@@ -18,6 +18,7 @@
 class Color;
 class DistantSky;
 class EntityManager;
+class Palette;
 class Rect;
 class Surface;
 class VoxelGrid;
@@ -178,7 +179,7 @@ public:
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint32_t *srcTexels);
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-		const uint32_t *srcTexels, int width, int height);
+		const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);

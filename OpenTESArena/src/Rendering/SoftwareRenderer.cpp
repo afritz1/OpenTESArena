@@ -11,6 +11,7 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
+#include "../Media/Palette.h"
 #include "../Utilities/Platform.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelGrid.h"
@@ -86,7 +87,7 @@ const std::vector<SoftwareRenderer::FlatTexture> *SoftwareRenderer::FlatTextureG
 }
 
 void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateType stateType,
-	const uint32_t *srcTexels, int width, int height)
+	const uint8_t *srcTexels, int width, int height, const Palette &palette)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -107,14 +108,34 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 	flatTexture.texels = std::vector<FlatTexel>(texelCount);
 
 	std::transform(srcTexels, srcTexels + texelCount, flatTexture.texels.begin(),
-		[](const uint32_t srcTexel)
+		[&palette](const uint8_t srcTexel)
 	{
-		const Double4 dstTexel = Double4::fromARGB(srcTexel);
+		// Palette indices 1-13 are used for light level diminishing in the original game.
+		// These texels do not have any color and are purely for manipulating the previously
+		// rendered color in the frame buffer.
 		FlatTexel flatTexel;
-		flatTexel.r = dstTexel.x;
-		flatTexel.g = dstTexel.y;
-		flatTexel.b = dstTexel.z;
-		flatTexel.a = dstTexel.w;
+		if ((srcTexel >= 1) && (srcTexel <= 13))
+		{
+			flatTexel.r = 0.0;
+			flatTexel.g = 0.0;
+			flatTexel.b = 0.0;
+			flatTexel.a = static_cast<double>(srcTexel) / 14.0;
+		}
+		else
+		{
+			// Check if the color is hardcoded to another palette index. Otherwise,
+			// color the texel normally.
+			const int paletteIndex = (srcTexel == 14) ? 158 :
+				((srcTexel == 15) ? 159 : srcTexel);
+
+			const uint32_t srcARGB = palette.get()[paletteIndex].toARGB();
+			const Double4 dstTexel = Double4::fromARGB(srcARGB);
+			flatTexel.r = dstTexel.x;
+			flatTexel.g = dstTexel.y;
+			flatTexel.b = dstTexel.z;
+			flatTexel.a = dstTexel.w;
+		}
+		
 		return flatTexel;
 	});
 
@@ -779,7 +800,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 }
 
 void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-	const uint32_t *srcTexels, int width, int height)
+	const uint8_t *srcTexels, int width, int height, const Palette &palette)
 {
 	// If the flat mapping doesn't exist, add a new one.
 	auto iter = this->flatTextureGroups.find(flatIndex);
@@ -790,7 +811,7 @@ void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateT
 	}
 
 	FlatTextureGroup &flatTextureGroup = iter->second;
-	flatTextureGroup.addTexture(stateType, srcTexels, width, height);
+	flatTextureGroup.addTexture(stateType, srcTexels, width, height, palette);
 }
 
 void SoftwareRenderer::updateLight(int id, const Double3 *point,

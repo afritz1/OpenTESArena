@@ -4,12 +4,18 @@
 #include "LevelData.h"
 #include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "../Assets/CFAFile.h"
+#include "../Assets/COLFile.h"
+#include "../Assets/DFAFile.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
+#include "../Media/PaletteFile.h"
+#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../World/WorldType.h"
@@ -1344,6 +1350,12 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 	}
 
+	// Palette for flats, required in the renderer so it can conditionally transform certain
+	// palette indices for transparency.
+	COLFile col;
+	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
+	const Palette &palette = col.getPalette();
+
 	// Initialize entities from the flat defs list and write their textures to the renderer.
 	for (const auto &flatDef : this->flatsLists)
 	{
@@ -1448,27 +1460,53 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const bool isIMG = extension == "IMG";
 		const bool noExtension = extension.size() == 0;
 
-		// @todo: separate each extension into its own if statement and load the file
-		// directly instead of with texture manager.
-
-		if (isCFA || isDFA)
+		// Entities can be partially transparent. Some palette indices determine whether
+		// there should be any "alpha blending" (in the original game, it implements alpha
+		// using light level diminishing with 13 different levels in an .LGT file).
+		auto addFlatTexture = [&textureManager, &renderer, &palette](const uint8_t *texels,
+			int width, int height, int flatIndex, EntityAnimationData::StateType stateType)
 		{
-			const std::vector<Surface> &surfaces = textureManager.getSurfaces(entityAnimName);
-
-			for (size_t i = 0; i < surfaces.size(); i++)
+			renderer.addFlatTexture(flatIndex, stateType, texels, width, height, palette);
+		};
+		
+		if (isCFA)
+		{
+			CFAFile cfa;
+			if (!cfa.init(entityAnimName.c_str()))
 			{
-				const Surface &surface = surfaces[i];
-				renderer.addFlatTexture(flatIndex, EntityAnimationData::StateType::Idle,
-					static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(),
-					surface.getHeight());
+				DebugCrash("Could not init .CFA file \"" + entityAnimName + "\".");
+			}
+
+			for (int i = 0; i < cfa.getImageCount(); i++)
+			{
+				addFlatTexture(cfa.getPixels(i), cfa.getWidth(), cfa.getHeight(), flatIndex,
+					EntityAnimationData::StateType::Idle);
+			}
+		}
+		else if (isDFA)
+		{
+			DFAFile dfa;
+			if (!dfa.init(entityAnimName.c_str()))
+			{
+				DebugCrash("Could not init .DFA file \"" + entityAnimName + "\".");
+			}
+
+			for (int i = 0; i < dfa.getImageCount(); i++)
+			{
+				addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(), flatIndex,
+					EntityAnimationData::StateType::Idle);
 			}
 		}
 		else if (isIMG)
 		{
-			const Surface &surface = textureManager.getSurface(entityAnimName);
-			renderer.addFlatTexture(flatIndex, EntityAnimationData::StateType::Idle,
-				static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(),
-				surface.getHeight());
+			IMGFile img;
+			if (!img.init(entityAnimName.c_str()))
+			{
+				DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+			}
+
+			addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(), flatIndex,
+				EntityAnimationData::StateType::Idle);
 		}
 		else if (noExtension)
 		{

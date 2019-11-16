@@ -21,6 +21,7 @@
 // This class runs the CPU-based 3D rendering for the application.
 
 class Entity;
+class Palette;
 class VoxelGrid;
 
 class SoftwareRenderer
@@ -220,8 +221,8 @@ private:
 	public:
 		const std::vector<FlatTexture> *getTextures(EntityAnimationData::StateType stateType) const;
 		
-		void addTexture(EntityAnimationData::StateType stateType, const uint32_t *texels,
-			int width, int height);
+		void addTexture(EntityAnimationData::StateType stateType, const uint8_t *texels,
+			int width, int height, const Palette &palette);
 	};
 
 	// Visible flat data. A flat is a 2D surface always facing perpendicular to the Y axis,
@@ -713,9 +714,11 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint32_t *srcTexels);
 
-	// Adds a flat texture to the given flat's animation texture list.
+	// Adds a flat texture to the given flat's animation texture list. 8-bit colors with
+	// a palette is required here since some palette indices have special behavior for
+	// transparency.
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-		const uint32_t *srcTexels, int width, int height);
+		const uint8_t *srcTexels, int width, int height, const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
