@@ -6374,11 +6374,26 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 
 				if (texel.a > 0.0)
 				{
-					// Texture color with shading.
-					const double shadingMax = 1.0;
-					double colorR = texel.r * std::min(shading.x, shadingMax);
-					double colorG = texel.g * std::min(shading.y, shadingMax);
-					double colorB = texel.b * std::min(shading.z, shadingMax);
+					// Special case (for true color): if texel alpha is between 0 and 1,
+					// the previously rendered pixel is diminished by some amount.
+					double colorR, colorG, colorB;
+					if (texel.a < 1.0)
+					{
+						// Diminish the previous color in the frame buffer.
+						const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[index]);
+						const double visPercent = std::clamp(1.0 - texel.a, 0.0, 1.0);
+						colorR = prevColor.x * visPercent;
+						colorG = prevColor.y * visPercent;
+						colorB = prevColor.z * visPercent;
+					}
+					else
+					{
+						// Texture color with shading.
+						const double shadingMax = 1.0;
+						colorR = texel.r * std::min(shading.x, shadingMax);
+						colorG = texel.g * std::min(shading.y, shadingMax);
+						colorB = texel.b * std::min(shading.z, shadingMax);
+					}
 
 					// Linearly interpolate with fog.
 					colorR += (fogColor.x - colorR) * fogPercent;
@@ -6387,161 +6402,6 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 
 					// Clamp maximum (don't worry about negative values).
 					const double high = 1.0;
-					colorR = (colorR > high) ? high : colorR;
-					colorG = (colorG > high) ? high : colorG;
-					colorB = (colorB > high) ? high : colorB;
-
-					// Convert floats to integers.
-					const uint32_t colorRGB = static_cast<uint32_t>(
-						((static_cast<uint8_t>(colorR * 255.0)) << 16) |
-						((static_cast<uint8_t>(colorG * 255.0)) << 8) |
-						((static_cast<uint8_t>(colorB * 255.0))));
-
-					frame.colorBuffer[index] = colorRGB;
-					frame.depthBuffer[index] = depth;
-				}
-			}
-		}
-	}
-}
-
-void SoftwareRenderer::drawAlphaBlendedFlat(int startX, int endX, const VisibleFlat &flat,
-	const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo,
-	const FlatTexture &texture, const FrameView &frame)
-{
-	// @todo: wrap some of these local variables up into a struct so we can
-	// separate the draw call variables from the shading.
-
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
-	// X percents across the screen for the given start and end columns.
-	const double startXPercent = (static_cast<double>(startX) + 0.50) /
-		static_cast<double>(frame.width);
-	const double endXPercent = (static_cast<double>(endX) + 0.50) /
-		static_cast<double>(frame.width);
-
-	const bool startsInRange =
-		(flat.startX >= startXPercent) && (flat.startX <= endXPercent);
-	const bool endsInRange =
-		(flat.endX >= startXPercent) && (flat.endX <= endXPercent);
-	const bool coversRange =
-		(flat.startX <= startXPercent) && (flat.endX >= endXPercent);
-
-	// Throw out the draw call if the flat is not in the X range.
-	if (!startsInRange && !endsInRange && !coversRange)
-	{
-		return;
-	}
-
-	// Get the min and max X range of coordinates in screen-space. This range is completely 
-	// contained within the flat.
-	const double clampedStartXPercent = std::clamp(startXPercent, flat.startX, flat.endX);
-	const double clampedEndXPercent = std::clamp(endXPercent, flat.startX, flat.endX);
-
-	// The percentages from start to end within the flat.
-	const double startFlatPercent = (clampedStartXPercent - flat.startX) /
-		(flat.endX - flat.startX);
-	const double endFlatPercent = (clampedEndXPercent - flat.startX) /
-		(flat.endX - flat.startX);
-
-	// Points interpolated between for per-column depth calculations in the XZ plane.
-	const Double3 startTopPoint = flat.topLeft.lerp(flat.topRight, startFlatPercent);
-	const Double3 endTopPoint = flat.topLeft.lerp(flat.topRight, endFlatPercent);
-
-	// Horizontal texture coordinates in the flat. Although the flat percent can be
-	// equal to 1.0, the texture coordinate needs to be less than 1.0.
-	const double startU = std::clamp(startFlatPercent, 0.0, Constants::JustBelowOne);
-	const double endU = std::clamp(endFlatPercent, 0.0, Constants::JustBelowOne);
-
-	// Get the start and end coordinates of the projected points (Y values potentially
-	// outside the screen).
-	const double projectedXStart = clampedStartXPercent * frame.widthReal;
-	const double projectedXEnd = clampedEndXPercent * frame.widthReal;
-	const double projectedYStart = flat.startY * frame.heightReal;
-	const double projectedYEnd = flat.endY * frame.heightReal;
-
-	// Clamp the coordinates for where the flat starts and stops on the screen.
-	const int xStart = SoftwareRenderer::getLowerBoundedPixel(projectedXStart, frame.width);
-	const int xEnd = SoftwareRenderer::getUpperBoundedPixel(projectedXEnd, frame.width);
-	const int yStart = SoftwareRenderer::getLowerBoundedPixel(projectedYStart, frame.height);
-	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(projectedYEnd, frame.height);
-
-	// Shading on the texture.
-	// - @todo: contribution from lights.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
-
-	// Draw by-column, similar to wall rendering.
-	for (int x = xStart; x < xEnd; x++)
-	{
-		const double xPercent = ((static_cast<double>(x) + 0.50) - projectedXStart) /
-			(projectedXEnd - projectedXStart);
-
-		// Horizontal texture coordinate.
-		const double u = startU + ((endU - startU) * xPercent);
-
-		// Horizontal texel position.
-		const int textureX = static_cast<int>(
-			(flat.flipped ? (Constants::JustBelowOne - u) : u) *
-			static_cast<double>(texture.width));
-
-		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
-
-		// Get the true XZ distance for the depth.
-		const double depth = (Double2(topPoint.x, topPoint.z) - eye).length();
-
-		// Linearly interpolated fog.
-		const Double3 &fogColor = shadingInfo.getFogColor();
-		const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
-
-		for (int y = yStart; y < yEnd; y++)
-		{
-			const int index = x + (y * frame.width);
-
-			if (depth <= frame.depthBuffer[index])
-			{
-				const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) /
-					(projectedYEnd - projectedYStart);
-
-				// Vertical texture coordinate.
-				constexpr double startV = 0.0;
-				const double endV = Constants::JustBelowOne;
-				const double v = startV + ((endV - startV) * yPercent);
-
-				// Vertical texel position.
-				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
-
-				// Alpha is checked in this loop, and transparent texels are not drawn.
-				// Flats do not have emission, so ignore it.
-				const int textureIndex = textureX + (textureY * texture.width);
-				const FlatTexel &texel = texture.texels[textureIndex];
-
-				if (texel.a > 0.0)
-				{
-					// Previous frame buffer color.
-					const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[index]);
-
-					// Linearly interpolate previous color with texel color.
-					constexpr double shadingMax = 1.0;
-					double colorR = (prevColor.x + ((texel.r - prevColor.x) * texel.a)) *
-						std::min(shading.x, shadingMax);
-					double colorG = (prevColor.y + ((texel.g - prevColor.y) * texel.a)) *
-						std::min(shading.y, shadingMax);
-					double colorB = (prevColor.z + ((texel.b - prevColor.z) * texel.a)) *
-						std::min(shading.z, shadingMax);
-
-					// Linearly interpolate with fog.
-					colorR += (fogColor.x - colorR) * fogPercent;
-					colorG += (fogColor.y - colorG) * fogPercent;
-					colorB += (fogColor.z - colorB) * fogPercent;
-
-					// Clamp maximum (don't worry about negative values).
-					constexpr double high = 1.0;
 					colorR = (colorR > high) ? high : colorR;
 					colorG = (colorG > high) ? high : colorG;
 					colorB = (colorB > high) ? high : colorB;
