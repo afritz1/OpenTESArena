@@ -626,6 +626,12 @@ private:
 		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo, 
 		const FlatTexture &texture, const FrameView &frame);
 
+	// Draws the portion of a transparent flat contained within the given X range of the screen.
+	// The end X value is exclusive.
+	static void drawAlphaBlendedFlat(int startX, int endX, const VisibleFlat &flat,
+		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo,
+		const FlatTexture &texture, const FrameView &frame);
+
 	// @todo: drawAlphaFlat(...), for flats with partial transparency.
 	// - Must be back to front.
 
