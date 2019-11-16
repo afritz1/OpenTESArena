@@ -1349,6 +1349,8 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 	{
 		const int flatIndex = flatDef.getFlatIndex();
 		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
+		const std::optional<int> &optItemIndex = flatData.itemIndex;
+		const bool isCreature = optItemIndex.has_value() && IsCreatureIndex(*optItemIndex);
 
 		// Must be at least one instance of the entity for the loop to try and
 		// instantiate it and write textures to the renderer.
@@ -1360,9 +1362,33 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		// Add a new entity data instance.
 		// @todo: assign creature data here from .exe data if the flat is a creature.
 		DebugAssert(this->entityManager.getEntityData(dataIndex) == nullptr);
-		EntityData newEntityData(dataIndex, flatData.yOffset, flatData.collider,
-			flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
-			flatData.ceiling, flatData.mediumScale);
+		EntityData newEntityData;
+		if (isCreature)
+		{
+			// Read from .exe data instead for creatures.
+			const int itemIndex = *optItemIndex;
+			const int creatureID = GetCreatureIDFromItemIndex(itemIndex);
+			const int creatureIndex = creatureID - 1;
+			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
+			DebugAssertIndex(creatureYOffsets, creatureIndex);
+
+			const int yOffset = creatureYOffsets[creatureIndex];
+			const bool collider = true;
+			const bool puddle = false;
+			const bool largeScale = false;
+			const bool dark = false;
+			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
+			const bool ceiling = false;
+			const bool mediumScale = false;
+			newEntityData.init(flatIndex, yOffset, collider, puddle, largeScale, dark,
+				transparent, ceiling, mediumScale);
+		}
+		else
+		{
+			newEntityData.init(flatIndex, flatData.yOffset, flatData.collider,
+				flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
+				flatData.ceiling, flatData.mediumScale);
+		}
 
 		auto &entityAnimData = newEntityData.getAnimationData();
 		const EntityAnimationData::State animState = MakeEntityAnimationState(
@@ -1421,6 +1447,9 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const bool isDFA = extension == "DFA";
 		const bool isIMG = extension == "IMG";
 		const bool noExtension = extension.size() == 0;
+
+		// @todo: separate each extension into its own if statement and load the file
+		// directly instead of with texture manager.
 
 		if (isCFA || isDFA)
 		{

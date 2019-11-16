@@ -8,6 +8,9 @@ class EntityData
 private:
 	EntityAnimationData animationData;
 
+	// @todo: convert to discriminated union like VoxelData so we can have creature
+	// properties like blood animation index, "has no corpse", etc..
+
 	// Several copied over from .INF data (not all, just for initial implementation).
 	int yOffset;
 	bool collider;
@@ -23,7 +26,9 @@ private:
 	// (entity double size, puddle, etc.) in this class.
 	int flatIndex;
 public:
-	EntityData(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
+	EntityData();
+
+	void init(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
 		bool dark, bool transparent, bool ceiling, bool mediumScale);
 
 	int getFlatIndex() const;

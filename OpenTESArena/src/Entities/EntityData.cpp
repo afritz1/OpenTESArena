@@ -1,6 +1,19 @@
 #include "EntityData.h"
 
-EntityData::EntityData(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
+EntityData::EntityData()
+{
+	this->flatIndex = -1;
+	this->yOffset = 0;
+	this->collider = false;
+	this->puddle = false;
+	this->largeScale = false;
+	this->dark = false;
+	this->transparent = false;
+	this->ceiling = false;
+	this->mediumScale = false;
+}
+
+void EntityData::init(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
 	bool dark, bool transparent, bool ceiling, bool mediumScale)
 {
 	this->flatIndex = flatIndex;
