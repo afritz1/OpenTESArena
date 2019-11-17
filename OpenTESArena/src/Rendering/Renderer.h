@@ -177,7 +177,7 @@ public:
 	void updateLight(int id, const Double3 *point, const Double3 *color,
 		const double *intensity);
 	void setFogDistance(double fogDistance);
-	void setVoxelTexture(int id, const uint32_t *srcTexels);
+	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
 		const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette);

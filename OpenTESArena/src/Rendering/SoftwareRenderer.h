@@ -39,6 +39,8 @@ private:
 		bool transparent; // Voxel texels only support alpha testing, not alpha blending.
 
 		VoxelTexel();
+
+		static VoxelTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
 	};
 
 	struct FlatTexel
@@ -710,7 +712,7 @@ public:
 	void setSkyPalette(const uint32_t *colors, int count);
 
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
-	void setVoxelTexture(int id, const uint32_t *srcTexels);
+	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 
 	// Adds a flat texture to the given flat's animation texture list. 8-bit colors with
 	// a palette is required here since some palette indices have special behavior for

@@ -27,6 +27,22 @@ SoftwareRenderer::VoxelTexel::VoxelTexel()
 	this->transparent = false;
 }
 
+SoftwareRenderer::VoxelTexel SoftwareRenderer::VoxelTexel::makeFrom8Bit(
+	uint8_t texel, const Palette &palette)
+{
+	// Convert ARGB color from integer to double-precision format. This does waste
+	// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
+	// for Arena's textures (eight textures is a megabyte).
+	const uint32_t srcARGB = palette.get()[texel].toARGB();
+	const Double4 srcTexel = Double4::fromARGB(srcARGB);
+	VoxelTexel voxelTexel;
+	voxelTexel.r = srcTexel.x;
+	voxelTexel.g = srcTexel.y;
+	voxelTexel.b = srcTexel.z;
+	voxelTexel.transparent = srcTexel.w == 0.0;
+	return voxelTexel;
+}
+
 SoftwareRenderer::FlatTexel::FlatTexel()
 {
 	this->r = 0.0;
@@ -803,7 +819,7 @@ void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &col
 	DebugNotImplemented();
 }
 
-void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
+void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette)
 {
 	// Clear the selected texture.
 	VoxelTexture &texture = this->voxelTextures.at(id);
@@ -818,19 +834,12 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint32_t *srcTexels)
 			// source index and destination index.
 			// - "dstX" and "dstY" should be calculated, and also used with lightTexels.
 			const int index = x + (y * VoxelTexture::WIDTH);
-
-			// Convert ARGB color from integer to double-precision format. This does waste
-			// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
-			// for Arena's textures (eight textures is a megabyte).
-			const Double4 srcTexel = Double4::fromARGB(srcTexels[index]);
-			VoxelTexel &dstTexel = texture.texels[index];
-			dstTexel.r = srcTexel.x;
-			dstTexel.g = srcTexel.y;
-			dstTexel.b = srcTexel.z;
-			dstTexel.transparent = srcTexel.w == 0.0;
+			const uint8_t srcTexel = srcTexels[index];
+			VoxelTexel voxelTexel = VoxelTexel::makeFrom8Bit(srcTexel, palette);
+			texture.texels[index] = voxelTexel;
 
 			// If it's a white texel, it's used with night lights (i.e., yellow at night).
-			const bool isWhite = (srcTexel.x == 1.0) && (srcTexel.y == 1.0) && (srcTexel.z == 1.0);
+			const bool isWhite = srcTexel == 113;
 
 			if (isWhite)
 			{

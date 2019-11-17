@@ -560,10 +560,10 @@ void Renderer::setFogDistance(double fogDistance)
 	this->softwareRenderer.setFogDistance(fogDistance);
 }
 
-void Renderer::setVoxelTexture(int id, const uint32_t *srcTexels)
+void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setVoxelTexture(id, srcTexels);
+	this->softwareRenderer.setVoxelTexture(id, srcTexels, palette);
 }
 
 void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,

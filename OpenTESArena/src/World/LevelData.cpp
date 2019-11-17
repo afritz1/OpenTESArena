@@ -10,6 +10,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
+#include "../Assets/SETFile.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Math/Constants.h"
@@ -1312,6 +1313,12 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 	renderer.clearDistantSky();
 	this->entityManager.clear();
 
+	// Palette for voxels and flats, required in the renderer so it can conditionally transform
+	// certain palette indices for transparency.
+	COLFile col;
+	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
+	const Palette &palette = col.getPalette();
+
 	// Load .INF voxel textures into the renderer.
 	const auto &voxelTextures = this->inf.getVoxelTextures();
 	const int voxelTextureCount = static_cast<int>(voxelTextures.size());
@@ -1325,18 +1332,29 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const bool isIMG = extension == "IMG";
 		const bool isSET = extension == "SET";
 		const bool noExtension = extension.size() == 0;
+		
+		if (isIMG)
+		{
+			IMGFile img;
+			if (!img.init(textureName.c_str()))
+			{
+				DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
+			}
 
-		if (isSET)
-		{
-			// Use the texture data's .SET index to obtain the correct surface.
-			const auto &surfaces = textureManager.getSurfaces(textureName);
-			const Surface &surface = surfaces.at(textureData.setIndex.value());
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
+			renderer.setVoxelTexture(i, img.getPixels(), palette);
 		}
-		else if (isIMG)
+		else if (isSET)
 		{
-			const Surface &surface = textureManager.getSurface(textureName);
-			renderer.setVoxelTexture(i, static_cast<const uint32_t*>(surface.getPixels()));
+			SETFile set;
+			if (!set.init(textureName.c_str()))
+			{
+				DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
+			}
+
+			// Use the texture data's .SET index to obtain the correct surface.
+			DebugAssert(textureData.setIndex.has_value());
+			const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
+			renderer.setVoxelTexture(i, srcPixels, palette);
 		}
 		else if (noExtension)
 		{
@@ -1349,12 +1367,6 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 			DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 		}
 	}
-
-	// Palette for flats, required in the renderer so it can conditionally transform certain
-	// palette indices for transparency.
-	COLFile col;
-	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
-	const Palette &palette = col.getPalette();
 
 	// Initialize entities from the flat defs list and write their textures to the renderer.
 	for (const auto &flatDef : this->flatsLists)
