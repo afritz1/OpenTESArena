@@ -96,6 +96,220 @@ Surface TextureManager::make32BitFromPaletted(int width, int height,
 	return surface;
 }
 
+Buffer2D<uint8_t> TextureManager::make8BitSurface(const std::string_view &filename,
+	Palette *outPalette)
+{
+	// Check what kind of file extension the filename has.
+	const std::string_view extension = StringView::getExtension(filename);
+	const bool isIMG = extension == "IMG";
+	const bool isMNU = extension == "MNU";
+
+	Buffer2D<uint8_t> buffer;
+
+	if (isIMG || isMNU)
+	{
+		IMGFile img;
+		if (!img.init(filename.data()))
+		{
+			DebugCrash("Could not init .IMG file \"" + std::string(filename) + "\".");
+		}
+
+		buffer.init(img.getWidth(), img.getHeight());
+
+		const uint8_t *srcPixels = img.getPixels();
+		const int pixelCount = img.getWidth() * img.getHeight();
+		std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+
+		// Optionally write out the contained palette (if any).
+		const Palette *imgPalette = img.getPalette();
+		if (imgPalette != nullptr && outPalette != nullptr)
+		{
+			std::copy(imgPalette->get().begin(), imgPalette->get().end(),
+				outPalette->get().begin());
+		}
+	}
+	else
+	{
+		DebugCrash("Unrecognized surface format \"" + std::string(filename) + "\".");
+	}
+
+	return buffer;
+}
+
+Buffer2D<uint8_t> TextureManager::make8BitSurface(const std::string_view &filename)
+{
+	return TextureManager::make8BitSurface(filename, nullptr);
+}
+
+Buffer<Buffer2D<uint8_t>> TextureManager::make8BitSurfaces(const std::string_view &filename,
+	Buffer<Palette> *outPalettes)
+{
+	const std::string_view extension = StringView::getExtension(filename);
+	const bool isCFA = extension == "CFA";
+	const bool isCIF = extension == "CIF";
+	const bool isCEL = extension == "CEL";
+	const bool isDFA = extension == "DFA";
+	const bool isFLC = extension == "FLC";
+	const bool isRCI = extension == "RCI";
+	const bool isSET = extension == "SET";
+
+	Buffer<Buffer2D<uint8_t>> buffers;
+
+	if (isCFA)
+	{
+		CFAFile cfa;
+		if (!cfa.init(filename.data()))
+		{
+			DebugCrash("Could not init .CFA file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(cfa.getImageCount());
+
+		// Create a surface for each image in the .CFA.
+		for (int i = 0; i < cfa.getImageCount(); i++)
+		{
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(cfa.getWidth(), cfa.getHeight());
+
+			const uint8_t *srcPixels = cfa.getPixels(i);
+			const int pixelCount = cfa.getWidth() * cfa.getHeight();
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+		}
+	}
+	else if (isCIF)
+	{
+		CIFFile cif;
+		if (!cif.init(filename.data()))
+		{
+			DebugCrash("Could not init .CIF file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(cif.getImageCount());
+
+		// Create a surface for each image in the .CIF.
+		for (int i = 0; i < cif.getImageCount(); i++)
+		{
+			const int cifWidth = cif.getWidth(i);
+			const int cifHeight = cif.getHeight(i);
+
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(cifWidth, cifHeight);
+
+			const uint8_t *srcPixels = cif.getPixels(i);
+			const int pixelCount = cifWidth * cifHeight;
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+		}
+	}
+	else if (isDFA)
+	{
+		DFAFile dfa;
+		if (!dfa.init(filename.data()))
+		{
+			DebugCrash("Could not init .DFA file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(dfa.getImageCount());
+
+		// Create a surface for each image in the .DFA.
+		for (int i = 0; i < dfa.getImageCount(); i++)
+		{
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(dfa.getWidth(), dfa.getHeight());
+
+			const uint8_t *srcPixels = dfa.getPixels(i);
+			const int pixelCount = dfa.getWidth() * dfa.getHeight();
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+		}
+	}
+	else if (isFLC || isCEL)
+	{
+		FLCFile flc;
+		if (!flc.init(filename.data()))
+		{
+			DebugCrash("Could not init .FLC file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(flc.getFrameCount());
+
+		// Optionally prepare the output palette buffer.
+		if (outPalettes != nullptr)
+		{
+			outPalettes->init(flc.getFrameCount());
+		}
+
+		// Create a surface for each frame in the .FLC.
+		for (int i = 0; i < flc.getFrameCount(); i++)
+		{
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(flc.getWidth(), flc.getHeight());
+
+			const uint8_t *srcPixels = flc.getPixels(i);
+			const int pixelCount = flc.getWidth() * flc.getHeight();
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+
+			// Optionally write out the frame's palette.
+			if (outPalettes != nullptr)
+			{
+				const Palette &framePalette = flc.getFramePalette(i);
+				outPalettes->set(i, framePalette);
+			}
+		}
+	}
+	else if (isRCI)
+	{
+		RCIFile rci;
+		if (!rci.init(filename.data()))
+		{
+			DebugCrash("Could not init .RCI file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(rci.getImageCount());
+
+		// Create a surface for each image in the .RCI.
+		for (int i = 0; i < rci.getImageCount(); i++)
+		{
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(RCIFile::WIDTH, RCIFile::HEIGHT);
+
+			const uint8_t *srcPixels = rci.getPixels(i);
+			const int pixelCount = RCIFile::WIDTH * RCIFile::HEIGHT;
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+		}
+	}
+	else if (isSET)
+	{
+		SETFile set;
+		if (!set.init(filename.data()))
+		{
+			DebugCrash("Could not init .SET file \"" + std::string(filename) + "\".");
+		}
+
+		buffers.init(set.getImageCount());
+
+		// Create a surface for each image in the .SET.
+		for (int i = 0; i < set.getImageCount(); i++)
+		{
+			Buffer2D<uint8_t> &buffer = buffers.get(i);
+			buffer.init(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
+
+			const uint8_t *srcPixels = set.getPixels(i);
+			const int pixelCount = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
+			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
+		}
+	}
+	else
+	{
+		DebugCrash("Unrecognized surface list \"" + std::string(filename) + "\".");
+	}
+
+	return buffers;
+}
+
+Buffer<Buffer2D<uint8_t>> TextureManager::make8BitSurfaces(const std::string_view &filename)
+{
+	return TextureManager::make8BitSurfaces(filename, nullptr);
+}
+
 const Surface &TextureManager::getSurface(const std::string &filename,
 	const std::string &paletteName)
 {

@@ -1,13 +1,18 @@
 #ifndef TEXTURE_MANAGER_H
 #define TEXTURE_MANAGER_H
 
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 #include "Palette.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
+
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Buffer2D.h"
 
 class Renderer;
 
@@ -41,6 +46,18 @@ public:
 	// and a 256 color palette.
 	static Surface make32BitFromPaletted(int width, int height,
 		const uint8_t *srcPixels, const Palette &palette);
+
+	// Loads an 8-bit surface by filename and returns the allocated buffer. Optionally
+	// writes out the image's palette if it has one.
+	static Buffer2D<uint8_t> make8BitSurface(
+		const std::string_view &filename, Palette *outPalette);
+	static Buffer2D<uint8_t> make8BitSurface(const std::string_view &filename);
+
+	// Loads a list of 8-bit surfaces by filename and returns the allocated buffers.
+	// Optionally writes out the image's palette if it has one (several in some cases).
+	static Buffer<Buffer2D<uint8_t>> make8BitSurfaces(
+		const std::string_view &filename, Buffer<Palette> *outPalettes);
+	static Buffer<Buffer2D<uint8_t>> make8BitSurfaces(const std::string_view &filename);
 
 	// Gets a surface by filename. It will be loaded if not already stored with the 
 	// requested palette. If no palette name is given, the active one is used.
