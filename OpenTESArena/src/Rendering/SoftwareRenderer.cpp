@@ -18,6 +18,19 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	// Hardcoded palette indices with special behavior in the original game's renderer.
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
+	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;
+	constexpr uint8_t PALETTE_INDEX_RED_SRC1 = 14;
+	constexpr uint8_t PALETTE_INDEX_RED_SRC2 = 15;
+	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
+	constexpr uint8_t PALETTE_INDEX_RED_DST2 = 159;
+	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
+}
+
 SoftwareRenderer::VoxelTexel::VoxelTexel()
 {
 	this->r = 0.0;
@@ -59,18 +72,21 @@ SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
 	// rendered color in the frame buffer.
 	FlatTexel flatTexel;
 
-	if ((texel >= 1) && (texel <= 13))
+	if ((texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) &&
+		(texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST))
 	{
 		flatTexel.r = 0.0;
 		flatTexel.g = 0.0;
 		flatTexel.b = 0.0;
-		flatTexel.a = static_cast<double>(texel) / 14.0;
+		flatTexel.a = static_cast<double>(texel) /
+			static_cast<double>(PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
 	}
 	else
 	{
 		// Check if the color is hardcoded to another palette index. Otherwise,
 		// color the texel normally.
-		const int paletteIndex = (texel == 14) ? 158 : ((texel == 15) ? 159 : texel);
+		const int paletteIndex = (texel == PALETTE_INDEX_RED_SRC1) ? PALETTE_INDEX_RED_DST1 :
+			((texel == PALETTE_INDEX_RED_SRC2) ? PALETTE_INDEX_RED_DST2 : texel);
 
 		const uint32_t srcARGB = palette.get()[paletteIndex].toARGB();
 		const Double4 dstTexel = Double4::fromARGB(srcARGB);
@@ -839,7 +855,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const P
 			texture.texels[index] = voxelTexel;
 
 			// If it's a white texel, it's used with night lights (i.e., yellow at night).
-			const bool isWhite = srcTexel == 113;
+			const bool isWhite = srcTexel == PALETTE_INDEX_NIGHT_LIGHT;
 
 			if (isWhite)
 			{
