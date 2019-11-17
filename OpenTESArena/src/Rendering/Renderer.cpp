@@ -573,10 +573,10 @@ void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stat
 	this->softwareRenderer.addFlatTexture(flatIndex, stateType, srcTexels, width, height, palette);
 }
 
-void Renderer::setDistantSky(const DistantSky &distantSky)
+void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setDistantSky(distantSky);
+	this->softwareRenderer.setDistantSky(distantSky, palette);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)

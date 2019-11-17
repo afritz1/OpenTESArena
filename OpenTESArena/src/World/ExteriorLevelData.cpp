@@ -3,8 +3,11 @@
 
 #include "ExteriorLevelData.h"
 #include "WorldType.h"
+#include "../Assets/COLFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../Media/PaletteFile.h"
+#include "../Media/PaletteName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
@@ -1188,8 +1191,16 @@ void ExteriorLevelData::setActive(const ExeData &exeData, TextureManager &textur
 {
 	LevelData::setActive(exeData, textureManager, renderer);
 
+	// @todo: fetch this palette from somewhere better.
+	COLFile col;
+	const std::string colName = PaletteFile::fromName(PaletteName::Default);
+	if (!col.init(colName.c_str()))
+	{
+		DebugCrash("Couldn't init .COL file \"" + colName + "\".");
+	}
+
 	// Give distant sky data to the renderer.
-	renderer.setDistantSky(this->distantSky);
+	renderer.setDistantSky(this->distantSky, col.getPalette());
 }
 
 void ExteriorLevelData::tick(Game &game, double dt)

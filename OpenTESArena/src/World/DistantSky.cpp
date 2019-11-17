@@ -49,15 +49,15 @@ namespace
 	};
 }
 
-DistantSky::LandObject::LandObject(const Surface &surface, double angleRadians)
+DistantSky::LandObject::LandObject(int entryIndex, double angleRadians)
 {
-	this->surface = &surface;
+	this->entryIndex = entryIndex;
 	this->angleRadians = angleRadians;
 }
 
-const Surface &DistantSky::LandObject::getSurface() const
+int DistantSky::LandObject::getTextureEntryIndex() const
 {
-	return *this->surface;
+	return this->entryIndex;
 }
 
 double DistantSky::LandObject::getAngleRadians() const
@@ -65,28 +65,25 @@ double DistantSky::LandObject::getAngleRadians() const
 	return this->angleRadians;
 }
 
-DistantSky::AnimatedLandObject::AnimatedLandObject(double angleRadians, double frameTime)
+DistantSky::AnimatedLandObject::AnimatedLandObject(int setEntryIndex,
+	double angleRadians, double frameTime)
 {
 	// Frame time must be positive.
 	DebugAssert(frameTime > 0.0);
 
+	this->setEntryIndex = setEntryIndex;
 	this->angleRadians = angleRadians;
 	this->targetFrameTime = frameTime;
 	this->currentFrameTime = 0.0;
 	this->index = 0;
 }
 
-DistantSky::AnimatedLandObject::AnimatedLandObject(double angleRadians)
-	: AnimatedLandObject(angleRadians, AnimatedLandObject::DEFAULT_FRAME_TIME) { }
+DistantSky::AnimatedLandObject::AnimatedLandObject(int textureSetIndex, double angleRadians)
+	: AnimatedLandObject(textureSetIndex, angleRadians, AnimatedLandObject::DEFAULT_FRAME_TIME) { }
 
-int DistantSky::AnimatedLandObject::getSurfaceCount() const
+int DistantSky::AnimatedLandObject::getTextureSetEntryIndex() const
 {
-	return static_cast<int>(this->surfaces.size());
-}
-
-const Surface &DistantSky::AnimatedLandObject::getSurface(int index) const
-{
-	return *this->surfaces.at(index);
+	return this->setEntryIndex;
 }
 
 double DistantSky::AnimatedLandObject::getAngleRadians() const
@@ -104,11 +101,6 @@ int DistantSky::AnimatedLandObject::getIndex() const
 	return this->index;
 }
 
-void DistantSky::AnimatedLandObject::addSurface(const Surface &surface)
-{
-	this->surfaces.push_back(&surface);
-}
-
 void DistantSky::AnimatedLandObject::setFrameTime(double frameTime)
 {
 	// Frame time must be positive.
@@ -122,11 +114,11 @@ void DistantSky::AnimatedLandObject::setIndex(int index)
 	this->index = index;
 }
 
-void DistantSky::AnimatedLandObject::update(double dt)
+void DistantSky::AnimatedLandObject::update(double dt, const DistantSky &distantSky)
 {
 	// Must have at least one image.
-	const int surfaceCount = this->getSurfaceCount();
-	if (surfaceCount > 0)
+	const int textureCount = distantSky.getTextureSetCount(this->setEntryIndex);
+	if (textureCount > 0)
 	{
 		// Animate based on delta time.
 		this->currentFrameTime += dt;
@@ -134,21 +126,21 @@ void DistantSky::AnimatedLandObject::update(double dt)
 		while (this->currentFrameTime >= this->targetFrameTime)
 		{
 			this->currentFrameTime -= this->targetFrameTime;
-			this->index = (this->index < (surfaceCount - 1)) ? (this->index + 1) : 0;
+			this->index = (this->index < (textureCount - 1)) ? (this->index + 1) : 0;
 		}
 	}
 }
 
-DistantSky::AirObject::AirObject(const Surface &surface, double angleRadians, double height)
+DistantSky::AirObject::AirObject(int entryIndex, double angleRadians, double height)
 {
-	this->surface = &surface;
+	this->entryIndex = entryIndex;
 	this->angleRadians = angleRadians;
 	this->height = height;
 }
 
-const Surface &DistantSky::AirObject::getSurface() const
+int DistantSky::AirObject::getTextureEntryIndex() const
 {
-	return *this->surface;
+	return this->entryIndex;
 }
 
 double DistantSky::AirObject::getAngleRadians() const
@@ -161,17 +153,17 @@ double DistantSky::AirObject::getHeight() const
 	return this->height;
 }
 
-DistantSky::MoonObject::MoonObject(const Surface &surface, double phasePercent,
+DistantSky::MoonObject::MoonObject(int entryIndex, double phasePercent,
 	DistantSky::MoonObject::Type type)
 {
-	this->surface = &surface;
+	this->entryIndex = entryIndex;
 	this->phasePercent = phasePercent;
 	this->type = type;
 }
 
-const Surface &DistantSky::MoonObject::getSurface() const
+int DistantSky::MoonObject::getTextureEntryIndex() const
 {
-	return *this->surface;
+	return this->entryIndex;
 }
 
 double DistantSky::MoonObject::getPhasePercent() const
@@ -196,13 +188,13 @@ DistantSky::StarObject DistantSky::StarObject::makeSmall(uint32_t color, const D
 	return star;
 }
 
-DistantSky::StarObject DistantSky::StarObject::makeLarge(const Surface &surface, const Double3 &direction)
+DistantSky::StarObject DistantSky::StarObject::makeLarge(int entryIndex, const Double3 &direction)
 {
 	StarObject star;
 	star.type = StarObject::Type::Large;
 
 	StarObject::LargeStar &largeStar = star.large;
-	largeStar.surface = &surface;
+	largeStar.entryIndex = entryIndex;
 
 	star.direction = direction;
 	return star;
@@ -230,95 +222,50 @@ const Double3 &DistantSky::StarObject::getDirection() const
 	return this->direction;
 }
 
+DistantSky::TextureEntry::TextureEntry(std::string &&filename, Buffer2D<uint8_t> &&texture)
+	: filename(std::move(filename)), texture(std::move(texture)) { }
+
+DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename,
+	Buffer<Buffer2D<uint8_t>> &&textures)
+	: filename(std::move(filename)), textures(std::move(textures)) { }
+
 const int DistantSky::UNIQUE_ANGLES = 512;
 const double DistantSky::IDENTITY_DIM = 320.0;
 const double DistantSky::IDENTITY_ANGLE_RADIANS = 90.0 * Constants::DegToRad;
 
-DistantSky::DistantSky()
+std::optional<int> DistantSky::getTextureEntryIndex(const std::string_view &filename) const
 {
-	this->sunSurface = nullptr;
-}
-
-int DistantSky::getLandObjectCount() const
-{
-	return static_cast<int>(this->landObjects.size());
-}
-
-int DistantSky::getAnimatedLandObjectCount() const
-{
-	return static_cast<int>(this->animLandObjects.size());
-}
-
-int DistantSky::getAirObjectCount() const
-{
-	return static_cast<int>(this->airObjects.size());
-}
-
-int DistantSky::getMoonObjectCount() const
-{
-	return static_cast<int>(this->moonObjects.size());
-}
-
-int DistantSky::getStarObjectCount() const
-{
-	return static_cast<int>(this->starObjects.size());
-}
-
-bool DistantSky::hasSun() const
-{
-	return this->sunSurface != nullptr;
-}
-
-const DistantSky::LandObject &DistantSky::getLandObject(int index) const
-{
-	return this->landObjects.at(index);
-}
-
-const DistantSky::AnimatedLandObject &DistantSky::getAnimatedLandObject(int index) const
-{
-	return this->animLandObjects.at(index);
-}
-
-const DistantSky::AirObject &DistantSky::getAirObject(int index) const
-{
-	return this->airObjects.at(index);
-}
-
-const DistantSky::MoonObject &DistantSky::getMoonObject(int index) const
-{
-	return this->moonObjects.at(index);
-}
-
-const DistantSky::StarObject &DistantSky::getStarObject(int index) const
-{
-	return this->starObjects.at(index);
-}
-
-const Surface &DistantSky::getSunSurface() const
-{
-	return *this->sunSurface;
-}
-
-int DistantSky::getStarCountFromDensity(int starDensity)
-{
-	if (starDensity == 0)
+	const auto iter = std::find_if(this->textures.begin(), this->textures.end(),
+		[&filename](const TextureEntry &entry)
 	{
-		// Classic.
-		return 40;
-	}
-	else if (starDensity == 1)
+		return entry.filename == filename;
+	});
+
+	if (iter != this->textures.end())
 	{
-		// Moderate.
-		return 1000;
-	}
-	else if (starDensity == 2)
-	{
-		// High.
-		return 8000;
+		return static_cast<int>(std::distance(this->textures.begin(), iter));
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(int, std::to_string(starDensity));
+		return std::nullopt;
+	}
+}
+
+std::optional<int> DistantSky::getTextureSetEntryIndex(const std::string_view &filename) const
+{
+	const auto iter = std::find_if(this->textureSets.begin(), this->textureSets.end(),
+		[&filename](const TextureSetEntry &entry)
+	{
+		return entry.filename == filename;
+	});
+
+	if (iter != this->textureSets.end())
+	{
+		return static_cast<int>(std::distance(this->textureSets.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
 	}
 }
 
@@ -380,7 +327,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			DebugAssert(digits.size() <= maxDigits);
 
 			// Actual filename for the image.
-			const std::string filename = [&baseFilename, pos, maxDigits, &digits]()
+			std::string filename = [&baseFilename, pos, maxDigits, &digits]()
 			{
 				std::string name = baseFilename;
 				const int digitCount = static_cast<int>(digits.size());
@@ -396,7 +343,17 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 				return String::toUppercase(name);
 			}();
 
-			const Surface &surface = textureManager.getSurface(filename);
+			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
+			auto fixEntryIndexIfMissing = [this, &textureManager, &filename, &entryIndex]()
+			{
+				if (!entryIndex.has_value())
+				{
+					Buffer2D<uint8_t> surface = textureManager.make8BitSurface(filename);
+					TextureEntry textureEntry(std::move(filename), std::move(surface));
+					this->textures.push_back(std::move(textureEntry));
+					entryIndex = static_cast<int>(this->textures.size()) - 1;
+				}
+			};
 
 			// The yPos parameter is optional, and is assigned depending on whether the object
 			// is in the air.
@@ -414,12 +371,14 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 
 			if (isLand)
 			{
-				this->landObjects.push_back(LandObject(surface, angleRadians));
+				fixEntryIndexIfMissing();
+				this->landObjects.push_back(LandObject(*entryIndex, angleRadians));
 			}
 			else
 			{
+				fixEntryIndexIfMissing();
 				const double height = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				this->airObjects.push_back(AirObject(surface, angleRadians, height));
+				this->airObjects.push_back(AirObject(*entryIndex, angleRadians, height));
 			}
 		}
 	};
@@ -480,28 +439,40 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		}();
 
 		const auto &animFilenames = exeData.locations.animDistantMountainFilenames;
-		const std::string animFilename = String::toUppercase(animFilenames.at(animIndex));
+		DebugAssertIndex(animFilenames, animIndex);
+		std::string animFilename = String::toUppercase(animFilenames[animIndex]);
 
-		// .DFAs have multiple frames, .IMGs do not.
-		const bool hasMultipleFrames = animFilename.find(".DFA") != std::string::npos;
+		// See if there's an existing texture set entry. If not, make one.
+		std::optional<int> setEntryIndex = this->getTextureSetEntryIndex(animFilename);
 
-		AnimatedLandObject animLandObj(angle);
-
-		// Determine which frames the animation will have.
-		if (hasMultipleFrames)
+		if (!setEntryIndex.has_value())
 		{
-			const auto &animSurfaces = textureManager.getSurfaces(animFilename);
-			for (auto &surface : animSurfaces)
+			// Determine which frames the animation will have.
+			// .DFAs have multiple frames, .IMGs do not.
+			const bool hasMultipleFrames = animFilename.find(".DFA") != std::string::npos;
+
+			if (hasMultipleFrames)
 			{
-				animLandObj.addSurface(surface);
+				// Several frames of animation.
+				Buffer<Buffer2D<uint8_t>> surfaces = textureManager.make8BitSurfaces(animFilename);
+				TextureSetEntry textureSetEntry(std::move(animFilename), std::move(surfaces));
+				this->textureSets.push_back(std::move(textureSetEntry));
 			}
-		}
-		else
-		{
-			const auto &surface = textureManager.getSurface(animFilename);
-			animLandObj.addSurface(surface);
+			else
+			{
+				// Only one frame of animation.
+				Buffer2D<uint8_t> surface = textureManager.make8BitSurface(animFilename);
+				Buffer<Buffer2D<uint8_t>> buffers(1);
+				buffers.set(0, std::move(surface));
+
+				TextureSetEntry textureSetEntry(std::move(animFilename), std::move(buffers));
+				this->textureSets.push_back(std::move(textureSetEntry));
+			}
+
+			setEntryIndex = static_cast<int>(this->textureSets.size()) - 1;
 		}
 
+		AnimatedLandObject animLandObj(*setEntryIndex, angle);
 		this->animLandObjects.push_back(std::move(animLandObj));
 	}
 
@@ -511,7 +482,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	if (hasSpaceObjects)
 	{
 		// Initialize moons.
-		auto makeMoon = [currentDay, &textureManager, &exeData](MoonObject::Type type)
+		auto makeMoon = [this, currentDay, &textureManager, &exeData](MoonObject::Type type)
 		{
 			const int phaseCount = 32;
 			const int phaseIndex = [currentDay, type, phaseCount]()
@@ -531,13 +502,29 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			}();
 
 			const int moonIndex = static_cast<int>(type);
-			const std::string filename = String::toUppercase(
-				exeData.locations.moonFilenames.at(moonIndex));
-			const auto &surfaces = textureManager.getSurfaces(filename);
-			const auto &surface = surfaces.at(phaseIndex);
+			const auto &moonFilenames = exeData.locations.moonFilenames;
+			DebugAssertIndex(moonFilenames, moonIndex);
+			std::string filename = String::toUppercase(moonFilenames[moonIndex]);
+
+			// See if there's an existing texture entry. If not, make one for the moon phase.
+			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
+			if (!entryIndex.has_value())
+			{
+				Buffer<Buffer2D<uint8_t>> surfaces = textureManager.make8BitSurfaces(filename);
+
+				DebugAssert(phaseIndex >= 0);
+				DebugAssert(phaseIndex < surfaces.getCount());
+				Buffer2D<uint8_t> &surface = surfaces.get(phaseIndex);
+
+				TextureEntry textureEntry(std::move(filename), std::move(surface));
+				this->textures.push_back(std::move(textureEntry));
+				entryIndex = static_cast<int>(this->textures.size()) - 1;
+			}
+
 			const double phasePercent = static_cast<double>(phaseIndex) /
 				static_cast<double>(phaseCount);
-			return MoonObject(surface, phasePercent, type);
+
+			return MoonObject(*entryIndex, phasePercent, type);
 		};
 
 		this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
@@ -684,7 +671,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 			}
 			else
 			{
-				const std::string starFilename = [&exeData, &star]()
+				std::string starFilename = [&exeData, &star]()
 				{
 					const std::string typeStr = std::to_string(star.type + 1);
 					std::string filename = exeData.locations.starFilename;
@@ -695,14 +682,143 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 					return String::toUppercase(filename);
 				}();
 
-				const Surface &surface = textureManager.getSurface(starFilename);
-				this->starObjects.push_back(StarObject::makeLarge(surface, direction));
+				// See if there's an existing texture entry. If not, make one.
+				std::optional<int> entryIndex = this->getTextureEntryIndex(starFilename);
+				if (!entryIndex.has_value())
+				{
+					Buffer2D<uint8_t> surface = textureManager.make8BitSurface(starFilename);
+					TextureEntry textureEntry(std::move(starFilename), std::move(surface));
+					this->textures.push_back(std::move(textureEntry));
+					entryIndex = static_cast<int>(this->textures.size()) - 1;
+				}
+
+				this->starObjects.push_back(StarObject::makeLarge(*entryIndex, direction));
 			}
 		}
 
-		// Initialize sun texture.
-		const std::string &sunFilename = exeData.locations.sunFilename;
-		this->sunSurface = &textureManager.getSurface(String::toUppercase(sunFilename));
+		// Initialize sun texture index.
+		std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
+		std::optional<int> sunTextureIndex = this->getTextureEntryIndex(sunFilename);
+		if (!sunTextureIndex.has_value())
+		{
+			Buffer2D<uint8_t> surface = textureManager.make8BitSurface(sunFilename);
+			TextureEntry textureEntry(std::move(sunFilename), std::move(surface));
+			this->textures.push_back(std::move(textureEntry));
+			sunTextureIndex = static_cast<int>(this->textures.size()) - 1;
+		}
+
+		this->sunEntryIndex = *sunTextureIndex;
+	}
+}
+
+int DistantSky::getLandObjectCount() const
+{
+	return static_cast<int>(this->landObjects.size());
+}
+
+int DistantSky::getAnimatedLandObjectCount() const
+{
+	return static_cast<int>(this->animLandObjects.size());
+}
+
+int DistantSky::getAirObjectCount() const
+{
+	return static_cast<int>(this->airObjects.size());
+}
+
+int DistantSky::getMoonObjectCount() const
+{
+	return static_cast<int>(this->moonObjects.size());
+}
+
+int DistantSky::getStarObjectCount() const
+{
+	return static_cast<int>(this->starObjects.size());
+}
+
+bool DistantSky::hasSun() const
+{
+	return this->sunEntryIndex.has_value();
+}
+
+const DistantSky::LandObject &DistantSky::getLandObject(int index) const
+{
+	DebugAssertIndex(this->landObjects, index);
+	return this->landObjects[index];
+}
+
+const DistantSky::AnimatedLandObject &DistantSky::getAnimatedLandObject(int index) const
+{
+	DebugAssertIndex(this->animLandObjects, index);
+	return this->animLandObjects[index];
+}
+
+const DistantSky::AirObject &DistantSky::getAirObject(int index) const
+{
+	DebugAssertIndex(this->airObjects, index);
+	return this->airObjects[index];
+}
+
+const DistantSky::MoonObject &DistantSky::getMoonObject(int index) const
+{
+	DebugAssertIndex(this->moonObjects, index);
+	return this->moonObjects[index];
+}
+
+const DistantSky::StarObject &DistantSky::getStarObject(int index) const
+{
+	DebugAssertIndex(this->starObjects, index);
+	return this->starObjects[index];
+}
+
+int DistantSky::getSunEntryIndex() const
+{
+	DebugAssert(this->sunEntryIndex.has_value());
+	return *this->sunEntryIndex;
+}
+
+BufferView2D<const uint8_t> DistantSky::getTexture(int index) const
+{
+	DebugAssertIndex(this->textures, index);
+	const TextureEntry &entry = this->textures[index];
+	const Buffer2D<uint8_t> &buffer = entry.texture;
+	return BufferView2D<const uint8_t>(buffer.get(), buffer.getWidth(), buffer.getHeight());
+}
+
+int DistantSky::getTextureSetCount(int index) const
+{
+	DebugAssertIndex(this->textureSets, index);
+	return this->textureSets[index].textures.getCount();
+}
+
+BufferView2D<const uint8_t> DistantSky::getTextureSetElement(int index, int elementIndex) const
+{
+	DebugAssertIndex(this->textureSets, index);
+	const TextureSetEntry &entry = this->textureSets[index];
+	const Buffer2D<uint8_t> &buffer = entry.textures.get(elementIndex);
+	return BufferView2D<const uint8_t>(buffer.get(), buffer.getWidth(), buffer.getHeight());
+}
+
+int DistantSky::getStarCountFromDensity(int starDensity)
+{
+	if (starDensity == 0)
+	{
+		// Classic.
+		return 40;
+	}
+	else if (starDensity == 1)
+	{
+		// Moderate.
+		return 1000;
+	}
+	else if (starDensity == 2)
+	{
+		// High.
+		return 8000;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(starDensity));
 	}
 }
 
@@ -711,6 +827,6 @@ void DistantSky::tick(double dt)
 	// Only animated distant land needs updating.
 	for (auto &anim : this->animLandObjects)
 	{
-		anim.update(dt);
+		anim.update(dt, *this);
 	}
 }

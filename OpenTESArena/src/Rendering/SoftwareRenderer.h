@@ -46,15 +46,20 @@ private:
 		double r, g, b, a;
 
 		FlatTexel();
+
+		static FlatTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
 	};
 
-	// For distant sky objects (mountains, clouds, etc.).
+	// For distant sky objects (mountains, clouds, etc.). Although most distant objects
+	// only need alpha-testing, some clouds have special case texels for a simple form
+	// of transparency.
 	struct SkyTexel
 	{
-		double r, g, b;
-		bool transparent;
+		double r, g, b, a;
 
 		SkyTexel();
+
+		static SkyTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
 	};
 
 	struct VoxelTexture
@@ -275,7 +280,9 @@ private:
 
 		DistantObjects();
 
-		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures);
+		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures,
+			const Palette &palette);
+
 		void clear();
 	};
 
@@ -696,7 +703,7 @@ public:
 	void setFogDistance(double fogDistance);
 
 	// Sets textures for the distant sky (mountains, clouds, etc.).
-	void setDistantSky(const DistantSky &distantSky);
+	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
 
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.

@@ -35,12 +35,71 @@ SoftwareRenderer::FlatTexel::FlatTexel()
 	this->a = 0.0;
 }
 
+SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
+	uint8_t texel, const Palette &palette)
+{
+	// Palette indices 1-13 are used for light level diminishing in the original game.
+	// These texels do not have any color and are purely for manipulating the previously
+	// rendered color in the frame buffer.
+	FlatTexel flatTexel;
+
+	if ((texel >= 1) && (texel <= 13))
+	{
+		flatTexel.r = 0.0;
+		flatTexel.g = 0.0;
+		flatTexel.b = 0.0;
+		flatTexel.a = static_cast<double>(texel) / 14.0;
+	}
+	else
+	{
+		// Check if the color is hardcoded to another palette index. Otherwise,
+		// color the texel normally.
+		const int paletteIndex = (texel == 14) ? 158 : ((texel == 15) ? 159 : texel);
+
+		const uint32_t srcARGB = palette.get()[paletteIndex].toARGB();
+		const Double4 dstTexel = Double4::fromARGB(srcARGB);
+		flatTexel.r = dstTexel.x;
+		flatTexel.g = dstTexel.y;
+		flatTexel.b = dstTexel.z;
+		flatTexel.a = dstTexel.w;
+	}
+
+	return flatTexel;
+}
+
 SoftwareRenderer::SkyTexel::SkyTexel()
 {
 	this->r = 0.0;
 	this->g = 0.0;
 	this->b = 0.0;
-	this->transparent = false;
+	this->a = 0.0;
+}
+
+SoftwareRenderer::SkyTexel SoftwareRenderer::SkyTexel::makeFrom8Bit(
+	uint8_t texel, const Palette &palette)
+{
+	// Same as flat texels but for sky objects and without some hardcoded indices.
+	SkyTexel skyTexel;
+
+	if ((texel >= 1) && (texel <= 13))
+	{
+		skyTexel.r = 0.0;
+		skyTexel.g = 0.0;
+		skyTexel.b = 0.0;
+		skyTexel.a = static_cast<double>(texel) / 14.0;
+	}
+	else
+	{
+		// Color the texel normally.
+		const uint32_t srcARGB = palette.get()[texel].toARGB();
+		const Double4 dstTexel = Double4::fromARGB(srcARGB);
+		skyTexel.r = dstTexel.x;
+		skyTexel.g = dstTexel.y;
+		skyTexel.b = dstTexel.z;
+		skyTexel.a = dstTexel.w;
+	}
+
+	return skyTexel;
 }
 
 SoftwareRenderer::FlatTexture::FlatTexture()
@@ -110,33 +169,7 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 	std::transform(srcTexels, srcTexels + texelCount, flatTexture.texels.begin(),
 		[&palette](const uint8_t srcTexel)
 	{
-		// Palette indices 1-13 are used for light level diminishing in the original game.
-		// These texels do not have any color and are purely for manipulating the previously
-		// rendered color in the frame buffer.
-		FlatTexel flatTexel;
-		if ((srcTexel >= 1) && (srcTexel <= 13))
-		{
-			flatTexel.r = 0.0;
-			flatTexel.g = 0.0;
-			flatTexel.b = 0.0;
-			flatTexel.a = static_cast<double>(srcTexel) / 14.0;
-		}
-		else
-		{
-			// Check if the color is hardcoded to another palette index. Otherwise,
-			// color the texel normally.
-			const int paletteIndex = (srcTexel == 14) ? 158 :
-				((srcTexel == 15) ? 159 : srcTexel);
-
-			const uint32_t srcARGB = palette.get()[paletteIndex].toARGB();
-			const Double4 dstTexel = Double4::fromARGB(srcARGB);
-			flatTexel.r = dstTexel.x;
-			flatTexel.g = dstTexel.y;
-			flatTexel.b = dstTexel.z;
-			flatTexel.a = dstTexel.w;
-		}
-		
-		return flatTexel;
+		return FlatTexel::makeFrom8Bit(srcTexel, palette);
 	});
 
 	std::vector<FlatTexture> &textures = textureList->second;
@@ -407,17 +440,16 @@ SoftwareRenderer::DistantObjects::DistantObjects()
 }
 
 void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
-	std::vector<SkyTexture> &skyTextures)
+	std::vector<SkyTexture> &skyTextures, const Palette &palette)
 {
 	DebugAssert(skyTextures.size() == 0);
 
 	// Creates a render texture from the given surface, adds it to the sky textures list, and
 	// returns its index in the sky textures list.
-	auto addSkyTexture = [&skyTextures](const Surface &surface)
+	auto addSkyTexture = [&skyTextures, &palette](const BufferView2D<const uint8_t> &buffer)
 	{
-		const int width = surface.getWidth();
-		const int height = surface.getHeight();
-		const uint32_t *texels = static_cast<const uint32_t*>(surface.getPixels());
+		const int width = buffer.getWidth();
+		const int height = buffer.getHeight();
 		const int texelCount = width * height;
 
 		skyTextures.push_back(SkyTexture());
@@ -426,14 +458,16 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 		texture.width = width;
 		texture.height = height;
 
-		for (int i = 0; i < texelCount; i++)
+		for (int y = 0; y < height; y++)
 		{
-			const Double4 srcTexel = Double4::fromARGB(texels[i]);
-			SkyTexel &dstTexel = texture.texels[i];
-			dstTexel.r = srcTexel.x;
-			dstTexel.g = srcTexel.y;
-			dstTexel.b = srcTexel.z;
-			dstTexel.transparent = srcTexel.w == 0.0;
+			for (int x = 0; x < width; x++)
+			{
+				// Similar to ghosts, some clouds have special palette indices for a simple
+				// form of transparency.
+				const uint8_t texel = buffer.get(x, y);
+				const int index = x + (y * width);
+				texture.texels[index] = SkyTexel::makeFrom8Bit(texel, palette);
+			}
 		}
 
 		return static_cast<int>(skyTextures.size()) - 1;
@@ -448,12 +482,14 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 		texture.width = 1;
 		texture.height = 1;
 
+		// Small stars are never transparent in the original game; this is just using the
+		// same storage representation as clouds which can have some transparencies.
 		const Double4 srcColor = Double4::fromARGB(color);
 		SkyTexel &dstTexel = texture.texels.front();
 		dstTexel.r = srcColor.x;
 		dstTexel.g = srcColor.y;
 		dstTexel.b = srcColor.z;
-		dstTexel.transparent = false;
+		dstTexel.a = srcColor.w;
 
 		return static_cast<int>(skyTextures.size()) - 1;
 	};
@@ -463,21 +499,24 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
-		const int textureIndex = addSkyTexture(landObject.getSurface());
-		this->lands.push_back(DistantObject<DistantSky::LandObject>(
-			landObject, textureIndex));
+		const int entryIndex = landObject.getTextureEntryIndex();
+		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		this->lands.push_back(DistantObject<DistantSky::LandObject>(landObject, textureIndex));
 	}
 
 	for (int i = distantSky.getAnimatedLandObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
+		const int setEntryIndex = animLandObject.getTextureSetEntryIndex();
+		const int setEntryCount = distantSky.getTextureSetCount(setEntryIndex);
+		DebugAssert(setEntryCount > 0);
 
 		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(animLandObject.getSurface(0));
+		const int textureIndex = addSkyTexture(distantSky.getTextureSetElement(setEntryIndex, 0));
 
-		for (int j = 1; j < animLandObject.getSurfaceCount(); j++)
+		for (int j = 1; j < setEntryCount; j++)
 		{
-			addSkyTexture(animLandObject.getSurface(j));
+			addSkyTexture(distantSky.getTextureSetElement(setEntryIndex, j));
 		}
 
 		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(
@@ -487,23 +526,23 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
-		const int textureIndex = addSkyTexture(airObject.getSurface());
-		this->airs.push_back(DistantObject<DistantSky::AirObject>(
-			airObject, textureIndex));
+		const int entryIndex = airObject.getTextureEntryIndex();
+		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		this->airs.push_back(DistantObject<DistantSky::AirObject>(airObject, textureIndex));
 	}
 
 	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
-		const int textureIndex = addSkyTexture(moonObject.getSurface());
-		this->moons.push_back(DistantObject<DistantSky::MoonObject>(
-			moonObject, textureIndex));
+		const int entryIndex = moonObject.getTextureEntryIndex();
+		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		this->moons.push_back(DistantObject<DistantSky::MoonObject>(moonObject, textureIndex));
 	}
 
 	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
-		const int textureIndex = [&addSkyTexture, &addSmallStarTexture, &starObject]()
+		const int textureIndex = [&distantSky, &addSkyTexture, &addSmallStarTexture, &starObject]()
 		{
 			if (starObject.getType() == DistantSky::StarObject::Type::Small)
 			{
@@ -513,7 +552,8 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			else if (starObject.getType() == DistantSky::StarObject::Type::Large)
 			{
 				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
-				return addSkyTexture(*largeStar.surface);
+				const int entryIndex = largeStar.entryIndex;
+				return addSkyTexture(distantSky.getTexture(entryIndex));
 			}
 			else
 			{
@@ -529,7 +569,8 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	if (distantSky.hasSun())
 	{
 		// Add the sun to the sky textures and assign its texture index.
-		this->sunTextureIndex = addSkyTexture(distantSky.getSunSurface());
+		const int sunEntryIndex = distantSky.getSunEntryIndex();
+		this->sunTextureIndex = addSkyTexture(distantSky.getTexture(sunEntryIndex));
 	}
 }
 
@@ -825,14 +866,14 @@ void SoftwareRenderer::setFogDistance(double fogDistance)
 	this->fogDistance = fogDistance;
 }
 
-void SoftwareRenderer::setDistantSky(const DistantSky &distantSky)
+void SoftwareRenderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
 {
 	// Clear old distant sky data.
 	this->distantObjects.clear();
 	this->skyTextures.clear();
 
 	// Create distant objects and set the sky textures.
-	this->distantObjects.init(distantSky, this->skyTextures);
+	this->distantObjects.init(distantSky, this->skyTextures, palette);
 }
 
 void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
@@ -3461,12 +3502,28 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 		const int textureIndex = textureX + (textureY * texture.width);
 		const SkyTexel &texel = texture.texels[textureIndex];
 
-		if (!texel.transparent)
+		if (texel.a != 0.0)
 		{
-			// Texture color with shading.
-			double colorR = texel.r * shading;
-			double colorG = texel.g * shading;
-			double colorB = texel.b * shading;
+			// Special case (for true color): if texel alpha is between 0 and 1,
+			// the previously rendered pixel is diminished by some amount. This is mostly
+			// only pertinent to the edges of some clouds (with respect to distant sky).
+			double colorR, colorG, colorB;
+			if (texel.a < 1.0)
+			{
+				// Diminish the previous color in the frame buffer.
+				const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[index]);
+				const double visPercent = std::clamp(1.0 - texel.a, 0.0, 1.0);
+				colorR = prevColor.x * visPercent;
+				colorG = prevColor.y * visPercent;
+				colorB = prevColor.z * visPercent;
+			}
+			else
+			{
+				// Texture color with shading.
+				colorR = texel.r * shading;
+				colorG = texel.g * shading;
+				colorB = texel.b * shading;
+			}
 
 			// Clamp maximum (don't worry about negative values).
 			const double high = 1.0;
@@ -3489,6 +3546,8 @@ void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, d
 	double vStart, double vEnd, const SkyTexture &texture, bool emissive,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
+	// @todo: fix. this is now out of sync with the non-SSE version.
+
 	// Draw range values.
 	const int yStart = drawRange.yStart;
 	const int yEnd = drawRange.yEnd;
@@ -3562,8 +3621,8 @@ void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, d
 		const SkyTexel &texel0 = texture.texels[_mm_extract_epi32(textureIndices, 0)];
 		const SkyTexel &texel1 = texture.texels[_mm_extract_epi32(textureIndices, 1)];
 		const __m128i texelAs = _mm_setr_epi32(
-			static_cast<int>(texel0.transparent),
-			static_cast<int>(texel1.transparent),
+			static_cast<int>(texel0.a == 0.0),
+			static_cast<int>(texel1.a == 0.0),
 			static_cast<int>(false),
 			static_cast<int>(false));
 
@@ -3574,6 +3633,7 @@ void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, d
 		const bool anyOpaque = opaque0 || opaque1;
 		if (anyOpaque)
 		{
+			// @todo: missing transparency branch of non-SSE version.
 			// Texel colors.
 			const __m128d texelRs = _mm_setr_pd(texel0.r, texel1.r);
 			const __m128d texelGs = _mm_setr_pd(texel0.g, texel1.g);
@@ -3829,7 +3889,7 @@ void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double 
 		const int textureIndex = textureX + (textureY * texture.width);
 		const SkyTexel &texel = texture.texels[textureIndex];
 
-		if (!texel.transparent)
+		if (texel.a != 0.0)
 		{
 			// Determine how the pixel should be shaded based on the moon texel. Should be
 			// safe to do floating-point comparisons here with no error.
@@ -3904,7 +3964,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 		const int textureIndex = textureX + (textureY * texture.width);
 		const SkyTexel &texel = texture.texels[textureIndex];
 
-		if (!texel.transparent)
+		if (texel.a != 0.0)
 		{
 			// Get gradient color from sky gradient row cache.
 			const Double3 &gradientColor = skyGradientRowCache[y];
