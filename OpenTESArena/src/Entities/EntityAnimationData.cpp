@@ -31,18 +31,24 @@ int EntityAnimationData::Keyframe::getTextureID() const
 	return this->textureID;
 }
 
-EntityAnimationData::State::State(StateType type, double secondsPerFrame, bool loop)
+EntityAnimationData::State::State(StateType type, double secondsPerFrame, bool loop, bool flipped)
 {
 	DebugAssert(secondsPerFrame > 0.0);
 
 	this->type = type;
 	this->secondsPerFrame = secondsPerFrame;
 	this->loop = loop;
+	this->flipped = flipped;
 }
 
 EntityAnimationData::StateType EntityAnimationData::State::getType() const
 {
 	return this->type;
+}
+
+bool EntityAnimationData::State::isFlipped() const
+{
+	return this->flipped;
 }
 
 bool EntityAnimationData::State::getLoop() const
@@ -86,18 +92,22 @@ EntityAnimationData::Instance::Instance()
 	this->percentDone = 0.0;
 }
 
-const EntityAnimationData::State &EntityAnimationData::Instance::getState(
+const std::vector<EntityAnimationData::State> &EntityAnimationData::Instance::getStateList(
 	const EntityAnimationData &animationData) const
 {
-	const State *state = animationData.findState(this->stateType);
-	DebugAssertMsg(state != nullptr, "Couldn't find state \"" +
+	const std::vector<State> *stateList = animationData.findStateList(this->stateType);
+	DebugAssertMsg(stateList != nullptr, "Couldn't find state list \"" +
 		std::to_string(static_cast<int>(this->stateType)) + "\".");
-	return *state;
+	return *stateList;
 }
 
-int EntityAnimationData::Instance::getKeyframeIndex(const EntityAnimationData &animationData) const
+int EntityAnimationData::Instance::getKeyframeIndex(int stateIndex,
+	const EntityAnimationData &animationData) const
 {
-	const State &state = this->getState(animationData);
+	const std::vector<State> &stateList = this->getStateList(animationData);
+
+	DebugAssertIndex(stateList, stateIndex);
+	const State &state = stateList[stateIndex];
 	const BufferView<const Keyframe> keyframes = state.getKeyframes();
 	const int keyframeCount = keyframes.getCount();
 
@@ -128,7 +138,13 @@ void EntityAnimationData::Instance::reset()
 
 void EntityAnimationData::Instance::tick(double dt, const EntityAnimationData &animationData)
 {
-	const State &state = this->getState(animationData);
+	const std::vector<State> &stateList = this->getStateList(animationData);
+
+	// @todo: see if total seconds (i.e. period) instead of seconds per frame would be better.
+	// - Don't know if we can assume that all state lists are the same size (probably not).
+	DebugAssert(stateList.size() > 0);
+	const State &state = stateList[0];
+
 	const BufferView<const Keyframe> keyframes = state.getKeyframes();
 	const int keyframeCount = keyframes.getCount();
 	const double secondsPerFrame = state.getSecondsPerFrame();
@@ -142,38 +158,45 @@ void EntityAnimationData::Instance::tick(double dt, const EntityAnimationData &a
 		std::clamp(currentSeconds / targetSeconds, 0.0, 1.0);
 }
 
-const EntityAnimationData::State *EntityAnimationData::findState(StateType stateType) const
+const std::vector<EntityAnimationData::State> *EntityAnimationData::findStateList(
+	StateType stateType) const
 {
-	const auto iter = std::find_if(this->states.begin(), this->states.end(),
-		[stateType](const EntityAnimationData::State &state)
+	const auto iter = std::find_if(this->stateLists.begin(), this->stateLists.end(),
+		[stateType](const std::vector<EntityAnimationData::State> &stateList)
 	{
+		DebugAssert(stateList.size() > 0);
+		const EntityAnimationData::State &state = stateList[0];
 		return state.getType() == stateType;
 	});
 
-	return (iter != this->states.end()) ? &(*iter) : nullptr;
+	return (iter != this->stateLists.end()) ? &(*iter) : nullptr;
 }
 
-void EntityAnimationData::addState(State &&state)
+void EntityAnimationData::addStateList(std::vector<State> &&stateList)
 {
-	// Can't have two states of the same type.
-	DebugAssert(this->findState(state.getType()) == nullptr);
+	DebugAssert(stateList.size() > 0);
 
-	this->states.push_back(std::move(state));
+	// Can't have two state lists of the same type.
+	DebugAssert(this->findStateList(stateList[0].getType()) == nullptr);
+
+	this->stateLists.push_back(std::move(stateList));
 }
 
-void EntityAnimationData::removeState(StateType stateType)
+void EntityAnimationData::removeStateList(StateType stateType)
 {
-	const State *state = this->findState(stateType);
+	const std::vector<State> *stateList = this->findStateList(stateType);
 
-	if (state != nullptr)
+	if (stateList != nullptr)
 	{
-		const State *firstState = this->states.data();
-		const int index = static_cast<int>(std::distance(firstState, state));
-		this->states.erase(this->states.begin() + index);
+		DebugAssert(stateList->size() > 0);
+
+		const std::vector<State> *firstStateList = this->stateLists.data();
+		const int index = static_cast<int>(std::distance(firstStateList, stateList));
+		this->stateLists.erase(this->stateLists.begin() + index);
 	}
 }
 
 void EntityAnimationData::clear()
 {
-	this->states.clear();
+	this->stateLists.clear();
 }

@@ -1462,9 +1462,17 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		{
 			// Get current entity animation frame.
 			const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
-			const int keyframeIndex = entityAnim.getKeyframeIndex(entityAnimData);
 
-			const EntityAnimationData::State &animState = entityAnim.getState(entityAnimData);
+			// @temp: Assume first state list for now.
+			// @todo: make stateIndex dependent on entity direction and camera position relative to entity.
+			const std::vector<EntityAnimationData::State> &stateList = entityAnim.getStateList(entityAnimData);
+			const int stateCount = static_cast<int>(stateList.size());
+			const int stateIndex = 0;
+
+			const int keyframeIndex = entityAnim.getKeyframeIndex(stateIndex, entityAnimData);
+
+			DebugAssertIndex(stateList, stateIndex);
+			const EntityAnimationData::State &animState = stateList[stateIndex];
 			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
 
 			return keyframes.get(keyframeIndex);
@@ -1533,7 +1541,13 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
 			visFlat.flatIndex = entityData.getFlatIndex();
-			visFlat.animStateType = entity.getAnimation().getState(entityAnimData).getType();
+
+			// @todo: refactor state lists so they don't store so much duplicate information like state type.
+			const auto &stateList = entity.getAnimation().getStateList(entityAnimData);
+			const int stateIndex = 0;
+			DebugAssertIndex(stateList, stateIndex);
+			const EntityAnimationData::State &firstState = stateList[stateIndex];
+			visFlat.animStateType = firstState.getType();
 
 			// Calculate each corner of the flat in world space.
 			visFlat.bottomLeft = flatPosition + flatRightScaled;

@@ -92,7 +92,8 @@ namespace
 			const EntityAnimationData::StateType stateType = EntityAnimationData::StateType::Idle;
 			constexpr double secondsPerFrame = 1.0 / 12.0;
 			const bool loop = true;
-			return EntityAnimationData::State(stateType, secondsPerFrame, loop);
+			const bool flipped = false;
+			return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
 		};
 
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
@@ -1422,7 +1423,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const bool success = animState.getKeyframes().getCount() > 0;
 		if (success)
 		{
-			entityAnimData.addState(EntityAnimationData::State(animState));
+			entityAnimData.addStateList({ EntityAnimationData::State(animState) });
 			this->entityManager.addEntityData(std::move(newEntityData));
 		}
 		else

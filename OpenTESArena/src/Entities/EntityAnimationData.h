@@ -42,10 +42,12 @@ public:
 		double secondsPerFrame;
 		StateType type;
 		bool loop;
+		bool flipped;
 	public:
-		State(StateType type, double secondsPerFrame, bool loop);
+		State(StateType type, double secondsPerFrame, bool loop, bool flipped);
 
 		StateType getType() const;
+		bool isFlipped() const;
 		bool getLoop() const;
 		double getSecondsPerFrame() const;
 		const std::string &getTextureName() const;
@@ -67,8 +69,8 @@ public:
 		// Animation data is passed by reference because its EntityData owner is
 		// allocated on the heap and can become dangling if a pointer is stored here.
 
-		const State &getState(const EntityAnimationData &animationData) const;
-		int getKeyframeIndex(const EntityAnimationData &animationData) const;
+		const std::vector<State> &getStateList(const EntityAnimationData &animationData) const;
+		int getKeyframeIndex(int stateIndex, const EntityAnimationData &animationData) const;
 
 		void setStateType(StateType stateType);
 
@@ -78,12 +80,15 @@ public:
 		void tick(double dt, const EntityAnimationData &animationData);
 	};
 private:
-	std::vector<State> states;
+	// Each state list contains one or more states, intended for directional animations.
+	// The renderer decides which state to display depending on relative angle, etc..
+	// State lists are expected to be in clockwise order with respect to directions.
+	std::vector<std::vector<State>> stateLists;
 
-	const State *findState(StateType stateType) const;
+	const std::vector<State> *findStateList(StateType stateType) const;
 public:
-	void addState(State &&state);
-	void removeState(StateType stateType);
+	void addStateList(std::vector<State> &&stateList);
+	void removeStateList(StateType stateType);
 	void clear();
 };
 
