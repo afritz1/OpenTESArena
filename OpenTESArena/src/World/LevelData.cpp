@@ -28,6 +28,30 @@
 
 namespace
 {
+	// Number of directions a dynamic entity can face.
+	constexpr int MAX_ANIM_DIRECTIONS = 8;
+
+	// First flipped animation ID that requires a mapping to a non-flipped ID for use
+	// with a creature .CFA file.
+	constexpr int FIRST_FLIPPED_ANIM_ID = 6;
+
+	// Animation values for creatures with .CFA files.
+	constexpr double CREATURE_ANIM_IDLE_SECONDS_PER_FRAME = 1.0 / 4.0;
+	constexpr double CREATURE_ANIM_LOOK_SECONDS_PER_FRAME = 1.0 / 4.0;
+	constexpr double CREATURE_ANIM_WALK_SECONDS_PER_FRAME = 1.0 / 8.0;
+	constexpr double CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME = 1.0 / 8.0;
+	constexpr double CREATURE_ANIM_DEATH_SECONDS_PER_FRAME = 1.0 / 4.0;
+	constexpr int CREATURE_ANIM_ATTACK_FRAME_INDEX = 10;
+	const bool CREATURE_ANIM_IDLE_LOOP = true;
+	const bool CREATURE_ANIM_LOOK_LOOP = false;
+	const bool CREATURE_ANIM_WALK_LOOP = true;
+	const bool CREATURE_ANIM_ATTACK_LOOP = false;
+	const bool CREATURE_ANIM_DEATH_LOOP = false;
+	const std::vector<int> CreatureAnimIndicesIdle = { 0 };
+	const std::vector<int> CreatureAnimIndicesLook = { 6, 0, 7, 0 };
+	const std::vector<int> CreatureAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
+	const std::vector<int> CreatureAnimIndicesAttack = { 8, 9, 10, 11 };
+
 	// *ITEM 32 to 54 are creatures (rat, goblin, etc.).
 	bool IsCreatureIndex(int itemIndex)
 	{
@@ -81,201 +105,513 @@ namespace
 		*baseHeight = (((height * scale) / 256) * 200) / 256;
 	}
 
-	// @todo: add support in entity animations for directional animations, then rename this to
-	// MakeEntityAnimationStates() and return a vector or whatever EntityAnimationData needs.
-	EntityAnimationData::State MakeEntityAnimationState(int flatIndex,
-		const INFFile &inf, const ExeData &exeData, TextureManager &textureManager)
+	// Returns whether the given original animation state ID would be for a flipped animation.
+	// Animation state IDs are 1-based, 1 being the entity looking at the player.
+	bool IsAnimDirectionFlipped(int animDirectionID)
 	{
-		// Lambda for generating a default entity animation state for later modification.
-		auto makeDefaultAnimState = []()
+		DebugAssert(animDirectionID >= 1);
+		DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
+		return animDirectionID >= FIRST_FLIPPED_ANIM_ID;
+	}
+
+	// Given a creature direction anim ID like 7, will return the index of the non-flipped anim.
+	int GetDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped)
+	{
+		// If the animation direction points to a flipped animation, the ID needs to be
+		// corrected to point to the non-flipped version.
+		if (IsAnimDirectionFlipped(animDirectionID))
 		{
-			const EntityAnimationData::StateType stateType = EntityAnimationData::StateType::Idle;
-			constexpr double secondsPerFrame = 1.0 / 12.0;
-			const bool loop = true;
-			const bool flipped = false;
-			return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
+			*outIsFlipped = true;
+			return ((FIRST_FLIPPED_ANIM_ID - 1) * 2) - animDirectionID;
+		}
+		else
+		{
+			*outIsFlipped = false;
+			return animDirectionID;
+		}
+	}
+
+	// Helper function for generating a default entity animation state for later modification.
+	EntityAnimationData::State MakeAnimState(EntityAnimationData::StateType stateType,
+		double secondsPerFrame, bool loop, bool flipped = false)
+	{
+		return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
+	}
+
+	bool TrySetCreatureFilenameDirection(std::string &creatureFilename, int animDirectionID)
+	{
+		DebugAssert(creatureFilename.size() > 0);
+		DebugAssert(animDirectionID >= 1);
+		DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
+
+		const size_t index = creatureFilename.find('@');
+		if (index != std::string::npos)
+		{
+			const char animDirectionChar = '0' + animDirectionID;
+			creatureFilename[index] = animDirectionChar;
+			return true;
+		}
+		else
+		{
+			DebugLogError("Couldn't replace creature direction in \"" + creatureFilename + "\".");
+			return false;
+		}
+	}
+
+	// Static entity animation state for idle.
+	EntityAnimationData::State MakeStaticEntityIdleAnimState(int flatIndex,
+		const INFFile &inf, const ExeData &exeData)
+	{
+		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
+
+		DebugAssertIndex(flatTextures, flatData.textureIndex);
+		const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
+		const std::string &flatTextureName = flatTextureData.filename;
+		const std::string_view extension = StringView::getExtension(flatTextureName);
+		const bool isDFA = extension == "DFA";
+		const bool isIMG = extension == "IMG";
+		const bool noExtension = extension.size() == 0;
+
+		// A flat's appearance may be modified by some .INF properties.
+		constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
+		constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
+		const double dimensionModifier = flatData.largeScale ? largeScaleValue :
+			(flatData.mediumScale ? mediumScaleValue : 1.0);
+
+		auto makeKeyframeDimension = [dimensionModifier](int value)
+		{
+			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
 		};
 
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		EntityAnimationData::State animState = MakeAnimState(
+			EntityAnimationData::StateType::Idle, 1.0 / 12.0, true);
 
-		// Static entities just have an idle animation state.
-		auto makeStaticEntityAnim = [&inf, &textureManager, &makeDefaultAnimState, &flatData]()
+		// Determine how to populate the animation state with keyframes.
+		if (isDFA)
 		{
-			const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
-
-			DebugAssertIndex(flatTextures, flatData.textureIndex);
-			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
-			const std::string &flatTextureName = flatTextureData.filename;
-			const std::string_view extension = StringView::getExtension(flatTextureName);
-			const bool isDFA = extension == "DFA";
-			const bool isIMG = extension == "IMG";
-			const bool noExtension = extension.size() == 0;
-
-			// A flat's appearance may be modified by some .INF properties.
-			constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
-			constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
-			const double dimensionModifier = flatData.largeScale ? largeScaleValue :
-				(flatData.mediumScale ? mediumScaleValue : 1.0);
-
-			auto makeKeyframeDimension = [dimensionModifier](int value)
+			DFAFile dfa;
+			if (!dfa.init(flatTextureName.c_str()))
 			{
-				return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
-			};
-
-			EntityAnimationData::State animState = makeDefaultAnimState();
-
-			// Determine how to populate the animation state with keyframes.
-			if (isDFA)
-			{
-				animState.setTextureName(std::string(flatTextureName));
-
-				const std::vector<Surface> &surfaces = textureManager.getSurfaces(flatTextureName);
-				for (size_t i = 0; i < surfaces.size(); i++)
-				{
-					const Surface &surface = surfaces[i];
-					const double width = makeKeyframeDimension(surface.getWidth());
-					const double height = makeKeyframeDimension(surface.getHeight());
-					const int textureID = static_cast<int>(i);
-
-					EntityAnimationData::Keyframe keyframe(width, height, textureID);
-					animState.addKeyframe(std::move(keyframe));
-				}
-
-				return animState;
+				DebugCrash("Couldn't init .DFA file \"" + flatTextureName + "\".");
 			}
-			else if (isIMG)
-			{
-				animState.setTextureName(std::string(flatTextureName));
 
-				const Surface &surface = textureManager.getSurface(flatTextureName);
-				const double width = makeKeyframeDimension(surface.getWidth());
-				const double height = makeKeyframeDimension(surface.getHeight());
-				const int textureID = 0;
+			animState.setTextureName(std::string(flatTextureName));
+
+			for (int i = 0; i < dfa.getImageCount(); i++)
+			{
+				const double width = makeKeyframeDimension(dfa.getWidth());
+				const double height = makeKeyframeDimension(dfa.getHeight());
+				const int textureID = i;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
 				animState.addKeyframe(std::move(keyframe));
-				return animState;
 			}
-			else if (noExtension)
+
+			return animState;
+		}
+		else if (isIMG)
+		{
+			IMGFile img;
+			if (!img.init(flatTextureName.c_str()))
 			{
-				// Ignore texture names with no extension. They appear to be lore-related names
-				// that were used at one point in Arena's development.
-				return animState;
+				DebugCrash("Couldn't init .IMG file \"" + flatTextureName + "\".");
 			}
-			else
+
+			animState.setTextureName(std::string(flatTextureName));
+
+			const double width = makeKeyframeDimension(img.getWidth());
+			const double height = makeKeyframeDimension(img.getHeight());
+			const int textureID = 0;
+
+			EntityAnimationData::Keyframe keyframe(width, height, textureID);
+			animState.addKeyframe(std::move(keyframe));
+			return animState;
+		}
+		else if (noExtension)
+		{
+			// Ignore texture names with no extension. They appear to be lore-related names
+			// that were used at one point in Arena's development.
+			return animState;
+		}
+		else
+		{
+			DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
+			return animState;
+		}
+	}
+
+	// For any of the dynamic entity anim states, if the returned state list is empty,
+	// it is assumed that the entity has no information for that state.
+
+	// Write out to lists of dynamic entity animation states for each animation direction.
+	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
+		std::vector<EntityAnimationData::State> *outIdleStates,
+		std::vector<EntityAnimationData::State> *outLookStates,
+		std::vector<EntityAnimationData::State> *outWalkStates,
+		std::vector<EntityAnimationData::State> *outAttackStates,
+		std::vector<EntityAnimationData::State> *outDeathStates)
+	{
+		DebugAssert(outIdleStates != nullptr);
+		DebugAssert(outLookStates != nullptr);
+		DebugAssert(outWalkStates != nullptr);
+		DebugAssert(outAttackStates != nullptr);
+		DebugAssert(outDeathStates != nullptr);
+
+		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
+		const std::optional<int> &optItemIndex = flatData.itemIndex;
+		DebugAssert(optItemIndex.has_value());
+		const int itemIndex = *optItemIndex;
+		const bool isCreature = IsCreatureIndex(itemIndex);
+		const bool isHuman = IsHumanEnemyIndex(itemIndex);
+
+		// Lambda for converting creature dimensions to the in-engine values.
+		auto makeCreatureKeyframeDimensions = [&exeData](int creatureIndex, int width, int height,
+			double *outWidth, double *outHeight)
+		{
+			// Get the scale value of the creature.
+			const uint16_t creatureScale = [&exeData, creatureIndex]()
 			{
-				DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
-				return animState;
-			}
+				const auto &creatureScales = exeData.entities.creatureScales;
+
+				DebugAssertIndex(creatureScales, creatureIndex);
+				const uint16_t scaleValue = creatureScales[creatureIndex];
+
+				// Special case: 0 == 256.
+				return (scaleValue == 0) ? 256 : scaleValue;
+			}();
+
+			int baseWidth, baseHeight;
+			GetBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
+			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
+			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
 		};
 
-		// Dynamic entities have several animation states based on direction.
-		auto makeDynamicEntityAnim = [&exeData, &textureManager, &makeDefaultAnimState,
-			&flatData](int itemIndex)
+		// Lambda for converting human dimensions to the in-engine values.
+		auto makeHumanKeyframeDimensions = [](int width, int height, double *outWidth, double *outHeight)
 		{
-			// Determine whether it's a creature or human entity.
-			const bool isCreature = IsCreatureIndex(itemIndex);
-			const bool isHuman = IsHumanEnemyIndex(itemIndex);
+			const uint16_t humanScale = 256;
+			int baseWidth, baseHeight;
+			GetBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
+			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
+			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
+		};
 
-			EntityAnimationData::State animState = makeDefaultAnimState();
-			const int raceIndex = itemIndex - 31;
+		// Write animation states for idle, look, and walk for the given anim direction.
+		auto tryWriteAnimStates = [&exeData, outIdleStates, outLookStates, outWalkStates,
+			itemIndex, isCreature, isHuman, &makeCreatureKeyframeDimensions,
+			&makeHumanKeyframeDimensions](int animDirectionID)
+		{
+			DebugAssert(animDirectionID >= 1);
+			DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
 
+			bool animIsFlipped;
+			const int correctedAnimDirID = GetDynamicEntityCorrectedAnimID(animDirectionID, &animIsFlipped);
+
+			// Determine which dynamic entity animation to load.
 			if (isCreature)
 			{
-				const auto &creatureAnimNames = exeData.entities.creatureAnimationFilenames;
-				const int creatureIndex = raceIndex - 1;
+				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
+				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
 
-				DebugAssertIndex(creatureAnimNames, creatureIndex);
-				std::string animName = creatureAnimNames[creatureIndex];
-
-				// Replace '@' with desired animation index (1 for now).
-				animName = String::replace(animName, "@", "1");
-				animName = String::toUppercase(animName);
-				
-				auto makeKeyframeDimensions = [&exeData, creatureIndex](
-					int width, int height, double *outWidth, double *outHeight)
+				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
+				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
+				if (!TrySetCreatureFilenameDirection(creatureFilename, correctedAnimDirID))
 				{
-					// Get the scale value of the creature.
-					const uint16_t creatureScale = [&exeData, creatureIndex]()
-					{
-						const auto &creatureScales = exeData.entities.creatureScales;
-
-						DebugAssertIndex(creatureScales, creatureIndex);
-						const uint16_t scaleValue = creatureScales[creatureIndex];
-
-						// Special case: 0 == 256.
-						return (scaleValue == 0) ? 256 : scaleValue;
-					}();
-
-					int baseWidth, baseHeight;
-					GetBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
-					*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-					*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
-				};
-
-				animState.setTextureName(std::string(animName));
-				const std::vector<Surface> &surfaces = textureManager.getSurfaces(animName);
-
-				for (size_t i = 0; i < surfaces.size(); i++)
-				{
-					const Surface &surface = surfaces[i];
-					double width, height;
-					makeKeyframeDimensions(surface.getWidth(), surface.getHeight(), &width, &height);
-					const int textureID = static_cast<int>(i);
-
-					EntityAnimationData::Keyframe keyframe(width, height, textureID);
-					animState.addKeyframe(std::move(keyframe));
+					DebugLogError("Couldn't set creature filename direction \"" +
+						creatureFilename + "\" (" + std::to_string(correctedAnimDirID) + ").");
+					return false;
 				}
 
-				return animState;
+				// Load the .CFA of the creature at the given direction.
+				CFAFile cfa;
+				if (!cfa.init(creatureFilename.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					return false;
+				}
+
+				// Prepare the states to write out.
+				EntityAnimationData::State idleState = MakeAnimState(
+					EntityAnimationData::StateType::Idle,
+					CREATURE_ANIM_IDLE_SECONDS_PER_FRAME,
+					CREATURE_ANIM_IDLE_LOOP,
+					animIsFlipped);
+				EntityAnimationData::State lookState = MakeAnimState(
+					EntityAnimationData::StateType::Look,
+					CREATURE_ANIM_LOOK_SECONDS_PER_FRAME,
+					CREATURE_ANIM_LOOK_LOOP,
+					animIsFlipped);
+				EntityAnimationData::State walkState = MakeAnimState(
+					EntityAnimationData::StateType::Walk,
+					CREATURE_ANIM_WALK_SECONDS_PER_FRAME,
+					CREATURE_ANIM_WALK_LOOP,
+					animIsFlipped);
+
+				// Lambda for writing keyframes to an anim state.
+				auto writeStateKeyframes = [&makeCreatureKeyframeDimensions, creatureIndex, &cfa](
+					EntityAnimationData::State *outState, const std::vector<int> &indices)
+				{
+					for (size_t i = 0; i < indices.size(); i++)
+					{
+						const int frameIndex = indices[i];
+
+						double width, height;
+						makeCreatureKeyframeDimensions(
+							creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+						const int textureID = frameIndex;
+
+						EntityAnimationData::Keyframe keyframe(width, height, textureID);
+						outState->addKeyframe(std::move(keyframe));
+					}
+				};
+
+				writeStateKeyframes(&idleState, CreatureAnimIndicesIdle);
+				writeStateKeyframes(&lookState, CreatureAnimIndicesLook);
+				writeStateKeyframes(&walkState, CreatureAnimIndicesWalk);
+
+				// Write animation filename to each.
+				idleState.setTextureName(std::string(creatureFilename));
+				lookState.setTextureName(std::string(creatureFilename));
+				walkState.setTextureName(std::string(creatureFilename));
+
+				// Write out the states to their respective state lists.
+				outIdleStates->push_back(std::move(idleState));
+				outLookStates->push_back(std::move(lookState));
+				outWalkStates->push_back(std::move(walkState));
+				return true;
 			}
 			else if (isHuman)
 			{
-				auto makeKeyframeDimensions = [](int width, int height, double *outWidth, double *outHeight)
-				{
-					const uint16_t humanScale = 256;
-					int baseWidth, baseHeight;
-					GetBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
-					*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-					*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
-				};
-
 				// @todo: replace placeholder image
 				const std::string animName = "01PLTWLK.CFA";
-				animState.setTextureName(std::string(animName));
 
-				const Surface &surface = textureManager.getSurfaces(animName).at(0);
+				CFAFile cfa;
+				if (!cfa.init(animName.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					return false;
+				}
+
+				EntityAnimationData::State placeholderState = MakeAnimState(
+					EntityAnimationData::StateType::Idle,
+					CREATURE_ANIM_IDLE_SECONDS_PER_FRAME,
+					CREATURE_ANIM_IDLE_LOOP,
+					false);
+
+				placeholderState.setTextureName(std::string(animName));
+
 				double width, height;
-				makeKeyframeDimensions(surface.getWidth(), surface.getHeight(), &width, &height);
+				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				animState.addKeyframe(std::move(keyframe));
-				return animState;
+				placeholderState.addKeyframe(std::move(keyframe));
+				outIdleStates->push_back(std::move(placeholderState));
+				return true;
 			}
 			else
 			{
-				DebugLogError("Not a dynamic entity *ITEM \"" + std::to_string(itemIndex) + "\".");
-				return animState;
+				DebugLogError("Not implemented.");
+				return false;
 			}
 		};
 
-		// Determine whether the flat index points to a static or dynamic entity.
-		int itemIndex = -1;
-		const bool isDynamicEntity = [&flatData, &itemIndex]()
+		auto tryWriteAttackAnimStates = [&exeData, outAttackStates, itemIndex, isCreature, isHuman,
+			&makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
-			if (flatData.itemIndex.has_value())
+			// Attack state is only in the first .CFA file.
+			const int animDirectionID = 1;
+
+			if (isCreature)
 			{
-				itemIndex = *flatData.itemIndex;
-				return IsCreatureIndex(itemIndex) || IsHumanEnemyIndex(itemIndex);
+				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
+				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
+
+				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
+				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
+				if (!TrySetCreatureFilenameDirection(creatureFilename, animDirectionID))
+				{
+					DebugLogError("Couldn't set creature filename direction \"" +
+						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
+					return false;
+				}
+
+				// Load the .CFA of the creature at the given direction.
+				CFAFile cfa;
+				if (!cfa.init(creatureFilename.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					return false;
+				}
+
+				const bool animIsFlipped = false;
+				EntityAnimationData::State attackState = MakeAnimState(
+					EntityAnimationData::StateType::Attack,
+					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
+					CREATURE_ANIM_ATTACK_LOOP,
+					animIsFlipped);
+
+				for (size_t i = 0; i < CreatureAnimIndicesAttack.size(); i++)
+				{
+					const int frameIndex = CreatureAnimIndicesAttack[i];
+
+					double width, height;
+					makeCreatureKeyframeDimensions(
+						creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+					const int textureID = frameIndex;
+
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					attackState.addKeyframe(std::move(keyframe));
+				}
+
+				// Write animation filename.
+				attackState.setTextureName(std::move(creatureFilename));
+
+				outAttackStates->push_back(std::move(attackState));
+				return true;
+			}
+			else if (isHuman)
+			{
+				// @todo: replace placeholder image
+				const std::string animName = "01PLTWLK.CFA";
+
+				CFAFile cfa;
+				if (!cfa.init(animName.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					return false;
+				}
+
+				EntityAnimationData::State placeholderState = MakeAnimState(
+					EntityAnimationData::StateType::Attack,
+					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
+					CREATURE_ANIM_ATTACK_LOOP,
+					false);
+
+				placeholderState.setTextureName(std::string(animName));
+
+				double width, height;
+				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
+				const int textureID = 0;
+
+				EntityAnimationData::Keyframe keyframe(width, height, textureID);
+				placeholderState.addKeyframe(std::move(keyframe));
+				outAttackStates->push_back(std::move(placeholderState));
+				return true;
 			}
 			else
 			{
+				DebugLogError("Not implemented.");
 				return false;
 			}
-		}();
+		};
 
-		return isDynamicEntity ? makeDynamicEntityAnim(itemIndex) : makeStaticEntityAnim();
+		auto tryWriteDeathAnimStates = [&exeData, outDeathStates, itemIndex, isCreature, isHuman,
+			&makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
+		{
+			// Death state is only in the last .CFA file.
+			const int animDirectionID = 6;
+
+			if (isCreature)
+			{
+				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
+				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
+
+				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
+				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
+				if (!TrySetCreatureFilenameDirection(creatureFilename, animDirectionID))
+				{
+					DebugLogError("Couldn't set creature filename direction \"" +
+						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
+					return false;
+				}
+
+				// Load the .CFA of the creature at the given direction.
+				CFAFile cfa;
+				if (!cfa.init(creatureFilename.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					return false;
+				}
+
+				const bool animIsFlipped = false;
+				EntityAnimationData::State deathState = MakeAnimState(
+					EntityAnimationData::StateType::Death,
+					CREATURE_ANIM_DEATH_SECONDS_PER_FRAME,
+					CREATURE_ANIM_DEATH_LOOP,
+					animIsFlipped);
+
+				for (int i = 0; i < cfa.getImageCount(); i++)
+				{
+					double width, height;
+					makeCreatureKeyframeDimensions(
+						creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+					const int textureID = i;
+
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					deathState.addKeyframe(std::move(keyframe));
+				}
+
+				// Write animation filename.
+				deathState.setTextureName(std::move(creatureFilename));
+
+				outDeathStates->push_back(std::move(deathState));
+				return true;
+			}
+			else if (isHuman)
+			{
+				// @todo: replace placeholder image
+				const std::string animName = "01PLTWLK.CFA";
+
+				CFAFile cfa;
+				if (!cfa.init(animName.c_str()))
+				{
+					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					return false;
+				}
+
+				EntityAnimationData::State placeholderState = MakeAnimState(
+					EntityAnimationData::StateType::Death,
+					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
+					CREATURE_ANIM_ATTACK_LOOP,
+					false);
+
+				placeholderState.setTextureName(std::string(animName));
+
+				double width, height;
+				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
+				const int textureID = 0;
+
+				EntityAnimationData::Keyframe keyframe(width, height, textureID);
+				placeholderState.addKeyframe(std::move(keyframe));
+				outDeathStates->push_back(std::move(placeholderState));
+				return true;
+			}
+			else
+			{
+				DebugLogError("Not implemented.");
+				return false;
+			}
+		};
+
+		for (int i = 1; i <= MAX_ANIM_DIRECTIONS; i++)
+		{
+			if (!tryWriteAnimStates(i))
+			{
+				DebugLogError("Couldn't make anim states for direction \"" + std::to_string(i) + "\".");
+			}
+		}
+
+		if (!tryWriteAttackAnimStates())
+		{
+			DebugLogError("Couldn't make attack anim states.");
+		}
+
+		if (!tryWriteDeathAnimStates())
+		{
+			DebugLogError("Couldn't make death anim states.");
+		}
 	}
 }
 
@@ -1333,7 +1669,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		const bool isIMG = extension == "IMG";
 		const bool isSET = extension == "SET";
 		const bool noExtension = extension.size() == 0;
-		
+
 		if (isIMG)
 		{
 			IMGFile img;
@@ -1374,6 +1710,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 	{
 		const int flatIndex = flatDef.getFlatIndex();
 		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
+		const EntityType entityType = GetEntityTypeFromFlat(flatIndex, this->inf);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
 		const bool isCreature = optItemIndex.has_value() && IsCreatureIndex(*optItemIndex);
 
@@ -1415,26 +1752,69 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				flatData.ceiling, flatData.mediumScale);
 		}
 
+		// Add entity animation data. Static entities have only idle animations (and maybe on/off
+		// state for lampposts). Dynamic entities have several animation states and directions.
 		auto &entityAnimData = newEntityData.getAnimationData();
-		const EntityAnimationData::State animState = MakeEntityAnimationState(
-			flatIndex, this->inf, exeData, textureManager);
+		std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
+			attackStates, deathStates;
 
-		// The entity can only be instantiated if there is at least one animation frame.
-		const bool success = animState.getKeyframes().getCount() > 0;
-		if (success)
+		if (entityType == EntityType::Static)
 		{
-			entityAnimData.addStateList({ EntityAnimationData::State(animState) });
-			this->entityManager.addEntityData(std::move(newEntityData));
+			EntityAnimationData::State animState =
+				MakeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
+
+			// The entity can only be instantiated if there is at least one animation frame.
+			const bool success = animState.getKeyframes().getCount() > 0;
+			if (success)
+			{
+				idleStates.push_back(std::move(animState));
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+			}
+			else
+			{
+				continue;
+			}
+		}
+		else if (entityType == EntityType::Dynamic)
+		{
+			MakeDynamicEntityAnimStates(flatIndex, this->inf, exeData,
+				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
+
+			// Must at least have an idle state.
+			DebugAssert(idleStates.size() > 0);
+			entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+
+			if (lookStates.size() > 0)
+			{
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
+			}
+
+			if (walkStates.size() > 0)
+			{
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
+			}
+
+			if (attackStates.size() > 0)
+			{
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
+			}
+
+			if (deathStates.size() > 0)
+			{
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
+			}
 		}
 		else
 		{
-			continue;
+			DebugCrash("Unrecognized entity type \"" +
+				std::to_string(static_cast<int>(entityType)) + "\".");
 		}
+
+		this->entityManager.addEntityData(std::move(newEntityData));
 
 		// Initialize each instance of the flat def.
 		for (const Int2 &position : flatDef.getPositions())
 		{
-			const EntityType entityType = GetEntityTypeFromFlat(flatIndex, this->inf);
 			Entity *entity = [this, entityType]() -> Entity*
 			{
 				if (entityType == EntityType::Static)
@@ -1465,72 +1845,97 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 			entity->setPosition(positionXZ);
 		}
 
-		// Write the flat def's textures to the renderer.
-		const std::string &entityAnimName = animState.getTextureName();
-		const std::string_view extension = StringView::getExtension(entityAnimName);
-		const bool isCFA = extension == "CFA";
-		const bool isDFA = extension == "DFA";
-		const bool isIMG = extension == "IMG";
-		const bool noExtension = extension.size() == 0;
-
-		// Entities can be partially transparent. Some palette indices determine whether
-		// there should be any "alpha blending" (in the original game, it implements alpha
-		// using light level diminishing with 13 different levels in an .LGT file).
-		auto addFlatTexture = [&textureManager, &renderer, &palette](const uint8_t *texels,
-			int width, int height, int flatIndex, EntityAnimationData::StateType stateType)
+		auto addTexturesFromState = [&renderer, &palette, flatIndex](
+			const EntityAnimationData::State &animState)
 		{
-			renderer.addFlatTexture(flatIndex, stateType, texels, width, height, palette);
+			// Write the flat def's textures to the renderer.
+			const std::string &entityAnimName = animState.getTextureName();
+			const std::string_view extension = StringView::getExtension(entityAnimName);
+			const bool isCFA = extension == "CFA";
+			const bool isDFA = extension == "DFA";
+			const bool isIMG = extension == "IMG";
+			const bool noExtension = extension.size() == 0;
+
+			// Entities can be partially transparent. Some palette indices determine whether
+			// there should be any "alpha blending" (in the original game, it implements alpha
+			// using light level diminishing with 13 different levels in an .LGT file).
+			auto addFlatTexture = [&renderer, &palette](const uint8_t *texels,
+				int width, int height, int flatIndex, EntityAnimationData::StateType stateType)
+			{
+				renderer.addFlatTexture(flatIndex, stateType, texels, width, height, palette);
+			};
+
+			if (isCFA)
+			{
+				CFAFile cfa;
+				if (!cfa.init(entityAnimName.c_str()))
+				{
+					DebugCrash("Could not init .CFA file \"" + entityAnimName + "\".");
+				}
+
+				for (int i = 0; i < cfa.getImageCount(); i++)
+				{
+					addFlatTexture(cfa.getPixels(i), cfa.getWidth(), cfa.getHeight(),
+						flatIndex, animState.getType());
+				}
+			}
+			else if (isDFA)
+			{
+				DFAFile dfa;
+				if (!dfa.init(entityAnimName.c_str()))
+				{
+					DebugCrash("Could not init .DFA file \"" + entityAnimName + "\".");
+				}
+
+				for (int i = 0; i < dfa.getImageCount(); i++)
+				{
+					addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
+						flatIndex, animState.getType());
+				}
+			}
+			else if (isIMG)
+			{
+				IMGFile img;
+				if (!img.init(entityAnimName.c_str()))
+				{
+					DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+				}
+
+				addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
+					flatIndex, animState.getType());
+			}
+			else if (noExtension)
+			{
+				// Ignore texture names with no extension. They appear to be lore-related names
+				// that were used at one point in Arena's development.
+				static_cast<void>(entityAnimName);
+			}
+			else
+			{
+				DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
+			}
 		};
-		
-		if (isCFA)
-		{
-			CFAFile cfa;
-			if (!cfa.init(entityAnimName.c_str()))
-			{
-				DebugCrash("Could not init .CFA file \"" + entityAnimName + "\".");
-			}
 
-			for (int i = 0; i < cfa.getImageCount(); i++)
-			{
-				addFlatTexture(cfa.getPixels(i), cfa.getWidth(), cfa.getHeight(), flatIndex,
-					EntityAnimationData::StateType::Idle);
-			}
-		}
-		else if (isDFA)
+		auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
+			const std::vector<EntityAnimationData::State> &animStateList)
 		{
-			DFAFile dfa;
-			if (!dfa.init(entityAnimName.c_str()))
+			for (const auto &animState : animStateList)
 			{
-				DebugCrash("Could not init .DFA file \"" + entityAnimName + "\".");
+				addTexturesFromState(animState);
 			}
+		};
 
-			for (int i = 0; i < dfa.getImageCount(); i++)
-			{
-				addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(), flatIndex,
-					EntityAnimationData::StateType::Idle);
-			}
-		}
-		else if (isIMG)
-		{
-			IMGFile img;
-			if (!img.init(entityAnimName.c_str()))
-			{
-				DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
-			}
-
-			addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(), flatIndex,
-				EntityAnimationData::StateType::Idle);
-		}
-		else if (noExtension)
-		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(entityAnimName);
-		}
-		else
-		{
-			DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
-		}
+		// Add textures to the renderer for each of the entity's animation states.
+		// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
+		// in the renderer implementation, because it seems to group textures by flat index only,
+		// which could be wasteful).
+		// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
+		//   in the addTextureFromState lambda.
+		addTexturesFromStateList(idleStates);
+		addTexturesFromStateList(lookStates);
+		addTexturesFromStateList(walkStates);
+		addTexturesFromStateList(attackStates);
+		addTexturesFromStateList(deathStates);
 	}
 }
 

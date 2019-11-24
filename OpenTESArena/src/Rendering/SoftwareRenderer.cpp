@@ -1464,9 +1464,13 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
 
 			// @temp: Assume first state list for now.
-			// @todo: make stateIndex dependent on entity direction and camera position relative to entity.
 			const std::vector<EntityAnimationData::State> &stateList = entityAnim.getStateList(entityAnimData);
 			const int stateCount = static_cast<int>(stateList.size());
+
+			// @todo: make stateIndex dependent on entity direction and camera position relative to entity.
+			// - doesn't matter if animation has 1 keyframe or 1000. Being directional is a bonus.
+			// double animAngle = ...;
+			// double animAnglePercent = ...; // clamped [0,1)
 			const int stateIndex = 0;
 
 			const int keyframeIndex = entityAnim.getKeyframeIndex(stateIndex, entityAnimData);

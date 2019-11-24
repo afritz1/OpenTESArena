@@ -8,14 +8,16 @@
 class EntityAnimationData
 {
 public:
+	// @todo: this should probably be a discriminated union, I guess? So we can have static and dynamic
+	// state types in the same class without needing derived classes.
+	// @todo: probably have a "returnState" mapping for non-looping states.
 	enum class StateType
 	{
 		Idle,
-		Walking,
-		Looking,
-		Attacking,
-		Dying,
-		Dead
+		Look,
+		Walk,
+		Attack,
+		Death
 	};
 
 	class Keyframe
