@@ -220,21 +220,28 @@ private:
 	class FlatTextureGroup
 	{
 	public:
+		// Angle ID maps to texture list. Only used for insertion, not reading during rendering.
 		using TextureList = std::vector<FlatTexture>;
-		using AngleGroup = std::vector<std::pair<int, TextureList>>; // Angle ID maps to texture list.
+		using AngleGroup = std::vector<std::pair<int, TextureList>>;
 		using StateTypeMapping = std::pair<EntityAnimationData::StateType, AngleGroup>;
 	private:
 		std::vector<StateTypeMapping> stateTypeMappings;
 
 		StateTypeMapping *findMapping(EntityAnimationData::StateType stateType);
 		const StateTypeMapping *findMapping(EntityAnimationData::StateType stateType) const;
-		TextureList *findTextureList(AngleGroup &angleGroup, int angleID);
-		const TextureList *findTextureList(const AngleGroup &angleGroup, int angleID) const;
+
+		static int anglePercentToIndex(const AngleGroup &angleGroup, double anglePercent);
+
+		// Only for inserting textures at initialization.
+		static TextureList *findTextureList(AngleGroup &angleGroup, int angleID);
 	public:
-		const TextureList *getTextureList(EntityAnimationData::StateType stateType, int angleID) const;
+		// Looks up a texture list by state type and 0->1 angle percent of the entity's direction,
+		// where 0 is forward and 1 is all the way around clockwise.
+		const TextureList *getTextureList(EntityAnimationData::StateType stateType,
+			double anglePercent) const;
 
 		// Adds a texture to the given state type mapping (adding if missing) and angle group.
-		void addTexture(EntityAnimationData::StateType stateType, int angleID,
+		void addTexture(EntityAnimationData::StateType stateType, int angleID, bool flipped,
 			const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	};
 
@@ -256,11 +263,10 @@ private:
 
 		// Flat texture state. The animation state type determines which texture list to
 		// use the texture ID with.
-		int flatIndex; // Tightly coupled with .INF flat.
+		int flatIndex; // @todo: remove dependency on this. Tightly coupled with .INF flat.
 		int textureID;
-		EntityAnimationData::StateType animStateType;
-		int angleID; // Maps to texture list for a given angle.
-		bool flipped;
+		double anglePercent; // @todo: remove dependency on this and just use textureID directly.
+		EntityAnimationData::StateType animStateType; // @todo: remove dependency on this.
 	};
 
 	// Pairs together a distant sky object with its render texture index. If it's an animation,
@@ -724,9 +730,8 @@ public:
 	// Adds a flat texture to the given flat's animation texture list at the specified angle
 	// group. 8-bit colors with a palette is required here since some palette indices have
 	// special behavior for transparency.
-	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-		int angleGroupID, const uint8_t *srcTexels, int width, int height,
-		const Palette &palette);
+	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
+		bool flipped, const uint8_t *srcTexels, int width, int height, const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

@@ -179,7 +179,7 @@ public:
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
-		const uint8_t *srcTexels, int width, int height, const Palette &palette);
+		bool flipped, const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);

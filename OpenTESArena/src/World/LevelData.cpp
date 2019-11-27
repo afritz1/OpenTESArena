@@ -1848,6 +1848,9 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		auto addTexturesFromState = [&renderer, &palette, flatIndex](
 			const EntityAnimationData::State &animState, int angleID)
 		{
+			// Check whether the animation direction ID is for a flipped animation.
+			const bool isFlipped = IsAnimDirectionFlipped(angleID);
+
 			// Write the flat def's textures to the renderer.
 			const std::string &entityAnimName = animState.getTextureName();
 			const std::string_view extension = StringView::getExtension(entityAnimName);
@@ -1859,10 +1862,10 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 			// Entities can be partially transparent. Some palette indices determine whether
 			// there should be any "alpha blending" (in the original game, it implements alpha
 			// using light level diminishing with 13 different levels in an .LGT file).
-			auto addFlatTexture = [&renderer, &palette](const uint8_t *texels, int width,
+			auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
 				int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
 			{
-				renderer.addFlatTexture(flatIndex, stateType, angleID, texels,
+				renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
 					width, height, palette);
 			};
 
