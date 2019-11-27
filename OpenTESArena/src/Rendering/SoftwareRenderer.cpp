@@ -146,49 +146,82 @@ SoftwareRenderer::SkyTexture::SkyTexture()
 	this->height = 0;
 }
 
-SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::findTextureList(
+SoftwareRenderer::FlatTextureGroup::StateTypeMapping *SoftwareRenderer::FlatTextureGroup::findMapping(
 	EntityAnimationData::StateType stateType)
 {
-	const auto iter = std::find_if(this->textureLists.begin(), this->textureLists.end(),
-		[stateType](const TextureList &textureList)
+	const auto iter = std::find_if(this->stateTypeMappings.begin(), this->stateTypeMappings.end(),
+		[stateType](const StateTypeMapping &mapping)
 	{
-		return textureList.first == stateType;
+		return mapping.first == stateType;
 	});
 
-	return (iter != this->textureLists.end()) ? &(*iter) : nullptr;
+	return (iter != this->stateTypeMappings.end()) ? &(*iter) : nullptr;
+}
+
+const SoftwareRenderer::FlatTextureGroup::StateTypeMapping *SoftwareRenderer::FlatTextureGroup::findMapping(
+	EntityAnimationData::StateType stateType) const
+{
+	const auto iter = std::find_if(this->stateTypeMappings.begin(), this->stateTypeMappings.end(),
+		[stateType](const StateTypeMapping &mapping)
+	{
+		return mapping.first == stateType;
+	});
+
+	return (iter != this->stateTypeMappings.end()) ? &(*iter) : nullptr;
+}
+
+SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::findTextureList(
+	AngleGroup &angleGroup, int angleID)
+{
+	const auto iter = std::find_if(angleGroup.begin(), angleGroup.end(),
+		[angleID](const auto &pair)
+	{
+		return pair.first == angleID;
+	});
+
+	return (iter != angleGroup.end()) ? &iter->second : nullptr;
 }
 
 const SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::findTextureList(
-	EntityAnimationData::StateType stateType) const
+	const AngleGroup &angleGroup, int angleID) const
 {
-	const auto iter = std::find_if(this->textureLists.begin(), this->textureLists.end(),
-		[stateType](const TextureList &textureList)
+	const auto iter = std::find_if(angleGroup.begin(), angleGroup.end(),
+		[angleID](const auto &pair)
 	{
-		return textureList.first == stateType;
+		return pair.first == angleID;
 	});
 
-	return (iter != this->textureLists.end()) ? &(*iter) : nullptr;
+	return (iter != angleGroup.end()) ? &iter->second : nullptr;
 }
 
-const std::vector<SoftwareRenderer::FlatTexture> *SoftwareRenderer::FlatTextureGroup::getTextures(
-	EntityAnimationData::StateType stateType) const
+const SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTextureGroup::getTextureList(
+	EntityAnimationData::StateType stateType, int angleID) const
 {
-	const TextureList *textureList = this->findTextureList(stateType);
-	return (textureList != nullptr) ? &textureList->second : nullptr;
+	const StateTypeMapping *mapping = this->findMapping(stateType);
+	return (mapping != nullptr) ? this->findTextureList(mapping->second, angleID) : nullptr;
 }
 
 void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateType stateType,
-	const uint8_t *srcTexels, int width, int height, const Palette &palette)
+	int angleID, const uint8_t *srcTexels, int width, int height, const Palette &palette)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
 
-	// Add texture list if it doesn't exist.
-	TextureList *textureList = this->findTextureList(stateType);
+	// Add state type mapping if it doesn't exist.
+	StateTypeMapping *mapping = this->findMapping(stateType);
+	if (mapping == nullptr)
+	{
+		this->stateTypeMappings.push_back(std::make_pair(stateType, AngleGroup()));
+		mapping = &this->stateTypeMappings.back();
+	}
+
+	// Add texture list to angle group entry if it doesn't exist.
+	AngleGroup &angleGroup = mapping->second;
+	TextureList *textureList = this->findTextureList(angleGroup, angleID);
 	if (textureList == nullptr)
 	{
-		this->textureLists.push_back(std::make_pair(stateType, std::vector<FlatTexture>()));
-		textureList = &this->textureLists.back();
+		angleGroup.push_back(std::make_pair(angleID, TextureList()));
+		textureList = &angleGroup.back().second;
 	}
 
 	const int texelCount = width * height;
@@ -204,8 +237,7 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 		return FlatTexel::makeFrom8Bit(srcTexel, palette);
 	});
 
-	std::vector<FlatTexture> &textures = textureList->second;
-	textures.push_back(std::move(flatTexture));
+	textureList->push_back(std::move(flatTexture));
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
@@ -866,7 +898,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const P
 }
 
 void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-	const uint8_t *srcTexels, int width, int height, const Palette &palette)
+	int angleGroupID, const uint8_t *srcTexels, int width, int height, const Palette &palette)
 {
 	// If the flat mapping doesn't exist, add a new one.
 	auto iter = this->flatTextureGroups.find(flatIndex);
@@ -877,7 +909,7 @@ void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateT
 	}
 
 	FlatTextureGroup &flatTextureGroup = iter->second;
-	flatTextureGroup.addTexture(stateType, srcTexels, width, height, palette);
+	flatTextureGroup.addTexture(stateType, angleGroupID, srcTexels, width, height, palette);
 }
 
 void SoftwareRenderer::updateLight(int id, const Double3 *point,
@@ -1455,30 +1487,25 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		// Get the entity's data definition and animation.
 		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
 		const EntityAnimationData &entityAnimData = entityData.getAnimationData();
+
+		// Get active state.
+		const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
+		const std::vector<EntityAnimationData::State> &stateList = entityAnim.getStateList(entityAnimData);
+		const int stateCount = static_cast<int>(stateList.size());
+		// @todo: make stateIndex dependent on entity direction and camera position relative to entity.
+		// - doesn't matter if animation has 1 keyframe or 1000. Being directional is a bonus.
+		// double animAngle = ...;
+		// double animAnglePercent = ...; // clamped [0,1)
+		const int stateIndex = 0;
+		DebugAssertIndex(stateList, stateIndex);
+		const EntityAnimationData::State &animState = stateList[stateIndex];
 		
 		// Get the entity's current animation frame (dimensions, texture, etc.).
-		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData]()
-			-> const EntityAnimationData::Keyframe&
+		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData, &entityAnim,
+			stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
 		{
-			// Get current entity animation frame.
-			const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
-
-			// @temp: Assume first state list for now.
-			const std::vector<EntityAnimationData::State> &stateList = entityAnim.getStateList(entityAnimData);
-			const int stateCount = static_cast<int>(stateList.size());
-
-			// @todo: make stateIndex dependent on entity direction and camera position relative to entity.
-			// - doesn't matter if animation has 1 keyframe or 1000. Being directional is a bonus.
-			// double animAngle = ...;
-			// double animAnglePercent = ...; // clamped [0,1)
-			const int stateIndex = 0;
-
 			const int keyframeIndex = entityAnim.getKeyframeIndex(stateIndex, entityAnimData);
-
-			DebugAssertIndex(stateList, stateIndex);
-			const EntityAnimationData::State &animState = stateList[stateIndex];
 			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
-
 			return keyframes.get(keyframeIndex);
 		}();
 
@@ -1586,7 +1613,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			if (inScreenX && inScreenY && inPlanes)
 			{
 				// Finish initializing the visible flat.
-				visFlat.flipped = false; // @todo: based on entity direction and camera position.
+				visFlat.angleID = 1; // @todo: based on entity direction and camera position.
+				visFlat.flipped = animState.isFlipped();
 				visFlat.textureID = keyframe.getTextureID();
 
 				// Add the flat data to the draw list.
@@ -6928,15 +6956,16 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		}
 
 		const FlatTextureGroup &flatTextureGroup = iter->second;
-		const std::vector<FlatTexture> *flatTextures =
-			flatTextureGroup.getTextures(flat.animStateType);
-		if (flatTextures == nullptr)
+		const FlatTextureGroup::TextureList *textureList =
+			flatTextureGroup.getTextureList(flat.animStateType, flat.angleID);
+
+		if (textureList == nullptr)
 		{
 			// No flat textures allocated for the animation state.
 			continue;
 		}
 
-		const FlatTexture &texture = (*flatTextures)[flat.textureID];
+		const FlatTexture &texture = (*textureList)[flat.textureID];
 		const Double2 eye2D(camera.eye.x, camera.eye.z);
 
 		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,

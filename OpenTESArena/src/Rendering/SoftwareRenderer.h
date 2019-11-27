@@ -215,21 +215,27 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
-	// Each .INF flat index has a list of textures for each animation state type.
+	// Each .INF flat index has a set of animation state type mappings to groups of texture
+	// lists ordered by entity angle.
 	class FlatTextureGroup
 	{
 	public:
-		using TextureList = std::pair<EntityAnimationData::StateType, std::vector<FlatTexture>>;
+		using TextureList = std::vector<FlatTexture>;
+		using AngleGroup = std::vector<std::pair<int, TextureList>>; // Angle ID maps to texture list.
+		using StateTypeMapping = std::pair<EntityAnimationData::StateType, AngleGroup>;
 	private:
-		std::vector<TextureList> textureLists;
+		std::vector<StateTypeMapping> stateTypeMappings;
 
-		TextureList *findTextureList(EntityAnimationData::StateType stateType);
-		const TextureList *findTextureList(EntityAnimationData::StateType stateType) const;
+		StateTypeMapping *findMapping(EntityAnimationData::StateType stateType);
+		const StateTypeMapping *findMapping(EntityAnimationData::StateType stateType) const;
+		TextureList *findTextureList(AngleGroup &angleGroup, int angleID);
+		const TextureList *findTextureList(const AngleGroup &angleGroup, int angleID) const;
 	public:
-		const std::vector<FlatTexture> *getTextures(EntityAnimationData::StateType stateType) const;
-		
-		void addTexture(EntityAnimationData::StateType stateType, const uint8_t *texels,
-			int width, int height, const Palette &palette);
+		const TextureList *getTextureList(EntityAnimationData::StateType stateType, int angleID) const;
+
+		// Adds a texture to the given state type mapping (adding if missing) and angle group.
+		void addTexture(EntityAnimationData::StateType stateType, int angleID,
+			const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	};
 
 	// Visible flat data. A flat is a 2D surface always facing perpendicular to the Y axis,
@@ -253,6 +259,7 @@ private:
 		int flatIndex; // Tightly coupled with .INF flat.
 		int textureID;
 		EntityAnimationData::StateType animStateType;
+		int angleID; // Maps to texture list for a given angle.
 		bool flipped;
 	};
 
@@ -714,11 +721,12 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 
-	// Adds a flat texture to the given flat's animation texture list. 8-bit colors with
-	// a palette is required here since some palette indices have special behavior for
-	// transparency.
+	// Adds a flat texture to the given flat's animation texture list at the specified angle
+	// group. 8-bit colors with a palette is required here since some palette indices have
+	// special behavior for transparency.
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-		const uint8_t *srcTexels, int width, int height, const Palette &palette);
+		int angleGroupID, const uint8_t *srcTexels, int width, int height,
+		const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

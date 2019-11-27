@@ -1846,7 +1846,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 
 		auto addTexturesFromState = [&renderer, &palette, flatIndex](
-			const EntityAnimationData::State &animState)
+			const EntityAnimationData::State &animState, int angleID)
 		{
 			// Write the flat def's textures to the renderer.
 			const std::string &entityAnimName = animState.getTextureName();
@@ -1859,10 +1859,11 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 			// Entities can be partially transparent. Some palette indices determine whether
 			// there should be any "alpha blending" (in the original game, it implements alpha
 			// using light level diminishing with 13 different levels in an .LGT file).
-			auto addFlatTexture = [&renderer, &palette](const uint8_t *texels,
-				int width, int height, int flatIndex, EntityAnimationData::StateType stateType)
+			auto addFlatTexture = [&renderer, &palette](const uint8_t *texels, int width,
+				int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
 			{
-				renderer.addFlatTexture(flatIndex, stateType, texels, width, height, palette);
+				renderer.addFlatTexture(flatIndex, stateType, angleID, texels,
+					width, height, palette);
 			};
 
 			if (isCFA)
@@ -1876,7 +1877,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				for (int i = 0; i < cfa.getImageCount(); i++)
 				{
 					addFlatTexture(cfa.getPixels(i), cfa.getWidth(), cfa.getHeight(),
-						flatIndex, animState.getType());
+						flatIndex, animState.getType(), angleID);
 				}
 			}
 			else if (isDFA)
@@ -1890,7 +1891,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				for (int i = 0; i < dfa.getImageCount(); i++)
 				{
 					addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
-						flatIndex, animState.getType());
+						flatIndex, animState.getType(), angleID);
 				}
 			}
 			else if (isIMG)
@@ -1902,7 +1903,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				}
 
 				addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
-					flatIndex, animState.getType());
+					flatIndex, animState.getType(), angleID);
 			}
 			else if (noExtension)
 			{
@@ -1919,9 +1920,11 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
 			const std::vector<EntityAnimationData::State> &animStateList)
 		{
-			for (const auto &animState : animStateList)
+			for (size_t i = 0; i < animStateList.size(); i++)
 			{
-				addTexturesFromState(animState);
+				const auto &animState = animStateList[i];
+				const int angleID = static_cast<int>(i + 1);
+				addTexturesFromState(animState, angleID);
 			}
 		};
 
