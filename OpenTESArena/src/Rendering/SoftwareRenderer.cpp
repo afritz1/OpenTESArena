@@ -8,6 +8,7 @@
 #include "SoftwareRenderer.h"
 #include "Surface.h"
 #include "../Entities/EntityAnimationData.h"
+#include "../Entities/EntityType.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
@@ -1505,7 +1506,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
-	const Double2 direction(camera.forwardX, camera.forwardZ);
+	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	// Potentially visible flat determination algorithm, given the current camera.
 	for (int i = 0; i < entityCount; i++)
@@ -1522,11 +1523,45 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
 
 		// Calculate state index based on entity direction relative to camera.
-		const double animAngle = MathUtils::fullAtan2(direction.y, direction.x); // @todo: calculate properly, and fmod by 2pi?
-		// angleBias: 2pi / stateCount?
-		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, 1.0);
-		const int stateIndex = std::clamp(
-			static_cast<int>(static_cast<double>(stateCount) * anglePercent), 0, stateCount - 1);
+		const double animAngle = [&eye2D, &cameraDir, &entity, stateCount]()
+		{
+			if (entity.getEntityType() == EntityType::Static)
+			{
+				// Static entities always face the camera.
+				return 0.0;
+			}
+			else if (entity.getEntityType() == EntityType::Dynamic)
+			{
+				// Dynamic entities are angle-dependent.
+				const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
+				const Double2 &entityDir = dynamicEntity.getDirection();
+				const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
+
+				const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
+				const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);
+
+				// Use the difference of the two vectors as the angle vector.
+				const Double2 resultDir = entityDir - diffDir;
+				const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir.y, resultDir.x);
+
+				// Angle bias so the final direction is centered within its angle range.
+				const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
+
+				return std::fmod(resultAngle + angleBias, Constants::TwoPi);
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(double,
+					std::to_string(static_cast<int>(entity.getEntityType())));
+			}
+		}();
+
+		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
+		const int stateIndex = [stateCount, anglePercent]()
+		{
+			const int index = static_cast<int>(static_cast<double>(stateCount) * anglePercent);
+			return std::clamp(index, 0, stateCount - 1);
+		}();
 
 		DebugAssertIndex(stateList, stateIndex);
 		const EntityAnimationData::State &animState = stateList[stateIndex];
@@ -1585,7 +1620,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		const Double2 flatEyeDiff = flatPosition2D - eye2D;
 		const double flatEyeDiffLen = flatEyeDiff.length();
 		const Double2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
-		const bool inFrontOfCamera = direction.dot(flatEyeDir) > 0.0;
+		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
 
 		// Check if the flat is within the fog distance. Treat the flat as a cylinder and
 		// see if it's inside the fog distance circle centered on the player. Can't use

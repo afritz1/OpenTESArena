@@ -1827,6 +1827,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				{
 					DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
 					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+					dynamicEntity->setDirection(Double2::UnitX);
 					return dynamicEntity;
 				}
 				else
