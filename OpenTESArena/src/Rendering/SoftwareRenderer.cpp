@@ -1517,20 +1517,25 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		const EntityAnimationData &entityAnimData = entityData.getAnimationData();
 
 		// Get active state.
-		const EntityAnimationData::Instance &entityAnim = entity.getAnimation();
-		const std::vector<EntityAnimationData::State> &stateList = entityAnim.getStateList(entityAnimData);
-		const int stateCount = static_cast<int>(stateList.size());
-		const double animAngle = MathUtils::fullAtan2(direction.y, direction.x); // @todo: calculate properly.
+		const EntityAnimationData::Instance &animInstance = entity.getAnimation();
+		const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
+		const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
+
+		// Calculate state index based on entity direction relative to camera.
+		const double animAngle = MathUtils::fullAtan2(direction.y, direction.x); // @todo: calculate properly, and fmod by 2pi?
+		// angleBias: 2pi / stateCount?
 		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, 1.0);
-		const int stateIndex = 0; // @todo: figure out why this is needed. Why not just "get the active state"?
+		const int stateIndex = std::clamp(
+			static_cast<int>(static_cast<double>(stateCount) * anglePercent), 0, stateCount - 1);
+
 		DebugAssertIndex(stateList, stateIndex);
 		const EntityAnimationData::State &animState = stateList[stateIndex];
 		
 		// Get the entity's current animation frame (dimensions, texture, etc.).
-		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData, &entityAnim,
+		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData, &animInstance,
 			stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
 		{
-			const int keyframeIndex = entityAnim.getKeyframeIndex(stateIndex, entityAnimData);
+			const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
 			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
 			return keyframes.get(keyframeIndex);
 		}();
