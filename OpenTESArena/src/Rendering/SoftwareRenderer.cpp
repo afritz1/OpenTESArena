@@ -3421,7 +3421,8 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 	}
 }
 
-void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
+template <bool Fading>
+void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawRange,
 	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
@@ -3453,7 +3454,7 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 	const Double2 startPointDiv = startPoint * depthStartRecip;
 	const Double2 endPointDiv = endPoint * depthEndRecip;
 	const Double2 pointDivDiff = endPointDiv - startPointDiv;
-	
+
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
 	occlusion.update(yStart, yEnd);
@@ -3464,11 +3465,11 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 		const int index = x + (y * frame.width);
 
 		// Percent stepped from beginning to end on the column.
-		const double yPercent = 
+		const double yPercent =
 			((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
 
 		// Interpolate between the near and far depth.
-		const double depth = 1.0 / 
+		const double depth = 1.0 /
 			(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
 
 		// Check depth of the pixel before rendering.
@@ -3505,10 +3506,13 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
 			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
 
-			// Apply voxel fade percent.
-			colorR *= fadePercent;
-			colorG *= fadePercent;
-			colorB *= fadePercent;
+			if constexpr (Fading)
+			{
+				// Apply voxel fade percent.
+				colorR *= fadePercent;
+				colorG *= fadePercent;
+				colorB *= fadePercent;
+			}
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -3530,6 +3534,25 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 			frame.colorBuffer[index] = colorRGB;
 			frame.depthBuffer[index] = depth;
 		}
+	}
+}
+
+void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
+	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
+	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
+{
+	if (fadePercent == 1.0)
+	{
+		constexpr bool fading = false;
+		SoftwareRenderer::drawPerspectivePixelsShader<fading>(x, drawRange, startPoint, endPoint,
+			depthStart, depthEnd, normal, texture, fadePercent, shadingInfo, occlusion, frame);
+	}
+	else
+	{
+		constexpr bool fading = true;
+		SoftwareRenderer::drawPerspectivePixelsShader<fading>(x, drawRange, startPoint, endPoint,
+			depthStart, depthEnd, normal, texture, fadePercent, shadingInfo, occlusion, frame);
 	}
 }
 

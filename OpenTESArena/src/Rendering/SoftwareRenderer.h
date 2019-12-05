@@ -597,6 +597,13 @@ private:
 		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 		const FrameView &frame);
 
+	// Low-level shader for perspective pixel rendering.
+	template <bool Fading>
+	static void drawPerspectivePixelsShader(int x, const DrawRange &drawRange,
+		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+		const Double3 &normal, const VoxelTexture &texture, double fadePercent,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectivePixels(int x, const DrawRange &drawRange, const Double2 &startPoint,
