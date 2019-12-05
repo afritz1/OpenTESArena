@@ -3306,8 +3306,9 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	}
 }
 
-void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double depth, double u,
-	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+template <bool Fading>
+void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, double depth,
+	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
 	double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 	const FrameView &frame)
 {
@@ -3351,7 +3352,7 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
 		{
 			// Percent stepped from beginning to end on the column.
-			const double yPercent = 
+			const double yPercent =
 				((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
 
 			// Vertical texture coordinate.
@@ -3370,10 +3371,13 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
 			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
 
-			// Apply voxel fade percent.
-			colorR *= fadePercent;
-			colorG *= fadePercent;
-			colorB *= fadePercent;
+			if constexpr (Fading)
+			{
+				// Apply voxel fade percent.
+				colorR *= fadePercent;
+				colorG *= fadePercent;
+				colorB *= fadePercent;
+			}
 
 			// Linearly interpolate with fog.
 			colorR += (fogColor.x - colorR) * fogPercent;
@@ -3395,6 +3399,25 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 			frame.colorBuffer[index] = colorRGB;
 			frame.depthBuffer[index] = depth;
 		}
+	}
+}
+
+void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double depth, double u,
+	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+	const FrameView &frame)
+{
+	if (fadePercent == 1.0)
+	{
+		constexpr bool fading = false;
+		SoftwareRenderer::drawPixelsShader<fading>(x, drawRange, depth, u, vStart, vEnd, normal, texture,
+			fadePercent, shadingInfo, occlusion, frame);
+	}
+	else
+	{
+		constexpr bool fading = true;
+		SoftwareRenderer::drawPixelsShader<fading>(x, drawRange, depth, u, vStart, vEnd, normal, texture,
+			fadePercent, shadingInfo, occlusion, frame);
 	}
 }
 

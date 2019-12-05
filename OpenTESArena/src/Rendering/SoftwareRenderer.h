@@ -583,6 +583,14 @@ private:
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
+	// Low-level shader for wall pixel rendering. Template parameters are used for
+	// compile-time generation of shader permutations.
+	template <bool Fading>
+	static void drawPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+		const FrameView &frame);
+
 	// Draws a column of pixels with no perspective or transparency.
 	static void drawPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
