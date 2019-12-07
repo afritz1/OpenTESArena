@@ -21,6 +21,9 @@
 
 namespace
 {
+	// Hardcoded graphics options (will be loaded at runtime at some point).
+	constexpr int TextureFilterMode = 0;
+
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
@@ -3307,14 +3310,14 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 }
 
 // @todo: might be better as a macro so there's no chance of a function call in the pixel loop.
-template <int SampleMode, bool Transparency>
+template <int FilterMode, bool Transparency>
 void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
 	double *r, double *g, double *b, double *emission, bool *transparent)
 {
 	constexpr double textureWidthReal = static_cast<double>(VoxelTexture::WIDTH);
 	constexpr double textureHeightReal = static_cast<double>(VoxelTexture::HEIGHT);
 
-	if constexpr (SampleMode == 0)
+	if constexpr (FilterMode == 0)
 	{
 		// Nearest.
 		const int textureX = static_cast<int>(u * textureWidthReal);
@@ -3332,7 +3335,7 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 			*transparent = texel.transparent;
 		}
 	}
-	else if constexpr (SampleMode == 1)
+	else if constexpr (FilterMode == 1)
 	{
 		// Linear.
 		constexpr double texelWidth = 1.0 / textureWidthReal;
@@ -3380,8 +3383,8 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 	}
 	else
 	{
-		static_assert(false);
-		return Double4();
+		// Silently fail; don't want error reporting in a pixel shader.
+		// (apparently can't static assert false here on GCC/Clang).
 	}
 }
 
@@ -3439,10 +3442,9 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
 			// Texture color. Alpha is ignored in this loop, so transparent texels will appear black.
-			constexpr int TextureSamplingMode = 0;
 			constexpr bool TextureTransparency = false;
 			double colorR, colorG, colorB, colorEmission;
-			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+			SoftwareRenderer::sampleVoxelTexture<TextureFilterMode, TextureTransparency>(
 				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
 			// Shading from light.
@@ -3573,10 +3575,9 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 				0.0, Constants::JustBelowOne);
 
 			// Texture color. Alpha is ignored in this loop, so transparent texels will appear black.
-			constexpr int TextureSamplingMode = 0;
 			constexpr bool TextureTransparency = false;
 			double colorR, colorG, colorB, colorEmission;
-			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+			SoftwareRenderer::sampleVoxelTexture<TextureFilterMode, TextureTransparency>(
 				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
 			// Shading from light.
@@ -3685,11 +3686,10 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
 			// Texture color. Alpha is checked in this loop, and transparent texels are not drawn.
-			constexpr int TextureSamplingMode = 0;
 			constexpr bool TextureTransparency = true;
 			double colorR, colorG, colorB, colorEmission;
 			bool colorTransparent;
-			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+			SoftwareRenderer::sampleVoxelTexture<TextureFilterMode, TextureTransparency>(
 				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, &colorTransparent);
 			
 			if (!colorTransparent)

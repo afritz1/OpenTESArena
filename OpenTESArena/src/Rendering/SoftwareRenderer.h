@@ -584,7 +584,7 @@ private:
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
 	// Low-level texture sampling function.
-	template <int SampleMode, bool Transparency>
+	template <int FilterMode, bool Transparency>
 	static void sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
 		double *r, double *g, double *b, double *emission, bool *transparent);
 
