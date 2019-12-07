@@ -13,19 +13,18 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-# Configure for GNU Compiler. Use "MATCHES" instead of "STREQUAL" to cover
-# both Clang and AppleClang.
+# Configure for GNU Compiler (also affects MSYS2). Use "MATCHES" instead of "STREQUAL"
+# to cover both Clang and AppleClang.
 IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC
     IF (NOT WIN32 AND NOT APPLE)
         SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-
-        # Optimizations.
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
-
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
+
+    # Optimizations.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
 ENDIF ()
 
 # We want RelWithDebInfo to actually include debug stuff (define _DEBUG
