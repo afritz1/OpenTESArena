@@ -3306,6 +3306,85 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 	}
 }
 
+// @todo: might be better as a macro so there's no chance of a function call in the pixel loop.
+template <int SampleMode, bool Transparency>
+void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
+	double *r, double *g, double *b, double *emission, bool *transparent)
+{
+	constexpr double textureWidthReal = static_cast<double>(VoxelTexture::WIDTH);
+	constexpr double textureHeightReal = static_cast<double>(VoxelTexture::HEIGHT);
+
+	if constexpr (SampleMode == 0)
+	{
+		// Nearest.
+		const int textureX = static_cast<int>(u * textureWidthReal);
+		const int textureY = static_cast<int>(v * textureHeightReal);
+		const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+
+		const VoxelTexel &texel = texture.texels[textureIndex];
+		*r = texel.r;
+		*g = texel.g;
+		*b = texel.b;
+		*emission = texel.emission;
+		
+		if constexpr (Transparency)
+		{
+			*transparent = texel.transparent;
+		}
+	}
+	else if constexpr (SampleMode == 1)
+	{
+		// Linear.
+		constexpr double texelWidth = 1.0 / textureWidthReal;
+		constexpr double texelHeight = 1.0 / textureHeightReal;
+		constexpr double halfTexelWidth = texelWidth / 2.0;
+		constexpr double halfTexelHeight = texelHeight / 2.0;
+		const double uL = std::max(u - halfTexelWidth, 0.0); // Change to wrapping for better texture edges
+		const double uR = std::min(u + halfTexelWidth, Constants::JustBelowOne);
+		const double vT = std::max(v - halfTexelHeight, 0.0);
+		const double vB = std::min(v + halfTexelHeight, Constants::JustBelowOne);
+		const double uLWidth = uL * textureWidthReal;
+		const double vTHeight = vT * textureHeightReal;
+		const double uLPercent = 1.0 - (uLWidth - std::floor(uLWidth));
+		const double uRPercent = 1.0 - uLPercent;
+		const double vTPercent = 1.0 - (vTHeight - std::floor(vTHeight));
+		const double vBPercent = 1.0 - vTPercent;
+		const double tlPercent = uLPercent * vTPercent;
+		const double trPercent = uRPercent * vTPercent;
+		const double blPercent = uLPercent * vBPercent;
+		const double brPercent = uRPercent * vBPercent;
+		const int textureXL = static_cast<int>(uL * textureWidthReal);
+		const int textureXR = static_cast<int>(uR * textureWidthReal);
+		const int textureYT = static_cast<int>(vT * textureHeightReal);
+		const int textureYB = static_cast<int>(vB * textureHeightReal);
+		const int textureIndexTL = textureXL + (textureYT * VoxelTexture::WIDTH);
+		const int textureIndexTR = textureXR + (textureYT * VoxelTexture::WIDTH);
+		const int textureIndexBL = textureXL + (textureYB * VoxelTexture::WIDTH);
+		const int textureIndexBR = textureXR + (textureYB * VoxelTexture::WIDTH);
+
+		const VoxelTexel &texelTL = texture.texels[textureIndexTL];
+		const VoxelTexel &texelTR = texture.texels[textureIndexTR];
+		const VoxelTexel &texelBL = texture.texels[textureIndexBL];
+		const VoxelTexel &texelBR = texture.texels[textureIndexBR];
+		*r = (texelTL.r * tlPercent) + (texelTR.r * trPercent) + (texelBL.r * blPercent) + (texelBR.r * brPercent);
+		*g = (texelTL.g * tlPercent) + (texelTR.g * trPercent) + (texelBL.g * blPercent) + (texelBR.g * brPercent);
+		*b = (texelTL.b * tlPercent) + (texelTR.b * trPercent) + (texelBL.b * blPercent) + (texelBR.b * brPercent);
+		*emission = (texelTL.emission * tlPercent) + (texelTR.emission * trPercent) +
+			(texelBL.emission * blPercent) + (texelBR.emission * brPercent);
+
+		if constexpr (Transparency)
+		{
+			*transparent = texelTL.transparent && texelTR.transparent &&
+				texelBL.transparent && texelBR.transparent;
+		}
+	}
+	else
+	{
+		static_assert(false);
+		return Double4();
+	}
+}
+
 template <bool Fading>
 void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, double depth,
 	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
@@ -3319,7 +3398,8 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 	int yEnd = drawRange.yEnd;
 
 	// Horizontal offset in texture.
-	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+	// - Taken care of in texture sampling function (redundant calculation, though).
+	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.getFogColor();
@@ -3358,18 +3438,18 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 			// Vertical texture coordinate.
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
-			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
+			// Texture color. Alpha is ignored in this loop, so transparent texels will appear black.
+			constexpr int TextureSamplingMode = 0;
+			constexpr bool TextureTransparency = false;
+			double colorR, colorG, colorB, colorEmission;
+			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
-			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
-			const VoxelTexel &texel = texture.texels[textureIndex];
-
-			// Texture color with shading.
-			const double shadingMax = 1.0;
-			double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
-			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
-			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
+			// Shading from light.
+			constexpr double shadingMax = 1.0;
+			colorR *= std::min(shading.x + colorEmission, shadingMax);
+			colorG *= std::min(shading.y + colorEmission, shadingMax);
+			colorB *= std::min(shading.z + colorEmission, shadingMax);
 
 			if constexpr (Fading)
 			{
@@ -3385,7 +3465,7 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 			colorB += (fogColor.z - colorB) * fogPercent;
 
 			// Clamp maximum (don't worry about negative values).
-			const double high = 1.0;
+			constexpr double high = 1.0;
 			colorR = (colorR > high) ? high : colorR;
 			colorG = (colorG > high) ? high : colorG;
 			colorB = (colorB > high) ? high : colorB;
@@ -3492,19 +3572,18 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY)),
 				0.0, Constants::JustBelowOne);
 
-			// Offsets in texture.
-			const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
-			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
+			// Texture color. Alpha is ignored in this loop, so transparent texels will appear black.
+			constexpr int TextureSamplingMode = 0;
+			constexpr bool TextureTransparency = false;
+			double colorR, colorG, colorB, colorEmission;
+			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
-			// Alpha is ignored in this loop, so transparent texels will appear black.
-			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
-			const VoxelTexel &texel = texture.texels[textureIndex];
-
-			// Texture color with shading.
-			const double shadingMax = 1.0;
-			double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
-			double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
-			double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
+			// Shading from light.
+			constexpr double shadingMax = 1.0;
+			colorR *= std::min(shading.x + colorEmission, shadingMax);
+			colorG *= std::min(shading.y + colorEmission, shadingMax);
+			colorB *= std::min(shading.z + colorEmission, shadingMax);
 
 			if constexpr (Fading)
 			{
@@ -3567,7 +3646,8 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 	int yEnd = drawRange.yEnd;
 
 	// Horizontal offset in texture.
-	const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+	// - Taken care of in texture sampling function (redundant calculation, though).
+	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.getFogColor();
@@ -3604,20 +3684,21 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 			// Vertical texture coordinate.
 			const double v = vStart + ((vEnd - vStart) * yPercent);
 
-			// Y position in texture.
-			const int textureY = static_cast<int>(v * static_cast<double>(VoxelTexture::HEIGHT));
-
-			// Alpha is checked in this loop, and transparent texels are not drawn.
-			const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
-			const VoxelTexel &texel = texture.texels[textureIndex];
+			// Texture color. Alpha is checked in this loop, and transparent texels are not drawn.
+			constexpr int TextureSamplingMode = 0;
+			constexpr bool TextureTransparency = true;
+			double colorR, colorG, colorB, colorEmission;
+			bool colorTransparent;
+			SoftwareRenderer::sampleVoxelTexture<TextureSamplingMode, TextureTransparency>(
+				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, &colorTransparent);
 			
-			if (!texel.transparent)
+			if (!colorTransparent)
 			{
-				// Texture color with shading.
-				const double shadingMax = 1.0;
-				double colorR = texel.r * std::min(shading.x + texel.emission, shadingMax);
-				double colorG = texel.g * std::min(shading.y + texel.emission, shadingMax);
-				double colorB = texel.b * std::min(shading.z + texel.emission, shadingMax);
+				// Shading from light.
+				constexpr double shadingMax = 1.0;
+				colorR *= std::min(shading.x + colorEmission, shadingMax);
+				colorG *= std::min(shading.y + colorEmission, shadingMax);
+				colorB *= std::min(shading.z + colorEmission, shadingMax);
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;

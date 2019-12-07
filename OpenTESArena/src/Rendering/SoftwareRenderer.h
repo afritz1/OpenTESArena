@@ -583,6 +583,11 @@ private:
 	// (Unused for now; keeping for reference).
 	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
 
+	// Low-level texture sampling function.
+	template <int SampleMode, bool Transparency>
+	static void sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
+		double *r, double *g, double *b, double *emission, bool *transparent);
+
 	// Low-level shader for wall pixel rendering. Template parameters are used for
 	// compile-time generation of shader permutations.
 	template <bool Fading>
