@@ -160,7 +160,7 @@ public:
 		// Filename chunks for sprites with variable weapons, etc., to be combined with
 		// the .CFA filenames containing three X's (walk, attack, bow).
 		// - Order: Plate, Chain, Leather, Unarmored, Mage, Monk, Barbarian.
-		std::array<std::string, 7> cfaFilenameChunks;
+		std::array<std::string, 7> humanFilenameTypes;
 
 		// Filename templates to be used with the .CFA filename chunks. Replace "0@" with
 		// either 0 or 1 for the gender, and 1 to 5 depending on the kind of animation (i.e.,
@@ -168,7 +168,7 @@ public:
 		// of the .CFA filename chunks. Not every character has every combination (i.e.,
 		// barbarians don't have a bow shoot animation, and there is no female plate).
 		// - Order: Walk, Attack, Bow.
-		std::array<std::string, 3> cfaFilenameTemplates;
+		std::array<std::string, 3> humanFilenameTemplates;
 
 		// A few premade human .CFA animations with some weapons. Some of these can't be 
 		// created from pairing a.CFA template with a .CFA chunk because there aren't the

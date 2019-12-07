@@ -52,6 +52,33 @@ namespace
 	const std::vector<int> CreatureAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
 	const std::vector<int> CreatureAnimIndicesAttack = { 8, 9, 10, 11 };
 
+	// Cache for .CFA/.DFA files referenced multiple times during entity loading.
+	template <typename T>
+	class AnimFileCache
+	{
+	private:
+		std::unordered_map<std::string, T> files;
+	public:
+		bool tryGet(const std::string &filename, const T **outFile)
+		{
+			auto iter = this->files.find(filename);
+			if (iter == this->files.end())
+			{
+				T file;
+				if (!file.init(filename.c_str()))
+				{
+					DebugLogError("Couldn't init cached anim file \"" + filename + "\".");
+					return false;
+				}
+
+				iter = this->files.emplace(std::make_pair(filename, std::move(file))).first;
+			}
+
+			*outFile = &iter->second;
+			return true;
+		}
+	};
+
 	// *ITEM 32 to 54 are creatures (rat, goblin, etc.).
 	bool IsCreatureIndex(int itemIndex)
 	{
@@ -138,22 +165,48 @@ namespace
 		return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
 	}
 
-	bool TrySetCreatureFilenameDirection(std::string &creatureFilename, int animDirectionID)
+	// Works for both creature and human enemy filenames.
+	bool TrySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID)
 	{
-		DebugAssert(creatureFilename.size() > 0);
+		DebugAssert(filename.size() > 0);
 		DebugAssert(animDirectionID >= 1);
 		DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
 
-		const size_t index = creatureFilename.find('@');
+		const size_t index = filename.find('@');
 		if (index != std::string::npos)
 		{
 			const char animDirectionChar = '0' + animDirectionID;
-			creatureFilename[index] = animDirectionChar;
+			filename[index] = animDirectionChar;
 			return true;
 		}
 		else
 		{
-			DebugLogError("Couldn't replace creature direction in \"" + creatureFilename + "\".");
+			DebugLogError("Couldn't replace direction in \"" + filename + "\".");
+			return false;
+		}
+	}
+
+	bool TrySetHumanFilenameGender(std::string &filename, bool isMale)
+	{
+		DebugAssert(filename.size() > 0);
+		filename[0] = isMale ? '0' : '1';
+		return true;
+	}
+
+	bool TrySetHumanFilenameType(std::string &filename, const std::string_view &type)
+	{
+		DebugAssert(filename.size() > 0);
+		DebugAssert(type.size() == 3);
+
+		const size_t index = filename.find("XXX");
+		if (index != std::string::npos)
+		{
+			filename.replace(index, type.size(), type.data());
+			return true;
+		}
+		else
+		{
+			DebugLogError("Couldn't replace type in \"" + filename + "\".");
 			return false;
 		}
 	}
@@ -246,6 +299,7 @@ namespace
 
 	// Write out to lists of dynamic entity animation states for each animation direction.
 	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
+		AnimFileCache<CFAFile> &cfaCache,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outLookStates,
 		std::vector<EntityAnimationData::State> *outWalkStates,
@@ -298,7 +352,7 @@ namespace
 		};
 
 		// Write animation states for idle, look, and walk for the given anim direction.
-		auto tryWriteAnimStates = [&exeData, outIdleStates, outLookStates, outWalkStates,
+		auto tryWriteAnimStates = [&exeData, &cfaCache, outIdleStates, outLookStates, outWalkStates,
 			itemIndex, isCreature, isHuman, &makeCreatureKeyframeDimensions,
 			&makeHumanKeyframeDimensions](int animDirectionID)
 		{
@@ -316,7 +370,7 @@ namespace
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetCreatureFilenameDirection(creatureFilename, correctedAnimDirID))
+				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, correctedAnimDirID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(correctedAnimDirID) + ").");
@@ -324,10 +378,10 @@ namespace
 				}
 
 				// Load the .CFA of the creature at the given direction.
-				CFAFile cfa;
-				if (!cfa.init(creatureFilename.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
 					return false;
 				}
 
@@ -358,7 +412,7 @@ namespace
 
 						double width, height;
 						makeCreatureKeyframeDimensions(
-							creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+							creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
 						const int textureID = frameIndex;
 
 						EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -383,16 +437,58 @@ namespace
 			}
 			else if (isHuman)
 			{
-				// @todo: replace placeholder image
-				const std::string animName = "01PLTWLK.CFA";
+				// @todo: use base filenames in ExeData like 0@XXXwlk.cfa.
+				// - First number is gender; 0 = male
+				// - X's indicate armor/class type.
 
-				CFAFile cfa;
-				if (!cfa.init(animName.c_str()))
+				// @todo: see how plate/chain/leather/mage/monk/etc. are mapped to from
+				// flat index. Maybe assume there's some base like creatures, and they're
+				// all adjacent.
+
+				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
+				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
+
+				const int templateIndex = 0; // Placeholder (walk)
+				DebugAssertIndex(humanFilenameTemplates, templateIndex);
+				std::string animName = humanFilenameTemplates[templateIndex];
+				if (!TrySetDynamicEntityFilenameDirection(animName, correctedAnimDirID))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					DebugLogError("Couldn't set human filename direction \"" +
+						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
 					return false;
 				}
 
+				const int typeIndex = 0; // Placeholder (plate)
+				DebugAssertIndex(humanFilenameTypes, typeIndex);
+				const std::string_view filenameType = humanFilenameTypes[typeIndex];
+				if (!TrySetHumanFilenameType(animName, filenameType))
+				{
+					DebugLogError("Couldn't set human filename type \"" +
+						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
+					return false;
+				}
+
+				const bool isMale = true; // @todo: see if this depends on flat index?
+				if (!TrySetHumanFilenameGender(animName, isMale))
+				{
+					DebugLogError("Couldn't set human filename gender \"" +
+						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
+					return false;
+				}
+
+				animName = String::toUppercase(animName);
+
+				// Not all permutations of human filenames exist. If a series is missing,
+				// then probably need to have special behavior.
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(animName.c_str(), &cfa))
+				{
+					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
+					return false;
+				}
+
+				// @todo: other states (walk, look -- although I don't think humans have look.
+				// Just use idle for look).
 				EntityAnimationData::State placeholderState = MakeAnimState(
 					EntityAnimationData::StateType::Idle,
 					CREATURE_ANIM_IDLE_SECONDS_PER_FRAME,
@@ -402,7 +498,7 @@ namespace
 				placeholderState.setTextureName(std::string(animName));
 
 				double width, height;
-				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
+				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -417,8 +513,8 @@ namespace
 			}
 		};
 
-		auto tryWriteAttackAnimStates = [&exeData, outAttackStates, itemIndex, isCreature, isHuman,
-			&makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
+		auto tryWriteAttackAnimStates = [&exeData, &cfaCache, outAttackStates, itemIndex,
+			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
 			// Attack state is only in the first .CFA file.
 			const int animDirectionID = 1;
@@ -430,7 +526,7 @@ namespace
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetCreatureFilenameDirection(creatureFilename, animDirectionID))
+				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
@@ -438,10 +534,10 @@ namespace
 				}
 
 				// Load the .CFA of the creature at the given direction.
-				CFAFile cfa;
-				if (!cfa.init(creatureFilename.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
 					return false;
 				}
 
@@ -458,7 +554,7 @@ namespace
 
 					double width, height;
 					makeCreatureKeyframeDimensions(
-						creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+						creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
 					const int textureID = frameIndex;
 
 					EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -476,10 +572,10 @@ namespace
 				// @todo: replace placeholder image
 				const std::string animName = "01PLTWLK.CFA";
 
-				CFAFile cfa;
-				if (!cfa.init(animName.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(animName.c_str(), &cfa))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
 					return false;
 				}
 
@@ -492,7 +588,7 @@ namespace
 				placeholderState.setTextureName(std::string(animName));
 
 				double width, height;
-				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
+				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -507,8 +603,8 @@ namespace
 			}
 		};
 
-		auto tryWriteDeathAnimStates = [&exeData, outDeathStates, itemIndex, isCreature, isHuman,
-			&makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
+		auto tryWriteDeathAnimStates = [&exeData, &cfaCache, outDeathStates, itemIndex,
+			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
 			// Death state is only in the last .CFA file.
 			const int animDirectionID = 6;
@@ -520,7 +616,7 @@ namespace
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetCreatureFilenameDirection(creatureFilename, animDirectionID))
+				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
@@ -528,10 +624,10 @@ namespace
 				}
 
 				// Load the .CFA of the creature at the given direction.
-				CFAFile cfa;
-				if (!cfa.init(creatureFilename.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + creatureFilename + "\".");
+					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
 					return false;
 				}
 
@@ -542,11 +638,11 @@ namespace
 					CREATURE_ANIM_DEATH_LOOP,
 					animIsFlipped);
 
-				for (int i = 0; i < cfa.getImageCount(); i++)
+				for (int i = 0; i < cfa->getImageCount(); i++)
 				{
 					double width, height;
 					makeCreatureKeyframeDimensions(
-						creatureIndex, cfa.getWidth(), cfa.getHeight(), &width, &height);
+						creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
 					const int textureID = i;
 
 					EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -561,13 +657,13 @@ namespace
 			}
 			else if (isHuman)
 			{
-				// @todo: replace placeholder image
+				// @todo: replace placeholder image with corpse image (DEADBODY.IMG?).
 				const std::string animName = "01PLTWLK.CFA";
 
-				CFAFile cfa;
-				if (!cfa.init(animName.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(animName.c_str(), &cfa))
 				{
-					DebugLogError("Couldn't init .CFA file \"" + animName + "\".");
+					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
 					return false;
 				}
 
@@ -580,7 +676,7 @@ namespace
 				placeholderState.setTextureName(std::string(animName));
 
 				double width, height;
-				makeHumanKeyframeDimensions(cfa.getWidth(), cfa.getHeight(), &width, &height);
+				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -1758,6 +1854,9 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
 			attackStates, deathStates;
 
+		// Cache for .CFA files referenced multiple times.
+		AnimFileCache<CFAFile> cfaCache;
+
 		if (entityType == EntityType::Static)
 		{
 			EntityAnimationData::State animState =
@@ -1777,7 +1876,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 		else if (entityType == EntityType::Dynamic)
 		{
-			MakeDynamicEntityAnimStates(flatIndex, this->inf, exeData,
+			MakeDynamicEntityAnimStates(flatIndex, this->inf, exeData, cfaCache,
 				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
 
 			// Must at least have an idle state.
@@ -1846,7 +1945,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 			entity->setPosition(positionXZ);
 		}
 
-		auto addTexturesFromState = [&renderer, &palette, flatIndex](
+		auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
 			const EntityAnimationData::State &animState, int angleID)
 		{
 			// Check whether the animation direction ID is for a flipped animation.
@@ -1872,15 +1971,15 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 
 			if (isCFA)
 			{
-				CFAFile cfa;
-				if (!cfa.init(entityAnimName.c_str()))
+				const CFAFile *cfa;
+				if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
 				{
-					DebugCrash("Could not init .CFA file \"" + entityAnimName + "\".");
+					DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
 				}
 
-				for (int i = 0; i < cfa.getImageCount(); i++)
+				for (int i = 0; i < cfa->getImageCount(); i++)
 				{
-					addFlatTexture(cfa.getPixels(i), cfa.getWidth(), cfa.getHeight(),
+					addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
 						flatIndex, animState.getType(), angleID);
 				}
 			}
@@ -1889,7 +1988,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 				DFAFile dfa;
 				if (!dfa.init(entityAnimName.c_str()))
 				{
-					DebugCrash("Could not init .DFA file \"" + entityAnimName + "\".");
+					DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
 				}
 
 				for (int i = 0; i < dfa.getImageCount(); i++)

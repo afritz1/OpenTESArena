@@ -342,8 +342,8 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes", keyValueFile);
 	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueFile);
 	const int femaleCitizenAnimFilenamesOffset = ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueFile);
-	const int cfaFilenameChunksOffset = ExeData::get(section, "CFAFilenameChunks", keyValueFile);
-	const int cfaFilenameTemplatesOffset = ExeData::get(section, "CFAFilenameTemplates", keyValueFile);
+	const int humanFilenameTypesOffset = ExeData::get(section, "HumanFilenameTypes", keyValueFile);
+	const int humanFilenameTemplatesOffset = ExeData::get(section, "HumanFilenameTemplates", keyValueFile);
 	const int cfaHumansWithWeaponAnimsOffset = ExeData::get(section, "CFAHumansWithWeaponAnimations", keyValueFile);
 	const int cfaWeaponAnimationsOffset = ExeData::get(section, "CFAWeaponAnimations", keyValueFile);
 	const int effectAnimsOffset = ExeData::get(section, "EffectAnimations", keyValueFile);
@@ -371,8 +371,8 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
 	initStringArray(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
 	initStringArray(this->femaleCitizenAnimationFilenames, data + femaleCitizenAnimFilenamesOffset);
-	initStringArray(this->cfaFilenameChunks, data + cfaFilenameChunksOffset);
-	initStringArray(this->cfaFilenameTemplates, data + cfaFilenameTemplatesOffset);
+	initStringArray(this->humanFilenameTypes, data + humanFilenameTypesOffset);
+	initStringArray(this->humanFilenameTemplates, data + humanFilenameTemplatesOffset);
 	initStringArray(this->cfaHumansWithWeaponAnimations, data + cfaHumansWithWeaponAnimsOffset);
 	initStringArray(this->cfaWeaponAnimations, data + cfaWeaponAnimationsOffset);
 	initStringArray(this->effectAnimations, data + effectAnimsOffset);
