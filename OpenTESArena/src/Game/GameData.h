@@ -102,27 +102,28 @@ public:
 	static MusicName getInteriorMusicName(const std::string &mifName, Random &random);
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, const Location &location, const ExeData &exeData,
+	void loadInterior(const MIFFile &mif, const Location &location, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const ExeData &exeData,
+	void enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Leaves the current interior and returns to the exterior. Only call this method if the
 	// player is in an interior that has an outside area to return to.
-	void leaveInterior(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
+	void leaveInterior(const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-		const ExeData &exeData, TextureManager &textureManager, Renderer &renderer);
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
 	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-		const CityDataFile &cityData, const ExeData &exeData, TextureManager &textureManager,
+		const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only

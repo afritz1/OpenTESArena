@@ -33,6 +33,7 @@
 class ArenaRandom;
 class ExeData;
 class Game;
+class MiscAssets;
 class Renderer;
 class TextureManager;
 
@@ -186,7 +187,7 @@ public:
 
 	// Sets this level active in the renderer. It's virtual so derived level data classes can
 	// do some extra work (like set interior sky colors in the renderer).
-	virtual void setActive(const ExeData &exeData, TextureManager &textureManager,
+	virtual void setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.

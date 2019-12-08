@@ -1186,10 +1186,10 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 	return false;
 }
 
-void ExteriorLevelData::setActive(const ExeData &exeData, TextureManager &textureManager,
+void ExteriorLevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
-	LevelData::setActive(exeData, textureManager, renderer);
+	LevelData::setActive(miscAssets, textureManager, renderer);
 
 	// @todo: fetch this palette from somewhere better.
 	COLFile col;

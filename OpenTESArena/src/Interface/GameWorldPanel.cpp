@@ -1826,14 +1826,14 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		}
 
 		// Leave the interior and go to the saved exterior.
-		const auto &exeData = game.getMiscAssets().getExeData();
-		gameData.leaveInterior(exeData, textureManager, renderer);
+		const auto &miscAssets = game.getMiscAssets();
+		gameData.leaveInterior(miscAssets, textureManager, renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
 		const auto &location = gameData.getLocation();
 		const ClimateType climateType = Location::getCityClimateType(
-			location.localCityID, location.provinceID, game.getMiscAssets());
+			location.localCityID, location.provinceID, miscAssets);
 		const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 			gameData.getWeatherType(), climateType);
 		const MusicName musicName = !clock.nightMusicIsActive() ?
@@ -1881,7 +1881,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 				const auto &cityDataFile = gameData.getCityDataFile();
 				const Location &location = gameData.getLocation();
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &miscAssets = game.getMiscAssets();
+				const auto &exeData = miscAssets.getExeData();
 				const std::string mifName = cityDataFile.getDoorVoxelMifName(
 					doorVoxel.x, doorVoxel.y, menuID, location.localCityID,
 					location.provinceID, isCity, exeData);
@@ -1930,7 +1931,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 
 					gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
-						exeData, game.getTextureManager(), game.getRenderer());
+						miscAssets, game.getTextureManager(), game.getRenderer());
 
 					// Change to interior music.
 					Random random;
@@ -2139,8 +2140,8 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
-			newActiveLevel.setActive(game.getMiscAssets().getExeData(),
-				game.getTextureManager(), game.getRenderer());
+			newActiveLevel.setActive(game.getMiscAssets(), game.getTextureManager(),
+				game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(

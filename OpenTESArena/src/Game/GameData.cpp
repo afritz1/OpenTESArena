@@ -235,15 +235,16 @@ MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &ran
 }
 
 void GameData::loadInterior(const MIFFile &mif, const Location &location,
-	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Call interior WorldData loader.
+	const auto &exeData = miscAssets.getExeData();
 	this->worldData = std::make_unique<InteriorWorldData>(
 		InteriorWorldData::loadInterior(mif, exeData));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(exeData, textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -261,8 +262,8 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const ExeData &exeData,
-	TextureManager &textureManager, Renderer &renderer)
+void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	DebugAssert(this->worldData.get() != nullptr);
 	DebugAssert(this->worldData->getActiveWorldType() != WorldType::Interior);
@@ -270,6 +271,7 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldData.get());
 	DebugAssert(exterior.getInterior() == nullptr);
 
+	const auto &exeData = miscAssets.getExeData();
 	InteriorWorldData interior = InteriorWorldData::loadInterior(mif, exeData);
 
 	// Give the interior world data to the active exterior.
@@ -277,7 +279,7 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 
 	// Set interior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(exeData, textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = exterior.getInterior()->getStartPoints().front();
@@ -291,7 +293,7 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const 
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::leaveInterior(const ExeData &exeData, TextureManager &textureManager,
+void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	DebugAssert(this->worldData.get() != nullptr);
@@ -306,7 +308,7 @@ void GameData::leaveInterior(const ExeData &exeData, TextureManager &textureMana
 
 	// Set exterior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(exeData, textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 startPoint(
@@ -329,7 +331,7 @@ void GameData::leaveInterior(const ExeData &exeData, TextureManager &textureMana
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-	const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
 	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
@@ -339,6 +341,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 	const uint32_t dungeonSeed = this->cityData.getDungeonSeed(localDungeonID, provinceID);
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
+	const auto &exeData = miscAssets.getExeData();
 	const int widthChunks = 2;
 	const int depthChunks = 1;
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
@@ -346,7 +349,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(exeData, textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -365,7 +368,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 }
 
 void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-	const CityDataFile &cityData, const ExeData &exeData, TextureManager &textureManager,
+	const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Verify that the wilderness block coordinates are valid (0..63).
@@ -379,6 +382,7 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 		provinceID, wildBlockX, wildBlockY);
 
 	// Call dungeon WorldData loader with parameters specific to wilderness dungeons.
+	const auto &exeData = miscAssets.getExeData();
 	const int widthChunks = 2;
 	const int depthChunks = 2;
 	const bool isArtifactDungeon = false;
@@ -387,7 +391,7 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(exeData, textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -422,7 +426,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -513,7 +517,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -549,7 +553,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets.getExeData(), textureManager, renderer);
+	activeLevel.setActive(miscAssets, textureManager, renderer);
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();

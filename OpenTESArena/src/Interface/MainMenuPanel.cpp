@@ -325,7 +325,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 					}();
 
-					gameData->loadInterior(mif, location, miscAssets.getExeData(),
+					gameData->loadInterior(mif, location, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 				else
@@ -338,7 +338,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					{
 						const int localDungeonID = 2 + random.next(14);
 						gameData->loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
-							miscAssets.getExeData(), game.getTextureManager(), renderer);
+							miscAssets, game.getTextureManager(), renderer);
 
 						// Set random named dungeon name and visibility for testing.
 						auto &cityData = gameData->getCityDataFile();
@@ -352,8 +352,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int wildBlockX = random.next(RMDFile::WIDTH);
 						const int wildBlockY = random.next(RMDFile::DEPTH);
 						gameData->loadWildernessDungeon(provinceID, wildBlockX, wildBlockY,
-							miscAssets.getCityDataFile(), miscAssets.getExeData(),
-							game.getTextureManager(), renderer);
+							miscAssets.getCityDataFile(), miscAssets, game.getTextureManager(),
+							renderer);
 					}
 					else
 					{

@@ -10,9 +10,12 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
+#include "../Assets/MiscAssets.h"
 #include "../Assets/SETFile.h"
+#include "../Entities/CharacterClass.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
+#include "../Items/ArmorMaterialType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
@@ -79,16 +82,25 @@ namespace
 		}
 	};
 
-	// *ITEM 32 to 54 are creatures (rat, goblin, etc.).
-	bool IsCreatureIndex(int itemIndex)
+	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
+	// human enemies, but they are treated like a creature.
+	bool IsFinalBossIndex(int itemIndex)
 	{
-		return itemIndex >= 32 && itemIndex <= 54;
+		return itemIndex == 73;
 	}
 
-	// *ITEM 55 to 73 are human enemies (guard, wizard, etc.).
+	// *ITEM 32 to 54 are creatures (rat, goblin, etc.). The final boss is a special case.
+	bool IsCreatureIndex(int itemIndex, bool *outIsFinalBoss)
+	{
+		const bool isFinalBoss = IsFinalBossIndex(itemIndex);
+		*outIsFinalBoss = isFinalBoss;
+		return (itemIndex >= 32 && itemIndex <= 54) || isFinalBoss;
+	}
+
+	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
 	bool IsHumanEnemyIndex(int itemIndex)
 	{
-		return itemIndex >= 55 && itemIndex <= 73;
+		return itemIndex >= 55 && itemIndex <= 72;
 	}
 
 	// Returns whether the given flat index is for a static or dynamic entity.
@@ -101,7 +113,8 @@ namespace
 
 			// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
 			// are higher.
-			return (IsCreatureIndex(itemIndex) || IsHumanEnemyIndex(itemIndex)) ?
+			bool dummy;
+			return (IsCreatureIndex(itemIndex, &dummy) || IsHumanEnemyIndex(itemIndex)) ?
 				EntityType::Dynamic : EntityType::Static;
 		}
 		else
@@ -114,6 +127,18 @@ namespace
 	int GetCreatureIDFromItemIndex(int itemIndex)
 	{
 		return itemIndex - 31;
+	}
+
+	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	int GetFinalBossCreatureID()
+	{
+		return 24;
+	}
+
+	// Character classes (mage, warrior, etc.) used by human enemies.
+	int GetCharacterClassIndexFromItemIndex(int itemIndex)
+	{
+		return itemIndex - 55;
 	}
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
@@ -184,6 +209,77 @@ namespace
 			DebugLogError("Couldn't replace direction in \"" + filename + "\".");
 			return false;
 		}
+	}
+
+	void GetHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
+		std::string *outTypeStr, bool *outIsMale)
+	{
+		const auto &exeData = miscAssets.getExeData();
+
+		const int charClassIndex = GetCharacterClassIndexFromItemIndex(itemIndex);
+		const auto &charClasses = miscAssets.getClassDefinitions();
+		DebugAssertIndex(charClasses, charClassIndex);
+		const CharacterClass &charClass = charClasses[charClassIndex];
+
+		// Properties about the character class.
+		*outTypeStr = [&exeData, &charClass]()
+		{
+			const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
+			const int humanFilenameTypeIndex = [&charClass]()
+			{
+				// Find which armors the class can wear.
+				bool hasPlate = false;
+				bool hasChain = false;
+				bool hasLeather = false;
+
+				const auto &allowedArmors = charClass.getAllowedArmors();
+				for (const ArmorMaterialType armorType : allowedArmors)
+				{
+					hasPlate |= armorType == ArmorMaterialType::Plate;
+					hasChain |= armorType == ArmorMaterialType::Chain;
+					hasLeather |= armorType == ArmorMaterialType::Leather;
+				}
+
+				if (hasPlate)
+				{
+					return 0;
+				}
+				else if (hasChain)
+				{
+					return 1;
+				}
+				else if (hasLeather)
+				{
+					return 2;
+				}
+				else if (charClass.canCastMagic())
+				{
+					// Spellcaster.
+					return 4;
+				}
+				else if (charClass.getClassIndex() == 12)
+				{
+					// Monk.
+					return 5;
+				}
+				else if (charClass.getClassIndex() == 15)
+				{
+					// Barbarian.
+					return 6;
+				}
+				else
+				{
+					// Unarmored.
+					return 3;
+				}
+			}();
+
+			DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
+			return humanFilenameTypes[humanFilenameTypeIndex];
+		}();
+
+		// Assume all non-randomly generated enemies are male.
+		*outIsMale = true;
 	}
 
 	bool TrySetHumanFilenameGender(std::string &filename, bool isMale)
@@ -298,8 +394,8 @@ namespace
 	// it is assumed that the entity has no information for that state.
 
 	// Write out to lists of dynamic entity animation states for each animation direction.
-	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
-		AnimFileCache<CFAFile> &cfaCache,
+	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
+		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outLookStates,
 		std::vector<EntityAnimationData::State> *outWalkStates,
@@ -312,11 +408,14 @@ namespace
 		DebugAssert(outAttackStates != nullptr);
 		DebugAssert(outDeathStates != nullptr);
 
+		const auto &exeData = miscAssets.getExeData();
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
 		DebugAssert(optItemIndex.has_value());
 		const int itemIndex = *optItemIndex;
-		const bool isCreature = IsCreatureIndex(itemIndex);
+
+		bool isFinalBoss;
+		const bool isCreature = IsCreatureIndex(itemIndex, &isFinalBoss);
 		const bool isHuman = IsHumanEnemyIndex(itemIndex);
 
 		// Lambda for converting creature dimensions to the in-engine values.
@@ -352,8 +451,8 @@ namespace
 		};
 
 		// Write animation states for idle, look, and walk for the given anim direction.
-		auto tryWriteAnimStates = [&exeData, &cfaCache, outIdleStates, outLookStates, outWalkStates,
-			itemIndex, isCreature, isHuman, &makeCreatureKeyframeDimensions,
+		auto tryWriteAnimStates = [&miscAssets, &cfaCache, outIdleStates, outLookStates, outWalkStates,
+			&exeData, itemIndex, isFinalBoss, isCreature, isHuman, &makeCreatureKeyframeDimensions,
 			&makeHumanKeyframeDimensions](int animDirectionID)
 		{
 			DebugAssert(animDirectionID >= 1);
@@ -366,7 +465,9 @@ namespace
 			if (isCreature)
 			{
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
+				const int creatureID = isFinalBoss ?
+					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
@@ -437,18 +538,12 @@ namespace
 			}
 			else if (isHuman)
 			{
-				// @todo: use base filenames in ExeData like 0@XXXwlk.cfa.
-				// - First number is gender; 0 = male
-				// - X's indicate armor/class type.
-
-				// @todo: see how plate/chain/leather/mage/monk/etc. are mapped to from
-				// flat index. Maybe assume there's some base like creatures, and they're
-				// all adjacent.
-
-				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
-				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
+				std::string humanFilenameType;
+				bool isMale;
+				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameType, &isMale);
 
 				const int templateIndex = 0; // Placeholder (walk)
+				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
 				DebugAssertIndex(humanFilenameTemplates, templateIndex);
 				std::string animName = humanFilenameTemplates[templateIndex];
 				if (!TrySetDynamicEntityFilenameDirection(animName, correctedAnimDirID))
@@ -458,17 +553,13 @@ namespace
 					return false;
 				}
 
-				const int typeIndex = 0; // Placeholder (plate)
-				DebugAssertIndex(humanFilenameTypes, typeIndex);
-				const std::string_view filenameType = humanFilenameTypes[typeIndex];
-				if (!TrySetHumanFilenameType(animName, filenameType))
+				if (!TrySetHumanFilenameType(animName, humanFilenameType))
 				{
 					DebugLogError("Couldn't set human filename type \"" +
 						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
 					return false;
 				}
 
-				const bool isMale = true; // @todo: see if this depends on flat index?
 				if (!TrySetHumanFilenameGender(animName, isMale))
 				{
 					DebugLogError("Couldn't set human filename gender \"" +
@@ -513,7 +604,7 @@ namespace
 			}
 		};
 
-		auto tryWriteAttackAnimStates = [&exeData, &cfaCache, outAttackStates, itemIndex,
+		auto tryWriteAttackAnimStates = [&exeData, &cfaCache, outAttackStates, itemIndex, isFinalBoss,
 			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
 			// Attack state is only in the first .CFA file.
@@ -522,7 +613,10 @@ namespace
 			if (isCreature)
 			{
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
+
+				const int creatureID = isFinalBoss ?
+					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
@@ -603,7 +697,7 @@ namespace
 			}
 		};
 
-		auto tryWriteDeathAnimStates = [&exeData, &cfaCache, outDeathStates, itemIndex,
+		auto tryWriteDeathAnimStates = [&exeData, &cfaCache, outDeathStates, itemIndex, isFinalBoss,
 			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
 			// Death state is only in the last .CFA file.
@@ -612,7 +706,9 @@ namespace
 			if (isCreature)
 			{
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-				const int creatureIndex = GetCreatureIDFromItemIndex(itemIndex) - 1;
+				const int creatureID = isFinalBoss ?
+					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
@@ -1738,7 +1834,7 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 	}
 }
 
-void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager,
+void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
@@ -1802,13 +1898,17 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 	}
 
 	// Initialize entities from the flat defs list and write their textures to the renderer.
+	const auto &exeData = miscAssets.getExeData();
 	for (const auto &flatDef : this->flatsLists)
 	{
 		const int flatIndex = flatDef.getFlatIndex();
 		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
 		const EntityType entityType = GetEntityTypeFromFlat(flatIndex, this->inf);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
-		const bool isCreature = optItemIndex.has_value() && IsCreatureIndex(*optItemIndex);
+
+		bool isFinalBoss;
+		const bool isCreature = optItemIndex.has_value() &&
+			IsCreatureIndex(*optItemIndex, &isFinalBoss);
 
 		// Must be at least one instance of the entity for the loop to try and
 		// instantiate it and write textures to the renderer.
@@ -1825,7 +1925,8 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		{
 			// Read from .exe data instead for creatures.
 			const int itemIndex = *optItemIndex;
-			const int creatureID = GetCreatureIDFromItemIndex(itemIndex);
+			const int creatureID = isFinalBoss ?
+				GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = creatureID - 1;
 			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
 			DebugAssertIndex(creatureYOffsets, creatureIndex);
@@ -1876,7 +1977,7 @@ void LevelData::setActive(const ExeData &exeData, TextureManager &textureManager
 		}
 		else if (entityType == EntityType::Dynamic)
 		{
-			MakeDynamicEntityAnimStates(flatIndex, this->inf, exeData, cfaCache,
+			MakeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
 				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
 
 			// Must at least have an idle state.
