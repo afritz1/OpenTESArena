@@ -111,8 +111,7 @@ If you would like to use a different sound patches library (like OPL3), simply e
 - [CMake](https://cmake.org/download/)
 - [OpenAL Soft 1.18.2](http://kcat.strangesoft.net/openal.html#download)
 - [SDL 2.0.4](https://www.libsdl.org/download-2.0.php)
-- [WildMIDI 0.4.0](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
-  - Windows users building with Visual Studio must build WildMIDI 0.4.3 from source to avoid [crash bug](https://github.com/Mindwerks/wildmidi/issues/192#issuecomment-389211843) in `wildmidi_dynamic.dll`
+- [WildMIDI 0.4.3](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
 
 ### Building the executable
 - Create a `build` folder in the project's top-level directory.
