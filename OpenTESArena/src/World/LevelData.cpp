@@ -212,7 +212,7 @@ namespace
 	}
 
 	void GetHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
-		std::string *outTypeStr, bool *outIsMale)
+		int *outTypeIndex, bool *outIsMale)
 	{
 		const auto &exeData = miscAssets.getExeData();
 
@@ -222,60 +222,53 @@ namespace
 		const CharacterClass &charClass = charClasses[charClassIndex];
 
 		// Properties about the character class.
-		*outTypeStr = [&exeData, &charClass]()
+		*outTypeIndex = [&exeData, &charClass]()
 		{
-			const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
-			const int humanFilenameTypeIndex = [&charClass]()
+			// Find which armors the class can wear.
+			bool hasPlate = false;
+			bool hasChain = false;
+			bool hasLeather = false;
+
+			const auto &allowedArmors = charClass.getAllowedArmors();
+			for (const ArmorMaterialType armorType : allowedArmors)
 			{
-				// Find which armors the class can wear.
-				bool hasPlate = false;
-				bool hasChain = false;
-				bool hasLeather = false;
+				hasPlate |= armorType == ArmorMaterialType::Plate;
+				hasChain |= armorType == ArmorMaterialType::Chain;
+				hasLeather |= armorType == ArmorMaterialType::Leather;
+			}
 
-				const auto &allowedArmors = charClass.getAllowedArmors();
-				for (const ArmorMaterialType armorType : allowedArmors)
-				{
-					hasPlate |= armorType == ArmorMaterialType::Plate;
-					hasChain |= armorType == ArmorMaterialType::Chain;
-					hasLeather |= armorType == ArmorMaterialType::Leather;
-				}
-
-				if (hasPlate)
-				{
-					return 0;
-				}
-				else if (hasChain)
-				{
-					return 1;
-				}
-				else if (hasLeather)
-				{
-					return 2;
-				}
-				else if (charClass.canCastMagic())
-				{
-					// Spellcaster.
-					return 4;
-				}
-				else if (charClass.getClassIndex() == 12)
-				{
-					// Monk.
-					return 5;
-				}
-				else if (charClass.getClassIndex() == 15)
-				{
-					// Barbarian.
-					return 6;
-				}
-				else
-				{
-					// Unarmored.
-					return 3;
-				}
-			}();
-
-			DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
-			return humanFilenameTypes[humanFilenameTypeIndex];
+			if (hasPlate)
+			{
+				return 0;
+			}
+			else if (hasChain)
+			{
+				return 1;
+			}
+			else if (hasLeather)
+			{
+				return 2;
+			}
+			else if (charClass.canCastMagic())
+			{
+				// Spellcaster.
+				return 4;
+			}
+			else if (charClass.getClassIndex() == 12)
+			{
+				// Monk.
+				return 5;
+			}
+			else if (charClass.getClassIndex() == 15)
+			{
+				// Barbarian.
+				return 6;
+			}
+			else
+			{
+				// Unarmored.
+				return 3;
+			}
 		}();
 
 		// Assume all non-randomly generated enemies are male.
@@ -538,9 +531,9 @@ namespace
 			}
 			else if (isHuman)
 			{
-				std::string humanFilenameType;
+				int humanFilenameTypeIndex;
 				bool isMale;
-				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameType, &isMale);
+				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
 
 				const int templateIndex = 0; // Placeholder (walk)
 				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
@@ -553,6 +546,9 @@ namespace
 					return false;
 				}
 
+				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
+				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
+				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
 				if (!TrySetHumanFilenameType(animName, humanFilenameType))
 				{
 					DebugLogError("Couldn't set human filename type \"" +
@@ -560,7 +556,11 @@ namespace
 					return false;
 				}
 
-				if (!TrySetHumanFilenameGender(animName, isMale))
+				// Special case for plate sprites: female is replaced with male, since they would
+				// apparently look the same in armor.
+				const bool isPlate = humanFilenameTypeIndex == 0;
+
+				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
 				{
 					DebugLogError("Couldn't set human filename gender \"" +
 						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
