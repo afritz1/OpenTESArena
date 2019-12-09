@@ -159,6 +159,7 @@ public:
 	const int *getMenu(int index) const;
 	int getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
+	const FlatData *getFlatWithItemIndex(int itemIndex) const;
 	const std::string &getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

@@ -1017,6 +1017,17 @@ const INFFile::FlatData &INFFile::getFlat(int index) const
 	return this->flats[index];
 }
 
+const INFFile::FlatData *INFFile::getFlatWithItemIndex(int itemIndex) const
+{
+	const auto iter = std::find_if(this->flats.begin(), this->flats.end(),
+		[itemIndex](const FlatData &flat)
+	{
+		return flat.itemIndex.has_value() && (*flat.itemIndex == itemIndex);
+	});
+
+	return (iter != this->flats.end()) ? &(*iter) : nullptr;
+}
+
 const std::string &INFFile::getSound(int index) const
 {
 	const auto soundIter = this->sounds.find(index);
