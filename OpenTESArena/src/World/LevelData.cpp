@@ -55,6 +55,18 @@ namespace
 	const std::vector<int> CreatureAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
 	const std::vector<int> CreatureAnimIndicesAttack = { 8, 9, 10, 11 };
 
+	// Animation values for human enemies with .CFA files.
+	constexpr double HUMAN_ANIM_IDLE_SECONDS_PER_FRAME = CREATURE_ANIM_IDLE_SECONDS_PER_FRAME;
+	constexpr double HUMAN_ANIM_WALK_SECONDS_PER_FRAME = CREATURE_ANIM_WALK_SECONDS_PER_FRAME;
+	constexpr double HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME = CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME;
+	constexpr double HUMAN_ANIM_DEATH_SECONDS_PER_FRAME = CREATURE_ANIM_DEATH_SECONDS_PER_FRAME;
+	const bool HUMAN_ANIM_IDLE_LOOP = true;
+	const bool HUMAN_ANIM_WALK_LOOP = true;
+	const bool HUMAN_ANIM_ATTACK_LOOP = false;
+	const bool HUMAN_ANIM_DEATH_LOOP = false;
+	const std::vector<int> HumanAnimIndicesIdle = { 0 };
+	const std::vector<int> HumanAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
+
 	// Cache for .CFA/.DFA files referenced multiple times during entity loading.
 	template <typename T>
 	class AnimFileCache
@@ -535,7 +547,7 @@ namespace
 				bool isMale;
 				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
 
-				const int templateIndex = 0; // Placeholder (walk)
+				const int templateIndex = 0; // Idle/walk template index.
 				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
 				DebugAssertIndex(humanFilenameTemplates, templateIndex);
 				std::string animName = humanFilenameTemplates[templateIndex];
@@ -578,23 +590,45 @@ namespace
 					return false;
 				}
 
-				// @todo: other states (walk, look -- although I don't think humans have look.
-				// Just use idle for look).
-				EntityAnimationData::State placeholderState = MakeAnimState(
+				// Prepare the states to write out. Human enemies don't have look animations.
+				EntityAnimationData::State idleState = MakeAnimState(
 					EntityAnimationData::StateType::Idle,
-					CREATURE_ANIM_IDLE_SECONDS_PER_FRAME,
-					CREATURE_ANIM_IDLE_LOOP,
-					false);
+					HUMAN_ANIM_IDLE_SECONDS_PER_FRAME,
+					HUMAN_ANIM_IDLE_LOOP,
+					animIsFlipped);
+				EntityAnimationData::State walkState = MakeAnimState(
+					EntityAnimationData::StateType::Walk,
+					HUMAN_ANIM_WALK_SECONDS_PER_FRAME,
+					HUMAN_ANIM_WALK_LOOP,
+					animIsFlipped);
 
-				placeholderState.setTextureName(std::string(animName));
+				// Lambda for writing keyframes to an anim state.
+				auto writeStateKeyframes = [&makeHumanKeyframeDimensions, &cfa](
+					EntityAnimationData::State *outState, const std::vector<int> &indices)
+				{
+					for (size_t i = 0; i < indices.size(); i++)
+					{
+						const int frameIndex = indices[i];
 
-				double width, height;
-				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
-				const int textureID = 0;
+						double width, height;
+						makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
+						const int textureID = frameIndex;
 
-				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				placeholderState.addKeyframe(std::move(keyframe));
-				outIdleStates->push_back(std::move(placeholderState));
+						EntityAnimationData::Keyframe keyframe(width, height, textureID);
+						outState->addKeyframe(std::move(keyframe));
+					}
+				};
+
+				writeStateKeyframes(&idleState, HumanAnimIndicesIdle);
+				writeStateKeyframes(&walkState, HumanAnimIndicesWalk);
+
+				// Write animation filename to each.
+				idleState.setTextureName(std::string(animName));
+				walkState.setTextureName(std::string(animName));
+
+				// Write out the states to their respective state lists.
+				outIdleStates->push_back(std::move(idleState));
+				outWalkStates->push_back(std::move(walkState));
 				return true;
 			}
 			else
@@ -604,11 +638,12 @@ namespace
 			}
 		};
 
-		auto tryWriteAttackAnimStates = [&exeData, &cfaCache, outAttackStates, itemIndex, isFinalBoss,
-			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
+		auto tryWriteAttackAnimStates = [&miscAssets, &cfaCache, outAttackStates, &exeData, itemIndex,
+			isFinalBoss, isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
 			// Attack state is only in the first .CFA file.
 			const int animDirectionID = 1;
+			const bool animIsFlipped = false;
 
 			if (isCreature)
 			{
@@ -635,7 +670,6 @@ namespace
 					return false;
 				}
 
-				const bool animIsFlipped = false;
 				EntityAnimationData::State attackState = MakeAnimState(
 					EntityAnimationData::StateType::Attack,
 					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
@@ -663,8 +697,43 @@ namespace
 			}
 			else if (isHuman)
 			{
-				// @todo: replace placeholder image
-				const std::string animName = "01PLTWLK.CFA";
+				int humanFilenameTypeIndex;
+				bool isMale;
+				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
+
+				const int attackTemplateIndex = 1;
+				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
+				DebugAssertIndex(humanFilenameTemplates, attackTemplateIndex);
+				std::string animName = humanFilenameTemplates[attackTemplateIndex];
+				if (!TrySetDynamicEntityFilenameDirection(animName, animDirectionID))
+				{
+					DebugLogError("Couldn't set human attack filename direction \"" +
+						animName + "\" (" + std::to_string(animDirectionID) + ").");
+					return false;
+				}
+
+				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
+				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
+				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
+				if (!TrySetHumanFilenameType(animName, humanFilenameType))
+				{
+					DebugLogError("Couldn't set human attack filename type \"" +
+						animName + "\" (" + std::to_string(animDirectionID) + ").");
+					return false;
+				}
+
+				// Special case for plate sprites: female is replaced with male, since they would
+				// apparently look the same in armor.
+				const bool isPlate = humanFilenameTypeIndex == 0;
+
+				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
+				{
+					DebugLogError("Couldn't set human attack filename gender \"" +
+						animName + "\" (" + std::to_string(animDirectionID) + ").");
+					return false;
+				}
+
+				animName = String::toUppercase(animName);
 
 				const CFAFile *cfa;
 				if (!cfaCache.tryGet(animName.c_str(), &cfa))
@@ -673,21 +742,28 @@ namespace
 					return false;
 				}
 
-				EntityAnimationData::State placeholderState = MakeAnimState(
+				EntityAnimationData::State attackState = MakeAnimState(
 					EntityAnimationData::StateType::Attack,
-					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
-					CREATURE_ANIM_ATTACK_LOOP,
-					false);
+					HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME,
+					HUMAN_ANIM_ATTACK_LOOP,
+					animIsFlipped);
 
-				placeholderState.setTextureName(std::string(animName));
+				for (int i = 0; i < cfa->getImageCount(); i++)
+				{
+					const int frameIndex = i;
 
-				double width, height;
-				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
-				const int textureID = 0;
+					double width, height;
+					makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
+					const int textureID = frameIndex;
 
-				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				placeholderState.addKeyframe(std::move(keyframe));
-				outAttackStates->push_back(std::move(placeholderState));
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					attackState.addKeyframe(std::move(keyframe));
+				}
+
+				// Write animation filename.
+				attackState.setTextureName(std::move(animName));
+
+				outAttackStates->push_back(std::move(attackState));
 				return true;
 			}
 			else
@@ -697,14 +773,16 @@ namespace
 			}
 		};
 
-		auto tryWriteDeathAnimStates = [&exeData, &cfaCache, outDeathStates, itemIndex, isFinalBoss,
+		auto tryWriteDeathAnimStates = [&inf, &cfaCache, outDeathStates, &exeData, itemIndex, isFinalBoss,
 			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
 		{
-			// Death state is only in the last .CFA file.
-			const int animDirectionID = 6;
+			const bool animIsFlipped = false;
 
 			if (isCreature)
 			{
+				// Death state is only in the last .CFA file.
+				const int animDirectionID = 6;
+
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 				const int creatureID = isFinalBoss ?
 					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
@@ -727,7 +805,6 @@ namespace
 					return false;
 				}
 
-				const bool animIsFlipped = false;
 				EntityAnimationData::State deathState = MakeAnimState(
 					EntityAnimationData::StateType::Death,
 					CREATURE_ANIM_DEATH_SECONDS_PER_FRAME,
@@ -753,31 +830,37 @@ namespace
 			}
 			else if (isHuman)
 			{
-				// @todo: replace placeholder image with corpse image (DEADBODY.IMG?).
-				const std::string animName = "01PLTWLK.CFA";
+				// Humans use a single dead body image.
+				const int corpseItemIndex = 2;
+				const INFFile::FlatData *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
+				DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
+				const int corpseFlatTextureIndex = corpseFlat->textureIndex;
+				const auto &flatTextures = inf.getFlatTextures();
+				DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
+				std::string animName = String::toUppercase(flatTextures[corpseFlatTextureIndex].filename);
 
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(animName.c_str(), &cfa))
+				IMGFile img;
+				if (!img.init(animName.c_str()))
 				{
-					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
+					DebugLogError("Couldn't init .IMG file \"" + animName + "\".");
 					return false;
 				}
 
-				EntityAnimationData::State placeholderState = MakeAnimState(
+				EntityAnimationData::State deathState = MakeAnimState(
 					EntityAnimationData::StateType::Death,
-					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
-					CREATURE_ANIM_ATTACK_LOOP,
-					false);
+					HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME,
+					HUMAN_ANIM_ATTACK_LOOP,
+					animIsFlipped);
 
-				placeholderState.setTextureName(std::string(animName));
+				deathState.setTextureName(std::string(animName));
 
 				double width, height;
-				makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
+				makeHumanKeyframeDimensions(img.getWidth(), img.getHeight(), &width, &height);
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				placeholderState.addKeyframe(std::move(keyframe));
-				outDeathStates->push_back(std::move(placeholderState));
+				deathState.addKeyframe(std::move(keyframe));
+				outDeathStates->push_back(std::move(deathState));
 				return true;
 			}
 			else
