@@ -774,7 +774,7 @@ namespace
 		};
 
 		auto tryWriteDeathAnimStates = [&inf, &cfaCache, outDeathStates, &exeData, itemIndex, isFinalBoss,
-			isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
+			isCreature, isHuman, &makeCreatureKeyframeDimensions]()
 		{
 			const bool animIsFlipped = false;
 
@@ -854,8 +854,9 @@ namespace
 
 				deathState.setTextureName(std::string(animName));
 
-				double width, height;
-				makeHumanKeyframeDimensions(img.getWidth(), img.getHeight(), &width, &height);
+				// Human corpse is not affected by human scaling values.
+				const double width = static_cast<double>(img.getWidth()) / MIFFile::ARENA_UNITS;
+				const double height = static_cast<double>(img.getHeight()) / MIFFile::ARENA_UNITS;
 				const int textureID = 0;
 
 				EntityAnimationData::Keyframe keyframe(width, height, textureID);
