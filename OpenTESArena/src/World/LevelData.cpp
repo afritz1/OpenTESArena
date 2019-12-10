@@ -38,12 +38,16 @@ namespace
 	// with a creature .CFA file.
 	constexpr int FIRST_FLIPPED_ANIM_ID = 6;
 
+	// Animation values for static .DFA files.
+	constexpr double STATIC_ANIM_IDLE_SECONDS_PER_FRAME = 1.0 / 12.0;
+	const bool STATIC_ANIM_IDLE_LOOP = true;
+
 	// Animation values for creatures with .CFA files.
-	constexpr double CREATURE_ANIM_IDLE_SECONDS_PER_FRAME = 1.0 / 4.0;
-	constexpr double CREATURE_ANIM_LOOK_SECONDS_PER_FRAME = 1.0 / 4.0;
-	constexpr double CREATURE_ANIM_WALK_SECONDS_PER_FRAME = 1.0 / 8.0;
-	constexpr double CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME = 1.0 / 8.0;
-	constexpr double CREATURE_ANIM_DEATH_SECONDS_PER_FRAME = 1.0 / 4.0;
+	constexpr double CREATURE_ANIM_IDLE_SECONDS_PER_FRAME = 1.0 / 12.0;
+	constexpr double CREATURE_ANIM_LOOK_SECONDS_PER_FRAME = 1.0 / 8.0;
+	constexpr double CREATURE_ANIM_WALK_SECONDS_PER_FRAME = 1.0 / 12.0;
+	constexpr double CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME = 1.0 / 12.0;
+	constexpr double CREATURE_ANIM_DEATH_SECONDS_PER_FRAME = 1.0 / 12.0;
 	constexpr int CREATURE_ANIM_ATTACK_FRAME_INDEX = 10;
 	const bool CREATURE_ANIM_IDLE_LOOP = true;
 	const bool CREATURE_ANIM_LOOK_LOOP = false;
@@ -60,11 +64,11 @@ namespace
 	constexpr double HUMAN_ANIM_WALK_SECONDS_PER_FRAME = CREATURE_ANIM_WALK_SECONDS_PER_FRAME;
 	constexpr double HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME = CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME;
 	constexpr double HUMAN_ANIM_DEATH_SECONDS_PER_FRAME = CREATURE_ANIM_DEATH_SECONDS_PER_FRAME;
-	const bool HUMAN_ANIM_IDLE_LOOP = true;
-	const bool HUMAN_ANIM_WALK_LOOP = true;
-	const bool HUMAN_ANIM_ATTACK_LOOP = false;
-	const bool HUMAN_ANIM_DEATH_LOOP = false;
-	const std::vector<int> HumanAnimIndicesIdle = { 0 };
+	const bool HUMAN_ANIM_IDLE_LOOP = CREATURE_ANIM_IDLE_LOOP;
+	const bool HUMAN_ANIM_WALK_LOOP = CREATURE_ANIM_WALK_LOOP;
+	const bool HUMAN_ANIM_ATTACK_LOOP = CREATURE_ANIM_ATTACK_LOOP;
+	const bool HUMAN_ANIM_DEATH_LOOP = CREATURE_ANIM_DEATH_LOOP;
+	const std::vector<int> HumanAnimIndicesIdle = CreatureAnimIndicesIdle;
 	const std::vector<int> HumanAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
 
 	// Cache for .CFA/.DFA files referenced multiple times during entity loading.
@@ -339,7 +343,9 @@ namespace
 		};
 
 		EntityAnimationData::State animState = MakeAnimState(
-			EntityAnimationData::StateType::Idle, 1.0 / 12.0, true);
+			EntityAnimationData::StateType::Idle,
+			STATIC_ANIM_IDLE_SECONDS_PER_FRAME,
+			STATIC_ANIM_IDLE_LOOP);
 
 		// Determine how to populate the animation state with keyframes.
 		if (isDFA)
@@ -848,8 +854,8 @@ namespace
 
 				EntityAnimationData::State deathState = MakeAnimState(
 					EntityAnimationData::StateType::Death,
-					HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME,
-					HUMAN_ANIM_ATTACK_LOOP,
+					HUMAN_ANIM_DEATH_SECONDS_PER_FRAME,
+					HUMAN_ANIM_DEATH_LOOP,
 					animIsFlipped);
 
 				deathState.setTextureName(std::string(animName));
