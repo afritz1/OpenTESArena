@@ -89,6 +89,8 @@ private:
 
 	const std::vector<State> *findStateList(StateType stateType) const;
 public:
+	bool hasStateList(StateType stateType) const;
+
 	void addStateList(std::vector<State> &&stateList);
 	void removeStateList(StateType stateType);
 	void clear();
