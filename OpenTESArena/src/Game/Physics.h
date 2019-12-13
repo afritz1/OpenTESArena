@@ -4,7 +4,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/VoxelData.h"
-#include <OpenTESArena\src\Entities\EntityManager.h>
+#include "../Entities/EntityManager.h"
 
 // Static class for physics-related calculations like ray casting.
 
