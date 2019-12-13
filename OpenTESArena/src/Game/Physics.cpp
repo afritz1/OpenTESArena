@@ -5,10 +5,11 @@
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
+#include <OpenTESArena\src\Entities\Entity.h>
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direction, 
-	const Int3 &voxel, VoxelData::Facing facing, const Double2 &nearPoint,
-	const Double2 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 	Physics::Hit &hit)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -30,7 +31,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - rayStart).length(); // @todo: do in 3D.
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
 		hit.facing = facing;
@@ -55,12 +56,91 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	}
 	else if (voxelDataType == VoxelDataType::Diagonal)
 	{
-		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+		const VoxelData::DiagonalData& diagData = voxelData.diagonal;
 
 		// Continue the ray into the voxel and do line intersection.
+		double nextX = static_cast<double>(direction.x >= 0 ? voxel.x + 1 : voxel.x);
+		double nextY = static_cast<double>(direction.y >= 0 ? voxel.y + 1 : voxel.y);
+		double nextZ = static_cast<double>(direction.z >= 0 ? voxel.z + 1 : voxel.z);
+		double distX = abs(nextX - farPoint.x);
+		double distY = abs(nextY - (farPoint.y / ceilingHeight));
+		double distZ = abs(nextZ - farPoint.z);
+
+		double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
+		double tY = (direction.y == 0 ? FLT_MAX : distY / abs(direction.y));
+		double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+
+		Double3 nextPoint = farPoint;
+		int stepAxis = 0;
+		if (tX <= tY && tX <= tZ)
+			nextPoint = farPoint + (direction * tX);
+		else if (tY <= tX && tY <= tZ)
+		{
+			nextPoint = farPoint + (direction * tY);
+			stepAxis = 1;
+		}
+		else if (tZ <= tX && tZ <= tY)
+		{
+			nextPoint = farPoint + (direction * tZ);
+			stepAxis = 2;
+		}
+
 		const bool isRightDiag = diagData.type1;
 
-		// @todo.
+		// Check if the next point is above or below. That's a special case
+		if (nextPoint.x == floor(nextPoint.x) || nextPoint.z == floor(nextPoint.z))
+		{
+			// We can simplify this to a ray/wall intersection in the XZ plane
+			double A = isRightDiag ? -1 : 1;
+			double B = isRightDiag ? 1 : 0;
+
+			double dzdx = -direction.z / direction.x;
+			double z0 = -(farPoint.x - voxel.x) * dzdx;
+
+			double rayA, rayB;
+
+			if (floor(farPoint.x) == farPoint.x)
+			{
+				z0 = (farPoint.z - voxel.z);
+			}
+
+			rayA = dzdx;
+			rayB = z0;
+
+			double intersection = (rayB - B) / (A - rayA);
+			if (intersection >= 0 && intersection <= 1)
+			{
+				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
+				hit.t = (nearPoint - hitPoint).length();
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+		else
+		{
+			Double3 cornerA = Double3(isRightDiag ? 0 : 1, 0, 0);
+			Double3 cornerB = Double3(isRightDiag ? 1 : 0, 0, 1);
+
+			Double3 nextPointProjection = Double3(nextPoint.x - floor(nextPoint.x), 0, nextPoint.z - floor(nextPoint.z));
+			Double3 farPointProjection = farPointProjection = Double3(farPoint.x - voxel.x, 0, farPoint.z - voxel.z);
+
+			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
+			{
+				// @todo: calculate the exact point of intersection between the ray and the quad
+				hit.t = (nearPoint - farPoint).length() + distY;
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+
 		return false;
 	}
 	else if (voxelDataType == VoxelDataType::TransparentWall)
@@ -80,7 +160,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+			hit.t = (nearPoint - rayStart).length(); // @todo: do in 3D.
 			hit.point = rayStart + (direction * hit.t);
 			hit.voxel = voxel;
 			hit.facing = facing;
@@ -132,8 +212,8 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 }
 
 bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
-	const Int3 &voxel, VoxelData::Facing facing, const Double2 &nearPoint,
-	const Double2 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
+	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
@@ -154,7 +234,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
 		hit.facing = facing;
@@ -164,17 +244,116 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	}
 	else if (voxelDataType == VoxelDataType::Floor)
 	{
-		// @todo: only possible with 3D-DDA.
-		return false;
+		hit.t = (nearPoint - farPoint).length();
+		hit.point = rayStart + (direction * hit.t);
+		hit.voxel = voxel;
+		hit.facing = facing;
+		hit.type = Hit::Type::Voxel;
+		hit.voxelID = voxelID;
+		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Ceiling)
 	{
-		// @todo: only possible with 3D-DDA.
-		return false;
+		hit.t = (nearPoint - farPoint).length();
+		hit.point = rayStart + (direction * hit.t);
+		hit.voxel = voxel;
+		hit.facing = facing;
+		hit.type = Hit::Type::Voxel;
+		hit.voxelID = voxelID;
+		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Raised)
 	{
-		// @todo: check ceiling if above, wall/ceiling/floor if inside, and floor if below.
+		// check ceiling if above, wall/ceiling/floor if inside, and floor if below.
+		const VoxelData::RaisedData& raisedData = voxelData.raised;
+
+		const double voxelHeight = ceilingHeight;
+		const double voxelYReal = static_cast<double>(voxel.y)* voxelHeight;
+
+		const Double3 nearCeilingPoint(
+			farPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			farPoint.z);
+		const Double3 nearFloorPoint(
+			farPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			farPoint.z);
+
+		if (farPoint.y > nearCeilingPoint.y)
+		{
+			// We're looking from above the raised platform
+			// We need to do 1 more step forward to see if the ray crosses below the top of the raised platform by the time it reaches the next voxel in the grid
+			double nextX = static_cast<double>(direction.x >= 0 ? voxel.x + 1 : voxel.x);
+			double nextZ = static_cast<double>(direction.z >= 0 ? voxel.z + 1 : voxel.z);
+			double distX = abs(nextX - farPoint.x);
+			double distZ = abs(nextZ - farPoint.z);
+
+			double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
+			double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+
+			Double3 nextPoint = farPoint;
+			if (tX <= tZ)
+				nextPoint = farPoint + (direction * tX);
+			else if(tZ <= tX)
+				nextPoint = farPoint + (direction * tZ);
+			
+			if (nextPoint.y <= nearCeilingPoint.y)
+			{
+				const double s = (nearCeilingPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
+				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
+
+				hit.t = (nearPoint - hitPoint).length();
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+		else if (farPoint.y < nearFloorPoint.y)
+		{
+			// We're looking from below the raised platform
+			// We need to do 1 more step forward to see if the ray crosses above the bottom of the raised platform by the time it reaches the next voxel in the grid
+			double nextX = static_cast<double>(direction.x >= 0 ? voxel.x + 1 : voxel.x);
+			double nextZ = static_cast<double>(direction.z >= 0 ? voxel.z + 1 : voxel.z);
+			double distX = abs(nextX - farPoint.x);
+			double distZ = abs(nextZ - farPoint.z);
+
+			double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
+			double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+
+			Double3 nextPoint = farPoint;
+			if (tX <= tZ)
+				nextPoint = farPoint + (direction * tX);
+			else if (tZ <= tX)
+				nextPoint = farPoint + (direction * tZ);
+			
+			if (nextPoint.y >= nearFloorPoint.y)
+			{
+				const double s = (nearFloorPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
+				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
+
+				hit.t = (nearPoint - hitPoint).length();
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+		else
+		{
+			// The ray collided with the side of the voxel, so we know it was clicked.
+			hit.t = (nearPoint - farPoint).length();
+			hit.point = rayStart + (direction * hit.t);
+			hit.voxel = voxel;
+			hit.facing = facing;
+			hit.type = Hit::Type::Voxel;
+			hit.voxelID = voxelID;
+			return true;
+		}
 		return false;
 	}
 	else if (voxelDataType == VoxelDataType::Diagonal)
@@ -182,15 +361,94 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
 		// Continue the ray into the voxel and do line intersection.
+		double nextX = static_cast<double>(direction.x >= 0 ? voxel.x + 1 : voxel.x);
+		double nextY = static_cast<double>(direction.y >= 0 ? voxel.y + 1 : voxel.y);
+		double nextZ = static_cast<double>(direction.z >= 0 ? voxel.z + 1 : voxel.z);
+		double distX = abs(nextX - farPoint.x);
+		double distY = abs(nextY - (farPoint.y / ceilingHeight));
+		double distZ = abs(nextZ - farPoint.z);
+
+		double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
+		double tY = (direction.y == 0 ? FLT_MAX : distY / abs(direction.y));
+		double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+
+		Double3 nextPoint = farPoint;
+		int stepAxis = 0;
+		if (tX <= tY && tX <= tZ)
+			nextPoint = farPoint + (direction * tX);
+		else if (tY <= tX && tY <= tZ)
+		{
+			nextPoint = farPoint + (direction * tY);
+			stepAxis = 1;
+		}
+		else if (tZ <= tX && tZ <= tY)
+		{
+			nextPoint = farPoint + (direction * tZ);
+			stepAxis = 2;
+		}
+
 		const bool isRightDiag = diagData.type1;
 
-		// @todo.
+		// Check if the next point is above or below. That's a special case
+		if (nextPoint.x == floor(nextPoint.x) || nextPoint.z == floor(nextPoint.z))
+		{
+			// We can simplify this to a ray/wall intersection in the XZ plane
+			double A = isRightDiag ? -1 : 1;
+			double B = isRightDiag ? 1 : 0;
+
+			double dzdx = -direction.z / direction.x;
+			double z0 = -(farPoint.x - voxel.x) * dzdx;
+
+			double rayA, rayB;
+
+			if (floor(farPoint.x) == farPoint.x)
+			{
+				z0 = (farPoint.z - voxel.z);
+			}
+
+			rayA = dzdx;
+			rayB = z0;
+
+			double intersection = (rayB - B) / (A - rayA);
+			if (intersection >= 0 && intersection <= 1)
+			{
+				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
+				hit.t = (nearPoint - hitPoint).length();
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+		else
+		{
+			Double3 cornerA = Double3(isRightDiag ? 0 : 1, 0, 0);
+			Double3 cornerB = Double3(isRightDiag ? 1 : 0, 0, 1);
+
+			Double3 nextPointProjection = Double3(nextPoint.x - floor(nextPoint.x), 0, nextPoint.z - floor(nextPoint.z));
+			Double3 farPointProjection = farPointProjection = Double3(farPoint.x - voxel.x, 0, farPoint.z - voxel.z);
+			
+			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
+			{
+				// @todo: calculate the exact point of intersection between the ray and the quad
+				hit.t = (nearPoint - farPoint).length() + distY;
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
+
 		return false;
 	}
 	else if (voxelDataType == VoxelDataType::TransparentWall)
 	{
 		// Transparent walls are hit when the camera is outside of their voxel.
-		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - rayStart).length(); // @todo: do in 3D.
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
 		hit.facing = facing;
@@ -210,7 +468,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+			hit.t = (nearPoint - rayStart).length(); // @todo: do in 3D.
 			hit.point = rayStart + (direction * hit.t);
 			hit.voxel = voxel;
 			hit.facing = facing;
@@ -255,7 +513,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		// state, but for now it will assume closed doors only, for simplicity.
 
 		// Cheap/incomplete solution: assume closed, treat like a wall, always a hit.
-		hit.t = (nearPoint - Double2(rayStart.x, rayStart.z)).length(); // @todo: do in 3D.
+		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
 		hit.facing = facing;
@@ -292,7 +550,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
-	const VoxelGrid &voxelGrid, Physics::Hit &hit)
+	const VoxelGrid &voxelGrid, const EntityManager& entityManager, Physics::Hit &hit)
 {
 	const Double3 voxelReal(
 		std::floor(rayStart.x),
@@ -303,183 +561,240 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 		static_cast<int>(voxelReal.y),
 		static_cast<int>(voxelReal.z));
 
-	const Double2 directionXZ = Double2(direction.x, direction.z).normalized();
+	const Double3 dirSquared(
+		direction.x * direction.x,
+		direction.y * direction.y,
+		direction.z * direction.z);
 
-	// @todo: implement support for actual 3D-DDA (instead of just in XZ plane).
-	const Double3 directionXZ_3D(directionXZ.x, 0.0, directionXZ.y);
+	// Height (Y size) of each voxel in the voxel grid. Some levels in Arena have
+	// "tall" voxels, so the voxel height must be a variable.
+	const double voxelHeight = ceilingHeight;
 
-	const double dirX = directionXZ.x;
-	const double dirZ = directionXZ.y;
-	const double dirXSquared = dirX * dirX;
-	const double dirZSquared = dirZ * dirZ;
+	// A custom variable that represents the Y "floor" of the current voxel.
+	const double eyeYRelativeFloor = std::floor(rayStart.y / voxelHeight) * voxelHeight;
 
-	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
-	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
+	// Calculate delta distances along each axis. These determine how far
+	// the ray has to go until the next X, Y, or Z side is hit, respectively.
+	const Double3 deltaDist(
+		std::sqrt(1.0 + (dirSquared.y / dirSquared.x) + (dirSquared.z / dirSquared.x)),
+		std::sqrt(1.0 + (dirSquared.x / dirSquared.y) + (dirSquared.z / dirSquared.y)),
+		std::sqrt(1.0 + (dirSquared.x / dirSquared.z) + (dirSquared.y / dirSquared.z)));
 
-	const bool nonNegativeDirX = dirX >= 0.0;
-	const bool nonNegativeDirZ = dirZ >= 0.0;
+	// Booleans for whether a ray component is non-negative. Used with step directions 
+	// and texture coordinates.
+	const bool nonNegativeDirX = direction.x >= 0.0;
+	const bool nonNegativeDirY = direction.y >= 0.0;
+	const bool nonNegativeDirZ = direction.z >= 0.0;
 
-	int stepX, stepZ;
-	double sideDistX, sideDistZ;
+	// Calculate step directions and initial side distances.
+	Int3 step;
+	Double3 sideDist;
 	if (nonNegativeDirX)
 	{
-		stepX = 1;
-		sideDistX = (voxelReal.x + 1.0 - rayStart.x) * deltaDistX;
+		step.x = 1;
+		sideDist.x = (voxelReal.x + 1.0 - rayStart.x) * deltaDist.x;
 	}
 	else
 	{
-		stepX = -1;
-		sideDistX = (rayStart.x - voxelReal.x) * deltaDistX;
+		step.x = -1;
+		sideDist.x = (rayStart.x - voxelReal.x) * deltaDist.x;
+	}
+
+	if (nonNegativeDirY)
+	{
+		step.y = 1;
+		sideDist.y = (eyeYRelativeFloor + voxelHeight - rayStart.y) * deltaDist.y;
+	}
+	else
+	{
+		step.y = -1;
+		sideDist.y = (rayStart.y - eyeYRelativeFloor) * deltaDist.y;
 	}
 
 	if (nonNegativeDirZ)
 	{
-		stepZ = 1;
-		sideDistZ = (voxelReal.z + 1.0 - rayStart.z) * deltaDistZ;
+		step.z = 1;
+		sideDist.z = (voxelReal.z + 1.0 - rayStart.z) * deltaDist.z;
 	}
 	else
 	{
-		stepZ = -1;
-		sideDistZ = (rayStart.z - voxelReal.z) * deltaDistZ;
+		step.z = -1;
+		sideDist.z = (rayStart.z - voxelReal.z) * deltaDist.z;
 	}
 
-	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
-	// voxel face. The first Z distance is a special case, so it's brought outside the 
-	// DDA loop.
-	double zDistance;
-	VoxelData::Facing facing;
+	// Make a copy of the initial side distances. They are used for the special case 
+	// of the ray ending in the same voxel it started in.
+	const Double3 initialSideDist = sideDist;
 
-	// Verify that the initial voxel coordinate is within the world bounds.
-	bool voxelIsValid =
-		(voxel.x >= 0) &&
-		(voxel.y >= 0) &&
-		(voxel.z >= 0) &&
-		(voxel.x < voxelGrid.getWidth()) &&
-		(voxel.y < voxelGrid.getHeight()) &&
-		(voxel.z < voxelGrid.getDepth());
+	// Make a copy of the step magnitudes, converted to doubles.
+	const Double3 stepReal(
+		static_cast<double>(step.x),
+		static_cast<double>(step.y),
+		static_cast<double>(step.z));
 
-	if (voxelIsValid)
+	// Get initial voxel coordinates.
+	Int3 cell = voxel;
+
+	// ID of a hit voxel. Zero (air) by default.
+	uint16_t hitID = 0;
+
+	// Axis of a hit voxel's side. X by default.
+	enum class Axis { X, Y, Z };
+	Axis axis = Axis::X;
+
+	// Distance squared (in voxels) that the ray has stepped. Square roots are
+	// too slow to use in the DDA loop, so this is used instead.
+	// - When using variable-sized voxels, this may be calculated differently.
+	double cellDistSquared = 0.0;
+
+	// Offset values for which corner of a voxel to compare the distance 
+	// squared against. The correct corner to use is important when culling
+	// shapes at max view distance.
+	const Double3 startCellWithOffset(
+		voxelReal.x + ((1.0 + stepReal.x) / 2.0),
+		eyeYRelativeFloor + (((1.0 + stepReal.y) / 2.0) * voxelHeight),
+		voxelReal.z + ((1.0 + stepReal.z) / 2.0));
+	const Double3 cellOffset(
+		(1.0 - stepReal.x) / 2.0,
+		((1.0 - stepReal.y) / 2.0) * voxelHeight,
+		(1.0 - stepReal.z) / 2.0);
+
+	// Get dimensions of the voxel grid.
+	const int gridWidth = voxelGrid.getWidth();
+	const int gridHeight = voxelGrid.getHeight();
+	const int gridDepth = voxelGrid.getDepth();
+
+	// Check world bounds on the start voxel. Bounds are partially recalculated 
+	// for axes that the DDA loop is stepping through.
+	bool voxelIsValid = (cell.x >= 0) && (cell.y >= 0) && (cell.z >= 0) &&
+		(cell.x < gridWidth) && (cell.y < gridHeight) && (cell.z < gridDepth);
+
+	// Step through the voxel grid while the current coordinate is valid and
+	// the total voxel distance stepped is less than the view distance.
+	// (Note that the "voxel distance" is not the same as "actual" distance.)
+	const uint16_t* voxels = voxelGrid.getVoxels();
+	while (voxelIsValid && (cellDistSquared < 100)) // Arbitrary value
 	{
-		// Decide how far the wall is, and which voxel face was hit.
-		if (sideDistX < sideDistZ)
+		// Get the index of the current voxel in the voxel grid.
+		const int gridIndex = cell.x + (cell.y * gridWidth) +
+			(cell.z * gridWidth * gridHeight);
+
+		// Check if the current voxel is solid.
+		const uint16_t voxelID = voxels[gridIndex];
+
+		if (voxelID > 0)
 		{
-			zDistance = sideDistX;
-			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX :
-				VoxelData::Facing::PositiveX;
+			// Boolean for whether the ray ended in the same voxel it started in.
+			const bool stoppedInFirstVoxel = cell == voxel;
+
+			// Get the distance from the camera to the hit point. It is a special case
+			// if the ray stopped in the first voxel.
+			double distance;
+			VoxelData::Facing facing;
+			if (stoppedInFirstVoxel)
+			{
+				if ((initialSideDist.x < initialSideDist.y) &&
+					(initialSideDist.x < initialSideDist.z))
+				{
+					distance = initialSideDist.x;
+					axis = Axis::X;
+				}
+				else if (initialSideDist.y < initialSideDist.z)
+				{
+					distance = initialSideDist.y;
+					axis = Axis::Y;
+				}
+				else
+				{
+					distance = initialSideDist.z;
+					axis = Axis::Z;
+				}
+			}
+			else
+			{
+				const size_t axisIndex = static_cast<size_t>(axis);
+
+				// Assign to distance based on which axis was hit.
+				if (axis == Axis::X)
+				{
+					distance = (static_cast<double>(cell.x) - rayStart.x +
+						((1.0 - stepReal.x) / 2.0)) / direction.x;
+					facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : VoxelData::Facing::PositiveX;
+				}
+				else if (axis == Axis::Y)
+				{
+					distance = ((static_cast<double>(cell.y)* voxelHeight) - rayStart.y +
+						(((1.0 - stepReal.y) / 2.0) * voxelHeight)) / direction.y;
+					facing = VoxelData::Facing::NegativeZ; // TODO: There are no facing values for Y
+				}
+				else
+				{
+					distance = (static_cast<double>(cell.z) - rayStart.z +
+						((1.0 - stepReal.z) / 2.0)) / direction.z;
+					facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : VoxelData::Facing::PositiveZ;
+				}
+			}
+
+			Double3 rayEnd = rayStart + (direction * distance);
+
+			hitID = voxelID;
+			bool success = false;
+			if (hitID > 0)
+			{
+				if (stoppedInFirstVoxel)
+				{
+					success = testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
+				}
+				else
+				{
+					success = testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
+				}
+			}
+
+			if (success) {
+				return true;
+			}
+		}
+
+		if ((sideDist.x < sideDist.y) && (sideDist.x < sideDist.z))
+		{
+			sideDist.x += deltaDist.x;
+			cell.x += step.x;
+			axis = Axis::X;
+			voxelIsValid &= (cell.x >= 0) && (cell.x < gridWidth);
+		}
+		else if (sideDist.y < sideDist.z)
+		{
+			sideDist.y += deltaDist.y;
+			cell.y += step.y;
+			axis = Axis::Y;
+			voxelIsValid &= (cell.y >= 0) && (cell.y < gridHeight);
 		}
 		else
 		{
-			zDistance = sideDistZ;
-			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ :
-				VoxelData::Facing::PositiveZ;
+			sideDist.z += deltaDist.z;
+			cell.z += step.z;
+			axis = Axis::Z;
+			voxelIsValid &= (cell.z >= 0) && (cell.z < gridDepth);
 		}
 
-		// The initial near point is at the start point.
-		const Double2 initialNearPoint(rayStart.x, rayStart.z);
-
-		// The initial far point is the voxel hit. Depending on the voxel type this may
-		// or may not actually be on the side of the voxel (i.e., for diagonal walls).
-		const Double2 initialFarPoint(
-			rayStart.x + (dirX * zDistance),
-			rayStart.z + (dirZ * zDistance));
-
-		// Check the initial voxel.
-		const bool success = Physics::testInitialVoxelRay(rayStart, directionXZ_3D, voxel,
-			facing, initialNearPoint, initialFarPoint, ceilingHeight, voxelGrid, hit);
-
-		if (success)
-		{
-			// The ray hit something in the first block, so it can return early.
-			return true;
-		}
-	}
-	
-	// The current voxel coordinate in the DDA loop.
-	Int3 cell(voxel.x, voxel.y, voxel.z);
-
-	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
-	// distance for the current edge point.
-	auto doDDAStep = [&rayStart, &voxelGrid, dirX, dirZ, &sideDistX, &sideDistZ, &cell,
-		&facing, &voxelIsValid, &zDistance, deltaDistX, deltaDistZ, stepX, stepZ,
-		nonNegativeDirX, nonNegativeDirZ]()
-	{
-		if (sideDistX < sideDistZ)
-		{
-			sideDistX += deltaDistX;
-			cell.x += stepX;
-			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX :
-				VoxelData::Facing::PositiveX;
-			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
-		}
-		else
-		{
-			sideDistZ += deltaDistZ;
-			cell.z += stepZ;
-			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ :
-				VoxelData::Facing::PositiveZ;
-			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
-		}
-
-		const bool onXAxis = (facing == VoxelData::Facing::PositiveX) ||
-			(facing == VoxelData::Facing::NegativeX);
-
-		// Update the Z distance depending on which axis was stepped with.
-		if (onXAxis)
-		{
-			zDistance = (static_cast<double>(cell.x) -
-				rayStart.x + static_cast<double>((1 - stepX) / 2)) / dirX;
-		}
-		else
-		{
-			zDistance = (static_cast<double>(cell.z) -
-				rayStart.z + static_cast<double>((1 - stepZ) / 2)) / dirZ;
-		}
-	};
-
-	// Step forward in the grid once to leave the initial voxel and update the Z distance.
-	doDDAStep();
-
-	// Step through the voxel grid while the current coordinate is valid and no
-	// intersection has occurred.
-	while (voxelIsValid)
-	{
-		// Store the cell coordinates, axis, and Z distance for wall rendering. The
-		// loop needs to do another DDA step to calculate the far point.
-		const int savedCellX = cell.x;
-		const int savedCellY = cell.y;
-		const int savedCellZ = cell.z;
-		const VoxelData::Facing savedFacing = facing;
-		const double wallDistance = zDistance;
-
-		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
-		doDDAStep();
-
-		const Double2 nearPoint(
-			rayStart.x + (dirX * wallDistance),
-			rayStart.z + (dirZ * wallDistance));
-		const Double2 farPoint(
-			rayStart.x + (dirX * zDistance),
-			rayStart.z + (dirZ * zDistance));
-
-		// Check voxel.
-		const Int3 savedCell(savedCellX, savedCellY, savedCellZ);
-		const bool success = Physics::testVoxelRay(rayStart, directionXZ_3D, savedCell,
-			savedFacing, nearPoint, farPoint, ceilingHeight, voxelGrid, hit);
-
-		if (success)
-		{
-			// The ray hit something.
-			return true;
-		}
+		// Refresh how far the current cell is from the start cell, squared.
+		// The "offsets" move each point to the correct corner for each voxel
+		// so that the stepping stops correctly at max view distance.
+		const Double3 cellDiff(
+			(static_cast<double>(cell.x) + cellOffset.x) - startCellWithOffset.x,
+			(static_cast<double>(cell.y) + cellOffset.y) - startCellWithOffset.y,
+			(static_cast<double>(cell.z) + cellOffset.z) - startCellWithOffset.z);
+		cellDistSquared = (cellDiff.x * cellDiff.x) + (cellDiff.y * cellDiff.y) +
+			(cellDiff.z * cellDiff.z);
 	}
 
 	// The ray exited the voxel grid without hitting anything.
 	return false;
 }
 
-bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid,
-	Physics::Hit &hit)
+bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const EntityManager& entityManager, Physics::Hit &hit)
 {
 	const double ceilingHeight = 1.0;
-	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, hit);
+	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, entityManager, hit);
 }

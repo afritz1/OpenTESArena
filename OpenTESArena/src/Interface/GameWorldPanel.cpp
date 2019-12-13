@@ -1372,6 +1372,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
+	auto &entityManager = level.getEntityManager();
 	const double ceilingHeight = level.getCeilingHeight();
 
 	const Double3 rayStart = player.getPosition();
@@ -1388,9 +1389,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 		// Mouse position percents across the screen. Add 0.50 to sample at the center
 		// of the pixel.
-		const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
+		const double mouseXPercent = static_cast<double>(nativePoint.x) /
 			static_cast<double>(viewWidth);
-		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
+		const double mouseYPercent = static_cast<double>(nativePoint.y) /
 			static_cast<double>(viewHeight);
 
 		// Zoom of the camera, based on vertical field of view.
@@ -1403,17 +1404,27 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from
 		// screen space to world space?
-		const Double3 forward = player.getDirection();
 		const Double3 &right = player.getRight();
-		const Double3 up = right.cross(forward).normalized();
+		const Double3 forward = [&right, &player, &game, &zoom]() {
+			// Calculate the direction forward towards the horizon. This will be the basis for our forward vector, plus the yShear modifier
+			const Double3 straightAhead = Double3::UnitY.cross(right).normalized();
 
+			// Get the player's forward direction to use for the yShearing calculation
+			const Double3 direction = player.getDirection();
+			const double yShear = std::tan(direction.getYAngleRadians())* zoom * 0.96875; // This value is 31/32, and for some reason gives us better accuracy when clicking in modern interface
+
+			// Combine the forward-towards-horizon vector with the shearing modifier
+			return (straightAhead + Double3(0, yShear, 0));
+		}();
+		const Double3 up = right.cross(forward).normalized();
+		
 		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
 		// of the screen.
 		const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
 
 		// @todo: include SoftwareRenderer::TALL_PIXEL_RATIO here? Maybe it needs to do
 		// a screen-to-world projection of the y-shearing?
-		const double upPercent = (mouseYPercent * 2.0) - 1.0;
+		const double upPercent = ((mouseYPercent * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
 
 		const Double3 forwardComponent = forward * zoom;
 		const Double3 rightComponent = right * rightPercent;
@@ -1422,7 +1433,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	}();
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager, hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -1440,15 +1451,18 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 			if (hit.t <= maxSelectionDist)
 			{
-				if (voxelData.dataType == VoxelDataType::Wall)
+				if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal)
 				{
 					if (!debugFadeVoxel)
 					{
-						const VoxelData::WallData &wallData = voxelData.wall;
-
-						if (wallData.isMenu())
+						if (voxelData.dataType == VoxelDataType::Wall)
 						{
-							this->handleWorldTransition(hit, wallData.menuID);
+							const VoxelData::WallData& wallData = voxelData.wall;
+
+							if (wallData.isMenu())
+							{
+								this->handleWorldTransition(hit, wallData.menuID);
+							}
 						}
 					}
 					else
