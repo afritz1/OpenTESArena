@@ -6,12 +6,6 @@
 
 namespace MathUtils
 {
-	template<typename T>
-	T clamp(T x, T min, T max) 
-	{
-		return (x < min) ? min : (x > max) ? max : x;
-	}
-
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	double fullAtan2(double y, double x);
 

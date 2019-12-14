@@ -557,6 +557,75 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
 	const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
+	hit.t = DBL_MAX; // Set the hit distance to MAX. This will ensure that if we don't hit a voxel but we hit an entity the distance can still be used
+
+	std::unordered_map<Int3, std::vector<EntityManager::EntityVisibilityData>> voxelEntityMap;
+
+#pragma region build Voxel->Entity map
+
+	// Get all the entities
+	std::vector<const Entity*> entities(entityManager.getTotalCount());
+	const int entityCount = entityManager.getTotalEntities(
+		entities.data(),
+		static_cast<int>(entities.size()));
+
+	// Each flat shares the same axes. The forward direction always faces opposite to 
+	// the camera direction.
+	const Double3 flatForward = Double3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
+	const Double3 flatUp = Double3::UnitY;
+	const Double3 flatRight = flatForward.cross(flatUp).normalized();
+
+	const Double2 eye2D(rayStart.x, rayStart.z);
+	const Double2 cameraDir(cameraForward.x, cameraForward.z);
+
+	for (int i = 0; i < entityCount; i++)
+	{
+		const Entity& entity = *entities[i];
+		EntityManager::EntityVisibilityData visData;
+
+		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
+
+		// Use a bounding box to determine which voxels the entity could be in
+		// Start with a bounding cylinder
+		float radius = visData.keyframe.getWidth() / 2;
+		float height = visData.keyframe.getHeight();
+
+		// Convert the bounding cylinder to an axis-aligned bounding box
+		float minX = visData.flatPosition.x - radius;
+		float maxX = visData.flatPosition.x + radius;
+		float minY = visData.flatPosition.y;
+		float maxY = visData.flatPosition.y + height;
+		float minZ = visData.flatPosition.z - radius;
+		float maxZ = visData.flatPosition.z + radius;
+		
+		// Only iterate over the specific voxels that the entity could be in (at least partially). This loop should always hit at least 1 voxel
+		for (int z = static_cast<int>(floor(minZ)); z <= static_cast<int>(floor(maxZ)); z++)
+		{
+			for (int y = static_cast<int>(floor(minY)); y <= static_cast<int>(floor(maxY)); y++)
+			{
+				for (int x = static_cast<int>(floor(minX)); x <= static_cast<int>(floor(maxX)); x++)
+				{
+					// Create the voxel and entity list for the map
+					Int3 voxel = Int3(x, y, z);
+					std::vector<EntityManager::EntityVisibilityData> entityList;
+
+					// Check if a list already exists for this voxel. If it does, then get that one
+					auto iter = voxelEntityMap.find(voxel);
+					if (iter != voxelEntityMap.end())
+						entityList = iter->second;
+					
+					// Add the entity to the list
+					entityList.push_back(visData);
+
+					// Update the list in the map
+					voxelEntityMap.insert_or_assign(voxel, entityList);
+				}
+			}
+		}
+	}
+
+#pragma endregion build Voxel->Entity map
+
 #pragma region Ray Cast Voxels
 
 	const Double3 voxelReal(
@@ -680,13 +749,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	// the total voxel distance stepped is less than the view distance.
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
 	const uint16_t* voxels = voxelGrid.getVoxels();
-	bool voxelSelected = false;
+
 	while (voxelIsValid && (cellDistSquared < 100)) // Arbitrary value
 	{
 		// Get the index of the current voxel in the voxel grid.
 		const int gridIndex = cell.x + (cell.y * gridWidth) +
 			(cell.z * gridWidth * gridHeight);
 
+#pragma region Ray Test this voxel
 		// Check if the current voxel is solid.
 		const uint16_t voxelID = voxels[gridIndex];
 
@@ -751,22 +821,107 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 			{
 				if (stoppedInFirstVoxel)
 				{
-					success = testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
+					testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
 				}
 				else
 				{
-					success = testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
+					testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd, ceilingHeight, voxelGrid, hit);
 				}
 			}
+		}
 
-			if (success) {
-				voxelSelected = true;
-				// We can exit the while loop now. We don't want to return from the function
-				// because we've already found the selected voxel, but we haven't checked any
-				// entities yet.
-				break;
+#pragma endregion Ray Test this voxel
+
+#pragma region Ray Test any entities that cross this voxel
+
+		// Check if there are any entites that cross the current voxel
+		auto iter = voxelEntityMap.find(cell);
+		if (iter != voxelEntityMap.end())
+		{
+			// Iterate over all the entities that cross this voxel and ray test them
+			for (auto it = iter->second.begin(); it != iter->second.end(); it++)
+			{
+				const EntityManager::EntityVisibilityData& visData = *it;
+				const Entity& entity = *visData.entity;
+				const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+					
+				const Double2 flatPosition2D(
+					visData.flatPosition.x,
+					visData.flatPosition.z);
+
+				// Check if the flat is somewhere in front of the camera.
+				const Double2 flatEyeDiff = flatPosition2D - eye2D;
+				const double flatEyeDiffLen = flatEyeDiff.length();
+
+				if (flatEyeDiffLen < hit.t)
+				{
+					const double flatWidth = visData.keyframe.getWidth();
+					const double flatHeight = visData.keyframe.getHeight();
+					const double flatHalfWidth = flatWidth * 0.50;
+
+					// For theta being the angle between the +Z direction (sprite normal, unrotated)
+					// and the flatForward direction, calculate sine and cosine of theta
+					double cosTheta = flatForward.dot(Double3::UnitZ);
+					double sinTheta = flatForward.dot(Double3::UnitX);
+
+					// Generate a (rotated, translated) quad that represents the flat's orientation in 3D space
+					Matrix4d spriteRotation = Matrix4d::yRotation(-atan2(sinTheta, cosTheta));
+					Matrix4d spriteTranslation = Matrix4d::translation(visData.flatPosition.x, visData.flatPosition.y, visData.flatPosition.z);
+
+					Matrix4d spriteTransform = spriteTranslation * spriteRotation;
+
+					Double4 vertices4[] = {
+						spriteTransform * Double4(-flatWidth / 2, 0, 0, 1),
+						spriteTransform * Double4(flatWidth / 2, 0, 0, 1),
+						spriteTransform * Double4(flatWidth / 2, flatHeight, 0, 1),
+						spriteTransform * Double4(-flatWidth / 2, flatHeight, 0, 1)
+					};
+
+					Double3 vertices3[] = {
+						Double3(vertices4[0].x, vertices4[0].y, vertices4[0].z),
+						Double3(vertices4[1].x, vertices4[1].y, vertices4[1].z),
+						Double3(vertices4[2].x, vertices4[2].y, vertices4[2].z),
+						Double3(vertices4[3].x, vertices4[3].y, vertices4[3].z)
+					};
+
+					// @todo: Do a ray test to see if the ray intersects.
+					Double3 intersection;
+					if (MathUtils::RayQuadIntersection(rayStart, direction, vertices3, intersection))
+					{
+						Double3 u = (vertices3[2] - vertices3[3]);
+						Double3 v = (vertices3[0] - vertices3[3]);
+
+						// Get the texture coordinates
+						Double2 uv = Double2((intersection - vertices3[3]).dot(u.normalized()) / u.length(),
+							(intersection - vertices3[3]).dot(v.normalized()) / v.length());
+
+						// @todo: check the texel for these coordinates and determine if it's fully transparent. If so, then the ray did not REALLY intersect the entity
+						// This will be difficult since all the texture info belongs to the Software Renderer. I might just have to add a function to the software renderer
+						// check if a specific texture coordinate is fully transparent
+						double r, g, b, a;
+						renderer.getFlatTexel(uv, entityData.getFlatIndex(), visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType, r, g, b, a);
+
+						// If the a == 0, then we clicked on a transparent texel
+						if (a > 0)
+						{
+							double distance = (intersection - rayStart).length();
+							if (distance < hit.t)
+							{
+								hit.entityID = entity.getID();
+								hit.type = Physics::Hit::Type::Entity;
+								hit.point = intersection;
+								hit.t = distance;
+							}
+						}
+					}
+				}
 			}
 		}
+
+#pragma endregion Ray Test any entities that cross this voxel
+
+		if (hit.t != DBL_MAX)
+			break;
 
 		if ((sideDist.x < sideDist.y) && (sideDist.x < sideDist.z))
 		{
@@ -801,203 +956,10 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 			(cellDiff.z * cellDiff.z);
 	}
 
-#pragma endregion Ray Cast Voxels
+#pragma endregion Ray Cast Voxels and Entities
 
-#pragma region Ray Cast Entities
-
-	bool entitySelected = false;
-
-	// Get all the entities
-	std::vector<const Entity*> entities(entityManager.getTotalCount());
-	const int entityCount = entityManager.getTotalEntities(
-		entities.data(),
-		static_cast<int>(entities.size()));
-
-	// Each flat shares the same axes. The forward direction always faces opposite to 
-	// the camera direction.
-	const Double3 flatForward = Double3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
-	const Double3 flatUp = Double3::UnitY;
-	const Double3 flatRight = flatForward.cross(flatUp).normalized();
-
-	const Double2 eye2D(rayStart.x, rayStart.z);
-	const Double2 cameraDir(cameraForward.x, cameraForward.z);
-
-	// Iterate over the entities checking to see if there's one that the ray intersects that's closer than the selected voxel, if a voxel was even selected
-	for (auto i = 0; i < entityCount; i++)
-	{
-		const Entity& entity = *entities[i];
-		const EntityData& entityData = *entityManager.getEntityData(entity.getDataIndex());
-		const EntityAnimationData& entityAnimData = entityData.getAnimationData();
-
-		// Get active state.
-		const EntityAnimationData::Instance& animInstance = entity.getAnimation();
-		const std::vector<EntityAnimationData::State>& stateList = animInstance.getStateList(entityAnimData);
-		const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
-
-		// Calculate state index based on entity direction relative to camera.
-		const double animAngle = [&eye2D, &cameraDir, &entity, stateCount]()
-		{
-			if (entity.getEntityType() == EntityType::Static)
-			{
-				// Static entities always face the camera.
-				return 0.0;
-			}
-			else if (entity.getEntityType() == EntityType::Dynamic)
-			{
-				// Dynamic entities are angle-dependent.
-				const DynamicEntity& dynamicEntity = static_cast<const DynamicEntity&>(entity);
-				const Double2& entityDir = dynamicEntity.getDirection();
-				const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
-
-				const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
-				const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);
-
-				// Use the difference of the two vectors as the angle vector.
-				const Double2 resultDir = entityDir - diffDir;
-				const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir.y, resultDir.x);
-
-				// Angle bias so the final direction is centered within its angle range.
-				const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
-
-				return std::fmod(resultAngle + angleBias, Constants::TwoPi);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(double,
-					std::to_string(static_cast<int>(entity.getEntityType())));
-			}
-		}();
-
-		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
-		const int stateIndex = [stateCount, anglePercent]()
-		{
-			const int index = static_cast<int>(static_cast<double>(stateCount)* anglePercent);
-			return std::clamp(index, 0, stateCount - 1);
-		}();
-
-		DebugAssertIndex(stateList, stateIndex);
-		const EntityAnimationData::State& animState = stateList[stateIndex];
-
-		// Get the entity's current animation frame (dimensions, texture, etc.).
-		const EntityAnimationData::Keyframe& keyframe = [&entity, &entityAnimData, &animInstance,
-			stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
-		{
-			const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
-			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
-			return keyframes.get(keyframeIndex);
-		}();
-
-		const double flatWidth = keyframe.getWidth();
-		const double flatHeight = keyframe.getHeight();
-		const double flatHalfWidth = flatWidth * 0.50;
-
-		const Double2& entityPos = entity.getPosition();
-		const double entityPosX = entityPos.x;
-		const double entityPosZ = entityPos.y;
-
-		const double flatYOffset =
-			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
-
-		// If the entity is in a raised platform voxel, they are set on top of it.
-		const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
-		{
-			const Int2 entityVoxelPos(
-				static_cast<int>(entityPos.x),
-				static_cast<int>(entityPos.y));
-			const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
-			const VoxelData& voxelData = voxelGrid.getVoxelData(voxelID);
-
-			if (voxelData.dataType == VoxelDataType::Raised)
-			{
-				const VoxelData::RaisedData& raised = voxelData.raised;
-				return (raised.yOffset + raised.ySize) * ceilingHeight;
-			}
-			else
-			{
-				// No raised platform offset.
-				return 0.0;
-			}
-		}();
-
-		// Bottom center of flat.
-		const Double3 flatPosition(
-			entityPosX,
-			ceilingHeight + flatYOffset + raisedPlatformYOffset,
-			entityPosZ);
-		const Double2 flatPosition2D(
-			flatPosition.x,
-			flatPosition.z);
-
-		// Check if the flat is somewhere in front of the camera.
-		const Double2 flatEyeDiff = flatPosition2D - eye2D;
-		const double flatEyeDiffLen = flatEyeDiff.length();
-		const Double2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
-		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
-
-		if (inFrontOfCamera)
-		{
-			// For theta being the angle between the +Z direction (sprite normal, unrotated)
-			// and the flatForward direction, calculate sine and cosine of theta
-			double cosTheta = flatForward.dot(Double3::UnitZ);
-			double sinTheta = flatForward.dot(Double3::UnitX);
-
-			// Generate a (rotated, translated) quad that represents the flat's orientation in 3D space
-			Matrix4d spriteRotation = Matrix4d::yRotation(-atan2(sinTheta, cosTheta));
-			Matrix4d spriteTranslation = Matrix4d::translation(flatPosition.x, flatPosition.y, flatPosition.z);
-
-			Matrix4d spriteTransform = spriteTranslation * spriteRotation;
-
-			Double4 vertices4[] = {
-				spriteTransform * Double4(-flatWidth / 2, 0, 0, 1),
-				spriteTransform * Double4(flatWidth / 2, 0, 0, 1),
-				spriteTransform * Double4(flatWidth / 2, flatHeight, 0, 1),
-				spriteTransform * Double4(-flatWidth / 2, flatHeight, 0, 1)
-			};
-
-			Double3 vertices3[] = {
-				Double3(vertices4[0].x, vertices4[0].y, vertices4[0].z),
-				Double3(vertices4[1].x, vertices4[1].y, vertices4[1].z),
-				Double3(vertices4[2].x, vertices4[2].y, vertices4[2].z),
-				Double3(vertices4[3].x, vertices4[3].y, vertices4[3].z)
-			};
-
-			// @todo: Do a ray test to see if the ray intersects.
-			Double3 intersection;
-			if (MathUtils::RayQuadIntersection(rayStart, direction, vertices3, intersection))
-			{
-				Double3 u = (vertices3[2] - vertices3[3]);
-				Double3 v = (vertices3[0] - vertices3[3]);
-
-				// Get the texture coordinates
-				Double2 uv = Double2((intersection - vertices3[3]).dot(u.normalized()) / u.length(),
-					(intersection - vertices3[3]).dot(v.normalized()) / v.length());
-
-				// @todo: check the texel for these coordinates and determine if it's fully transparent. If so, then the ray did not REALLY intersect the entity
-				// This will be difficult since all the texture info belongs to the Software Renderer. I might just have to add a function to the software renderer
-				// check if a specific texture coordinate is fully transparent
-				double r, g, b, a;
-				renderer.getFlatTexel(uv, entity.getDataIndex(), keyframe.getTextureID(), anglePercent, animState.getType(), r, g, b, a);
-
-				// If the a == 0, then we clicked on a transparent texel
-				if (a > 0)
-				{
-					double distance = (intersection - rayStart).length();
-					if (!voxelSelected || distance < hit.t)
-					{
-						hit.entityID = entity.getID();
-						hit.type = Physics::Hit::Type::Entity;
-						hit.point = intersection;
-						hit.t = distance;
-					}
-				}
-			}
-		}
-	}
-
-#pragma endregion Ray Cast Entities
-
-	// The ray exited the voxel grid without hitting anything.
-	return voxelSelected || entitySelected;
+	// return true if the ray hit something
+	return hit.t != DBL_MAX;
 }
 
 bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer& renderer, Physics::Hit &hit)

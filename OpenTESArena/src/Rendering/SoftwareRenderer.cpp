@@ -1557,109 +1557,19 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *this->potentiallyVisibleFlats[i];
+		const EntityData& entityData = *entityManager.getEntityData(entity.getDataIndex());
 
-		// Get the entity's data definition and animation.
-		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
-		const EntityAnimationData &entityAnimData = entityData.getAnimationData();
+		EntityManager::EntityVisibilityData visData;
 
-		// Get active state.
-		const EntityAnimationData::Instance &animInstance = entity.getAnimation();
-		const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
-		const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
+		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
 
-		// Calculate state index based on entity direction relative to camera.
-		const double animAngle = [&eye2D, &cameraDir, &entity, stateCount]()
-		{
-			if (entity.getEntityType() == EntityType::Static)
-			{
-				// Static entities always face the camera.
-				return 0.0;
-			}
-			else if (entity.getEntityType() == EntityType::Dynamic)
-			{
-				// Dynamic entities are angle-dependent.
-				const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
-				const Double2 &entityDir = dynamicEntity.getDirection();
-				const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
-
-				const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
-				const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);
-
-				// Use the difference of the two vectors as the angle vector.
-				const Double2 resultDir = entityDir - diffDir;
-				const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir.y, resultDir.x);
-
-				// Angle bias so the final direction is centered within its angle range.
-				const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
-
-				return std::fmod(resultAngle + angleBias, Constants::TwoPi);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(double,
-					std::to_string(static_cast<int>(entity.getEntityType())));
-			}
-		}();
-
-		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
-		const int stateIndex = [stateCount, anglePercent]()
-		{
-			const int index = static_cast<int>(static_cast<double>(stateCount) * anglePercent);
-			return std::clamp(index, 0, stateCount - 1);
-		}();
-
-		DebugAssertIndex(stateList, stateIndex);
-		const EntityAnimationData::State &animState = stateList[stateIndex];
-		
-		// Get the entity's current animation frame (dimensions, texture, etc.).
-		const EntityAnimationData::Keyframe &keyframe = [&entity, &entityAnimData, &animInstance,
-			stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
-		{
-			const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
-			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
-			return keyframes.get(keyframeIndex);
-		}();
-
-		const double flatWidth = keyframe.getWidth();
-		const double flatHeight = keyframe.getHeight();
+		const double flatWidth = visData.keyframe.getWidth();
+		const double flatHeight = visData.keyframe.getHeight();
 		const double flatHalfWidth = flatWidth * 0.50;
 
-		const Double2 &entityPos = entity.getPosition();
-		const double entityPosX = entityPos.x;
-		const double entityPosZ = entityPos.y;
-
-		const double flatYOffset =
-			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
-
-		// If the entity is in a raised platform voxel, they are set on top of it.
-		const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
-		{
-			const Int2 entityVoxelPos(
-				static_cast<int>(entityPos.x),
-				static_cast<int>(entityPos.y));
-			const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
-			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-
-			if (voxelData.dataType == VoxelDataType::Raised)
-			{
-				const VoxelData::RaisedData &raised = voxelData.raised;
-				return (raised.yOffset + raised.ySize) * ceilingHeight;
-			}
-			else
-			{
-				// No raised platform offset.
-				return 0.0;
-			}
-		}();
-
-		// Bottom center of flat.
-		const Double3 flatPosition(
-			entityPosX,
-			ceilingHeight + flatYOffset + raisedPlatformYOffset,
-			entityPosZ);
 		const Double2 flatPosition2D(
-			flatPosition.x,
-			flatPosition.z);
+			visData.flatPosition.x,
+			visData.flatPosition.z);
 
 		// Check if the flat is somewhere in front of the camera.
 		const Double2 flatEyeDiff = flatPosition2D - eye2D;
@@ -1683,11 +1593,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
 			visFlat.flatIndex = entityData.getFlatIndex();
-			visFlat.animStateType = animState.getType();
+			visFlat.animStateType = visData.stateType;
 
 			// Calculate each corner of the flat in world space.
-			visFlat.bottomLeft = flatPosition + flatRightScaled;
-			visFlat.bottomRight = flatPosition - flatRightScaled;
+			visFlat.bottomLeft = visData.flatPosition + flatRightScaled;
+			visFlat.bottomRight = visData.flatPosition - flatRightScaled;
 			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
 			visFlat.topRight = visFlat.bottomRight + flatUpScaled;
 
@@ -1718,8 +1628,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			if (inScreenX && inScreenY && inPlanes)
 			{
 				// Finish initializing the visible flat.
-				visFlat.textureID = keyframe.getTextureID();
-				visFlat.anglePercent = anglePercent;
+				visFlat.textureID = visData.keyframe.getTextureID();
+				visFlat.anglePercent = visData.anglePercent;
 
 				// Add the flat data to the draw list.
 				this->visibleFlats.push_back(std::move(visFlat));

@@ -96,8 +96,8 @@ double MathUtils::DistanceBetweenLineSegments(const Double3& p0, const Double3 p
 	// Calculate s and t. These are the points along u and v from p0 and q0 respectively that are the closest to each other. 
 	// The values are limited to the interval [0, 1] because outside of that range is along the line that the segment exists
 	// on, but outside the bounds of the segment
-	s = clamp<double>((be - cd) / (ac - bb), 0, 1);
-	t = clamp<double>((ae - bd) / (ac - bb), 0, 1);
+	s = std::clamp((be - cd) / (ac - bb), 0.0, 1.0);
+	t = std::clamp((ae - bd) / (ac - bb), 0.0, 1.0);
 
 	// Calculate Psc and Qtc. These are the points on their respective segments that are closest to each other.
 	auto Psc = p0 + (u * s);

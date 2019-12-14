@@ -733,6 +733,9 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const int screenWidth = this->getWindowDimensions().x;
 	const int viewHeight = this->getViewHeight();
 	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
+
+	// Draw a pixel for the cursor, for debugging purposes
+	this->drawPixel(Color::Red, screenWidth / 2, viewHeight / 2);
 }
 
 void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,
