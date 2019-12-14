@@ -242,6 +242,11 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
+const void Renderer::getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const
+{
+	softwareRenderer.getFlatTexel(uv, flatIndex, textureId, anglePercent, animStateType, r, g, b, a);
+}
+
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 {
 	// From native point to letterbox point.

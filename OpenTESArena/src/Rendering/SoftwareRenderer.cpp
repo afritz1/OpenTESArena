@@ -854,6 +854,48 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	return data;
 }
 
+const void SoftwareRenderer::getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const
+{
+	// Set the out params to default values
+	r = 0;
+	g = 0;
+	b = 0;
+	a = 0;
+
+	// Texture of the flat. It might be flipped horizontally as well, given by
+		// the "flat.flipped" value.
+	const auto iter = flatTextureGroups.find(flatIndex);
+	if (iter == flatTextureGroups.end())
+	{
+		// No flat texture group available for the flat.
+		return;
+	}
+
+	const FlatTextureGroup& flatTextureGroup = iter->second;
+	const FlatTextureGroup::TextureList* textureList =
+		flatTextureGroup.getTextureList(animStateType, anglePercent);
+
+	if (textureList == nullptr)
+	{
+		// No flat textures allocated for the animation state.
+		return;
+	}
+
+	const FlatTexture& texture = (*textureList)[textureId];
+
+	// Use the UV to get the FlatTexel
+	int x = (int)floor((uv.x * texture.width) + 0.5);
+	int y = (int)floor((uv.y * texture.height) + 0.5);
+	int coord = y * texture.width + x;
+
+	auto texel = texture.texels[coord];
+
+	r = texel.r;
+	g = texel.g;
+	b = texel.b;
+	a = texel.a;
+}
+
 void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 {
 	// Initialize 2D frame buffer.

@@ -1433,152 +1433,191 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	}();
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager, hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, player.getDirection(), entityManager, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
 	{
-		const Int3 &voxel = hit.voxel;
-		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-
-		// Primary click handles selection in the game world. Secondary click handles
-		// reading names of things.
-		if (primaryClick)
+		if (hit.type == Physics::Hit::Type::Voxel)
 		{
-			// Arbitrary max distance for selection.
-			const double maxSelectionDist = 1.50;
+			const Int3& voxel = hit.voxel;
+			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelData& voxelData = voxelGrid.getVoxelData(voxelID);
 
-			if (hit.t <= maxSelectionDist)
+			// Primary click handles selection in the game world. Secondary click handles
+			// reading names of things.
+			if (primaryClick)
 			{
-				if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal)
-				{
-					if (!debugFadeVoxel)
-					{
-						if (voxelData.dataType == VoxelDataType::Wall)
-						{
-							const VoxelData::WallData& wallData = voxelData.wall;
+				// Arbitrary max distance for selection.
+				const double maxSelectionDist = 1.50;
 
-							if (wallData.isMenu())
+				if (hit.t <= maxSelectionDist)
+				{
+					if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal)
+					{
+						if (!debugFadeVoxel)
+						{
+							if (voxelData.dataType == VoxelDataType::Wall)
 							{
-								this->handleWorldTransition(hit, wallData.menuID);
+								const VoxelData::WallData& wallData = voxelData.wall;
+
+								if (wallData.isMenu())
+								{
+									this->handleWorldTransition(hit, wallData.menuID);
+								}
+							}
+						}
+						else
+						{
+							// @temp: add to fading voxels if it doesn't already exist.
+							LevelData::FadeState fadeState(voxel);
+							auto& fadingVoxels = level.getFadingVoxels();
+
+							const bool exists = [&voxel, fadingVoxels]()
+							{
+								const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
+									[&voxel](const LevelData::FadeState& state)
+									{
+										return state.getVoxel() == voxel;
+									});
+
+								return iter != fadingVoxels.end();
+							}();
+
+							if (!exists)
+							{
+								fadingVoxels.push_back(std::move(fadeState));
 							}
 						}
 					}
-					else
+					else if (voxelData.dataType == VoxelDataType::Edge)
 					{
-						// @temp: add to fading voxels if it doesn't already exist.
-						LevelData::FadeState fadeState(voxel);
-						auto &fadingVoxels = level.getFadingVoxels();
+						const VoxelData::EdgeData& edgeData = voxelData.edge;
 
-						const bool exists = [&voxel, fadingVoxels]()
+						if (edgeData.collider)
 						{
-							const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
-								[&voxel](const LevelData::FadeState &state)
-							{
-								return state.getVoxel() == voxel;
-							});
+							// The only collidable edges in cities should be palace voxels. Not sure
+							// how the original game handles the menu ID since it's a type 0xA voxel.
+							const int menuID = 11;
+							this->handleWorldTransition(hit, menuID);
+						}
+					}
+					else if (voxelData.dataType == VoxelDataType::Door)
+					{
+						const VoxelData::DoorData& doorData = voxelData.door;
+						const Int2 voxelXZ(voxel.x, voxel.z);
 
-							return iter != fadingVoxels.end();
+						// If the door is closed, then open it.
+						auto& openDoors = level.getOpenDoors();
+						const bool isClosed = [&openDoors, &voxelXZ]()
+						{
+							const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+								[&voxelXZ](const LevelData::DoorState& openDoor)
+								{
+									return openDoor.getVoxel() == voxelXZ;
+								});
+
+							return iter == openDoors.end();
 						}();
 
-						if (!exists)
+						if (isClosed)
 						{
-							fadingVoxels.push_back(std::move(fadeState));
+							// Add the door to the open doors list.
+							openDoors.push_back(LevelData::DoorState(voxelXZ));
+
+							// Get the door's opening sound index and play it.
+							const int soundIndex = doorData.getOpenSoundIndex();
+							const auto& inf = level.getInfFile();
+							const std::string& soundFilename = inf.getSound(soundIndex);
+							auto& audioManager = game.getAudioManager();
+							audioManager.playSound(soundFilename);
 						}
 					}
 				}
-				else if (voxelData.dataType == VoxelDataType::Edge)
-				{
-					const VoxelData::EdgeData &edgeData = voxelData.edge;
-
-					if (edgeData.collider)
-					{
-						// The only collidable edges in cities should be palace voxels. Not sure
-						// how the original game handles the menu ID since it's a type 0xA voxel.
-						const int menuID = 11;
-						this->handleWorldTransition(hit, menuID);
-					}
-				}
-				else if (voxelData.dataType == VoxelDataType::Door)
-				{
-					const VoxelData::DoorData &doorData = voxelData.door;
-					const Int2 voxelXZ(voxel.x, voxel.z);
-
-					// If the door is closed, then open it.
-					auto &openDoors = level.getOpenDoors();
-					const bool isClosed = [&openDoors, &voxelXZ]()
-					{
-						const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-							[&voxelXZ](const LevelData::DoorState &openDoor)
-						{
-							return openDoor.getVoxel() == voxelXZ;
-						});
-
-						return iter == openDoors.end();
-					}();
-
-					if (isClosed)
-					{
-						// Add the door to the open doors list.
-						openDoors.push_back(LevelData::DoorState(voxelXZ));
-
-						// Get the door's opening sound index and play it.
-						const int soundIndex = doorData.getOpenSoundIndex();
-						const auto &inf = level.getInfFile();
-						const std::string &soundFilename = inf.getSound(soundIndex);
-						auto &audioManager = game.getAudioManager();
-						audioManager.playSound(soundFilename);
-					}
-				}
 			}
-		}
-		else
-		{
-			// Handle secondary click (i.e., right click).
-			if (voxelData.dataType == VoxelDataType::Wall)
+			else
 			{
-				const VoxelData::WallData &wallData = voxelData.wall;
-
-				// Print interior display name if *MENU block is clicked in an exterior.
-				if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
+				// Handle secondary click (i.e., right click).
+				if (voxelData.dataType == VoxelDataType::Wall)
 				{
-					const bool isCity = worldData.getActiveWorldType() == WorldType::City;
-					const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
+					const VoxelData::WallData& wallData = voxelData.wall;
 
-					if (VoxelData::WallData::menuHasDisplayName(menuType))
+					// Print interior display name if *MENU block is clicked in an exterior.
+					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 					{
-						const auto &exterior = static_cast<ExteriorLevelData&>(level);
+						const bool isCity = worldData.getActiveWorldType() == WorldType::City;
+						const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
 
-						// Get interior name from the clicked voxel.
-						const std::string menuName = [&game, isCity, menuType, &exterior, &voxel]()
+						if (VoxelData::WallData::menuHasDisplayName(menuType))
 						{
-							const Int2 voxelXZ(voxel.x, voxel.z);
+							const auto& exterior = static_cast<ExteriorLevelData&>(level);
 
-							if (isCity)
+							// Get interior name from the clicked voxel.
+							const std::string menuName = [&game, isCity, menuType, &exterior, &voxel]()
 							{
-								// City interior name.
-								const auto &menuNames = exterior.getMenuNames();
-								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-									[&voxelXZ](const std::pair<Int2, std::string> &pair)
-								{
-									return pair.first == voxelXZ;
-								});
+								const Int2 voxelXZ(voxel.x, voxel.z);
 
-								const bool foundName = iter != menuNames.end();
-
-								if (foundName)
+								if (isCity)
 								{
-									return iter->second;
+									// City interior name.
+									const auto& menuNames = exterior.getMenuNames();
+									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+										[&voxelXZ](const std::pair<Int2, std::string>& pair)
+										{
+											return pair.first == voxelXZ;
+										});
+
+									const bool foundName = iter != menuNames.end();
+
+									if (foundName)
+									{
+										return iter->second;
+									}
+									else
+									{
+										// If no menu name was generated, then see if it's a mage's guild.
+										if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+										{
+											const auto& miscAssets = game.getMiscAssets();
+											const auto& exeData = miscAssets.getExeData();
+											return exeData.cityGen.magesGuildMenuName;
+										}
+										else
+										{
+											// This should only happen if the player created a new *MENU voxel,
+											// which shouldn't occur in regular play.
+											DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
+												", " + std::to_string(voxelXZ.y) + ").");
+											return std::string();
+										}
+									}
 								}
 								else
 								{
-									// If no menu name was generated, then see if it's a mage's guild.
-									if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+									// Wilderness interior name.
+
+									// Probably don't need this here with the current wild name generation.
+									/*const auto &voxelGrid = exterior.getVoxelGrid();
+									const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+										voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+									const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+									const Int2 relativeVoxel = originalVoxel - relativeOrigin;
+									const Int2 chunkCoords(
+										originalVoxel.x / RMDFile::WIDTH,
+										originalVoxel.y / RMDFile::DEPTH);*/
+
+									const auto& menuNames = exterior.getMenuNames();
+									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+										[&voxelXZ](const std::pair<Int2, std::string>& pair)
+										{
+											return pair.first == voxelXZ;
+										});
+
+									const bool foundName = iter != menuNames.end();
+
+									if (foundName)
 									{
-										const auto &miscAssets = game.getMiscAssets();
-										const auto &exeData = miscAssets.getExeData();
-										return exeData.cityGen.magesGuildMenuName;
+										return iter->second;
 									}
 									else
 									{
@@ -1589,64 +1628,76 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										return std::string();
 									}
 								}
-							}
-							else
-							{
-								// Wilderness interior name.
+							}();
 
-								// Probably don't need this here with the current wild name generation.
-								/*const auto &voxelGrid = exterior.getVoxelGrid();
-								const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-									voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
-								const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
-								const Int2 relativeVoxel = originalVoxel - relativeOrigin;
-								const Int2 chunkCoords(
-									originalVoxel.x / RMDFile::WIDTH,
-									originalVoxel.y / RMDFile::DEPTH);*/
+							const RichTextString richText(
+								menuName,
+								FontName::Arena,
+								ActionTextColor,
+								TextAlignment::Center,
+								game.getFontManager());
 
-								const auto &menuNames = exterior.getMenuNames();
-								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-									[&voxelXZ](const std::pair<Int2, std::string> &pair)
-								{
-									return pair.first == voxelXZ;
-								});
+							const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
 
-								const bool foundName = iter != menuNames.end();
+							auto textBox = std::make_unique<TextBox>(
+								Int2(0, 0),
+								richText,
+								&shadowData,
+								game.getRenderer());
 
-								if (foundName)
-								{
-									return iter->second;
-								}
-								else
-								{
-									// This should only happen if the player created a new *MENU voxel,
-									// which shouldn't occur in regular play.
-									DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
-										", " + std::to_string(voxelXZ.y) + ").");
-									return std::string();
-								}
-							}
-						}();
+							auto& actionText = gameData.getActionText();
+							const double duration = std::max(2.25,
+								static_cast<double>(richText.getText().size()) * 0.050);
+							actionText = TimedTextBox(duration, std::move(textBox));
+						}
+					}
+				}
+			}
+		}
+		else if (hit.type == Physics::Hit::Type::Entity)
+		{
+			if (primaryClick)
+			{
+				const double maxSelectionDist = 1.50;
+
+				if(hit.t <= maxSelectionDist)
+				{
+					if (!debugFadeVoxel)
+					{
+						// @todo: do whatever is supposed to be done when clicking on an entity
+					}
+					else
+					{
+						// Ignore the newline at the end.
+						const std::string text = "You clicked on an entity!";
+						const int lineSpacing = 1;
+
+						const ExeData& exeData = game.getMiscAssets().getExeData();
 
 						const RichTextString richText(
-							menuName,
+							text,
 							FontName::Arena,
-							ActionTextColor,
+							TriggerTextColor,
 							TextAlignment::Center,
+							lineSpacing,
 							game.getFontManager());
 
-						const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+						const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
 
+						// Create the text box for display (set position to zero; the renderer will
+						// decide where to draw it).
 						auto textBox = std::make_unique<TextBox>(
 							Int2(0, 0),
 							richText,
 							&shadowData,
 							game.getRenderer());
 
-						auto &actionText = gameData.getActionText();
-						const double duration = std::max(2.25,
-							static_cast<double>(richText.getText().size()) * 0.050);
-						actionText = TimedTextBox(duration, std::move(textBox));
+						// Assign the text box and its duration to the triggered text member. It will 
+						// be displayed in the render method until the duration is no longer positive.
+						auto& gameData = game.getGameData();
+						auto& triggerText = gameData.getTriggerText();
+						const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+						triggerText = TimedTextBox(duration, std::move(textBox));
 					}
 				}
 			}

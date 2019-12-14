@@ -1,11 +1,16 @@
 #include <cmath>
 
 #include "Physics.h"
+#include "../Assets/MIFFile.h"
+#include "../Entities/Entity.h"
+#include "../Entities/EntityType.h"
 #include "../World/VoxelDataType.h"
+#include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
+#include "../Math/Matrix4.h"
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
-#include <OpenTESArena\src\Entities\Entity.h>
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direction, 
 	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
@@ -550,8 +555,10 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const EntityManager& entityManager, Physics::Hit &hit)
+	const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
+#pragma region Ray Cast Voxels
+
 	const Double3 voxelReal(
 		std::floor(rayStart.x),
 		std::floor(rayStart.y / ceilingHeight),
@@ -673,6 +680,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	// the total voxel distance stepped is less than the view distance.
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
 	const uint16_t* voxels = voxelGrid.getVoxels();
+	bool voxelSelected = false;
 	while (voxelIsValid && (cellDistSquared < 100)) // Arbitrary value
 	{
 		// Get the index of the current voxel in the voxel grid.
@@ -752,7 +760,11 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 			}
 
 			if (success) {
-				return true;
+				voxelSelected = true;
+				// We can exit the while loop now. We don't want to return from the function
+				// because we've already found the selected voxel, but we haven't checked any
+				// entities yet.
+				break;
 			}
 		}
 
@@ -789,12 +801,207 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 			(cellDiff.z * cellDiff.z);
 	}
 
+#pragma endregion Ray Cast Voxels
+
+#pragma region Ray Cast Entities
+
+	bool entitySelected = false;
+
+	// Get all the entities
+	std::vector<const Entity*> entities(entityManager.getTotalCount());
+	const int entityCount = entityManager.getTotalEntities(
+		entities.data(),
+		static_cast<int>(entities.size()));
+
+	// Each flat shares the same axes. The forward direction always faces opposite to 
+	// the camera direction.
+	const Double3 flatForward = Double3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
+	const Double3 flatUp = Double3::UnitY;
+	const Double3 flatRight = flatForward.cross(flatUp).normalized();
+
+	const Double2 eye2D(rayStart.x, rayStart.z);
+	const Double2 cameraDir(cameraForward.x, cameraForward.z);
+
+	// Iterate over the entities checking to see if there's one that the ray intersects that's closer than the selected voxel, if a voxel was even selected
+	for (auto i = 0; i < entityCount; i++)
+	{
+		const Entity& entity = *entities[i];
+		const EntityData& entityData = *entityManager.getEntityData(entity.getDataIndex());
+		const EntityAnimationData& entityAnimData = entityData.getAnimationData();
+
+		// Get active state.
+		const EntityAnimationData::Instance& animInstance = entity.getAnimation();
+		const std::vector<EntityAnimationData::State>& stateList = animInstance.getStateList(entityAnimData);
+		const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
+
+		// Calculate state index based on entity direction relative to camera.
+		const double animAngle = [&eye2D, &cameraDir, &entity, stateCount]()
+		{
+			if (entity.getEntityType() == EntityType::Static)
+			{
+				// Static entities always face the camera.
+				return 0.0;
+			}
+			else if (entity.getEntityType() == EntityType::Dynamic)
+			{
+				// Dynamic entities are angle-dependent.
+				const DynamicEntity& dynamicEntity = static_cast<const DynamicEntity&>(entity);
+				const Double2& entityDir = dynamicEntity.getDirection();
+				const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
+
+				const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
+				const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);
+
+				// Use the difference of the two vectors as the angle vector.
+				const Double2 resultDir = entityDir - diffDir;
+				const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir.y, resultDir.x);
+
+				// Angle bias so the final direction is centered within its angle range.
+				const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
+
+				return std::fmod(resultAngle + angleBias, Constants::TwoPi);
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(double,
+					std::to_string(static_cast<int>(entity.getEntityType())));
+			}
+		}();
+
+		const double anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
+		const int stateIndex = [stateCount, anglePercent]()
+		{
+			const int index = static_cast<int>(static_cast<double>(stateCount)* anglePercent);
+			return std::clamp(index, 0, stateCount - 1);
+		}();
+
+		DebugAssertIndex(stateList, stateIndex);
+		const EntityAnimationData::State& animState = stateList[stateIndex];
+
+		// Get the entity's current animation frame (dimensions, texture, etc.).
+		const EntityAnimationData::Keyframe& keyframe = [&entity, &entityAnimData, &animInstance,
+			stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
+		{
+			const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
+			const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
+			return keyframes.get(keyframeIndex);
+		}();
+
+		const double flatWidth = keyframe.getWidth();
+		const double flatHeight = keyframe.getHeight();
+		const double flatHalfWidth = flatWidth * 0.50;
+
+		const Double2& entityPos = entity.getPosition();
+		const double entityPosX = entityPos.x;
+		const double entityPosZ = entityPos.y;
+
+		const double flatYOffset =
+			static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
+
+		// If the entity is in a raised platform voxel, they are set on top of it.
+		const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
+		{
+			const Int2 entityVoxelPos(
+				static_cast<int>(entityPos.x),
+				static_cast<int>(entityPos.y));
+			const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
+			const VoxelData& voxelData = voxelGrid.getVoxelData(voxelID);
+
+			if (voxelData.dataType == VoxelDataType::Raised)
+			{
+				const VoxelData::RaisedData& raised = voxelData.raised;
+				return (raised.yOffset + raised.ySize) * ceilingHeight;
+			}
+			else
+			{
+				// No raised platform offset.
+				return 0.0;
+			}
+		}();
+
+		// Bottom center of flat.
+		const Double3 flatPosition(
+			entityPosX,
+			ceilingHeight + flatYOffset + raisedPlatformYOffset,
+			entityPosZ);
+		const Double2 flatPosition2D(
+			flatPosition.x,
+			flatPosition.z);
+
+		// Check if the flat is somewhere in front of the camera.
+		const Double2 flatEyeDiff = flatPosition2D - eye2D;
+		const double flatEyeDiffLen = flatEyeDiff.length();
+		const Double2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
+		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
+
+		if (inFrontOfCamera)
+		{
+			// For theta being the angle between the +Z direction (sprite normal, unrotated)
+			// and the flatForward direction, calculate sine and cosine of theta
+			double cosTheta = flatForward.dot(Double3::UnitZ);
+			double sinTheta = flatForward.dot(Double3::UnitX);
+
+			// Generate a (rotated, translated) quad that represents the flat's orientation in 3D space
+			Matrix4d spriteRotation = Matrix4d::yRotation(-atan2(sinTheta, cosTheta));
+			Matrix4d spriteTranslation = Matrix4d::translation(flatPosition.x, flatPosition.y, flatPosition.z);
+
+			Matrix4d spriteTransform = spriteTranslation * spriteRotation;
+
+			Double4 vertices4[] = {
+				spriteTransform * Double4(-flatWidth / 2, 0, 0, 1),
+				spriteTransform * Double4(flatWidth / 2, 0, 0, 1),
+				spriteTransform * Double4(flatWidth / 2, flatHeight, 0, 1),
+				spriteTransform * Double4(-flatWidth / 2, flatHeight, 0, 1)
+			};
+
+			Double3 vertices3[] = {
+				Double3(vertices4[0].x, vertices4[0].y, vertices4[0].z),
+				Double3(vertices4[1].x, vertices4[1].y, vertices4[1].z),
+				Double3(vertices4[2].x, vertices4[2].y, vertices4[2].z),
+				Double3(vertices4[3].x, vertices4[3].y, vertices4[3].z)
+			};
+
+			// @todo: Do a ray test to see if the ray intersects.
+			Double3 intersection;
+			if (MathUtils::RayQuadIntersection(rayStart, direction, vertices3, intersection))
+			{
+				Double3 u = (vertices3[2] - vertices3[3]);
+				Double3 v = (vertices3[0] - vertices3[3]);
+
+				// Get the texture coordinates
+				Double2 uv = Double2((intersection - vertices3[3]).dot(u.normalized()) / u.length(),
+					(intersection - vertices3[3]).dot(v.normalized()) / v.length());
+
+				// @todo: check the texel for these coordinates and determine if it's fully transparent. If so, then the ray did not REALLY intersect the entity
+				// This will be difficult since all the texture info belongs to the Software Renderer. I might just have to add a function to the software renderer
+				// check if a specific texture coordinate is fully transparent
+				double r, g, b, a;
+				renderer.getFlatTexel(uv, entity.getDataIndex(), keyframe.getTextureID(), anglePercent, animState.getType(), r, g, b, a);
+
+				// If the a == 0, then we clicked on a transparent texel
+				if (a > 0)
+				{
+					double distance = (intersection - rayStart).length();
+					if (!voxelSelected || distance < hit.t)
+					{
+						hit.entityID = entity.getID();
+						hit.type = Physics::Hit::Type::Entity;
+						hit.point = intersection;
+						hit.t = distance;
+					}
+				}
+			}
+		}
+	}
+
+#pragma endregion Ray Cast Entities
+
 	// The ray exited the voxel grid without hitting anything.
-	return false;
+	return voxelSelected || entitySelected;
 }
 
-bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const EntityManager& entityManager, Physics::Hit &hit)
+bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer& renderer, Physics::Hit &hit)
 {
 	const double ceilingHeight = 1.0;
-	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, entityManager, hit);
+	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, cameraForward, entityManager, renderer, hit);
 }

@@ -117,6 +117,8 @@ public:
 	// Gets profiler data (timings, renderer properties, etc.).
 	const ProfilerData &getProfilerData() const;
 
+	const void getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const;
+
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
 	// or outside the 320x200 limit when returned.
