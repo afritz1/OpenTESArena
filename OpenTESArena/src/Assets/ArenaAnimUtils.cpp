@@ -13,24 +13,24 @@
 
 namespace ArenaAnimUtils
 {
-	bool IsFinalBossIndex(int itemIndex)
+	bool isFinalBossIndex(int itemIndex)
 	{
 		return itemIndex == 73;
 	}
 
-	bool IsCreatureIndex(int itemIndex, bool *outIsFinalBoss)
+	bool isCreatureIndex(int itemIndex, bool *outIsFinalBoss)
 	{
-		const bool isFinalBoss = IsFinalBossIndex(itemIndex);
+		const bool isFinalBoss = isFinalBossIndex(itemIndex);
 		*outIsFinalBoss = isFinalBoss;
 		return (itemIndex >= 32 && itemIndex <= 54) || isFinalBoss;
 	}
 
-	bool IsHumanEnemyIndex(int itemIndex)
+	bool isHumanEnemyIndex(int itemIndex)
 	{
 		return itemIndex >= 55 && itemIndex <= 72;
 	}
 
-	EntityType GetEntityTypeFromFlat(int flatIndex, const INFFile &inf)
+	EntityType getEntityTypeFromFlat(int flatIndex, const INFFile &inf)
 	{
 		const auto &flatData = inf.getFlat(flatIndex);
 		if (flatData.itemIndex.has_value())
@@ -40,7 +40,7 @@ namespace ArenaAnimUtils
 			// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
 			// are higher.
 			bool dummy;
-			return (IsCreatureIndex(itemIndex, &dummy) || IsHumanEnemyIndex(itemIndex)) ?
+			return (isCreatureIndex(itemIndex, &dummy) || isHumanEnemyIndex(itemIndex)) ?
 				EntityType::Dynamic : EntityType::Static;
 		}
 		else
@@ -49,44 +49,44 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	int GetCreatureIDFromItemIndex(int itemIndex)
+	int getCreatureIDFromItemIndex(int itemIndex)
 	{
 		return itemIndex - 31;
 	}
 
-	int GetFinalBossCreatureID()
+	int getFinalBossCreatureID()
 	{
 		return 24;
 	}
 
-	int GetCharacterClassIndexFromItemIndex(int itemIndex)
+	int getCharacterClassIndexFromItemIndex(int itemIndex)
 	{
 		return itemIndex - 55;
 	}
 
-	bool IsStreetLightFlatIndex(int flatIndex)
+	bool isStreetLightFlatIndex(int flatIndex)
 	{
 		return flatIndex == 29;
 	}
 
-	void GetBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight)
+	void getBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight)
 	{
 		*baseWidth = (width * scale) / 256;
 		*baseHeight = (((height * scale) / 256) * 200) / 256;
 	}
 
-	bool IsAnimDirectionFlipped(int animDirectionID)
+	bool isAnimDirectionFlipped(int animDirectionID)
 	{
 		DebugAssert(animDirectionID >= 1);
 		DebugAssert(animDirectionID <= Directions);
 		return animDirectionID >= FirstFlippedAnimID;
 	}
 
-	int GetDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped)
+	int getDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped)
 	{
 		// If the animation direction points to a flipped animation, the ID needs to be
 		// corrected to point to the non-flipped version.
-		if (IsAnimDirectionFlipped(animDirectionID))
+		if (isAnimDirectionFlipped(animDirectionID))
 		{
 			*outIsFlipped = true;
 			return ((FirstFlippedAnimID - 1) * 2) - animDirectionID;
@@ -98,13 +98,13 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	EntityAnimationData::State MakeAnimState(EntityAnimationData::StateType stateType,
+	EntityAnimationData::State makeAnimState(EntityAnimationData::StateType stateType,
 		double secondsPerFrame, bool loop, bool flipped)
 	{
 		return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
 	}
 
-	bool TrySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID)
+	bool trySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID)
 	{
 		DebugAssert(filename.size() > 0);
 		DebugAssert(animDirectionID >= 1);
@@ -124,12 +124,12 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	void GetHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
+	void getHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
 		int *outTypeIndex, bool *outIsMale)
 	{
 		const auto &exeData = miscAssets.getExeData();
 
-		const int charClassIndex = GetCharacterClassIndexFromItemIndex(itemIndex);
+		const int charClassIndex = getCharacterClassIndexFromItemIndex(itemIndex);
 		const auto &charClasses = miscAssets.getClassDefinitions();
 		DebugAssertIndex(charClasses, charClassIndex);
 		const CharacterClass &charClass = charClasses[charClassIndex];
@@ -188,7 +188,7 @@ namespace ArenaAnimUtils
 		*outIsMale = true;
 	}
 
-	bool TrySetHumanFilenameGender(std::string &filename, bool isMale)
+	bool trySetHumanFilenameGender(std::string &filename, bool isMale)
 	{
 		if (filename.size() == 0)
 		{
@@ -200,7 +200,7 @@ namespace ArenaAnimUtils
 		return true;
 	}
 
-	bool TrySetHumanFilenameType(std::string &filename, const std::string_view &type)
+	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type)
 	{
 		if (filename.size() == 0)
 		{
@@ -227,7 +227,7 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	EntityAnimationData::State MakeStaticEntityIdleAnimState(int flatIndex,
+	EntityAnimationData::State makeStaticEntityIdleAnimState(int flatIndex,
 		const INFFile &inf, const ExeData &exeData)
 	{
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
@@ -252,7 +252,7 @@ namespace ArenaAnimUtils
 			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
 		};
 
-		EntityAnimationData::State animState = MakeAnimState(
+		EntityAnimationData::State animState = makeAnimState(
 			EntityAnimationData::StateType::Idle,
 			StaticIdleSecondsPerFrame,
 			StaticIdleLoop);
@@ -311,7 +311,7 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
+	void makeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
 		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outLookStates,
@@ -332,8 +332,8 @@ namespace ArenaAnimUtils
 		const int itemIndex = *optItemIndex;
 
 		bool isFinalBoss;
-		const bool isCreature = IsCreatureIndex(itemIndex, &isFinalBoss);
-		const bool isHuman = IsHumanEnemyIndex(itemIndex);
+		const bool isCreature = isCreatureIndex(itemIndex, &isFinalBoss);
+		const bool isHuman = isHumanEnemyIndex(itemIndex);
 
 		// Lambda for converting creature dimensions to the in-engine values.
 		auto makeCreatureKeyframeDimensions = [&exeData](int creatureIndex, int width, int height,
@@ -352,7 +352,7 @@ namespace ArenaAnimUtils
 			}();
 
 			int baseWidth, baseHeight;
-			GetBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
+			getBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
 			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
 			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
 		};
@@ -362,7 +362,7 @@ namespace ArenaAnimUtils
 		{
 			const uint16_t humanScale = 256;
 			int baseWidth, baseHeight;
-			GetBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
+			getBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
 			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
 			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
 		};
@@ -376,19 +376,19 @@ namespace ArenaAnimUtils
 			DebugAssert(animDirectionID <= Directions);
 
 			bool animIsFlipped;
-			const int correctedAnimDirID = GetDynamicEntityCorrectedAnimID(animDirectionID, &animIsFlipped);
+			const int correctedAnimDirID = getDynamicEntityCorrectedAnimID(animDirectionID, &animIsFlipped);
 
 			// Determine which dynamic entity animation to load.
 			if (isCreature)
 			{
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+					getFinalBossCreatureID() : getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, correctedAnimDirID))
+				if (!trySetDynamicEntityFilenameDirection(creatureFilename, correctedAnimDirID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(correctedAnimDirID) + ").");
@@ -404,17 +404,17 @@ namespace ArenaAnimUtils
 				}
 
 				// Prepare the states to write out.
-				EntityAnimationData::State idleState = MakeAnimState(
+				EntityAnimationData::State idleState = makeAnimState(
 					EntityAnimationData::StateType::Idle,
 					CreatureIdleSecondsPerFrame,
 					CreatureIdleLoop,
 					animIsFlipped);
-				EntityAnimationData::State lookState = MakeAnimState(
+				EntityAnimationData::State lookState = makeAnimState(
 					EntityAnimationData::StateType::Look,
 					CreatureLookSecondsPerFrame,
 					CreatureLookLoop,
 					animIsFlipped);
-				EntityAnimationData::State walkState = MakeAnimState(
+				EntityAnimationData::State walkState = makeAnimState(
 					EntityAnimationData::StateType::Walk,
 					CreatureWalkSecondsPerFrame,
 					CreatureWalkLoop,
@@ -457,13 +457,13 @@ namespace ArenaAnimUtils
 			{
 				int humanFilenameTypeIndex;
 				bool isMale;
-				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
+				getHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
 
 				const int templateIndex = 0; // Idle/walk template index.
 				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
 				DebugAssertIndex(humanFilenameTemplates, templateIndex);
 				std::string animName = humanFilenameTemplates[templateIndex];
-				if (!TrySetDynamicEntityFilenameDirection(animName, correctedAnimDirID))
+				if (!trySetDynamicEntityFilenameDirection(animName, correctedAnimDirID))
 				{
 					DebugLogError("Couldn't set human filename direction \"" +
 						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
@@ -473,7 +473,7 @@ namespace ArenaAnimUtils
 				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
 				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
 				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
-				if (!TrySetHumanFilenameType(animName, humanFilenameType))
+				if (!trySetHumanFilenameType(animName, humanFilenameType))
 				{
 					DebugLogError("Couldn't set human filename type \"" +
 						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
@@ -484,7 +484,7 @@ namespace ArenaAnimUtils
 				// apparently look the same in armor.
 				const bool isPlate = humanFilenameTypeIndex == 0;
 
-				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
+				if (!trySetHumanFilenameGender(animName, isMale || isPlate))
 				{
 					DebugLogError("Couldn't set human filename gender \"" +
 						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
@@ -503,12 +503,12 @@ namespace ArenaAnimUtils
 				}
 
 				// Prepare the states to write out. Human enemies don't have look animations.
-				EntityAnimationData::State idleState = MakeAnimState(
+				EntityAnimationData::State idleState = makeAnimState(
 					EntityAnimationData::StateType::Idle,
 					HumanIdleSecondsPerFrame,
 					HumanIdleLoop,
 					animIsFlipped);
-				EntityAnimationData::State walkState = MakeAnimState(
+				EntityAnimationData::State walkState = makeAnimState(
 					EntityAnimationData::StateType::Walk,
 					HumanWalkSecondsPerFrame,
 					HumanWalkLoop,
@@ -562,12 +562,12 @@ namespace ArenaAnimUtils
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 
 				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+					getFinalBossCreatureID() : getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
+				if (!trySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
@@ -582,7 +582,7 @@ namespace ArenaAnimUtils
 					return false;
 				}
 
-				EntityAnimationData::State attackState = MakeAnimState(
+				EntityAnimationData::State attackState = makeAnimState(
 					EntityAnimationData::StateType::Attack,
 					CreatureAttackSecondsPerFrame,
 					CreatureAttackLoop,
@@ -611,13 +611,13 @@ namespace ArenaAnimUtils
 			{
 				int humanFilenameTypeIndex;
 				bool isMale;
-				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
+				getHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
 
 				const int attackTemplateIndex = 1;
 				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
 				DebugAssertIndex(humanFilenameTemplates, attackTemplateIndex);
 				std::string animName = humanFilenameTemplates[attackTemplateIndex];
-				if (!TrySetDynamicEntityFilenameDirection(animName, animDirectionID))
+				if (!trySetDynamicEntityFilenameDirection(animName, animDirectionID))
 				{
 					DebugLogError("Couldn't set human attack filename direction \"" +
 						animName + "\" (" + std::to_string(animDirectionID) + ").");
@@ -627,7 +627,7 @@ namespace ArenaAnimUtils
 				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
 				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
 				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
-				if (!TrySetHumanFilenameType(animName, humanFilenameType))
+				if (!trySetHumanFilenameType(animName, humanFilenameType))
 				{
 					DebugLogError("Couldn't set human attack filename type \"" +
 						animName + "\" (" + std::to_string(animDirectionID) + ").");
@@ -638,7 +638,7 @@ namespace ArenaAnimUtils
 				// apparently look the same in armor.
 				const bool isPlate = humanFilenameTypeIndex == 0;
 
-				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
+				if (!trySetHumanFilenameGender(animName, isMale || isPlate))
 				{
 					DebugLogError("Couldn't set human attack filename gender \"" +
 						animName + "\" (" + std::to_string(animDirectionID) + ").");
@@ -654,7 +654,7 @@ namespace ArenaAnimUtils
 					return false;
 				}
 
-				EntityAnimationData::State attackState = MakeAnimState(
+				EntityAnimationData::State attackState = makeAnimState(
 					EntityAnimationData::StateType::Attack,
 					HumanAttackSecondsPerFrame,
 					HumanAttackLoop,
@@ -697,12 +697,12 @@ namespace ArenaAnimUtils
 
 				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
 				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
+					getFinalBossCreatureID() : getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
 				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
 				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
+				if (!trySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
 				{
 					DebugLogError("Couldn't set creature filename direction \"" +
 						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
@@ -717,7 +717,7 @@ namespace ArenaAnimUtils
 					return false;
 				}
 
-				EntityAnimationData::State deathState = MakeAnimState(
+				EntityAnimationData::State deathState = makeAnimState(
 					EntityAnimationData::StateType::Death,
 					CreatureDeathSecondsPerFrame,
 					CreatureDeathLoop,
@@ -758,7 +758,7 @@ namespace ArenaAnimUtils
 					return false;
 				}
 
-				EntityAnimationData::State deathState = MakeAnimState(
+				EntityAnimationData::State deathState = makeAnimState(
 					EntityAnimationData::StateType::Death,
 					HumanDeathSecondsPerFrame,
 					HumanDeathLoop,

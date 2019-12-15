@@ -90,66 +90,66 @@ namespace ArenaAnimUtils
 
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
-	bool IsFinalBossIndex(int itemIndex);
+	bool isFinalBossIndex(int itemIndex);
 
 	// *ITEM 32 to 54 are creatures (rat, goblin, etc.). The final boss is a special case.
-	bool IsCreatureIndex(int itemIndex, bool *outIsFinalBoss);
+	bool isCreatureIndex(int itemIndex, bool *outIsFinalBoss);
 
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
-	bool IsHumanEnemyIndex(int itemIndex);
+	bool isHumanEnemyIndex(int itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
-	EntityType GetEntityTypeFromFlat(int flatIndex, const INFFile &inf);
+	EntityType getEntityTypeFromFlat(int flatIndex, const INFFile &inf);
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
-	int GetCreatureIDFromItemIndex(int itemIndex);
+	int getCreatureIDFromItemIndex(int itemIndex);
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
-	int GetFinalBossCreatureID();
+	int getFinalBossCreatureID();
 
 	// Character classes (mage, warrior, etc.) used by human enemies.
-	int GetCharacterClassIndexFromItemIndex(int itemIndex);
+	int getCharacterClassIndexFromItemIndex(int itemIndex);
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
-	bool IsStreetLightFlatIndex(int flatIndex);
+	bool isStreetLightFlatIndex(int flatIndex);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
-	void GetBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight);
+	void getBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight);
 
 	// Returns whether the given original animation state ID would be for a flipped animation.
 	// Animation state IDs are 1-based, 1 being the entity looking at the player.
-	bool IsAnimDirectionFlipped(int animDirectionID);
+	bool isAnimDirectionFlipped(int animDirectionID);
 
 	// Given a creature direction anim ID like 7, will return the index of the non-flipped anim.
-	int GetDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped);
+	int getDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped);
 
 	// Helper function for generating a default entity animation state for later modification.
-	EntityAnimationData::State MakeAnimState(EntityAnimationData::StateType stateType,
+	EntityAnimationData::State makeAnimState(EntityAnimationData::StateType stateType,
 		double secondsPerFrame, bool loop, bool flipped = false);
 
 	// Works for both creature and human enemy filenames.
-	bool TrySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID);
+	bool trySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID);
 
 	// Writes out values for human enemy animations.
-	void GetHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
+	void getHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
 		int *outTypeIndex, bool *outIsMale);
 
 	// Writes the gender data into the given filename if possible.
-	bool TrySetHumanFilenameGender(std::string &filename, bool isMale);
+	bool trySetHumanFilenameGender(std::string &filename, bool isMale);
 
 	// Writes the human type data into the given filename if possible.
-	bool TrySetHumanFilenameType(std::string &filename, const std::string_view &type);
+	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Static entity animation state for idle.
-	EntityAnimationData::State MakeStaticEntityIdleAnimState(int flatIndex,
+	EntityAnimationData::State makeStaticEntityIdleAnimState(int flatIndex,
 		const INFFile &inf, const ExeData &exeData);
 
 	// Write out to lists of dynamic entity animation states for each animation direction.
 	// For any of the dynamic entity anim states, if the returned state list is empty,
 	// it is assumed that the entity has no information for that state.
-	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
+	void makeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
 		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outLookStates,

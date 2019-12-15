@@ -1126,12 +1126,12 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 	{
 		const int flatIndex = flatDef.getFlatIndex();
 		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
-		const EntityType entityType = ArenaAnimUtils::GetEntityTypeFromFlat(flatIndex, this->inf);
+		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
 
 		bool isFinalBoss;
 		const bool isCreature = optItemIndex.has_value() &&
-			ArenaAnimUtils::IsCreatureIndex(*optItemIndex, &isFinalBoss);
+			ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
 
 		// Must be at least one instance of the entity for the loop to try and
 		// instantiate it and write textures to the renderer.
@@ -1149,8 +1149,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			// Read from .exe data instead for creatures.
 			const int itemIndex = *optItemIndex;
 			const int creatureID = isFinalBoss ?
-				ArenaAnimUtils::GetFinalBossCreatureID() :
-				ArenaAnimUtils::GetCreatureIDFromItemIndex(itemIndex);
+				ArenaAnimUtils::getFinalBossCreatureID() :
+				ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = creatureID - 1;
 			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
 			DebugAssertIndex(creatureYOffsets, creatureIndex);
@@ -1185,7 +1185,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 		if (entityType == EntityType::Static)
 		{
 			EntityAnimationData::State animState =
-				ArenaAnimUtils::MakeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
+				ArenaAnimUtils::makeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
 
 			// The entity can only be instantiated if there is at least one animation frame.
 			const bool success = animState.getKeyframes().getCount() > 0;
@@ -1201,7 +1201,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 		}
 		else if (entityType == EntityType::Dynamic)
 		{
-			MakeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
+			ArenaAnimUtils::makeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
 				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
 
 			// Must at least have an idle state.
@@ -1274,7 +1274,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			const EntityAnimationData::State &animState, int angleID)
 		{
 			// Check whether the animation direction ID is for a flipped animation.
-			const bool isFlipped = ArenaAnimUtils::IsAnimDirectionFlipped(angleID);
+			const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID);
 
 			// Write the flat def's textures to the renderer.
 			const std::string &entityAnimName = animState.getTextureName();
