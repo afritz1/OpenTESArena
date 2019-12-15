@@ -886,7 +886,7 @@ const void SoftwareRenderer::getFlatTexel(const Double2& uv, const int& flatInde
 	// Use the UV to get the FlatTexel
 	int x = (int)floor((uv.x * texture.width) + 0.5);
 	int y = (int)floor((uv.y * texture.height) + 0.5);
-	int coord = y * texture.width + x;
+	int coord = std::clamp(y * texture.width + x, 0, static_cast<int>(texture.texels.size()));
 
 	auto texel = texture.texels[coord];
 

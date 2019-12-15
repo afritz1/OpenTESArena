@@ -859,58 +859,36 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 					const double flatHeight = visData.keyframe.getHeight();
 					const double flatHalfWidth = flatWidth * 0.50;
 
-					// For theta being the angle between the +Z direction (sprite normal, unrotated)
-					// and the flatForward direction, calculate sine and cosine of theta
-					double cosTheta = flatForward.dot(Double3::UnitZ);
-					double sinTheta = flatForward.dot(Double3::UnitX);
-
-					// Generate a (rotated, translated) quad that represents the flat's orientation in 3D space
-					Matrix4d spriteRotation = Matrix4d::yRotation(-atan2(sinTheta, cosTheta));
-					Matrix4d spriteTranslation = Matrix4d::translation(visData.flatPosition.x, visData.flatPosition.y, visData.flatPosition.z);
-
-					Matrix4d spriteTransform = spriteTranslation * spriteRotation;
-
-					Double4 vertices4[] = {
-						spriteTransform * Double4(-flatWidth / 2, 0, 0, 1),
-						spriteTransform * Double4(flatWidth / 2, 0, 0, 1),
-						spriteTransform * Double4(flatWidth / 2, flatHeight, 0, 1),
-						spriteTransform * Double4(-flatWidth / 2, flatHeight, 0, 1)
-					};
-
-					Double3 vertices3[] = {
-						Double3(vertices4[0].x, vertices4[0].y, vertices4[0].z),
-						Double3(vertices4[1].x, vertices4[1].y, vertices4[1].z),
-						Double3(vertices4[2].x, vertices4[2].y, vertices4[2].z),
-						Double3(vertices4[3].x, vertices4[3].y, vertices4[3].z)
-					};
-
-					// @todo: Do a ray test to see if the ray intersects.
+					// Do a ray test to see if the ray intersects.
 					Double3 intersection;
-					if (MathUtils::RayQuadIntersection(rayStart, direction, vertices3, intersection))
+					if (MathUtils::RayPlaneIntersection(rayStart, direction, visData.flatPosition, flatForward, intersection))
 					{
-						Double3 u = (vertices3[2] - vertices3[3]);
-						Double3 v = (vertices3[0] - vertices3[3]);
+						Double3 w = (intersection - visData.flatPosition);
 
 						// Get the texture coordinates
-						Double2 uv = Double2((intersection - vertices3[3]).dot(u.normalized()) / u.length(),
-							(intersection - vertices3[3]).dot(v.normalized()) / v.length());
+						Double2 uv = Double2(0.5 - (w.dot(flatRight) / flatWidth), 1.0 - (w.dot(flatUp) / flatHeight));
 
-						// @todo: check the texel for these coordinates and determine if it's fully transparent. If so, then the ray did not REALLY intersect the entity
-						// This will be difficult since all the texture info belongs to the Software Renderer. I might just have to add a function to the software renderer
-						// check if a specific texture coordinate is fully transparent
-						double r, g, b, a;
-						renderer.getFlatTexel(uv, entityData.getFlatIndex(), visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType, r, g, b, a);
-
-						// If the a == 0, then we clicked on a transparent texel
-						if (a > 0)
+						// Verify that the UV coordinates are within a reasonable range
+						if (uv.x >= 0 && uv.x <= 1 &&
+							uv.y >= 0 && uv.y <= 1)
 						{
-							double distance = (intersection - rayStart).length();
-							if (distance < hit.t)
+							// Check the texel for these coordinates and determine if it's fully transparent. If so, then the ray did not REALLY intersect the entity
+							// This will be difficult since all the texture info belongs to the Software Renderer. I might just have to add a function to the software renderer
+							// check if a specific texture coordinate is fully transparent
+							double r, g, b, a;
+							renderer.getFlatTexel(uv, entityData.getFlatIndex(), visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType, r, g, b, a);
+
+							// If the a == 0, then we clicked on a transparent texel
+							if (a > 0)
 							{
-								hit.entityID = entity.getID();
-								hit.type = Physics::Hit::Type::Entity;
-								hit.point = intersection;
-								hit.t = distance;
+								double distance = (intersection - rayStart).length();
+								if (distance < hit.t)
+								{
+									hit.entityID = entity.getID();
+									hit.type = Physics::Hit::Type::Entity;
+									hit.point = intersection;
+									hit.t = distance;
+								}
 							}
 						}
 					}

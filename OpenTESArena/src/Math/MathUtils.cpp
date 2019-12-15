@@ -28,11 +28,12 @@ double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
 
 bool MathUtils::RayPlaneIntersection(const Double3& rayStart, const Double3& rayDirection, const Double3& pointInPlane, const Double3& planeNormal, Double3& intersection)
 {
-	double denominator = rayDirection.normalized().dot(planeNormal.normalized());
-	if (denominator > 1e-6)
+	const Double3 norm = planeNormal.normalized();
+	double denominator = rayDirection.normalized().dot(norm);
+	if (abs(denominator) > 1e-6)
 	{
 		Double3 projection = pointInPlane - rayStart;
-		double t = projection.dot(planeNormal) / denominator;
+		double t = projection.dot(norm) / denominator;
 		if (t >= 0)
 		{
 			// An intersection exists. Find it.
