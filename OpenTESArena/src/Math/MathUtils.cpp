@@ -30,7 +30,7 @@ bool MathUtils::RayPlaneIntersection(const Double3& rayStart, const Double3& ray
 {
 	const Double3 norm = planeNormal.normalized();
 	double denominator = rayDirection.normalized().dot(norm);
-	if (abs(denominator) > 1e-6)
+	if (abs(denominator) > Constants::Epsilon)
 	{
 		Double3 projection = pointInPlane - rayStart;
 		double t = projection.dot(norm) / denominator;

@@ -61,7 +61,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	}
 	else if (voxelDataType == VoxelDataType::Diagonal)
 	{
-		const VoxelData::DiagonalData& diagData = voxelData.diagonal;
+		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
 		// Continue the ray into the voxel and do line intersection.
 		double nextX = static_cast<double>(direction.x >= 0 ? voxel.x + 1 : voxel.x);
@@ -92,7 +92,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 
 		const bool isRightDiag = diagData.type1;
 
-		// Check if the next point is above or below. That's a special case
+		// Check if the next point is on an X or Z face, The Y faces are a special case
 		if (nextPoint.x == floor(nextPoint.x) || nextPoint.z == floor(nextPoint.z))
 		{
 			// We can simplify this to a ray/wall intersection in the XZ plane
@@ -115,9 +115,8 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 			double intersection = (rayB - B) / (A - rayA);
 			if (intersection >= 0 && intersection <= 1)
 			{
-				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
-				hit.t = (nearPoint - hitPoint).length();
-				hit.point = rayStart + (direction * hit.t);
+				hit.point = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
+				hit.t = (nearPoint - hit.point).length();
 				hit.voxel = voxel;
 				hit.facing = facing;
 				hit.type = Hit::Type::Voxel;
@@ -135,9 +134,11 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 
 			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
 			{
-				// @todo: calculate the exact point of intersection between the ray and the quad
-				hit.t = (nearPoint - farPoint).length() + distY;
-				hit.point = rayStart + (direction * hit.t);
+				// We already know that the point is on the diagonal plane, so we just need to do a ray/plane intersection to get the point on the plane
+				MathUtils::RayPlaneIntersection(nearPoint, direction, Double3(voxel.x + 0.5, voxel.y + (ceilingHeight / 2), voxel.z + 0.5), isRightDiag ?
+					Double3(-1, 0, 1) : Double3(1, 0, 1), hit.point);
+				
+				hit.t = (nearPoint - hit.point).length();
 				hit.voxel = voxel;
 				hit.facing = facing;
 				hit.type = Hit::Type::Voxel;
@@ -437,9 +438,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 			
 			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
 			{
-				// @todo: calculate the exact point of intersection between the ray and the quad
-				hit.t = (nearPoint - farPoint).length() + distY;
-				hit.point = rayStart + (direction * hit.t);
+				// We already know that the point is on the diagonal plane, so we just need to do a ray/plane intersection to get the point on the plane
+				MathUtils::RayPlaneIntersection(nearPoint, direction, Double3(voxel.x + 0.5, voxel.y + (ceilingHeight / 2), voxel.z + 0.5), isRightDiag ?
+					Double3(-1, 0, 1) : Double3(1, 0, 1), hit.point);
+
+				hit.t = (nearPoint - hit.point).length();
 				hit.voxel = voxel;
 				hit.facing = facing;
 				hit.type = Hit::Type::Voxel;
@@ -555,7 +558,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer &renderer, Physics::Hit &hit)
+	const VoxelGrid &voxelGrid, const Double3 &cameraForward, const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
 	hit.t = DBL_MAX; // Set the hit distance to MAX. This will ensure that if we don't hit a voxel but we hit an entity the distance can still be used
 
@@ -580,23 +583,23 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 	for (int i = 0; i < entityCount; i++)
 	{
-		const Entity& entity = *entities[i];
+		const Entity &entity = *entities[i];
 		EntityManager::EntityVisibilityData visData;
 
 		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
 
 		// Use a bounding box to determine which voxels the entity could be in
 		// Start with a bounding cylinder
-		float radius = visData.keyframe.getWidth() / 2;
-		float height = visData.keyframe.getHeight();
+		double radius = visData.keyframe.getWidth() / 2;
+		double height = visData.keyframe.getHeight();
 
 		// Convert the bounding cylinder to an axis-aligned bounding box
-		float minX = visData.flatPosition.x - radius;
-		float maxX = visData.flatPosition.x + radius;
-		float minY = visData.flatPosition.y;
-		float maxY = visData.flatPosition.y + height;
-		float minZ = visData.flatPosition.z - radius;
-		float maxZ = visData.flatPosition.z + radius;
+		double minX = visData.flatPosition.x - radius;
+		double maxX = visData.flatPosition.x + radius;
+		double minY = visData.flatPosition.y;
+		double maxY = visData.flatPosition.y + height;
+		double minZ = visData.flatPosition.z - radius;
+		double maxZ = visData.flatPosition.z + radius;
 		
 		// Only iterate over the specific voxels that the entity could be in (at least partially). This loop should always hit at least 1 voxel
 		for (int z = static_cast<int>(floor(minZ)); z <= static_cast<int>(floor(maxZ)); z++)
@@ -768,7 +771,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 			// Get the distance from the camera to the hit point. It is a special case
 			// if the ray stopped in the first voxel.
 			double distance;
-			VoxelData::Facing facing;
+			VoxelData::Facing facing = VoxelData::Facing::NegativeX;
 			if (stoppedInFirstVoxel)
 			{
 				if ((initialSideDist.x < initialSideDist.y) &&
@@ -940,7 +943,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	return hit.t != DBL_MAX;
 }
 
-bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const Double3& cameraForward, const EntityManager& entityManager, const Renderer& renderer, Physics::Hit &hit)
+bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const Double3 &cameraForward, const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
 	const double ceilingHeight = 1.0;
 	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, cameraForward, entityManager, renderer, hit);

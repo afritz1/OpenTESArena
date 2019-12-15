@@ -242,7 +242,7 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-const void Renderer::getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const
+const void Renderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const
 {
 	softwareRenderer.getFlatTexel(uv, flatIndex, textureId, anglePercent, animStateType, r, g, b, a);
 }
@@ -733,9 +733,6 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const int screenWidth = this->getWindowDimensions().x;
 	const int viewHeight = this->getViewHeight();
 	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
-
-	// Draw a pixel for the cursor, for debugging purposes
-	this->drawPixel(Color::Red, screenWidth / 2, viewHeight / 2);
 }
 
 void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,

@@ -854,7 +854,7 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	return data;
 }
 
-const void SoftwareRenderer::getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const
+const void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const
 {
 	// Set the out params to default values
 	r = 0;

@@ -724,7 +724,7 @@ public:
 	ProfilerData getProfilerData() const;
 
 	// Gets the rgba values of the specified texture coordinate for an entity/flat
-	const void getFlatTexel(const Double2& uv, const int& flatIndex, const int& textureId, const double& anglePercent, const EntityAnimationData::StateType& animStateType, double& r, double& g, double& b, double& a) const;
+	const void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const;
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

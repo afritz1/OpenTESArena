@@ -377,7 +377,7 @@ EntityData *EntityManager::addEntityData(EntityData &&data)
 	return &this->entityData.back();
 }
 
-void EntityManager::getEntityVisibilityData(const Entity& entity, const Double2 &eye2D, const Double2& cameraDir, const double &ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const
+void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const
 {
 	visData.entity = &entity;
 	const EntityData& entityData = *getEntityData(entity.getDataIndex());
@@ -422,7 +422,7 @@ void EntityManager::getEntityVisibilityData(const Entity& entity, const Double2 
 		}
 	}();
 
-	visData.anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
+	visData.anglePercent = static_cast<float>(std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne));
 	const int stateIndex = [stateCount, visData]()
 	{
 		const int index = static_cast<int>(static_cast<double>(stateCount)* visData.anglePercent);
