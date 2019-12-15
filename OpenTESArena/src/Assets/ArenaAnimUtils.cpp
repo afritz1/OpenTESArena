@@ -1,3 +1,5 @@
+#include <array>
+
 #include "ArenaAnimUtils.h"
 #include "CFAFile.h"
 #include "DFAFile.h"
@@ -937,15 +939,16 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	void transformCitizenClothing(uint16_t seed, const ExeData &exeData)
+	Palette transformCitizenClothing(uint16_t seed, const Palette &palette, const ExeData &exeData)
 	{
 		const std::array<uint8_t, 16> &colorBase = exeData.entities.citizenColorBase;
 
-		uint16_t val = seed;
+		uint16_t val = seed & 0x7FFF;
+		Palette newPalette = palette;
 		for (const uint8_t color : colorBase)
 		{
 			const bool flag = (val & 0x8000) != 0;
-			val = Bytes::ror(val, 16);
+			val = Bytes::ror(val, 1);
 			if (flag)
 			{
 				const uint8_t block = val & 0xF;
@@ -961,30 +964,40 @@ namespace ArenaAnimUtils
 
 				for (int j = 0; j < 10; j++)
 				{
-					// @todo: figure out what this line means in NPC wiki.
-					//new[src + j] <- old[dest + j]
+					const int oldIndex = dest + j;
+					const int newIndex = src + j;
+					DebugAssertIndex(palette.get(), oldIndex);
+					DebugAssertIndex(newPalette.get(), newIndex);
+					newPalette.get()[newIndex] = palette.get()[oldIndex];
 				}
 			}
 		}
+
+		return newPalette;
 	}
 
-	void transformCitizenSkin(int raceIndex, const ExeData &exeData)
+	Palette transformCitizenSkin(int raceIndex, const Palette &palette, const ExeData &exeData)
 	{
 		const std::array<uint8_t, 10> &skinColors = exeData.entities.citizenSkinColors;
-		DebugAssertIndex(skinColors, raceIndex);
-		const uint8_t skinColor = skinColors[raceIndex];
+		Palette newPalette = palette;
 
-		/*For skin transformation, the following values are used:
-		Bretons, Nords, Wood Elves, Khajiits - no transformation
-			Dark Elves - 52
-			High Elves - 192
-			Argonians - 116
-			Everyone else - 148*/
-
-		for (int i = 0; i < 10; i++)
+		// Run the palette transformation if the given race should have its colors transformed.
+		const std::array<int, 9> RaceOffsets = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };
+		DebugAssertIndex(RaceOffsets, raceIndex);
+		const int raceOffset = RaceOffsets[raceIndex];
+		const bool hasTransformation = raceOffset != -1;
+		if (hasTransformation)
 		{
-			// @todo: figure out what this line means in NPC wiki.
-			//new[skinColor[i]] <- old[VAL+i]
+			for (int i = 0; i < 10; i++)
+			{
+				const int oldIndex = raceOffset + i;
+				const int newIndex = skinColors[i];
+				DebugAssertIndex(palette.get(), oldIndex);
+				DebugAssertIndex(newPalette.get(), newIndex);
+				newPalette.get()[newIndex] = palette.get()[oldIndex];
+			}
 		}
+
+		return newPalette;
 	}
 }

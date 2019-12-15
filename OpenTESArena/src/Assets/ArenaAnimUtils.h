@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "../Entities/EntityAnimationData.h"
+#include "../Media/Palette.h"
 
 class ArenaRandom;
 class CFAFile;
@@ -176,13 +177,12 @@ namespace ArenaAnimUtils
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outWalkStates);
 
-	// Transforms the colors of a citizen's clothes to the ones determined by
-	// the algorithm.
-	void transformCitizenClothing(uint16_t seed, const ExeData &exeData);
+	// Transforms the palette used for a citizen's clothes. The given seed value is "pure random"
+	// and can essentially be anything.
+	Palette transformCitizenClothing(uint16_t seed, const Palette &palette, const ExeData &exeData);
 
-	// Transforms the colors of a citizen's skin to the ones determined by the
-	// algorithm.
-	void transformCitizenSkin(const ExeData &exeData);
+	// Transforms the palette used for a citizen's skin.
+	Palette transformCitizenSkin(int raceIndex, const Palette &palette, const ExeData &exeData);
 }
 
 #endif
