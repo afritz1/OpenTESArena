@@ -584,8 +584,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *entities[i];
-		EntityManager::EntityVisibilityData visData;
 
+		// Skip any entities that are behind the camera or more than 10 units away
+		Double2 entityPosRelativeToEye = entity.getPosition() - eye2D;
+		if (entityPosRelativeToEye.lengthSquared() > 100 ||
+			cameraDir.dot(entityPosRelativeToEye) < 0.0)
+			continue;
+
+		EntityManager::EntityVisibilityData visData;
 		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
 
 		// Use a bounding box to determine which voxels the entity could be in
