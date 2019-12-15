@@ -6,8 +6,10 @@
 #include "MiscAssets.h"
 #include "../Entities/EntityType.h"
 #include "../Items/ArmorMaterialType.h"
+#include "../World/ClimateType.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 
@@ -122,6 +124,12 @@ namespace ArenaAnimUtils
 			DebugLogError("Couldn't replace direction in \"" + filename + "\".");
 			return false;
 		}
+	}
+
+	bool trySetCitizenFilenameDirection(std::string &filename, int animDirectionID)
+	{
+		// Same as dynamic entities (creatures and human enemies).
+		return trySetDynamicEntityFilenameDirection(filename, animDirectionID);
 	}
 
 	void getHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
@@ -799,6 +807,184 @@ namespace ArenaAnimUtils
 		if (!tryWriteDeathAnimStates())
 		{
 			DebugLogError("Couldn't make death anim states.");
+		}
+	}
+
+	void makeCitizenAnimStates(bool isMale, ClimateType climateType, const INFFile &inf,
+		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
+		std::vector<EntityAnimationData::State> *outIdleStates,
+		std::vector<EntityAnimationData::State> *outWalkStates)
+	{
+		auto makeKeyframeDimension = [](int value)
+		{
+			return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+		};
+
+		// Index into citizen animation filenames, depends on the climate and gender.
+		const int citizenIndex = [isMale, climateType]()
+		{
+			if (isMale)
+			{
+				switch (climateType)
+				{
+				case ClimateType::Temperate:
+					return 2;
+				case ClimateType::Desert:
+					return 0;
+				case ClimateType::Mountain:
+					return 1;
+				default:
+					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
+				}
+			}
+			else
+			{
+				switch (climateType)
+				{
+				case ClimateType::Temperate:
+					return 0;
+				case ClimateType::Desert:
+					return 1;
+				case ClimateType::Mountain:
+					return 2;
+				default:
+					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
+				}
+			}
+		}();
+
+		// Citizen animation filename list, depends on the gender.
+		const auto &exeData = miscAssets.getExeData();
+		const auto &citizenAnimFilenames = isMale ?
+			exeData.entities.maleCitizenAnimationFilenames :
+			exeData.entities.femaleCitizenAnimationFilenames;
+
+		auto tryWriteAnimStates = [isMale, climateType, &inf, &miscAssets, &cfaCache,
+			outIdleStates, outWalkStates, &makeKeyframeDimension, citizenIndex,
+			&citizenAnimFilenames](int animDirectionID)
+		{
+			DebugAssert(animDirectionID >= 1);
+			DebugAssert(animDirectionID <= Directions);
+
+			bool animIsFlipped;
+			const int correctedAnimDirID = getDynamicEntityCorrectedAnimID(animDirectionID, &animIsFlipped);
+
+			DebugAssertIndex(citizenAnimFilenames, citizenIndex);
+			std::string citizenFilename = String::toUppercase(citizenAnimFilenames[citizenIndex]);
+			if (!trySetCitizenFilenameDirection(citizenFilename, correctedAnimDirID))
+			{
+				DebugLogError("Couldn't set citizen filename direction \"" +
+					citizenFilename + "\" (" + std::to_string(correctedAnimDirID) + ").");
+				return false;
+			}
+
+			// Load the .CFA of the citizen at the given direction.
+			const CFAFile *cfa;
+			if (!cfaCache.tryGet(citizenFilename.c_str(), &cfa))
+			{
+				DebugLogError("Couldn't get cached .CFA file \"" + citizenFilename + "\".");
+				return false;
+			}
+
+			// Prepare the states to write out.
+			EntityAnimationData::State idleState = makeAnimState(
+				EntityAnimationData::StateType::Idle,
+				CitizenIdleSecondsPerFrame,
+				CitizenIdleLoop,
+				animIsFlipped);
+			EntityAnimationData::State walkState = makeAnimState(
+				EntityAnimationData::StateType::Walk,
+				CitizenWalkSecondsPerFrame,
+				CitizenWalkLoop,
+				animIsFlipped);
+
+			// Lambda for writing keyframes to an anim state.
+			auto writeStateKeyframes = [&makeKeyframeDimension, &cfa](
+				EntityAnimationData::State *outState, const std::vector<int> &indices)
+			{
+				for (size_t i = 0; i < indices.size(); i++)
+				{
+					const int frameIndex = indices[i];
+
+					const double width = makeKeyframeDimension(cfa->getWidth());
+					const double height = makeKeyframeDimension(cfa->getHeight());
+					const int textureID = frameIndex;
+
+					EntityAnimationData::Keyframe keyframe(width, height, textureID);
+					outState->addKeyframe(std::move(keyframe));
+				}
+			};
+
+			writeStateKeyframes(&idleState, CitizenIdleIndices);
+			writeStateKeyframes(&walkState, CitizenWalkIndices);
+
+			// Write animation filename to each.
+			idleState.setTextureName(std::string(citizenFilename));
+			walkState.setTextureName(std::string(citizenFilename));
+
+			// Write out the states to their respective state lists.
+			outIdleStates->push_back(std::move(idleState));
+			outWalkStates->push_back(std::move(walkState));
+			return true;
+		};
+
+		for (int i = 1; i <= Directions; i++)
+		{
+			if (!tryWriteAnimStates(i))
+			{
+				DebugLogError("Couldn't make anim states for direction \"" + std::to_string(i) + "\".");
+			}
+		}
+	}
+
+	void transformCitizenClothing(uint16_t seed, const ExeData &exeData)
+	{
+		const std::array<uint8_t, 16> &colorBase = exeData.entities.citizenColorBase;
+
+		uint16_t val = seed;
+		for (const uint8_t color : colorBase)
+		{
+			const bool flag = (val & 0x8000) != 0;
+			val = Bytes::ror(val, 16);
+			if (flag)
+			{
+				const uint8_t block = val & 0xF;
+				const uint8_t dest = color;
+				if ((dest == 128) && (block == 11))
+				{
+					// No green hair.
+					continue;
+				}
+
+				DebugAssertIndex(colorBase, block);
+				const uint8_t src = colorBase[block];
+
+				for (int j = 0; j < 10; j++)
+				{
+					// @todo: figure out what this line means in NPC wiki.
+					//new[src + j] <- old[dest + j]
+				}
+			}
+		}
+	}
+
+	void transformCitizenSkin(int raceIndex, const ExeData &exeData)
+	{
+		const std::array<uint8_t, 10> &skinColors = exeData.entities.citizenSkinColors;
+		DebugAssertIndex(skinColors, raceIndex);
+		const uint8_t skinColor = skinColors[raceIndex];
+
+		/*For skin transformation, the following values are used:
+		Bretons, Nords, Wood Elves, Khajiits - no transformation
+			Dark Elves - 52
+			High Elves - 192
+			Argonians - 116
+			Everyone else - 148*/
+
+		for (int i = 0; i < 10; i++)
+		{
+			// @todo: figure out what this line means in NPC wiki.
+			//new[skinColor[i]] <- old[VAL+i]
 		}
 	}
 }

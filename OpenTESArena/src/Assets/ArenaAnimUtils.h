@@ -9,11 +9,13 @@
 
 #include "../Entities/EntityAnimationData.h"
 
+class ArenaRandom;
 class CFAFile;
 class ExeData;
 class INFFile;
 class MiscAssets;
 
+enum class ClimateType;
 enum class EntityType;
 
 // Helper values for working with the original animations. These may or may not be directly
@@ -59,7 +61,15 @@ namespace ArenaAnimUtils
 	const bool HumanAttackLoop = CreatureAttackLoop;
 	const bool HumanDeathLoop = CreatureDeathLoop;
 	const std::vector<int> HumanIdleIndices = CreatureIdleIndices;
-	const std::vector<int> HumanWalkIndices = { 0, 1, 2, 3, 4, 5 };
+	const std::vector<int> HumanWalkIndices = CreatureWalkIndices;
+
+	// Animation values for citizens with .CFA files.
+	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 4.0;
+	constexpr double CitizenWalkSecondsPerFrame = HumanWalkSecondsPerFrame;
+	const bool CitizenIdleLoop = HumanIdleLoop;
+	const bool CitizenWalkLoop = HumanWalkLoop;
+	const std::vector<int> CitizenIdleIndices = { 6, 7, 8 };
+	const std::vector<int> CitizenWalkIndices = HumanWalkIndices;
 
 	// Cache for .CFA/.DFA/.IMG files referenced multiple times during entity loading.
 	template <typename T>
@@ -132,6 +142,9 @@ namespace ArenaAnimUtils
 	// Works for both creature and human enemy filenames.
 	bool trySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID);
 
+	// Writes the value of the animation direction to the filename if possible.
+	bool trySetCitizenFilenameDirection(std::string &filename, int animDirectionID);
+
 	// Writes out values for human enemy animations.
 	void getHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
 		int *outTypeIndex, bool *outIsMale);
@@ -156,6 +169,20 @@ namespace ArenaAnimUtils
 		std::vector<EntityAnimationData::State> *outWalkStates,
 		std::vector<EntityAnimationData::State> *outAttackStates,
 		std::vector<EntityAnimationData::State> *outDeathStates);
+
+	// Write out to lists of citizen animation states for each animation direction.
+	void makeCitizenAnimStates(bool isMale, ClimateType climateType, const INFFile &inf,
+		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
+		std::vector<EntityAnimationData::State> *outIdleStates,
+		std::vector<EntityAnimationData::State> *outWalkStates);
+
+	// Transforms the colors of a citizen's clothes to the ones determined by
+	// the algorithm.
+	void transformCitizenClothing(uint16_t seed, const ExeData &exeData);
+
+	// Transforms the colors of a citizen's skin to the ones determined by the
+	// algorithm.
+	void transformCitizenSkin(const ExeData &exeData);
 }
 
 #endif
