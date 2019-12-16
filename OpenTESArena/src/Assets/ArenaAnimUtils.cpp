@@ -948,7 +948,7 @@ namespace ArenaAnimUtils
 		for (const uint8_t color : colorBase)
 		{
 			const bool flag = (val & 0x8000) != 0;
-			val = Bytes::ror(val, 1);
+			val = Bytes::rol(val, 1);
 			if (flag)
 			{
 				const uint8_t block = val & 0xF;
