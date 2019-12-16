@@ -939,10 +939,11 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	Palette transformCitizenClothing(uint16_t seed, const Palette &palette, const ExeData &exeData)
+	Palette transformCitizenColors(int raceIndex, uint16_t seed, const Palette &palette, const ExeData &exeData)
 	{
 		const std::array<uint8_t, 16> &colorBase = exeData.entities.citizenColorBase;
 
+		// Clothes transformation.
 		uint16_t val = seed & 0x7FFF;
 		Palette newPalette = palette;
 		for (const uint8_t color : colorBase)
@@ -973,15 +974,9 @@ namespace ArenaAnimUtils
 			}
 		}
 
-		return newPalette;
-	}
-
-	Palette transformCitizenSkin(int raceIndex, const Palette &palette, const ExeData &exeData)
-	{
 		const std::array<uint8_t, 10> &skinColors = exeData.entities.citizenSkinColors;
-		Palette newPalette = palette;
 
-		// Run the palette transformation if the given race should have its colors transformed.
+		// Skin transformation, only if the given race should have its colors transformed.
 		const std::array<int, 9> RaceOffsets = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };
 		DebugAssertIndex(RaceOffsets, raceIndex);
 		const int raceOffset = RaceOffsets[raceIndex];

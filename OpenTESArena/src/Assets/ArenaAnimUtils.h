@@ -177,12 +177,10 @@ namespace ArenaAnimUtils
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outWalkStates);
 
-	// Transforms the palette used for a citizen's clothes. The given seed value is "pure random"
-	// and can essentially be anything.
-	Palette transformCitizenClothing(uint16_t seed, const Palette &palette, const ExeData &exeData);
-
-	// Transforms the palette used for a citizen's skin.
-	Palette transformCitizenSkin(int raceIndex, const Palette &palette, const ExeData &exeData);
+	// Transforms the palette used for a citizen's clothes and skin. The given seed value is
+	// "pure random" and can essentially be anything.
+	Palette transformCitizenColors(int raceIndex, uint16_t seed, const Palette &palette,
+		const ExeData &exeData);
 }
 
 #endif
