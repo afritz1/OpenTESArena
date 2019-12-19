@@ -77,6 +77,7 @@ public:
 	std::string toString() const;
 	uint32_t toARGB() const;
 	uint32_t toRGBA() const;
+	Vector3f<T> toXYZ() const;
 	T lengthSquared() const;
 	T length() const;
 	Vector4f<T> lerp(const Vector4f<T> &end, T percent) const;

@@ -147,6 +147,12 @@ Vector4f<T> Vector4f<T>::fromRGBA(uint32_t rgba)
 }
 
 template <typename T>
+Vector3f<T> Vector4f<T>::toXYZ() const
+{
+	return Vector3f<T>(x, y, z);
+}
+
+template <typename T>
 T &Vector4f<T>::operator[](size_t index)
 {
 	return reinterpret_cast<T*>(&this->x)[index];
