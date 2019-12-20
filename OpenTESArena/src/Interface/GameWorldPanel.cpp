@@ -1453,7 +1453,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				if (hit.t <= maxSelectionDist)
 				{
-					if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal)
+					if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal || voxelData.dataType == VoxelDataType::TransparentWall)
 					{
 						if (!debugFadeVoxel)
 						{

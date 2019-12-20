@@ -71,9 +71,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		double distY = abs(nextY - (farPoint.y / ceilingHeight));
 		double distZ = abs(nextZ - farPoint.z);
 
-		double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
-		double tY = (direction.y == 0 ? FLT_MAX : distY / abs(direction.y));
-		double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+		double tX = (direction.x == 0 ? std::numeric_limits<double>::max() : distX / abs(direction.x));
+		double tY = (direction.y == 0 ? std::numeric_limits<double>::max() : distY / abs(direction.y));
+		double tZ = (direction.z == 0 ? std::numeric_limits<double>::max() : distZ / abs(direction.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -152,6 +152,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	else if (voxelDataType == VoxelDataType::TransparentWall)
 	{
 		// Always invisible (no back face).
+		// You can't click an invisible wall that you're inside of
 		return false;
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
@@ -294,8 +295,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 			double distX = abs(nextX - farPoint.x);
 			double distZ = abs(nextZ - farPoint.z);
 
-			double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
-			double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+			double tX = (direction.x == 0 ? std::numeric_limits<double>::max() : distX / abs(direction.x));
+			double tZ = (direction.z == 0 ? std::numeric_limits<double>::max() : distZ / abs(direction.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -326,8 +327,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 			double distX = abs(nextX - farPoint.x);
 			double distZ = abs(nextZ - farPoint.z);
 
-			double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
-			double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+			double tX = (direction.x == 0 ? std::numeric_limits<double>::max() : distX / abs(direction.x));
+			double tZ = (direction.z == 0 ? std::numeric_limits<double>::max() : distZ / abs(direction.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -374,9 +375,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		double distY = abs(nextY - (farPoint.y / ceilingHeight));
 		double distZ = abs(nextZ - farPoint.z);
 
-		double tX = (direction.x == 0 ? FLT_MAX : distX / abs(direction.x));
-		double tY = (direction.y == 0 ? FLT_MAX : distY / abs(direction.y));
-		double tZ = (direction.z == 0 ? FLT_MAX : distZ / abs(direction.z));
+		double tX = (direction.x == 0 ? std::numeric_limits<double>::max() : distX / abs(direction.x));
+		double tY = (direction.y == 0 ? std::numeric_limits<double>::max() : distY / abs(direction.y));
+		double tZ = (direction.z == 0 ? std::numeric_limits<double>::max() : distZ / abs(direction.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -455,14 +456,22 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	}
 	else if (voxelDataType == VoxelDataType::TransparentWall)
 	{
-		// Transparent walls are hit when the camera is outside of their voxel.
-		hit.t = (nearPoint - rayStart).length(); // @todo: do in 3D.
-		hit.point = rayStart + (direction * hit.t);
-		hit.voxel = voxel;
-		hit.facing = facing;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
-		return true;
+		// Only select voxels that are collidable
+		if (voxelData.transparentWall.collider)
+		{
+			// Check if we clicked on the side of the voxel
+			if (farPoint.x == floor(farPoint.x) || farPoint.z == floor(farPoint.z))
+			{
+				// Transparent walls are hit when the camera is outside of their voxel.
+				hit.t = (nearPoint - farPoint).length(); // @todo: do in 3D.
+				hit.point = rayStart + (direction * hit.t);
+				hit.voxel = voxel;
+				hit.facing = facing;
+				hit.type = Hit::Type::Voxel;
+				hit.voxelID = voxelID;
+				return true;
+			}
+		}
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
 	{
@@ -560,7 +569,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
 	const VoxelGrid &voxelGrid, const Double3 &cameraForward, const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
-	hit.t = DBL_MAX; // Set the hit distance to MAX. This will ensure that if we don't hit a voxel but we hit an entity the distance can still be used
+	hit.t = std::numeric_limits<double>::max(); // Set the hit distance to MAX. This will ensure that if we don't hit a voxel but we hit an entity the distance can still be used
 
 	std::unordered_map<Int3, std::vector<EntityManager::EntityVisibilityData>> voxelEntityMap;
 
@@ -907,7 +916,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 #pragma endregion Ray Test any entities that cross this voxel
 
-		if (hit.t != DBL_MAX)
+		if (hit.t != std::numeric_limits<double>::max())
 			break;
 
 		if ((sideDist.x < sideDist.y) && (sideDist.x < sideDist.z))
@@ -946,7 +955,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 #pragma endregion Ray Cast Voxels and Entities
 
 	// return true if the ray hit something
-	return hit.t != DBL_MAX;
+	return hit.t != std::numeric_limits<double>::max();
 }
 
 bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid, const Double3 &cameraForward, const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
