@@ -1405,17 +1405,20 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from
 		// screen space to world space?
 		const Double3 &right = player.getRight();
-		const Double3 forward = [&right, &player, &game, &zoom]() {
-			// Calculate the direction forward towards the horizon. This will be the basis for our forward vector, plus the yShear modifier
+		const Double3 forward = [&game, &player, zoom, &right]()
+		{
+			// Calculate the direction forward towards the horizon. This will be the basis for our
+			// forward vector, plus the y-shear modifier.
 			const Double3 straightAhead = Double3::UnitY.cross(right).normalized();
 
-			// Get the player's forward direction to use for the yShearing calculation
+			// Get the player's forward direction to use for the y-shearing calculation.
 			const Double3 direction = player.getDirection();
-			const double yShear = std::tan(direction.getYAngleRadians())* zoom * 0.96875; // This value is 31/32, and for some reason gives us better accuracy when clicking in modern interface
+			const double yShear = std::tan(direction.getYAngleRadians()) * (zoom * 0.96875); // This value is 31/32, and for some reason gives us better accuracy when clicking in modern interface
 
-			// Combine the forward-towards-horizon vector with the shearing modifier
-			return (straightAhead + Double3(0, yShear, 0));
+			// Combine the forward-towards-horizon vector with the shearing modifier.
+			return straightAhead + Double3(0, yShear, 0);
 		}();
+
 		const Double3 up = right.cross(forward).normalized();
 		
 		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
@@ -1433,16 +1436,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	}();
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, player.getDirection(), entityManager, game.getRenderer(), hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid,
+		player.getDirection(), entityManager, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
 	{
 		if (hit.type == Physics::Hit::Type::Voxel)
 		{
-			const Int3& voxel = hit.voxel;
+			const Int3 &voxel = hit.voxel;
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelData& voxelData = voxelGrid.getVoxelData(voxelID);
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
 			// Primary click handles selection in the game world. Secondary click handles
 			// reading names of things.
@@ -1453,13 +1457,16 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				if (hit.t <= maxSelectionDist)
 				{
-					if (voxelData.dataType == VoxelDataType::Wall || voxelData.dataType == VoxelDataType::Raised || voxelData.dataType == VoxelDataType::Diagonal || voxelData.dataType == VoxelDataType::TransparentWall)
+					if (voxelData.dataType == VoxelDataType::Wall ||
+						voxelData.dataType == VoxelDataType::Raised ||
+						voxelData.dataType == VoxelDataType::Diagonal ||
+						voxelData.dataType == VoxelDataType::TransparentWall)
 					{
 						if (!debugFadeVoxel)
 						{
 							if (voxelData.dataType == VoxelDataType::Wall)
 							{
-								const VoxelData::WallData& wallData = voxelData.wall;
+								const VoxelData::WallData &wallData = voxelData.wall;
 
 								if (wallData.isMenu())
 								{
@@ -1471,15 +1478,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
 							LevelData::FadeState fadeState(voxel);
-							auto& fadingVoxels = level.getFadingVoxels();
+							auto &fadingVoxels = level.getFadingVoxels();
 
 							const bool exists = [&voxel, fadingVoxels]()
 							{
 								const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
-									[&voxel](const LevelData::FadeState& state)
-									{
-										return state.getVoxel() == voxel;
-									});
+									[&voxel](const LevelData::FadeState &state)
+								{
+									return state.getVoxel() == voxel;
+								});
 
 								return iter != fadingVoxels.end();
 							}();
@@ -1492,7 +1499,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					}
 					else if (voxelData.dataType == VoxelDataType::Edge)
 					{
-						const VoxelData::EdgeData& edgeData = voxelData.edge;
+						const VoxelData::EdgeData &edgeData = voxelData.edge;
 
 						if (edgeData.collider)
 						{
@@ -1504,18 +1511,18 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					}
 					else if (voxelData.dataType == VoxelDataType::Door)
 					{
-						const VoxelData::DoorData& doorData = voxelData.door;
+						const VoxelData::DoorData &doorData = voxelData.door;
 						const Int2 voxelXZ(voxel.x, voxel.z);
 
 						// If the door is closed, then open it.
-						auto& openDoors = level.getOpenDoors();
+						auto &openDoors = level.getOpenDoors();
 						const bool isClosed = [&openDoors, &voxelXZ]()
 						{
 							const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-								[&voxelXZ](const LevelData::DoorState& openDoor)
-								{
-									return openDoor.getVoxel() == voxelXZ;
-								});
+								[&voxelXZ](const LevelData::DoorState &openDoor)
+							{
+								return openDoor.getVoxel() == voxelXZ;
+							});
 
 							return iter == openDoors.end();
 						}();
@@ -1527,9 +1534,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 							// Get the door's opening sound index and play it.
 							const int soundIndex = doorData.getOpenSoundIndex();
-							const auto& inf = level.getInfFile();
-							const std::string& soundFilename = inf.getSound(soundIndex);
-							auto& audioManager = game.getAudioManager();
+							const auto &inf = level.getInfFile();
+							const std::string &soundFilename = inf.getSound(soundIndex);
+							auto &audioManager = game.getAudioManager();
 							audioManager.playSound(soundFilename);
 						}
 					}
@@ -1540,7 +1547,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Handle secondary click (i.e., right click).
 				if (voxelData.dataType == VoxelDataType::Wall)
 				{
-					const VoxelData::WallData& wallData = voxelData.wall;
+					const VoxelData::WallData &wallData = voxelData.wall;
 
 					// Print interior display name if *MENU block is clicked in an exterior.
 					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
@@ -1550,22 +1557,22 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 						if (VoxelData::WallData::menuHasDisplayName(menuType))
 						{
-							const auto& exterior = static_cast<ExteriorLevelData&>(level);
+							const auto &exterior = static_cast<ExteriorLevelData&>(level);
 
 							// Get interior name from the clicked voxel.
-							const std::string menuName = [&game, isCity, menuType, &exterior, &voxel]()
+							const std::string menuName = [&game, &voxel, isCity, menuType, &exterior]()
 							{
 								const Int2 voxelXZ(voxel.x, voxel.z);
 
 								if (isCity)
 								{
 									// City interior name.
-									const auto& menuNames = exterior.getMenuNames();
+									const auto &menuNames = exterior.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<Int2, std::string>& pair)
-										{
-											return pair.first == voxelXZ;
-										});
+										[&voxelXZ](const std::pair<Int2, std::string> &pair)
+									{
+										return pair.first == voxelXZ;
+									});
 
 									const bool foundName = iter != menuNames.end();
 
@@ -1578,8 +1585,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										// If no menu name was generated, then see if it's a mage's guild.
 										if (menuType == VoxelData::WallData::MenuType::MagesGuild)
 										{
-											const auto& miscAssets = game.getMiscAssets();
-											const auto& exeData = miscAssets.getExeData();
+											const auto &miscAssets = game.getMiscAssets();
+											const auto &exeData = miscAssets.getExeData();
 											return exeData.cityGen.magesGuildMenuName;
 										}
 										else
@@ -1606,12 +1613,12 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										originalVoxel.x / RMDFile::WIDTH,
 										originalVoxel.y / RMDFile::DEPTH);*/
 
-									const auto& menuNames = exterior.getMenuNames();
+									const auto &menuNames = exterior.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<Int2, std::string>& pair)
-										{
-											return pair.first == voxelXZ;
-										});
+										[&voxelXZ](const std::pair<Int2, std::string> &pair)
+									{
+										return pair.first == voxelXZ;
+									});
 
 									const bool foundName = iter != menuNames.end();
 
@@ -1645,7 +1652,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								&shadowData,
 								game.getRenderer());
 
-							auto& actionText = gameData.getActionText();
+							auto &actionText = gameData.getActionText();
 							const double duration = std::max(2.25,
 								static_cast<double>(richText.getText().size()) * 0.050);
 							actionText = TimedTextBox(duration, std::move(textBox));
@@ -1660,7 +1667,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			{
 				const double maxSelectionDist = 1.50;
 
-				if(hit.t <= maxSelectionDist)
+				if (hit.t <= maxSelectionDist)
 				{
 					if (!debugFadeVoxel)
 					{
@@ -1672,7 +1679,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						const std::string text = "You clicked on an entity!";
 						const int lineSpacing = 1;
 
-						const ExeData& exeData = game.getMiscAssets().getExeData();
+						const ExeData &exeData = game.getMiscAssets().getExeData();
 
 						const RichTextString richText(
 							text,
@@ -1694,8 +1701,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 						// Assign the text box and its duration to the triggered text member. It will 
 						// be displayed in the render method until the duration is no longer positive.
-						auto& gameData = game.getGameData();
-						auto& triggerText = gameData.getTriggerText();
+						auto &gameData = game.getGameData();
+						auto &triggerText = gameData.getTriggerText();
 						const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
 						triggerText = TimedTextBox(duration, std::move(textBox));
 					}

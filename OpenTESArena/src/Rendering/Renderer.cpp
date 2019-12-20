@@ -242,7 +242,8 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-const void Renderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const
+void Renderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
+	EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const
 {
 	softwareRenderer.getFlatTexel(uv, flatIndex, textureId, anglePercent, animStateType, r, g, b, a);
 }

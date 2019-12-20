@@ -10,6 +10,14 @@
 
 #include "components/debug/Debug.h"
 
+EntityManager::EntityVisibilityData::EntityVisibilityData() :
+	flatPosition(Double3::Zero), keyframe(EntityAnimationData::Keyframe(0, 0, 0))
+{
+	this->entity = nullptr;
+	this->anglePercent = 0.0;
+	this->stateType = EntityAnimationData::StateType::Idle;
+}
+
 template <typename T>
 int EntityManager::EntityGroup<T>::getCount() const
 {
@@ -377,19 +385,21 @@ EntityData *EntityManager::addEntityData(EntityData &&data)
 	return &this->entityData.back();
 }
 
-void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const
+void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
+	const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid,
+	EntityVisibilityData &visData) const
 {
 	visData.entity = &entity;
-	const EntityData& entityData = *getEntityData(entity.getDataIndex());
-	const EntityAnimationData& entityAnimData = entityData.getAnimationData();
+	const EntityData &entityData = *getEntityData(entity.getDataIndex());
+	const EntityAnimationData &entityAnimData = entityData.getAnimationData();
 
 	// Get active state
-	const EntityAnimationData::Instance& animInstance = entity.getAnimation();
-	const std::vector<EntityAnimationData::State>& stateList = animInstance.getStateList(entityAnimData);
+	const EntityAnimationData::Instance &animInstance = entity.getAnimation();
+	const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
 	const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
 
 	// Calculate state index based on entity direction relative to camera.
-	const double animAngle = [&eye2D, &cameraDir, &entity, stateCount]()
+	const double animAngle = [&entity, &eye2D, &cameraDir, stateCount]()
 	{
 		if (entity.getEntityType() == EntityType::Static)
 		{
@@ -399,8 +409,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		else if (entity.getEntityType() == EntityType::Dynamic)
 		{
 			// Dynamic entities are angle-dependent.
-			const DynamicEntity& dynamicEntity = static_cast<const DynamicEntity&>(entity);
-			const Double2& entityDir = dynamicEntity.getDirection();
+			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
+			const Double2 &entityDir = dynamicEntity.getDirection();
 			const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
 
 			const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
@@ -422,7 +432,9 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		}
 	}();
 
-	visData.anglePercent = static_cast<float>(std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne));
+	visData.anglePercent = static_cast<float>(
+		std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne));
+
 	const int stateIndex = [stateCount, visData]()
 	{
 		const int index = static_cast<int>(static_cast<double>(stateCount)* visData.anglePercent);
@@ -434,7 +446,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	visData.stateType = animState.getType();
 
 	// Get the entity's current animation frame (dimensions, texture, etc.).
-	visData.keyframe = [&entity, &animInstance, &entityAnimData, stateIndex, &animState]() -> const EntityAnimationData::Keyframe&
+	visData.keyframe = [&entity, &entityAnimData, &animInstance, stateIndex, &animState]()
+		-> const EntityAnimationData::Keyframe&
 	{
 		const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
 		const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
@@ -445,12 +458,11 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	const double flatHeight = visData.keyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
-	const Double2& entityPos = entity.getPosition();
+	const Double2 &entityPos = entity.getPosition();
 	const double entityPosX = entityPos.x;
 	const double entityPosZ = entityPos.y;
 
-	const double flatYOffset =
-		static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
+	const double flatYOffset = static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
@@ -459,11 +471,11 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 			static_cast<int>(entityPos.x),
 			static_cast<int>(entityPos.y));
 		const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
-		const VoxelData& voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
 		if (voxelData.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData& raised = voxelData.raised;
+			const VoxelData::RaisedData &raised = voxelData.raised;
 			return (raised.yOffset + raised.ySize) * ceilingHeight;
 		}
 		else
@@ -538,13 +550,4 @@ void EntityManager::tick(Game &game, double dt)
 
 	tickEntityGroup(this->staticGroup);
 	tickEntityGroup(this->dynamicGroup);
-}
-
-EntityManager::EntityVisibilityData::EntityVisibilityData() : 
-	entity(nullptr), 
-	flatPosition(Double3::Zero),
-	keyframe(EntityAnimationData::Keyframe(0, 0, 0)),
-	anglePercent(0),
-	stateType(EntityAnimationData::StateType::Idle)
-{
 }

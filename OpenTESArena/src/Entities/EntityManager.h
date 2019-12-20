@@ -19,6 +19,17 @@ enum class EntityType;
 
 class EntityManager
 {
+public:
+	struct EntityVisibilityData
+	{
+		const Entity *entity;
+		Double3 flatPosition;
+		EntityAnimationData::Keyframe keyframe;
+		float anglePercent;
+		EntityAnimationData::StateType stateType;
+
+		EntityVisibilityData();
+	};
 private:
 	template <typename T>
 	class EntityGroup
@@ -123,19 +134,9 @@ public:
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);
 
-	struct EntityVisibilityData
-	{
-		const Entity* entity;
-		Double3 flatPosition;
-		EntityAnimationData::Keyframe keyframe;
-		float anglePercent; 
-		EntityAnimationData::StateType stateType;
-
-		EntityVisibilityData();
-	};
-
-	// Gets the data necessary for rendering and raycast selection
-	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const;
+	// Gets the data necessary for rendering and ray cast selection.
+	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir,
+		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const;
 
 };
 

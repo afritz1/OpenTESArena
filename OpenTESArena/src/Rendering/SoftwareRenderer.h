@@ -723,8 +723,9 @@ public:
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const;
 
-	// Gets the rgba values of the specified texture coordinate for an entity/flat
-	const void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const;
+	// Gets the color values at the specified texture coordinate of an entity.
+	void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
+		EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const;
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

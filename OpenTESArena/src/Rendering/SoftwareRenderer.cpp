@@ -854,25 +854,27 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	return data;
 }
 
-const void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent, const EntityAnimationData::StateType &animStateType, double &r, double &g, double &b, double &a) const
+void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId,
+	double anglePercent, EntityAnimationData::StateType animStateType, double &r,
+	double &g, double &b, double &a) const
 {
-	// Set the out params to default values
+	// Set the out params to default values.
 	r = 0;
 	g = 0;
 	b = 0;
 	a = 0;
 
 	// Texture of the flat. It might be flipped horizontally as well, given by
-		// the "flat.flipped" value.
+	// the "flat.flipped" value.
 	const auto iter = flatTextureGroups.find(flatIndex);
 	if (iter == flatTextureGroups.end())
 	{
-		// No flat texture group available for the flat.
+		// No flat texture group found for the flat.
 		return;
 	}
 
-	const FlatTextureGroup& flatTextureGroup = iter->second;
-	const FlatTextureGroup::TextureList* textureList =
+	const FlatTextureGroup &flatTextureGroup = iter->second;
+	const FlatTextureGroup::TextureList *textureList =
 		flatTextureGroup.getTextureList(animStateType, anglePercent);
 
 	if (textureList == nullptr)
@@ -881,15 +883,14 @@ const void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int 
 		return;
 	}
 
-	const FlatTexture& texture = (*textureList)[textureId];
+	const FlatTexture &texture = (*textureList)[textureId];
 
-	// Use the UV to get the FlatTexel
-	int x = (int)floor((uv.x * texture.width) + 0.5);
-	int y = (int)floor((uv.y * texture.height) + 0.5);
-	int coord = std::clamp(y * texture.width + x, 0, static_cast<int>(texture.texels.size()));
+	// Use the UV to get the flat texel.
+	int x = static_cast<int>(std::floor((uv.x * texture.width) + 0.5));
+	int y = static_cast<int>(std::floor((uv.y * texture.height) + 0.5));
+	int coord = std::clamp(x + (y * texture.width), 0, static_cast<int>(texture.texels.size()));
 
-	auto texel = texture.texels[coord];
-
+	FlatTexel texel = texture.texels[coord];
 	r = texel.r;
 	g = texel.g;
 	b = texel.b;
@@ -1557,11 +1558,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *this->potentiallyVisibleFlats[i];
-		const EntityData& entityData = *entityManager.getEntityData(entity.getDataIndex());
+		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
 
 		EntityManager::EntityVisibilityData visData;
-
-		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
+		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir,
+			ceilingHeight, voxelGrid, visData);
 
 		const double flatWidth = visData.keyframe.getWidth();
 		const double flatHeight = visData.keyframe.getHeight();
