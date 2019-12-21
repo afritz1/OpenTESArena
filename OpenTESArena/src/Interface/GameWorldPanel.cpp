@@ -1398,37 +1398,34 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		const double zoom = [&game]()
 		{
 			const auto &options = game.getOptions();
+
+			// Don't use zoom for modern interface
+			if (options.getGraphics_ModernInterface())
+				return 1.0;
+
 			const double fovY = options.getGraphics_VerticalFOV();
 			return MathUtils::verticalFovToZoom(fovY);
 		}();
 
-		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from
-		// screen space to world space?
+		// The basic components are the forward, up, and right vectors
 		const Double3 &right = player.getRight();
-		const Double3 forward = [&game, &player, zoom, &right]()
-		{
-			// Calculate the direction forward towards the horizon. This will be the basis for our
-			// forward vector, plus the y-shear modifier.
-			const Double3 straightAhead = Double3::UnitY.cross(right).normalized();
-
-			// Get the player's forward direction to use for the y-shearing calculation.
-			const Double3 direction = player.getDirection();
-			const double yShear = std::tan(direction.getYAngleRadians()) * (zoom * 0.96875); // This value is 31/32, and for some reason gives us better accuracy when clicking in modern interface
-
-			// Combine the forward-towards-horizon vector with the shearing modifier.
-			return straightAhead + Double3(0, yShear, 0);
-		}();
-
-		const Double3 up = right.cross(forward).normalized();
+		const Double3 up = Double3::UnitY;
+		const Double3 forward = up.cross(right).normalized();		
 		
 		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
 		// of the screen.
 		const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
 
-		// @todo: include SoftwareRenderer::TALL_PIXEL_RATIO here? Maybe it needs to do
-		// a screen-to-world projection of the y-shearing?
-		const double upPercent = ((mouseYPercent * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+		// Get the player's forward direction to use for the y-shearing calculation.
+		const Double3 direction = player.getDirection();
+		// Calculate the y-shearing to determine how much up to add to the final direction
+		const double yShear = std::tan(direction.getYAngleRadians());
 
+		// Include SoftwareRenderer::TALL_PIXEL_RATIO here
+		// subtrtact yShear from thte mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
+		const double upPercent = (((mouseYPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+
+		// Combine the various components to get the final vector
 		const Double3 forwardComponent = forward * zoom;
 		const Double3 rightComponent = right * rightPercent;
 		const Double3 upComponent = up * upPercent;

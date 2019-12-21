@@ -262,7 +262,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
-		hit.facing = facing;
+		hit.facing = VoxelData::Facing::PositiveY;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;
@@ -272,7 +272,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (direction * hit.t);
 		hit.voxel = voxel;
-		hit.facing = facing;
+		hit.facing = VoxelData::Facing::NegativeY;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;

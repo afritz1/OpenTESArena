@@ -21,7 +21,7 @@ public:
 	// This defines which axis a wall's normal is facing towards on the outside
 	// (i.e., away from the center of the voxel). Used with edges and rendering.
 	// The Y axis is elided for simplicity (although it might be added eventually).
-	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
+	enum class Facing { PositiveX, NegativeX, PositiveY, NegativeY, PositiveZ, NegativeZ };
 
 	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
 	// can be inferred by the renderer.
