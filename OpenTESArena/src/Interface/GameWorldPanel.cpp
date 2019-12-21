@@ -1378,58 +1378,72 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const Double3 rayStart = player.getPosition();
 	const Double3 rayDirection = [&nativePoint, &game, &player]()
 	{
-		// Modify ray direction based on various factors:
-		// - Screen aspect, mouse position, y-shearing, tall pixels.
-		const auto &renderer = game.getRenderer();
-		const Int2 windowDims = renderer.getWindowDimensions();
-		const int viewWidth = windowDims.x;
-		const int viewHeight = renderer.getViewHeight();
-		const double viewAspectRatio = static_cast<double>(viewWidth) /
-			static_cast<double>(viewHeight);
-
-		// Mouse position percents across the screen. Add 0.50 to sample at the center
-		// of the pixel.
-		const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
-			static_cast<double>(viewWidth);
-		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
-			static_cast<double>(viewHeight);
-
-		// Zoom of the camera, based on vertical field of view.
-		const double zoom = [&game]()
+		if (game.getOptions().getGraphics_ModernInterface())
 		{
-			const auto &options = game.getOptions();
+			// The basic components are the forward, up, and right vectors
+			const Double3 up = Double3::UnitY;
+			const Double3 forward = up.cross(player.getRight()).normalized();
 
-			// Don't use zoom for modern interface
-			if (options.getGraphics_ModernInterface())
-				return 1.0;
+			// Calculate the y-shearing to determine how much up to add to the final direction
+			const double yShear = std::tan(player.getDirection().getYAngleRadians());
 
-			const double fovY = options.getGraphics_VerticalFOV();
-			return MathUtils::verticalFovToZoom(fovY);
-		}();
+			// Include SoftwareRenderer::TALL_PIXEL_RATIO here
+			// subtrtact yShear from thte mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
+			const double upPercent = 2 * yShear / SoftwareRenderer::TALL_PIXEL_RATIO;
 
-		// The basic components are the forward, up, and right vectors
-		const Double3 &right = player.getRight();
-		const Double3 up = Double3::UnitY;
-		const Double3 forward = up.cross(right).normalized();		
-		
-		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
-		// of the screen.
-		const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
+			// Combine the various components to get the final vector
+			const Double3 forwardComponent = forward;
+			const Double3 upComponent = up * upPercent;
 
-		// Get the player's forward direction to use for the y-shearing calculation.
-		const Double3 direction = player.getDirection();
-		// Calculate the y-shearing to determine how much up to add to the final direction
-		const double yShear = std::tan(direction.getYAngleRadians());
+			Double3 rayDirection = (forwardComponent + upComponent).normalized();
+			return rayDirection;
+		}
+		else
+		{
+			// Modify ray direction based on various factors:
+			// - Screen aspect, mouse position, y-shearing, tall pixels.
+			const auto &renderer = game.getRenderer();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const int viewWidth = windowDims.x;
+			const int viewHeight = renderer.getViewHeight();
+			const double viewAspectRatio = static_cast<double>(viewWidth) /
+				static_cast<double>(viewHeight);
 
-		// Include SoftwareRenderer::TALL_PIXEL_RATIO here
-		// subtrtact yShear from thte mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
-		const double upPercent = (((mouseYPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+			// Mouse position percents across the screen. Add 0.50 to sample at the center
+			// of the pixel.
+			const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
+				static_cast<double>(viewWidth);
+			const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
+				static_cast<double>(viewHeight);
 
-		// Combine the various components to get the final vector
-		const Double3 forwardComponent = forward * zoom;
-		const Double3 rightComponent = right * rightPercent;
-		const Double3 upComponent = up * upPercent;
-		return (forwardComponent + rightComponent - upComponent).normalized();
+			// Zoom of the camera, based on vertical field of view.
+			const double zoom = [&game]()
+			{
+				const auto &options = game.getOptions();
+
+				const double fovY = options.getGraphics_VerticalFOV();
+				return MathUtils::verticalFovToZoom(fovY);
+			}();
+
+			// The basic components are the forward, up, and right vectors
+			const Double3 &right = player.getRight();
+			const Double3 up = Double3::UnitY;
+			const Double3 forward = up.cross(right).normalized();
+
+			// Building blocks of the ray direction. Up is reversed because y=0 is at the top
+			// of the screen.
+			const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
+
+			// Include SoftwareRenderer::TALL_PIXEL_RATIO here
+			// subtrtact yShear from thte mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
+			const double upPercent = ((mouseYPercent * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+
+			// Combine the various components to get the final vector
+			const Double3 forwardComponent = forward * zoom;
+			const Double3 rightComponent = right * rightPercent;
+			const Double3 upComponent = up * upPercent;
+			return (forwardComponent + rightComponent - upComponent).normalized();
+		}
 	}();
 
 	Physics::Hit hit;
