@@ -248,6 +248,12 @@ void Renderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, dou
 	softwareRenderer.getFlatTexel(uv, flatIndex, textureId, anglePercent, animStateType, r, g, b, a);
 }
 
+Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+	double fovY, double aspect) const
+{
+	return SoftwareRenderer::screenPointToRay(xPercent, yPercent, cameraDirection, fovY, aspect);
+}
+
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 {
 	// From native point to letterbox point.

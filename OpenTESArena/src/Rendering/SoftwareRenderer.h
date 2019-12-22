@@ -33,34 +33,6 @@ public:
 	{
 		int width, height;
 	};
-
-	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
-	struct Camera
-	{
-		Double3 eye; // Camera position.
-		Double3 eyeVoxelReal; // 'eye' with each component floored.
-		Double3 direction; // 3D direction the camera is facing.
-		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
-		Matrix4d transform; // Perspective transformation matrix.
-		double forwardX, forwardZ; // Forward components.
-		double forwardZoomedX, forwardZoomedZ; // Forward * zoom components.
-		double rightX, rightZ; // Right components.
-		double rightAspectedX, rightAspectedZ; // Right * aspect components.
-		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
-		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
-		double fovY, zoom, aspect;
-		double yAngleRadians; // Angle of the camera above or below the horizon.
-		double yShear; // Projected Y-coordinate translation.
-
-		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
-			double projectionModifier);
-
-		// Gets the angle of the camera's 2D forward vector. 0 is +Z, pi/2 is +X.
-		double getXZAngleRadians() const;
-
-		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
-		int getAdjustedEyeVoxelY(double ceilingHeight) const;
-	};
 private:
 	struct VoxelTexel
 	{
@@ -117,6 +89,34 @@ private:
 		int width, height;
 
 		SkyTexture();
+	};
+
+	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
+	struct Camera
+	{
+		Double3 eye; // Camera position.
+		Double3 eyeVoxelReal; // 'eye' with each component floored.
+		Double3 direction; // 3D direction the camera is facing.
+		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
+		Matrix4d transform; // Perspective transformation matrix.
+		double forwardX, forwardZ; // Forward components.
+		double forwardZoomedX, forwardZoomedZ; // Forward * zoom components.
+		double rightX, rightZ; // Right components.
+		double rightAspectedX, rightAspectedZ; // Right * aspect components.
+		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
+		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
+		double fovY, zoom, aspect;
+		double yAngleRadians; // Angle of the camera above or below the horizon.
+		double yShear; // Projected Y-coordinate translation.
+
+		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
+			double projectionModifier);
+
+		// Gets the angle of the camera's 2D forward vector. 0 is +Z, pi/2 is +X.
+		double getXZAngleRadians() const;
+
+		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
+		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};
 
 	// Ray for 2.5D ray casting. The start point is always at the camera's eye.
@@ -487,6 +487,10 @@ private:
 	static double getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
 		const std::vector<LevelData::FadeState> &fadingVoxels);
 
+	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
+	// and the zoom of the camera (dependent on vertical field of view).
+	static double getYShear(double angleRadians, double zoom);
+
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
@@ -728,7 +732,9 @@ public:
 	void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
 		EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const;
 
-	static Double3 screenPointToRay(double xPercent, double yPercent, const Camera &camera, const Options &options);
+	// Converts a screen point to a ray into the game world.
+	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect);
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

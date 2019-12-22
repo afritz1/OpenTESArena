@@ -349,7 +349,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	// for "acceptable skewing" at a vertical FOV of 90.0. If the camera is not clamped, this
 	// could theoretically be between -infinity and infinity, but it would result in far too much
 	// skewing.
-	this->yShear = std::tan(this->yAngleRadians) * this->zoom;
+	this->yShear = SoftwareRenderer::getYShear(this->yAngleRadians, this->zoom);
 }
 
 double SoftwareRenderer::Camera::getXZAngleRadians() const
@@ -898,23 +898,26 @@ void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textur
 	a = texel.a;
 }
 
-Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Camera &camera, const Options &options)
+Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
+	const Double3 &cameraDirection, double fovY, double aspect)
 {
-	// The basic components are the forward, up, and right vectors
+	// The basic components are the forward, up, and right vectors.
 	const Double3 up = Double3::UnitY;
-	const Double3 right = camera.direction.cross(up).normalized();
+	const Double3 right = cameraDirection.cross(up).normalized();
 	const Double3 forward = up.cross(right).normalized();
 
 	// Building blocks of the ray direction. Up is reversed because y=0 is at the top
 	// of the screen.
-	const double rightPercent = ((xPercent * 2.0) - 1.0) * camera.aspect;
+	const double rightPercent = ((xPercent * 2.0) - 1.0) * aspect;
 
-	// Include SoftwareRenderer::TALL_PIXEL_RATIO here
-	// subtrtact yShear from the mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
-	const double upPercent = (((yPercent - camera.yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+	// Subtract y-shear from the Y percent because Y coordinates on-screen are reversed.
+	const double yAngleRadians = cameraDirection.getYAngleRadians();
+	const double zoom = MathUtils::verticalFovToZoom(fovY);
+	const double yShear = SoftwareRenderer::getYShear(yAngleRadians, zoom);
+	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
 
 	// Combine the various components to get the final vector
-	const Double3 forwardComponent = forward * camera.zoom;
+	const Double3 forwardComponent = forward * zoom;
 	const Double3 rightComponent = right * rightPercent;
 	const Double3 upComponent = up * upPercent;
 	return (forwardComponent + rightComponent - upComponent).normalized();
@@ -2308,6 +2311,11 @@ double SoftwareRenderer::getFadingVoxelPercent(int voxelX, int voxelY, int voxel
 
 	return (iter != fadingVoxels.end()) ?
 		std::clamp(1.0 - iter->getPercentDone(), 0.0, 1.0) : 1.0;
+}
+
+double SoftwareRenderer::getYShear(double angleRadians, double zoom)
+{
+	return std::tan(angleRadians) * zoom;
 }
 
 double SoftwareRenderer::getProjectedY(const Double3 &point, 

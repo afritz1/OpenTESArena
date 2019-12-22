@@ -122,6 +122,11 @@ public:
 		double anglePercent, EntityAnimationData::StateType animStateType,
 		double &r, double &g, double &b, double &a) const;
 
+	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
+	// dependent on renderer details.
+	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect) const;
+
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
 	// or outside the 320x200 limit when returned.
