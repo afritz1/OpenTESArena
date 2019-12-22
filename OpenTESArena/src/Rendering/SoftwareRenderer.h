@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../Game/Options.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -31,6 +32,34 @@ public:
 	struct ProfilerData
 	{
 		int width, height;
+	};
+
+	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
+	struct Camera
+	{
+		Double3 eye; // Camera position.
+		Double3 eyeVoxelReal; // 'eye' with each component floored.
+		Double3 direction; // 3D direction the camera is facing.
+		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
+		Matrix4d transform; // Perspective transformation matrix.
+		double forwardX, forwardZ; // Forward components.
+		double forwardZoomedX, forwardZoomedZ; // Forward * zoom components.
+		double rightX, rightZ; // Right components.
+		double rightAspectedX, rightAspectedZ; // Right * aspect components.
+		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
+		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
+		double fovY, zoom, aspect;
+		double yAngleRadians; // Angle of the camera above or below the horizon.
+		double yShear; // Projected Y-coordinate translation.
+
+		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
+			double projectionModifier);
+
+		// Gets the angle of the camera's 2D forward vector. 0 is +Z, pi/2 is +X.
+		double getXZAngleRadians() const;
+
+		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
+		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};
 private:
 	struct VoxelTexel
@@ -88,34 +117,6 @@ private:
 		int width, height;
 
 		SkyTexture();
-	};
-
-	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
-	struct Camera
-	{
-		Double3 eye; // Camera position.
-		Double3 eyeVoxelReal; // 'eye' with each component floored.
-		Double3 direction; // 3D direction the camera is facing.
-		Int3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
-		Matrix4d transform; // Perspective transformation matrix.
-		double forwardX, forwardZ; // Forward components.
-		double forwardZoomedX, forwardZoomedZ; // Forward * zoom components.
-		double rightX, rightZ; // Right components.
-		double rightAspectedX, rightAspectedZ; // Right * aspect components.
-		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
-		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
-		double fovY, zoom, aspect;
-		double yAngleRadians; // Angle of the camera above or below the horizon.
-		double yShear; // Projected Y-coordinate translation.
-
-		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
-			double projectionModifier);
-
-		// Gets the angle of the camera's 2D forward vector. 0 is +Z, pi/2 is +X.
-		double getXZAngleRadians() const;
-
-		// Gets the camera's Y voxel coordinate after compensating for ceiling height.
-		int getAdjustedEyeVoxelY(double ceilingHeight) const;
 	};
 
 	// Ray for 2.5D ray casting. The start point is always at the camera's eye.
@@ -726,6 +727,8 @@ public:
 	// Gets the color values at the specified texture coordinate of an entity.
 	void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
 		EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const;
+
+	static Double3 screenPointToRay(double xPercent, double yPercent, const Camera &camera, const Options &options);
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

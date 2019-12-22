@@ -9,6 +9,7 @@
 #include "Surface.h"
 #include "../Entities/EntityAnimationData.h"
 #include "../Entities/EntityType.h"
+#include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"
@@ -895,6 +896,28 @@ void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textur
 	g = texel.g;
 	b = texel.b;
 	a = texel.a;
+}
+
+Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent, const Camera &camera, const Options &options)
+{
+	// The basic components are the forward, up, and right vectors
+	const Double3 up = Double3::UnitY;
+	const Double3 right = camera.direction.cross(up).normalized();
+	const Double3 forward = up.cross(right).normalized();
+
+	// Building blocks of the ray direction. Up is reversed because y=0 is at the top
+	// of the screen.
+	const double rightPercent = ((xPercent * 2.0) - 1.0) * camera.aspect;
+
+	// Include SoftwareRenderer::TALL_PIXEL_RATIO here
+	// subtrtact yShear from the mouseYpercent because y coordinates on-screen are reversed and we're treating yShear as a mouse position
+	const double upPercent = (((yPercent - camera.yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+
+	// Combine the various components to get the final vector
+	const Double3 forwardComponent = forward * camera.zoom;
+	const Double3 rightComponent = right * rightPercent;
+	const Double3 upComponent = up * upPercent;
+	return (forwardComponent + rightComponent - upComponent).normalized();
 }
 
 void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
