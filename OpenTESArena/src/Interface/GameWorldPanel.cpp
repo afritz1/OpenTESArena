@@ -1385,17 +1385,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		const double viewAspectRatio = static_cast<double>(viewWidth) /
 			static_cast<double>(viewHeight);
 
-		const Options &options = game.getOptions();
-		const bool modernInterface = options.getGraphics_ModernInterface();
-
 		// Mouse position percents across the screen. Add 0.50 to sample at the center
 		// of the pixel if in classic mode.
-		const double mouseXPercent = modernInterface ? 0.50 :
-			((static_cast<double>(nativePoint.x) + 0.50) / static_cast<double>(viewWidth));
-		const double mouseYPercent = modernInterface ? 0.50 :
-			((static_cast<double>(nativePoint.y) + 0.50) / static_cast<double>(viewHeight));
+		const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
+			static_cast<double>(viewWidth);
+		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
+			static_cast<double>(viewHeight);
 
 		const Double3 &cameraDirection = player.getDirection();
+		const auto &options = game.getOptions();
 		return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
 			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
