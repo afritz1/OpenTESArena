@@ -136,8 +136,7 @@ public:
 
 	// Gets the data necessary for rendering and ray cast selection.
 	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir,
-		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &visData) const;
-
+		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
 };
 
 #endif

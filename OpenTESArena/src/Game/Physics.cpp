@@ -607,7 +607,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 #pragma region build Voxel->Entity map
 
-	// Get all the entities
+	// Get all the entities.
 	std::vector<const Entity*> entities(entityManager.getTotalCount());
 	const int entityCount = entityManager.getTotalEntities(
 		entities.data(),
@@ -891,9 +891,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 		if (iter != voxelEntityMap.end())
 		{
 			// Iterate over all the entities that cross this voxel and ray test them.
-			for (auto it = iter->second.begin(); it != iter->second.end(); it++)
+			const auto &voxelVisDataList = iter->second;
+			for (const auto &visData : voxelVisDataList)
 			{
-				const EntityManager::EntityVisibilityData &visData = *it;
 				const Entity &entity = *visData.entity;
 				const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
 
@@ -911,42 +911,21 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 					const double flatHeight = visData.keyframe.getHeight();
 					const double flatHalfWidth = flatWidth * 0.50;
 
-					// Do a ray test to see if the ray intersects.
-					Double3 intersection;
-					if (MathUtils::rayPlaneIntersection(rayStart, direction, visData.flatPosition,
-						flatForward, intersection))
+					// @todo: change to option in Options.
+					const bool pixelPerfect = true;
+
+					Double3 hitPoint;
+					if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
+						flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
+						direction, pixelPerfect, &hitPoint))
 					{
-						Double3 w = intersection - visData.flatPosition;
-
-						// Get the texture coordinates.
-						Double2 uv(
-							0.5 - (w.dot(flatRight) / flatWidth),
-							1.0 - (w.dot(flatUp) / flatHeight));
-
-						// Verify that the UV coordinates are within a reasonable range.
-						if (uv.x >= 0 && uv.x <= 1 && uv.y >= 0 && uv.y <= 1)
+						double distance = (hitPoint - rayStart).length();
+						if (distance < hit.t)
 						{
-							// Check the texel for these coordinates and determine if it's fully transparent.
-							// If so, then the ray did not REALLY intersect the entity. This will be difficult
-							// since all the texture info belongs to the software renderer. I might just have
-							// to add a function to the software renderer to check if a specific texture
-							// coordinate is fully transparent.
-							double r, g, b, a;
-							renderer.getFlatTexel(uv, entityData.getFlatIndex(), visData.keyframe.getTextureID(),
-								visData.anglePercent, visData.stateType, r, g, b, a);
-
-							// If alpha == 0, then we clicked on a transparent texel.
-							if (a > 0)
-							{
-								double distance = (intersection - rayStart).length();
-								if (distance < hit.t)
-								{
-									hit.entityID = entity.getID();
-									hit.type = Physics::Hit::Type::Entity;
-									hit.point = intersection;
-									hit.t = distance;
-								}
-							}
+							hit.t = distance;
+							hit.point = hitPoint;
+							hit.type = Physics::Hit::Type::Entity;
+							hit.entityID = entity.getID();
 						}
 					}
 				}

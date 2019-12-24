@@ -9,6 +9,7 @@
 #include "Surface.h"
 #include "../Interface/CursorAlignment.h"
 #include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Utilities/Platform.h"
@@ -242,10 +243,39 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-void Renderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
-	EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const
+bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
+	int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
+	const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
+	const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const
 {
-	softwareRenderer.getFlatTexel(uv, flatIndex, textureId, anglePercent, animStateType, r, g, b, a);
+	DebugAssert(this->softwareRenderer.isInited());
+	const Entity &entity = *visData.entity;
+
+	// Do a ray test to see if the ray intersects.
+	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, visData.flatPosition,
+		entityForward, *outHitPoint))
+	{
+		const Double3 diff = (*outHitPoint) - visData.flatPosition;
+
+		// Get the texture coordinates. It's okay if they are outside the entity.
+		const Double2 uv(
+			0.5 - (diff.dot(entityRight) / entityWidth),
+			1.0 - (diff.dot(entityUp) / entityHeight));
+
+		// See if the ray successfully hit a point on the entity, and that point is considered
+		// selectable (i.e. it's not transparent).
+		bool isSelected;
+		const bool withinEntity = this->softwareRenderer.tryGetEntitySelectionData(uv, flatIndex,
+			visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType,
+			pixelPerfect, &isSelected);
+
+		return withinEntity && isSelected;
+	}
+	else
+	{
+		// Did not intersect the entity's plane.
+		return false;
+	}
 }
 
 Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,

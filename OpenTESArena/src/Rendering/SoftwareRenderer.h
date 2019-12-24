@@ -428,6 +428,9 @@ private:
 	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
 	//static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
+	// Height ratio between normal pixels and tall pixels.
+	static const double TALL_PIXEL_RATIO;
+
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
 
@@ -720,17 +723,16 @@ public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
 
-	// Height ratio between normal pixels and tall pixels.
-	static const double TALL_PIXEL_RATIO;
-
 	bool isInited() const;
 
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const;
 
-	// Gets the color values at the specified texture coordinate of an entity.
-	void getFlatTexel(const Double2 &uv, int flatIndex, int textureId, double anglePercent,
-		EntityAnimationData::StateType animStateType, double &r, double &g, double &b, double &a) const;
+	// Tries to write out selection data for the given entity. Returns whether selection data was
+	// successfully written.
+	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int textureID,
+		double anglePercent, EntityAnimationData::StateType animStateType, bool pixelPerfect,
+		bool *outIsSelected) const;
 
 	// Converts a screen point to a ray into the game world.
 	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,

@@ -820,10 +820,10 @@ const double SoftwareRenderer::NEAR_PLANE = 0.0001;
 const double SoftwareRenderer::FAR_PLANE = 1000.0;
 const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 //const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
+const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
 const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
 const double SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE = 25.0;
-const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
 
 SoftwareRenderer::SoftwareRenderer()
 {
@@ -855,47 +855,62 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	return data;
 }
 
-void SoftwareRenderer::getFlatTexel(const Double2 &uv, int flatIndex, int textureId,
-	double anglePercent, EntityAnimationData::StateType animStateType, double &r,
-	double &g, double &b, double &a) const
+bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int textureID,
+	double anglePercent, EntityAnimationData::StateType animStateType, bool pixelPerfect,
+	bool *outIsSelected) const
 {
-	// Set the out params to default values.
-	r = 0;
-	g = 0;
-	b = 0;
-	a = 0;
-
-	// Texture of the flat. It might be flipped horizontally as well, given by
-	// the "flat.flipped" value.
-	const auto iter = flatTextureGroups.find(flatIndex);
-	if (iter == flatTextureGroups.end())
+	// Branch depending on whether the selection request needs to include texture data.
+	if (pixelPerfect)
 	{
-		// No flat texture group found for the flat.
-		return;
+		// Get the flat texture group mapped to the flat index.
+		const auto iter = flatTextureGroups.find(flatIndex);
+		if (iter == flatTextureGroups.end())
+		{
+			// No flat texture group found for the flat.
+			return false;
+		}
+
+		// Get the texture list from the texture group at the given animation state and angle.
+		const FlatTextureGroup &flatTextureGroup = iter->second;
+		const FlatTextureGroup::TextureList *textureList =
+			flatTextureGroup.getTextureList(animStateType, anglePercent);
+
+		if (textureList == nullptr)
+		{
+			// No flat textures allocated for the animation state.
+			return false;
+		}
+
+		DebugAssertIndex(*textureList, textureID);
+		const FlatTexture &texture = (*textureList)[textureID];
+
+		// Convert texture coordinates to a texture index. Don't need to clamp; just return
+		// failure if it's out-of-bounds.
+		const int textureX = static_cast<int>(uv.x * static_cast<double>(texture.width));
+		const int textureY = static_cast<int>(uv.y * static_cast<double>(texture.height));
+
+		if ((textureX < 0) || (textureX >= texture.width) ||
+			(textureY < 0) || (textureY >= texture.height))
+		{
+			// Outside the texture.
+			return false;
+		}
+
+		const int textureIndex = textureX + (textureY * texture.width);
+
+		// Check if the texel is non-transparent.
+		const FlatTexel &texel = texture.texels[textureIndex];
+		*outIsSelected = texel.a > 0.0;
+		return true;
 	}
-
-	const FlatTextureGroup &flatTextureGroup = iter->second;
-	const FlatTextureGroup::TextureList *textureList =
-		flatTextureGroup.getTextureList(animStateType, anglePercent);
-
-	if (textureList == nullptr)
+	else
 	{
-		// No flat textures allocated for the animation state.
-		return;
+		// If not pixel perfect, the entity's projected rectangle is hit if the texture coordinates
+		// are valid.
+		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
+		*outIsSelected = withinEntity;
+		return withinEntity;
 	}
-
-	const FlatTexture &texture = (*textureList)[textureId];
-
-	// Use the UV to get the flat texel.
-	int x = static_cast<int>(std::floor((uv.x * texture.width) + 0.5));
-	int y = static_cast<int>(std::floor((uv.y * texture.height) + 0.5));
-	int coord = std::clamp(x + (y * texture.width), 0, static_cast<int>(texture.texels.size()));
-
-	FlatTexel texel = texture.texels[coord];
-	r = texel.r;
-	g = texel.g;
-	b = texel.b;
-	a = texel.a;
 }
 
 Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,

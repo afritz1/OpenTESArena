@@ -387,9 +387,9 @@ EntityData *EntityManager::addEntityData(EntityData &&data)
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
 	const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid,
-	EntityVisibilityData &visData) const
+	EntityVisibilityData &outVisData) const
 {
-	visData.entity = &entity;
+	outVisData.entity = &entity;
 	const EntityData &entityData = *getEntityData(entity.getDataIndex());
 	const EntityAnimationData &entityAnimData = entityData.getAnimationData();
 
@@ -432,21 +432,21 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		}
 	}();
 
-	visData.anglePercent = static_cast<float>(
+	outVisData.anglePercent = static_cast<float>(
 		std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne));
 
-	const int stateIndex = [stateCount, visData]()
+	const int stateIndex = [&outVisData, stateCount]()
 	{
-		const int index = static_cast<int>(static_cast<double>(stateCount)* visData.anglePercent);
+		const int index = static_cast<int>(static_cast<double>(stateCount) * outVisData.anglePercent);
 		return std::clamp(index, 0, stateCount - 1);
 	}();
 
 	DebugAssertIndex(stateList, stateIndex);
-	const EntityAnimationData::State& animState = stateList[stateIndex];
-	visData.stateType = animState.getType();
+	const EntityAnimationData::State &animState = stateList[stateIndex];
+	outVisData.stateType = animState.getType();
 
 	// Get the entity's current animation frame (dimensions, texture, etc.).
-	visData.keyframe = [&entity, &entityAnimData, &animInstance, stateIndex, &animState]()
+	outVisData.keyframe = [&entity, &entityAnimData, &animInstance, stateIndex, &animState]()
 		-> const EntityAnimationData::Keyframe&
 	{
 		const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
@@ -454,8 +454,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		return keyframes.get(keyframeIndex);
 	}();
 
-	const double flatWidth = visData.keyframe.getWidth();
-	const double flatHeight = visData.keyframe.getHeight();
+	const double flatWidth = outVisData.keyframe.getWidth();
+	const double flatHeight = outVisData.keyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
 	const Double2 &entityPos = entity.getPosition();
@@ -486,7 +486,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	}();
 
 	// Bottom center of flat.
-	visData.flatPosition = Double3(
+	outVisData.flatPosition = Double3(
 		entityPosX,
 		ceilingHeight + flatYOffset + raisedPlatformYOffset,
 		entityPosZ);

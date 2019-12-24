@@ -16,7 +16,7 @@ namespace MathUtils
 	// Converts vertical field of view to horizontal field of view.
 	double verticalFovToHorizontalFov(double fovY, double aspectRatio);
 
-	// Finds the intersecion of the ray defined by rayStart and rayDirection and the plane
+	// Finds the intersection of the ray defined by rayStart and rayDirection and the plane
 	// defined by pointInPlane and planeNormal if such an intersection exists.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &pointInPlane, const Double3 &planeNormal, Double3 &intersection);

@@ -19,6 +19,8 @@ public:
 	{
 		enum class Type { Voxel, Entity };
 
+		// @todo: voxel and entity structs so both structs can be in one union.
+
 		double t;
 		Double3 point;
 		Int3 voxel;
