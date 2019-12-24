@@ -596,8 +596,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
-	const VoxelGrid &voxelGrid, const Double3 &cameraForward, const EntityManager &entityManager,
-	const Renderer &renderer, Physics::Hit &hit)
+	const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
+	const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
@@ -911,9 +911,6 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 					const double flatHeight = visData.keyframe.getHeight();
 					const double flatHalfWidth = flatWidth * 0.50;
 
-					// @todo: change to option in Options.
-					const bool pixelPerfect = true;
-
 					Double3 hitPoint;
 					if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
 						flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
@@ -978,11 +975,11 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	return hit.t != std::numeric_limits<double>::max();
 }
 
-bool Physics::rayCast(const Double3 &point, const Double3 &direction, const VoxelGrid &voxelGrid,
-	const Double3 &cameraForward, const EntityManager &entityManager, const Renderer &renderer,
-	Physics::Hit &hit)
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, const Double3 &cameraForward,
+	bool pixelPerfect, const EntityManager &entityManager, const VoxelGrid &voxelGrid,
+	const Renderer &renderer, Physics::Hit &hit)
 {
-	const double ceilingHeight = 1.0;
-	return Physics::rayCast(point, direction, ceilingHeight, voxelGrid, cameraForward,
-		entityManager, renderer, hit);
+	constexpr double ceilingHeight = 1.0;
+	return Physics::rayCast(rayStart, direction, ceilingHeight, cameraForward, pixelPerfect,
+		entityManager, voxelGrid, renderer, hit);
 }

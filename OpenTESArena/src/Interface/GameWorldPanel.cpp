@@ -1368,6 +1368,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
+	const auto &options = game.getOptions();
 	auto &player = gameData.getPlayer();
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
@@ -1376,7 +1377,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const double ceilingHeight = level.getCeilingHeight();
 
 	const Double3 rayStart = player.getPosition();
-	const Double3 rayDirection = [&nativePoint, &game, &player]()
+	const Double3 rayDirection = [&nativePoint, &game, &options, &player]()
 	{
 		const auto &renderer = game.getRenderer();
 		const Int2 windowDims = renderer.getWindowDimensions();
@@ -1393,14 +1394,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			static_cast<double>(viewHeight);
 
 		const Double3 &cameraDirection = player.getDirection();
-		const auto &options = game.getOptions();
 		return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
 			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
 
+	// Pixel-perfect selection determines whether an entity's texture is used in the
+	// selection calculation.
+	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
+
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid,
-		player.getDirection(), entityManager, game.getRenderer(), hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, player.getDirection(),
+		pixelPerfectSelection, entityManager, voxelGrid, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)

@@ -153,6 +153,7 @@ private:
 	static const std::string HORIZONTAL_SENSITIVITY_NAME;
 	static const std::string VERTICAL_SENSITIVITY_NAME;
 	static const std::string CAMERA_PITCH_LIMIT_NAME;
+	static const std::string PIXEL_PERFECT_SELECTION_NAME;
 
 	// Misc.
 	static const std::string SHOW_COMPASS_NAME;
