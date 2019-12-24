@@ -3,6 +3,8 @@
 #include <algorithm>
 #include "../Math/Constants.h"
 
+#include "components/debug/Debug.h"
+
 Collider3D::ColliderHit::ColliderHit(const Collider3D *a, const Collider3D *b, const Double3 &pointOfImpactOnA, const Double3 &pointOfImpactOnB, const Double3 &normal) :
 	A(a),
 	B(b),
@@ -104,10 +106,10 @@ bool CapsuleCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit
 
 bool BoxCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 {
-	auto processHit = [this, &other](ColliderHit &hit) {
+	auto processHit = [this, &other](ColliderHit &hit, bool flipNormal) {
 		Double3 pointOfImpactOnA = hit.A == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
 		Double3 pointOfImpactOnB = hit.B == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
-		Double3 normal = hit.Normal;
+		Double3 normal = hit.Normal * (flipNormal ? -1.0 : 1.0);
 		hit = ColliderHit(
 			static_cast<Collider3D *>(this),
 			&other,
@@ -116,12 +118,21 @@ bool BoxCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 			normal);
 	};
 
-	if (dynamic_cast<const CapsuleCollider3D *>(&other) != nullptr)
+	if (dynamic_cast<const AxisAlignedCylinderCollider3D *>(&other) != nullptr)
+	{
+		bool collided = Collider3D::CheckCollisionBoxCylinder(*this, static_cast<const AxisAlignedCylinderCollider3D &>(other), hit);
+		if (collided)
+		{
+			processHit(hit, false);
+			return true;
+		}
+	}
+	else if (dynamic_cast<const CapsuleCollider3D *>(&other) != nullptr)
 	{
 		bool collided = Collider3D::CheckCollisionBoxCapsule(*this, static_cast<const CapsuleCollider3D &>(other), hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
 			return true;
 		}
 	}
@@ -130,7 +141,7 @@ bool BoxCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 		bool collided = Collider3D::CheckCollisionBoxBox(static_cast<const BoxCollider3D &>(other), *this, hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, true);
 			return true;
 		}
 	}
@@ -139,7 +150,7 @@ bool BoxCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 		bool collided = Collider3D::CheckCollisionQuadBox(static_cast<const QuadCollider3D &>(other), *this, hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, true);
 			return true;
 		}
 	}
@@ -187,10 +198,10 @@ bool QuadCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 
 bool AxisAlignedCylinderCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 {
-	auto processHit = [this, &other](ColliderHit &hit) {
+	auto processHit = [this, &other](ColliderHit &hit, bool flipNormal) {
 		Double3 pointOfImpactOnA = hit.A == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
 		Double3 pointOfImpactOnB = hit.B == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
-		Double3 normal = hit.Normal;
+		Double3 normal = hit.Normal * (flipNormal ? -1.0 : 1.0);
 		hit = ColliderHit(
 			static_cast<Collider3D *>(this),
 			&other,
@@ -204,7 +215,7 @@ bool AxisAlignedCylinderCollider3D::CheckCollision(const Collider3D &other, Coll
 		bool collided = Collider3D::CheckCollisionCylinderCylinder(*this, static_cast<const AxisAlignedCylinderCollider3D &>(other), hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
 			return true;
 		}
 	}
@@ -213,7 +224,7 @@ bool AxisAlignedCylinderCollider3D::CheckCollision(const Collider3D &other, Coll
 		bool collided = Collider3D::CheckCollisionCylinderCapsule(*this, static_cast<const CapsuleCollider3D &>(other), hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
 			return true;
 		}
 	}
@@ -222,7 +233,7 @@ bool AxisAlignedCylinderCollider3D::CheckCollision(const Collider3D &other, Coll
 		bool collided = Collider3D::CheckCollisionBoxCylinder(static_cast<const BoxCollider3D &>(other), *this, hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, true);
 			return true;
 		}
 	}
@@ -231,7 +242,7 @@ bool AxisAlignedCylinderCollider3D::CheckCollision(const Collider3D &other, Coll
 		bool collided = Collider3D::CheckCollisionCylinderQuad(*this, static_cast<const QuadCollider3D &>(other), hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
 			return true;
 		}
 	}
@@ -536,8 +547,8 @@ bool Collider3D::CheckCollisionBoxCylinder(const BoxCollider3D &a, const AxisAli
 	auto a0 = a.Transform * Double4(0, 0, 0, 1);
 	double minXa = a0.x - (a.Width / 2);
 	double maxXa = a0.x + (a.Width / 2);
-	double minYa = a0.y - (a.Height / 2);
-	double maxYa = a0.y + (a.Height / 2);
+	double minYa = a0.y;
+	double maxYa = a0.y + a.Height;
 	double minZa = a0.z - (a.Depth / 2);
 	double maxZa = a0.z + (a.Depth / 2);
 
@@ -557,22 +568,21 @@ bool Collider3D::CheckCollisionBoxCylinder(const BoxCollider3D &a, const AxisAli
 	if (bPos.x < maxXa && bPos.x > minXa &&
 		bPos.z < maxZa && bPos.z > minZa)
 	{
-		// Note: This will cause the cylinder to fall through the box the minute the top of the cylinder is below the top of the box. This isn't strictly a bad thing, but if you reverse these conditions
-		// then the cylinder can pop up through the box on collision, the way players do in the real game
-		if (bTop.y < maxYa) // The cylinder is colliding with the top of the box
+		if (bPos.y <= maxYa && bTop.y >= maxYa) // The bottom of the cylinder is colliding with the top of the box
 		{
 			auto pointOnB = bPos;
 			auto pointOnA = Double3(bPos.x, maxYa, bPos.z);
-			auto normal = -Double3::UnitY;
+			auto normal = -Double3::UnitY; // normal on the cylinder, because B is the cylinder
 			handleCollision(pointOnA, pointOnB, normal);
-			return true;
 		}
-
-		// The top of the cylinder is colliding with the bottom of the box
-		auto pointOnB = bTop;
-		auto pointOnA = Double3(bTop.x, minYa, bTop.z);
-		auto normal = Double3::UnitY;
-		handleCollision(pointOnA, pointOnB, normal);
+		else
+		{
+			// The top of the cylinder is colliding with the bottom of the box
+			auto pointOnB = bTop;
+			auto pointOnA = Double3(bTop.x, minYa, bTop.z);
+			auto normal = Double3::UnitY; // normal on the cylinder, because B is the cylinder
+			handleCollision(pointOnA, pointOnB, normal);
+		}
 		return true;
 	}
 	else
@@ -586,24 +596,26 @@ bool Collider3D::CheckCollisionBoxCylinder(const BoxCollider3D &a, const AxisAli
 		{
 			if (bPos.z > maxZa)
 			{
-				if (bPos.z - b.Radius < maxZa)
+				if (bPos.z - b.Radius <= maxZa)
 				{
 					// collision
 					auto pointOnA = Double3(bPos.x, collisionPlane, maxZa);
 					auto pointOnB = Double3(bPos.x, collisionPlane, bPos.z - b.Radius);
-					auto normal = -Double3::UnitZ;
+					auto normal = -Double3::UnitZ; // normal on the cylinder, because B is the cylinder
 					handleCollision(pointOnA, pointOnB, normal);
+					return true;
 				}
 			}
 			else // bPos.z < minZa
 			{
-				if (bPos.z + b.Radius < minZa)
+				if (bPos.z + b.Radius >= minZa)
 				{
 					// collision
 					auto pointOnA = Double3(bPos.x, collisionPlane, minZa);
 					auto pointOnB = Double3(bPos.x, collisionPlane, bPos.z + b.Radius);
-					auto normal = Double3::UnitZ;
+					auto normal = Double3::UnitZ; // normal on the cylinder, because B is the cylinder
 					handleCollision(pointOnA, pointOnB, normal);
+					return true;
 				}
 			}
 		}
@@ -611,24 +623,26 @@ bool Collider3D::CheckCollisionBoxCylinder(const BoxCollider3D &a, const AxisAli
 		{
 			if (bPos.x > maxXa)
 			{
-				if (bPos.x - b.Radius < maxXa)
+				if (bPos.x - b.Radius <= maxXa)
 				{
 					// collision
 					auto pointOnA = Double3(maxXa, collisionPlane, bPos.z);
 					auto pointOnB = Double3(bPos.x - b.Radius, collisionPlane, bPos.z);
-					auto normal = -Double3::UnitZ;
+					auto normal = -Double3::UnitX; // normal on the cylinder, because B is the cylinder
 					handleCollision(pointOnA, pointOnB, normal);
+					return true;
 				}
 			}
 			else // bPos.x < minXa
 			{
-				if (bPos.x + b.Radius < minXa)
+				if (bPos.x + b.Radius >= minXa)
 				{
 					// collision
 					auto pointOnA = Double3(minXa, collisionPlane, bPos.z);
 					auto pointOnB = Double3(bPos.x + b.Radius, collisionPlane, bPos.z);
-					auto normal = Double3::UnitZ;
+					auto normal = Double3::UnitX; // normal on the cylinder, because B is the cylinder
 					handleCollision(pointOnA, pointOnB, normal);
+					return true;
 				}
 			}
 		}
@@ -638,14 +652,13 @@ bool Collider3D::CheckCollisionBoxCylinder(const BoxCollider3D &a, const AxisAli
 
 			auto checkEdgeCollision = [&a, &b, &hit, &bPosC, &handleCollision](const Double3 &corner) -> bool
 			{
-				auto b2c = corner - bPosC;
 				auto radSqr = b.Radius * b.Radius;
-				if (b2c.lengthSquared() < radSqr)
+				auto b2c = corner - bPosC;
+				if (b2c.lengthSquared() <= radSqr)
 				{
-					auto normal = (bPosC - corner).normalized();
-					auto pointOnA = corner;
-					auto pointOnB = bPosC + (normal * b.Radius);
-					handleCollision(pointOnA, pointOnB, normal);
+					auto normal = (bPosC - corner).normalized(); // normal on the cylinder, because B is the cylinder
+					auto pointOnB = bPosC - (normal * b.Radius);
+					handleCollision(corner, pointOnB, normal);
 					return true;
 				}
 				return false;
@@ -789,3 +802,1239 @@ bool Collider3D::CheckCollisionCylinderQuad(const AxisAlignedCylinderCollider3D 
 
 	return false;
 }
+
+#pragma region Unit Tests
+
+#pragma region Unit Tests - AABB -> AABB
+
+void UnitTestAABB_AABB_NoCollision_PosX()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(2.01, 0, 0), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+void UnitTestAABB_AABB_NoCollision_NegX()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(-2.01, 0, 0), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+void UnitTestAABB_AABB_NoCollision_PosY()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(0, 2.01, 0), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+void UnitTestAABB_AABB_NoCollision_NegY()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(0, -2.01, 0), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+void UnitTestAABB_AABB_NoCollision_PosZ()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(0, 0, 2.01), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+void UnitTestAABB_AABB_NoCollision_NegZ()
+{
+	BoxCollider3D A(Matrix4d::identity(), 2, 2, 2);
+	BoxCollider3D B(Matrix4d::translation(0, 0, -2.01), 2, 2, 2);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_AABB_NoCollision_X");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_AABB_NoCollision_X");
+}
+
+#pragma endregion Unit Tests - AABB -> AABB
+
+#pragma region Unit Tests - AABB -> Axis Aligned Cylinder
+
+#pragma region AABB -> Axis Aligned Cylinder PosY Tests
+
+void UnitTestAABB_Cylinder_Above()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0.01, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_Above: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_Above: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_RestingOnTop()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_OnTop: Incorrect return value");
+
+	// Check the values of hit
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_OnTop: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_OnTop: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_OnTop: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_OnTop: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitY, "Failed AABB_Cylinder_OnTop: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_OnTop: Incorrect return value");
+
+	// Check the values of hit
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_OnTop: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_OnTop: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_OnTop: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_OnTop: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitY, "Failed AABB_Cylinder_OnTop: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_InterpenetratingTop()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, -0.01, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_InterpenetratingTop: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_InterpenetratingTop: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_InterpenetratingTop: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingTop: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, -0.01, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingTop: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitY, "Failed AABB_Cylinder_InterpenetratingTop: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_InterpenetratingTop: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_InterpenetratingTop: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_InterpenetratingTop: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, -0.01, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingTop: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingTop: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitY, "Failed AABB_Cylinder_InterpenetratingTop: hit.Normal: incorrect value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder PosY Tests
+
+#pragma region AABB -> Axis Aligned Cylinder NegY Tests
+
+void UnitTestAABB_Cylinder_InterpenetratingBottom()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, -1, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_InterpenetratingBottom: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_InterpenetratingBottom: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_InterpenetratingBottom: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingBottom: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, -0.5, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingBottom: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitY, "Failed AABB_Cylinder_InterpenetratingBottom: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_InterpenetratingBottom: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_InterpenetratingBottom: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_InterpenetratingBottom: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, -0.5, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingBottom: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_InterpenetratingBottom: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitY, "Failed AABB_Cylinder_InterpenetratingBottom: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_TouchingBottom()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, -1.28, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_TouchingBottom: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_TouchingBottom: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_TouchingBottom: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_TouchingBottom: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_TouchingBottom: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitY, "Failed AABB_Cylinder_TouchingBottom: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_TouchingBottom: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_TouchingBottom: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_TouchingBottom: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_TouchingBottom: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, -0.78, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_TouchingBottom: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitY, "Failed AABB_Cylinder_TouchingBottom: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_Below()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, -0.78, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, -2, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_Below: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_Below: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder NegY Tests
+
+#pragma region AABB -> Axis Aligned Cylinder PosX Tests
+
+void UnitTestAABB_Cylinder_PosX_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.05, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.95, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.95, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.1, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.5)).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosX_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.11, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.05, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.95, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.95, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.1, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.11, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.05, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.95, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.95, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.1, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.11, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXNegZCorner_NoCollision: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder PosX Tests
+
+#pragma region AABB -> Axis Aligned Cylinder NegX Tests
+
+void UnitTestAABB_Cylinder_NegX_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.05, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.05, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.05, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.1, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.5)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.11, 0, 0.5), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.05, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.05, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.05, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.1, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.99)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.11, 0, 0.99), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.05, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.05, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.05, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.1, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0.01)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitX, "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.11, 0, 0.01), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegX_NearNegXNegZCorner_NoCollision: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder NegX Tests
+
+#pragma region AABB -> Axis Aligned Cylinder PosZ Tests
+
+void UnitTestAABB_Cylinder_PosZ_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, 1.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, 1.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, 1.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, 1.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, 1.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, 1.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, 1.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 0.95)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, 1.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, 1.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosZ_NearNegXPosZCorner_NoCollision: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder PosZ Tests
+
+#pragma region AABB -> Axis Aligned Cylinder NegZ Tests
+
+void UnitTestAABB_Cylinder_NegZ_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, -0.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, -0.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.5, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.5, 0, -0.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, -0.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, -0.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.99, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.99, 0, -0.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearPosXNegZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, -0.05), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 0.05)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_Touching()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, -0.1), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0.01, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -Double3::UnitZ, "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_Touching: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.01, 0, -0.11), 0.1, 0.5);
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegZ_NearNegXNegZCorner_NoCollision: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder NegZ Tests
+
+#pragma region AABB -> Axis Aligned Cylinder Corner Tests
+
+void UnitTestAABB_Cylinder_PosXPosZCorner_Interpenetrating()
+{
+	double r = 1.05 - (0.05 * sqrt(2));
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.05, 0, 1.05), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(r, 0.25, r)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == (Double3::UnitX + Double3::UnitZ).normalized(), 
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(r, 0.25, r)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg(hit.Normal == -(Double3::UnitX + Double3::UnitZ).normalized(), 
+		"Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.1, 0, 1.1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_PosXNegZCorner_Interpenetrating()
+{
+	double r = 1.05 - (0.05 * sqrt(2));
+	double s = -0.05 + (0.05 * sqrt(2));
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.05, 0, -0.05), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(1, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(r, 0.25, s)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - (Double3::UnitX - Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(r, 0.25, s)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(1, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - -(Double3::UnitX - Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_PosXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_PosXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.1, 0, -0.1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_PosXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegXPosZCorner_Interpenetrating()
+{
+	double r = 1.05 - (0.05 * sqrt(2));
+	double s = -0.05 + (0.05 * sqrt(2));
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.05, 0, 1.05), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(s, 0.25, r)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - -(Double3::UnitX - Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_PosXPosZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(s, 0.25, r)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 1)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - (Double3::UnitX - Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_NegXPosZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegXPosZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.1, 0, 1.1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegXPosZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegXPosZCorner_NoCollision: Incorrect return value");
+}
+
+void UnitTestAABB_Cylinder_NegXNegZCorner_Interpenetrating()
+{
+	double s = -0.05 + (0.05 * sqrt(2));
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.05, 0, -0.05), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.A != A");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.B != B");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(0, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(s, 0.25, s)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - -(Double3::UnitX + Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+
+	DebugAssertMsg(B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: Incorrect return value");
+
+	DebugAssertMsg(hit.A == static_cast<const Collider3D *>(&B), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.A != B");
+	DebugAssertMsg(hit.B == static_cast<const Collider3D *>(&A), "Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.B != A");
+	DebugAssertMsg((hit.PointOfImpactOnA - Double3(s, 0.25, s)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.PointOfImpactOnA: incorrect value");
+	DebugAssertMsg((hit.PointOfImpactOnB - Double3(0, 0.25, 0)).lengthSquared() < Constants::Epsilon,
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.PointOfImpactOnB: incorrect value");
+	DebugAssertMsg((hit.Normal - (Double3::UnitX + Double3::UnitZ).normalized()).lengthSquared() < Constants::Epsilon, 
+		"Failed AABB_Cylinder_NegXNegZCorner_Interpenetrating: hit.Normal: incorrect value");
+}
+
+void UnitTestAABB_Cylinder_NegXNegZCorner_NoCollision()
+{
+	BoxCollider3D A(Matrix4d::translation(0.5, 0, 0.5), 1, 0.78, 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.1, 0, -0.1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hit(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+
+	DebugAssertMsg(!A.CheckCollision(B, hit), "Failed AABB_Cylinder_NegXNegZCorner_NoCollision: Incorrect return value");
+	DebugAssertMsg(!B.CheckCollision(A, hit), "Failed AABB_Cylinder_NegXNegZCorner_NoCollision: Incorrect return value");
+}
+
+#pragma endregion AABB -> Axis Aligned Cylinder Corner Tests
+
+#pragma endregion Unit Tests - AABB -> Axis Aligned Cylinder
+
+void Collider3D::RunUnitTests()
+{
+#ifndef NDEBUG
+	UnitTestAABB_AABB_NoCollision_PosX();
+	UnitTestAABB_AABB_NoCollision_NegX();
+	UnitTestAABB_AABB_NoCollision_PosY();
+	UnitTestAABB_AABB_NoCollision_NegY();
+	UnitTestAABB_AABB_NoCollision_PosZ();
+	UnitTestAABB_AABB_NoCollision_NegZ();
+
+	// Test all possible edge cases for collisions between cylinders and AABBs
+
+	// Testing collisions along the Y axis
+	UnitTestAABB_Cylinder_Above();
+	UnitTestAABB_Cylinder_RestingOnTop();
+	UnitTestAABB_Cylinder_InterpenetratingTop();
+	UnitTestAABB_Cylinder_InterpenetratingBottom();
+	UnitTestAABB_Cylinder_TouchingBottom();
+	UnitTestAABB_Cylinder_Below();
+	// @todo: Test that collisions interpenetrating the top less than the side register as top collisions rather than side collisions.
+	// for in the case of the player resting on the edge of a block
+
+	// Testing collisions along the X axis
+	UnitTestAABB_Cylinder_PosX_Interpenetrating();
+	UnitTestAABB_Cylinder_PosX_Touching();
+	UnitTestAABB_Cylinder_PosX_NoCollision();
+	UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_Touching();
+	UnitTestAABB_Cylinder_PosX_NearPosXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_Touching();
+	UnitTestAABB_Cylinder_PosX_NearPosXNegZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegX_Interpenetrating();
+	UnitTestAABB_Cylinder_NegX_Touching();
+	UnitTestAABB_Cylinder_NegX_NoCollision();
+	UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_Touching();
+	UnitTestAABB_Cylinder_NegX_NearNegXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_Touching();
+	UnitTestAABB_Cylinder_NegX_NearNegXNegZCorner_NoCollision();
+
+	// Testing collisions along the Z axis
+	UnitTestAABB_Cylinder_PosZ_Interpenetrating();
+	UnitTestAABB_Cylinder_PosZ_Touching();
+	UnitTestAABB_Cylinder_PosZ_NoCollision();
+	UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_Touching();
+	UnitTestAABB_Cylinder_PosZ_NearPosXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_Touching();
+	UnitTestAABB_Cylinder_PosZ_NearNegXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegZ_Interpenetrating();
+	UnitTestAABB_Cylinder_NegZ_Touching();
+	UnitTestAABB_Cylinder_NegZ_NoCollision();
+	UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_Touching();
+	UnitTestAABB_Cylinder_NegZ_NearPosXNegZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_Touching();
+	UnitTestAABB_Cylinder_NegZ_NearNegXNegZCorner_NoCollision();
+
+	// Test collisions at corners of box
+	UnitTestAABB_Cylinder_PosXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_PosXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_PosXNegZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegXPosZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegXPosZCorner_NoCollision();
+	UnitTestAABB_Cylinder_NegXNegZCorner_Interpenetrating();
+	UnitTestAABB_Cylinder_NegXNegZCorner_NoCollision();
+#endif
+}
+
+#pragma endregion Unit Tests

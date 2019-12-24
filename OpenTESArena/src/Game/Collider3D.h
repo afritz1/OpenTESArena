@@ -29,6 +29,7 @@ public:
 	~Collider3D();
 
 	virtual bool CheckCollision(const Collider3D &other, ColliderHit &hit) = 0;
+	static void RunUnitTests();
 
 protected:
 	Collider3D(const Matrix4d &transform);
@@ -50,8 +51,8 @@ public:
 
 	double Radius;
 	double Length;
-protected:
 	bool CheckCollision(const Collider3D &other, ColliderHit &hit);
+	
 private:
 };
 
@@ -63,7 +64,6 @@ public:
 
 	double Radius;
 	double Height;
-protected:
 	bool CheckCollision(const Collider3D &other, ColliderHit &hit);
 };
 
@@ -74,7 +74,6 @@ public:
 	double Width;
 	double Height;
 	double Depth;
-protected:
 	bool CheckCollision(const Collider3D &other, ColliderHit &hit);
 private:
 };
@@ -87,7 +86,6 @@ public:
 	Double3 Normal;
 	double Width;
 	double Height;
-protected:
 	bool CheckCollision(const Collider3D &other, ColliderHit &hit);
 private:
 };

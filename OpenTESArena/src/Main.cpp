@@ -8,6 +8,7 @@
 #include "Game/Game.h"
 
 #include "components/debug/Debug.h"
+#include "Game/Collider3D.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +17,8 @@ int main(int argc, char *argv[])
 
 	try
 	{
+		Collider3D::RunUnitTests();
+
 		// Allocated on the heap to avoid stack overflow warning.
 		auto g = std::make_unique<Game>();
 		g->loop();
