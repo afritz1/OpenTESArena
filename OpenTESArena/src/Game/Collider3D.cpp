@@ -383,12 +383,14 @@ bool Collider3D::CheckCollisionCapsuleCapsule(const CapsuleCollider3D &a, const 
 bool Collider3D::CheckCollisionCylinderCylinder(const AxisAlignedCylinderCollider3D &a, const AxisAlignedCylinderCollider3D &b, ColliderHit &hit)
 {
 	Double3 aPos = (a.Transform * Double4(0, 0, 0, 1)).toXYZ();
-	Double3 bPos = (a.Transform * Double4(0, 0, 0, 1)).toXYZ();
+	Double3 aTop = Double3(aPos.x, aPos.y + a.Height, aPos.z);
+	Double3 bPos = (b.Transform * Double4(0, 0, 0, 1)).toXYZ();
+	Double3 bTop = Double3(bPos.x, bPos.y + b.Height, bPos.z);
 
 	// If there doesn't exist an XZ plane that both cylinders exist in, then they can't be colliding
-	if (aPos.y > bPos.y + b.Height)
+	if (aPos.y > bTop.y)
 		return false;
-	if (bPos.y > aPos.y + a.Height)
+	if (bPos.y > aTop.y)
 		return false;
 
 	// Get the plane of collision
@@ -397,18 +399,42 @@ bool Collider3D::CheckCollisionCylinderCylinder(const AxisAlignedCylinderCollide
 	double collisionPlane = (top + bottom) / 2;
 
 	// Get the distance between the points of collision
-	aPos = Double3(aPos.x, collisionPlane, aPos.z);
-	bPos = Double3(bPos.x, collisionPlane, bPos.z);
-	Double3 b2a = (aPos - bPos);
+	Double3 a2dPos = Double3(aPos.x, collisionPlane, aPos.z);
+	Double3 b2dPos = Double3(bPos.x, collisionPlane, bPos.z);
+	Double3 b2a = (a2dPos - b2dPos);
 
-	const double distance = b2a.length();
-	if (distance > a.Radius + b.Radius)
+	const double xzInterpenetration = (a.Radius + b.Radius - b2a.length());
+	if (xzInterpenetration < 0)
 		return false;
 
+	// Check if colliding vertically less than horizontally. If so then this is a vertical collision
+	double topInterpenetration = aTop.y - bPos.y;
+	double bottomInterpenetration = bTop.y - aPos.y;
+	Double3 pointOnA, pointOnB, normal;
+
+	if (xzInterpenetration < topInterpenetration && xzInterpenetration < bottomInterpenetration)
+	{
+		normal = b2a.normalized();
+		pointOnA = a2dPos - (normal * a.Radius);
+		pointOnB = b2dPos + (normal * b.Radius);
+	}
+	else if (topInterpenetration < xzInterpenetration && topInterpenetration < bottomInterpenetration)
+	{
+		normal = -Double3::UnitY;
+		Double3 xzNorm = b2a.normalized();
+		pointOnA = aTop - (xzNorm * (a.Radius - (xzInterpenetration / 2)));
+		pointOnB = bPos + (xzNorm * (b.Radius - (xzInterpenetration / 2)));
+	}
+	else
+	{
+		normal = Double3::UnitY;
+		Double3 xzNorm = b2a.normalized();
+		pointOnA = aPos - (xzNorm * (a.Radius - (xzInterpenetration / 2)));
+		pointOnB = bTop + (xzNorm * (b.Radius - (xzInterpenetration / 2)));
+	}
+
 	// We have a collision. Calculate the hit info and return true
-	Double3 normal = b2a.normalized();
-	Double3 pointOnA = aPos - (normal * a.Radius);
-	Double3 pointOnB = bPos + (normal * b.Radius);
+	
 	hit = ColliderHit(static_cast<const Collider3D *>(&a), static_cast<const Collider3D *>(&b), pointOnA, pointOnB, normal);
 	return true;
 }
