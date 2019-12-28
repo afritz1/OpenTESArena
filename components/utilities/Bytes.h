@@ -20,7 +20,7 @@ public:
 	template <typename T>
 	static T ror(T value, unsigned int count)
 	{
-		const unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
+		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
 		return (value >> count) |
 			(value << (static_cast<unsigned int>(-static_cast<int>(count)) & mask));
@@ -30,7 +30,7 @@ public:
 	template <typename T>
 	static T rol(T value, unsigned int count)
 	{
-		const unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
+		constexpr unsigned int mask = (CHAR_BIT * sizeof(value)) - 1;
 		count &= mask;
 		return (value << count) |
 			(value >> (static_cast<unsigned int>(-static_cast<int>(count)) & mask));

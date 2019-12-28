@@ -172,6 +172,11 @@ const std::vector<EntityAnimationData::State> *EntityAnimationData::findStateLis
 	return (iter != this->stateLists.end()) ? &(*iter) : nullptr;
 }
 
+bool EntityAnimationData::hasStateList(StateType stateType) const
+{
+	return this->findStateList(stateType) != nullptr;
+}
+
 void EntityAnimationData::addStateList(std::vector<State> &&stateList)
 {
 	DebugAssert(stateList.size() > 0);
