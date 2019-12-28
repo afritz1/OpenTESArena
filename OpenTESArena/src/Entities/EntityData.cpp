@@ -13,9 +13,10 @@ EntityData::EntityData()
 	this->mediumScale = false;
 }
 
-void EntityData::init(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
-	bool dark, bool transparent, bool ceiling, bool mediumScale)
+void EntityData::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
+	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale)
 {
+	this->displayName = std::move(displayName);
 	this->flatIndex = flatIndex;
 	this->yOffset = yOffset;
 	this->collider = collider;
@@ -25,6 +26,11 @@ void EntityData::init(int flatIndex, int yOffset, bool collider, bool puddle, bo
 	this->transparent = transparent;
 	this->ceiling = ceiling;
 	this->mediumScale = mediumScale;
+}
+
+std::string_view EntityData::getDisplayName() const
+{
+	return this->displayName;
 }
 
 int EntityData::getFlatIndex() const

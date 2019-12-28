@@ -1993,6 +1993,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 		bool isFinalBoss;
 		const bool isCreature = optItemIndex.has_value() &&
 			IsCreatureIndex(*optItemIndex, &isFinalBoss);
+		const bool isHumanEnemy = optItemIndex.has_value() && IsHumanEnemyIndex(*optItemIndex);
 
 		// Must be at least one instance of the entity for the loop to try and
 		// instantiate it and write textures to the renderer.
@@ -2012,10 +2013,26 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			const int creatureID = isFinalBoss ?
 				GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = creatureID - 1;
+
+			std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
+			{
+				if (!isFinalBoss)
+				{
+					const auto &creatureNames = exeData.entities.creatureNames;
+					DebugAssertIndex(creatureNames, creatureIndex);
+					return creatureNames[creatureIndex];
+				}
+				else
+				{
+					// @todo: return final boss class name?
+					return std::string("TODO");
+				}
+			}();
+
 			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
 			DebugAssertIndex(creatureYOffsets, creatureIndex);
-
 			const int yOffset = creatureYOffsets[creatureIndex];
+
 			const bool collider = true;
 			const bool puddle = false;
 			const bool largeScale = false;
@@ -2023,14 +2040,28 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
 			const bool ceiling = false;
 			const bool mediumScale = false;
-			newEntityData.init(flatIndex, yOffset, collider, puddle, largeScale, dark,
-				transparent, ceiling, mediumScale);
+			newEntityData.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
+				largeScale, dark, transparent, ceiling, mediumScale);
+		}
+		else if (isHumanEnemy)
+		{
+			// Use character class name as the display name.
+			const auto &charClassNames = exeData.charClasses.classNames;
+			const int charClassIndex = GetCharacterClassIndexFromItemIndex(*optItemIndex);
+			DebugAssertIndex(charClassNames, charClassIndex);
+			const std::string_view charClassName = charClassNames[charClassIndex];
+
+			newEntityData.init(std::string(charClassName), flatIndex, flatData.yOffset,
+				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
 		else
 		{
-			newEntityData.init(flatIndex, flatData.yOffset, flatData.collider,
-				flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
-				flatData.ceiling, flatData.mediumScale);
+			// No display name.
+			std::string displayName;
+			newEntityData.init(std::move(displayName), flatIndex, flatData.yOffset,
+				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off

@@ -1630,50 +1630,69 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		}
 		else if (hit.type == Physics::Hit::Type::Entity)
 		{
+			const auto &exeData = game.getMiscAssets().getExeData();
+
 			if (primaryClick)
 			{
-				const double maxSelectionDist = 1.50;
-
+				// @todo: max selection distance matters when talking to NPCs and selecting corpses.
+				// - need to research a bit since I think it switches between select and inspect
+				//   depending on distance and entity state.
+				// - Also need the "too far away..." text?
+				/*const double maxSelectionDist = 1.50;
 				if (hit.t <= maxSelectionDist)
 				{
-					if (!debugFadeVoxel)
-					{
-						// @todo: do whatever is supposed to be done when clicking on an entity
-					}
-					else
-					{
-						// Ignore the newline at the end.
-						const std::string text = "You clicked on an entity!";
-						const int lineSpacing = 1;
+					
+				}*/
 
-						const ExeData &exeData = game.getMiscAssets().getExeData();
+				// Try inspecting the entity (can be from any distance). If they have a display name,
+				// then show it.
+				const Entity *entity = entityManager.get(hit.entityID);
+				DebugAssert(entity != nullptr);
 
-						const RichTextString richText(
-							text,
-							FontName::Arena,
-							TriggerTextColor,
-							TextAlignment::Center,
-							lineSpacing,
-							game.getFontManager());
+				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
+				DebugAssert(entityData != nullptr);
 
-						const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+				const std::string_view entityName = entityData->getDisplayName();
 
-						// Create the text box for display (set position to zero; the renderer will
-						// decide where to draw it).
-						auto textBox = std::make_unique<TextBox>(
-							Int2(0, 0),
-							richText,
-							&shadowData,
-							game.getRenderer());
+				std::string text;
+				if (entityName.size() > 0)
+				{
+					text = exeData.ui.inspectedEntityName;
 
-						// Assign the text box and its duration to the triggered text member. It will 
-						// be displayed in the render method until the duration is no longer positive.
-						auto &gameData = game.getGameData();
-						auto &triggerText = gameData.getTriggerText();
-						const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-						triggerText = TimedTextBox(duration, std::move(textBox));
-					}
+					// Replace format specifier with entity name.
+					text = String::replace(text, "%s", std::string(entityName));
 				}
+				else
+				{
+					// Placeholder text for testing.
+					text = "Entity " +  std::to_string(hit.entityID);
+				}
+
+				const int lineSpacing = 1;
+				const RichTextString richText(
+					text,
+					FontName::Arena,
+					ActionTextColor,
+					TextAlignment::Center,
+					lineSpacing,
+					game.getFontManager());
+
+				const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+				// Create the text box for display (set position to zero; the renderer will
+				// decide where to draw it).
+				auto textBox = std::make_unique<TextBox>(
+					Int2(0, 0),
+					richText,
+					&shadowData,
+					game.getRenderer());
+
+				// Assign the text box and its duration. It will be displayed in the render
+				// method until the duration is no longer positive.
+				auto &gameData = game.getGameData();
+				auto &actionText = gameData.getActionText();
+				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+				actionText = TimedTextBox(duration, std::move(textBox));
 			}
 		}
 	}
