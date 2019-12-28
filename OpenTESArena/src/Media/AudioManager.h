@@ -3,6 +3,9 @@
 
 #include <memory>
 #include <string>
+#include <optional>
+
+#include "../Math/Vector3.h"
 
 // This class manages what sounds and music are played by OpenAL Soft.
 
@@ -17,7 +20,7 @@ public:
 	AudioManager();
 	~AudioManager(); // Required for pImpl to stay in .cpp file.
 
-    void init(double musicVolume, double soundVolume, int maxChannels, 
+    void init(double musicVolume, double soundVolume, int maxChannels,
 		int resamplingOption, const std::string &midiConfig);
 
 	static const double MIN_VOLUME;
@@ -29,11 +32,17 @@ public:
 	// Returns whether the implementation supports resampling options.
 	bool hasResamplerExtension() const;
 
+	// Sets the global listener's position/orientation (in world coordinates).
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &at);
+
 	// Plays a music file. All music should loop until changed.
 	void playMusic(const std::string &filename);
 
 	// Plays a sound file. All sounds should play once.
-	void playSound(const std::string &filename);
+	// If 'position' is equal to std::nullopt then the sound is played globally.
+	void playSound(const std::string &filename,
+	               const std::optional<Double3> &position = std::nullopt);
 
 	// Stops the music.
 	void stopMusic();
@@ -52,7 +61,7 @@ public:
 	// resampling options are not supported.
 	void setResamplingOption(int resamplingOption);
 
-	// Updates any state not handled by a background thread, such as resetting 
+	// Updates any state not handled by a background thread, such as resetting
 	// the sources of finished sounds.
 	void update();
 };

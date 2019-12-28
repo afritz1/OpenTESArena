@@ -295,7 +295,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			}();
 
 			// -- Temporary hack for "on voxel enter" transitions --
-			// - @todo: replace with "on would enter voxel" event and near facing check.			
+			// - @todo: replace with "on would enter voxel" event and near facing check.
 			const bool isLevelUpDown = [&voxelData]()
 			{
 				if (voxelData.dataType == VoxelDataType::Wall)
@@ -351,7 +351,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 		this->velocity = newVelocity;
 	}
 
-	// Don't let the horizontal velocity be greater than the max speed for the 
+	// Don't let the horizontal velocity be greater than the max speed for the
 	// current movement state (i.e., walking/running).
 	double maxSpeed = isRunning ? this->maxRunSpeed : this->maxWalkSpeed;
 	Double2 velocityXZ(this->velocity.x, this->velocity.z);
@@ -360,7 +360,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 		velocityXZ = velocityXZ.normalized() * maxSpeed;
 	}
 
-	// If the velocity is near zero, set it to zero. This fixes a problem where 
+	// If the velocity is near zero, set it to zero. This fixes a problem where
 	// the velocity could remain at a tiny magnitude and never reach zero.
 	if (this->velocity.length() < 0.001)
 	{
@@ -371,7 +371,7 @@ void Player::accelerate(const Double3 &direction, double magnitude,
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
 {
 	DebugAssert(direction.isNormalized());
-	
+
 	const Double3 additiveVelocity = direction * magnitude;
 
 	if (std::isfinite(additiveVelocity.length()))
@@ -436,6 +436,11 @@ void Player::tick(Game &game, double dt)
 	// Update player position and velocity due to collisions.
 	const WorldData &worldData = game.getGameData().getWorldData();
 	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
+
+	// Update the global audio listener.
+	auto &audioManager = game.getAudioManager();
+	audioManager.setListenerPosition(this->getPosition());
+	audioManager.setListenerOrientation(this->getDirection());
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

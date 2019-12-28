@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <optional>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,6 +18,10 @@
 #include "WildMidi.h"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
+#include "../Math/Constants.h"
+#include "../Math/Matrix4.h"
+#include "../Math/Vector3.h"
+#include "../Math/Vector4.h"
 
 #include "components/debug/Debug.h"
 
@@ -69,7 +74,7 @@ public:
 	// A deque of available sources to play sounds and streams with.
 	std::deque<ALuint> mFreeSources;
 
-	// A deque of currently used sources for sounds (the music source is owned 
+	// A deque of currently used sources for sounds (the music source is owned
 	// by OpenALStream). The string is the filename and the integer is the ID.
 	// The filename is required for some sounds that can only have one instance
 	// active at a time.
@@ -81,8 +86,11 @@ public:
 	void init(double musicVolume, double soundVolume, int maxChannels,
 		int resamplingOption, const std::string &midiConfig);
 
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &at);
+
 	void playMusic(const std::string &filename);
-	void playSound(const std::string &filename);
+	void playSound(const std::string &filename, const std::optional<Double3> &position);
 
 	void stopMusic();
 	void stopSound();
@@ -349,7 +357,6 @@ public:
 AudioManagerImpl::AudioManagerImpl()
 	: mMusicVolume(1.0f), mSfxVolume(1.0f), mHasResamplerExtension(false)
 {
-
 }
 
 AudioManagerImpl::~AudioManagerImpl()
@@ -465,7 +472,7 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
-	mResampler = mHasResamplerExtension ? 
+	mResampler = mHasResamplerExtension ?
 		AudioManagerImpl::getResamplingIndex(resamplingOption) :
 		AudioManagerImpl::UNSUPPORTED_EXTENSION;
 
@@ -481,6 +488,13 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 			DebugLogWarning("alGenSources() error " + std::to_string(status) + ".");
 		}
 
+		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
+		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+		alSourcef(source, AL_GAIN, this->mSfxVolume);
+		alSourcef(source, AL_PITCH, 1.0f);
+		alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
+
 		// Set resampling if the extension is supported.
 		if (mHasResamplerExtension)
 		{
@@ -492,6 +506,30 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
+	this->setListenerPosition(Double3(0.0f, 0.0f, 0.0f));
+
+	// Set the listener's orientation
+	const float listenerOrientation[] = {
+		0.0f, 1.0f, 0.0f,			// up
+		1.0f, 1.0f, 0.0f			// at
+	};
+	alListenerfv(AL_ORIENTATION, listenerOrientation);
+}
+
+void AudioManagerImpl::setListenerPosition(const Double3 &position)
+{
+	alListener3f(AL_POSITION, position.x, position.y, position.z);
+}
+
+void AudioManagerImpl::setListenerOrientation(const Double3 &at)
+{
+	const auto &right = Matrix4d::yRotation(-Constants::HalfPi) * Double4(at.x, at.y, at.z, 1.0f);
+	const auto &up = Double3(right.x, right.y, right.z).cross(at);
+	const float data[] = {
+		static_cast<float>(up.x), static_cast<float>(up.y), static_cast<float>(up.z),
+		static_cast<float>(at.x), static_cast<float>(at.y), static_cast<float>(at.z)
+	};
+	alListenerfv(AL_ORIENTATION, data);
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename)
@@ -522,7 +560,8 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 	}
 }
 
-void AudioManagerImpl::playSound(const std::string &filename)
+void AudioManagerImpl::playSound(const std::string &filename,
+                                 const std::optional<Double3> &position)
 {
 	// Certain sounds (like DRUMS.VOC) should only have one live instance at a time.
 	// This is purely an arbitrary rule to avoid having long sounds overlap each other
@@ -571,11 +610,23 @@ void AudioManagerImpl::playSound(const std::string &filename)
 		const ALuint source = mFreeSources.front();
 		alSourcei(source, AL_BUFFER, vocIter->second);
 
+		if (position.has_value())
+		{
+			alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
+			auto &positionValue = position.value();
+			alSource3f(source, AL_POSITION, positionValue.x, positionValue.y, positionValue.z);
+		}
+		else
+		{
+			alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+			alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+		}
+
 		// Set resampling if the extension is supported.
 		if (mHasResamplerExtension)
 		{
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
-		}		
+		}
 
 		// Play the sound.
 		alSourcePlay(source);
@@ -727,14 +778,24 @@ bool AudioManager::hasResamplerExtension() const
 	return pImpl->mHasResamplerExtension;
 }
 
+void AudioManager::setListenerPosition(const Double3 &position)
+{
+	pImpl->setListenerPosition(position);
+}
+
+void AudioManager::setListenerOrientation(const Double3 &at)
+{
+	pImpl->setListenerOrientation(at);
+}
+
 void AudioManager::playMusic(const std::string &filename)
 {
 	pImpl->playMusic(filename);
 }
 
-void AudioManager::playSound(const std::string &filename)
+void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
 {
-	pImpl->playSound(filename);
+	pImpl->playSound(filename, position);
 }
 
 void AudioManager::stopMusic()

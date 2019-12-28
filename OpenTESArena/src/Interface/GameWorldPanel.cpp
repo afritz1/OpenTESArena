@@ -83,9 +83,9 @@ namespace
 	const Color EffectTextColor(251, 239, 77);
 	const Color EffectTextShadowColor(190, 113, 0);
 
-	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse 
-	// position so the cursor's click area is closer to the tip of each arrow, as is 
-	// done in the original game (slightly differently, though. I think the middle 
+	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse
+	// position so the cursor's click area is closer to the tip of each arrow, as is
+	// done in the original game (slightly differently, though. I think the middle
 	// cursor was originally top-aligned, not middle-aligned, which is strange).
 	const std::array<CursorAlignment, 9> ArrowCursorAlignments =
 	{
@@ -188,7 +188,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 					const int timeOfDayIndex = [&gameData]()
 					{
-						// Arena has eight time ranges for each time of day. They aren't 
+						// Arena has eight time ranges for each time of day. They aren't
 						// uniformly distributed -- midnight and noon are only one minute.
 						const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
 						{
@@ -269,7 +269,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 					// Remove newline on end.
 					text.pop_back();
-					
+
 					return text;
 				}();
 
@@ -289,7 +289,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const Int2 &richTextDimensions = richText.getDimensions();
 
-			Texture texture = Texture::generate(Texture::PatternType::Dark, 
+			Texture texture = Texture::generate(Texture::PatternType::Dark,
 				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer);
 
 			const Int2 textureCenter = center;
@@ -299,7 +299,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				game.popSubPanel();
 			};
 
-			game.pushSubPanel<TextSubPanel>(game, center, richText, function, 
+			game.pushSubPanel<TextSubPanel>(game, center, richText, function,
 				std::move(texture), textureCenter);
 		};
 		return Button<Game&>(177, 151, 29, 22, function);
@@ -417,7 +417,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 						location.getName(gameData.getCityDataFile(), exeData) : std::string();
 				}();
 
-				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), 
+				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z),
 					player.getGroundDirection(), level.getVoxelGrid(), automapLocationName);
 			}
 			else
@@ -972,8 +972,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		{
 			const Int2 dimensions = game.getRenderer().getWindowDimensions();
 
-			// Get the smaller of the two dimensions, so the look sensitivity is relative 
-			// to a square instead of a rectangle. This keeps the camera look independent 
+			// Get the smaller of the two dimensions, so the look sensitivity is relative
+			// to a square instead of a rectangle. This keeps the camera look independent
 			// of the aspect ratio.
 			const int minDimension = std::min(dimensions.x, dimensions.y);
 			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
@@ -1005,7 +1005,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		// Arena uses arrow keys, but let's use the left hand side of the keyboard 
+		// Arena uses arrow keys, but let's use the left hand side of the keyboard
 		// because we like being comfortable.
 
 		// A and D turn the player, and if Ctrl is held, the player slides instead.
@@ -1022,7 +1022,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 		bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
-		// The original game didn't have sprinting, but it seems like something 
+		// The original game didn't have sprinting, but it seems like something
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
@@ -1096,7 +1096,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// Use a normalized direction.
 			accelDirection = accelDirection.normalized();
 
-			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
 			double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
 
@@ -1143,7 +1143,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// Use a normalized direction.
 			accelDirection = accelDirection.normalized();
 
-			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
 			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
 
@@ -1169,7 +1169,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
 		bool space = inputManager.keyIsDown(SDL_SCANCODE_SPACE);
 
-		// The original game didn't have sprinting, but it seems like something 
+		// The original game didn't have sprinting, but it seems like something
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
@@ -1210,7 +1210,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			// Use a normalized direction.
 			accelDirection = accelDirection.normalized();
 
-			// Set the magnitude of the acceleration to some arbitrary number. These values 
+			// Set the magnitude of the acceleration to some arbitrary number. These values
 			// are independent of max speed.
 			double accelMagnitude = isRunning ? runSpeed : walkSpeed;
 
@@ -1231,12 +1231,12 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 
 void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 {
-	// @todo: run this method at fixed time-steps instead of every frame, because if, 
-	// for example, the game is running at 200 fps, then the player has to move their 
-	// cursor much faster for it to count as a swing. The GameWorldPanel would probably 
+	// @todo: run this method at fixed time-steps instead of every frame, because if,
+	// for example, the game is running at 200 fps, then the player has to move their
+	// cursor much faster for it to count as a swing. The GameWorldPanel would probably
 	// need to save its own "swing" mouse delta independently of the input manager, or
 	// maybe the game loop could call a "Panel::fixedTick()" method.
-	
+
 	// Only handle attacking if the player's weapon is currently idle.
 	auto &weaponAnimation = this->getGame().getGameData().getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
@@ -1249,7 +1249,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 			// Handle melee attack.
 			const Int2 dimensions = this->getGame().getRenderer().getWindowDimensions();
 
-			// Get the smaller of the two dimensions, so the percentage change in mouse position 
+			// Get the smaller of the two dimensions, so the percentage change in mouse position
 			// is relative to a square instead of a rectangle.
 			const int minDimension = std::min(dimensions.x, dimensions.y);
 
@@ -1360,7 +1360,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 				audioManager.playSound(SoundFile::fromName(SoundName::ArrowFire));
 			}
 		}
-	}	
+	}
 }
 
 void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryClick,
@@ -1514,7 +1514,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						const auto &inf = level.getInfFile();
 						const std::string &soundFilename = inf.getSound(soundIndex);
 						auto &audioManager = game.getAudioManager();
-						audioManager.playSound(soundFilename);
+						auto const &doorPosition = std::make_optional(
+							Double3(voxelXZ.x + 0.5, 0.5, voxelXZ.y + 0.5)
+						);
+						audioManager.playSound(soundFilename, doorPosition);
 					}
 				}
 			}
@@ -1654,7 +1657,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 		LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
 		if (textTrigger != nullptr)
 		{
-			// Only display it if it should be displayed (i.e., not already displayed 
+			// Only display it if it should be displayed (i.e., not already displayed
 			// if it's a single-display text).
 			const bool canDisplay = !textTrigger->isSingleDisplay() ||
 				(textTrigger->isSingleDisplay() && !textTrigger->hasBeenDisplayed());
@@ -1684,7 +1687,7 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 					&shadowData,
 					game.getRenderer());
 
-				// Assign the text box and its duration to the triggered text member. It will 
+				// Assign the text box and its duration to the triggered text member. It will
 				// be displayed in the render method until the duration is no longer positive.
 				auto &gameData = game.getGameData();
 				auto &triggerText = gameData.getTriggerText();
@@ -1720,14 +1723,18 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
 	auto playSoundIfType = [&game, &activeLevel](
 		const VoxelData::DoorData::CloseSoundData &closeSoundData,
-		VoxelData::DoorData::CloseSoundType closeSoundType)
+		VoxelData::DoorData::CloseSoundType closeSoundType,
+		const LevelData::DoorState &doorState)
 	{
 		if (closeSoundData.type == closeSoundType)
 		{
 			const auto &inf = activeLevel.getInfFile();
 			const std::string &soundFilename = inf.getSound(closeSoundData.soundIndex);
 			auto &audioManager = game.getAudioManager();
-			audioManager.playSound(soundFilename);
+			const auto &doorPosition = std::make_optional(
+				Double3(doorState.getVoxel().x, 0.5, doorState.getVoxel().y)
+			);
+			audioManager.playSound(soundFilename, doorPosition);
 		}
 	};
 
@@ -1749,7 +1756,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		if (door.isClosed())
 		{
 			// Only some doors play a sound when they become closed.
-			playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosed);
+			playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosed, door);
 
 			// Erase closed door.
 			openDoors.erase(openDoors.begin() + i);
@@ -1774,7 +1781,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 				door.setDirection(LevelData::DoorState::Direction::Closing);
 
 				// Only some doors play a sound when they start closing.
-				playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosing);
+				playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosing, door);
 			}
 		}
 	}
@@ -1952,7 +1959,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				const auto &location = gameData.getLocation();
 				const int starCount = DistantSky::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
-				
+
 				if (isCity)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
@@ -2017,7 +2024,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 							game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
 					}
 				}
-				
+
 				// Reset the current music (even if it's the same one).
 				const MusicName musicName = [&game, &gameData, &location]()
 				{
@@ -2220,7 +2227,7 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
-void GameWorldPanel::drawCompass(const Double2 &direction, 
+void GameWorldPanel::drawCompass(const Double2 &direction,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Draw compass slider based on player direction. +X is north, +Z is east.
@@ -2230,8 +2237,8 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 	// Angle between 0 and 2 pi.
 	const double angle = std::atan2(direction.y, direction.x);
 
-	// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a 
-	// small "pop-in" when turning from N to NE, because N is drawn in two places, 
+	// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a
+	// small "pop-in" when turning from N to NE, because N is drawn in two places,
 	// but the second place (offset == 256) has tick marks where "NE" should be.
 	const int xOffset = static_cast<int>(240.0 +
 		std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
@@ -2280,7 +2287,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 1);
 		const std::string text = "FPS: " + fpsText + " (" + frameTimeText + "ms)";
 		const RichTextString richText(
-			text, 
+			text,
 			FontName::D,
 			Color::White,
 			TextAlignment::Left,
@@ -2373,7 +2380,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const Renderer::ProfilerData &profilerData = renderer.getProfilerData();
 		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
 
-		const std::string text = 
+		const std::string text =
 			"3D render: " + renderTime + "ms" + "\n\n" +
 			"FPS Graph:" + '\n' +
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
@@ -2483,10 +2490,10 @@ void GameWorldPanel::tick(double dt)
 	const double newClockTime = newClock.getPreciseTotalSeconds();
 	const double lamppostActivateTime = Clock::LamppostActivate.getPreciseTotalSeconds();
 	const double lamppostDeactivateTime = Clock::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool activateNightLights = 
+	const bool activateNightLights =
 		(oldClockTime < lamppostActivateTime) &&
 		(newClockTime >= lamppostActivateTime);
-	const bool deactivateNightLights = 
+	const bool deactivateNightLights =
 		(oldClockTime < lamppostDeactivateTime) &&
 		(newClockTime >= lamppostDeactivateTime);
 
@@ -2603,7 +2610,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw game world onto the native frame buffer. The game world buffer
-	// might not completely fill up the native buffer (bottom corners), so 
+	// might not completely fill up the native buffer (bottom corners), so
 	// clearing the native buffer beforehand is still necessary.
 	auto &gameData = this->getGame().getGameData();
 	auto &player = gameData.getPlayer();
@@ -2624,7 +2631,7 @@ void GameWorldPanel::render(Renderer &renderer)
 			return gameData.getAmbientPercent();
 		}
 	}();
-	
+
 	const double latitude = [&gameData]()
 	{
 		const Location &location = gameData.getLocation();
@@ -2766,7 +2773,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	}
 
 	// Draw each pop-up text if its duration is positive.
-	// - @todo: maybe give delta time to render()? Or store in tick()? I want to avoid 
+	// - @todo: maybe give delta time to render()? Or store in tick()? I want to avoid
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	auto &triggerText = gameData.getTriggerText();
 	auto &actionText = gameData.getActionText();
