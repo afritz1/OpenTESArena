@@ -32,17 +32,13 @@ public:
 	// Returns whether the implementation supports resampling options.
 	bool hasResamplerExtension() const;
 
-	// Sets the global listener's position/orientation (in world coordinates).
-	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &at);
-
 	// Plays a music file. All music should loop until changed.
 	void playMusic(const std::string &filename);
 
-	// Plays a sound file. All sounds should play once.
-	// If 'position' is equal to std::nullopt then the sound is played globally.
+	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
+	// is played globally.
 	void playSound(const std::string &filename,
-	               const std::optional<Double3> &position = std::nullopt);
+		const std::optional<Double3> &position = std::nullopt);
 
 	// Stops the music.
 	void stopMusic();
@@ -60,6 +56,10 @@ public:
 	// necessarily map to a specific index in the resampling list. Causes an error if
 	// resampling options are not supported.
 	void setResamplingOption(int resamplingOption);
+
+	// Sets the global listener's position/orientation (in world coordinates).
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &direction);
 
 	// Updates any state not handled by a background thread, such as resetting
 	// the sources of finished sounds.

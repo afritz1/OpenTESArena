@@ -86,9 +86,6 @@ public:
 	void init(double musicVolume, double soundVolume, int maxChannels,
 		int resamplingOption, const std::string &midiConfig);
 
-	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &at);
-
 	void playMusic(const std::string &filename);
 	void playSound(const std::string &filename, const std::optional<Double3> &position);
 
@@ -98,6 +95,8 @@ public:
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setResamplingOption(int value);
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &at);
 
 	void update();
 };
@@ -488,9 +487,9 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 			DebugLogWarning("alGenSources() error " + std::to_string(status) + ".");
 		}
 
+		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
-		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
 		alSourcef(source, AL_GAIN, this->mSfxVolume);
 		alSourcef(source, AL_PITCH, 1.0f);
 		alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
@@ -506,30 +505,8 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
-	this->setListenerPosition(Double3(0.0f, 0.0f, 0.0f));
-
-	// Set the listener's orientation
-	const float listenerOrientation[] = {
-		0.0f, 1.0f, 0.0f,			// up
-		1.0f, 1.0f, 0.0f			// at
-	};
-	alListenerfv(AL_ORIENTATION, listenerOrientation);
-}
-
-void AudioManagerImpl::setListenerPosition(const Double3 &position)
-{
-	alListener3f(AL_POSITION, position.x, position.y, position.z);
-}
-
-void AudioManagerImpl::setListenerOrientation(const Double3 &at)
-{
-	const auto &right = Matrix4d::yRotation(-Constants::HalfPi) * Double4(at.x, at.y, at.z, 1.0f);
-	const auto &up = Double3(right.x, right.y, right.z).cross(at);
-	const float data[] = {
-		static_cast<float>(up.x), static_cast<float>(up.y), static_cast<float>(up.z),
-		static_cast<float>(at.x), static_cast<float>(at.y), static_cast<float>(at.z)
-	};
-	alListenerfv(AL_ORIENTATION, data);
+	this->setListenerPosition(Double3::Zero);
+	this->setListenerOrientation(Double3::UnitX);
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename)
@@ -561,7 +538,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 }
 
 void AudioManagerImpl::playSound(const std::string &filename,
-                                 const std::optional<Double3> &position)
+	const std::optional<Double3> &position)
 {
 	// Certain sounds (like DRUMS.VOC) should only have one live instance at a time.
 	// This is purely an arbitrary rule to avoid having long sounds overlap each other
@@ -613,8 +590,11 @@ void AudioManagerImpl::playSound(const std::string &filename,
 		if (position.has_value())
 		{
 			alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
-			auto &positionValue = position.value();
-			alSource3f(source, AL_POSITION, positionValue.x, positionValue.y, positionValue.z);
+			const Double3 &positionValue = *position;
+			const ALfloat posX = static_cast<ALfloat>(positionValue.x);
+			const ALfloat posY = static_cast<ALfloat>(positionValue.y);
+			const ALfloat posZ = static_cast<ALfloat>(positionValue.z);
+			alSource3f(source, AL_POSITION, posX, posY, posZ);
 		}
 		else
 		{
@@ -717,6 +697,34 @@ void AudioManagerImpl::setResamplingOption(int resamplingOption)
 	}
 }
 
+void AudioManagerImpl::setListenerPosition(const Double3 &position)
+{
+	const ALfloat posX = static_cast<ALfloat>(position.x);
+	const ALfloat posY = static_cast<ALfloat>(position.y);
+	const ALfloat posZ = static_cast<ALfloat>(position.z);
+	alListener3f(AL_POSITION, posX, posY, posZ);
+}
+
+void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
+{
+	DebugAssert(direction.isNormalized());
+	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
+		Double4(direction.x, direction.y, direction.z, 1.0);
+	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
+
+	const std::array<ALfloat, 6> orientation =
+	{
+		static_cast<ALfloat>(direction.x),
+		static_cast<ALfloat>(direction.y),
+		static_cast<ALfloat>(direction.z),
+		static_cast<ALfloat>(up.x),
+		static_cast<ALfloat>(up.y),
+		static_cast<ALfloat>(up.z)
+	};
+
+	alListenerfv(AL_ORIENTATION, orientation.data());
+}
+
 void AudioManagerImpl::update()
 {
 	// If a sound source is done, reset it and return the ID to the free sources.
@@ -778,16 +786,6 @@ bool AudioManager::hasResamplerExtension() const
 	return pImpl->mHasResamplerExtension;
 }
 
-void AudioManager::setListenerPosition(const Double3 &position)
-{
-	pImpl->setListenerPosition(position);
-}
-
-void AudioManager::setListenerOrientation(const Double3 &at)
-{
-	pImpl->setListenerOrientation(at);
-}
-
 void AudioManager::playMusic(const std::string &filename)
 {
 	pImpl->playMusic(filename);
@@ -821,6 +819,16 @@ void AudioManager::setSoundVolume(double percent)
 void AudioManager::setResamplingOption(int resamplingOption)
 {
 	pImpl->setResamplingOption(resamplingOption);
+}
+
+void AudioManager::setListenerPosition(const Double3 &position)
+{
+	pImpl->setListenerPosition(position);
+}
+
+void AudioManager::setListenerOrientation(const Double3 &direction)
+{
+	pImpl->setListenerOrientation(direction);
 }
 
 void AudioManager::update()
