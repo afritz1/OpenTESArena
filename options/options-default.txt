@@ -53,6 +53,10 @@ SoundChannels=32
 # 0: default, 1: fastest, 2: medium, 3: best.
 SoundResampling=0
 
+# Whether audio played in the game world has a 3D position or is centered
+# on the player like the original game.
+Is3DAudio=true
+
 [Input]
 # Look sensitivity is normally between 3.0 and 10.0.
 HorizontalSensitivity=5.0

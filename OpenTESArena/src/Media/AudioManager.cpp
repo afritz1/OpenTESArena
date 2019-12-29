@@ -46,6 +46,7 @@ private:
 	static const ALint UNSUPPORTED_EXTENSION;
 
 	ALint mResampler;
+	bool mIs3D;
 
 	// Use this when resetting sound sources back to their default resampling. This uses
 	// whatever setting is the default within OpenAL.
@@ -83,8 +84,8 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(double musicVolume, double soundVolume, int maxChannels,
-		int resamplingOption, const std::string &midiConfig);
+	void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
+		bool is3D, const std::string &midiConfig);
 
 	void playMusic(const std::string &filename);
 	void playSound(const std::string &filename, const std::optional<Double3> &position);
@@ -95,6 +96,7 @@ public:
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setResamplingOption(int value);
+	void set3D(bool is3D);
 	void setListenerPosition(const Double3 &position);
 	void setListenerOrientation(const Double3 &direction);
 
@@ -455,7 +457,7 @@ bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 }
 
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, const std::string &midiConfig)
+	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
 	DebugLog("Initializing.");
 
@@ -487,6 +489,9 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	mResampler = mHasResamplerExtension ?
 		AudioManagerImpl::getResamplingIndex(resamplingOption) :
 		AudioManagerImpl::UNSUPPORTED_EXTENSION;
+
+	// Set whether the audio manager should play in 2D or 3D mode.
+	mIs3D = is3D;
 
 	// Generate the sound sources.
 	for (int i = 0; i < maxChannels; i++)
@@ -600,7 +605,9 @@ void AudioManagerImpl::playSound(const std::string &filename,
 		const ALuint source = mFreeSources.front();
 		alSourcei(source, AL_BUFFER, vocIter->second);
 
-		if (position.has_value())
+		// Play the sound in 3D if it has a position and we are set to 3D mode.
+		// Otherwise, play it in 2D centered on the listener.
+		if (position.has_value() && mIs3D)
 		{
 			alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
 			const Double3 &positionValue = *position;
@@ -710,6 +717,12 @@ void AudioManagerImpl::setResamplingOption(int resamplingOption)
 	}
 }
 
+void AudioManagerImpl::set3D(bool is3D)
+{
+	// Any future game world sounds will base their playback on this value.
+	mIs3D = is3D;
+}
+
 void AudioManagerImpl::setListenerPosition(const Double3 &position)
 {
 	const ALfloat posX = static_cast<ALfloat>(position.x);
@@ -786,9 +799,9 @@ AudioManager::~AudioManager()
 }
 
 void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, const std::string &midiConfig)
+	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
-	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, midiConfig);
+	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, is3D, midiConfig);
 }
 
 double AudioManager::getMusicVolume() const
@@ -839,6 +852,11 @@ void AudioManager::setSoundVolume(double percent)
 void AudioManager::setResamplingOption(int resamplingOption)
 {
 	pImpl->setResamplingOption(resamplingOption);
+}
+
+void AudioManager::set3D(bool is3D)
+{
+	pImpl->set3D(is3D);
 }
 
 void AudioManager::update(const ListenerData *listenerData)

@@ -232,6 +232,7 @@ const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
 // Audio.
 const std::string OptionsPanel::SOUND_CHANNELS_NAME = "Sound Channels";
 const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
+const std::string OptionsPanel::IS_3D_AUDIO_NAME = "Is 3D Audio";
 
 // Input.
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
@@ -560,6 +561,20 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	soundResamplingOption->setDisplayOverrides({ "Default", "Fastest", "Medium", "Best" });
 	this->audioOptions.push_back(std::move(soundResamplingOption));
+
+	this->audioOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::IS_3D_AUDIO_NAME,
+		"Determines whether sounds in the game world have a 3D position.\nSet to false for classic behavior.",
+		options.getAudio_Is3DAudio(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setAudio_Is3DAudio(value);
+
+		auto &audioManager = game.getAudioManager();
+		audioManager.set3D(value);
+	}));
 
 	// Create input options.
 	this->inputOptions.push_back(std::make_unique<DoubleOption>(

@@ -33,8 +33,8 @@ public:
 	AudioManager();
 	~AudioManager(); // Required for pImpl to stay in .cpp file.
 
-    void init(double musicVolume, double soundVolume, int maxChannels,
-		int resamplingOption, const std::string &midiConfig);
+    void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
+		bool is3D, const std::string &midiConfig);
 
 	static const double MIN_VOLUME;
 	static const double MAX_VOLUME;
@@ -69,6 +69,10 @@ public:
 	// necessarily map to a specific index in the resampling list. Causes an error if
 	// resampling options are not supported.
 	void setResamplingOption(int resamplingOption);
+
+	// Sets whether game world audio should be played in 2D (global) or 3D (with a listener).
+	// The 2D option is provided for parity with the original engine.
+	void set3D(bool is3D);
 
 	// Updates any state not handled by a background thread, such as resetting
 	// the sources of finished sounds, and updating listener values (if any).

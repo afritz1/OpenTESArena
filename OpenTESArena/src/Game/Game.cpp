@@ -54,7 +54,7 @@ Game::Game()
 
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
-		this->options.getAudio_SoundResampling(), midiPath);
+		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getGraphics_ScreenWidth(),
