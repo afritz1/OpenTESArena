@@ -485,8 +485,23 @@ void Game::loop()
 		// Update the input manager's state.
 		this->inputManager.update();
 
-		// Update the audio manager, checking for finished sounds.
-		this->audioManager.update();
+		// Update the audio manager listener (if any) and check for finished sounds.
+		if (this->gameDataIsActive())
+		{
+			const AudioManager::ListenerData listenerData = [this]()
+			{
+				const Player &player = this->getGameData().getPlayer();
+				const Double3 &position = player.getPosition();
+				const Double3 &direction = player.getDirection();
+				return AudioManager::ListenerData(position, direction);
+			}();
+
+			this->audioManager.update(&listenerData);
+		}
+		else
+		{
+			this->audioManager.update(nullptr);
+		}
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);

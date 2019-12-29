@@ -2,8 +2,8 @@
 #define AUDIO_MANAGER_H
 
 #include <memory>
-#include <string>
 #include <optional>
+#include <string>
 
 #include "../Math/Vector3.h"
 
@@ -14,6 +14,19 @@ class Options;
 
 class AudioManager
 {
+public:
+	// Contains data for defining the state of an audio listener.
+	class ListenerData
+	{
+	private:
+		Double3 position;
+		Double3 direction;
+	public:
+		ListenerData(const Double3 &position, const Double3 &direction);
+
+		const Double3 &getPosition() const;
+		const Double3 &getDirection() const;
+	};
 private:
 	std::unique_ptr<AudioManagerImpl> pImpl;
 public:
@@ -57,13 +70,9 @@ public:
 	// resampling options are not supported.
 	void setResamplingOption(int resamplingOption);
 
-	// Sets the global listener's position/orientation (in world coordinates).
-	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &direction);
-
 	// Updates any state not handled by a background thread, such as resetting
-	// the sources of finished sounds.
-	void update();
+	// the sources of finished sounds, and updating listener values (if any).
+	void update(const ListenerData *listenerData);
 };
 
 #endif

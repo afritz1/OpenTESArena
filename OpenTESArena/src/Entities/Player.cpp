@@ -437,11 +437,6 @@ void Player::tick(Game &game, double dt)
 	const WorldData &worldData = game.getGameData().getWorldData();
 	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
 
-	// Update the global audio listener.
-	auto &audioManager = game.getAudioManager();
-	audioManager.setListenerPosition(this->getPosition());
-	audioManager.setListenerOrientation(this->getDirection());
-
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);
 }

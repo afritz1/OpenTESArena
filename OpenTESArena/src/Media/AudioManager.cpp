@@ -98,8 +98,21 @@ public:
 	void setListenerPosition(const Double3 &position);
 	void setListenerOrientation(const Double3 &direction);
 
-	void update();
+	void update(const AudioManager::ListenerData *listenerData);
 };
+
+AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
+	: position(position), direction(direction) { }
+
+const Double3 &AudioManager::ListenerData::getPosition() const
+{
+	return this->position;
+}
+
+const Double3 &AudioManager::ListenerData::getDirection() const
+{
+	return this->direction;
+}
 
 const ALint AudioManagerImpl::UNSUPPORTED_EXTENSION = -1;
 
@@ -490,7 +503,7 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
 		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
-		alSourcef(source, AL_GAIN, this->mSfxVolume);
+		alSourcef(source, AL_GAIN, mSfxVolume);
 		alSourcef(source, AL_PITCH, 1.0f);
 		alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
 
@@ -725,8 +738,15 @@ void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
 	alListenerfv(AL_ORIENTATION, orientation.data());
 }
 
-void AudioManagerImpl::update()
+void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
 {
+	// Update listener values if there is a listener currently active.
+	if (listenerData != nullptr)
+	{
+		this->setListenerPosition(listenerData->getPosition());
+		this->setListenerOrientation(listenerData->getDirection());
+	}
+
 	// If a sound source is done, reset it and return the ID to the free sources.
 	for (size_t i = 0; i < mUsedSources.size(); i++)
 	{
@@ -821,17 +841,7 @@ void AudioManager::setResamplingOption(int resamplingOption)
 	pImpl->setResamplingOption(resamplingOption);
 }
 
-void AudioManager::setListenerPosition(const Double3 &position)
+void AudioManager::update(const ListenerData *listenerData)
 {
-	pImpl->setListenerPosition(position);
-}
-
-void AudioManager::setListenerOrientation(const Double3 &direction)
-{
-	pImpl->setListenerOrientation(direction);
-}
-
-void AudioManager::update()
-{
-	pImpl->update();
+	pImpl->update(listenerData);
 }
