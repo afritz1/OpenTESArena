@@ -96,7 +96,7 @@ public:
 	void setSoundVolume(double percent);
 	void setResamplingOption(int value);
 	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &at);
+	void setListenerOrientation(const Double3 &direction);
 
 	void update();
 };
