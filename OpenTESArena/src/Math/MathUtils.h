@@ -21,11 +21,10 @@ namespace MathUtils
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &pointInPlane, const Double3 &planeNormal, Double3 &intersection);
 
-	// Finds the intersection of the ray and the quad defined by the vertices. 'vertices'
-	// must contain at least 4 Double3 values (only the first 4 are used), and the first 3
-	// are used to determine the plane in which they reside.
+	// Finds the intersection of the ray and the quad defined by the vertices.
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 *vertices, Double3 &intersection);
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3,
+		Double3 &intersection);
 
 	// Finds the shortest distance between points p0 and p1 and between points q0 and q1.
 	// - s is the percent distance along p0p1 that's nearest to q0q1

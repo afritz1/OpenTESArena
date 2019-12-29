@@ -25,7 +25,7 @@ public:
 		const Entity *entity;
 		Double3 flatPosition;
 		EntityAnimationData::Keyframe keyframe;
-		float anglePercent;
+		double anglePercent;
 		EntityAnimationData::StateType stateType;
 
 		EntityVisibilityData();

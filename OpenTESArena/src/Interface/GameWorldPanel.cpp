@@ -1646,7 +1646,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				/*const double maxSelectionDist = 1.50;
 				if (hit.t <= maxSelectionDist)
 				{
-					
+
 				}*/
 
 				// Try inspecting the entity (can be from any distance). If they have a display name,
@@ -1670,7 +1670,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				else
 				{
 					// Placeholder text for testing.
-					text = "Entity " +  std::to_string(hit.entityID);
+					text = "Entity " + std::to_string(hit.entityID);
 				}
 
 				const int lineSpacing = 1;
@@ -1699,6 +1699,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
 				actionText = TimedTextBox(duration, std::move(textBox));
 			}
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.type)));
 		}
 	}
 }

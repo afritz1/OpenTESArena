@@ -432,8 +432,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		}
 	}();
 
-	outVisData.anglePercent = static_cast<float>(
-		std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne));
+	outVisData.anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
 
 	const int stateIndex = [&outVisData, stateCount]()
 	{

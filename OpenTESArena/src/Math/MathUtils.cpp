@@ -29,12 +29,13 @@ double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 	const Double3 &pointInPlane, const Double3 &planeNormal, Double3 &intersection)
 {
-	const Double3 norm = planeNormal.normalized();
-	double denominator = rayDirection.normalized().dot(norm);
+	DebugAssert(rayDirection.isNormalized());
+	DebugAssert(planeNormal.isNormalized());
+	const double denominator = rayDirection.dot(planeNormal);
 	if (std::abs(denominator) > Constants::Epsilon)
 	{
-		Double3 projection = pointInPlane - rayStart;
-		double t = projection.dot(norm) / denominator;
+		const Double3 projection = pointInPlane - rayStart;
+		const double t = projection.dot(planeNormal) / denominator;
 		if (t >= 0)
 		{
 			// An intersection exists. Find it.
@@ -47,28 +48,29 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 }
 
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 *vertices, Double3 &intersection)
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3,
+	Double3 &intersection)
 {
 	// Calculate the normal of the plane which contains the quad.
-	Double3 normal = (vertices[2] - vertices[0]).cross(vertices[1] - vertices[0]).normalized();
+	const Double3 normal = (v2 - v0).cross(v1 - v0).normalized();
 
 	// Get the intersection of the ray and the plane that contains the quad.
 	Double3 planeIntersection;
-	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, vertices[0], normal, planeIntersection))
+	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, normal, planeIntersection))
 	{
 		// Plane intersection is a point co-planar with the vertices of the quad (at least
 		// with the first 3, which form the basis for the plane the quad is in). Check if the
 		// coplanar point is within the bounds of the quad.
-		Double3 a = (vertices[1] - vertices[0]).cross(planeIntersection - vertices[0]);
-		Double3 b = (vertices[2] - vertices[1]).cross(planeIntersection - vertices[1]);
-		Double3 c = (vertices[3] - vertices[2]).cross(planeIntersection - vertices[2]);
-		Double3 d = (vertices[0] - vertices[3]).cross(planeIntersection - vertices[3]);
+		const Double3 a = (v1 - v0).cross(planeIntersection - v0);
+		const Double3 b = (v2 - v1).cross(planeIntersection - v1);
+		const Double3 c = (v3 - v2).cross(planeIntersection - v2);
+		const Double3 d = (v0 - v3).cross(planeIntersection - v3);
 
-		double ab = a.dot(b);
-		double bc = b.dot(c);
-		double cd = c.dot(d);
+		const double ab = a.dot(b);
+		const double bc = b.dot(c);
+		const double cd = c.dot(d);
 
-		if (((ab * bc) >= 0) && ((bc * cd) >= 0))
+		if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
 		{
 			intersection = planeIntersection;
 			return true;
@@ -81,23 +83,23 @@ bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayD
 double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &p1,
 	const Double3 &q0, const Double3 &q1, double &s, double &t)
 {
-	Double3 u = p1 - p0;
-	Double3 v = q1 - q0;
+	const Double3 u = p1 - p0;
+	const Double3 v = q1 - q0;
 
 	// These values are needed for the calculation of values s and t.
-	Double3 p0q0 = p0 - q0;
-	double a = u.dot(u);
-	double b = u.dot(v);
-	double c = v.dot(v);
-	double d = u.dot(p0q0);
-	double e = v.dot(p0q0);
+	const Double3 p0q0 = p0 - q0;
+	const double a = u.dot(u);
+	const double b = u.dot(v);
+	const double c = v.dot(v);
+	const double d = u.dot(p0q0);
+	const double e = v.dot(p0q0);
 
-	double be = b * e;
-	double cd = c * d;
-	double ac = a * c;
-	double ae = a * e;
-	double bd = b * d;
-	double bb = b * b;
+	const double be = b * e;
+	const double cd = c * d;
+	const double ac = a * c;
+	const double ae = a * e;
+	const double bd = b * d;
+	const double bb = b * b;
 
 	// Calculate s and t. These are the points along u and v from p0 and q0 respectively that
 	// are the closest to each other. The values are limited to the interval [0, 1] because
@@ -108,8 +110,8 @@ double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &
 
 	// Calculate Psc and Qtc. These are the points on their respective segments that are closest
 	// to each other.
-	Double3 Psc = p0 + (u * s);
-	Double3 Qtc = p0 + (v * t);
+	const Double3 Psc = p0 + (u * s);
+	const Double3 Qtc = p0 + (v * t);
 
 	// The distance between these two points is the shortest distance between the line segments.
 	return (Psc - Qtc).length();

@@ -12,6 +12,11 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	constexpr double MAX_DIST = std::numeric_limits<double>::max();
+}
+
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
 	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
@@ -64,16 +69,16 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
 		// Continue the ray into the voxel and do line intersection.
-		double nextX = static_cast<double>((direction.x >= 0) ? (voxel.x + 1) : voxel.x);
-		double nextY = static_cast<double>((direction.y >= 0) ? (voxel.y + 1) : voxel.y);
-		double nextZ = static_cast<double>((direction.z >= 0) ? (voxel.z + 1) : voxel.z);
-		double distX = std::abs(nextX - farPoint.x);
-		double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
-		double distZ = std::abs(nextZ - farPoint.z);
+		const double nextX = static_cast<double>((direction.x >= 0.0) ? (voxel.x + 1) : voxel.x);
+		const double nextY = static_cast<double>((direction.y >= 0.0) ? (voxel.y + 1) : voxel.y);
+		const double nextZ = static_cast<double>((direction.z >= 0.0) ? (voxel.z + 1) : voxel.z);
+		const double distX = std::abs(nextX - farPoint.x);
+		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
+		const double distZ = std::abs(nextZ - farPoint.z);
 
-		double tX = (direction.x == 0) ? std::numeric_limits<double>::max() : (distX / std::abs(direction.x));
-		double tY = (direction.y == 0) ? std::numeric_limits<double>::max() : (distY / std::abs(direction.y));
-		double tZ = (direction.z == 0) ? std::numeric_limits<double>::max() : (distZ / std::abs(direction.z));
+		const double tX = (direction.x == 0.0) ? MAX_DIST : (distX / std::abs(direction.x));
+		const double tY = (direction.y == 0.0) ? MAX_DIST : (distY / std::abs(direction.y));
+		const double tZ = (direction.z == 0.0) ? MAX_DIST : (distZ / std::abs(direction.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -97,23 +102,19 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		// Check if the next point is on an X or Z face, The Y faces are a special case
 		if (nextPoint.x == std::floor(nextPoint.x) || nextPoint.z == std::floor(nextPoint.z))
 		{
-			// We can simplify this to a ray/wall intersection in the XZ plane
-			double A = isRightDiag ? -1 : 1;
-			double B = isRightDiag ? 1 : 0;
+			// We can simplify this to a ray/wall intersection in the XZ plane.
+			const double A = isRightDiag ? -1.0 : 1.0;
+			const double B = isRightDiag ? 1.0 : 0.0;
 
-			double dzdx = -direction.z / direction.x;
-			double z0 = -(farPoint.x - voxel.x) * dzdx;
+			const double dzdx = -direction.z / direction.x;
+			const double z0 = (std::floor(farPoint.x) == farPoint.x) ?
+				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
 
-			if (std::floor(farPoint.x) == farPoint.x)
-			{
-				z0 = farPoint.z - voxel.z;
-			}
+			const double rayA = dzdx;
+			const double rayB = z0;
 
-			double rayA = dzdx;
-			double rayB = z0;
-
-			double intersection = (rayB - B) / (A - rayA);
-			if (intersection >= 0 && intersection <= 1)
+			const double intersection = (rayB - B) / (A - rayA);
+			if (intersection >= 0.0 && intersection <= 1.0)
 			{
 				hit.point = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
 				hit.t = (nearPoint - hit.point).length();
@@ -126,25 +127,32 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		}
 		else
 		{
-			Double3 cornerA = Double3(isRightDiag ? 0 : 1, 0, 0);
-			Double3 cornerB = Double3(isRightDiag ? 1 : 0, 0, 1);
+			const Double3 cornerA(isRightDiag ? 0.0 : 1.0, 0.0, 0.0);
+			const Double3 cornerB(isRightDiag ? 1.0 : 0.0, 0.0, 1.0);
 
-			Double3 nextPointProjection(
+			const Double3 nextPointProjection(
 				nextPoint.x - std::floor(nextPoint.x),
-				0,
+				0.0,
 				nextPoint.z - std::floor(nextPoint.z));
-			Double3 farPointProjection(
+			const Double3 farPointProjection(
 				farPoint.x - voxel.x,
-				0,
+				0.0,
 				farPoint.z - voxel.z);
 
-			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
+			const Double3 cornerDiff = cornerA - cornerB;
+			const Double3 farPointBDiff = farPointProjection - cornerB;
+			const Double3 nextPointBDiff = nextPointProjection - cornerB;
+			const double cornerDiffCrossY =
+				cornerDiff.cross(farPointBDiff).y * cornerDiff.cross(nextPointBDiff).y;
+
+			if (cornerDiffCrossY <= 0.0)
 			{
 				// We already know that the point is on the diagonal plane, so we just need to do a
 				// ray/plane intersection to get the point on the plane.
-				MathUtils::rayPlaneIntersection(nearPoint, direction,
-					Double3(voxel.x + 0.5, voxel.y + (ceilingHeight / 2), voxel.z + 0.5),
-					isRightDiag ? Double3(-1, 0, 1) : Double3(1, 0, 1), hit.point);
+				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
+				const Double3 planeNormal = Double3(
+					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
+				MathUtils::rayPlaneIntersection(nearPoint, direction, planePoint, planeNormal, hit.point);
 
 				hit.t = (nearPoint - hit.point).length();
 				hit.voxel = voxel;
@@ -160,7 +168,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 	else if (voxelDataType == VoxelDataType::TransparentWall)
 	{
 		// Always invisible (no back face).
-		// You can't click an invisible wall that you're inside of
+		// You can't click an invisible wall that you're inside of.
 		return false;
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
@@ -299,13 +307,13 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 			// We're looking from above the raised platform. We need to do 1 more step forward
 			// to see if the ray crosses below the top of the raised platform by the time it
 			// reaches the next voxel in the grid.
-			double nextX = static_cast<double>((direction.x >= 0) ? (voxel.x + 1) : voxel.x);
-			double nextZ = static_cast<double>((direction.z >= 0) ? (voxel.z + 1) : voxel.z);
-			double distX = std::abs(nextX - farPoint.x);
-			double distZ = std::abs(nextZ - farPoint.z);
+			const double nextX = static_cast<double>((direction.x >= 0.0) ? (voxel.x + 1) : voxel.x);
+			const double nextZ = static_cast<double>((direction.z >= 0.0) ? (voxel.z + 1) : voxel.z);
+			const double distX = std::abs(nextX - farPoint.x);
+			const double distZ = std::abs(nextZ - farPoint.z);
 
-			double tX = (direction.x == 0) ? std::numeric_limits<double>::max() : (distX / std::abs(direction.x));
-			double tZ = (direction.z == 0) ? std::numeric_limits<double>::max() : (distZ / std::abs(direction.z));
+			const double tX = (direction.x == 0.0) ? MAX_DIST : (distX / std::abs(direction.x));
+			const double tZ = (direction.z == 0.0) ? MAX_DIST : (distZ / std::abs(direction.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -336,13 +344,13 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 			// We're looking from below the raised platform. We need to do 1 more step forward
 			// to see if the ray crosses above the bottom of the raised platform by the time it
 			// reaches the next voxel in the grid.
-			double nextX = static_cast<double>((direction.x >= 0) ? (voxel.x + 1) : voxel.x);
-			double nextZ = static_cast<double>((direction.z >= 0) ? (voxel.z + 1) : voxel.z);
-			double distX = std::abs(nextX - farPoint.x);
-			double distZ = std::abs(nextZ - farPoint.z);
+			const double nextX = static_cast<double>((direction.x >= 0.0) ? (voxel.x + 1) : voxel.x);
+			const double nextZ = static_cast<double>((direction.z >= 0.0) ? (voxel.z + 1) : voxel.z);
+			const double distX = std::abs(nextX - farPoint.x);
+			const double distZ = std::abs(nextZ - farPoint.z);
 
-			double tX = (direction.x == 0) ? std::numeric_limits<double>::max() : (distX / std::abs(direction.x));
-			double tZ = (direction.z == 0) ? std::numeric_limits<double>::max() : (distZ / std::abs(direction.z));
+			const double tX = (direction.x == 0.0) ? MAX_DIST : (distX / std::abs(direction.x));
+			const double tZ = (direction.z == 0.0) ? MAX_DIST : (distZ / std::abs(direction.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -387,16 +395,16 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
 
 		// Continue the ray into the voxel and do line intersection.
-		double nextX = static_cast<double>((direction.x >= 0) ? (voxel.x + 1) : voxel.x);
-		double nextY = static_cast<double>((direction.y >= 0) ? (voxel.y + 1) : voxel.y);
-		double nextZ = static_cast<double>((direction.z >= 0) ? (voxel.z + 1) : voxel.z);
-		double distX = std::abs(nextX - farPoint.x);
-		double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
-		double distZ = std::abs(nextZ - farPoint.z);
+		const double nextX = static_cast<double>((direction.x >= 0.0) ? (voxel.x + 1) : voxel.x);
+		const double nextY = static_cast<double>((direction.y >= 0.0) ? (voxel.y + 1) : voxel.y);
+		const double nextZ = static_cast<double>((direction.z >= 0.0) ? (voxel.z + 1) : voxel.z);
+		const double distX = std::abs(nextX - farPoint.x);
+		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
+		const double distZ = std::abs(nextZ - farPoint.z);
 
-		double tX = (direction.x == 0) ? std::numeric_limits<double>::max() : (distX / std::abs(direction.x));
-		double tY = (direction.y == 0) ? std::numeric_limits<double>::max() : (distY / std::abs(direction.y));
-		double tZ = (direction.z == 0) ? std::numeric_limits<double>::max() : (distZ / std::abs(direction.z));
+		const double tX = (direction.x == 0.0) ? MAX_DIST : (distX / std::abs(direction.x));
+		const double tY = (direction.y == 0.0) ? MAX_DIST : (distY / std::abs(direction.y));
+		const double tZ = (direction.z == 0.0) ? MAX_DIST : (distZ / std::abs(direction.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -417,26 +425,22 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 
 		const bool isRightDiag = diagData.type1;
 
-		// Check if the next point is above or below. That's a special case
+		// Check if the next point is above or below. That's a special case.
 		if (nextPoint.x == std::floor(nextPoint.x) || nextPoint.z == std::floor(nextPoint.z))
 		{
-			// We can simplify this to a ray/wall intersection in the XZ plane
-			double A = isRightDiag ? -1 : 1;
-			double B = isRightDiag ? 1 : 0;
+			// We can simplify this to a ray/wall intersection in the XZ plane.
+			const double A = isRightDiag ? -1.0 : 1.0;
+			const double B = isRightDiag ? 1.0 : 0.0;
 
-			double dzdx = -direction.z / direction.x;
-			double z0 = -(farPoint.x - voxel.x) * dzdx;
+			const double dzdx = -direction.z / direction.x;
+			const double z0 = (std::floor(farPoint.x) == farPoint.x) ?
+				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
 
-			if (std::floor(farPoint.x) == farPoint.x)
-			{
-				z0 = farPoint.z - voxel.z;
-			}
-			
-			double rayA = dzdx;
-			double rayB = z0;
+			const double rayA = dzdx;
+			const double rayB = z0;
 
-			double intersection = (rayB - B) / (A - rayA);
-			if (intersection >= 0 && intersection <= 1)
+			const double intersection = (rayB - B) / (A - rayA);
+			if (intersection >= 0.0 && intersection <= 1.0)
 			{
 				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
 				hit.t = (nearPoint - hitPoint).length();
@@ -450,25 +454,32 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		}
 		else
 		{
-			Double3 cornerA(isRightDiag ? 0 : 1, 0, 0);
-			Double3 cornerB(isRightDiag ? 1 : 0, 0, 1);
+			const Double3 cornerA(isRightDiag ? 0.0 : 1.0, 0.0, 0.0);
+			const Double3 cornerB(isRightDiag ? 1.0 : 0.0, 0.0, 1.0);
 
-			Double3 nextPointProjection(
+			const Double3 nextPointProjection(
 				nextPoint.x - std::floor(nextPoint.x),
-				0,
+				0.0,
 				nextPoint.z - std::floor(nextPoint.z));
-			Double3 farPointProjection(
+			const Double3 farPointProjection(
 				farPoint.x - voxel.x,
-				0,
+				0.0,
 				farPoint.z - voxel.z);
 
-			if ((cornerA - cornerB).cross(farPointProjection - cornerB).y * (cornerA - cornerB).cross(nextPointProjection - cornerB).y <= 0)
+			const Double3 cornerDiff = cornerA - cornerB;
+			const Double3 farPointBDiff = farPointProjection - cornerB;
+			const Double3 nextPointBDiff = nextPointProjection - cornerB;
+			const double cornerDiffCrossY =
+				cornerDiff.cross(farPointBDiff).y * cornerDiff.cross(nextPointBDiff).y;
+
+			if (cornerDiffCrossY <= 0.0)
 			{
 				// We already know that the point is on the diagonal plane, so we just need to do a
 				// ray/plane intersection to get the point on the plane.
-				MathUtils::rayPlaneIntersection(nearPoint, direction,
-					Double3(voxel.x + 0.5, voxel.y + (ceilingHeight / 2), voxel.z + 0.5),
-					isRightDiag ? Double3(-1, 0, 1) : Double3(1, 0, 1), hit.point);
+				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
+				const Double3 planeNormal = Double3(
+					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
+				MathUtils::rayPlaneIntersection(nearPoint, direction, planePoint, planeNormal, hit.point);
 
 				hit.t = (nearPoint - hit.point).length();
 				hit.voxel = voxel;
@@ -601,7 +612,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
-	hit.t = std::numeric_limits<double>::max();
+	hit.t = MAX_DIST;
 
 	std::unordered_map<Int3, std::vector<EntityManager::EntityVisibilityData>> voxelEntityMap;
 
@@ -610,8 +621,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	// Get all the entities.
 	std::vector<const Entity*> entities(entityManager.getTotalCount());
 	const int entityCount = entityManager.getTotalEntities(
-		entities.data(),
-		static_cast<int>(entities.size()));
+		entities.data(), static_cast<int>(entities.size()));
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
@@ -626,50 +636,59 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	{
 		const Entity &entity = *entities[i];
 
-		// Skip any entities that are behind the camera or more than 10 units away.
-		Double2 entityPosRelativeToEye = entity.getPosition() - eye2D;
-		if (entityPosRelativeToEye.lengthSquared() > 100 ||
-			cameraDir.dot(entityPosRelativeToEye) < 0.0)
+		// Skip any entities that are behind the camera or are too far away.
+		constexpr double maxEntityDistance = 10.0;
+		Double2 entityPosEyeDiff = entity.getPosition() - eye2D;
+		if (entityPosEyeDiff.lengthSquared() > (maxEntityDistance * maxEntityDistance) ||
+			cameraDir.dot(entityPosEyeDiff) < 0.0)
+		{
 			continue;
+		}
 
 		EntityManager::EntityVisibilityData visData;
 		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
 
 		// Use a bounding box to determine which voxels the entity could be in.
 		// Start with a bounding cylinder.
-		double radius = visData.keyframe.getWidth() / 2;
-		double height = visData.keyframe.getHeight();
+		const double radius = visData.keyframe.getWidth() / 2.0;
+		const double height = visData.keyframe.getHeight();
 
 		// Convert the bounding cylinder to an axis-aligned bounding box.
-		double minX = visData.flatPosition.x - radius;
-		double maxX = visData.flatPosition.x + radius;
-		double minY = visData.flatPosition.y;
-		double maxY = visData.flatPosition.y + height;
-		double minZ = visData.flatPosition.z - radius;
-		double maxZ = visData.flatPosition.z + radius;
+		const double minX = visData.flatPosition.x - radius;
+		const double maxX = visData.flatPosition.x + radius;
+		const double minY = visData.flatPosition.y;
+		const double maxY = visData.flatPosition.y + height;
+		const double minZ = visData.flatPosition.z - radius;
+		const double maxZ = visData.flatPosition.z + radius;
 
-		// Only iterate over the specific voxels that the entity could be in (at least partially).
+		// Only iterate over voxels the entity could be in (at least partially).
 		// This loop should always hit at least 1 voxel.
-		for (int z = static_cast<int>(std::floor(minZ)); z <= static_cast<int>(std::floor(maxZ)); z++)
+		const int startX = static_cast<int>(std::floor(minX));
+		const int endX = static_cast<int>(std::floor(maxX));
+		const int startY = static_cast<int>(std::floor(minY));
+		const int endY = static_cast<int>(std::floor(maxY));
+		const int startZ = static_cast<int>(std::floor(minZ));
+		const int endZ = static_cast<int>(std::floor(maxZ));
+
+		for (int z = startZ; z <= endZ; z++)
 		{
-			for (int y = static_cast<int>(std::floor(minY)); y <= static_cast<int>(std::floor(maxY)); y++)
+			for (int y = startY; y <= endY; y++)
 			{
-				for (int x = static_cast<int>(std::floor(minX)); x <= static_cast<int>(std::floor(maxX)); x++)
+				for (int x = startX; x <= endX; x++)
 				{
-					// Create the voxel and entity list for the map
-					Int3 voxel(x, y, z);
-					std::vector<EntityManager::EntityVisibilityData> entityList;
+					const Int3 voxel(x, y, z);
 
-					// Check if a list already exists for this voxel. If it does, then get that one
+					// Add the entity to the list. Create a new voxel->entity list mapping if
+					// there isn't one for this voxel.
 					auto iter = voxelEntityMap.find(voxel);
-					if (iter != voxelEntityMap.end())
-						entityList = iter->second;
+					if (iter == voxelEntityMap.end())
+					{
+						iter = voxelEntityMap.insert(std::make_pair(
+							voxel, std::vector<EntityManager::EntityVisibilityData>())).first;
+					}
 
-					// Add the entity to the list
-					entityList.push_back(visData);
-
-					// Update the list in the map
-					voxelEntityMap.insert_or_assign(voxel, entityList);
+					auto &entityDataList = iter->second;
+					entityDataList.push_back(visData);
 				}
 			}
 		}
@@ -801,7 +820,8 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
 	const uint16_t *voxels = voxelGrid.getVoxels();
 
-	while (voxelIsValid && (cellDistSquared < 100)) // Arbitrary value
+	constexpr double maxCellDistance = 10.0; // Arbitrary value
+	while (voxelIsValid && (cellDistSquared < (maxCellDistance * maxCellDistance)))
 	{
 		// Get the index of the current voxel in the voxel grid.
 		const int gridIndex = cell.x + (cell.y * gridWidth) + (cell.z * gridWidth * gridHeight);
@@ -809,8 +829,8 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 #pragma region Ray Test this voxel
 		// Check if the current voxel is solid.
 		const uint16_t voxelID = voxels[gridIndex];
-
-		if (voxelID > 0)
+		const bool isAir = voxelID == 0;
+		if (!isAir)
 		{
 			// Boolean for whether the ray ended in the same voxel it started in.
 			const bool stoppedInFirstVoxel = cell == voxel;
@@ -863,22 +883,16 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 				}
 			}
 
-			Double3 rayEnd = rayStart + (direction * distance);
-
-			hitID = voxelID;
-			bool success = false;
-			if (hitID > 0)
+			const Double3 rayEnd = rayStart + (direction * distance);
+			if (stoppedInFirstVoxel)
 			{
-				if (stoppedInFirstVoxel)
-				{
-					testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
-						ceilingHeight, voxelGrid, hit);
-				}
-				else
-				{
-					testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
-						ceilingHeight, voxelGrid, hit);
-				}
+				testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
+					ceilingHeight, voxelGrid, hit);
+			}
+			else
+			{
+				testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
+					ceilingHeight, voxelGrid, hit);
 			}
 		}
 
@@ -887,12 +901,12 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 #pragma region Ray Test any entities that cross this voxel
 
 		// Check if there are any entites that cross the current voxel.
-		auto iter = voxelEntityMap.find(cell);
+		const auto iter = voxelEntityMap.find(cell);
 		if (iter != voxelEntityMap.end())
 		{
 			// Iterate over all the entities that cross this voxel and ray test them.
-			const auto &voxelVisDataList = iter->second;
-			for (const auto &visData : voxelVisDataList)
+			const auto &entityDataList = iter->second;
+			for (const auto &visData : entityDataList)
 			{
 				const Entity &entity = *visData.entity;
 				const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
@@ -903,9 +917,10 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 				// Check if the flat is somewhere in front of the camera.
 				const Double2 flatEyeDiff = flatPosition2D - eye2D;
-				const double flatEyeDiffLen = flatEyeDiff.length();
+				const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
+				const double hitTSqr = hit.t * hit.t;
 
-				if (flatEyeDiffLen < hit.t)
+				if (flatEyeDiffLenSqr < hitTSqr)
 				{
 					const double flatWidth = visData.keyframe.getWidth();
 					const double flatHeight = visData.keyframe.getHeight();
@@ -931,7 +946,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 #pragma endregion Ray Test any entities that cross this voxel
 
-		if (hit.t != std::numeric_limits<double>::max())
+		if (hit.t != MAX_DIST)
 		{
 			break;
 		}
@@ -972,7 +987,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 #pragma endregion Ray Cast Voxels and Entities
 
 	// Return whether the ray hit something.
-	return hit.t != std::numeric_limits<double>::max();
+	return hit.t != MAX_DIST;
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, const Double3 &cameraForward,
