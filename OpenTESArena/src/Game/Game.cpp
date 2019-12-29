@@ -54,7 +54,7 @@ Game::Game()
 
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
-		this->options.getAudio_SoundResampling(), midiPath);
+		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getGraphics_ScreenWidth(),
@@ -485,8 +485,23 @@ void Game::loop()
 		// Update the input manager's state.
 		this->inputManager.update();
 
-		// Update the audio manager, checking for finished sounds.
-		this->audioManager.update();
+		// Update the audio manager listener (if any) and check for finished sounds.
+		if (this->gameDataIsActive())
+		{
+			const AudioManager::ListenerData listenerData = [this]()
+			{
+				const Player &player = this->getGameData().getPlayer();
+				const Double3 &position = player.getPosition();
+				const Double3 &direction = player.getDirection();
+				return AudioManager::ListenerData(position, direction);
+			}();
+
+			this->audioManager.update(&listenerData);
+		}
+		else
+		{
+			this->audioManager.update(nullptr);
+		}
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
