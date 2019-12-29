@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <deque>
 #include <functional>
+#include <optional>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -17,6 +18,10 @@
 #include "WildMidi.h"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
+#include "../Math/Constants.h"
+#include "../Math/Matrix4.h"
+#include "../Math/Vector3.h"
+#include "../Math/Vector4.h"
 
 #include "components/debug/Debug.h"
 
@@ -41,6 +46,7 @@ private:
 	static const ALint UNSUPPORTED_EXTENSION;
 
 	ALint mResampler;
+	bool mIs3D;
 
 	// Use this when resetting sound sources back to their default resampling. This uses
 	// whatever setting is the default within OpenAL.
@@ -69,7 +75,7 @@ public:
 	// A deque of available sources to play sounds and streams with.
 	std::deque<ALuint> mFreeSources;
 
-	// A deque of currently used sources for sounds (the music source is owned 
+	// A deque of currently used sources for sounds (the music source is owned
 	// by OpenALStream). The string is the filename and the integer is the ID.
 	// The filename is required for some sounds that can only have one instance
 	// active at a time.
@@ -78,11 +84,11 @@ public:
 	AudioManagerImpl();
 	~AudioManagerImpl();
 
-	void init(double musicVolume, double soundVolume, int maxChannels,
-		int resamplingOption, const std::string &midiConfig);
+	void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
+		bool is3D, const std::string &midiConfig);
 
 	void playMusic(const std::string &filename);
-	void playSound(const std::string &filename);
+	void playSound(const std::string &filename, const std::optional<Double3> &position);
 
 	void stopMusic();
 	void stopSound();
@@ -90,9 +96,25 @@ public:
 	void setMusicVolume(double percent);
 	void setSoundVolume(double percent);
 	void setResamplingOption(int value);
+	void set3D(bool is3D);
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &direction);
 
-	void update();
+	void update(const AudioManager::ListenerData *listenerData);
 };
+
+AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
+	: position(position), direction(direction) { }
+
+const Double3 &AudioManager::ListenerData::getPosition() const
+{
+	return this->position;
+}
+
+const Double3 &AudioManager::ListenerData::getDirection() const
+{
+	return this->direction;
+}
 
 const ALint AudioManagerImpl::UNSUPPORTED_EXTENSION = -1;
 
@@ -349,7 +371,6 @@ public:
 AudioManagerImpl::AudioManagerImpl()
 	: mMusicVolume(1.0f), mSfxVolume(1.0f), mHasResamplerExtension(false)
 {
-
 }
 
 AudioManagerImpl::~AudioManagerImpl()
@@ -436,7 +457,7 @@ bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 }
 
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, const std::string &midiConfig)
+	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
 	DebugLog("Initializing.");
 
@@ -465,9 +486,12 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
-	mResampler = mHasResamplerExtension ? 
+	mResampler = mHasResamplerExtension ?
 		AudioManagerImpl::getResamplingIndex(resamplingOption) :
 		AudioManagerImpl::UNSUPPORTED_EXTENSION;
+
+	// Set whether the audio manager should play in 2D or 3D mode.
+	mIs3D = is3D;
 
 	// Generate the sound sources.
 	for (int i = 0; i < maxChannels; i++)
@@ -481,6 +505,13 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 			DebugLogWarning("alGenSources() error " + std::to_string(status) + ".");
 		}
 
+		alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+		alSource3f(source, AL_DIRECTION, 0.0f, 0.0f, 0.0f);
+		alSource3f(source, AL_VELOCITY, 0.0f, 0.0f, 0.0f);
+		alSourcef(source, AL_GAIN, mSfxVolume);
+		alSourcef(source, AL_PITCH, 1.0f);
+		alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
+
 		// Set resampling if the extension is supported.
 		if (mHasResamplerExtension)
 		{
@@ -492,6 +523,8 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
+	this->setListenerPosition(Double3::Zero);
+	this->setListenerOrientation(Double3::UnitX);
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename)
@@ -522,7 +555,8 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 	}
 }
 
-void AudioManagerImpl::playSound(const std::string &filename)
+void AudioManagerImpl::playSound(const std::string &filename,
+	const std::optional<Double3> &position)
 {
 	// Certain sounds (like DRUMS.VOC) should only have one live instance at a time.
 	// This is purely an arbitrary rule to avoid having long sounds overlap each other
@@ -571,11 +605,28 @@ void AudioManagerImpl::playSound(const std::string &filename)
 		const ALuint source = mFreeSources.front();
 		alSourcei(source, AL_BUFFER, vocIter->second);
 
+		// Play the sound in 3D if it has a position and we are set to 3D mode.
+		// Otherwise, play it in 2D centered on the listener.
+		if (position.has_value() && mIs3D)
+		{
+			alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
+			const Double3 &positionValue = *position;
+			const ALfloat posX = static_cast<ALfloat>(positionValue.x);
+			const ALfloat posY = static_cast<ALfloat>(positionValue.y);
+			const ALfloat posZ = static_cast<ALfloat>(positionValue.z);
+			alSource3f(source, AL_POSITION, posX, posY, posZ);
+		}
+		else
+		{
+			alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+			alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+		}
+
 		// Set resampling if the extension is supported.
 		if (mHasResamplerExtension)
 		{
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
-		}		
+		}
 
 		// Play the sound.
 		alSourcePlay(source);
@@ -666,8 +717,49 @@ void AudioManagerImpl::setResamplingOption(int resamplingOption)
 	}
 }
 
-void AudioManagerImpl::update()
+void AudioManagerImpl::set3D(bool is3D)
 {
+	// Any future game world sounds will base their playback on this value.
+	mIs3D = is3D;
+}
+
+void AudioManagerImpl::setListenerPosition(const Double3 &position)
+{
+	const ALfloat posX = static_cast<ALfloat>(position.x);
+	const ALfloat posY = static_cast<ALfloat>(position.y);
+	const ALfloat posZ = static_cast<ALfloat>(position.z);
+	alListener3f(AL_POSITION, posX, posY, posZ);
+}
+
+void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
+{
+	DebugAssert(direction.isNormalized());
+	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
+		Double4(direction.x, direction.y, direction.z, 1.0);
+	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
+
+	const std::array<ALfloat, 6> orientation =
+	{
+		static_cast<ALfloat>(direction.x),
+		static_cast<ALfloat>(direction.y),
+		static_cast<ALfloat>(direction.z),
+		static_cast<ALfloat>(up.x),
+		static_cast<ALfloat>(up.y),
+		static_cast<ALfloat>(up.z)
+	};
+
+	alListenerfv(AL_ORIENTATION, orientation.data());
+}
+
+void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
+{
+	// Update listener values if there is a listener currently active.
+	if (listenerData != nullptr)
+	{
+		this->setListenerPosition(listenerData->getPosition());
+		this->setListenerOrientation(listenerData->getDirection());
+	}
+
 	// If a sound source is done, reset it and return the ID to the free sources.
 	for (size_t i = 0; i < mUsedSources.size(); i++)
 	{
@@ -707,9 +799,9 @@ AudioManager::~AudioManager()
 }
 
 void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, const std::string &midiConfig)
+	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
-	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, midiConfig);
+	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, is3D, midiConfig);
 }
 
 double AudioManager::getMusicVolume() const
@@ -732,9 +824,9 @@ void AudioManager::playMusic(const std::string &filename)
 	pImpl->playMusic(filename);
 }
 
-void AudioManager::playSound(const std::string &filename)
+void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
 {
-	pImpl->playSound(filename);
+	pImpl->playSound(filename, position);
 }
 
 void AudioManager::stopMusic()
@@ -762,7 +854,12 @@ void AudioManager::setResamplingOption(int resamplingOption)
 	pImpl->setResamplingOption(resamplingOption);
 }
 
-void AudioManager::update()
+void AudioManager::set3D(bool is3D)
 {
-	pImpl->update();
+	pImpl->set3D(is3D);
+}
+
+void AudioManager::update(const ListenerData *listenerData)
+{
+	pImpl->update(listenerData);
 }

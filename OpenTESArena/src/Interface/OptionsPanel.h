@@ -148,6 +148,7 @@ private:
 	// Audio.
 	static const std::string SOUND_CHANNELS_NAME;
 	static const std::string SOUND_RESAMPLING_NAME;
+	static const std::string IS_3D_AUDIO_NAME;
 
 	// Input.
 	static const std::string HORIZONTAL_SENSITIVITY_NAME;
