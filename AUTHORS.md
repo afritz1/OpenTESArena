@@ -10,6 +10,7 @@ I started this project in 2016. Over time, several individuals have contributed 
     Malcolm Mallardi (mdmallardi)
     MinganMuon
     Paul Cercueil (pcercuei)
+    Pietro Ferrari (Plettro)
     Robert MacGregor (Ragora)
     Will Herrmann (Thunderforge)
     
