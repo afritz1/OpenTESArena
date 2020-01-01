@@ -177,6 +177,13 @@ IsEmpty=0x432EF
 [Meta]
 DataSegmentOffset=0x3276A
 
+[Quests]
+MainQuestItemNames=0x40612
+StaffPieces=0x40692
+KeyNames=0x3EE2B
+KeyPickedUp=0x406A5
+DoorUnlockedWithKey=0x406BC
+
 [Races]
 SingularNames=0x3E594
 PluralNames=0x3E549

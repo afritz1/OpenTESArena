@@ -360,6 +360,20 @@ public:
 		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
+	struct Quests
+	{
+		std::array<std::string, 8> mainQuestItemNames;
+
+		// Staff piece count in inventory.
+		std::string staffPieces;
+
+		std::array<std::string, 12> keyNames;
+		std::string keyPickedUp;
+		std::string doorUnlockedWithKey;
+
+		void init(const char *data, const KeyValueFile &keyValueFile);
+	};
+
 	struct Races
 	{
 		// Race names (ordered the same as provinces).
@@ -534,6 +548,7 @@ public:
 	Locations locations;
 	Logbook logbook;
 	Meta meta;
+	Quests quests;
 	Races races;
 	Status status;
 	Travel travel;

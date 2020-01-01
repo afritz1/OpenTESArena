@@ -561,6 +561,22 @@ void ExeData::Meta::init(const char *data, const KeyValueFile &keyValueFile)
 	this->dataSegmentOffset = ExeData::get(section, "DataSegmentOffset", keyValueFile);
 }
 
+void ExeData::Quests::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const std::string section = "Quests";
+	const int mainQuestItemNamesOffset = ExeData::get(section, "MainQuestItemNames", keyValueFile);
+	const int staffPiecesOffset = ExeData::get(section, "StaffPieces", keyValueFile);
+	const int keyNamesOffset = ExeData::get(section, "KeyNames", keyValueFile);
+	const int keyPickedUpOffset = ExeData::get(section, "KeyPickedUp", keyValueFile);
+	const int doorUnlockedWithKeyOffset = ExeData::get(section, "DoorUnlockedWithKey", keyValueFile);
+
+	initStringArray(this->mainQuestItemNames, data + mainQuestItemNamesOffset);
+	this->staffPieces = ExeData::readString(data + staffPiecesOffset);
+	initStringArray(this->keyNames, data + keyNamesOffset);
+	this->keyPickedUp = ExeData::readString(data + keyPickedUpOffset);
+	this->doorUnlockedWithKey = ExeData::readString(data + doorUnlockedWithKeyOffset);
+}
+
 void ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Races";
@@ -843,6 +859,7 @@ bool ExeData::init(bool floppyVersion)
 	this->locations.init(dataPtr, keyValueFile);
 	this->logbook.init(dataPtr, keyValueFile);
 	this->meta.init(dataPtr, keyValueFile);
+	this->quests.init(dataPtr, keyValueFile);
 	this->races.init(dataPtr, keyValueFile);
 	this->status.init(dataPtr, keyValueFile);
 	this->travel.init(dataPtr, keyValueFile);
