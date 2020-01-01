@@ -15,6 +15,85 @@
 namespace
 {
 	constexpr double MAX_DIST = std::numeric_limits<double>::max();
+	constexpr double MAX_ENTITY_DIST = 10.0;
+}
+
+Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPosition,
+	const Double3 &cameraDirection, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const EntityManager &entityManager)
+{
+	// Get all the entities.
+	std::vector<const Entity*> entities(entityManager.getTotalCount());
+	const int entityCount = entityManager.getTotalEntities(
+		entities.data(), static_cast<int>(entities.size()));
+
+	const Double2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
+	const Double2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
+
+	// Build mappings of voxels to entities.
+	VoxelEntityMap voxelEntityMap;
+	for (const Entity *entityPtr : entities)
+	{
+		const Entity &entity = *entityPtr;
+
+		// Skip any entities that are behind the camera or are too far away.
+		Double2 entityPosEyeDiff = entity.getPosition() - cameraPosXZ;
+		if (entityPosEyeDiff.lengthSquared() > (MAX_ENTITY_DIST * MAX_ENTITY_DIST) ||
+			cameraDirXZ.dot(entityPosEyeDiff) < 0.0)
+		{
+			continue;
+		}
+
+		EntityManager::EntityVisibilityData visData;
+		entityManager.getEntityVisibilityData(entity, cameraPosXZ, cameraDirXZ, ceilingHeight, voxelGrid, visData);
+
+		// Use a bounding box to determine which voxels the entity could be in.
+		// Start with a bounding cylinder.
+		const double radius = visData.keyframe.getWidth() / 2.0;
+		const double height = visData.keyframe.getHeight();
+
+		// Convert the bounding cylinder to an axis-aligned bounding box.
+		const double minX = visData.flatPosition.x - radius;
+		const double maxX = visData.flatPosition.x + radius;
+		const double minY = visData.flatPosition.y;
+		const double maxY = visData.flatPosition.y + height;
+		const double minZ = visData.flatPosition.z - radius;
+		const double maxZ = visData.flatPosition.z + radius;
+
+		// Only iterate over voxels the entity could be in (at least partially).
+		// This loop should always hit at least 1 voxel.
+		const int startX = static_cast<int>(std::floor(minX));
+		const int endX = static_cast<int>(std::floor(maxX));
+		const int startY = static_cast<int>(std::floor(minY));
+		const int endY = static_cast<int>(std::floor(maxY));
+		const int startZ = static_cast<int>(std::floor(minZ));
+		const int endZ = static_cast<int>(std::floor(maxZ));
+
+		for (int z = startZ; z <= endZ; z++)
+		{
+			for (int y = startY; y <= endY; y++)
+			{
+				for (int x = startX; x <= endX; x++)
+				{
+					const Int3 voxel(x, y, z);
+
+					// Add the entity to the list. Create a new voxel->entity list mapping if
+					// there isn't one for this voxel.
+					auto iter = voxelEntityMap.find(voxel);
+					if (iter == voxelEntityMap.end())
+					{
+						iter = voxelEntityMap.insert(std::make_pair(
+							voxel, std::vector<EntityManager::EntityVisibilityData>())).first;
+					}
+
+					auto &entityDataList = iter->second;
+					entityDataList.push_back(visData);
+				}
+			}
+		}
+	}
+
+	return voxelEntityMap;
 }
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direction,
@@ -606,7 +685,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 	}
 }
 
-bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double ceilingHeight,
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
 	const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
 	const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit)
 {
@@ -614,87 +693,16 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 	// entity, the distance can still be used.
 	hit.t = MAX_DIST;
 
-	std::unordered_map<Int3, std::vector<EntityManager::EntityVisibilityData>> voxelEntityMap;
-
-#pragma region build Voxel->Entity map
-
-	// Get all the entities.
-	std::vector<const Entity*> entities(entityManager.getTotalCount());
-	const int entityCount = entityManager.getTotalEntities(
-		entities.data(), static_cast<int>(entities.size()));
-
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
 	const Double3 flatForward = Double3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
-	const Double2 eye2D(rayStart.x, rayStart.z);
-	const Double2 cameraDir(cameraForward.x, cameraForward.z);
+	const Double2 rayStartXZ(rayStart.x, rayStart.z);
 
-	for (int i = 0; i < entityCount; i++)
-	{
-		const Entity &entity = *entities[i];
-
-		// Skip any entities that are behind the camera or are too far away.
-		constexpr double maxEntityDistance = 10.0;
-		Double2 entityPosEyeDiff = entity.getPosition() - eye2D;
-		if (entityPosEyeDiff.lengthSquared() > (maxEntityDistance * maxEntityDistance) ||
-			cameraDir.dot(entityPosEyeDiff) < 0.0)
-		{
-			continue;
-		}
-
-		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir, ceilingHeight, voxelGrid, visData);
-
-		// Use a bounding box to determine which voxels the entity could be in.
-		// Start with a bounding cylinder.
-		const double radius = visData.keyframe.getWidth() / 2.0;
-		const double height = visData.keyframe.getHeight();
-
-		// Convert the bounding cylinder to an axis-aligned bounding box.
-		const double minX = visData.flatPosition.x - radius;
-		const double maxX = visData.flatPosition.x + radius;
-		const double minY = visData.flatPosition.y;
-		const double maxY = visData.flatPosition.y + height;
-		const double minZ = visData.flatPosition.z - radius;
-		const double maxZ = visData.flatPosition.z + radius;
-
-		// Only iterate over voxels the entity could be in (at least partially).
-		// This loop should always hit at least 1 voxel.
-		const int startX = static_cast<int>(std::floor(minX));
-		const int endX = static_cast<int>(std::floor(maxX));
-		const int startY = static_cast<int>(std::floor(minY));
-		const int endY = static_cast<int>(std::floor(maxY));
-		const int startZ = static_cast<int>(std::floor(minZ));
-		const int endZ = static_cast<int>(std::floor(maxZ));
-
-		for (int z = startZ; z <= endZ; z++)
-		{
-			for (int y = startY; y <= endY; y++)
-			{
-				for (int x = startX; x <= endX; x++)
-				{
-					const Int3 voxel(x, y, z);
-
-					// Add the entity to the list. Create a new voxel->entity list mapping if
-					// there isn't one for this voxel.
-					auto iter = voxelEntityMap.find(voxel);
-					if (iter == voxelEntityMap.end())
-					{
-						iter = voxelEntityMap.insert(std::make_pair(
-							voxel, std::vector<EntityManager::EntityVisibilityData>())).first;
-					}
-
-					auto &entityDataList = iter->second;
-					entityDataList.push_back(visData);
-				}
-			}
-		}
-	}
-
-#pragma endregion build Voxel->Entity map
+	const VoxelEntityMap voxelEntityMap = Physics::makeVoxelEntityMap(
+		rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
 
 #pragma region Ray Cast Voxels
 
@@ -708,9 +716,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 		static_cast<int>(voxelReal.z));
 
 	const Double3 dirSquared(
-		direction.x * direction.x,
-		direction.y * direction.y,
-		direction.z * direction.z);
+		rayDirection.x * rayDirection.x,
+		rayDirection.y * rayDirection.y,
+		rayDirection.z * rayDirection.z);
 
 	// Height (Y size) of each voxel in the voxel grid. Some levels in Arena have
 	// "tall" voxels, so the voxel height must be a variable.
@@ -728,9 +736,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 
 	// Booleans for whether a ray component is non-negative. Used with step directions 
 	// and texture coordinates.
-	const bool nonNegativeDirX = direction.x >= 0.0;
-	const bool nonNegativeDirY = direction.y >= 0.0;
-	const bool nonNegativeDirZ = direction.z >= 0.0;
+	const bool nonNegativeDirX = rayDirection.x >= 0.0;
+	const bool nonNegativeDirY = rayDirection.y >= 0.0;
+	const bool nonNegativeDirZ = rayDirection.z >= 0.0;
 
 	// Calculate step directions and initial side distances.
 	Int3 step;
@@ -866,32 +874,32 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 				if (axis == Axis::X)
 				{
 					distance = (static_cast<double>(cell.x) - rayStart.x +
-						((1.0 - stepReal.x) / 2.0)) / direction.x;
+						((1.0 - stepReal.x) / 2.0)) / rayDirection.x;
 					facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : VoxelData::Facing::PositiveX;
 				}
 				else if (axis == Axis::Y)
 				{
 					distance = ((static_cast<double>(cell.y) * voxelHeight) - rayStart.y +
-						(((1.0 - stepReal.y) / 2.0) * voxelHeight)) / direction.y;
+						(((1.0 - stepReal.y) / 2.0) * voxelHeight)) / rayDirection.y;
 					facing = VoxelData::Facing::NegativeZ; // TODO: There are no facing values for Y
 				}
 				else
 				{
 					distance = (static_cast<double>(cell.z) - rayStart.z +
-						((1.0 - stepReal.z) / 2.0)) / direction.z;
+						((1.0 - stepReal.z) / 2.0)) / rayDirection.z;
 					facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : VoxelData::Facing::PositiveZ;
 				}
 			}
 
-			const Double3 rayEnd = rayStart + (direction * distance);
+			const Double3 rayEnd = rayStart + (rayDirection * distance);
 			if (stoppedInFirstVoxel)
 			{
-				testInitialVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
+				testInitialVoxelRay(rayStart, rayDirection, cell, facing, rayStart, rayEnd,
 					ceilingHeight, voxelGrid, hit);
 			}
 			else
 			{
-				testVoxelRay(rayStart, direction, cell, facing, rayStart, rayEnd,
+				testVoxelRay(rayStart, rayDirection, cell, facing, rayStart, rayEnd,
 					ceilingHeight, voxelGrid, hit);
 			}
 		}
@@ -916,7 +924,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 					visData.flatPosition.z);
 
 				// Check if the flat is somewhere in front of the camera.
-				const Double2 flatEyeDiff = flatPosition2D - eye2D;
+				const Double2 flatEyeDiff = flatPosition2D - rayStartXZ;
 				const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
 				const double hitTSqr = hit.t * hit.t;
 
@@ -929,9 +937,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, double 
 					Double3 hitPoint;
 					if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
 						flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
-						direction, pixelPerfect, &hitPoint))
+						rayDirection, pixelPerfect, &hitPoint))
 					{
-						double distance = (hitPoint - rayStart).length();
+						const double distance = (hitPoint - rayStart).length();
 						if (distance < hit.t)
 						{
 							hit.t = distance;
