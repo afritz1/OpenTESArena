@@ -179,14 +179,15 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &direct
 		const bool isRightDiag = diagData.type1;
 
 		// Check if the next point is on an X or Z face, The Y faces are a special case
-		if (nextPoint.x == std::floor(nextPoint.x) || nextPoint.z == std::floor(nextPoint.z))
+		if (MathUtils::almostEqual(nextPoint.x, std::floor(nextPoint.x)) ||
+			MathUtils::almostEqual(nextPoint.z, std::floor(nextPoint.z)))
 		{
 			// We can simplify this to a ray/wall intersection in the XZ plane.
 			const double A = isRightDiag ? -1.0 : 1.0;
 			const double B = isRightDiag ? 1.0 : 0.0;
 
 			const double dzdx = -direction.z / direction.x;
-			const double z0 = (std::floor(farPoint.x) == farPoint.x) ?
+			const double z0 = MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ?
 				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
 
 			const double rayA = dzdx;
@@ -505,14 +506,15 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		const bool isRightDiag = diagData.type1;
 
 		// Check if the next point is above or below. That's a special case.
-		if (nextPoint.x == std::floor(nextPoint.x) || nextPoint.z == std::floor(nextPoint.z))
+		if (MathUtils::almostEqual(nextPoint.x, std::floor(nextPoint.x)) ||
+			MathUtils::almostEqual(nextPoint.z, std::floor(nextPoint.z)))
 		{
 			// We can simplify this to a ray/wall intersection in the XZ plane.
 			const double A = isRightDiag ? -1.0 : 1.0;
 			const double B = isRightDiag ? 1.0 : 0.0;
 
 			const double dzdx = -direction.z / direction.x;
-			const double z0 = (std::floor(farPoint.x) == farPoint.x) ?
+			const double z0 = MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ?
 				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
 
 			const double rayA = dzdx;
@@ -577,7 +579,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &direction,
 		if (voxelData.transparentWall.collider)
 		{
 			// Check if we clicked on the side of the voxel.
-			if (farPoint.x == std::floor(farPoint.x) || farPoint.z == std::floor(farPoint.z))
+			if (MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ||
+				MathUtils::almostEqual(farPoint.z, std::floor(farPoint.z)))
 			{
 				// Transparent walls are hit when the camera is outside of their voxel.
 				hit.t = (nearPoint - farPoint).length();

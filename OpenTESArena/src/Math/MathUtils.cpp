@@ -5,6 +5,11 @@
 
 #include "components/debug/Debug.h"
 
+double MathUtils::almostEqual(double a, double b)
+{
+	return std::abs(a - b) < Constants::Epsilon;
+}
+
 double MathUtils::fullAtan2(double y, double x)
 {
 	const double angle = std::atan2(y, x);

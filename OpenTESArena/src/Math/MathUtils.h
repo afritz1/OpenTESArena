@@ -7,6 +7,9 @@
 
 namespace MathUtils
 {
+	// Returns whether the two values are within epsilon of each other.
+	double almostEqual(double a, double b);
+
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	double fullAtan2(double y, double x);
 
