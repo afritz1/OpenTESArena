@@ -64,8 +64,8 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 		// This loop should always hit at least 1 voxel.
 		const int startX = static_cast<int>(std::floor(minX));
 		const int endX = static_cast<int>(std::floor(maxX));
-		const int startY = static_cast<int>(std::floor(minY));
-		const int endY = static_cast<int>(std::floor(maxY));
+		const int startY = static_cast<int>(std::floor(minY / ceilingHeight));
+		const int endY = static_cast<int>(std::floor(maxY / ceilingHeight));
 		const int startZ = static_cast<int>(std::floor(minZ));
 		const int endZ = static_cast<int>(std::floor(maxZ));
 
