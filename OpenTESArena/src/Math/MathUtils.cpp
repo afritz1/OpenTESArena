@@ -5,9 +5,14 @@
 
 #include "components/debug/Debug.h"
 
+double MathUtils::almostZero(double value)
+{
+	return std::abs(value) < Constants::Epsilon;
+}
+
 double MathUtils::almostEqual(double a, double b)
 {
-	return std::abs(a - b) < Constants::Epsilon;
+	return MathUtils::almostZero(a - b);
 }
 
 double MathUtils::fullAtan2(double y, double x)

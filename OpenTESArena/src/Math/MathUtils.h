@@ -7,6 +7,9 @@
 
 namespace MathUtils
 {
+	// Returns whether the given value is within epsilon of zero.
+	double almostZero(double value);
+
 	// Returns whether the two values are within epsilon of each other.
 	double almostEqual(double a, double b);
 
