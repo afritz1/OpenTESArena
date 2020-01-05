@@ -15,8 +15,73 @@
 
 namespace
 {
-	constexpr double MAX_DIST = std::numeric_limits<double>::max();
 	constexpr double MAX_ENTITY_DIST = 10.0;
+}
+
+const double Physics::Hit::MAX_T = std::numeric_limits<double>::infinity();
+
+void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
+	const VoxelFacing *facing)
+{
+	this->t = t;
+	this->point = point;
+	this->type = Hit::Type::Voxel;
+	this->voxelHit.id = id;
+	this->voxelHit.voxel = voxel;
+
+	if (facing != nullptr)
+	{
+		this->voxelHit.facing = *facing;
+	}
+	else
+	{
+		this->voxelHit.facing = std::nullopt;
+	}
+}
+
+void Physics::Hit::initEntity(double t, const Double3 &point, int id)
+{
+	this->t = t;
+	this->point = point;
+	this->type = Hit::Type::Entity;
+	this->entityHit.id = id;
+}
+
+double Physics::Hit::getT() const
+{
+	return this->t;
+}
+
+double Physics::Hit::getTSqr() const
+{
+	return this->t * this->t;
+}
+
+const Double3 &Physics::Hit::getPoint() const
+{
+	return this->point;
+}
+
+Physics::Hit::Type Physics::Hit::getType() const
+{
+	return this->type;
+}
+
+const Physics::Hit::VoxelHit &Physics::Hit::getVoxelHit() const
+{
+	DebugAssert(this->getType() == Hit::Type::Voxel);
+	return this->voxelHit;
+}
+
+const Physics::Hit::EntityHit &Physics::Hit::getEntityHit() const
+{
+	DebugAssert(this->getType() == Hit::Type::Entity);
+	return this->entityHit;
+}
+
+void Physics::Hit::setT(double t)
+{
+	this->t = t;
 }
 
 Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPosition,
@@ -98,7 +163,7 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 }
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-	const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
+	const Int3 &voxel, VoxelFacing farFacing, const Double3 &nearPoint,
 	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 	Physics::Hit &hit)
 {
@@ -117,12 +182,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (nearPoint - rayStart).length();
-		hit.point = rayStart + (rayDirection * hit.t);
-		hit.voxel = voxel;
-		hit.facing = facing;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
+		const double t = (nearPoint - rayStart).length();
+		const Double3 hitPoint = rayStart + (rayDirection * t);
+		hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Floor)
@@ -152,9 +214,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
 		const double distZ = std::abs(nextZ - farPoint.z);
 
-		const double tX = (rayDirection.x == 0.0) ? MAX_DIST : (distX / std::abs(rayDirection.x));
-		const double tY = (rayDirection.y == 0.0) ? MAX_DIST : (distY / std::abs(rayDirection.y));
-		const double tZ = (rayDirection.z == 0.0) ? MAX_DIST : (distZ / std::abs(rayDirection.z));
+		const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
+		const double tY = (rayDirection.y == 0.0) ? Hit::MAX_T : (distY / std::abs(rayDirection.y));
+		const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -193,12 +255,10 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 			const double intersection = (rayB - B) / (A - rayA);
 			if (intersection >= 0.0 && intersection <= 1.0)
 			{
-				hit.point = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
-				hit.t = (nearPoint - hit.point).length();
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				const Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
+				// @todo: T should be distance from rayStart
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
 				return true;
 			}
 		}
@@ -229,13 +289,13 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
 				const Double3 planeNormal = Double3(
 					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
-				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hit.point);
 
-				hit.t = (nearPoint - hit.point).length();
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				Double3 hitPoint;
+				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hitPoint);
+
+				// @todo: T should be distance from rayStart
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
 				return true;
 			}
 		}
@@ -256,16 +316,13 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 		// consider edges with collision.
 		const VoxelFacing edgeFacing = edgeData.facing;
 
-		if ((edgeFacing == facing) && edgeData.collider)
+		if ((edgeFacing == farFacing) && edgeData.collider)
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			hit.t = (nearPoint - rayStart).length();
-			hit.point = rayStart + (rayDirection * hit.t);
-			hit.voxel = voxel;
-			hit.facing = facing;
-			hit.type = Hit::Type::Voxel;
-			hit.voxelID = voxelID;
+			const double t = (nearPoint - rayStart).length();
+			const Double3 hitPoint = rayStart + (rayDirection * t);
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
 			return true;
 		}
 		else
@@ -279,7 +336,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 		const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
 		// See if the intersected face is visible.
-		if (chasmData.faceIsVisible(facing))
+		if (chasmData.faceIsVisible(farFacing))
 		{
 			// See what kind of chasm it is (this has an effect on the chasm size).
 			const VoxelData::ChasmData::Type chasmType = chasmData.type;
@@ -312,7 +369,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 }
 
 bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-	const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
+	const Int3 &voxel, VoxelFacing nearFacing, const Double3 &nearPoint,
 	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -320,10 +377,6 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	// Get the voxel data associated with the voxel.
 	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 	const VoxelDataType voxelDataType = voxelData.dataType;
-
-	// @todo: test voxelDataType bit mask with collisionMask before doing any more tests.
-	// @todo: do intersection in 3D (maybe don't need ray-plane intersection for each one;
-	//        just use the farPoint parameter).
 
 	// Determine which type the voxel data is and run the associated calculation.
 	if (voxelDataType == VoxelDataType::None)
@@ -334,32 +387,25 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		hit.t = (nearPoint - farPoint).length();
-		hit.point = rayStart + (rayDirection * hit.t);
-		hit.voxel = voxel;
-		hit.facing = facing;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
+		const double t = (nearPoint - farPoint).length();
+		const Double3 hitPoint = rayStart + (rayDirection * t);
+		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Floor)
 	{
-		hit.t = (nearPoint - farPoint).length();
-		hit.point = rayStart + (rayDirection * hit.t);
-		hit.voxel = voxel;
-		hit.facing = VoxelFacing::PositiveY;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
+		// @todo: revise to only check the top face.
+		const double t = (nearPoint - farPoint).length();
+		const Double3 hitPoint = rayStart + (rayDirection * t);
+		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Ceiling)
 	{
-		hit.t = (nearPoint - farPoint).length();
-		hit.point = rayStart + (rayDirection * hit.t);
-		hit.voxel = voxel;
-		hit.facing = VoxelFacing::NegativeY;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
+		// @todo: revise to only check the bottom face.
+		const double t = (nearPoint - farPoint).length();
+		const Double3 hitPoint = rayStart + (rayDirection * t);
+		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Raised)
@@ -389,8 +435,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 			const double distX = std::abs(nextX - farPoint.x);
 			const double distZ = std::abs(nextZ - farPoint.z);
 
-			const double tX = (rayDirection.x == 0.0) ? MAX_DIST : (distX / std::abs(rayDirection.x));
-			const double tZ = (rayDirection.z == 0.0) ? MAX_DIST : (distZ / std::abs(rayDirection.z));
+			const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
+			const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -407,12 +453,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 				const double s = (nearCeilingPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
 				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
 
-				hit.t = (nearPoint - hitPoint).length();
-				hit.point = rayStart + (rayDirection * hit.t);
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				// @todo: t should be relative to rayStart.
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, &nearFacing);
 				return true;
 			}
 		}
@@ -426,8 +469,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 			const double distX = std::abs(nextX - farPoint.x);
 			const double distZ = std::abs(nextZ - farPoint.z);
 
-			const double tX = (rayDirection.x == 0.0) ? MAX_DIST : (distX / std::abs(rayDirection.x));
-			const double tZ = (rayDirection.z == 0.0) ? MAX_DIST : (distZ / std::abs(rayDirection.z));
+			const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
+			const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
 
 			Double3 nextPoint = farPoint;
 			if (tX <= tZ)
@@ -443,25 +486,17 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 			{
 				const double s = (nearFloorPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
 				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
-
-				hit.t = (nearPoint - hitPoint).length();
-				hit.point = rayStart + (rayDirection * hit.t);
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, &nearFacing);
 				return true;
 			}
 		}
 		else
 		{
 			// The ray collided with the side of the voxel, so we know it was clicked.
-			hit.t = (nearPoint - farPoint).length();
-			hit.point = rayStart + (rayDirection * hit.t);
-			hit.voxel = voxel;
-			hit.facing = facing;
-			hit.type = Hit::Type::Voxel;
-			hit.voxelID = voxelID;
+			const double t = (nearPoint - farPoint).length();
+			const Double3 hitPoint = rayStart + (rayDirection * t);
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 			return true;
 		}
 
@@ -479,9 +514,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
 		const double distZ = std::abs(nextZ - farPoint.z);
 
-		const double tX = (rayDirection.x == 0.0) ? MAX_DIST : (distX / std::abs(rayDirection.x));
-		const double tY = (rayDirection.y == 0.0) ? MAX_DIST : (distY / std::abs(rayDirection.y));
-		const double tZ = (rayDirection.z == 0.0) ? MAX_DIST : (distZ / std::abs(rayDirection.z));
+		const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
+		const double tY = (rayDirection.y == 0.0) ? Hit::MAX_T : (distY / std::abs(rayDirection.y));
+		const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
 
 		Double3 nextPoint = farPoint;
 		int stepAxis = 0;
@@ -521,12 +556,8 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 			if (intersection >= 0.0 && intersection <= 1.0)
 			{
 				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
-				hit.t = (nearPoint - hitPoint).length();
-				hit.point = rayStart + (rayDirection * hit.t);
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, nullptr);
 				return true;
 			}
 		}
@@ -557,13 +588,12 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
 				const Double3 planeNormal = Double3(
 					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
-				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hit.point);
 
-				hit.t = (nearPoint - hit.point).length();
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				Double3 hitPoint;
+				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hitPoint);
+
+				const double t = (nearPoint - hitPoint).length();
+				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
 				return true;
 			}
 		}
@@ -580,12 +610,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 				MathUtils::almostEqual(farPoint.z, std::floor(farPoint.z)))
 			{
 				// Transparent walls are hit when the camera is outside of their voxel.
-				hit.t = (nearPoint - farPoint).length();
-				hit.point = rayStart + (rayDirection * hit.t);
-				hit.voxel = voxel;
-				hit.facing = facing;
-				hit.type = Hit::Type::Voxel;
-				hit.voxelID = voxelID;
+				const double t = (nearPoint - farPoint).length();
+				const Double3 hitPoint = rayStart + (rayDirection * t);
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 				return true;
 			}
 		}
@@ -600,16 +627,13 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		// consider edges with collision.
 		const VoxelFacing edgeFacing = edgeData.facing;
 
-		if ((edgeFacing == facing) && edgeData.collider)
+		if ((edgeFacing == nearFacing) && edgeData.collider)
 		{
 			// See if the Y offset brings the ray within the face's area.
 			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			hit.t = (nearPoint - rayStart).length();
-			hit.point = rayStart + (rayDirection * hit.t);
-			hit.voxel = voxel;
-			hit.facing = facing;
-			hit.type = Hit::Type::Voxel;
-			hit.voxelID = voxelID;
+			const double t = (nearPoint - rayStart).length();
+			const Double3 hitPoint = rayStart + (rayDirection * t);
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 			return true;
 		}
 		else
@@ -622,8 +646,10 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
+		// @todo: this probably shouldn't use near facing.
+		// @todo: chasm depth depends on whether it's wet/lava or dry.
 		// See if the intersected face is visible.
-		if (chasmData.faceIsVisible(facing))
+		if (chasmData.faceIsVisible(nearFacing))
 		{
 			// See what kind of chasm it is (this has an effect on the chasm size).
 			const VoxelData::ChasmData::Type chasmType = chasmData.type;
@@ -649,12 +675,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		// state, but for now it will assume closed doors only, for simplicity.
 
 		// Cheap/incomplete solution: assume closed, treat like a wall, always a hit.
-		hit.t = (nearPoint - farPoint).length();
-		hit.point = rayStart + (rayDirection * hit.t);
-		hit.voxel = voxel;
-		hit.facing = facing;
-		hit.type = Hit::Type::Voxel;
-		hit.voxelID = voxelID;
+		const double t = (nearPoint - farPoint).length();
+		const Double3 hitPoint = rayStart + (rayDirection * t);
+		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 		return true;
 
 		/*if (doorType == VoxelData::DoorData::Type::Swinging)
@@ -691,7 +714,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
-	hit.t = MAX_DIST;
+	hit.setT(Hit::MAX_T);
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
@@ -926,9 +949,8 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 				// Check if the flat is somewhere in front of the camera.
 				const Double2 flatEyeDiff = flatPosition2D - rayStartXZ;
 				const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
-				const double hitTSqr = hit.t * hit.t;
 
-				if (flatEyeDiffLenSqr < hitTSqr)
+				if (flatEyeDiffLenSqr < hit.getTSqr())
 				{
 					const double flatWidth = visData.keyframe.getWidth();
 					const double flatHeight = visData.keyframe.getHeight();
@@ -940,12 +962,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 						rayDirection, pixelPerfect, &hitPoint))
 					{
 						const double distance = (hitPoint - rayStart).length();
-						if (distance < hit.t)
+						if (distance < hit.getT())
 						{
-							hit.t = distance;
-							hit.point = hitPoint;
-							hit.type = Physics::Hit::Type::Entity;
-							hit.entityID = entity.getID();
+							hit.initEntity(distance, hitPoint, entity.getID());
 						}
 					}
 				}
@@ -954,7 +973,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 
 #pragma endregion Ray Test any entities that cross this voxel
 
-		if (hit.t != MAX_DIST)
+		if (hit.getT() != Hit::MAX_T)
 		{
 			break;
 		}
@@ -995,7 +1014,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 #pragma endregion Ray Cast Voxels and Entities
 
 	// Return whether the ray hit something.
-	return hit.t != MAX_DIST;
+	return hit.getT() != Hit::MAX_T;
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, const Double3 &cameraForward,

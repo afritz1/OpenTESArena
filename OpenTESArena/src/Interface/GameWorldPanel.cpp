@@ -1410,9 +1410,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	// See if the ray hit anything.
 	if (success)
 	{
-		if (hit.type == Physics::Hit::Type::Voxel)
+		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
-			const Int3 &voxel = hit.voxel;
+			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+			const Int3 &voxel = voxelHit.voxel;
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
@@ -1423,7 +1424,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Arbitrary max distance for selection.
 				const double maxSelectionDist = 1.50;
 
-				if (hit.t <= maxSelectionDist)
+				if (hit.getT() <= maxSelectionDist)
 				{
 					if (voxelData.dataType == VoxelDataType::Wall ||
 						voxelData.dataType == VoxelDataType::Raised ||
@@ -1634,8 +1635,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				}
 			}
 		}
-		else if (hit.type == Physics::Hit::Type::Entity)
+		else if (hit.getType() == Physics::Hit::Type::Entity)
 		{
+			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getMiscAssets().getExeData();
 
 			if (primaryClick)
@@ -1652,7 +1654,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				// Try inspecting the entity (can be from any distance). If they have a display name,
 				// then show it.
-				const Entity *entity = entityManager.get(hit.entityID);
+				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
 				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
@@ -1671,7 +1673,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				else
 				{
 					// Placeholder text for testing.
-					text = "Entity " + std::to_string(hit.entityID);
+					text = "Entity " + std::to_string(entityHit.id);
 				}
 
 				const int lineSpacing = 1;
@@ -1703,7 +1705,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		}
 		else
 		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.type)));
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.getType())));
 		}
 	}
 }
@@ -1881,6 +1883,10 @@ void GameWorldPanel::handleFadingVoxels(double dt)
 
 void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 {
+	// @todo: maybe will need to change this to account for wilderness dens?
+	DebugAssert(hit.getType() == Physics::Hit::Type::Voxel);
+	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 	auto &textureManager = game.getTextureManager();
@@ -1929,7 +1935,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		if (isTransitionVoxel)
 		{
 			auto &voxelGrid = activeLevel.getVoxelGrid();
-			const Int2 voxel(hit.voxel.x, hit.voxel.z);
+			const Int2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
 			const bool isTransitionToInterior = VoxelData::WallData::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
@@ -1964,34 +1970,37 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
 				// "wild return".
-				const Int3 returnVoxel = [&hit]()
+				const Int3 returnVoxel = [&voxelHit]()
 				{
-					const Int3 delta = [&hit]()
+					const Int3 delta = [&voxelHit]()
 					{
-						if (hit.facing == VoxelFacing::PositiveX)
+						// Assuming this is a wall voxel.
+						DebugAssert(voxelHit.facing.has_value());
+						const VoxelFacing facing = *voxelHit.facing;
+
+						if (facing == VoxelFacing::PositiveX)
 						{
 							return Int3(1, 0, 0);
 						}
-						else if (hit.facing == VoxelFacing::NegativeX)
+						else if (facing == VoxelFacing::NegativeX)
 						{
 							return Int3(-1, 0, 0);
 						}
-						else if (hit.facing == VoxelFacing::PositiveZ)
+						else if (facing == VoxelFacing::PositiveZ)
 						{
 							return Int3(0, 0, 1);
 						}
-						else if (hit.facing == VoxelFacing::NegativeZ)
+						else if (facing == VoxelFacing::NegativeZ)
 						{
 							return Int3(0, 0, -1);
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int3,
-								std::to_string(static_cast<int>(hit.facing)));
+							DebugUnhandledReturnMsg(Int3, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
-					return hit.voxel + delta;
+					return voxelHit.voxel + delta;
 				}();
 
 				// Enter the interior location if the .MIF name is valid.
@@ -2031,29 +2040,32 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
-					const Int2 gatePos(hit.voxel.x, hit.voxel.z);
-					const Int2 transitionDir = [&hit]()
+					const Int2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
+					const Int2 transitionDir = [&voxelHit]()
 					{
-						if (hit.facing == VoxelFacing::PositiveX)
+						// Assuming this is a wall voxel.
+						DebugAssert(voxelHit.facing.has_value());
+						const VoxelFacing facing = *voxelHit.facing;
+
+						if (facing == VoxelFacing::PositiveX)
 						{
 							return Int2(-1, 0);
 						}
-						else if (hit.facing == VoxelFacing::NegativeX)
+						else if (facing == VoxelFacing::NegativeX)
 						{
 							return Int2(1, 0);
 						}
-						else if (hit.facing == VoxelFacing::PositiveZ)
+						else if (facing == VoxelFacing::PositiveZ)
 						{
 							return Int2(0, -1);
 						}
-						else if (hit.facing == VoxelFacing::NegativeZ)
+						else if (facing == VoxelFacing::NegativeZ)
 						{
 							return Int2(0, 1);
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int2,
-								std::to_string(static_cast<int>(hit.facing)));
+							DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
