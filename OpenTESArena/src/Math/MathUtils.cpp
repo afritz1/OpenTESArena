@@ -37,19 +37,20 @@ double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
 }
 
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &pointInPlane, const Double3 &planeNormal, Double3 &intersection)
+	const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint)
 {
 	DebugAssert(rayDirection.isNormalized());
 	DebugAssert(planeNormal.isNormalized());
+
 	const double denominator = rayDirection.dot(planeNormal);
-	if (std::abs(denominator) > Constants::Epsilon)
+	if (!MathUtils::almostZero(denominator))
 	{
-		const Double3 projection = pointInPlane - rayStart;
+		const Double3 projection = planeOrigin - rayStart;
 		const double t = projection.dot(planeNormal) / denominator;
-		if (t >= 0)
+		if (t >= 0.0)
 		{
 			// An intersection exists. Find it.
-			intersection = rayStart + (rayDirection * t);
+			*outPoint = rayStart + (rayDirection * t);
 			return true;
 		}
 	}
@@ -58,23 +59,23 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 }
 
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3,
-	Double3 &intersection)
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint)
 {
+	const Double3 v3 = v2 + (v1 - v0);
+
 	// Calculate the normal of the plane which contains the quad.
 	const Double3 normal = (v2 - v0).cross(v1 - v0).normalized();
 
 	// Get the intersection of the ray and the plane that contains the quad.
-	Double3 planeIntersection;
-	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, normal, planeIntersection))
+	Double3 hitPoint;
+	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, normal, &hitPoint))
 	{
-		// Plane intersection is a point co-planar with the vertices of the quad (at least
-		// with the first 3, which form the basis for the plane the quad is in). Check if the
-		// coplanar point is within the bounds of the quad.
-		const Double3 a = (v1 - v0).cross(planeIntersection - v0);
-		const Double3 b = (v2 - v1).cross(planeIntersection - v1);
-		const Double3 c = (v3 - v2).cross(planeIntersection - v2);
-		const Double3 d = (v0 - v3).cross(planeIntersection - v3);
+		// The plane intersection is a point co-planar with the quad. Check if the point is
+		// within the bounds of the quad.
+		const Double3 a = (v1 - v0).cross(hitPoint - v0);
+		const Double3 b = (v2 - v1).cross(hitPoint - v1);
+		const Double3 c = (v3 - v2).cross(hitPoint - v2);
+		const Double3 d = (v0 - v3).cross(hitPoint - v3);
 
 		const double ab = a.dot(b);
 		const double bc = b.dot(c);
@@ -82,7 +83,7 @@ bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayD
 
 		if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
 		{
-			intersection = planeIntersection;
+			*outPoint = hitPoint;
 			return true;
 		}
 	}

@@ -253,7 +253,7 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 
 	// Do a ray test to see if the ray intersects.
 	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, visData.flatPosition,
-		entityForward, *outHitPoint))
+		entityForward, outHitPoint))
 	{
 		const Double3 diff = (*outHitPoint) - visData.flatPosition;
 

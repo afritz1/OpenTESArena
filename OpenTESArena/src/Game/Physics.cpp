@@ -13,6 +13,8 @@
 
 #include "components/debug/Debug.h"
 
+// @todo: allow hits on the insides of voxels until the renderer uses back-face culling (if ever).
+
 namespace
 {
 	constexpr double MAX_ENTITY_DIST = 10.0;
@@ -163,9 +165,8 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 }
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-	const Int3 &voxel, VoxelFacing farFacing, const Double3 &nearPoint,
-	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
-	Physics::Hit &hit)
+	const Int3 &voxel, VoxelFacing farFacing, const Double3 &farPoint, double ceilingHeight,
+	const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
@@ -182,183 +183,328 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		const double t = (nearPoint - rayStart).length();
-		const Double3 hitPoint = rayStart + (rayDirection * t);
+		const double t = (farPoint - rayStart).length();
+		const Double3 hitPoint = farPoint;
 		hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Floor)
 	{
-		// @todo: only possible with 3D-DDA.
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::Ceiling)
-	{
-		// @todo: only possible with 3D-DDA.
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::Raised)
-	{
-		// @todo: check ceiling if above, wall/ceiling/floor if inside, and floor if below.
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::Diagonal)
-	{
-		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
-
-		// Continue the ray into the voxel and do line intersection.
-		const double nextX = static_cast<double>((rayDirection.x >= 0.0) ? (voxel.x + 1) : voxel.x);
-		const double nextY = static_cast<double>((rayDirection.y >= 0.0) ? (voxel.y + 1) : voxel.y);
-		const double nextZ = static_cast<double>((rayDirection.z >= 0.0) ? (voxel.z + 1) : voxel.z);
-		const double distX = std::abs(nextX - farPoint.x);
-		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
-		const double distZ = std::abs(nextZ - farPoint.z);
-
-		const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
-		const double tY = (rayDirection.y == 0.0) ? Hit::MAX_T : (distY / std::abs(rayDirection.y));
-		const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
-
-		Double3 nextPoint = farPoint;
-		int stepAxis = 0;
-		if (tX <= tY && tX <= tZ)
+		// Check if the ray hits the top of the voxel.
+		if (farFacing == VoxelFacing::PositiveY)
 		{
-			nextPoint = farPoint + (rayDirection * tX);
-		}
-		else if (tY <= tX && tY <= tZ)
-		{
-			nextPoint = farPoint + (rayDirection * tY);
-			stepAxis = 1;
-		}
-		else if (tZ <= tX && tZ <= tY)
-		{
-			nextPoint = farPoint + (rayDirection * tZ);
-			stepAxis = 2;
-		}
-
-		const bool isRightDiag = diagData.type1;
-
-		// Check if the next point is on an X or Z face, The Y faces are a special case
-		if (MathUtils::almostEqual(nextPoint.x, std::floor(nextPoint.x)) ||
-			MathUtils::almostEqual(nextPoint.z, std::floor(nextPoint.z)))
-		{
-			// We can simplify this to a ray/wall intersection in the XZ plane.
-			const double A = isRightDiag ? -1.0 : 1.0;
-			const double B = isRightDiag ? 1.0 : 0.0;
-
-			const double dzdx = -rayDirection.z / rayDirection.x;
-			const double z0 = MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ?
-				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
-
-			const double rayA = dzdx;
-			const double rayB = z0;
-
-			const double intersection = (rayB - B) / (A - rayA);
-			if (intersection >= 0.0 && intersection <= 1.0)
-			{
-				const Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
-				// @todo: T should be distance from rayStart
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
-				return true;
-			}
-		}
-		else
-		{
-			const Double3 cornerA(isRightDiag ? 0.0 : 1.0, 0.0, 0.0);
-			const Double3 cornerB(isRightDiag ? 1.0 : 0.0, 0.0, 1.0);
-
-			const Double3 nextPointProjection(
-				nextPoint.x - std::floor(nextPoint.x),
-				0.0,
-				nextPoint.z - std::floor(nextPoint.z));
-			const Double3 farPointProjection(
-				farPoint.x - voxel.x,
-				0.0,
-				farPoint.z - voxel.z);
-
-			const Double3 cornerDiff = cornerA - cornerB;
-			const Double3 farPointBDiff = farPointProjection - cornerB;
-			const Double3 nextPointBDiff = nextPointProjection - cornerB;
-			const double cornerDiffCrossY =
-				cornerDiff.cross(farPointBDiff).y * cornerDiff.cross(nextPointBDiff).y;
-
-			if (cornerDiffCrossY <= 0.0)
-			{
-				// We already know that the point is on the diagonal plane, so we just need to do a
-				// ray/plane intersection to get the point on the plane.
-				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
-				const Double3 planeNormal = Double3(
-					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
-
-				Double3 hitPoint;
-				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hitPoint);
-
-				// @todo: T should be distance from rayStart
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
-				return true;
-			}
-		}
-
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::TransparentWall)
-	{
-		// Always invisible (no back face).
-		// You can't click an invisible wall that you're inside of.
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::Edge)
-	{
-		const VoxelData::EdgeData &edgeData = voxelData.edge;
-
-		// See if the intersected facing and the edge's facing are the same, and only
-		// consider edges with collision.
-		const VoxelFacing edgeFacing = edgeData.facing;
-
-		if ((edgeFacing == farFacing) && edgeData.collider)
-		{
-			// See if the Y offset brings the ray within the face's area.
-			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			const double t = (nearPoint - rayStart).length();
-			const Double3 hitPoint = rayStart + (rayDirection * t);
+			const double t = (farPoint - rayStart).length();
+			const Double3 hitPoint = farPoint;
 			hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
 			return true;
 		}
 		else
 		{
-			// No hit.
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::Ceiling)
+	{
+		// Check if the ray hits the bottom of the voxel.
+		if (farFacing == VoxelFacing::NegativeY)
+		{
+			const double t = (farPoint - rayStart).length();
+			const Double3 hitPoint = farPoint;
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::Raised)
+	{
+		const VoxelData::RaisedData &raised = voxelData.raised;
+		const double raisedYBottom = (static_cast<double>(voxel.y) + raised.yOffset) * ceilingHeight;
+		const double raisedYTop = raisedYBottom + (raised.ySize * ceilingHeight);
+
+		if ((rayStart.y > raisedYBottom) && (rayStart.y < raisedYTop))
+		{
+			// Inside the raised platform. See where the far point is.
+			if (farPoint.y < raisedYBottom)
+			{
+				// Hits the inside floor of the raised platform.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					raisedYBottom,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = Double3::UnitY;
+
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::NegativeY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else if (farPoint.y > raisedYTop)
+			{
+				// Hits the inside ceiling of the raised platform.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					raisedYTop,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = -Double3::UnitY;
+
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::PositiveY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else
+			{
+				// Hits the inside wall of the raised platform.
+				const double t = (farPoint - rayStart).length();
+				const Double3 hitPoint = farPoint;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
+				return true;
+			}
+		}
+		else if (rayStart.y > raisedYTop)
+		{
+			// Above the raised platform. See if the ray hits the top.
+			if (farPoint.y <= raisedYTop)
+			{
+				// Hits the top somewhere.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					raisedYTop,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = Double3::UnitY;
+
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::PositiveY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (rayStart.y < raisedYBottom)
+		{
+			// Below the raised platform. See if the ray hits the bottom.
+			if (farPoint.y >= raisedYBottom)
+			{
+				// Hits the bottom somewhere.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					raisedYBottom,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = -Double3::UnitY;
+
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::NegativeY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::Diagonal)
+	{
+		const VoxelData::DiagonalData &diagonal = voxelData.diagonal;
+		const bool isRightDiag = diagonal.type1;
+
+		// Generate points for the diagonal's quad.
+		Double3 bottomLeftPoint, bottomRightPoint, topLeftPoint;
+		if (isRightDiag)
+		{
+			bottomLeftPoint = Double3(
+				static_cast<double>(voxel.x),
+				static_cast<double>(voxel.y) * ceilingHeight,
+				static_cast<double>(voxel.z));
+			bottomRightPoint = Double3(
+				bottomLeftPoint.x + 1.0,
+				bottomLeftPoint.y,
+				bottomLeftPoint.z + 1.0);
+			topLeftPoint = Double3(
+				bottomLeftPoint.x,
+				bottomLeftPoint.y + ceilingHeight,
+				bottomLeftPoint.z);
+		}
+		else
+		{
+			bottomLeftPoint = Double3(
+				static_cast<double>(voxel.x + 1),
+				static_cast<double>(voxel.y) * ceilingHeight,
+				static_cast<double>(voxel.z));
+			bottomRightPoint = Double3(
+				bottomLeftPoint.x - 1.0,
+				bottomLeftPoint.y,
+				bottomLeftPoint.z + 1.0);
+			topLeftPoint = Double3(
+				bottomLeftPoint.x,
+				bottomLeftPoint.y + ceilingHeight,
+				bottomLeftPoint.z);
+		}
+
+		Double3 hitPoint;
+		const bool success = MathUtils::rayQuadIntersection(
+			rayStart, rayDirection, bottomLeftPoint, bottomRightPoint, topLeftPoint, &hitPoint);
+
+		if (success)
+		{
+			const double t = (hitPoint - rayStart).length();
+			hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::TransparentWall)
+	{
+		// Back faces of transparent walls are invisible.
+		return false;
+	}
+	else if (voxelDataType == VoxelDataType::Edge)
+	{
+		// See if the intersected facing and the edge's facing are the same, and only
+		// consider edges with collision.
+		const VoxelData::EdgeData &edge = voxelData.edge;
+		const VoxelFacing edgeFacing = edge.facing;
+
+		if ((edgeFacing == farFacing) && edge.collider)
+		{
+			// See if the ray hits within the edge with its Y offset.
+			const double edgeYBottom = (static_cast<double>(voxel.y) + edge.yOffset) * ceilingHeight;
+			const double edgeYTop = edgeYBottom + ceilingHeight;
+
+			if ((farPoint.y >= edgeYBottom) && (farPoint.y <= edgeYTop))
+			{
+				const double t = (farPoint - rayStart).length();
+				const Double3 hitPoint = farPoint;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
 			return false;
 		}
 	}
 	else if (voxelDataType == VoxelDataType::Chasm)
 	{
-		const VoxelData::ChasmData &chasmData = voxelData.chasm;
+		// The chasm type determines the depth relative to the top of the voxel.
+		const VoxelData::ChasmData &chasm = voxelData.chasm;
+		const bool isDryChasm = chasm.type == VoxelData::ChasmData::Type::Dry;
+		const double voxelHeight = isDryChasm ? ceilingHeight : 1.0;
 
-		// See if the intersected face is visible.
-		if (chasmData.faceIsVisible(farFacing))
+		const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingHeight;
+		const double chasmYBottom = chasmYTop - voxelHeight;
+
+		// See if the ray starts above or below the chasm floor.
+		if (rayStart.y >= chasmYBottom)
 		{
-			// See what kind of chasm it is (this has an effect on the chasm size).
-			const VoxelData::ChasmData::Type chasmType = chasmData.type;
+			// Above the floor. See which face the ray hits.
+			if ((farFacing == VoxelFacing::NegativeY) || (farPoint.y < chasmYBottom))
+			{
+				// Hits the floor somewhere.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					chasmYBottom,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = Double3::UnitY;
 
-			// @todo.
-			return false;
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::NegativeY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else if (farFacing != VoxelFacing::PositiveY && chasm.faceIsVisible(farFacing))
+			{
+				// Hits a side wall.
+				const double t = (farPoint - rayStart).length();
+				const Double3 hitPoint = farPoint;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
+			}
+			else
+			{
+				// Goes up outside the chasm, or goes through an invisible chasm side wall.
+				return false;
+			}
 		}
 		else
 		{
-			// No intersection.
-			return false;
+			// Below the floor. See if the ray hits the bottom face.
+			if (farPoint.y >= chasmYBottom)
+			{
+				// Hits the bottom face somewhere.
+				const Double3 planeOrigin(
+					static_cast<double>(voxel.x) + 0.50,
+					chasmYBottom,
+					static_cast<double>(voxel.z) + 0.50);
+				const Double3 planeNormal = -Double3::UnitY;
+
+				// Ray-plane intersection (guaranteed to hit a valid spot).
+				Double3 hitPoint;
+				const bool success = MathUtils::rayPlaneIntersection(
+					rayStart, rayDirection, planeOrigin, planeNormal, &hitPoint);
+				DebugAssert(success);
+
+				const double t = (hitPoint - rayStart).length();
+				const VoxelFacing facing = VoxelFacing::NegativeY;
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 	else if (voxelDataType == VoxelDataType::Door)
 	{
-		const VoxelData::DoorData &doorData = voxelData.door;
-
-		// See what kind of door it is.
-		const VoxelData::DoorData::Type doorType = doorData.type;
-
-		// @todo: for now, doors won't be clickable when in the same voxel for simplicity's sake,
-		// due to various oddities (some doors have back faces, swinging doors have corner
+		// Doors are not clickable when in the same voxel (besides, it would be complicated
+		// due to various oddities: some doors have back faces, swinging doors have corner
 		// preferences, etc.).
 		return false;
 	}
@@ -590,7 +736,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
 
 				Double3 hitPoint;
-				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, hitPoint);
+				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, &hitPoint);
 
 				const double t = (nearPoint - hitPoint).length();
 				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
@@ -917,7 +1063,10 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 			const Double3 rayEnd = rayStart + (rayDirection * distance);
 			if (stoppedInFirstVoxel)
 			{
-				testInitialVoxelRay(rayStart, rayDirection, cell, facing, rayStart, rayEnd,
+				// @todo: make sure we're feeding the right facing. We want the one for this
+				// voxel, not the next voxel (if that would even happen). Test by printing out
+				// the facing when inside a wall voxel.
+				testInitialVoxelRay(rayStart, rayDirection, cell, facing, rayEnd,
 					ceilingHeight, voxelGrid, hit);
 			}
 			else

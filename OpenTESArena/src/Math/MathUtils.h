@@ -22,15 +22,13 @@ namespace MathUtils
 	// Converts vertical field of view to horizontal field of view.
 	double verticalFovToHorizontalFov(double fovY, double aspectRatio);
 
-	// Finds the intersection of the ray defined by rayStart and rayDirection and the plane
-	// defined by pointInPlane and planeNormal if such an intersection exists.
+	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &pointInPlane, const Double3 &planeNormal, Double3 &intersection);
+		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
 
-	// Finds the intersection of the ray and the quad defined by the vertices.
+	// Finds the intersection of a ray and a quad defined by three vertices.
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3,
-		Double3 &intersection);
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
 
 	// Finds the shortest distance between points p0 and p1 and between points q0 and q1.
 	// - s is the percent distance along p0p1 that's nearest to q0q1
