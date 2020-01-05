@@ -29,7 +29,7 @@ public:
 		double t;
 		Double3 point;
 		Int3 voxel;
-		VoxelData::Facing facing;
+		VoxelFacing facing;
 		Hit::Type type;
 		union { uint16_t voxelID; int entityID; };
 	};
@@ -49,14 +49,14 @@ private:
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	static bool testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-		const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+		const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
 		const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 		Physics::Hit &hit);
 
 	// Checks a voxel for ray hits and writes them into the output parameter. Returns
 	// true if the ray hit something.
 	static bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-		const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+		const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
 		const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 		Physics::Hit &hit);
 public:

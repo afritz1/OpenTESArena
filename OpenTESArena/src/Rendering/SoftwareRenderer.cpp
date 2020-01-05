@@ -16,6 +16,7 @@
 #include "../Media/Palette.h"
 #include "../Utilities/Platform.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelFacing.h"
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
@@ -2032,7 +2033,7 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 	}
 }
 
-VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
+VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 &eye, const Ray &ray)
 {
 	// Angle of the ray from the camera eye.
@@ -2064,24 +2065,24 @@ VoxelData::Facing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int vox
 	// Find which range the ray's angle lies within.
 	if ((angle < upRightAngle) || (angle > downRightAngle))
 	{
-		return VoxelData::Facing::PositiveZ;
+		return VoxelFacing::PositiveZ;
 	}
 	else if (angle < upLeftAngle)
 	{
-		return VoxelData::Facing::PositiveX;
+		return VoxelFacing::PositiveX;
 	}
 	else if (angle < downLeftAngle)
 	{
-		return VoxelData::Facing::NegativeZ;
+		return VoxelFacing::NegativeZ;
 	}
 	else
 	{
-		return VoxelData::Facing::NegativeX;
+		return VoxelFacing::NegativeX;
 	}
 }
 
-VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ, 
-	VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray)
+VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ, 
+	VoxelFacing nearFacing, const Camera &camera, const Ray &ray)
 {
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	
@@ -2114,7 +2115,7 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	// Find which side it starts on, then do some checks against line angles.
 	// When the ray origin is at a diagonal to the voxel, ignore the corner
 	// closest to that origin.
-	if (nearFacing == VoxelData::Facing::PositiveX)
+	if (nearFacing == VoxelFacing::PositiveX)
 	{
 		// Starts on (1.0, z).
 		const bool onRight = camera.eyeVoxel.z > voxelZ;
@@ -2125,11 +2126,11 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore top-right corner.
 			if (angle < downLeftAngle)
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 		}
 		else if (onLeft)
@@ -2137,30 +2138,30 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore top-left corner.
 			if ((angle > downLeftAngle) && (angle < downRightAngle))
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 			else
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 		}
 		else
 		{
 			if (angle > downRightAngle)
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 			else if (angle > downLeftAngle)
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 		}
 	}
-	else if (nearFacing == VoxelData::Facing::NegativeX)
+	else if (nearFacing == VoxelFacing::NegativeX)
 	{
 		// Starts on (0.0, z).
 		const bool onRight = camera.eyeVoxel.z > voxelZ;
@@ -2171,11 +2172,11 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore bottom-right corner.
 			if (angle < upLeftAngle)
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 		}
 		else if (onLeft)
@@ -2183,30 +2184,30 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore bottom-left corner.
 			if (angle < upRightAngle)
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 			else
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 		}
 		else
 		{
 			if (angle < upRightAngle)
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 			else if (angle < upLeftAngle)
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 		}
 	}				
-	else if (nearFacing == VoxelData::Facing::PositiveZ)
+	else if (nearFacing == VoxelFacing::PositiveZ)
 	{
 		// Starts on (x, 1.0).
 		const bool onTop = camera.eyeVoxel.x > voxelX;
@@ -2217,11 +2218,11 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore top-right corner.
 			if (angle < downLeftAngle)
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 		}
 		else if (onBottom)
@@ -2229,26 +2230,26 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore bottom-right corner.
 			if (angle < upLeftAngle)
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 		}
 		else
 		{
 			if (angle < upLeftAngle)
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 			else if (angle < downLeftAngle)
 			{
-				return VoxelData::Facing::NegativeZ;
+				return VoxelFacing::NegativeZ;
 			}
 			else
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 		}
 	}
@@ -2264,11 +2265,11 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore top-left corner.
 			if ((angle > downLeftAngle) && (angle < downRightAngle))
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 			else
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 		}
 		else if (onBottom)
@@ -2276,26 +2277,26 @@ VoxelData::Facing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			// Ignore bottom-left corner.
 			if ((angle > upRightAngle) && (angle < upLeftAngle))
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 			else
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 		}
 		else
 		{
 			if ((angle < upRightAngle) || (angle > downRightAngle))
 			{
-				return VoxelData::Facing::PositiveZ;
+				return VoxelFacing::PositiveZ;
 			}
 			else if (angle > downLeftAngle)
 			{
-				return VoxelData::Facing::NegativeX;
+				return VoxelFacing::NegativeX;
 			}
 			else
 			{
-				return VoxelData::Facing::PositiveX;
+				return VoxelFacing::PositiveX;
 			}
 		}
 	}
@@ -2681,11 +2682,11 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 }
 
 bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ, 
-	VoxelData::Facing edgeFacing, bool flipped, const Double2 &nearPoint, const Double2 &farPoint,
+	VoxelFacing edgeFacing, bool flipped, const Double2 &nearPoint, const Double2 &farPoint,
 	const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// Reuse the chasm facing code to find which face is intersected.
-	const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+	const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 		voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
 
 	// If the edge facing and far facing match, there's an intersection.
@@ -2696,15 +2697,15 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 		{
 			const double uVal = [&farPoint, farFacing]()
 			{
-				if (farFacing == VoxelData::Facing::PositiveX)
+				if (farFacing == VoxelFacing::PositiveX)
 				{
 					return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 				}
-				else if (farFacing == VoxelData::Facing::NegativeX)
+				else if (farFacing == VoxelFacing::NegativeX)
 				{
 					return farPoint.y - std::floor(farPoint.y);
 				}
-				else if (farFacing == VoxelData::Facing::PositiveZ)
+				else if (farFacing == VoxelFacing::PositiveZ)
 				{
 					return farPoint.x - std::floor(farPoint.x);
 				}
@@ -2730,8 +2731,8 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 	}
 }
 
-bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-	bool flipped, VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
+	bool flipped, VoxelFacing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearU, const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// If the edge facing and near facing match, the intersection is trivial.
@@ -2748,7 +2749,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 	{
 		// A search is needed to see whether an intersection occurred. Reuse the chasm
 		// facing code to find what the far facing is.
-		const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+		const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
 			voxelX, voxelZ, nearFacing, camera, ray);
 
 		// If the edge facing and far facing match, there's an intersection.
@@ -2759,15 +2760,15 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelData::F
 			{
 				const double uVal = [&farPoint, farFacing]()
 				{
-					if (farFacing == VoxelData::Facing::PositiveX)
+					if (farFacing == VoxelFacing::PositiveX)
 					{
 						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 					}
-					else if (farFacing == VoxelData::Facing::NegativeX)
+					else if (farFacing == VoxelFacing::NegativeX)
 					{
 						return farPoint.y - std::floor(farPoint.y);
 					}
-					else if (farFacing == VoxelData::Facing::PositiveZ)
+					else if (farFacing == VoxelFacing::PositiveZ)
 					{
 						return farPoint.x - std::floor(farPoint.x);
 					}
@@ -2933,10 +2934,10 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 	{
 		// Treat the door like a wall. Reuse the chasm facing code to find which face is
 		// intersected.
-		const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
-		const VoxelData::Facing doorFacing = xAxis ?
-			VoxelData::Facing::PositiveX : VoxelData::Facing::PositiveZ;
+		const VoxelFacing doorFacing = xAxis ?
+			VoxelFacing::PositiveX : VoxelFacing::PositiveZ;
 
 		if (doorFacing == farFacing)
 		{
@@ -3090,7 +3091,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 }
 
 bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
-	double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+	double percentOpen, VoxelFacing nearFacing, const Double2 &nearPoint,
 	const Double2 &farPoint, double nearU, RayHit &hit)
 {
 	// Decide which corner the door's hinge will be in, and create the line segment
@@ -3100,22 +3101,22 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 	{
 		const Int2 corner = [voxelX, voxelZ, nearFacing, &interpStart]()
 		{
-			if (nearFacing == VoxelData::Facing::PositiveX)
+			if (nearFacing == VoxelFacing::PositiveX)
 			{
 				interpStart = -Double2::UnitX;
 				return Int2(voxelX + 1, voxelZ + 1);
 			}
-			else if (nearFacing == VoxelData::Facing::NegativeX)
+			else if (nearFacing == VoxelFacing::NegativeX)
 			{
 				interpStart = Double2::UnitX;
 				return Int2(voxelX, voxelZ);
 			}
-			else if (nearFacing == VoxelData::Facing::PositiveZ)
+			else if (nearFacing == VoxelFacing::PositiveZ)
 			{
 				interpStart = -Double2::UnitY;
 				return Int2(voxelX, voxelZ + 1);
 			}
-			else if (nearFacing == VoxelData::Facing::NegativeZ)
+			else if (nearFacing == VoxelFacing::NegativeZ)
 			{
 				interpStart = Double2::UnitY;
 				return Int2(voxelX + 1, voxelZ);
@@ -3184,7 +3185,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 }
 
 bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
-	VoxelData::DoorData::Type doorType, double percentOpen, VoxelData::Facing nearFacing,
+	VoxelData::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
 	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
 {
 	// Check trivial case first: whether the door is closed.
@@ -4271,7 +4272,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 }
 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
+	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
@@ -4289,15 +4290,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	{
 		const double uVal = [&farPoint, facing]()
 		{
-			if (facing == VoxelData::Facing::PositiveX)
+			if (facing == VoxelFacing::PositiveX)
 			{
 				return farPoint.y - std::floor(farPoint.y);
 			}
-			else if (facing == VoxelData::Facing::NegativeX)
+			else if (facing == VoxelFacing::NegativeX)
 			{
 				return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 			}
-			else if (facing == VoxelData::Facing::PositiveZ)
+			else if (facing == VoxelFacing::PositiveZ)
 			{
 				return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 			}
@@ -4549,7 +4550,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
 			// Find which far face on the chasm was intersected.
-			const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
 
 			// Far.
@@ -4559,15 +4560,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				{
 					const double uVal = [&farPoint, farFacing]()
 					{
-						if (farFacing == VoxelData::Facing::PositiveX)
+						if (farFacing == VoxelFacing::PositiveX)
 						{
 							return farPoint.y - std::floor(farPoint.y);
 						}
-						else if (farFacing == VoxelData::Facing::NegativeX)
+						else if (farFacing == VoxelFacing::NegativeX)
 						{
 							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 						}
-						else if (farFacing == VoxelData::Facing::PositiveZ)
+						else if (farFacing == VoxelFacing::PositiveZ)
 						{
 							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 						}
@@ -4912,7 +4913,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
 			// Find which far face on the chasm was intersected.
-			const VoxelData::Facing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
 
 			// Far.
@@ -4922,15 +4923,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				{
 					const double uVal = [&farPoint, farFacing]()
 					{
-						if (farFacing == VoxelData::Facing::PositiveX)
+						if (farFacing == VoxelFacing::PositiveX)
 						{
 							return farPoint.y - std::floor(farPoint.y);
 						}
-						else if (farFacing == VoxelData::Facing::NegativeX)
+						else if (farFacing == VoxelFacing::NegativeX)
 						{
 							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 						}
-						else if (farFacing == VoxelData::Facing::PositiveZ)
+						else if (farFacing == VoxelFacing::PositiveZ)
 						{
 							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 						}
@@ -5387,7 +5388,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 }
 
 void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint, const Double2 &farPoint,
+	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
@@ -5412,15 +5413,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	{
 		const double uVal = [&nearPoint, facing]()
 		{
-			if (facing == VoxelData::Facing::PositiveX)
+			if (facing == VoxelFacing::PositiveX)
 			{
 				return Constants::JustBelowOne - (nearPoint.y - std::floor(nearPoint.y));
 			}
-			else if (facing == VoxelData::Facing::NegativeX)
+			else if (facing == VoxelFacing::NegativeX)
 			{
 				return nearPoint.y - std::floor(nearPoint.y);
 			}
-			else if (facing == VoxelData::Facing::PositiveZ)
+			else if (facing == VoxelFacing::PositiveZ)
 			{
 				return nearPoint.x - std::floor(nearPoint.x);
 			}
@@ -5657,8 +5658,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
 			// Find which faces on the chasm were intersected.
-			const VoxelData::Facing nearFacing = facing;
-			const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+			const VoxelFacing nearFacing = facing;
+			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
 				voxelX, voxelZ, nearFacing, camera, ray);
 
 			// Near.
@@ -5695,15 +5696,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				{
 					const double uVal = [&farPoint, farFacing]()
 					{
-						if (farFacing == VoxelData::Facing::PositiveX)
+						if (farFacing == VoxelFacing::PositiveX)
 						{
 							return farPoint.y - std::floor(farPoint.y);
 						}
-						else if (farFacing == VoxelData::Facing::NegativeX)
+						else if (farFacing == VoxelFacing::NegativeX)
 						{
 							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 						}
-						else if (farFacing == VoxelData::Facing::PositiveZ)
+						else if (farFacing == VoxelFacing::PositiveZ)
 						{
 							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 						}
@@ -6060,8 +6061,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			const VoxelData::ChasmData &chasmData = voxelData.chasm;
 
 			// Find which faces on the chasm were intersected.
-			const VoxelData::Facing nearFacing = facing;
-			const VoxelData::Facing farFacing = SoftwareRenderer::getChasmFarFacing(
+			const VoxelFacing nearFacing = facing;
+			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
 				voxelX, voxelZ, nearFacing, camera, ray);
 
 			// Near.
@@ -6098,15 +6099,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				{
 					const double uVal = [&farPoint, farFacing]()
 					{
-						if (farFacing == VoxelData::Facing::PositiveX)
+						if (farFacing == VoxelFacing::PositiveX)
 						{
 							return farPoint.y - std::floor(farPoint.y);
 						}
-						else if (farFacing == VoxelData::Facing::NegativeX)
+						else if (farFacing == VoxelFacing::NegativeX)
 						{
 							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
 						}
-						else if (farFacing == VoxelData::Facing::PositiveZ)
+						else if (farFacing == VoxelFacing::PositiveZ)
 						{
 							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
 						}
@@ -6788,7 +6789,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
 	// DDA loop.
 	double zDistance;
-	VoxelData::Facing facing;
+	VoxelFacing facing;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
 	bool voxelIsValid = 
@@ -6805,14 +6806,14 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		if (sideDistX < sideDistZ)
 		{
 			zDistance = sideDistX;
-			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : 
-				VoxelData::Facing::PositiveX;
+			facing = nonNegativeDirX ? VoxelFacing::NegativeX : 
+				VoxelFacing::PositiveX;
 		}
 		else
 		{
 			zDistance = sideDistZ;
-			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : 
-				VoxelData::Facing::PositiveZ;
+			facing = nonNegativeDirZ ? VoxelFacing::NegativeZ : 
+				VoxelFacing::PositiveZ;
 		}
 
 		// The initial near point is directly in front of the player in the near Z 
@@ -6848,21 +6849,21 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		{
 			sideDistX += deltaDistX;
 			cell.x += stepX;
-			facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : 
-				VoxelData::Facing::PositiveX;
+			facing = nonNegativeDirX ? VoxelFacing::NegativeX : 
+				VoxelFacing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
 			cell.z += stepZ;
-			facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : 
-				VoxelData::Facing::PositiveZ;
+			facing = nonNegativeDirZ ? VoxelFacing::NegativeZ : 
+				VoxelFacing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
 		}
 
-		const bool onXAxis = (facing == VoxelData::Facing::PositiveX) || 
-			(facing == VoxelData::Facing::NegativeX);
+		const bool onXAxis = (facing == VoxelFacing::PositiveX) || 
+			(facing == VoxelFacing::NegativeX);
 
 		// Update the Z distance depending on which axis was stepped with.
 		if (onXAxis)
@@ -6890,7 +6891,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// loop needs to do another DDA step to calculate the far point.
 		const int savedCellX = cell.x;
 		const int savedCellZ = cell.z;
-		const VoxelData::Facing savedFacing = facing;
+		const VoxelFacing savedFacing = facing;
 		const double wallDistance = zDistance;
 
 		// Decide which voxel in the XZ plane to step to next, and update the Z distance.

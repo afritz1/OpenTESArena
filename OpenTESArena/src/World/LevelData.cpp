@@ -23,6 +23,7 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../World/VoxelFacing.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -777,26 +778,26 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				// graphics and gates are type 0xA colliders, I believe.
 				const bool flipped = collider;
 
-				const VoxelData::Facing facing = [map1Voxel]()
+				const VoxelFacing facing = [map1Voxel]()
 				{
 					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
 					// and C is east. It is stored in two bits above the texture index.
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelData::Facing::PositiveX;
+						return VoxelFacing::PositiveX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelData::Facing::NegativeZ;
+						return VoxelFacing::NegativeZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelData::Facing::NegativeX;
+						return VoxelFacing::NegativeX;
 					}
 					else
 					{
-						return VoxelData::Facing::PositiveZ;
+						return VoxelFacing::PositiveZ;
 					}
 				}();
 

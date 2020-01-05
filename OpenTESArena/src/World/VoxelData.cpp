@@ -4,6 +4,7 @@
 
 #include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "VoxelFacing.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 
@@ -128,17 +129,17 @@ bool VoxelData::WallData::menuHasDisplayName(MenuType menuType)
 const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
 	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
 
-bool VoxelData::ChasmData::faceIsVisible(VoxelData::Facing facing) const
+bool VoxelData::ChasmData::faceIsVisible(VoxelFacing facing) const
 {
-	if (facing == VoxelData::Facing::PositiveX)
+	if (facing == VoxelFacing::PositiveX)
 	{
 		return this->north;
 	}
-	else if (facing == VoxelData::Facing::PositiveZ)
+	else if (facing == VoxelFacing::PositiveZ)
 	{
 		return this->east;
 	}
-	else if (facing == VoxelData::Facing::NegativeX)
+	else if (facing == VoxelFacing::NegativeX)
 	{
 		return this->south;
 	}
@@ -339,7 +340,7 @@ VoxelData VoxelData::makeTransparentWall(int id, bool collider)
 	return data;
 }
 
-VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, bool flipped, Facing facing)
+VoxelData VoxelData::makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing)
 {
 	if (id >= VoxelData::TOTAL_IDS)
 	{
@@ -398,18 +399,18 @@ VoxelData VoxelData::makeDoor(int id, DoorData::Type type)
 	return data;
 }
 
-Double3 VoxelData::getNormal(VoxelData::Facing facing)
+Double3 VoxelData::getNormal(VoxelFacing facing)
 {
 	// Decide what the normal is, based on the facing.
-	if (facing == VoxelData::Facing::PositiveX)
+	if (facing == VoxelFacing::PositiveX)
 	{
 		return Double3::UnitX;
 	}
-	else if (facing == VoxelData::Facing::NegativeX)
+	else if (facing == VoxelFacing::NegativeX)
 	{
 		return -Double3::UnitX;
 	}
-	else if (facing == VoxelData::Facing::PositiveZ)
+	else if (facing == VoxelFacing::PositiveZ)
 	{
 		return Double3::UnitZ;
 	}

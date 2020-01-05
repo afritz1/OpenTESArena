@@ -54,6 +54,7 @@
 #include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelFacing.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -1967,19 +1968,19 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					const Int3 delta = [&hit]()
 					{
-						if (hit.facing == VoxelData::Facing::PositiveX)
+						if (hit.facing == VoxelFacing::PositiveX)
 						{
 							return Int3(1, 0, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeX)
+						else if (hit.facing == VoxelFacing::NegativeX)
 						{
 							return Int3(-1, 0, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						else if (hit.facing == VoxelFacing::PositiveZ)
 						{
 							return Int3(0, 0, 1);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						else if (hit.facing == VoxelFacing::NegativeZ)
 						{
 							return Int3(0, 0, -1);
 						}
@@ -2033,19 +2034,19 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const Int2 gatePos(hit.voxel.x, hit.voxel.z);
 					const Int2 transitionDir = [&hit]()
 					{
-						if (hit.facing == VoxelData::Facing::PositiveX)
+						if (hit.facing == VoxelFacing::PositiveX)
 						{
 							return Int2(-1, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeX)
+						else if (hit.facing == VoxelFacing::NegativeX)
 						{
 							return Int2(1, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						else if (hit.facing == VoxelFacing::PositiveZ)
 						{
 							return Int2(0, -1);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						else if (hit.facing == VoxelFacing::NegativeZ)
 						{
 							return Int2(0, 1);
 						}

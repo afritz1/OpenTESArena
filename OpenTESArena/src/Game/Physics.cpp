@@ -8,6 +8,7 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelFacing.h"
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
@@ -97,7 +98,7 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 }
 
 bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+	const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
 	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 	Physics::Hit &hit)
 {
@@ -253,7 +254,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 
 		// See if the intersected facing and the edge's facing are the same, and only
 		// consider edges with collision.
-		const VoxelData::Facing edgeFacing = edgeData.facing;
+		const VoxelFacing edgeFacing = edgeData.facing;
 
 		if ((edgeFacing == facing) && edgeData.collider)
 		{
@@ -311,7 +312,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 }
 
 bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-	const Int3 &voxel, VoxelData::Facing facing, const Double3 &nearPoint,
+	const Int3 &voxel, VoxelFacing facing, const Double3 &nearPoint,
 	const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -346,7 +347,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (rayDirection * hit.t);
 		hit.voxel = voxel;
-		hit.facing = VoxelData::Facing::PositiveY;
+		hit.facing = VoxelFacing::PositiveY;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;
@@ -356,7 +357,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		hit.t = (nearPoint - farPoint).length();
 		hit.point = rayStart + (rayDirection * hit.t);
 		hit.voxel = voxel;
-		hit.facing = VoxelData::Facing::NegativeY;
+		hit.facing = VoxelFacing::NegativeY;
 		hit.type = Hit::Type::Voxel;
 		hit.voxelID = voxelID;
 		return true;
@@ -597,7 +598,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 
 		// See if the intersected facing and the edge's facing are the same, and only
 		// consider edges with collision.
-		const VoxelData::Facing edgeFacing = edgeData.facing;
+		const VoxelFacing edgeFacing = edgeData.facing;
 
 		if ((edgeFacing == facing) && edgeData.collider)
 		{
@@ -845,7 +846,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 			// Get the distance from the camera to the hit point. It is a special case
 			// if the ray stopped in the first voxel.
 			double distance;
-			VoxelData::Facing facing = VoxelData::Facing::NegativeX;
+			VoxelFacing facing = VoxelFacing::NegativeX;
 			if (stoppedInFirstVoxel)
 			{
 				if ((initialSideDist.x < initialSideDist.y) &&
@@ -874,19 +875,19 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 				{
 					distance = (static_cast<double>(cell.x) - rayStart.x +
 						((1.0 - stepReal.x) / 2.0)) / rayDirection.x;
-					facing = nonNegativeDirX ? VoxelData::Facing::NegativeX : VoxelData::Facing::PositiveX;
+					facing = nonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 				}
 				else if (axis == Axis::Y)
 				{
 					distance = ((static_cast<double>(cell.y) * voxelHeight) - rayStart.y +
 						(((1.0 - stepReal.y) / 2.0) * voxelHeight)) / rayDirection.y;
-					facing = VoxelData::Facing::NegativeZ; // TODO: There are no facing values for Y
+					facing = VoxelFacing::NegativeZ; // TODO: There are no facing values for Y
 				}
 				else
 				{
 					distance = (static_cast<double>(cell.z) - rayStart.z +
 						((1.0 - stepReal.z) / 2.0)) / rayDirection.z;
-					facing = nonNegativeDirZ ? VoxelData::Facing::NegativeZ : VoxelData::Facing::PositiveZ;
+					facing = nonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 				}
 			}
 
