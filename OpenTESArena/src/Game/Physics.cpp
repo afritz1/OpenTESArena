@@ -343,7 +343,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 		const bool isRightDiag = diagonal.type1;
 
 		// Generate points for the diagonal's quad.
-		Double3 bottomLeftPoint, bottomRightPoint, topLeftPoint;
+		Double3 bottomLeftPoint, bottomRightPoint, topRightPoint;
 		if (isRightDiag)
 		{
 			bottomLeftPoint = Double3(
@@ -354,10 +354,10 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 				bottomLeftPoint.x + 1.0,
 				bottomLeftPoint.y,
 				bottomLeftPoint.z + 1.0);
-			topLeftPoint = Double3(
-				bottomLeftPoint.x,
-				bottomLeftPoint.y + ceilingHeight,
-				bottomLeftPoint.z);
+			topRightPoint = Double3(
+				bottomRightPoint.x,
+				bottomRightPoint.y + ceilingHeight,
+				bottomRightPoint.z);
 		}
 		else
 		{
@@ -369,15 +369,15 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 				bottomLeftPoint.x - 1.0,
 				bottomLeftPoint.y,
 				bottomLeftPoint.z + 1.0);
-			topLeftPoint = Double3(
-				bottomLeftPoint.x,
-				bottomLeftPoint.y + ceilingHeight,
-				bottomLeftPoint.z);
+			topRightPoint = Double3(
+				bottomRightPoint.x,
+				bottomRightPoint.y + ceilingHeight,
+				bottomRightPoint.z);
 		}
 
 		Double3 hitPoint;
 		const bool success = MathUtils::rayQuadIntersection(
-			rayStart, rayDirection, bottomLeftPoint, bottomRightPoint, topLeftPoint, &hitPoint);
+			rayStart, rayDirection, bottomLeftPoint, bottomRightPoint, topRightPoint, &hitPoint);
 
 		if (success)
 		{
@@ -465,6 +465,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 				const double t = (farPoint - rayStart).length();
 				const Double3 hitPoint = farPoint;
 				hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
+				return true;
 			}
 			else
 			{

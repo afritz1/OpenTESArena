@@ -61,7 +61,7 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
 	const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint)
 {
-	const Double3 v3 = v2 + (v1 - v0);
+	const Double3 v3 = v0 + (v2 - v1);
 
 	// Calculate the normal of the plane which contains the quad.
 	const Double3 normal = (v2 - v0).cross(v1 - v0).normalized();
