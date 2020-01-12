@@ -149,6 +149,13 @@ bool VoxelData::ChasmData::faceIsVisible(VoxelFacing facing) const
 	}
 }
 
+int VoxelData::ChasmData::getFaceCount() const
+{
+	// Assume chasms have floors.
+	return 1 + (this->north ? 1 : 0) + (this->east ? 1 : 0) +
+		(this->south ? 1 : 0) + (this->west ? 1 : 0);
+}
+
 int VoxelData::DoorData::getOpenSoundIndex() const
 {
 	if (this->type == DoorData::Type::Swinging)

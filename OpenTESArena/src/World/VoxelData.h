@@ -123,6 +123,9 @@ public:
 		Type type;
 
 		bool faceIsVisible(VoxelFacing facing) const;
+		
+		// Includes chasm floor.
+		int getFaceCount() const;
 	};
 
 	struct DoorData
