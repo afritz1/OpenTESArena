@@ -84,6 +84,19 @@ private:
 		const Int3 &voxel, VoxelFacing nearFacing, const Double3 &nearPoint,
 		const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid,
 		Physics::Hit &hit);
+
+	// Helper function for testing which entities in a voxel are intersected by a ray.
+	static void rayCastEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection,
+		const Double3 &flatForward, const Double3 &flatRight, const Double3 &flatUp,
+		const Int3 &voxel, const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
+		const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit);
+
+	// Internal ray casting loop for stepping through individual voxels and checking
+	// ray intersections with voxel data and entities.
+	static void rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
+		const Double3 &cameraForward, double ceilingHeight, const VoxelGrid &voxelGrid,
+		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
+		const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit);
 public:
 	// @todo: bit mask elements for each voxel data type.
 

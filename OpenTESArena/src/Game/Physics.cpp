@@ -908,26 +908,63 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	}
 }
 
-bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
-	const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
-	const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit)
+void Physics::rayCastEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection,
+	const Double3 &flatForward, const Double3 &flatRight, const Double3 &flatUp,
+	const Int3 &voxel, const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
+	const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
-	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
-	// entity, the distance can still be used.
-	hit.setT(Hit::MAX_T);
+	const Double2 rayStartXZ(rayStart.x, rayStart.z);
 
+	const auto iter = voxelEntityMap.find(voxel);
+	if (iter != voxelEntityMap.end())
+	{
+		// Iterate over all the entities that cross this voxel and ray test them.
+		const auto &entityDataList = iter->second;
+		for (const auto &visData : entityDataList)
+		{
+			const Entity &entity = *visData.entity;
+			const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+
+			const Double2 flatPosition2D(
+				visData.flatPosition.x,
+				visData.flatPosition.z);
+
+			// Check if the flat is somewhere in front of the camera.
+			const Double2 flatEyeDiff = flatPosition2D - rayStartXZ;
+			const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
+
+			if (flatEyeDiffLenSqr < hit.getTSqr())
+			{
+				const double flatWidth = visData.keyframe.getWidth();
+				const double flatHeight = visData.keyframe.getHeight();
+				const double flatHalfWidth = flatWidth * 0.50;
+
+				Double3 hitPoint;
+				if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
+					flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
+					rayDirection, pixelPerfect, &hitPoint))
+				{
+					const double distance = (hitPoint - rayStart).length();
+					if (distance < hit.getT())
+					{
+						hit.initEntity(distance, hitPoint, entity.getID());
+					}
+				}
+			}
+		}
+	}
+}
+
+void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
+	const Double3 &cameraForward, double ceilingHeight, const VoxelGrid &voxelGrid,
+	const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const EntityManager &entityManager,
+	const Renderer &renderer, Physics::Hit &hit)
+{
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
 	const Double3 flatForward = Double3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
-
-	const Double2 rayStartXZ(rayStart.x, rayStart.z);
-
-	const VoxelEntityMap voxelEntityMap = Physics::makeVoxelEntityMap(
-		rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
-
-#pragma region Ray Cast Voxels
 
 	const Double3 voxelReal(
 		std::floor(rayStart.x),
@@ -1049,17 +1086,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 	// Step through the voxel grid while the current coordinate is valid and
 	// the total voxel distance stepped is less than the view distance.
 	// (Note that the "voxel distance" is not the same as "actual" distance.)
-	const uint16_t *voxels = voxelGrid.getVoxels();
 
 	constexpr double maxCellDistance = 10.0; // Arbitrary value
 	while (voxelIsValid && (cellDistSquared < (maxCellDistance * maxCellDistance)))
 	{
-		// Get the index of the current voxel in the voxel grid.
-		const int gridIndex = cell.x + (cell.y * gridWidth) + (cell.z * gridWidth * gridHeight);
-
 #pragma region Ray Test this voxel
 		// Check if the current voxel is solid.
-		const uint16_t voxelID = voxels[gridIndex];
+		const uint16_t voxelID = voxelGrid.getVoxel(cell.x, cell.y, cell.z);
 		const bool isAir = voxelID == 0;
 		if (!isAir)
 		{
@@ -1134,49 +1167,9 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 
 #pragma endregion Ray Test this voxel
 
-#pragma region Ray Test any entities that cross this voxel
-
 		// Check if there are any entites that cross the current voxel.
-		const auto iter = voxelEntityMap.find(cell);
-		if (iter != voxelEntityMap.end())
-		{
-			// Iterate over all the entities that cross this voxel and ray test them.
-			const auto &entityDataList = iter->second;
-			for (const auto &visData : entityDataList)
-			{
-				const Entity &entity = *visData.entity;
-				const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
-
-				const Double2 flatPosition2D(
-					visData.flatPosition.x,
-					visData.flatPosition.z);
-
-				// Check if the flat is somewhere in front of the camera.
-				const Double2 flatEyeDiff = flatPosition2D - rayStartXZ;
-				const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
-
-				if (flatEyeDiffLenSqr < hit.getTSqr())
-				{
-					const double flatWidth = visData.keyframe.getWidth();
-					const double flatHeight = visData.keyframe.getHeight();
-					const double flatHalfWidth = flatWidth * 0.50;
-
-					Double3 hitPoint;
-					if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
-						flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
-						rayDirection, pixelPerfect, &hitPoint))
-					{
-						const double distance = (hitPoint - rayStart).length();
-						if (distance < hit.getT())
-						{
-							hit.initEntity(distance, hitPoint, entity.getID());
-						}
-					}
-				}
-			}
-		}
-
-#pragma endregion Ray Test any entities that cross this voxel
+		rayCastEntitiesInVoxel(rayStart, rayDirection, flatForward, flatRight, flatUp, cell,
+			voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
 
 		if (hit.getT() != Hit::MAX_T)
 		{
@@ -1217,9 +1210,25 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 	}
 
 #pragma endregion Ray Cast Voxels and Entities
+}
+
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
+	const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
+	const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit)
+{
+	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
+	// entity, the distance can still be used.
+	hit.setT(Hit::MAX_T);
+
+	const VoxelEntityMap voxelEntityMap = Physics::makeVoxelEntityMap(
+		rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
+
+	// Ray cast through the voxel grid, populating the output hit data.
+	rayCastInternal(rayStart, rayDirection, cameraForward, ceilingHeight, voxelGrid,
+		voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
 
 	// Return whether the ray hit something.
-	return hit.getT() != Hit::MAX_T;
+	return hit.getT() < Hit::MAX_T;
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, const Double3 &cameraForward,
