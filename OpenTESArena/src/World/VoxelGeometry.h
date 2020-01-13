@@ -16,11 +16,10 @@ namespace VoxelGeometry
 	void getInfo(const VoxelData &voxelData, int *outQuadCount);
 
 	// Writes out quads for the given voxel definition with the given origin offset in world space.
-	// Returns whether all data was written.
-	bool tryGetData(const VoxelData &voxelData, const Int3 &voxel, double ceilingHeight,
-		int quadBufferSize, Quad *outQuads, int *outQuadCount);
-	bool tryGetData(const VoxelData &voxelData, double ceilingHeight, int quadBufferSize,
-		Quad *outQuads, int *outQuadCount);
+	// Returns number of quads written.
+	int getQuads(const VoxelData &voxelData, const Int3 &voxel, double ceilingHeight,
+		Quad *outQuads, int bufferSize);
+	int getQuads(const VoxelData &voxelData, double ceilingHeight, Quad *outQuads, int bufferSize);
 }
 
 #endif

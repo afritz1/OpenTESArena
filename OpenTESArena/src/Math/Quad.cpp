@@ -1,5 +1,7 @@
 #include "Quad.h"
 
+Quad::Quad() { }
+
 Quad::Quad(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3)
 	: v0(v0), v1(v1), v2(v2), v3(v3) { }
 

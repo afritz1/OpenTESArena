@@ -13,6 +13,7 @@ class Quad
 private:
 	Double3 v0, v1, v2, v3;
 public:
+	Quad();
 	Quad(const Double3 &v0, const Double3 &v1, const Double3 &v2, const Double3 &v3);
 
 	// Implicitly constructs the fourth corner.

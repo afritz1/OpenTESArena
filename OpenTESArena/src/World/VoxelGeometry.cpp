@@ -85,7 +85,7 @@ namespace
 		const Double3 xVec = GetXVec();
 		const Double3 yVec = GetYVec(ceilingHeight);
 		const Double3 zVec = GetZVec();
-		
+
 		// Far Y
 		const Quad face(
 			origin + yVec,
@@ -250,7 +250,7 @@ namespace
 		const Double3 xVec = GetXVec();
 		const Double3 yVec = GetYVec(ceilingHeight);
 		const Double3 zVec = GetZVec();
-		
+
 		const Quad face = [&edge, &edgeOrigin, &xVec, &yVec, &zVec]()
 		{
 			// Geometry depends on orientation.
@@ -453,23 +453,24 @@ void VoxelGeometry::getInfo(const VoxelData &voxelData, int *outQuadCount)
 	}
 }
 
-bool VoxelGeometry::tryGetData(const VoxelData &voxelData, const Int3 &voxel,
-	double ceilingHeight, int quadBufferSize, Quad *outQuads, int *outQuadCount)
+int VoxelGeometry::getQuads(const VoxelData &voxelData, const Int3 &voxel, double ceilingHeight,
+	Quad *outQuads, int bufferSize)
 {
-	if ((outQuads == nullptr) || (quadBufferSize <= 0))
+	if ((outQuads == nullptr) || (bufferSize <= 0))
 	{
-		return false;
+		return 0;
 	}
 
-	// If all the geometry data can't fit in the output buffer, return failure.
 	int quadCount;
 	VoxelGeometry::getInfo(voxelData, &quadCount);
-	if (quadCount > quadBufferSize)
-	{
-		return false;
-	}
 
-	*outQuadCount = quadCount;
+	// If there's nothing to write, or all the geometry data can't fit in the output buffer,
+	// then return failure.
+	const bool hasEnoughBufferSize = bufferSize >= quadCount;
+	if ((quadCount == 0) || !hasEnoughBufferSize)
+	{
+		return 0;
+	}
 
 	BufferView<Quad> quadView(outQuads, quadCount);
 	const Double3 origin(
@@ -480,43 +481,44 @@ bool VoxelGeometry::tryGetData(const VoxelData &voxelData, const Int3 &voxel,
 	switch (voxelData.dataType)
 	{
 	case VoxelDataType::None:
-		return true;
+		break;
 	case VoxelDataType::Wall:
 		GenerateWall(voxelData.wall, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Floor:
 		GenerateFloor(voxelData.floor, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Ceiling:
 		GenerateCeiling(voxelData.ceiling, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Raised:
 		GenerateRaised(voxelData.raised, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Diagonal:
 		GenerateDiagonal(voxelData.diagonal, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::TransparentWall:
 		GenerateTransparentWall(voxelData.transparentWall, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Edge:
 		GenerateEdge(voxelData.edge, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Chasm:
 		GenerateChasm(voxelData.chasm, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	case VoxelDataType::Door:
 		GenerateDoor(voxelData.door, origin, ceilingHeight, quadView);
-		return true;
+		break;
 	default:
-		return false;
+		break;
 	}
+
+	return quadCount;
 }
 
-bool VoxelGeometry::tryGetData(const VoxelData &voxelData, double ceilingHeight,
-	int quadBufferSize, Quad *outQuads, int *outQuadCount)
+int VoxelGeometry::getQuads(const VoxelData &voxelData, double ceilingHeight,
+	Quad *outQuads, int bufferSize)
 {
 	const Int3 voxel = Int3::Zero;
-	return VoxelGeometry::tryGetData(voxelData, voxel, ceilingHeight, quadBufferSize,
-		outQuads, outQuadCount);
+	return VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, outQuads, bufferSize);
 }

@@ -9,6 +9,7 @@
 #include "../Math/Matrix4.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
+#include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
@@ -18,6 +19,47 @@
 namespace
 {
 	constexpr double MAX_ENTITY_DIST = 10.0;
+
+	// Converts the normal to the associated voxel facing on success. Not all conversions
+	// exist, for example, diagonals have normals but do not have a voxel facing.
+	bool TryGetFacingFromNormal(const Double3 &normal, VoxelFacing *outFacing)
+	{
+		DebugAssert(outFacing != nullptr);
+
+		constexpr double oneMinusEpsilon = 1.0 - Constants::Epsilon;
+
+		bool success = true;
+		if (normal.dot(Double3::UnitX) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::PositiveX;
+		}
+		else if (normal.dot(-Double3::UnitX) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::NegativeX;
+		}
+		else if (normal.dot(Double3::UnitY) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::PositiveY;
+		}
+		else if (normal.dot(-Double3::UnitY) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::NegativeY;
+		}
+		else if (normal.dot(Double3::UnitZ) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::PositiveZ;
+		}
+		else if (normal.dot(-Double3::UnitZ) > oneMinusEpsilon)
+		{
+			*outFacing = VoxelFacing::NegativeZ;
+		}
+		else
+		{
+			success = false;
+		}
+
+		return success;
+	}
 }
 
 const double Physics::Hit::MAX_T = std::numeric_limits<double>::infinity();
@@ -430,7 +472,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 		// The chasm type determines the depth relative to the top of the voxel.
 		const VoxelData::ChasmData &chasm = voxelData.chasm;
 		const bool isDryChasm = chasm.type == VoxelData::ChasmData::Type::Dry;
-		const double voxelHeight = isDryChasm ? ceilingHeight : 1.0;
+		const double voxelHeight = isDryChasm ? ceilingHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
 
 		const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingHeight;
 		const double chasmYBottom = chasmYTop - voxelHeight;
@@ -525,6 +567,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 	const VoxelDataType voxelDataType = voxelData.dataType;
 
+	// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
+	// instead of branching on type here.
+
 	// Determine which type the voxel data is and run the associated calculation.
 	if (voxelDataType == VoxelDataType::None)
 	{
@@ -534,320 +579,328 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	else if (voxelDataType == VoxelDataType::Wall)
 	{
 		// Opaque walls are always hit.
-		const double t = (nearPoint - farPoint).length();
-		const Double3 hitPoint = rayStart + (rayDirection * t);
+		const double t = (nearPoint - rayStart).length();
+		const Double3 hitPoint = nearPoint;
 		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 		return true;
 	}
 	else if (voxelDataType == VoxelDataType::Floor)
 	{
-		// @todo: revise to only check the top face.
-		const double t = (nearPoint - farPoint).length();
-		const Double3 hitPoint = rayStart + (rayDirection * t);
-		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
-		return true;
+		// Intersect the floor as a quad.
+		Quad quad;
+		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		DebugAssert(quadsWritten == 1);
+
+		Double3 hitPoint;
+		const bool success = MathUtils::rayQuadIntersection(
+			rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+		if (success)
+		{
+			const double t = (hitPoint - rayStart).length();
+			const VoxelFacing facing = VoxelFacing::PositiveY;
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	else if (voxelDataType == VoxelDataType::Ceiling)
 	{
-		// @todo: revise to only check the bottom face.
-		const double t = (nearPoint - farPoint).length();
-		const Double3 hitPoint = rayStart + (rayDirection * t);
-		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
-		return true;
+		// Intersect the ceiling as a quad.
+		Quad quad;
+		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		DebugAssert(quadsWritten == 1);
+
+		Double3 hitPoint;
+		const bool success = MathUtils::rayQuadIntersection(
+			rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+		if (success)
+		{
+			const double t = (hitPoint - rayStart).length();
+			const VoxelFacing facing = VoxelFacing::NegativeY;
+			hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	else if (voxelDataType == VoxelDataType::Raised)
 	{
-		// Check ceiling if above, wall/ceiling/floor if inside, and floor if below.
-		const VoxelData::RaisedData &raisedData = voxelData.raised;
+		// Intersect each face of the platform and find the closest one (if any).
+		int quadCount;
+		VoxelGeometry::getInfo(voxelData, &quadCount);
 
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
+		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
+		const int quadsWritten = VoxelGeometry::getQuads(
+			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+		DebugAssert(quadsWritten == quadCount);
 
-		const Double3 nearCeilingPoint(
-			farPoint.x,
-			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-			farPoint.z);
-		const Double3 nearFloorPoint(
-			farPoint.x,
-			voxelYReal + (raisedData.yOffset * voxelHeight),
-			farPoint.z);
+		double closestT = Hit::MAX_T;
+		Double3 closestHitPoint;
+		int closestIndex;
 
-		if (farPoint.y > nearCeilingPoint.y)
+		for (int i = 0; i < quadsWritten; i++)
 		{
-			// We're looking from above the raised platform. We need to do 1 more step forward
-			// to see if the ray crosses below the top of the raised platform by the time it
-			// reaches the next voxel in the grid.
-			const double nextX = static_cast<double>((rayDirection.x >= 0.0) ? (voxel.x + 1) : voxel.x);
-			const double nextZ = static_cast<double>((rayDirection.z >= 0.0) ? (voxel.z + 1) : voxel.z);
-			const double distX = std::abs(nextX - farPoint.x);
-			const double distZ = std::abs(nextZ - farPoint.z);
+			const Quad &quad = quads[i];
 
-			const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
-			const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
+			Double3 hitPoint;
+			const bool success = MathUtils::rayQuadIntersection(
+				rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
 
-			Double3 nextPoint = farPoint;
-			if (tX <= tZ)
+			if (success)
 			{
-				nextPoint = farPoint + (rayDirection * tX);
-			}
-			else if (tZ <= tX)
-			{
-				nextPoint = farPoint + (rayDirection * tZ);
-			}
-
-			if (nextPoint.y <= nearCeilingPoint.y)
-			{
-				const double s = (nearCeilingPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
-				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
-
-				// @todo: t should be relative to rayStart.
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, &nearFacing);
-				return true;
+				const double t = (hitPoint - rayStart).length();
+				if (t < closestT)
+				{
+					closestT = t;
+					closestHitPoint = hitPoint;
+					closestIndex = i;
+				}
 			}
 		}
-		else if (farPoint.y < nearFloorPoint.y)
+
+		if (closestT < Hit::MAX_T)
 		{
-			// We're looking from below the raised platform. We need to do 1 more step forward
-			// to see if the ray crosses above the bottom of the raised platform by the time it
-			// reaches the next voxel in the grid.
-			const double nextX = static_cast<double>((rayDirection.x >= 0.0) ? (voxel.x + 1) : voxel.x);
-			const double nextZ = static_cast<double>((rayDirection.z >= 0.0) ? (voxel.z + 1) : voxel.z);
-			const double distX = std::abs(nextX - farPoint.x);
-			const double distZ = std::abs(nextZ - farPoint.z);
-
-			const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
-			const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
-
-			Double3 nextPoint = farPoint;
-			if (tX <= tZ)
+			const Quad &closestQuad = quads[closestIndex];
+			const Double3 normal = closestQuad.getNormal();
+			VoxelFacing facing;
+			if (TryGetFacingFromNormal(normal, &facing))
 			{
-				nextPoint = farPoint + (rayDirection * tX);
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
 			}
-			else if (tZ <= tX)
+			else
 			{
-				nextPoint = farPoint + (rayDirection * tZ);
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, nullptr);
 			}
 
-			if (nextPoint.y >= nearFloorPoint.y)
-			{
-				const double s = (nearFloorPoint.y - farPoint.y) / (nextPoint.y - farPoint.y);
-				const Double3 hitPoint = farPoint + ((nextPoint - farPoint) * s);
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, &nearFacing);
-				return true;
-			}
+			return true;
 		}
 		else
 		{
-			// The ray collided with the side of the voxel, so we know it was clicked.
-			const double t = (nearPoint - farPoint).length();
-			const Double3 hitPoint = rayStart + (rayDirection * t);
-			hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
-			return true;
+			return false;
 		}
-
-		return false;
 	}
 	else if (voxelDataType == VoxelDataType::Diagonal)
 	{
-		const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+		// Intersect the diagonal as a quad.
+		Quad quad;
+		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		DebugAssert(quadsWritten == 1);
 
-		// Continue the ray into the voxel and do line intersection.
-		const double nextX = static_cast<double>((rayDirection.x >= 0.0) ? (voxel.x + 1) : voxel.x);
-		const double nextY = static_cast<double>((rayDirection.y >= 0.0) ? (voxel.y + 1) : voxel.y);
-		const double nextZ = static_cast<double>((rayDirection.z >= 0.0) ? (voxel.z + 1) : voxel.z);
-		const double distX = std::abs(nextX - farPoint.x);
-		const double distY = std::abs(nextY - (farPoint.y / ceilingHeight));
-		const double distZ = std::abs(nextZ - farPoint.z);
+		Double3 hitPoint;
+		const bool success = MathUtils::rayQuadIntersection(
+			rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
 
-		const double tX = (rayDirection.x == 0.0) ? Hit::MAX_T : (distX / std::abs(rayDirection.x));
-		const double tY = (rayDirection.y == 0.0) ? Hit::MAX_T : (distY / std::abs(rayDirection.y));
-		const double tZ = (rayDirection.z == 0.0) ? Hit::MAX_T : (distZ / std::abs(rayDirection.z));
-
-		Double3 nextPoint = farPoint;
-		int stepAxis = 0;
-		if (tX <= tY && tX <= tZ)
+		if (success)
 		{
-			nextPoint = farPoint + (rayDirection * tX);
-		}
-		else if (tY <= tX && tY <= tZ)
-		{
-			nextPoint = farPoint + (rayDirection * tY);
-			stepAxis = 1;
-		}
-		else if (tZ <= tX && tZ <= tY)
-		{
-			nextPoint = farPoint + (rayDirection * tZ);
-			stepAxis = 2;
-		}
-
-		const bool isRightDiag = diagData.type1;
-
-		// Check if the next point is above or below. That's a special case.
-		if (MathUtils::almostEqual(nextPoint.x, std::floor(nextPoint.x)) ||
-			MathUtils::almostEqual(nextPoint.z, std::floor(nextPoint.z)))
-		{
-			// We can simplify this to a ray/wall intersection in the XZ plane.
-			const double A = isRightDiag ? -1.0 : 1.0;
-			const double B = isRightDiag ? 1.0 : 0.0;
-
-			const double dzdx = -rayDirection.z / rayDirection.x;
-			const double z0 = MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ?
-				(farPoint.z - voxel.z) : (-(farPoint.x - voxel.x) * dzdx);
-
-			const double rayA = dzdx;
-			const double rayB = z0;
-
-			const double intersection = (rayB - B) / (A - rayA);
-			if (intersection >= 0.0 && intersection <= 1.0)
-			{
-				Double3 hitPoint = (nextPoint * intersection) + (farPoint * (1.0 - intersection));
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, rayStart + (rayDirection * t), voxelID, voxel, nullptr);
-				return true;
-			}
-		}
-		else
-		{
-			const Double3 cornerA(isRightDiag ? 0.0 : 1.0, 0.0, 0.0);
-			const Double3 cornerB(isRightDiag ? 1.0 : 0.0, 0.0, 1.0);
-
-			const Double3 nextPointProjection(
-				nextPoint.x - std::floor(nextPoint.x),
-				0.0,
-				nextPoint.z - std::floor(nextPoint.z));
-			const Double3 farPointProjection(
-				farPoint.x - voxel.x,
-				0.0,
-				farPoint.z - voxel.z);
-
-			const Double3 cornerDiff = cornerA - cornerB;
-			const Double3 farPointBDiff = farPointProjection - cornerB;
-			const Double3 nextPointBDiff = nextPointProjection - cornerB;
-			const double cornerDiffCrossY =
-				cornerDiff.cross(farPointBDiff).y * cornerDiff.cross(nextPointBDiff).y;
-
-			if (cornerDiffCrossY <= 0.0)
-			{
-				// We already know that the point is on the diagonal plane, so we just need to do a
-				// ray/plane intersection to get the point on the plane.
-				const Double3 planePoint(voxel.x + 0.5, voxel.y + (ceilingHeight / 2.0), voxel.z + 0.5);
-				const Double3 planeNormal = Double3(
-					isRightDiag ? Double3(-1.0, 0.0, 1.0) : Double3(1.0, 0.0, 1.0)).normalized();
-
-				Double3 hitPoint;
-				MathUtils::rayPlaneIntersection(nearPoint, rayDirection, planePoint, planeNormal, &hitPoint);
-
-				const double t = (nearPoint - hitPoint).length();
-				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
-				return true;
-			}
-		}
-
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::TransparentWall)
-	{
-		// Only select voxels that are collidable.
-		if (voxelData.transparentWall.collider)
-		{
-			// Check if we clicked on the side of the voxel.
-			if (MathUtils::almostEqual(farPoint.x, std::floor(farPoint.x)) ||
-				MathUtils::almostEqual(farPoint.z, std::floor(farPoint.z)))
-			{
-				// Transparent walls are hit when the camera is outside of their voxel.
-				const double t = (nearPoint - farPoint).length();
-				const Double3 hitPoint = rayStart + (rayDirection * t);
-				hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
-				return true;
-			}
-		}
-
-		return false;
-	}
-	else if (voxelDataType == VoxelDataType::Edge)
-	{
-		const VoxelData::EdgeData &edgeData = voxelData.edge;
-
-		// See if the intersected facing and the edge's facing are the same, and only
-		// consider edges with collision.
-		const VoxelFacing edgeFacing = edgeData.facing;
-
-		if ((edgeFacing == nearFacing) && edgeData.collider)
-		{
-			// See if the Y offset brings the ray within the face's area.
-			// @todo: ceiling height, voxel Y, etc.. Needs to be in 3D.
-			const double t = (nearPoint - rayStart).length();
-			const Double3 hitPoint = rayStart + (rayDirection * t);
-			hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
+			const double t = (hitPoint - rayStart).length();
+			hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
 			return true;
 		}
 		else
 		{
-			// No hit.
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::TransparentWall)
+	{
+		// Intersect each face and find the closest one (if any).
+		int quadCount;
+		VoxelGeometry::getInfo(voxelData, &quadCount);
+
+		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
+		const int quadsWritten = VoxelGeometry::getQuads(
+			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+		DebugAssert(quadsWritten == quadCount);
+
+		double closestT = Hit::MAX_T;
+		Double3 closestHitPoint;
+		int closestIndex;
+
+		for (int i = 0; i < quadsWritten; i++)
+		{
+			const Quad &quad = quads[i];
+
+			Double3 hitPoint;
+			const bool success = MathUtils::rayQuadIntersection(
+				rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+			if (success)
+			{
+				const double t = (hitPoint - rayStart).length();
+				if (t < closestT)
+				{
+					closestT = t;
+					closestHitPoint = hitPoint;
+					closestIndex = i;
+				}
+			}
+		}
+
+		if (closestT < Hit::MAX_T)
+		{
+			const Quad &closestQuad = quads[closestIndex];
+			const Double3 normal = closestQuad.getNormal();
+			VoxelFacing facing;
+			if (TryGetFacingFromNormal(normal, &facing))
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
+			}
+			else
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, nullptr);
+			}
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if (voxelDataType == VoxelDataType::Edge)
+	{
+		// Intersect the edge as a quad.
+		Quad quad;
+		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		DebugAssert(quadsWritten == 1);
+
+		Double3 hitPoint;
+		const bool success = MathUtils::rayQuadIntersection(
+			rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+		if (success)
+		{
+			const double t = (hitPoint - rayStart).length();
+			hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
+			return true;
+		}
+		else
+		{
 			return false;
 		}
 	}
 	else if (voxelDataType == VoxelDataType::Chasm)
 	{
-		const VoxelData::ChasmData &chasmData = voxelData.chasm;
+		// Intersect each face and find the closest one (if any).
+		int quadCount;
+		VoxelGeometry::getInfo(voxelData, &quadCount);
 
-		// @todo: this probably shouldn't use near facing.
-		// @todo: chasm depth depends on whether it's wet/lava or dry.
-		// See if the intersected face is visible.
-		if (chasmData.faceIsVisible(nearFacing))
+		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
+		const int quadsWritten = VoxelGeometry::getQuads(
+			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+		DebugAssert(quadsWritten == quadCount);
+
+		double closestT = Hit::MAX_T;
+		Double3 closestHitPoint;
+		int closestIndex;
+
+		for (int i = 0; i < quadsWritten; i++)
 		{
-			// See what kind of chasm it is (this has an effect on the chasm size).
-			const VoxelData::ChasmData::Type chasmType = chasmData.type;
+			const Quad &quad = quads[i];
 
-			// @todo.
-			return false;
+			Double3 hitPoint;
+			const bool success = MathUtils::rayQuadIntersection(
+				rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+			if (success)
+			{
+				const double t = (hitPoint - rayStart).length();
+				if (t < closestT)
+				{
+					closestT = t;
+					closestHitPoint = hitPoint;
+					closestIndex = i;
+				}
+			}
+		}
+
+		if (closestT < Hit::MAX_T)
+		{
+			const Quad &closestQuad = quads[closestIndex];
+			const Double3 normal = closestQuad.getNormal();
+			VoxelFacing facing;
+			if (TryGetFacingFromNormal(normal, &facing))
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
+			}
+			else
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, nullptr);
+			}
+
+			return true;
 		}
 		else
 		{
-			// No intersection.
 			return false;
 		}
 	}
 	else if (voxelDataType == VoxelDataType::Door)
 	{
-		const VoxelData::DoorData &doorData = voxelData.door;
-
-		// See what kind of door it is.
-		const VoxelData::DoorData::Type doorType = doorData.type;
-
 		// @todo: ideally this method would take any hit on a door into consideration, since
 		// it's the calling code's responsibility to decide what to do based on the door's open
 		// state, but for now it will assume closed doors only, for simplicity.
 
-		// Cheap/incomplete solution: assume closed, treat like a wall, always a hit.
-		const double t = (nearPoint - farPoint).length();
-		const Double3 hitPoint = rayStart + (rayDirection * t);
-		hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
-		return true;
+		// Intersect each face and find the closest one (if any).
+		int quadCount;
+		VoxelGeometry::getInfo(voxelData, &quadCount);
 
-		/*if (doorType == VoxelData::DoorData::Type::Swinging)
+		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
+		const int quadsWritten = VoxelGeometry::getQuads(
+			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+		DebugAssert(quadsWritten == quadCount);
+
+		double closestT = Hit::MAX_T;
+		Double3 closestHitPoint;
+		int closestIndex;
+
+		for (int i = 0; i < quadsWritten; i++)
 		{
+			const Quad &quad = quads[i];
 
+			Double3 hitPoint;
+			const bool success = MathUtils::rayQuadIntersection(
+				rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+			if (success)
+			{
+				const double t = (hitPoint - rayStart).length();
+				if (t < closestT)
+				{
+					closestT = t;
+					closestHitPoint = hitPoint;
+					closestIndex = i;
+				}
+			}
 		}
-		else if (doorType == VoxelData::DoorData::Type::Sliding)
-		{
 
-		}
-		else if (doorType == VoxelData::DoorData::Type::Raising)
+		if (closestT < Hit::MAX_T)
 		{
+			const Quad &closestQuad = quads[closestIndex];
+			const Double3 normal = closestQuad.getNormal();
+			VoxelFacing facing;
+			if (TryGetFacingFromNormal(normal, &facing))
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
+			}
+			else
+			{
+				hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, nullptr);
+			}
 
-		}
-		else if (doorType == VoxelData::DoorData::Type::Splitting)
-		{
-
+			return true;
 		}
 		else
 		{
-			throw DebugException("Invalid door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
-		}*/
+			return false;
+		}
 	}
 	else
 	{
@@ -1072,6 +1125,8 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 			}
 			else
 			{
+				// @todo: ray points are definitely wrong -- rayStart and nearPoint should not
+				// be the same variable. Fix this!
 				testVoxelRay(rayStart, rayDirection, cell, facing, rayStart, rayEnd,
 					ceilingHeight, voxelGrid, hit);
 			}
