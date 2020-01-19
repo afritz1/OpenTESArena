@@ -86,7 +86,7 @@ private:
 		Physics::Hit &hit);
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
-	static void rayCastEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection,
+	static bool testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &flatForward, const Double3 &flatRight, const Double3 &flatUp,
 		const Int3 &voxel, const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
 		const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit);
