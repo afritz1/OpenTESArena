@@ -984,12 +984,12 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 		static_cast<int>(rayStartVoxelReal.y),
 		static_cast<int>(rayStartVoxelReal.z));
 
+	// World space floor of the voxel the ray starts in, instead of grid space, adjusted for
+	// voxel side lengths.
+	const Double3 rayStartRelativeFloor = rayStartVoxelReal * axisLen;
+
 	// Ray direction squared components for use with hypotenuse calculations.
 	const Double3 dirSqr = rayDirection * rayDirection;
-
-	// A custom variable that represents the Y "floor" of the current voxel.
-	// @todo: is this useful?
-	//const double eyeYRelativeFloor = std::floor(rayStart.y / voxelHeight) * voxelHeight;
 
 	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 	// This is affected by non-uniform grid properties like tall voxels.
@@ -1005,42 +1005,40 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 	const bool nonNegativeDirZ = rayDirection.z >= 0.0;
 
 	// Step is the voxel delta per step (always +/- 1). The initial delta distances are percentages
-	// of the delta distances.
+	// of the delta distances, dependent on the ray start position inside the voxel.
 	Int3 step;
 	Double3 initialDeltaDistPercents;
 	if (nonNegativeDirX)
 	{
 		step.x = 1;
-		initialDeltaDistPercents.x = rayStartVoxelReal.x + 1.0 - rayStart.x;
+		initialDeltaDistPercents.x = 1.0 - ((rayStart.x - rayStartRelativeFloor.x) / axisLen.x);
 	}
 	else
 	{
 		step.x = -1;
-		initialDeltaDistPercents.x = rayStart.x - rayStartVoxelReal.x;
+		initialDeltaDistPercents.x = (rayStart.x - rayStartRelativeFloor.x) / axisLen.x;
 	}
 
 	if (nonNegativeDirY)
 	{
 		step.y = 1;
-		// @todo: include axisLen? deltaDist does it for us though, maybe?
-		initialDeltaDistPercents.y = rayStartVoxelReal.y + 1.0 - rayStart.y;
+		initialDeltaDistPercents.y = 1.0 - ((rayStart.y - rayStartRelativeFloor.y) / axisLen.y);
 	}
 	else
 	{
 		step.y = -1;
-		// @todo: include axisLen? deltaDist does it for us though, maybe?
-		initialDeltaDistPercents.y = rayStart.y - rayStartVoxelReal.y;
+		initialDeltaDistPercents.y = (rayStart.y - rayStartRelativeFloor.y) / axisLen.y;
 	}
 
 	if (nonNegativeDirZ)
 	{
 		step.z = 1;
-		initialDeltaDistPercents.z = rayStartVoxelReal.z + 1.0 - rayStart.z;
+		initialDeltaDistPercents.z = 1.0 - ((rayStart.z - rayStartRelativeFloor.z) / axisLen.z);
 	}
 	else
 	{
 		step.z = -1;
-		initialDeltaDistPercents.z = rayStart.z - rayStartVoxelReal.z;
+		initialDeltaDistPercents.z = (rayStart.z - rayStartRelativeFloor.z) / axisLen.z;
 	}
 
 	// Initial delta distance is a fraction of delta distance based on the ray's position in
