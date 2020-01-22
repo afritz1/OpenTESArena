@@ -238,6 +238,7 @@ const std::string OptionsPanel::IS_3D_AUDIO_NAME = "Is 3D Audio";
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
 const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
+const std::string OptionsPanel::PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Selection";
 
 // Misc.
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
@@ -626,6 +627,17 @@ OptionsPanel::OptionsPanel(Game &game)
 		const Double3 lookAtPoint = player.getPosition() +
 			Double3(groundDirection.x, 0.0, groundDirection.y);
 		player.lookAt(lookAtPoint);
+	}));
+
+	this->inputOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::PIXEL_PERFECT_SELECTION_NAME,
+		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
+		options.getInput_PixelPerfectSelection(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setInput_PixelPerfectSelection(value);
 	}));
 
 	// Create miscellaneous options.

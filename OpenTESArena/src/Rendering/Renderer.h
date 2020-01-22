@@ -117,6 +117,20 @@ public:
 	// Gets profiler data (timings, renderer properties, etc.).
 	const ProfilerData &getProfilerData() const;
 
+	// Tests whether an entity is intersected by the given ray. Intended for ray cast selection.
+	// 'pixelPerfect' determines whether the entity's texture is involved in the calculation.
+	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
+	// function because the exact method of testing may depend on the 3D representation of the entity.
+	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
+		int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
+		const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
+		const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const;
+
+	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
+	// dependent on renderer details.
+	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect) const;
+
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
 	// or outside the 320x200 limit when returned.

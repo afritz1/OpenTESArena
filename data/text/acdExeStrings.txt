@@ -232,6 +232,7 @@ Race1HelmetPaletteValues=0x37EDE
 Race3HelmetPaletteValues=0x37EFC
 Race4HelmetPaletteValues=0x37F1A
 CurrentWorldPosition=0x44103
+InspectedEntityName=0x43ED4
 
 [WallHeightTables]
 Box1A=0x48594

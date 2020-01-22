@@ -54,6 +54,7 @@
 #include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelFacing.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -99,6 +100,193 @@ namespace
 		CursorAlignment::Bottom,
 		CursorAlignment::Right
 	};
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	void DEBUG_ColorRaycastPixel(Game &game, Renderer &renderer)
+	{
+		const int selectionDim = 3;
+		const Int2 windowDims = renderer.getWindowDimensions();
+
+		constexpr int xOffset = 16;
+		constexpr int yOffset = 16;
+
+		auto &gameData = game.getGameData();
+		
+		const auto &options = game.getOptions();
+		const double verticalFOV = options.getGraphics_VerticalFOV();
+		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
+
+		const auto &player = gameData.getPlayer();
+		const Double3 rayStart = player.getPosition();
+		const Double3 &cameraDirection = player.getDirection();
+		const int viewWidth = windowDims.x;
+		const int viewHeight = renderer.getViewHeight();
+		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
+
+		const auto &worldData = gameData.getWorldData();
+		const auto &levelData = worldData.getActiveLevel();
+		const auto &entityManager = levelData.getEntityManager();
+		const auto &voxelGrid = levelData.getVoxelGrid();
+		const double ceilingHeight = levelData.getCeilingHeight();
+
+		for (int y = 0; y < windowDims.y; y += yOffset)
+		{
+			for (int x = 0; x < windowDims.x; x += xOffset)
+			{
+				// Position percents across the screen. Add 0.50 to sample at the center of the pixel.
+				const double pixelXPercent = (static_cast<double>(x) + 0.50) / static_cast<double>(viewWidth);
+				const double pixelYPercent = (static_cast<double>(y) + 0.50) / static_cast<double>(viewHeight);
+				const Double3 rayDirection = renderer.screenPointToRay(
+					pixelXPercent, pixelYPercent, cameraDirection, verticalFOV, viewAspectRatio);
+
+				// Not registering entities with ray cast hits for efficiency since this debug
+				// visualization is for voxels.
+				const bool includeEntities = false;
+
+				Physics::Hit hit;
+				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight,
+					rayDirection, pixelPerfect, includeEntities, entityManager, voxelGrid,
+					renderer, hit);
+
+				if (success)
+				{
+					Color color;
+					switch (hit.getType())
+					{
+						case Physics::Hit::Type::Voxel:
+						{
+							const std::array<Color, 5> colors =
+							{
+								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
+							};
+
+							color = colors[std::min(hit.getVoxelHit().voxel.y, 4)];
+							break;
+						}
+						case Physics::Hit::Type::Entity:
+						{
+							color = Color::Yellow;
+							break;
+						}
+					}
+
+					renderer.drawRect(color, x, y, selectionDim, selectionDim);
+				}
+			}
+		}
+	}
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	void DEBUG_PhysicsRaycast(Game &game, Renderer &renderer)
+	{
+		// ray cast out from center and display hit info (faster/better than console logging).
+		DEBUG_ColorRaycastPixel(game, renderer);
+
+		auto &gameData = game.getGameData();
+		const auto &options = game.getOptions();
+		const auto &player = gameData.getPlayer();
+		const Double3 rayStart = player.getPosition();
+		const Double3 rayDirection = [&game, &options, &player]()
+		{
+			const auto &renderer = game.getRenderer();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const int viewWidth = windowDims.x;
+			const int viewHeight = renderer.getViewHeight();
+			const double viewAspectRatio = static_cast<double>(viewWidth) /
+				static_cast<double>(viewHeight);
+
+			// Position percents across the screen. Add 0.50 to sample at the center
+			// of the pixel.
+			const double pixelXPercent = (static_cast<double>(viewWidth / 2) + 0.50) /
+				static_cast<double>(viewWidth);
+			const double pixelYPercent = (static_cast<double>(viewHeight / 2) + 0.50) /
+				static_cast<double>(viewHeight);
+
+			const Double3 &cameraDirection = player.getDirection();
+			return renderer.screenPointToRay(pixelXPercent, pixelYPercent, cameraDirection,
+				options.getGraphics_VerticalFOV(), viewAspectRatio);
+		}();
+
+		const auto &worldData = gameData.getWorldData();
+		const auto &levelData = worldData.getActiveLevel();
+		const auto &entityManager = levelData.getEntityManager();
+		const auto &voxelGrid = levelData.getVoxelGrid();
+		const bool includeEntities = true;
+
+		Physics::Hit hit;
+		const bool success = Physics::rayCast(rayStart, rayDirection, levelData.getCeilingHeight(),
+			rayDirection, options.getInput_PixelPerfectSelection(), includeEntities, entityManager,
+			voxelGrid, renderer, hit);
+
+		std::string text;
+		if (success)
+		{
+			switch (hit.getType())
+			{
+			case Physics::Hit::Type::Voxel:
+			{
+				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+				const Int3 &voxel = voxelHit.voxel;
+				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+				text = "Voxel: (" + voxelHit.voxel.toString() + "), " +
+					std::to_string(static_cast<int>(voxelData.dataType)) +
+					' ' + std::to_string(hit.getT());
+				break;
+			}
+			case Physics::Hit::Type::Entity:
+			{
+				const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
+				const auto &exeData = game.getMiscAssets().getExeData();
+
+				// Try inspecting the entity (can be from any distance). If they have a display name,
+				// then show it.
+				const Entity *entity = entityManager.get(entityHit.id);
+				DebugAssert(entity != nullptr);
+
+				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
+				DebugAssert(entityData != nullptr);
+
+				const std::string_view entityName = entityData->getDisplayName();
+
+				if (entityName.size() > 0)
+				{
+					text = std::string(entityName);
+				}
+				else
+				{
+					// Placeholder text for testing.
+					text = "Entity " + std::to_string(entityHit.id);
+				}
+
+				text.append(' ' + std::to_string(hit.getT()));
+				break;
+			}
+			default:
+				text.append("Unknown hit type");
+				break;
+			}
+		}
+		else
+		{
+			text = "No hit";
+		}
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		const TextBox textBox(0, 0, richText, renderer);
+		const int originalX = Renderer::ORIGINAL_WIDTH / 2;
+		const int originalY = (Renderer::ORIGINAL_HEIGHT / 2) + 10;
+		renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
+	}
 }
 
 GameWorldPanel::GameWorldPanel(Game &game)
@@ -1368,17 +1556,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
+	const auto &options = game.getOptions();
 	auto &player = gameData.getPlayer();
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
+	auto &entityManager = level.getEntityManager();
 	const double ceilingHeight = level.getCeilingHeight();
 
 	const Double3 rayStart = player.getPosition();
-	const Double3 rayDirection = [&nativePoint, &game, &player]()
+	const Double3 rayDirection = [&nativePoint, &game, &options, &player]()
 	{
-		// Modify ray direction based on various factors:
-		// - Screen aspect, mouse position, y-shearing, tall pixels.
 		const auto &renderer = game.getRenderer();
 		const Int2 windowDims = renderer.getWindowDimensions();
 		const int viewWidth = windowDims.x;
@@ -1393,183 +1581,212 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
 			static_cast<double>(viewHeight);
 
-		// Zoom of the camera, based on vertical field of view.
-		const double zoom = [&game]()
-		{
-			const auto &options = game.getOptions();
-			const double fovY = options.getGraphics_VerticalFOV();
-			return MathUtils::verticalFovToZoom(fovY);
-		}();
-
-		// @todo: Use y-shearing instead of actual 3D direction since it's a projection from
-		// screen space to world space?
-		const Double3 forward = player.getDirection();
-		const Double3 &right = player.getRight();
-		const Double3 up = right.cross(forward).normalized();
-
-		// Building blocks of the ray direction. Up is reversed because y=0 is at the top
-		// of the screen.
-		const double rightPercent = ((mouseXPercent * 2.0) - 1.0) * viewAspectRatio;
-
-		// @todo: include SoftwareRenderer::TALL_PIXEL_RATIO here? Maybe it needs to do
-		// a screen-to-world projection of the y-shearing?
-		const double upPercent = (mouseYPercent * 2.0) - 1.0;
-
-		const Double3 forwardComponent = forward * zoom;
-		const Double3 rightComponent = right * rightPercent;
-		const Double3 upComponent = up * upPercent;
-		return (forwardComponent + rightComponent - upComponent).normalized();
+		const Double3 &cameraDirection = player.getDirection();
+		return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
+			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
 
+	// Pixel-perfect selection determines whether an entity's texture is used in the
+	// selection calculation.
+	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
+	const bool includeEntities = true;
+
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, voxelGrid, hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, player.getDirection(),
+		pixelPerfectSelection, includeEntities, entityManager, voxelGrid, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
 	{
-		const Int3 &voxel = hit.voxel;
-		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-
-		// Primary click handles selection in the game world. Secondary click handles
-		// reading names of things.
-		if (primaryClick)
+		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
-			// Arbitrary max distance for selection.
-			const double maxSelectionDist = 1.50;
+			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+			const Int3 &voxel = voxelHit.voxel;
+			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
 
-			if (hit.t <= maxSelectionDist)
+			// Primary click handles selection in the game world. Secondary click handles
+			// reading names of things.
+			if (primaryClick)
 			{
-				if (voxelData.dataType == VoxelDataType::Wall)
-				{
-					if (!debugFadeVoxel)
-					{
-						const VoxelData::WallData &wallData = voxelData.wall;
+				// Arbitrary max distance for selection.
+				const double maxSelectionDist = 1.50;
 
-						if (wallData.isMenu())
+				if (hit.getT() <= maxSelectionDist)
+				{
+					if (voxelData.dataType == VoxelDataType::Wall ||
+						voxelData.dataType == VoxelDataType::Raised ||
+						voxelData.dataType == VoxelDataType::Diagonal ||
+						voxelData.dataType == VoxelDataType::TransparentWall)
+					{
+						if (!debugFadeVoxel)
 						{
-							this->handleWorldTransition(hit, wallData.menuID);
+							if (voxelData.dataType == VoxelDataType::Wall)
+							{
+								const VoxelData::WallData &wallData = voxelData.wall;
+
+								if (wallData.isMenu())
+								{
+									this->handleWorldTransition(hit, wallData.menuID);
+								}
+							}
+						}
+						else
+						{
+							// @temp: add to fading voxels if it doesn't already exist.
+							LevelData::FadeState fadeState(voxel);
+							auto &fadingVoxels = level.getFadingVoxels();
+
+							const bool exists = [&voxel, fadingVoxels]()
+							{
+								const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
+									[&voxel](const LevelData::FadeState &state)
+								{
+									return state.getVoxel() == voxel;
+								});
+
+								return iter != fadingVoxels.end();
+							}();
+
+							if (!exists)
+							{
+								fadingVoxels.push_back(std::move(fadeState));
+							}
 						}
 					}
-					else
+					else if (voxelData.dataType == VoxelDataType::Edge)
 					{
-						// @temp: add to fading voxels if it doesn't already exist.
-						LevelData::FadeState fadeState(voxel);
-						auto &fadingVoxels = level.getFadingVoxels();
+						const VoxelData::EdgeData &edgeData = voxelData.edge;
 
-						const bool exists = [&voxel, fadingVoxels]()
+						if (edgeData.collider)
 						{
-							const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
-								[&voxel](const LevelData::FadeState &state)
+							// The only collidable edges in cities should be palace voxels. Not sure
+							// how the original game handles the menu ID since it's a type 0xA voxel.
+							const int menuID = 11;
+							this->handleWorldTransition(hit, menuID);
+						}
+					}
+					else if (voxelData.dataType == VoxelDataType::Door)
+					{
+						const VoxelData::DoorData &doorData = voxelData.door;
+						const Int2 voxelXZ(voxel.x, voxel.z);
+
+						// If the door is closed, then open it.
+						auto &openDoors = level.getOpenDoors();
+						const bool isClosed = [&openDoors, &voxelXZ]()
+						{
+							const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
+								[&voxelXZ](const LevelData::DoorState &openDoor)
 							{
-								return state.getVoxel() == voxel;
+								return openDoor.getVoxel() == voxelXZ;
 							});
 
-							return iter != fadingVoxels.end();
+							return iter == openDoors.end();
 						}();
 
-						if (!exists)
+						if (isClosed)
 						{
-							fadingVoxels.push_back(std::move(fadeState));
+							// Add the door to the open doors list.
+							openDoors.push_back(LevelData::DoorState(voxelXZ));
+
+							// Play the door's opening sound at the center of the voxel.
+							const int soundIndex = doorData.getOpenSoundIndex();
+							const auto &inf = level.getInfFile();
+							const std::string &soundFilename = inf.getSound(soundIndex);
+							auto &audioManager = game.getAudioManager();
+							const Double3 soundPosition(
+								static_cast<double>(voxelXZ.x) + 0.50,
+								level.getCeilingHeight() * 1.50,
+								static_cast<double>(voxelXZ.y) + 0.50);
+
+							audioManager.playSound(soundFilename, soundPosition);
 						}
-					}
-				}
-				else if (voxelData.dataType == VoxelDataType::Edge)
-				{
-					const VoxelData::EdgeData &edgeData = voxelData.edge;
-
-					if (edgeData.collider)
-					{
-						// The only collidable edges in cities should be palace voxels. Not sure
-						// how the original game handles the menu ID since it's a type 0xA voxel.
-						const int menuID = 11;
-						this->handleWorldTransition(hit, menuID);
-					}
-				}
-				else if (voxelData.dataType == VoxelDataType::Door)
-				{
-					const VoxelData::DoorData &doorData = voxelData.door;
-					const Int2 voxelXZ(voxel.x, voxel.z);
-
-					// If the door is closed, then open it.
-					auto &openDoors = level.getOpenDoors();
-					const bool isClosed = [&openDoors, &voxelXZ]()
-					{
-						const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-							[&voxelXZ](const LevelData::DoorState &openDoor)
-						{
-							return openDoor.getVoxel() == voxelXZ;
-						});
-
-						return iter == openDoors.end();
-					}();
-
-					if (isClosed)
-					{
-						// Add the door to the open doors list.
-						openDoors.push_back(LevelData::DoorState(voxelXZ));
-
-						// Play the door's opening sound at the center of the voxel.
-						const int soundIndex = doorData.getOpenSoundIndex();
-						const auto &inf = level.getInfFile();
-						const std::string &soundFilename = inf.getSound(soundIndex);
-						auto &audioManager = game.getAudioManager();
-						const Double3 soundPosition(
-							static_cast<double>(voxelXZ.x) + 0.50,
-							level.getCeilingHeight() * 1.50,
-							static_cast<double>(voxelXZ.y) + 0.50);
-
-						audioManager.playSound(soundFilename, soundPosition);
 					}
 				}
 			}
-		}
-		else
-		{
-			// Handle secondary click (i.e., right click).
-			if (voxelData.dataType == VoxelDataType::Wall)
+			else
 			{
-				const VoxelData::WallData &wallData = voxelData.wall;
-
-				// Print interior display name if *MENU block is clicked in an exterior.
-				if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
+				// Handle secondary click (i.e., right click).
+				if (voxelData.dataType == VoxelDataType::Wall)
 				{
-					const bool isCity = worldData.getActiveWorldType() == WorldType::City;
-					const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
+					const VoxelData::WallData &wallData = voxelData.wall;
 
-					if (VoxelData::WallData::menuHasDisplayName(menuType))
+					// Print interior display name if *MENU block is clicked in an exterior.
+					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 					{
-						const auto &exterior = static_cast<ExteriorLevelData&>(level);
+						const bool isCity = worldData.getActiveWorldType() == WorldType::City;
+						const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
 
-						// Get interior name from the clicked voxel.
-						const std::string menuName = [&game, isCity, menuType, &exterior, &voxel]()
+						if (VoxelData::WallData::menuHasDisplayName(menuType))
 						{
-							const Int2 voxelXZ(voxel.x, voxel.z);
+							const auto &exterior = static_cast<ExteriorLevelData&>(level);
 
-							if (isCity)
+							// Get interior name from the clicked voxel.
+							const std::string menuName = [&game, &voxel, isCity, menuType, &exterior]()
 							{
-								// City interior name.
-								const auto &menuNames = exterior.getMenuNames();
-								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-									[&voxelXZ](const std::pair<Int2, std::string> &pair)
-								{
-									return pair.first == voxelXZ;
-								});
+								const Int2 voxelXZ(voxel.x, voxel.z);
 
-								const bool foundName = iter != menuNames.end();
-
-								if (foundName)
+								if (isCity)
 								{
-									return iter->second;
+									// City interior name.
+									const auto &menuNames = exterior.getMenuNames();
+									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+										[&voxelXZ](const std::pair<Int2, std::string> &pair)
+									{
+										return pair.first == voxelXZ;
+									});
+
+									const bool foundName = iter != menuNames.end();
+
+									if (foundName)
+									{
+										return iter->second;
+									}
+									else
+									{
+										// If no menu name was generated, then see if it's a mage's guild.
+										if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+										{
+											const auto &miscAssets = game.getMiscAssets();
+											const auto &exeData = miscAssets.getExeData();
+											return exeData.cityGen.magesGuildMenuName;
+										}
+										else
+										{
+											// This should only happen if the player created a new *MENU voxel,
+											// which shouldn't occur in regular play.
+											DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
+												", " + std::to_string(voxelXZ.y) + ").");
+											return std::string();
+										}
+									}
 								}
 								else
 								{
-									// If no menu name was generated, then see if it's a mage's guild.
-									if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+									// Wilderness interior name.
+
+									// Probably don't need this here with the current wild name generation.
+									/*const auto &voxelGrid = exterior.getVoxelGrid();
+									const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+										voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+									const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+									const Int2 relativeVoxel = originalVoxel - relativeOrigin;
+									const Int2 chunkCoords(
+										originalVoxel.x / RMDFile::WIDTH,
+										originalVoxel.y / RMDFile::DEPTH);*/
+
+									const auto &menuNames = exterior.getMenuNames();
+									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
+										[&voxelXZ](const std::pair<Int2, std::string> &pair)
 									{
-										const auto &miscAssets = game.getMiscAssets();
-										const auto &exeData = miscAssets.getExeData();
-										return exeData.cityGen.magesGuildMenuName;
+										return pair.first == voxelXZ;
+									});
+
+									const bool foundName = iter != menuNames.end();
+
+									if (foundName)
+									{
+										return iter->second;
 									}
 									else
 									{
@@ -1580,67 +1797,103 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										return std::string();
 									}
 								}
-							}
-							else
-							{
-								// Wilderness interior name.
+							}();
 
-								// Probably don't need this here with the current wild name generation.
-								/*const auto &voxelGrid = exterior.getVoxelGrid();
-								const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-									voxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
-								const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
-								const Int2 relativeVoxel = originalVoxel - relativeOrigin;
-								const Int2 chunkCoords(
-									originalVoxel.x / RMDFile::WIDTH,
-									originalVoxel.y / RMDFile::DEPTH);*/
+							const RichTextString richText(
+								menuName,
+								FontName::Arena,
+								ActionTextColor,
+								TextAlignment::Center,
+								game.getFontManager());
 
-								const auto &menuNames = exterior.getMenuNames();
-								const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-									[&voxelXZ](const std::pair<Int2, std::string> &pair)
-								{
-									return pair.first == voxelXZ;
-								});
+							const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
 
-								const bool foundName = iter != menuNames.end();
+							auto textBox = std::make_unique<TextBox>(
+								Int2(0, 0),
+								richText,
+								&shadowData,
+								game.getRenderer());
 
-								if (foundName)
-								{
-									return iter->second;
-								}
-								else
-								{
-									// This should only happen if the player created a new *MENU voxel,
-									// which shouldn't occur in regular play.
-									DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
-										", " + std::to_string(voxelXZ.y) + ").");
-									return std::string();
-								}
-							}
-						}();
-
-						const RichTextString richText(
-							menuName,
-							FontName::Arena,
-							ActionTextColor,
-							TextAlignment::Center,
-							game.getFontManager());
-
-						const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
-
-						auto textBox = std::make_unique<TextBox>(
-							Int2(0, 0),
-							richText,
-							&shadowData,
-							game.getRenderer());
-
-						auto &actionText = gameData.getActionText();
-						const double duration = std::max(2.25,
-							static_cast<double>(richText.getText().size()) * 0.050);
-						actionText = TimedTextBox(duration, std::move(textBox));
+							auto &actionText = gameData.getActionText();
+							const double duration = std::max(2.25,
+								static_cast<double>(richText.getText().size()) * 0.050);
+							actionText = TimedTextBox(duration, std::move(textBox));
+						}
 					}
 				}
 			}
+		}
+		else if (hit.getType() == Physics::Hit::Type::Entity)
+		{
+			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
+			const auto &exeData = game.getMiscAssets().getExeData();
+
+			if (primaryClick)
+			{
+				// @todo: max selection distance matters when talking to NPCs and selecting corpses.
+				// - need to research a bit since I think it switches between select and inspect
+				//   depending on distance and entity state.
+				// - Also need the "too far away..." text?
+				/*const double maxSelectionDist = 1.50;
+				if (hit.t <= maxSelectionDist)
+				{
+
+				}*/
+
+				// Try inspecting the entity (can be from any distance). If they have a display name,
+				// then show it.
+				const Entity *entity = entityManager.get(entityHit.id);
+				DebugAssert(entity != nullptr);
+
+				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
+				DebugAssert(entityData != nullptr);
+
+				const std::string_view entityName = entityData->getDisplayName();
+
+				std::string text;
+				if (entityName.size() > 0)
+				{
+					text = exeData.ui.inspectedEntityName;
+
+					// Replace format specifier with entity name.
+					text = String::replace(text, "%s", std::string(entityName));
+				}
+				else
+				{
+					// Placeholder text for testing.
+					text = "Entity " + std::to_string(entityHit.id);
+				}
+
+				const int lineSpacing = 1;
+				const RichTextString richText(
+					text,
+					FontName::Arena,
+					ActionTextColor,
+					TextAlignment::Center,
+					lineSpacing,
+					game.getFontManager());
+
+				const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+				// Create the text box for display (set position to zero; the renderer will
+				// decide where to draw it).
+				auto textBox = std::make_unique<TextBox>(
+					Int2(0, 0),
+					richText,
+					&shadowData,
+					game.getRenderer());
+
+				// Assign the text box and its duration. It will be displayed in the render
+				// method until the duration is no longer positive.
+				auto &gameData = game.getGameData();
+				auto &actionText = gameData.getActionText();
+				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+				actionText = TimedTextBox(duration, std::move(textBox));
+			}
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.getType())));
 		}
 	}
 }
@@ -1818,6 +2071,10 @@ void GameWorldPanel::handleFadingVoxels(double dt)
 
 void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 {
+	// @todo: maybe will need to change this to account for wilderness dens?
+	DebugAssert(hit.getType() == Physics::Hit::Type::Voxel);
+	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 	auto &textureManager = game.getTextureManager();
@@ -1866,7 +2123,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		if (isTransitionVoxel)
 		{
 			auto &voxelGrid = activeLevel.getVoxelGrid();
-			const Int2 voxel(hit.voxel.x, hit.voxel.z);
+			const Int2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
 			const bool isTransitionToInterior = VoxelData::WallData::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
@@ -1901,34 +2158,37 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
 				// "wild return".
-				const Int3 returnVoxel = [&hit]()
+				const Int3 returnVoxel = [&voxelHit]()
 				{
-					const Int3 delta = [&hit]()
+					const Int3 delta = [&voxelHit]()
 					{
-						if (hit.facing == VoxelData::Facing::PositiveX)
+						// Assuming this is a wall voxel.
+						DebugAssert(voxelHit.facing.has_value());
+						const VoxelFacing facing = *voxelHit.facing;
+
+						if (facing == VoxelFacing::PositiveX)
 						{
 							return Int3(1, 0, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeX)
+						else if (facing == VoxelFacing::NegativeX)
 						{
 							return Int3(-1, 0, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						else if (facing == VoxelFacing::PositiveZ)
 						{
 							return Int3(0, 0, 1);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						else if (facing == VoxelFacing::NegativeZ)
 						{
 							return Int3(0, 0, -1);
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int3,
-								std::to_string(static_cast<int>(hit.facing)));
+							DebugUnhandledReturnMsg(Int3, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
-					return hit.voxel + delta;
+					return voxelHit.voxel + delta;
 				}();
 
 				// Enter the interior location if the .MIF name is valid.
@@ -1968,29 +2228,32 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
-					const Int2 gatePos(hit.voxel.x, hit.voxel.z);
-					const Int2 transitionDir = [&hit]()
+					const Int2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
+					const Int2 transitionDir = [&voxelHit]()
 					{
-						if (hit.facing == VoxelData::Facing::PositiveX)
+						// Assuming this is a wall voxel.
+						DebugAssert(voxelHit.facing.has_value());
+						const VoxelFacing facing = *voxelHit.facing;
+
+						if (facing == VoxelFacing::PositiveX)
 						{
 							return Int2(-1, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeX)
+						else if (facing == VoxelFacing::NegativeX)
 						{
 							return Int2(1, 0);
 						}
-						else if (hit.facing == VoxelData::Facing::PositiveZ)
+						else if (facing == VoxelFacing::PositiveZ)
 						{
 							return Int2(0, -1);
 						}
-						else if (hit.facing == VoxelData::Facing::NegativeZ)
+						else if (facing == VoxelFacing::NegativeZ)
 						{
 							return Int2(0, 1);
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int2,
-								std::to_string(static_cast<int>(hit.facing)));
+							DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
@@ -2874,4 +3137,11 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	{
 		this->drawProfiler(profilerLevel, renderer);
 	}
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	if (profilerLevel == Options::MAX_PROFILER_LEVEL)
+	{
+		DEBUG_PhysicsRaycast(this->getGame(), renderer);
+	}	
 }

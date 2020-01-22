@@ -1,11 +1,16 @@
 #ifndef ENTITY_DATA_H
 #define ENTITY_DATA_H
 
+#include <string>
+#include <string_view>
+
 #include "EntityAnimationData.h"
 
 class EntityData
 {
 private:
+	std::string displayName;
+
 	EntityAnimationData animationData;
 
 	// @todo: convert to discriminated union like VoxelData so we can have creature
@@ -28,9 +33,10 @@ private:
 public:
 	EntityData();
 
-	void init(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
-		bool dark, bool transparent, bool ceiling, bool mediumScale);
+	void init(std::string &&displayName, int flatIndex, int yOffset, bool collider, bool puddle,
+		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale);
 
+	std::string_view getDisplayName() const;
 	int getFlatIndex() const;
 	int getYOffset() const;
 	bool isCollider() const;

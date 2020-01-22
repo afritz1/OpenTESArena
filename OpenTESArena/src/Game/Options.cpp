@@ -45,7 +45,8 @@ namespace
 	{
 		{ "HorizontalSensitivity", OptionType::Double },
 		{ "VerticalSensitivity", OptionType::Double },
-		{ "CameraPitchLimit", OptionType::Double }
+		{ "CameraPitchLimit", OptionType::Double },
+		{ "PixelPerfectSelection", OptionType::Bool }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> MiscMappings =

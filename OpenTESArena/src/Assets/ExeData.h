@@ -473,6 +473,9 @@ public:
 		// Displayed when pressing F2.
 		std::string currentWorldPosition;
 
+		// Displayed when clicking an entity.
+		std::string inspectedEntityName;
+
 		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 

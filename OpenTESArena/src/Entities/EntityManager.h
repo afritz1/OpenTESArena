@@ -10,6 +10,8 @@
 #include "Entity.h"
 #include "EntityData.h"
 #include "StaticEntity.h"
+#include "../Math/Vector3.h"
+#include "../World/VoxelGrid.h"
 
 class Game;
 
@@ -17,6 +19,17 @@ enum class EntityType;
 
 class EntityManager
 {
+public:
+	struct EntityVisibilityData
+	{
+		const Entity *entity;
+		Double3 flatPosition;
+		EntityAnimationData::Keyframe keyframe;
+		double anglePercent;
+		EntityAnimationData::StateType stateType;
+
+		EntityVisibilityData();
+	};
 private:
 	template <typename T>
 	class EntityGroup
@@ -120,6 +133,10 @@ public:
 
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);
+
+	// Gets the data necessary for rendering and ray cast selection.
+	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir,
+		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
 };
 
 #endif

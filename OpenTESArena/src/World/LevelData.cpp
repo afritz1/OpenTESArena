@@ -23,6 +23,7 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../World/VoxelFacing.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -777,26 +778,26 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				// graphics and gates are type 0xA colliders, I believe.
 				const bool flipped = collider;
 
-				const VoxelData::Facing facing = [map1Voxel]()
+				const VoxelFacing facing = [map1Voxel]()
 				{
 					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
 					// and C is east. It is stored in two bits above the texture index.
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelData::Facing::PositiveX;
+						return VoxelFacing::PositiveX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelData::Facing::NegativeZ;
+						return VoxelFacing::NegativeZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelData::Facing::NegativeX;
+						return VoxelFacing::NegativeX;
 					}
 					else
 					{
-						return VoxelData::Facing::PositiveZ;
+						return VoxelFacing::PositiveZ;
 					}
 				}();
 
@@ -1132,6 +1133,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 		bool isFinalBoss;
 		const bool isCreature = optItemIndex.has_value() &&
 			ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
+		const bool isHumanEnemy = optItemIndex.has_value() &&
+			ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
 
 		// Must be at least one instance of the entity for the loop to try and
 		// instantiate it and write textures to the renderer.
@@ -1152,10 +1155,26 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				ArenaAnimUtils::getFinalBossCreatureID() :
 				ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = creatureID - 1;
+
+			std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
+			{
+				if (!isFinalBoss)
+				{
+					const auto &creatureNames = exeData.entities.creatureNames;
+					DebugAssertIndex(creatureNames, creatureIndex);
+					return creatureNames[creatureIndex];
+				}
+				else
+				{
+					// @todo: return final boss class name?
+					return std::string("TODO");
+				}
+			}();
+
 			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
 			DebugAssertIndex(creatureYOffsets, creatureIndex);
-
 			const int yOffset = creatureYOffsets[creatureIndex];
+
 			const bool collider = true;
 			const bool puddle = false;
 			const bool largeScale = false;
@@ -1163,14 +1182,28 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
 			const bool ceiling = false;
 			const bool mediumScale = false;
-			newEntityData.init(flatIndex, yOffset, collider, puddle, largeScale, dark,
-				transparent, ceiling, mediumScale);
+			newEntityData.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
+				largeScale, dark, transparent, ceiling, mediumScale);
+		}
+		else if (isHumanEnemy)
+		{
+			// Use character class name as the display name.
+			const auto &charClassNames = exeData.charClasses.classNames;
+			const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
+			DebugAssertIndex(charClassNames, charClassIndex);
+			const std::string_view charClassName = charClassNames[charClassIndex];
+
+			newEntityData.init(std::string(charClassName), flatIndex, flatData.yOffset,
+				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
 		else
 		{
-			newEntityData.init(flatIndex, flatData.yOffset, flatData.collider,
-				flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
-				flatData.ceiling, flatData.mediumScale);
+			// No display name.
+			std::string displayName;
+			newEntityData.init(std::move(displayName), flatIndex, flatData.yOffset,
+				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off

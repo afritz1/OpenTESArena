@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../Game/Options.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -427,6 +428,9 @@ private:
 	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
 	//static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
+	// Height ratio between normal pixels and tall pixels.
+	static const double TALL_PIXEL_RATIO;
+
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
 
@@ -473,10 +477,10 @@ private:
 		double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 	
 	// Gets the facing value for the far side of a chasm.
-	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
+	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
 		const Double2 &eye, const Ray &ray);
-	static VoxelData::Facing getChasmFarFacing(int voxelX, int voxelZ,
-		VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray);
+	static VoxelFacing getChasmFarFacing(int voxelX, int voxelZ,
+		VoxelFacing nearFacing, const Camera &camera, const Ray &ray);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
@@ -485,6 +489,10 @@ private:
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
 	static double getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
 		const std::vector<LevelData::FadeState> &fadingVoxels);
+
+	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
+	// and the zoom of the camera (dependent on vertical field of view).
+	static double getYShear(double angleRadians, double zoom);
 
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
@@ -544,15 +552,15 @@ private:
 
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
-	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
+	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
 		bool flipped, const Double2 &nearPoint, const Double2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
-	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-		bool flipped, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
+		bool flipped, VoxelFacing nearFacing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
@@ -569,14 +577,14 @@ private:
 
 	// Helper method for findDoorIntersection() for swinging doors.
 	static bool findSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,
-		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+		VoxelFacing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
 	static bool findDoorIntersection(int voxelX, int voxelZ, VoxelData::DoorData::Type doorType,
-		double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+		double percentOpen, VoxelFacing nearFacing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearU, RayHit &hit);
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
@@ -647,7 +655,7 @@ private:
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
@@ -656,7 +664,7 @@ private:
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
@@ -715,13 +723,20 @@ public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
 
-	// Height ratio between normal pixels and tall pixels.
-	static const double TALL_PIXEL_RATIO;
-
 	bool isInited() const;
 
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const;
+
+	// Tries to write out selection data for the given entity. Returns whether selection data was
+	// successfully written.
+	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int textureID,
+		double anglePercent, EntityAnimationData::StateType animStateType, bool pixelPerfect,
+		bool *outIsSelected) const;
+
+	// Converts a screen point to a ray into the game world.
+	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect);
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);

@@ -11,17 +11,13 @@
 // and color-coding on the automap.
 
 enum class VoxelDataType;
+enum class VoxelFacing;
 
 class VoxelData
 {
 public:
 	// IDs range from 0 to 63.
 	static const int TOTAL_IDS;
-
-	// This defines which axis a wall's normal is facing towards on the outside
-	// (i.e., away from the center of the voxel). Used with edges and rendering.
-	// The Y axis is elided for simplicity (although it might be added eventually).
-	enum class Facing { PositiveX, NegativeX, PositiveZ, NegativeZ };
 
 	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
 	// can be inferred by the renderer.
@@ -110,7 +106,7 @@ public:
 		// i.e., both palace graphics and store signs.
 		bool flipped;
 
-		Facing facing;
+		VoxelFacing facing;
 	};
 
 	// Chasms have zero to four visible faces depending on adjacent floors. Each face is 
@@ -126,7 +122,10 @@ public:
 		bool north, east, south, west;
 		Type type;
 
-		bool faceIsVisible(VoxelData::Facing facing) const;
+		bool faceIsVisible(VoxelFacing facing) const;
+		
+		// Includes chasm floor.
+		int getFaceCount() const;
 	};
 
 	struct DoorData
@@ -180,13 +179,13 @@ public:
 		double ySize, double vTop, double vBottom);
 	static VoxelData makeDiagonal(int id, bool type1);
 	static VoxelData makeTransparentWall(int id, bool collider);
-	static VoxelData makeEdge(int id, double yOffset, bool collider, bool flipped, Facing facing);
+	static VoxelData makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing);
 	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
 		ChasmData::Type type);
 	static VoxelData makeDoor(int id, DoorData::Type type);
 
 	// Gets the normal associated with a voxel facing.
-	static Double3 getNormal(VoxelData::Facing facing);
+	static Double3 getNormal(VoxelFacing facing);
 };
 
 #endif
