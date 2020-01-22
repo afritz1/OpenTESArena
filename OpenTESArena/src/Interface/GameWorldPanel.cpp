@@ -100,6 +100,193 @@ namespace
 		CursorAlignment::Bottom,
 		CursorAlignment::Right
 	};
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	void DEBUG_ColorRaycastPixel(Game &game, Renderer &renderer)
+	{
+		const int selectionDim = 3;
+		const Int2 windowDims = renderer.getWindowDimensions();
+
+		constexpr int xOffset = 16;
+		constexpr int yOffset = 16;
+
+		auto &gameData = game.getGameData();
+		
+		const auto &options = game.getOptions();
+		const double verticalFOV = options.getGraphics_VerticalFOV();
+		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
+
+		const auto &player = gameData.getPlayer();
+		const Double3 rayStart = player.getPosition();
+		const Double3 &cameraDirection = player.getDirection();
+		const int viewWidth = windowDims.x;
+		const int viewHeight = renderer.getViewHeight();
+		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
+
+		const auto &worldData = gameData.getWorldData();
+		const auto &levelData = worldData.getActiveLevel();
+		const auto &entityManager = levelData.getEntityManager();
+		const auto &voxelGrid = levelData.getVoxelGrid();
+		const double ceilingHeight = levelData.getCeilingHeight();
+
+		for (int y = 0; y < windowDims.y; y += yOffset)
+		{
+			for (int x = 0; x < windowDims.x; x += xOffset)
+			{
+				// Position percents across the screen. Add 0.50 to sample at the center of the pixel.
+				const double pixelXPercent = (static_cast<double>(x) + 0.50) / static_cast<double>(viewWidth);
+				const double pixelYPercent = (static_cast<double>(y) + 0.50) / static_cast<double>(viewHeight);
+				const Double3 rayDirection = renderer.screenPointToRay(
+					pixelXPercent, pixelYPercent, cameraDirection, verticalFOV, viewAspectRatio);
+
+				// Not registering entities with ray cast hits for efficiency since this debug
+				// visualization is for voxels.
+				const bool includeEntities = false;
+
+				Physics::Hit hit;
+				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight,
+					rayDirection, pixelPerfect, includeEntities, entityManager, voxelGrid,
+					renderer, hit);
+
+				if (success)
+				{
+					Color color;
+					switch (hit.getType())
+					{
+						case Physics::Hit::Type::Voxel:
+						{
+							const std::array<Color, 5> colors =
+							{
+								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
+							};
+
+							color = colors[std::min(hit.getVoxelHit().voxel.y, 4)];
+							break;
+						}
+						case Physics::Hit::Type::Entity:
+						{
+							color = Color::Yellow;
+							break;
+						}
+					}
+
+					renderer.drawRect(color, x, y, selectionDim, selectionDim);
+				}
+			}
+		}
+	}
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	void DEBUG_PhysicsRaycast(Game &game, Renderer &renderer)
+	{
+		// ray cast out from center and display hit info (faster/better than console logging).
+		DEBUG_ColorRaycastPixel(game, renderer);
+
+		auto &gameData = game.getGameData();
+		const auto &options = game.getOptions();
+		const auto &player = gameData.getPlayer();
+		const Double3 rayStart = player.getPosition();
+		const Double3 rayDirection = [&game, &options, &player]()
+		{
+			const auto &renderer = game.getRenderer();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const int viewWidth = windowDims.x;
+			const int viewHeight = renderer.getViewHeight();
+			const double viewAspectRatio = static_cast<double>(viewWidth) /
+				static_cast<double>(viewHeight);
+
+			// Position percents across the screen. Add 0.50 to sample at the center
+			// of the pixel.
+			const double pixelXPercent = (static_cast<double>(viewWidth / 2) + 0.50) /
+				static_cast<double>(viewWidth);
+			const double pixelYPercent = (static_cast<double>(viewHeight / 2) + 0.50) /
+				static_cast<double>(viewHeight);
+
+			const Double3 &cameraDirection = player.getDirection();
+			return renderer.screenPointToRay(pixelXPercent, pixelYPercent, cameraDirection,
+				options.getGraphics_VerticalFOV(), viewAspectRatio);
+		}();
+
+		const auto &worldData = gameData.getWorldData();
+		const auto &levelData = worldData.getActiveLevel();
+		const auto &entityManager = levelData.getEntityManager();
+		const auto &voxelGrid = levelData.getVoxelGrid();
+		const bool includeEntities = true;
+
+		Physics::Hit hit;
+		const bool success = Physics::rayCast(rayStart, rayDirection, levelData.getCeilingHeight(),
+			rayDirection, options.getInput_PixelPerfectSelection(), includeEntities, entityManager,
+			voxelGrid, renderer, hit);
+
+		std::string text;
+		if (success)
+		{
+			switch (hit.getType())
+			{
+			case Physics::Hit::Type::Voxel:
+			{
+				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+				const Int3 &voxel = voxelHit.voxel;
+				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+
+				text = "Voxel: (" + voxelHit.voxel.toString() + "), " +
+					std::to_string(static_cast<int>(voxelData.dataType)) +
+					' ' + std::to_string(hit.getT());
+				break;
+			}
+			case Physics::Hit::Type::Entity:
+			{
+				const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
+				const auto &exeData = game.getMiscAssets().getExeData();
+
+				// Try inspecting the entity (can be from any distance). If they have a display name,
+				// then show it.
+				const Entity *entity = entityManager.get(entityHit.id);
+				DebugAssert(entity != nullptr);
+
+				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
+				DebugAssert(entityData != nullptr);
+
+				const std::string_view entityName = entityData->getDisplayName();
+
+				if (entityName.size() > 0)
+				{
+					text = std::string(entityName);
+				}
+				else
+				{
+					// Placeholder text for testing.
+					text = "Entity " + std::to_string(entityHit.id);
+				}
+
+				text.append(' ' + std::to_string(hit.getT()));
+				break;
+			}
+			default:
+				text.append("Unknown hit type");
+				break;
+			}
+		}
+		else
+		{
+			text = "No hit";
+		}
+
+		const RichTextString richText(
+			text,
+			FontName::Arena,
+			Color::White,
+			TextAlignment::Left,
+			game.getFontManager());
+
+		const TextBox textBox(0, 0, richText, renderer);
+		const int originalX = Renderer::ORIGINAL_WIDTH / 2;
+		const int originalY = (Renderer::ORIGINAL_HEIGHT / 2) + 10;
+		renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
+	}
 }
 
 GameWorldPanel::GameWorldPanel(Game &game)
@@ -1402,10 +1589,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	// Pixel-perfect selection determines whether an entity's texture is used in the
 	// selection calculation.
 	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
+	const bool includeEntities = true;
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, player.getDirection(),
-		pixelPerfectSelection, entityManager, voxelGrid, game.getRenderer(), hit);
+		pixelPerfectSelection, includeEntities, entityManager, voxelGrid, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -2949,4 +3137,11 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	{
 		this->drawProfiler(profilerLevel, renderer);
 	}
+
+	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
+	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	if (profilerLevel == Options::MAX_PROFILER_LEVEL)
+	{
+		DEBUG_PhysicsRaycast(this->getGame(), renderer);
+	}	
 }

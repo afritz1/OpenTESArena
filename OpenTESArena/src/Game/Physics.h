@@ -103,11 +103,13 @@ public:
 	// Casts a ray through the world and writes any intersection data into the output
 	// parameter. Returns true if the ray hit something.
 	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
-		const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
-		const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit);
+		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
+		Physics::Hit &hit);
 	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
-		const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit);
+		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
+		Physics::Hit &hit);
 };
 
 #endif

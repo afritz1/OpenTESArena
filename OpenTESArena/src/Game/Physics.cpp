@@ -995,10 +995,39 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 	// This is affected by non-uniform grid properties like tall voxels.
 	// @todo: feels like something's missing with dirSqr, like that ratio needs to include ceilingHeight.
 	// - change dirSqr if it doesn't make sense to use its components directly w/o ceilingHeight.
-	const Double3 deltaDist(
-		std::sqrt(axisLenSqr.x + (dirSqr.y / dirSqr.x) + (dirSqr.z / dirSqr.x)),
-		std::sqrt(axisLenSqr.y + (dirSqr.x / dirSqr.y) + (dirSqr.z / dirSqr.y)),
-		std::sqrt(axisLenSqr.z + (dirSqr.x / dirSqr.z) + (dirSqr.y / dirSqr.z)));
+	
+	// @todo: this is very likely the cause of ceilingHeight looking wrong (too far above and below Y=1)
+	// - break each component up into pieces so I know where they come from!
+
+	const Double3 deltaDist = [&rayDirection, &dirSqr, &axisLen, &axisLenSqr]()
+	{
+		/*const double theta = std::atan2(rayDirection.x, rayDirection.z);
+		const double phi = std::atan2(std::sqrt(dirSqr.x + dirSqr.z), rayDirection.y);
+
+		const double xAdj = axisLen.x;
+		const double yAdj = axisLen.y;
+		const double zAdj = axisLen.z;
+
+		const double xOpp = std::tan(theta) * xAdj;
+		const double yOpp = std::tan(phi) * yAdj;
+		const double zOpp = std::tan(Constants::Pi - theta) * zAdj;*/
+
+		//printf("theta: %.2f, phi: %.2f, xOpp: %.2f\n", theta, phi, xOpp);
+
+		return Double3(
+			std::sqrt(axisLenSqr.x + (dirSqr.y / dirSqr.x) + (dirSqr.z / dirSqr.x)),
+			std::sqrt(axisLenSqr.y + (dirSqr.x / dirSqr.y) + (dirSqr.z / dirSqr.y)),
+			std::sqrt(axisLenSqr.z + (dirSqr.x / dirSqr.z) + (dirSqr.y / dirSqr.z)));
+
+		/*return Double3(
+			std::sqrt((xAdj * xAdj) + (xOpp * xOpp)),
+			std::sqrt((yAdj * yAdj) + (yOpp * yOpp)),
+			std::sqrt((zAdj * zAdj) + (zOpp * zOpp)));*/
+	}();
+
+	DebugAssert(deltaDist.x >= 0.0);
+	DebugAssert(deltaDist.y >= 0.0);
+	DebugAssert(deltaDist.z >= 0.0);
 
 	const bool nonNegativeDirX = rayDirection.x >= 0.0;
 	const bool nonNegativeDirY = rayDirection.y >= 0.0;
@@ -1040,6 +1069,13 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 		step.z = -1;
 		initialDeltaDistPercents.z = (rayStart.z - rayStartRelativeFloor.z) / axisLen.z;
 	}
+
+	DebugAssert(initialDeltaDistPercents.x >= 0.0);
+	DebugAssert(initialDeltaDistPercents.x <= 1.0);
+	DebugAssert(initialDeltaDistPercents.y >= 0.0);
+	DebugAssert(initialDeltaDistPercents.y <= 1.0);
+	DebugAssert(initialDeltaDistPercents.z >= 0.0);
+	DebugAssert(initialDeltaDistPercents.z <= 1.0);
 
 	// Initial delta distance is a fraction of delta distance based on the ray's position in
 	// the initial voxel.
@@ -1180,29 +1216,35 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
-	const Double3 &cameraForward, bool pixelPerfect, const EntityManager &entityManager,
-	const VoxelGrid &voxelGrid, const Renderer &renderer, Physics::Hit &hit)
+	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
+	Physics::Hit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
 	hit.setT(Hit::MAX_T);
 
-	const VoxelEntityMap voxelEntityMap = Physics::makeVoxelEntityMap(
-		rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
+	VoxelEntityMap voxelEntityMap;
+	if (includeEntities)
+	{
+		voxelEntityMap = Physics::makeVoxelEntityMap(
+			rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
+	}
 
 	// Ray cast through the voxel grid, populating the output hit data.
-	rayCastInternal(rayStart, rayDirection, cameraForward, ceilingHeight, voxelGrid,
+	Physics::rayCastInternal(rayStart, rayDirection, cameraForward, ceilingHeight, voxelGrid,
 		voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
 
 	// Return whether the ray hit something.
 	return hit.getT() < Hit::MAX_T;
 }
 
-bool Physics::rayCast(const Double3 &rayStart, const Double3 &direction, const Double3 &cameraForward,
-	bool pixelPerfect, const EntityManager &entityManager, const VoxelGrid &voxelGrid,
-	const Renderer &renderer, Physics::Hit &hit)
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection,
+	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
+	Physics::Hit &hit)
 {
 	constexpr double ceilingHeight = 1.0;
-	return Physics::rayCast(rayStart, direction, ceilingHeight, cameraForward, pixelPerfect,
-		entityManager, voxelGrid, renderer, hit);
+	return Physics::rayCast(rayStart, rayDirection, ceilingHeight, cameraForward, pixelPerfect,
+		includeEntities, entityManager, voxelGrid, renderer, hit);
 }
