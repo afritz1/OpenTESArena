@@ -2319,14 +2319,17 @@ double SoftwareRenderer::getFadingVoxelPercent(int voxelX, int voxelY, int voxel
 	const std::vector<LevelData::FadeState> &fadingVoxels)
 {
 	const Int3 voxel(voxelX, voxelY, voxelZ);
-	const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
-		[&voxel](const LevelData::FadeState &fadeState)
-	{
-		return fadeState.getVoxel() == voxel;
-	});
 
-	return (iter != fadingVoxels.end()) ?
-		std::clamp(1.0 - iter->getPercentDone(), 0.0, 1.0) : 1.0;
+	// find_if was terribly slow in MSVC due to iterators, so using for loop instead.
+	for (const LevelData::FadeState &fadeState : fadingVoxels)
+	{
+		if (fadeState.getVoxel() == voxel)
+		{
+			return std::clamp(1.0 - fadeState.getPercentDone(), 0.0, 1.0);
+		}
+	}
+
+	return 1.0;
 }
 
 double SoftwareRenderer::getYShear(double angleRadians, double zoom)
