@@ -972,7 +972,6 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 	// Axis length is the length of a voxel in each dimension. This is required for features
 	// like tall voxels.
 	const Double3 axisLen(1.0, ceilingHeight, 1.0);
-	const Double3 axisLenSqr = axisLen * axisLen;
 
 	// Initial voxel as reals and integers.
 	const Double3 rayStartVoxelReal(
@@ -988,50 +987,20 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 	// voxel side lengths.
 	const Double3 rayStartRelativeFloor = rayStartVoxelReal * axisLen;
 
-	// Ray direction squared components for use with hypotenuse calculations.
-	const Double3 dirSqr = rayDirection * rayDirection;
+	const bool nonNegativeDirX = rayDirection.x >= 0.0;
+	const bool nonNegativeDirY = rayDirection.y >= 0.0;
+	const bool nonNegativeDirZ = rayDirection.z >= 0.0;
 
 	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 	// This is affected by non-uniform grid properties like tall voxels.
-	// @todo: feels like something's missing with dirSqr, like that ratio needs to include ceilingHeight.
-	// - change dirSqr if it doesn't make sense to use its components directly w/o ceilingHeight.
-	
-	// @todo: this is very likely the cause of ceilingHeight looking wrong (too far above and below Y=1)
-	// - break each component up into pieces so I know where they come from!
-
-	const Double3 deltaDist = [&rayDirection, &dirSqr, &axisLen, &axisLenSqr]()
-	{
-		/*const double theta = std::atan2(rayDirection.x, rayDirection.z);
-		const double phi = std::atan2(std::sqrt(dirSqr.x + dirSqr.z), rayDirection.y);
-
-		const double xAdj = axisLen.x;
-		const double yAdj = axisLen.y;
-		const double zAdj = axisLen.z;
-
-		const double xOpp = std::tan(theta) * xAdj;
-		const double yOpp = std::tan(phi) * yAdj;
-		const double zOpp = std::tan(Constants::Pi - theta) * zAdj;*/
-
-		//printf("theta: %.2f, phi: %.2f, xOpp: %.2f\n", theta, phi, xOpp);
-
-		return Double3(
-			std::sqrt(axisLenSqr.x + (dirSqr.y / dirSqr.x) + (dirSqr.z / dirSqr.x)),
-			std::sqrt(axisLenSqr.y + (dirSqr.x / dirSqr.y) + (dirSqr.z / dirSqr.y)),
-			std::sqrt(axisLenSqr.z + (dirSqr.x / dirSqr.z) + (dirSqr.y / dirSqr.z)));
-
-		/*return Double3(
-			std::sqrt((xAdj * xAdj) + (xOpp * xOpp)),
-			std::sqrt((yAdj * yAdj) + (yOpp * yOpp)),
-			std::sqrt((zAdj * zAdj) + (zOpp * zOpp)));*/
-	}();
+	const Double3 deltaDist(
+		(nonNegativeDirX ? axisLen.x : -axisLen.x) / rayDirection.x,
+		(nonNegativeDirY ? axisLen.y : -axisLen.y) / rayDirection.y,
+		(nonNegativeDirZ ? axisLen.z : -axisLen.z) / rayDirection.z);
 
 	DebugAssert(deltaDist.x >= 0.0);
 	DebugAssert(deltaDist.y >= 0.0);
 	DebugAssert(deltaDist.z >= 0.0);
-
-	const bool nonNegativeDirX = rayDirection.x >= 0.0;
-	const bool nonNegativeDirY = rayDirection.y >= 0.0;
-	const bool nonNegativeDirZ = rayDirection.z >= 0.0;
 
 	// Step is the voxel delta per step (always +/- 1). The initial delta distances are percentages
 	// of the delta distances, dependent on the ray start position inside the voxel.
