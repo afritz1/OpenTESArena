@@ -763,20 +763,29 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
 	{
-		// Intersect the edge as a quad.
-		Quad quad;
-		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
-		DebugAssert(quadsWritten == 1);
+		const VoxelData::EdgeData &edge = voxelData.edge;
 
-		Double3 hitPoint;
-		const bool success = MathUtils::rayQuadIntersection(
-			rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
-
-		if (success)
+		if (edge.collider)
 		{
-			const double t = (hitPoint - rayStart).length();
-			hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
-			return true;
+			// Intersect the edge as a quad.
+			Quad quad;
+			const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+			DebugAssert(quadsWritten == 1);
+
+			Double3 hitPoint;
+			const bool success = MathUtils::rayQuadIntersection(
+				rayStart, rayDirection, quad.getV0(), quad.getV1(), quad.getV2(), &hitPoint);
+
+			if (success)
+			{
+				const double t = (hitPoint - rayStart).length();
+				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 		else
 		{
