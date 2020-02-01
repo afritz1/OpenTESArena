@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <functional>
+#include <optional>
 
 #include "LevelData.h"
 #include "VoxelData.h"
@@ -1058,6 +1059,248 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 	}
 }
 
+void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
+	uint16_t *outEastID, uint16_t *outWestID) const
+{
+	auto getVoxelIdOrAir = [this](const Int3 &voxel)
+	{
+		// The voxel is air if outside the grid.
+		return this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z) ?
+			this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z) : 0;
+	};
+
+	const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
+	const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
+	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
+	const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+
+	if (outNorthID != nullptr)
+	{
+		*outNorthID = getVoxelIdOrAir(northVoxel);
+	}
+	
+	if (outSouthID != nullptr)
+	{
+		*outSouthID = getVoxelIdOrAir(southVoxel);
+	}
+
+	if (outEastID != nullptr)
+	{
+		*outEastID = getVoxelIdOrAir(eastVoxel);
+	}
+	
+	if (outWestID != nullptr)
+	{
+		*outWestID = getVoxelIdOrAir(westVoxel);
+	}
+}
+
+void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
+{
+	// Ignore if outside the grid.
+	if (!this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z))
+	{
+		return;
+	}
+
+	const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelData &voxelData = this->voxelGrid.getVoxelData(voxelID);
+
+	// Ignore if not a chasm (no faces to update).
+	if (voxelData.dataType != VoxelDataType::Chasm)
+	{
+		return;
+	}
+
+	const VoxelData::ChasmData &chasmData = voxelData.chasm;
+
+	// Query surrounding voxels to see which faces should be set.
+	uint16_t northID, southID, eastID, westID;
+	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
+
+	const VoxelData &northData = this->voxelGrid.getVoxelData(northID);
+	const VoxelData &southData = this->voxelGrid.getVoxelData(southID);
+	const VoxelData &eastData = this->voxelGrid.getVoxelData(eastID);
+	const VoxelData &westData = this->voxelGrid.getVoxelData(westID);
+
+	auto voxelDataIsChasm = [](const VoxelData &voxelData)
+	{
+		return voxelData.dataType == VoxelDataType::Chasm;
+	};
+
+	// Booleans for each face of the new chasm voxel.
+	bool hasNorthFace = !voxelDataIsChasm(northData);
+	bool hasSouthFace = !voxelDataIsChasm(southData);
+	bool hasEastFace = !voxelDataIsChasm(eastData);
+	bool hasWestFace = !voxelDataIsChasm(westData);
+
+	const VoxelData newVoxelData = VoxelData::makeChasm(
+		chasmData.id, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, chasmData.type);
+
+	// Find chasm voxel data with the matching faces, adding if missing.
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelData(
+		[&newVoxelData](const VoxelData &voxelData)
+	{
+		if (voxelData.dataType == VoxelDataType::Chasm)
+		{
+			DebugAssert(newVoxelData.dataType == VoxelDataType::Chasm);
+			const VoxelData::ChasmData &newChasmData = newVoxelData.chasm;
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			return chasmData.matches(newChasmData);
+		}
+		else
+		{
+			return false;
+		}
+	});
+
+	// Use the chasm ID if it exists, or add a new voxel data to the grid and use its ID.
+	const uint16_t actualChasmID = optChasmID.has_value() ?
+		*optChasmID : this->voxelGrid.addVoxelData(newVoxelData);
+
+	// Update the chasm's voxel ID in the grid.
+	this->voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, actualChasmID);
+}
+
+uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
+{
+	DebugAssert(this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z));
+
+	// Get voxel IDs of adjacent voxels (potentially air).
+	uint16_t northID, southID, eastID, westID;
+	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
+
+	const VoxelData &northData = this->voxelGrid.getVoxelData(northID);
+	const VoxelData &southData = this->voxelGrid.getVoxelData(southID);
+	const VoxelData &eastData = this->voxelGrid.getVoxelData(eastID);
+	const VoxelData &westData = this->voxelGrid.getVoxelData(westID);
+
+	auto voxelDataIsChasm = [](const VoxelData &voxelData)
+	{
+		return voxelData.dataType == VoxelDataType::Chasm;
+	};
+
+	// Booleans for each face of the new chasm voxel.
+	bool hasNorthFace = !voxelDataIsChasm(northData);
+	bool hasSouthFace = !voxelDataIsChasm(southData);
+	bool hasEastFace = !voxelDataIsChasm(eastData);
+	bool hasWestFace = !voxelDataIsChasm(westData);
+
+	// Based on how the original game behaves, it seems to be the chasm type closest to the player,
+	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities
+	// like creating a dry chasm next to lava, which results in continued oddities like having a
+	// big difference in chasm depth between the two (depending on ceiling height).
+	const VoxelData::ChasmData::Type newChasmType = []()
+	{
+		// @todo: include player position. If there are no chasms to pick from, then default to
+		// wet chasm.
+		// @todo: getNearestChasmType(const Int3 &voxel)
+		return VoxelData::ChasmData::Type::Wet;
+	}();
+
+	const int newTextureID = [this, newChasmType]()
+	{
+		const int *chasmIndexPtr = nullptr;
+
+		// Ask the .INF file what the chasm texture is.
+		switch (newChasmType)
+		{
+		case VoxelData::ChasmData::Type::Dry:
+			chasmIndexPtr = this->inf.getDryChasmIndex();
+			break;
+		case VoxelData::ChasmData::Type::Wet:
+			chasmIndexPtr = this->inf.getWetChasmIndex();
+			break;
+		case VoxelData::ChasmData::Type::Lava:
+			chasmIndexPtr = this->inf.getLavaChasmIndex();
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(newChasmType)));
+			break;
+		}
+
+		// Default to whatever the first texture is if one is not found.
+		return (chasmIndexPtr != nullptr) ? *chasmIndexPtr : 0;
+	}();
+
+	const VoxelData newData = VoxelData::makeChasm(
+		newTextureID, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, newChasmType);
+
+	// Find chasm voxel data with the matching faces, adding if missing.
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelData(
+		[&newData](const VoxelData &voxelData)
+	{
+		if (voxelData.dataType == VoxelDataType::Chasm)
+		{
+			DebugAssert(newData.dataType == VoxelDataType::Chasm);
+			const VoxelData::ChasmData &newChasmData = newData.chasm;
+			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			return chasmData.matches(newChasmData);
+		}
+		else
+		{
+			return false;
+		}
+	});
+
+	if (optChasmID.has_value())
+	{
+		return *optChasmID;
+	}
+	else
+	{
+		// Need to add a new voxel data to the voxel grid.
+		return this->voxelGrid.addVoxelData(newData);
+	}
+}
+
+void LevelData::updateFadingVoxels(double dt)
+{
+	// Reverse iterate, removing voxels that are done fading out.
+	for (int i = static_cast<int>(this->fadingVoxels.size()) - 1; i >= 0; i--)
+	{
+		FadeState &fadingVoxel = this->fadingVoxels[i];
+		const Int3 &voxel = fadingVoxel.getVoxel();
+		fadingVoxel.update(dt);
+
+		if (fadingVoxel.isDoneFading())
+		{
+			const bool isFloorVoxel = voxel.y == 0;
+			const uint16_t newVoxelID = [this, &voxel, isFloorVoxel]() -> uint16_t
+			{
+				if (isFloorVoxel)
+				{
+					// Convert from floor to chasm.
+					return this->getChasmIdFromFadedFloorVoxel(voxel);
+				}
+				else
+				{
+					// Clear the voxel.
+					return 0;
+				}
+			}();
+
+			// Change the voxel in the grid to its empty representation (either air or chasm) and
+			// erase the fading voxel from the list.
+			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
+			this->fadingVoxels.erase(this->fadingVoxels.begin() + i);
+
+			// Update adjacent chasm faces.
+			if (isFloorVoxel)
+			{
+				const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
+				const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
+				const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
+				const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+				this->tryUpdateChasmVoxel(northVoxel);
+				this->tryUpdateChasmVoxel(southVoxel);
+				this->tryUpdateChasmVoxel(eastVoxel);
+				this->tryUpdateChasmVoxel(westVoxel);
+			}
+		}
+	}
+}
+
 void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
@@ -1405,5 +1648,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 
 void LevelData::tick(Game &game, double dt)
 {
+	this->updateFadingVoxels(dt);
+
+	// Update entities.
 	this->entityManager.tick(game, dt);
 }

@@ -2,6 +2,8 @@
 #define VOXEL_GRID_H
 
 #include <cstdint>
+#include <functional>
+#include <optional>
 #include <vector>
 
 #include "VoxelData.h"
@@ -15,6 +17,8 @@
 
 class VoxelGrid
 {
+public:
+	using VoxelDataPredicate = std::function<bool(const VoxelData&)>;
 private:
 	std::vector<uint16_t> voxels;
 	std::vector<VoxelData> voxelData;
@@ -36,6 +40,9 @@ public:
 	int getHeight() const;
 	int getDepth() const;
 
+	// Returns whether the given coordinate lies within the voxel grid.
+	bool coordIsValid(int x, int y, int z) const;
+
 	// Gets a pointer to the voxel grid data.
 	uint16_t *getVoxels();
 	const uint16_t *getVoxels() const;
@@ -46,6 +53,9 @@ public:
 	// Gets the voxel data associated with an ID.
 	VoxelData &getVoxelData(uint16_t id);
 	const VoxelData &getVoxelData(uint16_t id) const;
+	
+	// Finds a voxel data instance ID that matches the predicate, or none if not found.
+	std::optional<uint16_t> findVoxelData(const VoxelDataPredicate &predicate) const;
 
 	// Adds a voxel data object and returns its assigned ID.
 	uint16_t addVoxelData(const VoxelData &voxelData);

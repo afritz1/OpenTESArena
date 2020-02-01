@@ -129,6 +129,12 @@ bool VoxelData::WallData::menuHasDisplayName(MenuType menuType)
 const double VoxelData::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
 	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
 
+bool VoxelData::ChasmData::matches(const ChasmData &other) const
+{
+	return (this->id == other.id) && (this->north == other.north) && (this->east == other.east) &&
+		(this->south == other.south) && (this->west == other.west) && (this->type == other.type);
+}
+
 bool VoxelData::ChasmData::faceIsVisible(VoxelFacing facing) const
 {
 	if (facing == VoxelFacing::PositiveX)

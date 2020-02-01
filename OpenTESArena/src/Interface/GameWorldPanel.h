@@ -62,9 +62,6 @@ private:
 	// Handles updating of doors that are not closed.
 	void handleDoors(double dt, const Double2 &playerPos);
 
-	// Handles updating of any fading voxels.
-	void handleFadingVoxels(double dt);
-
 	// Handles the behavior for when the player activates a *MENU block and transitions
 	// from one world to another (i.e., from an interior to an exterior).
 	void handleWorldTransition(const Physics::Hit &hit, int menuID);

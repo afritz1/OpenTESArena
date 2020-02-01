@@ -1615,6 +1615,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				if (hit.getT() <= maxSelectionDist)
 				{
 					if (voxelData.dataType == VoxelDataType::Wall ||
+						voxelData.dataType == VoxelDataType::Floor ||
 						voxelData.dataType == VoxelDataType::Raised ||
 						voxelData.dataType == VoxelDataType::Diagonal ||
 						voxelData.dataType == VoxelDataType::TransparentWall)
@@ -2040,31 +2041,6 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 				// Only some doors play a sound when they start closing.
 				playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosing, voxel);
 			}
-		}
-	}
-}
-
-void GameWorldPanel::handleFadingVoxels(double dt)
-{
-	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getWorldData();
-	auto &activeLevel = worldData.getActiveLevel();
-	auto &fadingVoxels = activeLevel.getFadingVoxels();
-	auto &voxelGrid = activeLevel.getVoxelGrid();
-
-	// Reverse iterate, removing voxels that are done fading out.
-	for (int i = static_cast<int>(fadingVoxels.size()) - 1; i >= 0; i--)
-	{
-		auto &fadingVoxel = fadingVoxels[i];
-		const Int3 &voxel = fadingVoxel.getVoxel();
-		fadingVoxel.update(dt);
-
-		if (fadingVoxel.isDoneFading())
-		{
-			// Change voxel in grid to empty and erase fading voxel from list.
-			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, 0);
-			fadingVoxels.erase(fadingVoxels.begin() + i);
 		}
 	}
 }
@@ -2833,9 +2809,6 @@ void GameWorldPanel::tick(double dt)
 	// Handle door animations.
 	const Double3 newPlayerPos = player.getPosition();
 	this->handleDoors(dt, Double2(newPlayerPos.x, newPlayerPos.z));
-
-	// Handle fading voxels.
-	this->handleFadingVoxels(dt);
 
 	// Tick level data (entities, animated distant land, etc.).
 	auto &levelData = worldData.getActiveLevel();

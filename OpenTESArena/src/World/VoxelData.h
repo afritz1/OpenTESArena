@@ -122,6 +122,7 @@ public:
 		bool north, east, south, west;
 		Type type;
 
+		bool matches(const ChasmData &other) const;
 		bool faceIsVisible(VoxelFacing facing) const;
 		
 		// Includes chasm floor.
