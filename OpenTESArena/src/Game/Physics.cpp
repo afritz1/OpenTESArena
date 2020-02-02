@@ -779,7 +779,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				hit.initVoxel(t, hitPoint, voxelID, voxel, nullptr);
+				hit.initVoxel(t, hitPoint, voxelID, voxel, &edge.facing);
 				return true;
 			}
 			else
