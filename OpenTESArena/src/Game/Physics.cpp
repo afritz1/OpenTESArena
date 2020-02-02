@@ -919,52 +919,47 @@ bool Physics::testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDir
 	const Int3 &voxel, const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
 	const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
 {
-	// Save the current hit distance so we can determine whether an entity was closer.
-	const double savedT = hit.getT();
-
-	const Double2 rayStartXZ(rayStart.x, rayStart.z);
+	// Use a separate hit variable so we can determine whether an entity was closer.
+	Physics::Hit entityHit;
+	entityHit.setT(Hit::MAX_T);
 
 	const auto iter = voxelEntityMap.find(voxel);
 	if (iter != voxelEntityMap.end())
 	{
 		// Iterate over all the entities that cross this voxel and ray test them.
-		const auto &entityDataList = iter->second;
-		for (const auto &visData : entityDataList)
+		const auto &entityVisDataList = iter->second;
+		for (const auto &visData : entityVisDataList)
 		{
 			const Entity &entity = *visData.entity;
 			const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
 
-			const Double2 flatPosition2D(
-				visData.flatPosition.x,
-				visData.flatPosition.z);
+			const double flatWidth = visData.keyframe.getWidth();
+			const double flatHeight = visData.keyframe.getHeight();
 
-			// Check if the flat is somewhere in front of the camera.
-			const Double2 flatEyeDiff = flatPosition2D - rayStartXZ;
-			const double flatEyeDiffLenSqr = flatEyeDiff.lengthSquared();
-
-			if (flatEyeDiffLenSqr < hit.getTSqr())
+			Double3 hitPoint;
+			if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
+				flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
+				rayDirection, pixelPerfect, &hitPoint))
 			{
-				const double flatWidth = visData.keyframe.getWidth();
-				const double flatHeight = visData.keyframe.getHeight();
-				const double flatHalfWidth = flatWidth * 0.50;
-
-				Double3 hitPoint;
-				if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
-					flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
-					rayDirection, pixelPerfect, &hitPoint))
+				const double distance = (hitPoint - rayStart).length();
+				if (distance < entityHit.getT())
 				{
-					const double distance = (hitPoint - rayStart).length();
-					if (distance < hit.getT())
-					{
-						hit.initEntity(distance, hitPoint, entity.getID());
-					}
+					entityHit.initEntity(distance, hitPoint, entity.getID());
 				}
 			}
 		}
 	}
 
-	// Return whether an entity hit was closer than a voxel hit.
-	return hit.getT() < savedT;
+	const bool entityIsCloser = entityHit.getT() < hit.getT();
+	if (entityIsCloser)
+	{
+		hit = entityHit;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,

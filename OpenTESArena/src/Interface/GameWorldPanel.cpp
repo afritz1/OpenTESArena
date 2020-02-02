@@ -146,7 +146,7 @@ namespace
 
 				Physics::Hit hit;
 				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight,
-					rayDirection, pixelPerfect, includeEntities, entityManager, voxelGrid,
+					cameraDirection, pixelPerfect, includeEntities, entityManager, voxelGrid,
 					renderer, hit);
 
 				if (success)
@@ -187,8 +187,10 @@ namespace
 		auto &gameData = game.getGameData();
 		const auto &options = game.getOptions();
 		const auto &player = gameData.getPlayer();
+		const Double3 &cameraDirection = player.getDirection();
+
 		const Double3 rayStart = player.getPosition();
-		const Double3 rayDirection = [&game, &options, &player]()
+		const Double3 rayDirection = [&game, &options, &cameraDirection]()
 		{
 			const auto &renderer = game.getRenderer();
 			const Int2 windowDims = renderer.getWindowDimensions();
@@ -204,7 +206,6 @@ namespace
 			const double pixelYPercent = (static_cast<double>(viewHeight / 2) + 0.50) /
 				static_cast<double>(viewHeight);
 
-			const Double3 &cameraDirection = player.getDirection();
 			return renderer.screenPointToRay(pixelXPercent, pixelYPercent, cameraDirection,
 				options.getGraphics_VerticalFOV(), viewAspectRatio);
 		}();
@@ -217,8 +218,8 @@ namespace
 
 		Physics::Hit hit;
 		const bool success = Physics::rayCast(rayStart, rayDirection, levelData.getCeilingHeight(),
-			rayDirection, options.getInput_PixelPerfectSelection(), includeEntities, entityManager,
-			voxelGrid, renderer, hit);
+			cameraDirection, options.getInput_PixelPerfectSelection(), includeEntities,
+			entityManager, voxelGrid, renderer, hit);
 
 		std::string text;
 		if (success)
@@ -1558,6 +1559,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	auto &gameData = game.getGameData();
 	const auto &options = game.getOptions();
 	auto &player = gameData.getPlayer();
+	const Double3 &cameraDirection = player.getDirection();
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
@@ -1565,7 +1567,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const double ceilingHeight = level.getCeilingHeight();
 
 	const Double3 rayStart = player.getPosition();
-	const Double3 rayDirection = [&nativePoint, &game, &options, &player]()
+	const Double3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
 	{
 		const auto &renderer = game.getRenderer();
 		const Int2 windowDims = renderer.getWindowDimensions();
@@ -1581,7 +1583,6 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
 			static_cast<double>(viewHeight);
 
-		const Double3 &cameraDirection = player.getDirection();
 		return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
 			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
@@ -1592,7 +1593,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const bool includeEntities = true;
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, player.getDirection(),
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, cameraDirection,
 		pixelPerfectSelection, includeEntities, entityManager, voxelGrid, game.getRenderer(), hit);
 
 	// See if the ray hit anything.
