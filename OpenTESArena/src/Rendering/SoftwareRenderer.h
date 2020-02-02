@@ -17,7 +17,7 @@
 #include "../Math/Vector4.h"
 #include "../World/DistantSky.h"
 #include "../World/LevelData.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
 
 // This class runs the CPU-based 3D rendering for the application.
 
@@ -571,7 +571,7 @@ private:
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
 	static bool findInitialDoorIntersection(int voxelX, int voxelZ,
-		VoxelData::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
+		VoxelDefinition::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
 		const Double2 &farPoint, const Camera &camera, const Ray &ray, const VoxelGrid &voxelGrid,
 		RayHit &hit);
 
@@ -583,9 +583,9 @@ private:
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
-	static bool findDoorIntersection(int voxelX, int voxelZ, VoxelData::DoorData::Type doorType,
-		double percentOpen, VoxelFacing nearFacing, const Double2 &nearPoint,
-		const Double2 &farPoint, double nearU, RayHit &hit);
+	static bool findDoorIntersection(int voxelX, int voxelZ,
+		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
+		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
 
 	// Casts a 3D ray from the default start point (eye) and returns the color.
 	// (Unused for now; keeping for reference).

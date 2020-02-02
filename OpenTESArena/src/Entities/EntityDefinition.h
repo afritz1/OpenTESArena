@@ -13,7 +13,7 @@ private:
 
 	EntityAnimationData animationData;
 
-	// @todo: convert to discriminated union like VoxelData so we can have creature
+	// @todo: convert to discriminated union like VoxelDefinition so we can have creature
 	// properties like blood animation index, "has no corpse", etc..
 
 	// Several copied over from .INF data (not all, just for initial implementation).

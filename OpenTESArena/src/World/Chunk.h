@@ -4,7 +4,7 @@
 #include <array>
 #include <cstdint>
 
-#include "VoxelData.h"
+#include "VoxelDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
@@ -16,15 +16,15 @@ using VoxelID = uint8_t;
 class Chunk
 {
 private:
-	static constexpr int MAX_VOXEL_DATA = 256;
+	static constexpr int MAX_VOXEL_DEFS = 256;
 
-	// Indices into voxel data. Size depends on whether it's an interior or exterior.
+	// Indices into voxel definitions. Size depends on whether it's an interior or exterior.
 	Buffer3D<VoxelID> voxels;
 
-	// Voxel data definitions, pointed to by voxel IDs. If the associated bool is true,
+	// Voxel definitions, pointed to by voxel IDs. If the associated bool is true,
 	// the voxel data is in use by the voxel grid.
-	std::array<VoxelData, MAX_VOXEL_DATA> voxelData;
-	std::array<bool, MAX_VOXEL_DATA> activeVoxelData;
+	std::array<VoxelDefinition, MAX_VOXEL_DEFS> voxelDefs;
+	std::array<bool, MAX_VOXEL_DEFS> activeVoxelDefs;
 
 	// Chunk coordinates.
 	int x, y;
@@ -44,20 +44,20 @@ public:
 	// Gets the voxel ID at the given coordinate.
 	VoxelID get(int x, int y, int z) const;
 
-	// Gets the voxel data associated with a voxel ID.
-	const VoxelData &getVoxelData(VoxelID id) const;
+	// Gets the voxel definition associated with a voxel ID.
+	const VoxelDefinition &getVoxelDef(VoxelID id) const;
 
-	// Gets the number of active voxel data definitions.
-	int debug_getVoxelDataCount() const;
+	// Gets the number of active voxel definitions.
+	int debug_getVoxelDefCount() const;
 
 	// Sets the voxel at the given coordinate.
 	void set(int x, int y, int z, VoxelID id);
 
-	// Adds a voxel data definition and returns its assigned ID.
-	VoxelID addVoxelData(VoxelData &&voxelData);
+	// Adds a voxel definition and returns its assigned ID.
+	VoxelID addVoxelDef(VoxelDefinition &&voxelDef);
 
-	// Removes a voxel data definition so its corresponding voxel ID can be reused.
-	void removeVoxelData(VoxelID id);
+	// Removes a voxel definition so its corresponding voxel ID can be reused.
+	void removeVoxelDef(VoxelID id);
 };
 
 // Interior chunks are always three voxels high (ground, main floor, ceiling).

@@ -231,10 +231,10 @@ namespace
 				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 				const Int3 &voxel = voxelHit.voxel;
 				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
 				text = "Voxel: (" + voxelHit.voxel.toString() + "), " +
-					std::to_string(static_cast<int>(voxelData.dataType)) +
+					std::to_string(static_cast<int>(voxelDef.dataType)) +
 					' ' + std::to_string(hit.getT());
 				break;
 			}
@@ -1604,7 +1604,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 			const Int3 &voxel = voxelHit.voxel;
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+			const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
 			// Primary click handles selection in the game world. Secondary click handles
 			// reading names of things.
@@ -1615,17 +1615,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				if (hit.getT() <= maxSelectionDist)
 				{
-					if (voxelData.dataType == VoxelDataType::Wall ||
-						voxelData.dataType == VoxelDataType::Floor ||
-						voxelData.dataType == VoxelDataType::Raised ||
-						voxelData.dataType == VoxelDataType::Diagonal ||
-						voxelData.dataType == VoxelDataType::TransparentWall)
+					if (voxelDef.dataType == VoxelDataType::Wall ||
+						voxelDef.dataType == VoxelDataType::Floor ||
+						voxelDef.dataType == VoxelDataType::Raised ||
+						voxelDef.dataType == VoxelDataType::Diagonal ||
+						voxelDef.dataType == VoxelDataType::TransparentWall)
 					{
 						if (!debugFadeVoxel)
 						{
-							if (voxelData.dataType == VoxelDataType::Wall)
+							if (voxelDef.dataType == VoxelDataType::Wall)
 							{
-								const VoxelData::WallData &wallData = voxelData.wall;
+								const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 								if (wallData.isMenu())
 								{
@@ -1656,9 +1656,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							}
 						}
 					}
-					else if (voxelData.dataType == VoxelDataType::Edge)
+					else if (voxelDef.dataType == VoxelDataType::Edge)
 					{
-						const VoxelData::EdgeData &edgeData = voxelData.edge;
+						const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 						if (edgeData.collider)
 						{
@@ -1668,9 +1668,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							this->handleWorldTransition(hit, menuID);
 						}
 					}
-					else if (voxelData.dataType == VoxelDataType::Door)
+					else if (voxelDef.dataType == VoxelDataType::Door)
 					{
-						const VoxelData::DoorData &doorData = voxelData.door;
+						const VoxelDefinition::DoorData &doorData = voxelDef.door;
 						const Int2 voxelXZ(voxel.x, voxel.z);
 
 						// If the door is closed, then open it.
@@ -1709,17 +1709,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			else
 			{
 				// Handle secondary click (i.e., right click).
-				if (voxelData.dataType == VoxelDataType::Wall)
+				if (voxelDef.dataType == VoxelDataType::Wall)
 				{
-					const VoxelData::WallData &wallData = voxelData.wall;
+					const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 					// Print interior display name if *MENU block is clicked in an exterior.
 					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 					{
 						const bool isCity = worldData.getActiveWorldType() == WorldType::City;
-						const auto menuType = VoxelData::WallData::getMenuType(wallData.menuID, isCity);
+						const auto menuType = VoxelDefinition::WallData::getMenuType(wallData.menuID, isCity);
 
-						if (VoxelData::WallData::menuHasDisplayName(menuType))
+						if (VoxelDefinition::WallData::menuHasDisplayName(menuType))
 						{
 							const auto &exterior = static_cast<ExteriorLevelData&>(level);
 
@@ -1747,7 +1747,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 									else
 									{
 										// If no menu name was generated, then see if it's a mage's guild.
-										if (menuType == VoxelData::WallData::MenuType::MagesGuild)
+										if (menuType == VoxelDefinition::WallData::MenuType::MagesGuild)
 										{
 											const auto &miscAssets = game.getMiscAssets();
 											const auto &exeData = miscAssets.getExeData();
@@ -1979,8 +1979,8 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
 	auto playSoundIfType = [&game, &activeLevel](
-		const VoxelData::DoorData::CloseSoundData &closeSoundData,
-		VoxelData::DoorData::CloseSoundType closeSoundType, const Int2 &doorVoxel)
+		const VoxelDefinition::DoorData::CloseSoundData &closeSoundData,
+		VoxelDefinition::DoorData::CloseSoundType closeSoundType, const Int2 &doorVoxel)
 	{
 		if (closeSoundData.type == closeSoundType)
 		{
@@ -2009,14 +2009,14 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		// sounds when closing.
 		const Int2 &voxel = door.getVoxel();
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-		const VoxelData::DoorData &doorData = voxelData.door;
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const auto closeSoundData = doorData.getCloseSoundData();
 
 		if (door.isClosed())
 		{
 			// Only some doors play a sound when they become closed.
-			playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosed, voxel);
+			playSoundIfType(closeSoundData, VoxelDefinition::DoorData::CloseSoundType::OnClosed, voxel);
 
 			// Erase closed door.
 			openDoors.erase(openDoors.begin() + i);
@@ -2040,7 +2040,8 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 				door.setDirection(LevelData::DoorState::Direction::Closing);
 
 				// Only some doors play a sound when they start closing.
-				playSoundIfType(closeSoundData, VoxelData::DoorData::CloseSoundType::OnClosing, voxel);
+				playSoundIfType(closeSoundData,
+					VoxelDefinition::DoorData::CloseSoundType::OnClosing, voxel);
 			}
 		}
 	}
@@ -2092,16 +2093,16 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
 		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
 		const bool isCity = activeWorldType == WorldType::City;
-		const VoxelData::WallData::MenuType menuType =
-			VoxelData::WallData::getMenuType(menuID, isCity);
-		const bool isTransitionVoxel = menuType != VoxelData::WallData::MenuType::None;
+		const VoxelDefinition::WallData::MenuType menuType =
+			VoxelDefinition::WallData::getMenuType(menuID, isCity);
+		const bool isTransitionVoxel = menuType != VoxelDefinition::WallData::MenuType::None;
 
 		// Make sure the voxel will actually lead somewhere first.
 		if (isTransitionVoxel)
 		{
 			auto &voxelGrid = activeLevel.getVoxelGrid();
 			const Int2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
-			const bool isTransitionToInterior = VoxelData::WallData::menuLeadsToInterior(menuType);
+			const bool isTransitionToInterior = VoxelDefinition::WallData::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
 			{
@@ -2315,20 +2316,20 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	const auto &level = interior.getActiveLevel();
 	const auto &voxelGrid = level.getVoxelGrid();
 
-	// Get the voxel data associated with the voxel.
-	const auto &voxelData = [&transitionVoxel, &voxelGrid]()
+	// Get the voxel definition associated with the voxel.
+	const auto &voxelDef = [&transitionVoxel, &voxelGrid]()
 	{
 		const int x = transitionVoxel.x;
 		const int y = 1;
 		const int z = transitionVoxel.y;
 		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
-		return voxelGrid.getVoxelData(voxelID);
+		return voxelGrid.getVoxelDef(voxelID);
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelData.dataType == VoxelDataType::Wall)
+	if (voxelDef.dataType == VoxelDataType::Wall)
 	{
-		const VoxelData::WallData &wallData = voxelData.wall;
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 		// The direction from a level up/down voxel to where the player should end up after
 		// going through. In other words, it points to the destination voxel adjacent to the
@@ -2419,11 +2420,11 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		};
 
 		// Check the voxel type to determine what it is exactly.
-		if (wallData.type == VoxelData::WallData::Type::Menu)
+		if (wallData.type == VoxelDefinition::WallData::Type::Menu)
 		{
 			DebugLog("Entered *MENU " + std::to_string(wallData.menuID) + ".");
 		}
-		else if (wallData.type == VoxelData::WallData::Type::LevelUp)
+		else if (wallData.type == VoxelDefinition::WallData::Type::LevelUp)
 		{
 			// If the custom function has a target, call it and reset it.
 			auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
@@ -2443,7 +2444,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 				switchToWorldMap();
 			}
 		}
-		else if (wallData.type == VoxelData::WallData::Type::LevelDown)
+		else if (wallData.type == VoxelDefinition::WallData::Type::LevelDown)
 		{
 			if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
 			{

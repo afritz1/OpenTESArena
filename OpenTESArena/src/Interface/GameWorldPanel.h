@@ -9,7 +9,7 @@
 #include "TextBox.h"
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 

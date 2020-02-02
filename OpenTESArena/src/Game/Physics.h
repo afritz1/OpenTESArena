@@ -9,7 +9,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Rendering/Renderer.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
 
 // Static class for physics-related calculations like ray casting.
 

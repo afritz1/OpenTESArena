@@ -24,7 +24,7 @@ namespace
 	}
 
 	// Voxel geometry generation functions. Generally low X face first, then high X, etc..
-	void GenerateWall(const VoxelData::WallData &wall, const Double3 &origin, double ceilingHeight,
+	void GenerateWall(const VoxelDefinition::WallData &wall, const Double3 &origin, double ceilingHeight,
 		BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 6);
@@ -77,7 +77,7 @@ namespace
 		outView.set(5, face5);
 	}
 
-	void GenerateFloor(const VoxelData::FloorData &floor, const Double3 &origin,
+	void GenerateFloor(const VoxelDefinition::FloorData &floor, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
@@ -95,7 +95,7 @@ namespace
 		outView.set(0, face);
 	}
 
-	void GenerateCeiling(const VoxelData::CeilingData &ceiling, const Double3 &origin,
+	void GenerateCeiling(const VoxelDefinition::CeilingData &ceiling, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
@@ -113,7 +113,7 @@ namespace
 		outView.set(0, face);
 	}
 
-	void GenerateRaised(const VoxelData::RaisedData &raised, const Double3 &origin,
+	void GenerateRaised(const VoxelDefinition::RaisedData &raised, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 6);
@@ -168,7 +168,7 @@ namespace
 		outView.set(5, face5);
 	}
 
-	void GenerateDiagonal(const VoxelData::DiagonalData &diagonal, const Double3 &origin,
+	void GenerateDiagonal(const VoxelDefinition::DiagonalData &diagonal, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
@@ -201,7 +201,7 @@ namespace
 		outView.set(0, face);
 	}
 
-	void GenerateTransparentWall(const VoxelData::TransparentWallData &transparent,
+	void GenerateTransparentWall(const VoxelDefinition::TransparentWallData &transparent,
 		const Double3 &origin, double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 4);
@@ -240,7 +240,7 @@ namespace
 		outView.set(3, face3);
 	}
 
-	void GenerateEdge(const VoxelData::EdgeData &edge, const Double3 &origin,
+	void GenerateEdge(const VoxelDefinition::EdgeData &edge, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
@@ -288,15 +288,15 @@ namespace
 		outView.set(0, face);
 	}
 
-	void GenerateChasm(const VoxelData::ChasmData &chasm, const Double3 &origin,
+	void GenerateChasm(const VoxelDefinition::ChasmData &chasm, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		// Depends on number of faces and chasm type.
 		const int faceCount = outView.getCount();
 		DebugAssert(faceCount > 0);
 
-		const double chasmDepth = (chasm.type == VoxelData::ChasmData::Type::Dry) ?
-			ceilingHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+		const double chasmDepth = (chasm.type == VoxelDefinition::ChasmData::Type::Dry) ?
+			ceilingHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 		const Double3 chasmOrigin = origin + Double3(0.0, ceilingHeight - chasmDepth, 0.0);
 
 		const Double3 xVec = GetXVec();
@@ -363,7 +363,7 @@ namespace
 		DebugAssert(faceIndex == outView.getCount());
 	}
 
-	void GenerateDoor(const VoxelData::DoorData &door, const Double3 &origin,
+	void GenerateDoor(const VoxelDefinition::DoorData &door, const Double3 &origin,
 		double ceilingHeight, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 4);
@@ -403,7 +403,7 @@ namespace
 	}
 }
 
-void VoxelGeometry::getInfo(const VoxelData &voxelData, int *outQuadCount)
+void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, int *outQuadCount)
 {
 	auto maybeWrite = [outQuadCount](int quadCount)
 	{
@@ -413,7 +413,7 @@ void VoxelGeometry::getInfo(const VoxelData &voxelData, int *outQuadCount)
 		}
 	};
 
-	switch (voxelData.dataType)
+	switch (voxelDef.dataType)
 	{
 	case VoxelDataType::None:
 		maybeWrite(0);
@@ -441,19 +441,19 @@ void VoxelGeometry::getInfo(const VoxelData &voxelData, int *outQuadCount)
 		break;
 	case VoxelDataType::Chasm:
 		// Depends on visible face count.
-		maybeWrite(voxelData.chasm.getFaceCount());
+		maybeWrite(voxelDef.chasm.getFaceCount());
 		break;
 	case VoxelDataType::Door:
 		// Doors are an unusual case. Just pretend they're closed here.
 		maybeWrite(4);
 		break;
 	default:
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelData.dataType)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelDef.dataType)));
 		break;
 	}
 }
 
-int VoxelGeometry::getQuads(const VoxelData &voxelData, const Int3 &voxel, double ceilingHeight,
+int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, double ceilingHeight,
 	Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))
@@ -462,7 +462,7 @@ int VoxelGeometry::getQuads(const VoxelData &voxelData, const Int3 &voxel, doubl
 	}
 
 	int quadCount;
-	VoxelGeometry::getInfo(voxelData, &quadCount);
+	VoxelGeometry::getInfo(voxelDef, &quadCount);
 
 	// If there's nothing to write, or all the geometry data can't fit in the output buffer,
 	// then return failure.
@@ -478,36 +478,36 @@ int VoxelGeometry::getQuads(const VoxelData &voxelData, const Int3 &voxel, doubl
 		static_cast<double>(voxel.y) * ceilingHeight,
 		static_cast<double>(voxel.z));
 
-	switch (voxelData.dataType)
+	switch (voxelDef.dataType)
 	{
 	case VoxelDataType::None:
 		break;
 	case VoxelDataType::Wall:
-		GenerateWall(voxelData.wall, origin, ceilingHeight, quadView);
+		GenerateWall(voxelDef.wall, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Floor:
-		GenerateFloor(voxelData.floor, origin, ceilingHeight, quadView);
+		GenerateFloor(voxelDef.floor, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Ceiling:
-		GenerateCeiling(voxelData.ceiling, origin, ceilingHeight, quadView);
+		GenerateCeiling(voxelDef.ceiling, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Raised:
-		GenerateRaised(voxelData.raised, origin, ceilingHeight, quadView);
+		GenerateRaised(voxelDef.raised, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Diagonal:
-		GenerateDiagonal(voxelData.diagonal, origin, ceilingHeight, quadView);
+		GenerateDiagonal(voxelDef.diagonal, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::TransparentWall:
-		GenerateTransparentWall(voxelData.transparentWall, origin, ceilingHeight, quadView);
+		GenerateTransparentWall(voxelDef.transparentWall, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Edge:
-		GenerateEdge(voxelData.edge, origin, ceilingHeight, quadView);
+		GenerateEdge(voxelDef.edge, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Chasm:
-		GenerateChasm(voxelData.chasm, origin, ceilingHeight, quadView);
+		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Door:
-		GenerateDoor(voxelData.door, origin, ceilingHeight, quadView);
+		GenerateDoor(voxelDef.door, origin, ceilingHeight, quadView);
 		break;
 	default:
 		break;
@@ -516,9 +516,9 @@ int VoxelGeometry::getQuads(const VoxelData &voxelData, const Int3 &voxel, doubl
 	return quadCount;
 }
 
-int VoxelGeometry::getQuads(const VoxelData &voxelData, double ceilingHeight,
+int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, double ceilingHeight,
 	Quad *outQuads, int bufferSize)
 {
 	const Int3 voxel = Int3::Zero;
-	return VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, outQuads, bufferSize);
+	return VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, outQuads, bufferSize);
 }

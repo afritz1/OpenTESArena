@@ -209,9 +209,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
-	// Get the voxel data associated with the voxel.
-	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-	const VoxelDataType voxelDataType = voxelData.dataType;
+	// Get the voxel definition associated with the voxel.
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const VoxelDataType voxelDataType = voxelDef.dataType;
 
 	// Determine which type the voxel data is and run the associated calculation.
 	if (voxelDataType == VoxelDataType::None)
@@ -259,7 +259,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	}
 	else if (voxelDataType == VoxelDataType::Raised)
 	{
-		const VoxelData::RaisedData &raised = voxelData.raised;
+		const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 		const double raisedYBottom = (static_cast<double>(voxel.y) + raised.yOffset) * ceilingHeight;
 		const double raisedYTop = raisedYBottom + (raised.ySize * ceilingHeight);
 
@@ -378,7 +378,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	}
 	else if (voxelDataType == VoxelDataType::Diagonal)
 	{
-		const VoxelData::DiagonalData &diagonal = voxelData.diagonal;
+		const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
 		const bool isRightDiag = diagonal.type1;
 
 		// Generate points for the diagonal's quad.
@@ -438,7 +438,7 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	{
 		// See if the intersected facing and the edge's facing are the same, and only
 		// consider edges with collision.
-		const VoxelData::EdgeData &edge = voxelData.edge;
+		const VoxelDefinition::EdgeData &edge = voxelDef.edge;
 		const VoxelFacing edgeFacing = edge.facing;
 
 		if ((edgeFacing == farFacing) && edge.collider)
@@ -467,9 +467,9 @@ bool Physics::testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDir
 	else if (voxelDataType == VoxelDataType::Chasm)
 	{
 		// The chasm type determines the depth relative to the top of the voxel.
-		const VoxelData::ChasmData &chasm = voxelData.chasm;
-		const bool isDryChasm = chasm.type == VoxelData::ChasmData::Type::Dry;
-		const double voxelHeight = isDryChasm ? ceilingHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+		const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
+		const bool isDryChasm = chasm.type == VoxelDefinition::ChasmData::Type::Dry;
+		const double voxelHeight = isDryChasm ? ceilingHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 		const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingHeight;
 		const double chasmYBottom = chasmYTop - voxelHeight;
@@ -560,9 +560,9 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
-	// Get the voxel data associated with the voxel.
-	const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-	const VoxelDataType voxelDataType = voxelData.dataType;
+	// Get the voxel definition associated with the voxel.
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const VoxelDataType voxelDataType = voxelDef.dataType;
 
 	// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
 	// instead of branching on type here.
@@ -585,7 +585,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect the floor as a quad.
 		Quad quad;
-		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
 		DebugAssert(quadsWritten == 1);
 
 		Double3 hitPoint;
@@ -608,7 +608,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect the ceiling as a quad.
 		Quad quad;
-		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
 		DebugAssert(quadsWritten == 1);
 
 		Double3 hitPoint;
@@ -631,11 +631,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect each face of the platform and find the closest one (if any).
 		int quadCount;
-		VoxelGeometry::getInfo(voxelData, &quadCount);
+		VoxelGeometry::getInfo(voxelDef, &quadCount);
 
 		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
 		const int quadsWritten = VoxelGeometry::getQuads(
-			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
 		DebugAssert(quadsWritten == quadCount);
 
 		double closestT = Hit::MAX_T;
@@ -687,7 +687,7 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect the diagonal as a quad.
 		Quad quad;
-		const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+		const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
 		DebugAssert(quadsWritten == 1);
 
 		Double3 hitPoint;
@@ -709,11 +709,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect each face and find the closest one (if any).
 		int quadCount;
-		VoxelGeometry::getInfo(voxelData, &quadCount);
+		VoxelGeometry::getInfo(voxelDef, &quadCount);
 
 		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
 		const int quadsWritten = VoxelGeometry::getQuads(
-			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
 		DebugAssert(quadsWritten == quadCount);
 
 		double closestT = Hit::MAX_T;
@@ -763,13 +763,13 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	}
 	else if (voxelDataType == VoxelDataType::Edge)
 	{
-		const VoxelData::EdgeData &edge = voxelData.edge;
+		const VoxelDefinition::EdgeData &edge = voxelDef.edge;
 
 		if (edge.collider)
 		{
 			// Intersect the edge as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelData, voxel, ceilingHeight, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			Double3 hitPoint;
@@ -796,11 +796,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 	{
 		// Intersect each face and find the closest one (if any).
 		int quadCount;
-		VoxelGeometry::getInfo(voxelData, &quadCount);
+		VoxelGeometry::getInfo(voxelDef, &quadCount);
 
 		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
 		const int quadsWritten = VoxelGeometry::getQuads(
-			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
 		DebugAssert(quadsWritten == quadCount);
 
 		double closestT = Hit::MAX_T;
@@ -856,11 +856,11 @@ bool Physics::testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 
 		// Intersect each face and find the closest one (if any).
 		int quadCount;
-		VoxelGeometry::getInfo(voxelData, &quadCount);
+		VoxelGeometry::getInfo(voxelDef, &quadCount);
 
 		std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
 		const int quadsWritten = VoxelGeometry::getQuads(
-			voxelData, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
 		DebugAssert(quadsWritten == quadCount);
 
 		double closestT = Hit::MAX_T;

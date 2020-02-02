@@ -2724,7 +2724,7 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 		}();
 
 		hit.point = farPoint;
-		hit.normal = -VoxelData::getNormal(farFacing);
+		hit.normal = -VoxelDefinition::getNormal(farFacing);
 		return true;
 	}
 	else
@@ -2745,7 +2745,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing 
 		hit.u = !flipped ? nearU : std::clamp(
 			Constants::JustBelowOne - nearU, 0.0, Constants::JustBelowOne);
 		hit.point = nearPoint;
-		hit.normal = VoxelData::getNormal(nearFacing);
+		hit.normal = VoxelDefinition::getNormal(nearFacing);
 		return true;
 	}
 	else
@@ -2787,7 +2787,7 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing 
 			}();
 
 			hit.point = farPoint;
-			hit.normal = -VoxelData::getNormal(farFacing);
+			hit.normal = -VoxelDefinition::getNormal(farFacing);
 			return true;
 		}
 		else
@@ -2892,7 +2892,7 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(int voxelX, int voxel
 }
 
 bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
-	VoxelData::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
+	VoxelDefinition::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
 	const Double2 &farPoint, const Camera &camera, const Ray &ray,
 	const VoxelGrid &voxelGrid, RayHit &hit)
 {
@@ -2908,8 +2908,8 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 			if (insideGrid)
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
-				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-				return voxelData.dataType == VoxelDataType::None;
+				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				return voxelDef.dataType == VoxelDataType::None;
 			}
 			else
 			{
@@ -2928,9 +2928,9 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 	{
 		const bool isClosed = percentOpen == 0.0;
 		return isClosed ||
-			(doorType == VoxelData::DoorData::Type::Sliding) ||
-			(doorType == VoxelData::DoorData::Type::Raising) ||
-			(doorType == VoxelData::DoorData::Type::Splitting);
+			(doorType == VoxelDefinition::DoorData::Type::Sliding) ||
+			(doorType == VoxelDefinition::DoorData::Type::Raising) ||
+			(doorType == VoxelDefinition::DoorData::Type::Splitting);
 	}();
 
 	if (useFarFacing)
@@ -2963,16 +2963,16 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 			}();
 
-			if (doorType == VoxelData::DoorData::Type::Swinging)
+			if (doorType == VoxelDefinition::DoorData::Type::Swinging)
 			{
 				// Treat like a wall.
 				hit.innerZ = (farPoint - nearPoint).length();
 				hit.u = farU;
 				hit.point = farPoint;
-				hit.normal = -VoxelData::getNormal(farFacing);
+				hit.normal = -VoxelDefinition::getNormal(farFacing);
 				return true;
 			}
-			else if (doorType == VoxelData::DoorData::Type::Sliding)
+			else if (doorType == VoxelDefinition::DoorData::Type::Sliding)
 			{
 				// If far U coordinate is within percent closed, it's a hit. At 100% open,
 				// a sliding door is still partially visible.
@@ -2984,7 +2984,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 					hit.u = std::clamp(
 						farU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 					hit.point = farPoint;
-					hit.normal = -VoxelData::getNormal(farFacing);
+					hit.normal = -VoxelDefinition::getNormal(farFacing);
 					return true;
 				}
 				else
@@ -2993,16 +2993,16 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 					return false;
 				}
 			}
-			else if (doorType == VoxelData::DoorData::Type::Raising)
+			else if (doorType == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Raising doors are always hit.
 				hit.innerZ = (farPoint - nearPoint).length();
 				hit.u = farU;
 				hit.point = farPoint;
-				hit.normal = -VoxelData::getNormal(farFacing);
+				hit.normal = -VoxelDefinition::getNormal(farFacing);
 				return true;
 			}
-			else if (doorType == VoxelData::DoorData::Type::Splitting)
+			else if (doorType == VoxelDefinition::DoorData::Type::Splitting)
 			{
 				// If far U coordinate is within percent closed on left or right half, it's a hit.
 				// At 100% open, a splitting door is still partially visible.
@@ -3059,7 +3059,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 					}();
 
 					hit.point = farPoint;
-					hit.normal = -VoxelData::getNormal(farFacing);
+					hit.normal = -VoxelDefinition::getNormal(farFacing);
 
 					return true;
 				}
@@ -3081,7 +3081,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 			return false;
 		}
 	}
-	else if (doorType == VoxelData::DoorData::Type::Swinging)
+	else if (doorType == VoxelDefinition::DoorData::Type::Swinging)
 	{
 		return SoftwareRenderer::findInitialSwingingDoorIntersection(voxelX, voxelZ, percentOpen,
 			nearPoint, farPoint, xAxis, camera, ray, hit);
@@ -3188,7 +3188,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 }
 
 bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
-	VoxelData::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
+	VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
 	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
 {
 	// Check trivial case first: whether the door is closed.
@@ -3200,15 +3200,15 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 		hit.innerZ = 0.0;
 		hit.u = nearU;
 		hit.point = nearPoint;
-		hit.normal = VoxelData::getNormal(nearFacing);
+		hit.normal = VoxelDefinition::getNormal(nearFacing);
 		return true;
 	}
-	else if (doorType == VoxelData::DoorData::Type::Swinging)
+	else if (doorType == VoxelDefinition::DoorData::Type::Swinging)
 	{
 		return SoftwareRenderer::findSwingingDoorIntersection(voxelX, voxelZ, percentOpen,
 			nearFacing, nearPoint, farPoint, nearU, hit);
 	}
-	else if (doorType == VoxelData::DoorData::Type::Sliding)
+	else if (doorType == VoxelDefinition::DoorData::Type::Sliding)
 	{
 		// If near U coordinate is within percent closed, it's a hit. At 100% open,
 		// a sliding door is still partially visible.
@@ -3220,7 +3220,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 			hit.u = std::clamp(
 				nearU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 			hit.point = nearPoint;
-			hit.normal = VoxelData::getNormal(nearFacing);
+			hit.normal = VoxelDefinition::getNormal(nearFacing);
 			return true;
 		}
 		else
@@ -3229,16 +3229,16 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 			return false;
 		}
 	}
-	else if (doorType == VoxelData::DoorData::Type::Raising)
+	else if (doorType == VoxelDefinition::DoorData::Type::Raising)
 	{
 		// Raising doors are always hit.
 		hit.innerZ = 0.0;
 		hit.u = nearU;
 		hit.point = nearPoint;
-		hit.normal = VoxelData::getNormal(nearFacing);
+		hit.normal = VoxelDefinition::getNormal(nearFacing);
 		return true;
 	}
-	else if (doorType == VoxelData::DoorData::Type::Splitting)
+	else if (doorType == VoxelDefinition::DoorData::Type::Splitting)
 	{
 		// If near U coordinate is within percent closed on left or right half, it's a hit.
 		// At 100% open, a splitting door is still partially visible.
@@ -3295,7 +3295,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 			}();
 
 			hit.point = nearPoint;
-			hit.normal = VoxelData::getNormal(nearFacing);
+			hit.normal = VoxelDefinition::getNormal(nearFacing);
 
 			return true;
 		}
@@ -4316,21 +4316,21 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
 	// this voxel column.
-	const Double3 wallNormal = -VoxelData::getNormal(facing);
+	const Double3 wallNormal = -VoxelDefinition::getNormal(facing);
 
 	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
 			// Draw inner ceiling, wall, and floor.
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
@@ -4369,16 +4369,16 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farZ, nearZ, Double3::UnitY, textures.at(wallData.floorID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Do nothing. Floors can only be seen from above.
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Draw bottom of ceiling voxel if the camera is below it.
 			if (camera.eye.y < voxelYReal)
 			{
-				const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+				const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
 				const Double3 nearFloorPoint(
 					nearPoint.x,
@@ -4399,9 +4399,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -4483,9 +4483,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -4514,13 +4514,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Do nothing. Transparent walls have no back-faces.
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -4547,10 +4547,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Render back-face.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 			// Find which far face on the chasm was intersected.
 			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
@@ -4584,11 +4584,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
-				const Double3 farNormal = -VoxelData::getNormal(farFacing);
+				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 farCeilingPoint(
 					farPoint.x,
@@ -4607,9 +4607,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -4619,7 +4619,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -4637,7 +4637,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -4655,7 +4655,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -4680,7 +4680,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, vStart, Constants::JustBelowOne, hit.normal,
 						textures.at(doorData.id), shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -4707,13 +4707,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
@@ -4734,10 +4734,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Draw top of floor voxel.
-			const VoxelData::FloorData &floorData = voxelData.floor;
+			const VoxelDefinition::FloorData &floorData = voxelDef.floor;
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
@@ -4758,13 +4758,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
 				occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Do nothing. Ceilings can only be seen from below.
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -4846,9 +4846,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -4877,13 +4877,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Do nothing. Transparent walls have no back-faces.
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -4910,10 +4910,10 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Render back-face.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 			// Find which far face on the chasm was intersected.
 			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
@@ -4947,11 +4947,11 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
-				const Double3 farNormal = -VoxelData::getNormal(farFacing);
+				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 farCeilingPoint(
 					farPoint.x,
@@ -4970,9 +4970,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -4982,7 +4982,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5000,7 +5000,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5018,7 +5018,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -5043,7 +5043,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, vStart, Constants::JustBelowOne, hit.normal,
 						textures.at(doorData.id), shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5070,13 +5070,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 nearFloorPoint(
 				nearPoint.x,
@@ -5097,14 +5097,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Do nothing. Floors can only be seen from above.
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Draw bottom of ceiling voxel.
-			const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
 			const Double3 nearFloorPoint(
 				nearPoint.x,
@@ -5124,9 +5124,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
 				occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -5208,9 +5208,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -5239,13 +5239,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Do nothing. Transparent walls have no back-faces.
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -5272,13 +5272,13 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Ignore. Chasms should never be above the player's voxel.
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -5288,7 +5288,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5306,7 +5306,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5324,7 +5324,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -5349,7 +5349,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 						hit.u, vStart, Constants::JustBelowOne, hit.normal,
 						textures.at(doorData.id), shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5439,21 +5439,21 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 	// Normal of the wall for the incoming ray, potentially shared between multiple voxels in
 	// this voxel column.
-	const Double3 wallNormal = VoxelData::getNormal(facing);
+	const Double3 wallNormal = VoxelDefinition::getNormal(facing);
 
 	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
 			// Draw side.
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -5473,16 +5473,16 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Do nothing. Floors can only be seen from above.
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Draw bottom of ceiling voxel if the camera is below it.
 			if (camera.eye.y < voxelYReal)
 			{
-				const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+				const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
 				const Double3 nearFloorPoint(
 					nearPoint.x,
@@ -5503,9 +5503,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -5574,9 +5574,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -5605,10 +5605,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Draw transparent side.
-			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -5626,9 +5626,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -5655,10 +5655,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Render front and back-faces.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 			// Find which faces on the chasm were intersected.
 			const VoxelFacing nearFacing = facing;
@@ -5672,8 +5672,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				const Double3 nearNormal = wallNormal;
 				
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 nearCeilingPoint(
 					nearPoint.x,
@@ -5720,11 +5720,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
-				const Double3 farNormal = -VoxelData::getNormal(farFacing);
+				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 farCeilingPoint(
 					farPoint.x,
@@ -5743,9 +5743,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -5755,7 +5755,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5773,7 +5773,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5791,7 +5791,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -5816,7 +5816,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
 						occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -5843,13 +5843,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
@@ -5879,10 +5879,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Draw top of floor voxel.
-			const VoxelData::FloorData &floorData = voxelData.floor;
+			const VoxelDefinition::FloorData &floorData = voxelDef.floor;
 
 			const Double3 farCeilingPoint(
 				farPoint.x,
@@ -5902,13 +5902,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo, 
 				occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Do nothing. Ceilings can only be seen from below.
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -5977,9 +5977,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -6008,10 +6008,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Draw transparent side.
-			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -6029,9 +6029,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -6058,10 +6058,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Render front and back-faces.
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 			// Find which faces on the chasm were intersected.
 			const VoxelFacing nearFacing = facing;
@@ -6075,8 +6075,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				const Double3 nearNormal = wallNormal;
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 nearCeilingPoint(
 					nearPoint.x,
@@ -6123,11 +6123,11 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 				}();
 
-				const Double3 farNormal = -VoxelData::getNormal(farFacing);
+				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 
 				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelData::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelData::ChasmData::WET_LAVA_DEPTH;
+				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 
 				const Double3 farCeilingPoint(
 					farPoint.x,
@@ -6146,9 +6146,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -6158,7 +6158,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -6176,7 +6176,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -6194,7 +6194,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -6219,7 +6219,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
 						occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -6246,13 +6246,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const double voxelHeight = ceilingHeight;
 		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-		if (voxelData.dataType == VoxelDataType::Wall)
+		if (voxelDef.dataType == VoxelDataType::Wall)
 		{
-			const VoxelData::WallData &wallData = voxelData.wall;
+			const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -6282,14 +6282,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				nearZ, farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Floor)
+		else if (voxelDef.dataType == VoxelDataType::Floor)
 		{
 			// Do nothing. Floors can only be seen from above.
 		}
-		else if (voxelData.dataType == VoxelDataType::Ceiling)
+		else if (voxelDef.dataType == VoxelDataType::Ceiling)
 		{
 			// Draw bottom of ceiling voxel.
-			const VoxelData::CeilingData &ceilingData = voxelData.ceiling;
+			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
 			const Double3 nearFloorPoint(
 				nearPoint.x,
@@ -6309,9 +6309,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
 				occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Raised)
+		else if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raisedData = voxelData.raised;
+			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -6380,9 +6380,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Diagonal)
+		else if (voxelDef.dataType == VoxelDataType::Diagonal)
 		{
-			const VoxelData::DiagonalData &diagData = voxelData.diagonal;
+			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
 			// Find intersection.
 			RayHit hit;
@@ -6411,10 +6411,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::TransparentWall)
+		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Draw transparent side.
-			const VoxelData::TransparentWallData &transparentWallData = voxelData.transparentWall;
+			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
 			const Double3 nearCeilingPoint(
 				nearPoint.x,
@@ -6432,9 +6432,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
 				shadingInfo, occlusion, frame);
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
-			const VoxelData::EdgeData &edgeData = voxelData.edge;
+			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
 			// Find intersection.
 			RayHit hit;
@@ -6461,13 +6461,13 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelData.dataType == VoxelDataType::Chasm)
+		else if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
 			// Ignore. Chasms should never be above the player's voxel.
 		}
-		else if (voxelData.dataType == VoxelDataType::Door)
+		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
-			const VoxelData::DoorData &doorData = voxelData.door;
+			const VoxelDefinition::DoorData &doorData = voxelDef.door;
 			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
 				voxelX, voxelZ, openDoors);
 
@@ -6477,7 +6477,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 			if (success)
 			{
-				if (doorData.type == VoxelData::DoorData::Type::Swinging)
+				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -6495,7 +6495,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Sliding)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,
@@ -6513,7 +6513,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 						shadingInfo, occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Raising)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 				{
 					// Top point is fixed, bottom point depends on percent open.
 					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
@@ -6538,7 +6538,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
 						occlusion, frame);
 				}
-				else if (doorData.type == VoxelData::DoorData::Type::Splitting)
+				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 				{
 					const Double3 doorTopPoint(
 						hit.point.x,

@@ -1,19 +1,18 @@
-#ifndef VOXEL_DATA_H
-#define VOXEL_DATA_H
+#ifndef VOXEL_DEFINITION_H
+#define VOXEL_DEFINITION_H
 
 #include "../Math/Vector3.h"
 
-// Voxel data is the definition of a voxel that a voxel ID points to. Since there will 
-// only be a few kinds of voxel data per world, their size can be much larger than just 
-// a byte or two.
+// The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
+// of voxel data per world, their size can be much larger than just a byte or two.
 
-// A voxel's data is used for multiple things, such as rendering, collision detection,
+// A voxel's definition is used for multiple things, such as rendering, collision detection,
 // and color-coding on the automap.
 
 enum class VoxelDataType;
 enum class VoxelFacing;
 
-class VoxelData
+class VoxelDefinition
 {
 public:
 	// IDs range from 0 to 63.
@@ -170,20 +169,20 @@ public:
 		DoorData door;
 	};
 
-	VoxelData();
+	VoxelDefinition();
 
-	static VoxelData makeWall(int sideID, int floorID, int ceilingID, const int *menuID,
+	static VoxelDefinition makeWall(int sideID, int floorID, int ceilingID, const int *menuID,
 		WallData::Type type);
-	static VoxelData makeFloor(int id);
-	static VoxelData makeCeiling(int id);
-	static VoxelData makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
+	static VoxelDefinition makeFloor(int id);
+	static VoxelDefinition makeCeiling(int id);
+	static VoxelDefinition makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
 		double ySize, double vTop, double vBottom);
-	static VoxelData makeDiagonal(int id, bool type1);
-	static VoxelData makeTransparentWall(int id, bool collider);
-	static VoxelData makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing);
-	static VoxelData makeChasm(int id, bool north, bool east, bool south, bool west,
+	static VoxelDefinition makeDiagonal(int id, bool type1);
+	static VoxelDefinition makeTransparentWall(int id, bool collider);
+	static VoxelDefinition makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing);
+	static VoxelDefinition makeChasm(int id, bool north, bool east, bool south, bool west,
 		ChasmData::Type type);
-	static VoxelData makeDoor(int id, DoorData::Type type);
+	static VoxelDefinition makeDoor(int id, DoorData::Type type);
 
 	// Gets the normal associated with a voxel facing.
 	static Double3 getNormal(VoxelFacing facing);

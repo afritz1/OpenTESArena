@@ -470,11 +470,11 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 			static_cast<int>(entityPos.x),
 			static_cast<int>(entityPos.y));
 		const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
-		const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
-		if (voxelData.dataType == VoxelDataType::Raised)
+		if (voxelDef.dataType == VoxelDataType::Raised)
 		{
-			const VoxelData::RaisedData &raised = voxelData.raised;
+			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 			return (raised.yOffset + raised.ySize) * ceilingHeight;
 		}
 		else

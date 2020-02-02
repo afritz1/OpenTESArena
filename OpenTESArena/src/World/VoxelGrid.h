@@ -6,22 +6,22 @@
 #include <optional>
 #include <vector>
 
-#include "VoxelData.h"
+#include "VoxelDefinition.h"
 #include "../Math/Vector2.h"
 
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
 
 // In very complex scenes with several different kinds of voxels (including chasms, etc.),
-// there are over a few hundred unique voxel data definitions, which mandates that the voxel
+// there are over a few hundred unique voxel definitions, which mandates that the voxel
 // type itself be at least unsigned 16-bit.
 
 class VoxelGrid
 {
 public:
-	using VoxelDataPredicate = std::function<bool(const VoxelData&)>;
+	using VoxelDefPredicate = std::function<bool(const VoxelDefinition&)>;
 private:
 	std::vector<uint16_t> voxels;
-	std::vector<VoxelData> voxelData;
+	std::vector<VoxelDefinition> voxelDefs;
 	int width, height, depth;
 
 	// Converts XYZ coordinate to index.
@@ -50,15 +50,15 @@ public:
 	// Convenience method for getting a voxel's ID.
 	uint16_t getVoxel(int x, int y, int z) const;
 
-	// Gets the voxel data associated with an ID.
-	VoxelData &getVoxelData(uint16_t id);
-	const VoxelData &getVoxelData(uint16_t id) const;
+	// Gets the voxel definitions associated with an ID.
+	VoxelDefinition &getVoxelDef(uint16_t id);
+	const VoxelDefinition &getVoxelDef(uint16_t id) const;
 	
-	// Finds a voxel data instance ID that matches the predicate, or none if not found.
-	std::optional<uint16_t> findVoxelData(const VoxelDataPredicate &predicate) const;
+	// Finds a voxel definition ID that matches the predicate, or none if not found.
+	std::optional<uint16_t> findVoxelDef(const VoxelDefPredicate &predicate) const;
 
-	// Adds a voxel data object and returns its assigned ID.
-	uint16_t addVoxelData(const VoxelData &voxelData);
+	// Adds a voxel definition and returns its assigned ID.
+	uint16_t addVoxelDef(const VoxelDefinition &voxelDef);
 
 	// Convenience method for setting a voxel's ID.
 	void setVoxel(int x, int y, int z, uint16_t id);

@@ -7,7 +7,7 @@
 #include "../Math/Random.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -128,12 +128,12 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	int localCityID, int provinceID, bool isCity, const ExeData &exeData) const
 {
 	// Get the menu type associated with the *MENU ID.
-	const VoxelData::WallData::MenuType menuType =
-		VoxelData::WallData::getMenuType(menuID, isCity);
+	const VoxelDefinition::WallData::MenuType menuType =
+		VoxelDefinition::WallData::getMenuType(menuID, isCity);
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
-	if ((menuType == VoxelData::WallData::MenuType::Palace) &&
+	if ((menuType == VoxelDefinition::WallData::MenuType::Palace) &&
 		(provinceID == 8) && (localCityID == 0))
 	{
 		return String::toUppercase(exeData.locations.finalDungeonMifName);
@@ -150,27 +150,27 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
 			// since the palace type can be deduced from the current city type.
 			const int NO_INDEX = -1;
-			const std::array<std::pair<VoxelData::WallData::MenuType, int>, 12> MenuMifMappings =
+			const std::array<std::pair<VoxelDefinition::WallData::MenuType, int>, 12> MenuMifMappings =
 			{
 				{
-					{ VoxelData::WallData::MenuType::CityGates, NO_INDEX },
-					{ VoxelData::WallData::MenuType::Crypt, 7 },
-					{ VoxelData::WallData::MenuType::Dungeon, NO_INDEX },
-					{ VoxelData::WallData::MenuType::Equipment, 5 },
-					{ VoxelData::WallData::MenuType::House, 1 },
-					{ VoxelData::WallData::MenuType::MagesGuild, 6 },
-					{ VoxelData::WallData::MenuType::Noble, 2 },
-					{ VoxelData::WallData::MenuType::None, NO_INDEX },
-					{ VoxelData::WallData::MenuType::Palace, 0 },
-					{ VoxelData::WallData::MenuType::Tavern, 3 },
-					{ VoxelData::WallData::MenuType::Temple, 4 },
-					{ VoxelData::WallData::MenuType::Tower, 10 }
+					{ VoxelDefinition::WallData::MenuType::CityGates, NO_INDEX },
+					{ VoxelDefinition::WallData::MenuType::Crypt, 7 },
+					{ VoxelDefinition::WallData::MenuType::Dungeon, NO_INDEX },
+					{ VoxelDefinition::WallData::MenuType::Equipment, 5 },
+					{ VoxelDefinition::WallData::MenuType::House, 1 },
+					{ VoxelDefinition::WallData::MenuType::MagesGuild, 6 },
+					{ VoxelDefinition::WallData::MenuType::Noble, 2 },
+					{ VoxelDefinition::WallData::MenuType::None, NO_INDEX },
+					{ VoxelDefinition::WallData::MenuType::Palace, 0 },
+					{ VoxelDefinition::WallData::MenuType::Tavern, 3 },
+					{ VoxelDefinition::WallData::MenuType::Temple, 4 },
+					{ VoxelDefinition::WallData::MenuType::Tower, 10 }
 				}
 			};
 
 			// See if the given menu type has a .MIF prefix mapping.
 			const auto iter = std::find_if(MenuMifMappings.begin(), MenuMifMappings.end(),
-				[menuType](const std::pair<VoxelData::WallData::MenuType, int> &pair)
+				[menuType](const std::pair<VoxelDefinition::WallData::MenuType, int> &pair)
 			{
 				return pair.first == menuType;
 			});
@@ -185,7 +185,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 					// prefix to use based on the location type.
 					const int menuMifIndex = [locationType, menuType, index]()
 					{
-						if (menuType == VoxelData::WallData::MenuType::Palace)
+						if (menuType == VoxelDefinition::WallData::MenuType::Palace)
 						{
 							if (locationType == LocationType::CityState)
 							{
@@ -250,7 +250,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 			// Palaces have fewer .MIF files to choose from, and their variant depends
 			// on the ruler seed. Although there are five city-state palace .MIF files,
 			// only three of them are used.
-			const bool isPalace = menuType == VoxelData::WallData::MenuType::Palace;
+			const bool isPalace = menuType == VoxelDefinition::WallData::MenuType::Palace;
 			const int palaceCount = 3;
 			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % palaceCount) :
 				((Bytes::ror(offset, 4) ^ offset) % 8);

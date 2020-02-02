@@ -12,8 +12,8 @@
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../World/LevelData.h"
-#include "../World/VoxelData.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelDefinition.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WorldData.h"
 
@@ -200,7 +200,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 {
 	const LevelData &activeLevel = worldData.getActiveLevel();
 
-	auto getVoxelData = [&activeLevel](const Int3 &voxel) -> VoxelData
+	auto getVoxelDef = [&activeLevel](const Int3 &voxel) -> VoxelDefinition
 	{
 		const VoxelGrid &voxelGrid = activeLevel.getVoxelGrid();
 
@@ -209,12 +209,12 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			(voxel.y < 0) || (voxel.y >= voxelGrid.getHeight()) ||
 			(voxel.z < 0) || (voxel.z >= voxelGrid.getDepth()))
 		{
-			return VoxelData();
+			return VoxelDefinition();
 		}
 		else
 		{
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			return voxelGrid.getVoxelData(voxelID);
+			return voxelGrid.getVoxelDef(voxelID);
 		}
 	};
 
@@ -238,40 +238,40 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		feetVoxelY,
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
 
-	const VoxelData &xVoxelData = getVoxelData(xVoxel);
-	const VoxelData &yVoxelData = getVoxelData(yVoxel);
-	const VoxelData &zVoxelData = getVoxelData(zVoxel);
+	const VoxelDefinition &xVoxelDef = getVoxelDef(xVoxel);
+	const VoxelDefinition &yVoxelDef = getVoxelDef(yVoxel);
+	const VoxelDefinition &zVoxelDef = getVoxelDef(zVoxel);
 
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&activeLevel](const Int3 &voxel, const VoxelData &voxelData)
+	auto wouldCollideWithVoxel = [&activeLevel](const Int3 &voxel, const VoxelDefinition &voxelDef)
 	{
-		if (voxelData.dataType == VoxelDataType::TransparentWall)
+		if (voxelDef.dataType == VoxelDataType::TransparentWall)
 		{
 			// Transparent wall collision.
-			const VoxelData::TransparentWallData &transparent = voxelData.transparentWall;
+			const VoxelDefinition::TransparentWallData &transparent = voxelDef.transparentWall;
 			return transparent.collider;
 		}
-		else if (voxelData.dataType == VoxelDataType::Edge)
+		else if (voxelDef.dataType == VoxelDataType::Edge)
 		{
 			// Edge collision.
 			// - @todo: treat as edge, not solid voxel.
-			const VoxelData::EdgeData &edge = voxelData.edge;
+			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
 			return edge.collider;
 		}
 		else
 		{
 			// General voxel collision.
-			const bool isEmpty = voxelData.dataType == VoxelDataType::None;
-			const bool isOpenDoor = [&activeLevel, &voxel, &voxelData]()
+			const bool isEmpty = voxelDef.dataType == VoxelDataType::None;
+			const bool isOpenDoor = [&activeLevel, &voxel, &voxelDef]()
 			{
-				if (voxelData.dataType == VoxelDataType::Door)
+				if (voxelDef.dataType == VoxelDataType::Door)
 				{
 					const auto &openDoors = activeLevel.getOpenDoors();
-					const VoxelData::DoorData &doorData = voxelData.door;
+					const VoxelDefinition::DoorData &doorData = voxelDef.door;
 
 					// Only collide with a door voxel if the door is closed.
 					const bool isClosed = [&voxel, &openDoors]()
@@ -296,13 +296,13 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelUpDown = [&voxelData]()
+			const bool isLevelUpDown = [&voxelDef]()
 			{
-				if (voxelData.dataType == VoxelDataType::Wall)
+				if (voxelDef.dataType == VoxelDataType::Wall)
 				{
-					const VoxelData::WallData::Type wallType = voxelData.wall.type;
-					return (wallType == VoxelData::WallData::Type::LevelUp) ||
-						(wallType == VoxelData::WallData::Type::LevelDown);
+					const VoxelDefinition::WallData::Type wallType = voxelDef.wall.type;
+					return (wallType == VoxelDefinition::WallData::Type::LevelUp) ||
+						(wallType == VoxelDefinition::WallData::Type::LevelDown);
 				}
 				else
 				{
@@ -314,12 +314,12 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 	};
 
-	if (wouldCollideWithVoxel(xVoxel, xVoxelData))
+	if (wouldCollideWithVoxel(xVoxel, xVoxelDef))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if (wouldCollideWithVoxel(zVoxel, zVoxelData))
+	if (wouldCollideWithVoxel(zVoxel, zVoxelDef))
 	{
 		this->velocity.z = 0.0;
 	}

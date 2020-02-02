@@ -3,8 +3,8 @@
 #include <optional>
 
 #include "LevelData.h"
-#include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "VoxelDefinition.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/COLFile.h"
@@ -329,14 +329,13 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		else
 		{
 			// Insert new mapping.
-			const int index = this->voxelGrid.addVoxelData(
-				VoxelData::makeFloor(floorTextureID));
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeFloor(floorTextureID));
 			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
 	};
 
-	using ChasmDataFunc = VoxelData(*)(const INFFile &inf, const std::array<bool, 4>&);
+	using ChasmDataFunc = VoxelDefinition(*)(const INFFile &inf, const std::array<bool, 4>&);
 
 	// Lambda for obtaining the voxel data index of a chasm voxel. The given function argument
 	// returns the created voxel data if there was no previous mapping.
@@ -356,14 +355,14 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelData(chasmFunc(inf, adjacentFaces));
+			const int index = this->voxelGrid.addVoxelDef(chasmFunc(inf, adjacentFaces));
 			this->chasmDataMappings.push_back(std::make_tuple(florVoxel, adjacentFaces, index));
 			return index;
 		}
 	};
 
 	// Helper lambdas for creating each type of chasm voxel data.
-	auto makeDryChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeDryChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int dryChasmID = [&inf]()
 		{
@@ -380,12 +379,12 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(dryChasmID,
+		return VoxelDefinition::makeChasm(dryChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Dry);
+			VoxelDefinition::ChasmData::Type::Dry);
 	};
 
-	auto makeLavaChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeLavaChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int lavaChasmID = [&inf]()
 		{
@@ -402,12 +401,12 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(lavaChasmID,
+		return VoxelDefinition::makeChasm(lavaChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Lava);
+			VoxelDefinition::ChasmData::Type::Lava);
 	};
 
-	auto makeWetChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeWetChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int wetChasmID = [&inf]()
 		{
@@ -424,9 +423,9 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(wetChasmID,
+		return VoxelDefinition::makeChasm(wetChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Wet);
+			VoxelDefinition::ChasmData::Type::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -482,19 +481,19 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				if (floorTextureID == MIFFile::DRY_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeDryChasmVoxelData, adjacentFaces);
+						florVoxel, makeDryChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeLavaChasmVoxelData, adjacentFaces);
+						florVoxel, makeLavaChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::WET_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeWetChasmVoxelData, adjacentFaces);
+						florVoxel, makeWetChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 			}
@@ -534,7 +533,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	// Lambda for obtaining the voxel data index of a general-case MAP1 object. The function
 	// parameter returns the created voxel data if no previous mapping exists, and is intended
 	// for general cases where the voxel data type does not need extra parameters.
-	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelData(*func)(uint16_t))
+	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelDefinition(*func)(uint16_t))
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
@@ -543,7 +542,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelData(func(map1Voxel));
+			const int index = this->voxelGrid.addVoxelDef(func(map1Voxel));
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -571,7 +570,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 				// Determine what the type of the wall is (level up/down, menu, 
 				// or just plain solid).
-				const VoxelData::WallData::Type type = [&inf, textureIndex, isMenu]()
+				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
 				{
 					// Returns whether the given index pointer is non-null and
 					// matches the current texture index.
@@ -582,36 +581,36 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 					if (matchesIndex(inf.getLevelUpIndex()))
 					{
-						return VoxelData::WallData::Type::LevelUp;
+						return VoxelDefinition::WallData::Type::LevelUp;
 					}
 					else if (matchesIndex(inf.getLevelDownIndex()))
 					{
-						return VoxelData::WallData::Type::LevelDown;
+						return VoxelDefinition::WallData::Type::LevelDown;
 					}
 					else if (isMenu)
 					{
-						return VoxelData::WallData::Type::Menu;
+						return VoxelDefinition::WallData::Type::Menu;
 					}
 					else
 					{
-						return VoxelData::WallData::Type::Solid;
+						return VoxelDefinition::WallData::Type::Solid;
 					}
 				}();
 
-				VoxelData voxelData = VoxelData::makeWall(textureIndex, textureIndex, textureIndex,
-					(isMenu ? &menuIndex : nullptr), type);
+				VoxelDefinition voxelDef = VoxelDefinition::makeWall(
+					textureIndex, textureIndex, textureIndex, (isMenu ? &menuIndex : nullptr), type);
 
 				// Set the *MENU index if it's a menu voxel.
 				if (isMenu)
 				{
-					VoxelData::WallData &wallData = voxelData.wall;
+					VoxelDefinition::WallData &wallData = voxelDef.wall;
 					wallData.menuID = menuIndex;
 				}
 
-				return voxelData;
+				return voxelDef;
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeWallVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeWallVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -730,11 +729,11 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelData::makeRaised(sideID, floorID, ceilingID,
+				return VoxelDefinition::makeRaised(sideID, floorID, ceilingID,
 					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeRaisedVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeRaisedVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -745,7 +744,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool collider = (map1Voxel & 0x0100) == 0;
-		return VoxelData::makeTransparentWall(textureIndex, collider);
+		return VoxelDefinition::makeTransparentWall(textureIndex, collider);
 	};
 
 	// Lambda for obtaining the voxel data index of a type 0xA voxel.
@@ -802,11 +801,11 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					}
 				}();
 
-				return VoxelData::makeEdge(
+				return VoxelDefinition::makeEdge(
 					textureIndex, yOffset, collider, flipped, facing);
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeTypeAVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeTypeAVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -816,31 +815,31 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	auto makeTypeBVoxelData = [](uint16_t map1Voxel)
 	{
 		const int textureIndex = (map1Voxel & 0x003F) - 1;
-		const VoxelData::DoorData::Type doorType = [map1Voxel]()
+		const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
 		{
 			const int type = (map1Voxel & 0x00C0) >> 4;
 			if (type == 0x0)
 			{
-				return VoxelData::DoorData::Type::Swinging;
+				return VoxelDefinition::DoorData::Type::Swinging;
 			}
 			else if (type == 0x4)
 			{
-				return VoxelData::DoorData::Type::Sliding;
+				return VoxelDefinition::DoorData::Type::Sliding;
 			}
 			else if (type == 0x8)
 			{
-				return VoxelData::DoorData::Type::Raising;
+				return VoxelDefinition::DoorData::Type::Raising;
 			}
 			else
 			{
 				// I don't believe any doors in Arena split (but they are
 				// supported by the engine).
 				DebugUnhandledReturnMsg(
-					VoxelData::DoorData::Type, std::to_string(type));
+					VoxelDefinition::DoorData::Type, std::to_string(type));
 			}
 		}();
 
-		return VoxelData::makeDoor(textureIndex, doorType);
+		return VoxelDefinition::makeDoor(textureIndex, doorType);
 	};
 
 	// Lambda for creating type 0xD voxel data.
@@ -848,7 +847,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-		return VoxelData::makeDiagonal(textureIndex, isRightDiag);
+		return VoxelDefinition::makeDiagonal(textureIndex, isRightDiag);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -991,9 +990,9 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
 			const int *menuID = nullptr;
-			const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
 				textureIndex, textureIndex, textureIndex, menuID,
-				VoxelData::WallData::Type::Solid));
+				VoxelDefinition::WallData::Type::Solid));
 			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
 			return index;
 		}
@@ -1035,8 +1034,7 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 	}();
 
 	// Define the ceiling voxel data.
-	const int index = this->voxelGrid.addVoxelData(
-		VoxelData::makeCeiling(ceilingIndex));
+	const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeCeiling(ceilingIndex));
 
 	// Set all the ceiling voxels.
 	for (int x = 0; x < width; x++)
@@ -1078,7 +1076,7 @@ void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uin
 	{
 		*outNorthID = getVoxelIdOrAir(northVoxel);
 	}
-	
+
 	if (outSouthID != nullptr)
 	{
 		*outSouthID = getVoxelIdOrAir(southVoxel);
@@ -1088,7 +1086,7 @@ void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uin
 	{
 		*outEastID = getVoxelIdOrAir(eastVoxel);
 	}
-	
+
 	if (outWestID != nullptr)
 	{
 		*outWestID = getVoxelIdOrAir(westVoxel);
@@ -1104,48 +1102,48 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	}
 
 	const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelData &voxelData = this->voxelGrid.getVoxelData(voxelID);
+	const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
 
 	// Ignore if not a chasm (no faces to update).
-	if (voxelData.dataType != VoxelDataType::Chasm)
+	if (voxelDef.dataType != VoxelDataType::Chasm)
 	{
 		return;
 	}
 
-	const VoxelData::ChasmData &chasmData = voxelData.chasm;
+	const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 	// Query surrounding voxels to see which faces should be set.
 	uint16_t northID, southID, eastID, westID;
 	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
 
-	const VoxelData &northData = this->voxelGrid.getVoxelData(northID);
-	const VoxelData &southData = this->voxelGrid.getVoxelData(southID);
-	const VoxelData &eastData = this->voxelGrid.getVoxelData(eastID);
-	const VoxelData &westData = this->voxelGrid.getVoxelData(westID);
+	const VoxelDefinition &northDef = this->voxelGrid.getVoxelDef(northID);
+	const VoxelDefinition &southDef = this->voxelGrid.getVoxelDef(southID);
+	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
+	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
-	auto voxelDataIsChasm = [](const VoxelData &voxelData)
+	auto voxelDefIsChasm = [](const VoxelDefinition &voxelDef)
 	{
-		return voxelData.dataType == VoxelDataType::Chasm;
+		return voxelDef.dataType == VoxelDataType::Chasm;
 	};
 
 	// Booleans for each face of the new chasm voxel.
-	bool hasNorthFace = !voxelDataIsChasm(northData);
-	bool hasSouthFace = !voxelDataIsChasm(southData);
-	bool hasEastFace = !voxelDataIsChasm(eastData);
-	bool hasWestFace = !voxelDataIsChasm(westData);
+	bool hasNorthFace = !voxelDefIsChasm(northDef);
+	bool hasSouthFace = !voxelDefIsChasm(southDef);
+	bool hasEastFace = !voxelDefIsChasm(eastDef);
+	bool hasWestFace = !voxelDefIsChasm(westDef);
 
-	const VoxelData newVoxelData = VoxelData::makeChasm(
+	const VoxelDefinition newVoxelDef = VoxelDefinition::makeChasm(
 		chasmData.id, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, chasmData.type);
 
 	// Find chasm voxel data with the matching faces, adding if missing.
-	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelData(
-		[&newVoxelData](const VoxelData &voxelData)
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
+		[&newVoxelDef](const VoxelDefinition &voxelDef)
 	{
-		if (voxelData.dataType == VoxelDataType::Chasm)
+		if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
-			DebugAssert(newVoxelData.dataType == VoxelDataType::Chasm);
-			const VoxelData::ChasmData &newChasmData = newVoxelData.chasm;
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			DebugAssert(newVoxelDef.dataType == VoxelDataType::Chasm);
+			const VoxelDefinition::ChasmData &newChasmData = newVoxelDef.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 			return chasmData.matches(newChasmData);
 		}
 		else
@@ -1156,7 +1154,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 
 	// Use the chasm ID if it exists, or add a new voxel data to the grid and use its ID.
 	const uint16_t actualChasmID = optChasmID.has_value() ?
-		*optChasmID : this->voxelGrid.addVoxelData(newVoxelData);
+		*optChasmID : this->voxelGrid.addVoxelDef(newVoxelDef);
 
 	// Update the chasm's voxel ID in the grid.
 	this->voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, actualChasmID);
@@ -1170,32 +1168,32 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	uint16_t northID, southID, eastID, westID;
 	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
 
-	const VoxelData &northData = this->voxelGrid.getVoxelData(northID);
-	const VoxelData &southData = this->voxelGrid.getVoxelData(southID);
-	const VoxelData &eastData = this->voxelGrid.getVoxelData(eastID);
-	const VoxelData &westData = this->voxelGrid.getVoxelData(westID);
+	const VoxelDefinition &northDef = this->voxelGrid.getVoxelDef(northID);
+	const VoxelDefinition &southDef = this->voxelGrid.getVoxelDef(southID);
+	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
+	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
-	auto voxelDataIsChasm = [](const VoxelData &voxelData)
+	auto voxelDataIsChasm = [](const VoxelDefinition &voxelDef)
 	{
-		return voxelData.dataType == VoxelDataType::Chasm;
+		return voxelDef.dataType == VoxelDataType::Chasm;
 	};
 
 	// Booleans for each face of the new chasm voxel.
-	bool hasNorthFace = !voxelDataIsChasm(northData);
-	bool hasSouthFace = !voxelDataIsChasm(southData);
-	bool hasEastFace = !voxelDataIsChasm(eastData);
-	bool hasWestFace = !voxelDataIsChasm(westData);
+	bool hasNorthFace = !voxelDataIsChasm(northDef);
+	bool hasSouthFace = !voxelDataIsChasm(southDef);
+	bool hasEastFace = !voxelDataIsChasm(eastDef);
+	bool hasWestFace = !voxelDataIsChasm(westDef);
 
 	// Based on how the original game behaves, it seems to be the chasm type closest to the player,
 	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities
 	// like creating a dry chasm next to lava, which results in continued oddities like having a
 	// big difference in chasm depth between the two (depending on ceiling height).
-	const VoxelData::ChasmData::Type newChasmType = []()
+	const VoxelDefinition::ChasmData::Type newChasmType = []()
 	{
 		// @todo: include player position. If there are no chasms to pick from, then default to
 		// wet chasm.
 		// @todo: getNearestChasmType(const Int3 &voxel)
-		return VoxelData::ChasmData::Type::Wet;
+		return VoxelDefinition::ChasmData::Type::Wet;
 	}();
 
 	const int newTextureID = [this, newChasmType]()
@@ -1205,13 +1203,13 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		// Ask the .INF file what the chasm texture is.
 		switch (newChasmType)
 		{
-		case VoxelData::ChasmData::Type::Dry:
+		case VoxelDefinition::ChasmData::Type::Dry:
 			chasmIndexPtr = this->inf.getDryChasmIndex();
 			break;
-		case VoxelData::ChasmData::Type::Wet:
+		case VoxelDefinition::ChasmData::Type::Wet:
 			chasmIndexPtr = this->inf.getWetChasmIndex();
 			break;
-		case VoxelData::ChasmData::Type::Lava:
+		case VoxelDefinition::ChasmData::Type::Lava:
 			chasmIndexPtr = this->inf.getLavaChasmIndex();
 			break;
 		default:
@@ -1223,18 +1221,18 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		return (chasmIndexPtr != nullptr) ? *chasmIndexPtr : 0;
 	}();
 
-	const VoxelData newData = VoxelData::makeChasm(
+	const VoxelDefinition newDef = VoxelDefinition::makeChasm(
 		newTextureID, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, newChasmType);
 
 	// Find chasm voxel data with the matching faces, adding if missing.
-	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelData(
-		[&newData](const VoxelData &voxelData)
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
+		[&newDef](const VoxelDefinition &voxelDef)
 	{
-		if (voxelData.dataType == VoxelDataType::Chasm)
+		if (voxelDef.dataType == VoxelDataType::Chasm)
 		{
-			DebugAssert(newData.dataType == VoxelDataType::Chasm);
-			const VoxelData::ChasmData &newChasmData = newData.chasm;
-			const VoxelData::ChasmData &chasmData = voxelData.chasm;
+			DebugAssert(newDef.dataType == VoxelDataType::Chasm);
+			const VoxelDefinition::ChasmData &newChasmData = newDef.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 			return chasmData.matches(newChasmData);
 		}
 		else
@@ -1250,7 +1248,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	else
 	{
 		// Need to add a new voxel data to the voxel grid.
-		return this->voxelGrid.addVoxelData(newData);
+		return this->voxelGrid.addVoxelDef(newDef);
 	}
 }
 

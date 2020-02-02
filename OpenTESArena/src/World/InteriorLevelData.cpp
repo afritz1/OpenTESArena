@@ -35,7 +35,7 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, i
 		Color::Gray.toARGB() : Color::Black.toARGB();
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
@@ -168,7 +168,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	levelData.skyColor = Color::Black.toARGB();
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
