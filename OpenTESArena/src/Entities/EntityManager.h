@@ -8,7 +8,7 @@
 
 #include "DynamicEntity.h"
 #include "Entity.h"
-#include "EntityData.h"
+#include "EntityDefinition.h"
 #include "StaticEntity.h"
 #include "../Math/Vector3.h"
 #include "../World/VoxelGrid.h"
@@ -79,8 +79,8 @@ private:
 	EntityGroup<StaticEntity> staticGroup;
 	EntityGroup<DynamicEntity> dynamicGroup;
 
-	// Entity data definitions.
-	std::vector<EntityData> entityData;
+	// Entity definitions.
+	std::vector<EntityDefinition> entityDefs;
 
 	// Free IDs (previously owned) and the next available ID (never owned).
 	std::vector<int> freeIDs;
@@ -119,11 +119,11 @@ public:
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;
 
-	// Gets an entity data definition for the given flat index, or null if it doesn't exist.
-	const EntityData *getEntityData(int flatIndex) const;
+	// Gets an entity definition for the given flat index, or null if it doesn't exist.
+	const EntityDefinition *getEntityDef(int flatIndex) const;
 
 	// Adds an entity data definition to the definitions list and returns a pointer to it.
-	EntityData *addEntityData(EntityData &&data);
+	EntityDefinition *addEntityDef(EntityDefinition &&def);
 
 	// Deletes an entity.
 	void remove(int id);

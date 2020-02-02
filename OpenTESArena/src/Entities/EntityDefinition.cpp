@@ -1,6 +1,6 @@
-#include "EntityData.h"
+#include "EntityDefinition.h"
 
-EntityData::EntityData()
+EntityDefinition::EntityDefinition()
 {
 	this->flatIndex = -1;
 	this->yOffset = 0;
@@ -13,7 +13,7 @@ EntityData::EntityData()
 	this->mediumScale = false;
 }
 
-void EntityData::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
+void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
 	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale)
 {
 	this->displayName = std::move(displayName);
@@ -28,62 +28,62 @@ void EntityData::init(std::string &&displayName, int flatIndex, int yOffset, boo
 	this->mediumScale = mediumScale;
 }
 
-std::string_view EntityData::getDisplayName() const
+std::string_view EntityDefinition::getDisplayName() const
 {
 	return this->displayName;
 }
 
-int EntityData::getFlatIndex() const
+int EntityDefinition::getFlatIndex() const
 {
 	return this->flatIndex;
 }
 
-int EntityData::getYOffset() const
+int EntityDefinition::getYOffset() const
 {
 	return this->yOffset;
 }
 
-bool EntityData::isCollider() const
+bool EntityDefinition::isCollider() const
 {
 	return this->collider;
 }
 
-bool EntityData::isPuddle() const
+bool EntityDefinition::isPuddle() const
 {
 	return this->puddle;
 }
 
-bool EntityData::isLargeScale() const
+bool EntityDefinition::isLargeScale() const
 {
 	return this->largeScale;
 }
 
-bool EntityData::isDark() const
+bool EntityDefinition::isDark() const
 {
 	return this->dark;
 }
 
-bool EntityData::isTransparent() const
+bool EntityDefinition::isTransparent() const
 {
 	return this->transparent;
 }
 
-bool EntityData::isOnCeiling() const
+bool EntityDefinition::isOnCeiling() const
 {
 	return this->ceiling;
 }
 
-bool EntityData::isMediumScale() const
+bool EntityDefinition::isMediumScale() const
 {
 	return this->mediumScale;
 }
 
-EntityAnimationData &EntityData::getAnimationData()
+EntityAnimationData &EntityDefinition::getAnimationData()
 {
 	return this->animationData;
 }
 
-const EntityAnimationData &EntityData::getAnimationData() const
+const EntityAnimationData &EntityDefinition::getAnimationData() const
 {
 	return this->animationData;
 }

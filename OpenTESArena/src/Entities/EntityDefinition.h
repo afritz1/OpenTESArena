@@ -1,12 +1,12 @@
-#ifndef ENTITY_DATA_H
-#define ENTITY_DATA_H
+#ifndef ENTITY_DEFINITION_H
+#define ENTITY_DEFINITION_H
 
 #include <string>
 #include <string_view>
 
 #include "EntityAnimationData.h"
 
-class EntityData
+class EntityDefinition
 {
 private:
 	std::string displayName;
@@ -31,7 +31,7 @@ private:
 	// (entity double size, puddle, etc.) in this class.
 	int flatIndex;
 public:
-	EntityData();
+	EntityDefinition();
 
 	void init(std::string &&displayName, int flatIndex, int yOffset, bool collider, bool puddle,
 		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale);

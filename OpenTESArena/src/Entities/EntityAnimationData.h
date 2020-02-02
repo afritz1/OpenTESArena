@@ -68,7 +68,7 @@ public:
 	public:
 		Instance();
 
-		// Animation data is passed by reference because its EntityData owner is
+		// Animation data is passed by reference because its EntityDefinition owner is
 		// allocated on the heap and can become dangling if a pointer is stored here.
 
 		const std::vector<State> &getStateList(const EntityAnimationData &animationData) const;

@@ -1600,7 +1600,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *this->potentiallyVisibleFlats[i];
-		const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
 
 		EntityManager::EntityVisibilityData visData;
 		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir,
@@ -1635,7 +1635,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
-			visFlat.flatIndex = entityData.getFlatIndex();
+			visFlat.flatIndex = entityDef.getFlatIndex();
 			visFlat.animStateType = visData.stateType;
 
 			// Calculate each corner of the flat in world space.

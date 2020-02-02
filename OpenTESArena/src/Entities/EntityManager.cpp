@@ -368,21 +368,21 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
-const EntityData *EntityManager::getEntityData(int flatIndex) const
+const EntityDefinition *EntityManager::getEntityDef(int flatIndex) const
 {
-	const auto iter = std::find_if(this->entityData.begin(), this->entityData.end(),
-		[flatIndex](const EntityData &data)
+	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
+		[flatIndex](const EntityDefinition &def)
 	{
-		return data.getFlatIndex() == flatIndex;
+		return def.getFlatIndex() == flatIndex;
 	});
 
-	return (iter != this->entityData.end()) ? &(*iter) : nullptr;
+	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
 }
 
-EntityData *EntityManager::addEntityData(EntityData &&data)
+EntityDefinition *EntityManager::addEntityDef(EntityDefinition &&def)
 {
-	this->entityData.push_back(std::move(data));
-	return &this->entityData.back();
+	this->entityDefs.push_back(std::move(def));
+	return &this->entityDefs.back();
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
@@ -390,8 +390,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
-	const EntityData &entityData = *getEntityData(entity.getDataIndex());
-	const EntityAnimationData &entityAnimData = entityData.getAnimationData();
+	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
+	const EntityAnimationData &entityAnimData = entityDef.getAnimationData();
 
 	// Get active state
 	const EntityAnimationData::Instance &animInstance = entity.getAnimation();
@@ -461,7 +461,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	const double entityPosX = entityPos.x;
 	const double entityPosZ = entityPos.y;
 
-	const double flatYOffset = static_cast<double>(-entityData.getYOffset()) / MIFFile::ARENA_UNITS;
+	const double flatYOffset = static_cast<double>(-entityDef.getYOffset()) / MIFFile::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
@@ -525,7 +525,7 @@ void EntityManager::clear()
 	this->staticGroup.clear();
 	this->dynamicGroup.clear();
 
-	this->entityData.clear();
+	this->entityDefs.clear();
 
 	this->freeIDs.clear();
 	this->nextID = 0;

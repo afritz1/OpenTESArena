@@ -931,13 +931,13 @@ bool Physics::testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDir
 		for (const auto &visData : entityVisDataList)
 		{
 			const Entity &entity = *visData.entity;
-			const EntityData &entityData = *entityManager.getEntityData(entity.getDataIndex());
+			const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
 
 			const double flatWidth = visData.keyframe.getWidth();
 			const double flatHeight = visData.keyframe.getHeight();
 
 			Double3 hitPoint;
-			if (renderer.getEntityRayIntersection(visData, entityData.getFlatIndex(),
+			if (renderer.getEntityRayIntersection(visData, entityDef.getFlatIndex(),
 				flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
 				rayDirection, pixelPerfect, &hitPoint))
 			{

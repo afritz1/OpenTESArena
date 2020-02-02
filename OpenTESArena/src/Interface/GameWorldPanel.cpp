@@ -248,10 +248,10 @@ namespace
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
-				DebugAssert(entityData != nullptr);
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				DebugAssert(entityDef != nullptr);
 
-				const std::string_view entityName = entityData->getDisplayName();
+				const std::string_view entityName = entityDef->getDisplayName();
 
 				if (entityName.size() > 0)
 				{
@@ -1847,10 +1847,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityData *entityData = entityManager.getEntityData(entity->getDataIndex());
-				DebugAssert(entityData != nullptr);
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				DebugAssert(entityDef != nullptr);
 
-				const std::string_view entityName = entityData->getDisplayName();
+				const std::string_view entityName = entityDef->getDisplayName();
 
 				std::string text;
 				if (entityName.size() > 0)

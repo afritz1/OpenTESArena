@@ -1397,8 +1397,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 
 		// Add a new entity data instance.
 		// @todo: assign creature data here from .exe data if the flat is a creature.
-		DebugAssert(this->entityManager.getEntityData(dataIndex) == nullptr);
-		EntityData newEntityData;
+		DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
+		EntityDefinition newEntityDef;
 		if (isCreature)
 		{
 			// Read from .exe data instead for creatures.
@@ -1434,7 +1434,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
 			const bool ceiling = false;
 			const bool mediumScale = false;
-			newEntityData.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
+			newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
 				largeScale, dark, transparent, ceiling, mediumScale);
 		}
 		else if (isHumanEnemy)
@@ -1445,7 +1445,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			DebugAssertIndex(charClassNames, charClassIndex);
 			const std::string_view charClassName = charClassNames[charClassIndex];
 
-			newEntityData.init(std::string(charClassName), flatIndex, flatData.yOffset,
+			newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
 				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
@@ -1453,14 +1453,14 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 		{
 			// No display name.
 			std::string displayName;
-			newEntityData.init(std::move(displayName), flatIndex, flatData.yOffset,
+			newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
 				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 				flatData.transparent, flatData.ceiling, flatData.mediumScale);
 		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
-		auto &entityAnimData = newEntityData.getAnimationData();
+		auto &entityAnimData = newEntityDef.getAnimationData();
 		std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
 			attackStates, deathStates;
 
@@ -1519,7 +1519,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				std::to_string(static_cast<int>(entityType)) + "\".");
 		}
 
-		this->entityManager.addEntityData(std::move(newEntityData));
+		this->entityManager.addEntityDef(std::move(newEntityDef));
 
 		// Initialize each instance of the flat def.
 		for (const Int2 &position : flatDef.getPositions())
