@@ -1256,6 +1256,8 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 
 void LevelData::updateFadingVoxels(double dt)
 {
+	std::vector<Int3> completedVoxels;
+
 	// Reverse iterate, removing voxels that are done fading out.
 	for (int i = static_cast<int>(this->fadingVoxels.size()) - 1; i >= 0; i--)
 	{
@@ -1265,6 +1267,8 @@ void LevelData::updateFadingVoxels(double dt)
 
 		if (fadingVoxel.isDoneFading())
 		{
+			completedVoxels.push_back(voxel);
+
 			const bool isFloorVoxel = voxel.y == 0;
 			const uint16_t newVoxelID = [this, &voxel, isFloorVoxel]() -> uint16_t
 			{
@@ -1284,19 +1288,24 @@ void LevelData::updateFadingVoxels(double dt)
 			// erase the fading voxel from the list.
 			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
 			this->fadingVoxels.erase(this->fadingVoxels.begin() + i);
+		}
+	}
 
-			// Update adjacent chasm faces.
-			if (isFloorVoxel)
-			{
-				const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
-				const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
-				const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
-				const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
-				this->tryUpdateChasmVoxel(northVoxel);
-				this->tryUpdateChasmVoxel(southVoxel);
-				this->tryUpdateChasmVoxel(eastVoxel);
-				this->tryUpdateChasmVoxel(westVoxel);
-			}
+	// Update adjacent chasm faces (not sure why this has to be done after, but it works).
+	for (const Int3 &voxel : completedVoxels)
+	{
+		const bool isFloorVoxel = voxel.y == 0;
+
+		if (isFloorVoxel)
+		{
+			const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
+			const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
+			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
+			const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+			this->tryUpdateChasmVoxel(northVoxel);
+			this->tryUpdateChasmVoxel(southVoxel);
+			this->tryUpdateChasmVoxel(eastVoxel);
+			this->tryUpdateChasmVoxel(westVoxel);
 		}
 	}
 }
