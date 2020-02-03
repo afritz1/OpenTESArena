@@ -42,7 +42,7 @@ The concept began after I saw the success of other open-source projects like [Op
 
 Note that there are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is just an engine and does not contain any content.
 
-OpenTESArena is licensed under the MIT and uses code licensed under the GPL2. See [LICENSE.txt](LICENSE.txt) and [COPYING.txt](COPYING.txt) for details.
+OpenTESArena is licensed under the MIT license. See [LICENSE.txt](LICENSE.txt) for details.
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
@@ -138,5 +138,3 @@ If there is a bug or technical problem in the program, check out the issues tab!
 The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for finding information all about Arena. There are [various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) available such as WinArena and BSATool for browsing Arena's content, and there is a very detailed manual as well, so you'll probably want to take a look at a copy from [here](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities). I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay. 
 
 YouTube channel: https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw
-
-Project email: opentesarena {at} gmail [dot] com
