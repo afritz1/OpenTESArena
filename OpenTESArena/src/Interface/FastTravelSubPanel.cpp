@@ -352,7 +352,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	gameData.updateWeather(exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
-	gameData.getTriggerText().reset();
+	gameData.resetTriggerText();
 
 	// Pop this sub-panel on the next game loop. The game loop pops old sub-panels before
 	// pushing new ones, so call order doesn't matter.

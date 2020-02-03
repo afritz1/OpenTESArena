@@ -76,14 +76,6 @@ namespace
 	const Rect BottomRightRegion(179, 119, 141, 28);
 	const Rect UiBottomRegion(0, 147, 320, 53);
 
-	// Colors for UI text.
-	const Color TriggerTextColor(215, 121, 8);
-	const Color TriggerTextShadowColor(12, 12, 24);
-	const Color ActionTextColor(195, 0, 0);
-	const Color ActionTextShadowColor(12, 12, 24);
-	const Color EffectTextColor(251, 239, 77);
-	const Color EffectTextShadowColor(190, 113, 0);
-
 	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse
 	// position so the cursor's click area is closer to the tip of each arrow, as is
 	// done in the original game (slightly differently, though. I think the middle
@@ -897,28 +889,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			return str;
 		}();
 
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			ActionTextColor,
-			TextAlignment::Center,
-			game.getFontManager());
-
-		const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
-
-		// Create the text box for display (set position to zero; the renderer will decide
-		// where to draw it).
-		auto textBox = std::make_unique<TextBox>(
-			Int2(0, 0),
-			richText,
-			&shadowData,
-			game.getRenderer());
-
-		// Assign the text box and its duration to the action text.
 		auto &gameData = game.getGameData();
-		auto &actionText = gameData.getActionText();
-		const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
-		actionText = TimedTextBox(duration, std::move(textBox));
+		gameData.setActionText(text, game.getFontManager(), game.getRenderer());
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1801,25 +1773,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								}
 							}();
 
-							const RichTextString richText(
-								menuName,
-								FontName::Arena,
-								ActionTextColor,
-								TextAlignment::Center,
-								game.getFontManager());
-
-							const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
-
-							auto textBox = std::make_unique<TextBox>(
-								Int2(0, 0),
-								richText,
-								&shadowData,
-								game.getRenderer());
-
-							auto &actionText = gameData.getActionText();
-							const double duration = std::max(2.25,
-								static_cast<double>(richText.getText().size()) * 0.050);
-							actionText = TimedTextBox(duration, std::move(textBox));
+							auto &gameData = game.getGameData();
+							gameData.setActionText(menuName, game.getFontManager(), game.getRenderer());
 						}
 					}
 				}
@@ -1866,31 +1821,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					text = "Entity " + std::to_string(entityHit.id);
 				}
 
-				const int lineSpacing = 1;
-				const RichTextString richText(
-					text,
-					FontName::Arena,
-					ActionTextColor,
-					TextAlignment::Center,
-					lineSpacing,
-					game.getFontManager());
-
-				const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
-
-				// Create the text box for display (set position to zero; the renderer will
-				// decide where to draw it).
-				auto textBox = std::make_unique<TextBox>(
-					Int2(0, 0),
-					richText,
-					&shadowData,
-					game.getRenderer());
-
-				// Assign the text box and its duration. It will be displayed in the render
-				// method until the duration is no longer positive.
 				auto &gameData = game.getGameData();
-				auto &actionText = gameData.getActionText();
-				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-				actionText = TimedTextBox(duration, std::move(textBox));
+				gameData.setActionText(text, game.getFontManager(), game.getRenderer());
 			}
 		}
 		else
@@ -1924,32 +1856,9 @@ void GameWorldPanel::handleTriggers(const Int2 &voxel)
 				// Ignore the newline at the end.
 				const std::string text = textTrigger->getText().substr(
 					0, textTrigger->getText().size() - 1);
-				const int lineSpacing = 1;
 
-				const RichTextString richText(
-					text,
-					FontName::Arena,
-					TriggerTextColor,
-					TextAlignment::Center,
-					lineSpacing,
-					game.getFontManager());
-
-				const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
-
-				// Create the text box for display (set position to zero; the renderer will
-				// decide where to draw it).
-				auto textBox = std::make_unique<TextBox>(
-					Int2(0, 0),
-					richText,
-					&shadowData,
-					game.getRenderer());
-
-				// Assign the text box and its duration to the triggered text member. It will
-				// be displayed in the render method until the duration is no longer positive.
 				auto &gameData = game.getGameData();
-				auto &triggerText = gameData.getTriggerText();
-				const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-				triggerText = TimedTextBox(duration, std::move(textBox));
+				gameData.setTriggerText(text, game.getFontManager(), game.getRenderer());
 
 				// Set the text trigger as activated (regardless of whether or not it's
 				// single-shot, just for consistency).
@@ -2783,22 +2692,6 @@ void GameWorldPanel::tick(double dt)
 		}
 	}
 
-	// Tick text timers if their remaining duration is positive.
-	auto &triggerText = gameData.getTriggerText();
-	auto &actionText = gameData.getActionText();
-
-	if (triggerText.hasRemainingDuration())
-	{
-		triggerText.remainingDuration -= dt;
-	}
-
-	if (actionText.hasRemainingDuration())
-	{
-		actionText.remainingDuration -= dt;
-	}
-
-	// @todo: tick effect text, and draw in render().
-
 	// Tick the player.
 	auto &player = gameData.getPlayer();
 	const Int3 oldPlayerVoxel = player.getVoxelPosition();
@@ -3017,34 +2910,37 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	// Draw each pop-up text if its duration is positive.
 	// - @todo: maybe give delta time to render()? Or store in tick()? I want to avoid
 	//   subtracting the time in tick() because it would always be one frame shorter then.
-	auto &triggerText = gameData.getTriggerText();
-	auto &actionText = gameData.getActionText();
-	if (triggerText.hasRemainingDuration())
+	if (gameData.triggerTextIsVisible())
 	{
-		const auto &triggerTextBox = *triggerText.textBox.get();
-		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) -
-			(triggerTextBox.getSurface().getWidth() / 2) - 1;
-		const int centerY = [modernInterface, &gameInterface, &triggerTextBox]()
+		const Texture *triggerTextTexture;
+		gameData.getTriggerTextRenderInfo(&triggerTextTexture);
+
+		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
+		const int centerY = [modernInterface, &gameInterface, triggerTextTexture]()
 		{
 			const int interfaceOffset = modernInterface ?
 				(gameInterface.getHeight() / 2) : gameInterface.getHeight();
 			return Renderer::ORIGINAL_HEIGHT - interfaceOffset -
-				triggerTextBox.getSurface().getHeight() - 2;
+				triggerTextTexture->getHeight() - 2;
 		}();
 
-		renderer.drawOriginal(triggerTextBox.getTexture(), centerX, centerY);
+		renderer.drawOriginal(*triggerTextTexture, centerX, centerY);
 	}
 
-	if (actionText.hasRemainingDuration())
+	if (gameData.actionTextIsVisible())
 	{
-		const auto &actionTextBox = *actionText.textBox.get();
-		const int textX = (Renderer::ORIGINAL_WIDTH / 2) -
-			(actionTextBox.getSurface().getWidth() / 2);
+		const Texture *actionTextTexture;
+		gameData.getActionTextRenderInfo(&actionTextTexture);
+
+		const int textX = (Renderer::ORIGINAL_WIDTH / 2) - (actionTextTexture->getWidth() / 2);
 		const int textY = 20;
-		renderer.drawOriginal(actionTextBox.getTexture(), textX, textY);
+		renderer.drawOriginal(*actionTextTexture, textX, textY);
 	}
 
-	// @todo: draw "effect text" (similar to trigger text).
+	if (gameData.effectTextIsVisible())
+	{
+		// @todo: draw "effect text".
+	}
 
 	// Check if the mouse is over one of the buttons for tooltips in classic mode.
 	if (!modernInterface)

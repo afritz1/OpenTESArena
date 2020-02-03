@@ -16,8 +16,10 @@
 #include "../Entities/EntityManager.h"
 #include "../Entities/GenderName.h"
 #include "../Entities/Player.h"
+#include "../Interface/TextAlignment.h"
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -49,6 +51,14 @@ namespace
 		{ WeatherType::Overcast2, 30.0 },
 		{ WeatherType::SnowOvercast2, 20.0 }
 	};
+
+	// Colors for UI text.
+	const Color TriggerTextColor(215, 121, 8);
+	const Color TriggerTextShadowColor(12, 12, 24);
+	const Color ActionTextColor(195, 0, 0);
+	const Color ActionTextShadowColor(12, 12, 24);
+	const Color EffectTextColor(251, 239, 77);
+	const Color EffectTextShadowColor(190, 113, 0);
 }
 
 // One real second = twenty game seconds.
@@ -601,21 +611,6 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
 }
 
-TimedTextBox &GameData::getTriggerText()
-{
-	return this->triggerText;
-}
-
-TimedTextBox &GameData::getActionText()
-{
-	return this->actionText;
-}
-
-TimedTextBox &GameData::getEffectText()
-{
-	return this->effectText;
-}
-
 const std::array<WeatherType, 36> &GameData::getWeathersArray() const
 {
 	return this->weathers;
@@ -758,6 +753,115 @@ std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
 	return this->onLevelUpVoxelEnter;
 }
 
+bool GameData::triggerTextIsVisible() const
+{
+	return this->triggerText.hasRemainingDuration();
+}
+
+bool GameData::actionTextIsVisible() const
+{
+	return this->actionText.hasRemainingDuration();
+}
+
+bool GameData::effectTextIsVisible() const
+{
+	return this->effectText.hasRemainingDuration();
+}
+
+void GameData::getTriggerTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->triggerText.textBox->getTexture();
+	}
+}
+
+void GameData::getActionTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->actionText.textBox->getTexture();
+	}
+}
+
+void GameData::getEffectTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->effectText.textBox->getTexture();
+	}
+}
+
+void GameData::setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	const int lineSpacing = 1;
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		TriggerTextColor,
+		TextAlignment::Center,
+		lineSpacing,
+		fontManager);
+
+	const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+
+	// Create the text box for display (set position to zero; the renderer will
+	// decide where to draw it).
+	auto textBox = std::make_unique<TextBox>(
+		Int2(0, 0),
+		richText,
+		&shadowData,
+		renderer);
+
+	// Assign the text box and its duration to the triggered text member.
+	const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+	this->triggerText = TimedTextBox(duration, std::move(textBox));
+}
+
+void GameData::setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		ActionTextColor,
+		TextAlignment::Center,
+		fontManager);
+
+	const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+	// Create the text box for display (set position to zero; the renderer will decide
+	// where to draw it).
+	auto textBox = std::make_unique<TextBox>(
+		Int2(0, 0),
+		richText,
+		&shadowData,
+		renderer);
+
+	// Assign the text box and its duration to the action text.
+	const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
+	this->actionText = TimedTextBox(duration, std::move(textBox));
+}
+
+void GameData::setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	// @todo
+}
+
+void GameData::resetTriggerText()
+{
+	this->triggerText.reset();
+}
+
+void GameData::resetActionText()
+{
+	this->actionText.reset();
+}
+
+void GameData::resetEffectText()
+{
+	this->effectText.reset();
+}
+
 void GameData::updateWeather(const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
@@ -824,4 +928,17 @@ void GameData::tickTime(double dt, Game &game)
 		// Increment the day.
 		this->date.incrementDay();
 	}
+
+	// Tick on-screen text messages.
+	auto tryTickTextBox = [dt](TimedTextBox &textBox)
+	{
+		if (textBox.hasRemainingDuration())
+		{
+			textBox.remainingDuration -= dt;
+		}
+	};
+
+	tryTickTextBox(this->triggerText);
+	tryTickTextBox(this->actionText);
+	tryTickTextBox(this->effectText);
 }

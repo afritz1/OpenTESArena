@@ -28,10 +28,12 @@
 // need to load data into the game data object.
 
 class CharacterClass;
+class FontManager;
 class INFFile;
 class MIFFile;
 class Renderer;
 class TextBox;
+class Texture;
 class TextureManager;
 
 enum class GenderName;
@@ -142,10 +144,6 @@ public:
 		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
 
-	TimedTextBox &getTriggerText();
-	TimedTextBox &getActionText();
-	TimedTextBox &getEffectText();
-
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 
 	Player &getPlayer();
@@ -177,6 +175,26 @@ public:
 
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
+
+	// On-screen text is visible if it has remaining duration.
+	bool triggerTextIsVisible() const;
+	bool actionTextIsVisible() const;
+	bool effectTextIsVisible() const;
+
+	// On-screen text render info for the game world.
+	void getTriggerTextRenderInfo(const Texture **outTexture) const;
+	void getActionTextRenderInfo(const Texture **outTexture) const;
+	void getEffectTextRenderInfo(const Texture **outTexture) const;
+
+	// Sets on-screen text for various types of in-game messages.
+	void setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+	void setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+	void setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+
+	// Resets on-screen text boxes to empty and hidden.
+	void resetTriggerText();
+	void resetActionText();
+	void resetEffectText();
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeather(const ExeData &exeData);
