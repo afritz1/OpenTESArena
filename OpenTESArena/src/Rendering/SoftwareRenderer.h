@@ -65,6 +65,15 @@ private:
 		static SkyTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
 	};
 
+	struct ChasmTexel
+	{
+		double r, g, b;
+
+		ChasmTexel();
+
+		static ChasmTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+	};
+
 	struct VoxelTexture
 	{
 		static const int WIDTH = 64;
@@ -89,6 +98,14 @@ private:
 		int width, height;
 
 		SkyTexture();
+	};
+
+	struct ChasmTexture
+	{
+		std::vector<ChasmTexel> texels;
+		int width, height;
+
+		ChasmTexture();
 	};
 
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
@@ -758,6 +775,10 @@ public:
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
+
+	// Adds a chasm texture for the given water or lava texture list.
+	void addWaterTexture(const uint32_t *colors, int width, int height);
+	void addLavaTexture(const uint32_t *colors, int width, int height);
 
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);

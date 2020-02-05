@@ -140,6 +140,25 @@ SoftwareRenderer::SkyTexel SoftwareRenderer::SkyTexel::makeFrom8Bit(
 	return skyTexel;
 }
 
+SoftwareRenderer::ChasmTexel::ChasmTexel()
+{
+	this->r = 0.0;
+	this->g = 0.0;
+	this->b = 0.0;
+}
+
+SoftwareRenderer::ChasmTexel SoftwareRenderer::ChasmTexel::makeFrom8Bit(
+	uint8_t texel, const Palette &palette)
+{
+	const uint32_t srcARGB = palette.get()[texel].toARGB();
+	const Double4 srcTexel = Double4::fromARGB(srcARGB);
+	ChasmTexel chasmTexel;
+	chasmTexel.r = srcTexel.x;
+	chasmTexel.g = srcTexel.y;
+	chasmTexel.b = srcTexel.z;
+	return chasmTexel;
+}
+
 SoftwareRenderer::FlatTexture::FlatTexture()
 {
 	this->width = 0;
@@ -147,6 +166,12 @@ SoftwareRenderer::FlatTexture::FlatTexture()
 }
 
 SoftwareRenderer::SkyTexture::SkyTexture()
+{
+	this->width = 0;
+	this->height = 0;
+}
+
+SoftwareRenderer::ChasmTexture::ChasmTexture()
 {
 	this->width = 0;
 	this->height = 0;
