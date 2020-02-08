@@ -171,12 +171,6 @@ SoftwareRenderer::SkyTexture::SkyTexture()
 	this->height = 0;
 }
 
-SoftwareRenderer::ChasmTexture::ChasmTexture()
-{
-	this->width = 0;
-	this->height = 0;
-}
-
 SoftwareRenderer::FlatTextureGroup::StateTypeMapping *SoftwareRenderer::FlatTextureGroup::findMapping(
 	EntityAnimationData::StateType stateType)
 {
@@ -3106,6 +3100,15 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 	}
 }
 
+void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double screenX, double screenY,
+	double *r, double *g, double *b)
+{
+	constexpr double textureWidthReal = static_cast<double>(ChasmTexture::WIDTH);
+	constexpr double textureHeightReal = static_cast<double>(ChasmTexture::HEIGHT);
+
+	// @todo
+}
+
 template <bool Fading>
 void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, double depth,
 	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
@@ -3439,6 +3442,64 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 				frame.depthBuffer[index] = depth;
 			}
 		}
+	}
+}
+
+template <bool TrueDepth>
+void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth,
+	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+	const FrameView &frame)
+{
+	// @todo
+}
+
+void SoftwareRenderer::drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
+	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+	const FrameView &frame)
+{
+	const bool useTrueChasmDepth = true;
+	if (useTrueChasmDepth)
+	{
+		constexpr bool trueDepth = true;
+		SoftwareRenderer::drawChasmPixelsShader<trueDepth>(x, drawRange, depth, u, vStart, vEnd,
+			normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+	}
+	else
+	{
+		constexpr bool trueDepth = false;
+		SoftwareRenderer::drawChasmPixelsShader<trueDepth>(x, drawRange, depth, u, vStart, vEnd,
+			normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+	}
+}
+
+template <bool TrueDepth>
+void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
+	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	// @todo
+}
+
+void SoftwareRenderer::drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
+	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const bool useTrueChasmDepth = true;
+	if (useTrueChasmDepth)
+	{
+		constexpr bool trueDepth = true;
+		SoftwareRenderer::drawPerspectiveChasmPixelsShader<trueDepth>(x, drawRange, startPoint,
+			endPoint, depthStart, depthEnd, normal, texture, shadingInfo, occlusion, frame);
+	}
+	else
+	{
+		constexpr bool trueDepth = false;
+		SoftwareRenderer::drawPerspectiveChasmPixelsShader<trueDepth>(x, drawRange, startPoint,
+			endPoint, depthStart, depthEnd, normal, texture, shadingInfo, occlusion, frame);
 	}
 }
 

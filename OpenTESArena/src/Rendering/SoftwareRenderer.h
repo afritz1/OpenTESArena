@@ -102,10 +102,11 @@ private:
 
 	struct ChasmTexture
 	{
-		std::vector<ChasmTexel> texels;
-		int width, height;
+		static const int WIDTH = 320;
+		static const int HEIGHT = 100;
+		static const int TEXEL_COUNT = ChasmTexture::WIDTH * ChasmTexture::HEIGHT;
 
-		ChasmTexture();
+		std::array<ChasmTexel, ChasmTexture::TEXEL_COUNT> texels;
 	};
 
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
@@ -604,14 +605,14 @@ private:
 		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
 		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
 
-	// Casts a 3D ray from the default start point (eye) and returns the color.
-	// (Unused for now; keeping for reference).
-	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
-
 	// Low-level texture sampling function.
 	template <int FilterMode, bool Transparency>
 	static void sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
 		double *r, double *g, double *b, double *emission, bool *transparent);
+
+	// Low-level screen-space chasm texture sampling function.
+	static void sampleChasmTexture(const ChasmTexture &texture, double screenX, double screenY,
+		double *r, double *g, double *b);
 
 	// Low-level shader for wall pixel rendering. Template parameters are used for
 	// compile-time generation of shader permutations.
@@ -645,6 +646,36 @@ private:
 	static void drawTransparentPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
 		const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame);
+
+	// Low-level shader for chasm pixel rendering.
+	// @todo: consider template bool for treating screen-space texels as regular texels.
+	template <bool TrueDepth>
+	static void drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+		const FrameView &frame);
+
+	// Draws a column of chasm pixels that can either be a wall texture or screen-space texture.
+	static void drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
+		const FrameView &frame);
+
+	// Low-level shader for perspective chasm pixel rendering. This shader only cares about sampling
+	// the screen-space texture instead of branching on chasm wall texels.
+	// @todo: consider template bool for treating screen-space texels as regular texels.
+	template <bool TrueDepth>
+	static void drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
+		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+		const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
+
+	// Draws a column of chasm pixels with perspective and no transparency. The pixel drawing order
+	// is top to bottom, so the start and end values should be passed with that in mind.
+	static void drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
+		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+		const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels for a distant sky object (mountain, cloud, etc.). The 'emissive'
 	// parameter is for animated objects like volcanoes.
@@ -776,9 +807,9 @@ public:
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
 
-	// Adds a chasm texture for the given water or lava texture list.
-	void addWaterTexture(const uint32_t *colors, int width, int height);
-	void addLavaTexture(const uint32_t *colors, int width, int height);
+	// Adds a screen-space chasm texture for the given chasm texture list.
+	void addChasmTexture(int chasmID, const uint8_t *colors, int width, int height,
+		const Palette &palette);
 
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
