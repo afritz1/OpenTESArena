@@ -3186,8 +3186,8 @@ void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double sc
 	// perfect solution, so there will probably be graphics options to tweak how exactly this
 	// sampling is done (stretch, tile, etc.).
 	const int textureX = static_cast<int>(screenXPercent * textureWidthReal);
-	const int textureY = static_cast<int>(screenYPercent * textureHeightReal);
-	const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+	const int textureY = static_cast<int>((screenYPercent * 2.0) * textureHeightReal) % ChasmTexture::HEIGHT;
+	const int textureIndex = textureX + (textureY * ChasmTexture::WIDTH);
 
 	const ChasmTexel &texel = texture.texels[textureIndex];
 	*r = texel.r;
