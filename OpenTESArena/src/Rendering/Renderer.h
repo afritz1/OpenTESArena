@@ -194,6 +194,8 @@ public:
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
 		bool flipped, const uint8_t *srcTexels, int width, int height, const Palette &palette);
+	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
@@ -218,8 +220,8 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
-		double ambient, double daytimePercent, double latitude, bool parallaxSky,
+	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
+		double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager);

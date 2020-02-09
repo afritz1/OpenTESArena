@@ -617,6 +617,13 @@ void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stat
 		srcTexels, width, height, palette);
 }
 
+void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+	int width, int height, const Palette &palette)
+{
+	DebugAssert(this->softwareRenderer.isInited());
+	this->softwareRenderer.addChasmTexture(chasmType, colors, width, height, palette);
+}
+
 void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
@@ -731,8 +738,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
-	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
+	double ambient, double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager)
 {
@@ -751,7 +758,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent,
+	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
 		latitude, parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid,
 		entityManager, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();

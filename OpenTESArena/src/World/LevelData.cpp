@@ -13,6 +13,7 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MiscAssets.h"
+#include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/EntityType.h"
@@ -1322,335 +1323,380 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
 	const Palette &palette = col.getPalette();
 
-	// Load .INF voxel textures into the renderer.
-	const auto &voxelTextures = this->inf.getVoxelTextures();
-	const int voxelTextureCount = static_cast<int>(voxelTextures.size());
-	for (int i = 0; i < voxelTextureCount; i++)
+	// Loads .INF voxel textures into the renderer.
+	auto loadVoxelTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		DebugAssertIndex(voxelTextures, i);
-		const auto &textureData = voxelTextures[i];
-
-		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string_view extension = StringView::getExtension(textureName);
-		const bool isIMG = extension == "IMG";
-		const bool isSET = extension == "SET";
-		const bool noExtension = extension.size() == 0;
-
-		if (isIMG)
+		const auto &voxelTextures = this->inf.getVoxelTextures();
+		const int voxelTextureCount = static_cast<int>(voxelTextures.size());
+		for (int i = 0; i < voxelTextureCount; i++)
 		{
-			IMGFile img;
-			if (!img.init(textureName.c_str()))
-			{
-				DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
-			}
+			DebugAssertIndex(voxelTextures, i);
+			const auto &textureData = voxelTextures[i];
 
-			renderer.setVoxelTexture(i, img.getPixels(), palette);
-		}
-		else if (isSET)
-		{
-			SETFile set;
-			if (!set.init(textureName.c_str()))
-			{
-				DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
-			}
-
-			// Use the texture data's .SET index to obtain the correct surface.
-			DebugAssert(textureData.setIndex.has_value());
-			const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
-			renderer.setVoxelTexture(i, srcPixels, palette);
-		}
-		else if (noExtension)
-		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(textureData);
-		}
-		else
-		{
-			DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
-		}
-	}
-
-	// Initialize entities from the flat defs list and write their textures to the renderer.
-	const auto &exeData = miscAssets.getExeData();
-	for (const auto &flatDef : this->flatsLists)
-	{
-		const int flatIndex = flatDef.getFlatIndex();
-		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
-		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
-		const std::optional<int> &optItemIndex = flatData.itemIndex;
-
-		bool isFinalBoss;
-		const bool isCreature = optItemIndex.has_value() &&
-			ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
-		const bool isHumanEnemy = optItemIndex.has_value() &&
-			ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
-
-		// Must be at least one instance of the entity for the loop to try and
-		// instantiate it and write textures to the renderer.
-		DebugAssert(flatDef.getPositions().size() > 0);
-
-		// Entity data index is currently the flat index (depends on .INF file).
-		const int dataIndex = flatIndex;
-
-		// Add a new entity data instance.
-		// @todo: assign creature data here from .exe data if the flat is a creature.
-		DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
-		EntityDefinition newEntityDef;
-		if (isCreature)
-		{
-			// Read from .exe data instead for creatures.
-			const int itemIndex = *optItemIndex;
-			const int creatureID = isFinalBoss ?
-				ArenaAnimUtils::getFinalBossCreatureID() :
-				ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-			const int creatureIndex = creatureID - 1;
-
-			std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
-			{
-				if (!isFinalBoss)
-				{
-					const auto &creatureNames = exeData.entities.creatureNames;
-					DebugAssertIndex(creatureNames, creatureIndex);
-					return creatureNames[creatureIndex];
-				}
-				else
-				{
-					// @todo: return final boss class name?
-					return std::string("TODO");
-				}
-			}();
-
-			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
-			DebugAssertIndex(creatureYOffsets, creatureIndex);
-			const int yOffset = creatureYOffsets[creatureIndex];
-
-			const bool collider = true;
-			const bool puddle = false;
-			const bool largeScale = false;
-			const bool dark = false;
-			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
-			const bool ceiling = false;
-			const bool mediumScale = false;
-			newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
-				largeScale, dark, transparent, ceiling, mediumScale);
-		}
-		else if (isHumanEnemy)
-		{
-			// Use character class name as the display name.
-			const auto &charClassNames = exeData.charClasses.classNames;
-			const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
-			DebugAssertIndex(charClassNames, charClassIndex);
-			const std::string_view charClassName = charClassNames[charClassIndex];
-
-			newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
-				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-				flatData.transparent, flatData.ceiling, flatData.mediumScale);
-		}
-		else
-		{
-			// No display name.
-			std::string displayName;
-			newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
-				flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-				flatData.transparent, flatData.ceiling, flatData.mediumScale);
-		}
-
-		// Add entity animation data. Static entities have only idle animations (and maybe on/off
-		// state for lampposts). Dynamic entities have several animation states and directions.
-		auto &entityAnimData = newEntityDef.getAnimationData();
-		std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
-			attackStates, deathStates;
-
-		// Cache for .CFA files referenced multiple times.
-		ArenaAnimUtils::AnimFileCache<CFAFile> cfaCache;
-
-		if (entityType == EntityType::Static)
-		{
-			EntityAnimationData::State animState =
-				ArenaAnimUtils::makeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
-
-			// The entity can only be instantiated if there is at least one animation frame.
-			const bool success = animState.getKeyframes().getCount() > 0;
-			if (success)
-			{
-				idleStates.push_back(std::move(animState));
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-			}
-			else
-			{
-				continue;
-			}
-		}
-		else if (entityType == EntityType::Dynamic)
-		{
-			ArenaAnimUtils::makeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
-				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
-
-			// Must at least have an idle state.
-			DebugAssert(idleStates.size() > 0);
-			entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-
-			if (lookStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
-			}
-
-			if (walkStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
-			}
-
-			if (attackStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
-			}
-
-			if (deathStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
-			}
-		}
-		else
-		{
-			DebugCrash("Unrecognized entity type \"" +
-				std::to_string(static_cast<int>(entityType)) + "\".");
-		}
-
-		this->entityManager.addEntityDef(std::move(newEntityDef));
-
-		// Initialize each instance of the flat def.
-		for (const Int2 &position : flatDef.getPositions())
-		{
-			Entity *entity = [this, entityType]() -> Entity*
-			{
-				if (entityType == EntityType::Static)
-				{
-					StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
-					staticEntity->setDerivedType(StaticEntityType::Doodad);
-					return staticEntity;
-				}
-				else if (entityType == EntityType::Dynamic)
-				{
-					DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
-					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
-					dynamicEntity->setDirection(Double2::UnitX);
-					return dynamicEntity;
-				}
-				else
-				{
-					DebugCrash("Unrecognized entity type \"" +
-						std::to_string(static_cast<int>(entityType)) + "\".");
-					return nullptr;
-				}
-			}();
-
-			entity->init(dataIndex);
-
-			const Double2 positionXZ(
-				static_cast<double>(position.x) + 0.50,
-				static_cast<double>(position.y) + 0.50);
-			entity->setPosition(positionXZ);
-		}
-
-		auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
-			const EntityAnimationData::State &animState, int angleID)
-		{
-			// Check whether the animation direction ID is for a flipped animation.
-			const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID);
-
-			// Write the flat def's textures to the renderer.
-			const std::string &entityAnimName = animState.getTextureName();
-			const std::string_view extension = StringView::getExtension(entityAnimName);
-			const bool isCFA = extension == "CFA";
-			const bool isDFA = extension == "DFA";
+			const std::string textureName = String::toUppercase(textureData.filename);
+			const std::string_view extension = StringView::getExtension(textureName);
 			const bool isIMG = extension == "IMG";
+			const bool isSET = extension == "SET";
 			const bool noExtension = extension.size() == 0;
 
-			// Entities can be partially transparent. Some palette indices determine whether
-			// there should be any "alpha blending" (in the original game, it implements alpha
-			// using light level diminishing with 13 different levels in an .LGT file).
-			auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
-				int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
-			{
-				renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
-					width, height, palette);
-			};
-
-			if (isCFA)
-			{
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
-				{
-					DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
-				}
-
-				for (int i = 0; i < cfa->getImageCount(); i++)
-				{
-					addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
-						flatIndex, animState.getType(), angleID);
-				}
-			}
-			else if (isDFA)
-			{
-				DFAFile dfa;
-				if (!dfa.init(entityAnimName.c_str()))
-				{
-					DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
-				}
-
-				for (int i = 0; i < dfa.getImageCount(); i++)
-				{
-					addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
-						flatIndex, animState.getType(), angleID);
-				}
-			}
-			else if (isIMG)
+			if (isIMG)
 			{
 				IMGFile img;
-				if (!img.init(entityAnimName.c_str()))
+				if (!img.init(textureName.c_str()))
 				{
-					DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+					DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
 				}
 
-				addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
-					flatIndex, animState.getType(), angleID);
+				renderer.setVoxelTexture(i, img.getPixels(), palette);
+			}
+			else if (isSET)
+			{
+				SETFile set;
+				if (!set.init(textureName.c_str()))
+				{
+					DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
+				}
+
+				// Use the texture data's .SET index to obtain the correct surface.
+				DebugAssert(textureData.setIndex.has_value());
+				const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
+				renderer.setVoxelTexture(i, srcPixels, palette);
 			}
 			else if (noExtension)
 			{
 				// Ignore texture names with no extension. They appear to be lore-related names
 				// that were used at one point in Arena's development.
-				static_cast<void>(entityAnimName);
+				static_cast<void>(textureData);
 			}
 			else
 			{
-				DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
+				DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 			}
-		};
+		}
+	};
 
-		auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
-			const std::vector<EntityAnimationData::State> &animStateList)
+	// Loads screen-space chasm textures into the renderer.
+	auto loadChasmTextures = [this, &renderer, &palette]()
+	{
+		const int chasmWidth = RCIFile::WIDTH;
+		const int chasmHeight = RCIFile::HEIGHT;
+		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
+
+		// Dry chasm (just a single color).
+		const uint8_t dryChasmColor = 112;
+		chasmBuffer.fill(dryChasmColor);
+		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
+			chasmWidth, chasmHeight, palette);
+
+		// Lambda for writing an .RCI animation to the renderer.
+		auto writeChasmAnim = [&renderer, &palette, chasmWidth, chasmHeight](
+			VoxelDefinition::ChasmData::Type chasmType, const std::string &rciName)
 		{
-			for (size_t i = 0; i < animStateList.size(); i++)
+			RCIFile rci;
+			if (!rci.init(rciName.c_str()))
 			{
-				const auto &animState = animStateList[i];
-				const int angleID = static_cast<int>(i + 1);
-				addTexturesFromState(animState, angleID);
+				DebugLogError("Couldn't init .RCI \"" + rciName + "\".");
+				return;
+			}
+
+			for (int i = 0; i < rci.getImageCount(); i++)
+			{
+				const uint8_t *rciPixels = rci.getPixels(i);
+				renderer.addChasmTexture(chasmType, rciPixels, chasmWidth, chasmHeight, palette);
 			}
 		};
 
-		// Add textures to the renderer for each of the entity's animation states.
-		// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
-		// in the renderer implementation, because it seems to group textures by flat index only,
-		// which could be wasteful).
-		// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
-		//   in the addTextureFromState lambda.
-		addTexturesFromStateList(idleStates);
-		addTexturesFromStateList(lookStates);
-		addTexturesFromStateList(walkStates);
-		addTexturesFromStateList(attackStates);
-		addTexturesFromStateList(deathStates);
-	}
+		writeChasmAnim(VoxelDefinition::ChasmData::Type::Wet, "WATERANI.RCI");
+		writeChasmAnim(VoxelDefinition::ChasmData::Type::Lava, "LAVAANI.RCI");
+	};
+	
+	// Initializes entities from the flat defs list and write their textures to the renderer.
+	auto loadEntities = [this, &miscAssets, &textureManager, &renderer, &palette]()
+	{
+		const auto &exeData = miscAssets.getExeData();
+		for (const auto &flatDef : this->flatsLists)
+		{
+			const int flatIndex = flatDef.getFlatIndex();
+			const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
+			const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
+			const std::optional<int> &optItemIndex = flatData.itemIndex;
+
+			bool isFinalBoss;
+			const bool isCreature = optItemIndex.has_value() &&
+				ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
+			const bool isHumanEnemy = optItemIndex.has_value() &&
+				ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+
+			// Must be at least one instance of the entity for the loop to try and
+			// instantiate it and write textures to the renderer.
+			DebugAssert(flatDef.getPositions().size() > 0);
+
+			// Entity data index is currently the flat index (depends on .INF file).
+			const int dataIndex = flatIndex;
+
+			// Add a new entity data instance.
+			// @todo: assign creature data here from .exe data if the flat is a creature.
+			DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
+			EntityDefinition newEntityDef;
+			if (isCreature)
+			{
+				// Read from .exe data instead for creatures.
+				const int itemIndex = *optItemIndex;
+				const int creatureID = isFinalBoss ?
+					ArenaAnimUtils::getFinalBossCreatureID() :
+					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+				const int creatureIndex = creatureID - 1;
+
+				std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
+				{
+					if (!isFinalBoss)
+					{
+						const auto &creatureNames = exeData.entities.creatureNames;
+						DebugAssertIndex(creatureNames, creatureIndex);
+						return creatureNames[creatureIndex];
+					}
+					else
+					{
+						// @todo: return final boss class name?
+						return std::string("TODO");
+					}
+				}();
+
+				const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
+				DebugAssertIndex(creatureYOffsets, creatureIndex);
+				const int yOffset = creatureYOffsets[creatureIndex];
+
+				const bool collider = true;
+				const bool puddle = false;
+				const bool largeScale = false;
+				const bool dark = false;
+				const bool transparent = false; // Apparently ghost properties aren't in .INF files.
+				const bool ceiling = false;
+				const bool mediumScale = false;
+				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
+					largeScale, dark, transparent, ceiling, mediumScale);
+			}
+			else if (isHumanEnemy)
+			{
+				// Use character class name as the display name.
+				const auto &charClassNames = exeData.charClasses.classNames;
+				const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
+				DebugAssertIndex(charClassNames, charClassIndex);
+				const std::string_view charClassName = charClassNames[charClassIndex];
+
+				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
+					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale);
+			}
+			else
+			{
+				// No display name.
+				std::string displayName;
+				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
+					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale);
+			}
+
+			// Add entity animation data. Static entities have only idle animations (and maybe on/off
+			// state for lampposts). Dynamic entities have several animation states and directions.
+			auto &entityAnimData = newEntityDef.getAnimationData();
+			std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
+				attackStates, deathStates;
+
+			// Cache for .CFA files referenced multiple times.
+			ArenaAnimUtils::AnimFileCache<CFAFile> cfaCache;
+
+			if (entityType == EntityType::Static)
+			{
+				EntityAnimationData::State animState =
+					ArenaAnimUtils::makeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
+
+				// The entity can only be instantiated if there is at least one animation frame.
+				const bool success = animState.getKeyframes().getCount() > 0;
+				if (success)
+				{
+					idleStates.push_back(std::move(animState));
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+				}
+				else
+				{
+					continue;
+				}
+			}
+			else if (entityType == EntityType::Dynamic)
+			{
+				ArenaAnimUtils::makeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
+					&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
+
+				// Must at least have an idle state.
+				DebugAssert(idleStates.size() > 0);
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+
+				if (lookStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
+				}
+
+				if (walkStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
+				}
+
+				if (attackStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
+				}
+
+				if (deathStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
+				}
+			}
+			else
+			{
+				DebugCrash("Unrecognized entity type \"" +
+					std::to_string(static_cast<int>(entityType)) + "\".");
+			}
+
+			this->entityManager.addEntityDef(std::move(newEntityDef));
+
+			// Initialize each instance of the flat def.
+			for (const Int2 &position : flatDef.getPositions())
+			{
+				Entity *entity = [this, entityType]() -> Entity*
+				{
+					if (entityType == EntityType::Static)
+					{
+						StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
+						staticEntity->setDerivedType(StaticEntityType::Doodad);
+						return staticEntity;
+					}
+					else if (entityType == EntityType::Dynamic)
+					{
+						DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
+						dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+						dynamicEntity->setDirection(Double2::UnitX);
+						return dynamicEntity;
+					}
+					else
+					{
+						DebugCrash("Unrecognized entity type \"" +
+							std::to_string(static_cast<int>(entityType)) + "\".");
+						return nullptr;
+					}
+				}();
+
+				entity->init(dataIndex);
+
+				const Double2 positionXZ(
+					static_cast<double>(position.x) + 0.50,
+					static_cast<double>(position.y) + 0.50);
+				entity->setPosition(positionXZ);
+			}
+
+			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
+				const EntityAnimationData::State &animState, int angleID)
+			{
+				// Check whether the animation direction ID is for a flipped animation.
+				const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID);
+
+				// Write the flat def's textures to the renderer.
+				const std::string &entityAnimName = animState.getTextureName();
+				const std::string_view extension = StringView::getExtension(entityAnimName);
+				const bool isCFA = extension == "CFA";
+				const bool isDFA = extension == "DFA";
+				const bool isIMG = extension == "IMG";
+				const bool noExtension = extension.size() == 0;
+
+				// Entities can be partially transparent. Some palette indices determine whether
+				// there should be any "alpha blending" (in the original game, it implements alpha
+				// using light level diminishing with 13 different levels in an .LGT file).
+				auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
+					int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
+				{
+					renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
+						width, height, palette);
+				};
+
+				if (isCFA)
+				{
+					const CFAFile *cfa;
+					if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
+					{
+						DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
+					}
+
+					for (int i = 0; i < cfa->getImageCount(); i++)
+					{
+						addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
+							flatIndex, animState.getType(), angleID);
+					}
+				}
+				else if (isDFA)
+				{
+					DFAFile dfa;
+					if (!dfa.init(entityAnimName.c_str()))
+					{
+						DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
+					}
+
+					for (int i = 0; i < dfa.getImageCount(); i++)
+					{
+						addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
+							flatIndex, animState.getType(), angleID);
+					}
+				}
+				else if (isIMG)
+				{
+					IMGFile img;
+					if (!img.init(entityAnimName.c_str()))
+					{
+						DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+					}
+
+					addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
+						flatIndex, animState.getType(), angleID);
+				}
+				else if (noExtension)
+				{
+					// Ignore texture names with no extension. They appear to be lore-related names
+					// that were used at one point in Arena's development.
+					static_cast<void>(entityAnimName);
+				}
+				else
+				{
+					DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
+				}
+			};
+
+			auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
+				const std::vector<EntityAnimationData::State> &animStateList)
+			{
+				for (size_t i = 0; i < animStateList.size(); i++)
+				{
+					const auto &animState = animStateList[i];
+					const int angleID = static_cast<int>(i + 1);
+					addTexturesFromState(animState, angleID);
+				}
+			};
+
+			// Add textures to the renderer for each of the entity's animation states.
+			// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
+			// in the renderer implementation, because it seems to group textures by flat index only,
+			// which could be wasteful).
+			// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
+			//   in the addTextureFromState lambda.
+			addTexturesFromStateList(idleStates);
+			addTexturesFromStateList(lookStates);
+			addTexturesFromStateList(walkStates);
+			addTexturesFromStateList(attackStates);
+			addTexturesFromStateList(deathStates);
+		}
+	};
+
+	loadVoxelTextures();
+	loadChasmTextures();
+	loadEntities();
 }
 
 void LevelData::tick(Game &game, double dt)

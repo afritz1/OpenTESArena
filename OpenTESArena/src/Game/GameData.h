@@ -48,6 +48,9 @@ private:
 	// scale is 5.0, then each real-time second is five game seconds, etc..
 	static const double TIME_SCALE;
 
+	// Seconds per chasm animation loop.
+	static const double CHASM_ANIM_PERIOD;
+
 	// Arbitrary value for interior fog distance (mostly for testing purposes).
 	static const double DEFAULT_INTERIOR_FOG_DIST;
 
@@ -71,6 +74,7 @@ private:
 	Clock clock;
 	ArenaRandom arenaRandom;
 	double fogDistance;
+	double chasmAnimSeconds;
 	WeatherType weatherType;
 
 	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
@@ -157,6 +161,9 @@ public:
 	// Gets a percentage representing how far along the current day is. 0.0 is 
 	// 12:00am and 0.50 is noon.
 	double getDaytimePercent() const;
+
+	// Gets a percentage representing the current progress through the looping chasm animation.
+	double getChasmAnimPercent() const;
 
 	double getFogDistance() const;
 	WeatherType getWeatherType() const;

@@ -449,7 +449,8 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
-	double daytimePercent, double latitude, double ambient, double fogDistance)
+	double daytimePercent, double latitude, double ambient, double fogDistance,
+	double chasmAnimPercent)
 {
 	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
@@ -522,6 +523,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	this->distantAmbient = std::clamp(ambient, 0.25, 1.0);
 
 	this->fogDistance = fogDistance;
+	this->chasmAnimPercent = chasmAnimPercent;
 }
 
 const Double3 &SoftwareRenderer::ShadingInfo::getFogColor() const
@@ -792,7 +794,8 @@ void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
 void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion)
+	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
+	std::vector<OcclusionData> &occlusion)
 {
 	this->threadsDone = 0;
 	this->ceilingHeight = ceilingHeight;
@@ -800,6 +803,7 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
 	this->fadingVoxels = &fadingVoxels;
 	this->voxelGrid = &voxelGrid;
 	this->voxelTextures = &voxelTextures;
+	this->chasmTextureGroups = &chasmTextureGroups;
 	this->occlusion = &occlusion;
 }
 
@@ -1079,6 +1083,34 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 	}
 }
 
+void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType,
+	const uint8_t *colors, int width, int height, const Palette &palette)
+{
+	DebugAssert(width == ChasmTexture::WIDTH);
+	DebugAssert(height == ChasmTexture::HEIGHT);
+
+	const int chasmID = SoftwareRenderer::getChasmIdFromType(chasmType);
+
+	auto iter = this->chasmTextureGroups.find(chasmID);
+	if (iter == this->chasmTextureGroups.end())
+	{
+		iter = this->chasmTextureGroups.insert(std::make_pair(chasmID, ChasmTextureGroup())).first;
+	}
+
+	ChasmTextureGroup &textureGroup = iter->second;
+	textureGroup.push_back(ChasmTexture());
+	ChasmTexture &texture = textureGroup.back();
+
+	for (int y = 0; y < ChasmTexture::HEIGHT; y++)
+	{
+		for (int x = 0; x < ChasmTexture::WIDTH; x++)
+		{
+			const int index = x + (y * ChasmTexture::WIDTH);
+			texture.texels.at(index) = ChasmTexel::makeFrom8Bit(colors[index], palette);
+		}
+	}
+}
+
 void SoftwareRenderer::setNightLightsActive(bool active)
 {
 	// @todo: activate lights (don't worry about textures).
@@ -1124,6 +1156,8 @@ void SoftwareRenderer::clearTextures()
 	// Distant sky textures are cleared because the vector size is managed internally.
 	this->skyTextures.clear();
 	this->distantObjects.sunTextureIndex = SoftwareRenderer::DistantObjects::NO_SUN;
+
+	this->chasmTextureGroups.clear();
 }
 
 void SoftwareRenderer::clearDistantSky()
@@ -2009,6 +2043,48 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 			}
 		}
 	}
+}
+
+int SoftwareRenderer::getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType)
+{
+	switch (chasmType)
+	{
+	case VoxelDefinition::ChasmData::Type::Dry:
+		return 0;
+	case VoxelDefinition::ChasmData::Type::Wet:
+		return 1;
+	case VoxelDefinition::ChasmData::Type::Lava:
+		return 2;
+	default:
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(chasmType)));
+	}
+}
+
+void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
+	VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
+	const ChasmTexture **outTexture)
+{
+	const int chasmID = SoftwareRenderer::getChasmIdFromType(chasmType);
+	const auto groupIter = textureGroups.find(chasmID);
+	if (groupIter == textureGroups.end())
+	{
+		DebugCrash("Missing chasm texture group " + std::to_string(chasmID) + ".");
+		*outTexture = nullptr;
+		return;
+	}
+
+	const auto &textureGroup = groupIter->second;
+	const int groupSize = static_cast<int>(textureGroup.size());
+	if (groupSize == 0)
+	{
+		DebugCrash("Empty chasm texture group " + std::to_string(chasmID) + ".");
+		*outTexture = nullptr;
+		return;
+	}
+
+	const double groupRealIndex = static_cast<double>(groupSize) * chasmAnimPercent;
+	const int animIndex = std::clamp(static_cast<int>(groupRealIndex), 0, groupSize - 1);
+	*outTexture = &textureGroup[animIndex];
 }
 
 double SoftwareRenderer::getDoorPercentOpen(int voxelX, int voxelZ,
@@ -3100,13 +3176,23 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 	}
 }
 
-void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double screenX, double screenY,
-	double *r, double *g, double *b)
+void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double screenXPercent,
+	double screenYPercent, double *r, double *g, double *b)
 {
 	constexpr double textureWidthReal = static_cast<double>(ChasmTexture::WIDTH);
 	constexpr double textureHeightReal = static_cast<double>(ChasmTexture::HEIGHT);
 
-	// @todo
+	// @todo: this is just the first implementation of chasm texturing. There is apparently no
+	// perfect solution, so there will probably be graphics options to tweak how exactly this
+	// sampling is done (stretch, tile, etc.).
+	const int textureX = static_cast<int>(screenXPercent * textureWidthReal);
+	const int textureY = static_cast<int>(screenYPercent * textureHeightReal);
+	const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+
+	const ChasmTexel &texel = texture.texels[textureIndex];
+	*r = texel.r;
+	*g = texel.g;
+	*b = texel.b;
 }
 
 template <bool Fading>
@@ -3451,7 +3537,116 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 	const FrameView &frame)
 {
-	// @todo
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	int yStart = drawRange.yStart;
+	int yEnd = drawRange.yEnd;
+
+	// Horizontal offset in texture.
+	// - Taken care of in texture sampling function (redundant calculation, though).
+	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+
+	// Linearly interpolated fog.
+	const Double3 &fogColor = shadingInfo.getFogColor();
+	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
+
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
+
+	// Shading on the texture.
+	// - @todo: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
+
+	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
+	occlusion.clipRange(&yStart, &yEnd);
+	occlusion.update(yStart, yEnd);
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frame.width);
+
+		// Check depth of the pixel before rendering.
+		if (depth <= (frame.depthBuffer[index] - Constants::Epsilon))
+		{
+			// Percent stepped from beginning to end on the column.
+			const double yPercent =
+				((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
+
+			// Vertical texture coordinate.
+			const double v = vStart + ((vEnd - vStart) * yPercent);
+
+			// Texture color. If the texel is transparent, use the chasm texture instead.
+			// @todo: maybe this could be optimized to a 'transparent-texel-only' look-up, that
+			// then branches to determine whether to sample the voxel or chasm texture?
+			constexpr bool TextureTransparency = true;
+			double colorR, colorG, colorB, colorEmission;
+			bool colorTransparent;
+			SoftwareRenderer::sampleVoxelTexture<TextureFilterMode, TextureTransparency>(
+				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, &colorTransparent);
+
+			if (!colorTransparent)
+			{
+				// Voxel texture.
+				// Shading from light.
+				constexpr double shadingMax = 1.0;
+				colorR *= std::min(shading.x + colorEmission, shadingMax);
+				colorG *= std::min(shading.y + colorEmission, shadingMax);
+				colorB *= std::min(shading.z + colorEmission, shadingMax);
+
+				// Linearly interpolate with fog.
+				colorR += (fogColor.x - colorR) * fogPercent;
+				colorG += (fogColor.y - colorG) * fogPercent;
+				colorB += (fogColor.z - colorB) * fogPercent;
+
+				// Clamp maximum (don't worry about negative values).
+				const double high = 1.0;
+				colorR = (colorR > high) ? high : colorR;
+				colorG = (colorG > high) ? high : colorG;
+				colorB = (colorB > high) ? high : colorB;
+
+				// Convert floats to integers.
+				const uint32_t colorRGB = static_cast<uint32_t>(
+					((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+					((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+					((static_cast<uint8_t>(colorB * 255.0))));
+
+				frame.colorBuffer[index] = colorRGB;
+				frame.depthBuffer[index] = depth;
+			}
+			else
+			{
+				// Chasm texture.
+				const double screenXPercent = static_cast<double>(x) / frame.widthReal;
+				const double screenYPercent = static_cast<double>(y) / frame.heightReal;
+				double chasmR, chasmG, chasmB;
+				SoftwareRenderer::sampleChasmTexture(chasmTexture, screenXPercent, screenYPercent,
+					&chasmR, &chasmG, &chasmB);
+
+				const uint32_t colorRGB = static_cast<uint32_t>(
+					((static_cast<uint8_t>(chasmR * 255.0)) << 16) |
+					((static_cast<uint8_t>(chasmG * 255.0)) << 8) |
+					((static_cast<uint8_t>(chasmB * 255.0))));
+
+				frame.colorBuffer[index] = colorRGB;
+
+				if constexpr (TrueDepth)
+				{
+					frame.depthBuffer[index] = depth;
+				}
+				else
+				{
+					frame.depthBuffer[index] = std::numeric_limits<double>::infinity();
+				}
+			}
+		}
+	}
 }
 
 void SoftwareRenderer::drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
@@ -3480,7 +3675,95 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
 	OcclusionData &occlusion, const FrameView &frame)
 {
-	// @todo
+	// Draw range values.
+	const double yProjStart = drawRange.yProjStart;
+	const double yProjEnd = drawRange.yProjEnd;
+	int yStart = drawRange.yStart;
+	int yEnd = drawRange.yEnd;
+
+	// Fog color to interpolate with.
+	const Double3 &fogColor = shadingInfo.getFogColor();
+
+	// Contribution from the sun.
+	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
+	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
+		0.0, 1.0 - shadingInfo.ambient);
+
+	// Shading on the texture.
+	// - @todo: contribution from lights.
+	const Double3 shading(
+		shadingInfo.ambient + sunComponent.x,
+		shadingInfo.ambient + sunComponent.y,
+		shadingInfo.ambient + sunComponent.z);
+
+	// Values for perspective-correct interpolation.
+	const double depthStartRecip = 1.0 / depthStart;
+	const double depthEndRecip = 1.0 / depthEnd;
+	const Double2 startPointDiv = startPoint * depthStartRecip;
+	const Double2 endPointDiv = endPoint * depthEndRecip;
+	const Double2 pointDivDiff = endPointDiv - startPointDiv;
+
+	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
+	occlusion.clipRange(&yStart, &yEnd);
+	occlusion.update(yStart, yEnd);
+
+	// Draw the column to the output buffer.
+	for (int y = yStart; y < yEnd; y++)
+	{
+		const int index = x + (y * frame.width);
+
+		// Percent stepped from beginning to end on the column.
+		const double yPercent =
+			((static_cast<double>(y) + 0.50) - yProjStart) / (yProjEnd - yProjStart);
+
+		// Interpolate between the near and far depth.
+		const double depth = 1.0 /
+			(depthStartRecip + ((depthEndRecip - depthStartRecip) * yPercent));
+
+		// Check depth of the pixel before rendering.
+		// - @todo: implement occlusion culling and back-to-front transparent rendering so
+		//   this depth check isn't needed.
+		if (depth <= frame.depthBuffer[index])
+		{
+			// Linearly interpolated fog.
+			const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
+
+			// Interpolate between start and end points.
+			const double currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
+			const double currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
+
+			// Texture coordinates.
+			const double u = std::clamp(
+				Constants::JustBelowOne - (currentPointX - std::floor(currentPointX)),
+				0.0, Constants::JustBelowOne);
+			const double v = std::clamp(
+				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY)),
+				0.0, Constants::JustBelowOne);
+
+			// Chasm texture color.
+			const double screenXPercent = static_cast<double>(x) / frame.widthReal;
+			const double screenYPercent = static_cast<double>(y) / frame.heightReal;
+			double colorR, colorG, colorB;
+			SoftwareRenderer::sampleChasmTexture(texture, screenXPercent, screenYPercent,
+				&colorR, &colorG, &colorB);
+
+			const uint32_t colorRGB = static_cast<uint32_t>(
+				((static_cast<uint8_t>(colorR * 255.0)) << 16) |
+				((static_cast<uint8_t>(colorG * 255.0)) << 8) |
+				((static_cast<uint8_t>(colorB * 255.0))));
+
+			frame.colorBuffer[index] = colorRGB;
+
+			if constexpr (TrueDepth)
+			{
+				frame.depthBuffer[index] = depth;
+			}
+			else
+			{
+				frame.depthBuffer[index] = std::numeric_limits<double>::infinity();
+			}
+		}
+	}
 }
 
 void SoftwareRenderer::drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
@@ -4055,7 +4338,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
 
@@ -4096,7 +4380,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
+		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -4332,6 +4616,30 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
 
+			// Wet chasms and lava chasms are unaffected by ceiling height.
+			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				farCeilingPoint.y - chasmDepth,
+				farPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				farFloorPoint.y,
+				nearPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+			const ChasmTexture *chasmTexture;
+			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+				shadingInfo.chasmAnimPercent, &chasmTexture);
+
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
 			{
@@ -4361,27 +4669,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				}();
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					voxelYReal + voxelHeight,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					farCeilingPoint.y - chasmDepth,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, farFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), shadingInfo,
-					occlusion, frame);
+				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
+					shadingInfo, occlusion, frame);
 			}
+
+			// Chasm floor.
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -4480,7 +4776,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
+		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -4695,6 +4991,30 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
 
+			// Wet chasms and lava chasms are unaffected by ceiling height.
+			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				voxelYReal + voxelHeight,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				farCeilingPoint.y - chasmDepth,
+				farPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				farFloorPoint.y,
+				nearPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+			const ChasmTexture *chasmTexture;
+			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+				shadingInfo.chasmAnimPercent, &chasmTexture);
+
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
 			{
@@ -4724,27 +5044,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				}();
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					voxelYReal + voxelHeight,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					farCeilingPoint.y - chasmDepth,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, farFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), shadingInfo,
-					occlusion, frame);
+				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
+					shadingInfo, occlusion, frame);
 			}
+
+			// Chasm floor.
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5171,7 +5479,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -5219,7 +5528,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
+		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -5441,32 +5750,47 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
 				voxelX, voxelZ, nearFacing, camera, ray);
 
-			// Near.
+			// Wet chasms and lava chasms are unaffected by ceiling height.
+			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				nearCeilingPoint.y - chasmDepth,
+				nearPoint.y);
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const ChasmTexture *chasmTexture;
+			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+				shadingInfo.chasmAnimPercent, &chasmTexture);
+
+			// Near (drawn separately from far + chasm floor).
 			if (chasmData.faceIsVisible(nearFacing))
 			{
 				const double nearU = Constants::JustBelowOne - wallU;
 				const Double3 nearNormal = wallNormal;
-				
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 nearCeilingPoint(
-					nearPoint.x,
-					voxelYReal + voxelHeight,
-					nearPoint.y);
-				const Double3 nearFloorPoint(
-					nearPoint.x,
-					nearCeilingPoint.y - chasmDepth,
-					nearPoint.y);
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					nearCeilingPoint, nearFloorPoint, camera, frame);
 
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id),
+				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
+					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id), *chasmTexture,
 					shadingInfo, occlusion, frame);
 			}
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
@@ -5497,27 +5821,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				}();
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					voxelYReal + voxelHeight,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					farCeilingPoint.y - chasmDepth,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, farFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id),
+				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
 					shadingInfo, occlusion, frame);
 			}
+
+			// Chasm floor.
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5616,7 +5928,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
 		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
+		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -5839,37 +6151,52 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			// Render front and back-faces.
 			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
+			// Wet chasms and lava chasms are unaffected by ceiling height.
+			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
 			// Find which faces on the chasm were intersected.
 			const VoxelFacing nearFacing = facing;
 			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
 				voxelX, voxelZ, nearFacing, camera, ray);
 
-			// Near.
+			const Double3 nearCeilingPoint(
+				nearPoint.x,
+				voxelYReal + voxelHeight,
+				nearPoint.y);
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				nearCeilingPoint.y - chasmDepth,
+				nearPoint.y);
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const ChasmTexture *chasmTexture;
+			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+				shadingInfo.chasmAnimPercent, &chasmTexture);
+
+			// Near (drawn separately from far + chasm floor).
 			if (chasmData.faceIsVisible(nearFacing))
 			{
 				const double nearU = Constants::JustBelowOne - wallU;
 				const Double3 nearNormal = wallNormal;
 
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 nearCeilingPoint(
-					nearPoint.x,
-					voxelYReal + voxelHeight,
-					nearPoint.y);
-				const Double3 nearFloorPoint(
-					nearPoint.x,
-					nearCeilingPoint.y - chasmDepth,
-					nearPoint.y);
-
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					nearCeilingPoint, nearFloorPoint, camera, frame);
 
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id),
+				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
+					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id), *chasmTexture,
 					shadingInfo, occlusion, frame);
 			}
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
@@ -5900,27 +6227,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 				}();
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-
-				// Wet chasms and lava chasms are unaffected by ceiling height.
-				const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-					voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					voxelYReal + voxelHeight,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					farCeilingPoint.y - chasmDepth,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, farFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id),
+				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
 					shadingInfo, occlusion, frame);
 			}
+
+			// Chasm floor.
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -6518,7 +6833,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
 	// expensive as it does not stop at the first wall intersection, and it also renders voxels 
@@ -6611,7 +6927,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
 			zDistance, shadingInfo, ceilingHeight, openDoors, fadingVoxels, voxelGrid, textures,
-			occlusion, frame);
+			chasmTextureGroups, occlusion, frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -6688,7 +7004,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
 			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, ceilingHeight, 
-			openDoors, fadingVoxels, voxelGrid, textures, occlusion, frame);
+			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
@@ -6872,8 +7188,8 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
+	std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	const Double2 forwardZoomed(camera.forwardZoomedX, camera.forwardZoomedZ);
 	const Double2 rightAspected(camera.rightAspectedX, camera.rightAspectedZ);
@@ -6895,7 +7211,7 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 
 		// Cast the 2D ray and fill in the column's pixels with color.
 		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, openDoors,
-			fadingVoxels, voxelGrid, voxelTextures, occlusion.at(x), frame);
+			fadingVoxels, voxelGrid, voxelTextures, chasmTextureGroups, occlusion.at(x), frame);
 	}
 }
 
@@ -7009,7 +7325,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		RenderThreadData::Voxels &voxels = threadData.voxels;
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera,
 			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, *voxels.voxelGrid,
-			*voxels.voxelTextures, *voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
+			*voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion,
+			*threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish voxels.
 		threadBarrier(voxels);
@@ -7030,8 +7347,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 }
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
+	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
+	bool parallaxSky, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, uint32_t *colorBuffer)
 {
@@ -7052,7 +7369,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
-		ambient, this->fogDistance);
+		ambient, this->fogDistance, chasmAnimPercent);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.
@@ -7066,7 +7383,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 		this->skyGradientRowCache);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, fadingVoxels, voxelGrid,
-		this->voxelTextures, this->occlusion);
+		this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextureGroups);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread

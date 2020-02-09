@@ -64,6 +64,7 @@ namespace
 // One real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
+const double GameData::CHASM_ANIM_PERIOD = 1.0 / 2.0;
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
 
 GameData::GameData(Player &&player, const MiscAssets &miscAssets)
@@ -111,6 +112,8 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeather(miscAssets.getExeData());
+
+	this->chasmAnimSeconds = 0.0;
 }
 
 GameData::~GameData()
@@ -658,6 +661,12 @@ double GameData::getDaytimePercent() const
 		static_cast<double>(Clock::SECONDS_IN_A_DAY);
 }
 
+double GameData::getChasmAnimPercent() const
+{
+	const double percent = this->chasmAnimSeconds / GameData::CHASM_ANIM_PERIOD;
+	return std::clamp(percent, 0.0, Constants::JustBelowOne);
+}
+
 double GameData::getFogDistance() const
 {
 	return this->fogDistance;
@@ -927,6 +936,13 @@ void GameData::tickTime(double dt, Game &game)
 	{
 		// Increment the day.
 		this->date.incrementDay();
+	}
+
+	// Tick chasm animation.
+	this->chasmAnimSeconds += dt;
+	if (this->chasmAnimSeconds >= GameData::CHASM_ANIM_PERIOD)
+	{
+		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, GameData::CHASM_ANIM_PERIOD);
 	}
 
 	// Tick on-screen text messages.
