@@ -1254,25 +1254,28 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 					bottomRight.getWidth();
 			}
 
-			// Use a normalized direction.
-			accelDirection = accelDirection.normalized();
-
-			// Set the magnitude of the acceleration to some arbitrary number. These values
-			// are independent of max speed.
-			double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
-
-			// Check for jumping first (so the player can't slide jump on the first frame).
-			const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
-			if (rightClick)
+			// Only attempt to accelerate if a direction was chosen.
+			if (accelDirection.lengthSquared() > 0.0)
 			{
-				// Jump.
-				player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
-			}
-			// Change the player's velocity if valid.
-			else if (std::isfinite(accelDirection.length()) &&
-				std::isfinite(accelMagnitude))
-			{
-				player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+				// Use a normalized direction.
+				accelDirection = accelDirection.normalized();
+
+				// Set the magnitude of the acceleration to some arbitrary number. These values
+				// are independent of max speed.
+				double accelMagnitude = percent * (isRunning ? runSpeed : walkSpeed);
+
+				// Check for jumping first (so the player can't slide jump on the first frame).
+				const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+				if (rightClick)
+				{
+					// Jump.
+					player.accelerateInstant(Double3::UnitY, player.getJumpMagnitude());
+				}
+				// Change the player's velocity if valid.
+				else if (std::isfinite(accelDirection.length()) && std::isfinite(accelMagnitude))
+				{
+					player.accelerate(accelDirection, accelMagnitude, isRunning, dt);
+				}
 			}
 		}
 		else if ((forward || backward || ((left || right) && lCtrl) || space) &&
