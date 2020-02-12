@@ -450,7 +450,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
 	double daytimePercent, double latitude, double ambient, double fogDistance,
-	double chasmAnimPercent)
+	double chasmAnimPercent, bool sunExists)
 {
 	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
@@ -517,6 +517,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 			(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
 	}();
 
+	this->sunExists = sunExists;
 	this->ambient = ambient;
 
 	// At their darkest, distant objects are ~1/4 of their intensity.
@@ -2060,6 +2061,20 @@ int SoftwareRenderer::getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmT
 	}
 }
 
+bool SoftwareRenderer::isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType)
+{
+	switch (chasmType)
+	{
+	case VoxelDefinition::ChasmData::Type::Dry:
+	case VoxelDefinition::ChasmData::Type::Wet:
+		return false;
+	case VoxelDefinition::ChasmData::Type::Lava:
+		return true;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
+	}
+}
+
 void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
 	VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
 	const ChasmTexture **outTexture)
@@ -3531,7 +3546,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 	}
 }
 
-template <bool TrueDepth>
+template <bool AmbientShading, bool TrueDepth>
 void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth,
 	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
 	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
@@ -3629,6 +3644,13 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 				SoftwareRenderer::sampleChasmTexture(chasmTexture, screenXPercent, screenYPercent,
 					&chasmR, &chasmG, &chasmB);
 
+				if constexpr (AmbientShading)
+				{
+					chasmR *= shadingInfo.distantAmbient;
+					chasmG *= shadingInfo.distantAmbient;
+					chasmB *= shadingInfo.distantAmbient;
+				}
+
 				const uint32_t colorRGB = static_cast<uint32_t>(
 					((static_cast<uint8_t>(chasmR * 255.0)) << 16) |
 					((static_cast<uint8_t>(chasmG * 255.0)) << 8) |
@@ -3650,26 +3672,48 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 }
 
 void SoftwareRenderer::drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
-	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+	double vStart, double vEnd, const Double3 &normal, bool emissive, const VoxelTexture &texture,
 	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 	const FrameView &frame)
 {
+	const bool useAmbientChasmShading = shadingInfo.sunExists && !emissive;
 	const bool useTrueChasmDepth = true;
-	if (useTrueChasmDepth)
+
+	if (useAmbientChasmShading)
 	{
-		constexpr bool trueDepth = true;
-		SoftwareRenderer::drawChasmPixelsShader<trueDepth>(x, drawRange, depth, u, vStart, vEnd,
-			normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		constexpr bool ambientShading = true;
+		if (useTrueChasmDepth)
+		{
+			constexpr bool trueDepth = true;
+			SoftwareRenderer::drawChasmPixelsShader<ambientShading, trueDepth>(x, drawRange, depth,
+				u, vStart, vEnd, normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			constexpr bool trueDepth = false;
+			SoftwareRenderer::drawChasmPixelsShader<ambientShading, trueDepth>(x, drawRange, depth,
+				u, vStart, vEnd, normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		}
 	}
 	else
 	{
-		constexpr bool trueDepth = false;
-		SoftwareRenderer::drawChasmPixelsShader<trueDepth>(x, drawRange, depth, u, vStart, vEnd,
-			normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		constexpr bool ambientShading = false;
+		if (useTrueChasmDepth)
+		{
+			constexpr bool trueDepth = true;
+			SoftwareRenderer::drawChasmPixelsShader<ambientShading, trueDepth>(x, drawRange, depth,
+				u, vStart, vEnd, normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			constexpr bool trueDepth = false;
+			SoftwareRenderer::drawChasmPixelsShader<ambientShading, trueDepth>(x, drawRange, depth,
+				u, vStart, vEnd, normal, texture, chasmTexture, shadingInfo, occlusion, frame);
+		}
 	}
 }
 
-template <bool TrueDepth>
+template <bool AmbientShading, bool TrueDepth>
 void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
 	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
@@ -3747,6 +3791,13 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 			SoftwareRenderer::sampleChasmTexture(texture, screenXPercent, screenYPercent,
 				&colorR, &colorG, &colorB);
 
+			if constexpr (AmbientShading)
+			{
+				colorR *= shadingInfo.distantAmbient;
+				colorG *= shadingInfo.distantAmbient;
+				colorB *= shadingInfo.distantAmbient;
+			}
+
 			const uint32_t colorRGB = static_cast<uint32_t>(
 				((static_cast<uint8_t>(colorR * 255.0)) << 16) |
 				((static_cast<uint8_t>(colorG * 255.0)) << 8) |
@@ -3768,21 +3819,47 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 
 void SoftwareRenderer::drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
 	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
-	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
-	OcclusionData &occlusion, const FrameView &frame)
+	const Double3 &normal, bool emissive, const ChasmTexture &texture,
+	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
 {
+	const bool useAmbientChasmShading = shadingInfo.sunExists && !emissive;
 	const bool useTrueChasmDepth = true;
-	if (useTrueChasmDepth)
+
+	if (useAmbientChasmShading)
 	{
-		constexpr bool trueDepth = true;
-		SoftwareRenderer::drawPerspectiveChasmPixelsShader<trueDepth>(x, drawRange, startPoint,
-			endPoint, depthStart, depthEnd, normal, texture, shadingInfo, occlusion, frame);
+		constexpr bool ambientShading = true;
+		if (useTrueChasmDepth)
+		{
+			constexpr bool trueDepth = true;
+			SoftwareRenderer::drawPerspectiveChasmPixelsShader<ambientShading, trueDepth>(
+				x, drawRange, startPoint, endPoint, depthStart, depthEnd, normal, texture,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			constexpr bool trueDepth = false;
+			SoftwareRenderer::drawPerspectiveChasmPixelsShader<ambientShading, trueDepth>(
+				x, drawRange, startPoint, endPoint, depthStart, depthEnd, normal, texture,
+				shadingInfo, occlusion, frame);
+		}
 	}
 	else
 	{
-		constexpr bool trueDepth = false;
-		SoftwareRenderer::drawPerspectiveChasmPixelsShader<trueDepth>(x, drawRange, startPoint,
-			endPoint, depthStart, depthEnd, normal, texture, shadingInfo, occlusion, frame);
+		constexpr bool ambientShading = false;
+		if (useTrueChasmDepth)
+		{
+			constexpr bool trueDepth = true;
+			SoftwareRenderer::drawPerspectiveChasmPixelsShader<ambientShading, trueDepth>(
+				x, drawRange, startPoint, endPoint, depthStart, depthEnd, normal, texture,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			constexpr bool trueDepth = false;
+			SoftwareRenderer::drawPerspectiveChasmPixelsShader<ambientShading, trueDepth>(
+				x, drawRange, startPoint, endPoint, depthStart, depthEnd, normal, texture,
+				shadingInfo, occlusion, frame);
+		}
 	}
 }
 
@@ -4670,14 +4747,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			// Chasm floor.
 			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5045,14 +5123,15 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			// Chasm floor.
 			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5785,8 +5864,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint, nearFloorPoint, camera, frame);
 
 				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
@@ -5822,14 +5901,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			// Chasm floor.
 			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -6191,8 +6271,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					nearCeilingPoint, nearFloorPoint, camera, frame);
 
 				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
@@ -6228,14 +6308,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, textures.at(chasmData.id), *chasmTexture,
-					shadingInfo, occlusion, frame);
+					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
 
 			// Chasm floor.
 			const Double3 floorNormal = Double3::UnitY;
 			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, *chasmTexture, shadingInfo, occlusion, frame);
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type), 
+				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -7368,8 +7449,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
+	const bool sunExists = this->distantObjects.sunTextureIndex != DistantObjects::NO_SUN;
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
-		ambient, this->fogDistance, chasmAnimPercent);
+		ambient, this->fogDistance, chasmAnimPercent, sunExists);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.

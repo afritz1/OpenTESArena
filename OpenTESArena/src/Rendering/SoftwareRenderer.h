@@ -219,8 +219,11 @@ private:
 		// Returns whether the current clock time is before noon.
 		bool isAM;
 
+		// Whether there is a sun in the current world.
+		bool sunExists;
+
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
-			double ambient, double fogDistance, double chasmAnimPercent);
+			double ambient, double fogDistance, double chasmAnimPercent, bool sunExists);
 
 		const Double3 &getFogColor() const;
 	};
@@ -512,6 +515,9 @@ private:
 	// Converts the given chasm type to its chasm ID.
 	static int getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType);
 
+	// Returns whether the chasm type is emissive and ignores ambient shading.
+	static bool isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType);
+
 	// Tries to convert the chasm animation percent to the associated texture within the chasm
 	// texture group for the given chasm type.
 	static void getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
@@ -667,7 +673,7 @@ private:
 
 	// Low-level shader for chasm pixel rendering.
 	// @todo: consider template bool for treating screen-space texels as regular texels.
-	template <bool TrueDepth>
+	template <bool AmbientShading, bool TrueDepth>
 	static void drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
 		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
@@ -675,14 +681,14 @@ private:
 
 	// Draws a column of chasm pixels that can either be a wall texture or screen-space texture.
 	static void drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
-		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		double vStart, double vEnd, const Double3 &normal, bool emissive, const VoxelTexture &texture,
 		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 		const FrameView &frame);
 
 	// Low-level shader for perspective chasm pixel rendering. This shader only cares about sampling
 	// the screen-space texture instead of branching on chasm wall texels.
 	// @todo: consider template bool for treating screen-space texels as regular texels.
-	template <bool TrueDepth>
+	template <bool AmbientShading, bool TrueDepth>
 	static void drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
 		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 		const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
@@ -692,8 +698,8 @@ private:
 	// is top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
 		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
-		const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
-		OcclusionData &occlusion, const FrameView &frame);
+		const Double3 &normal, bool emissive, const ChasmTexture &texture,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels for a distant sky object (mountain, cloud, etc.). The 'emissive'
 	// parameter is for animated objects like volcanoes.
