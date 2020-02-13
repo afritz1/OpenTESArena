@@ -10,7 +10,7 @@
 
 // More complex than 1D buffer view due to the look-up requirements of a 2D array.
 
-template <typename T>
+template <typename T, bool Checked = true>
 class BufferView2D
 {
 private:
@@ -21,10 +21,14 @@ private:
 
 	int getIndex(int x, int y) const
 	{
-		DebugAssert(x >= 0);
-		DebugAssert(y >= 0);
-		DebugAssert(x < this->viewWidth);
-		DebugAssert(y < this->viewHeight);
+		if constexpr (Checked)
+		{
+			DebugAssert(x >= 0);
+			DebugAssert(y >= 0);
+			DebugAssert(x < this->viewWidth);
+			DebugAssert(y < this->viewHeight);
+		}
+		
 		return (viewX + x) + ((viewY + y) * this->width);
 	}
 public:
@@ -48,15 +52,19 @@ public:
 
 	void init(T *data, int width, int height, int viewX, int viewY, int viewWidth, int viewHeight)
 	{
-		DebugAssert(data != nullptr);
-		DebugAssert(width >= 0);
-		DebugAssert(height >= 0);
-		DebugAssert(viewX >= 0);
-		DebugAssert(viewY >= 0);
-		DebugAssert(viewWidth >= 0);
-		DebugAssert(viewHeight >= 0);
-		DebugAssert((viewX + viewWidth) <= width);
-		DebugAssert((viewY + viewHeight) <= height);
+		if constexpr (Checked)
+		{
+			DebugAssert(data != nullptr);
+			DebugAssert(width >= 0);
+			DebugAssert(height >= 0);
+			DebugAssert(viewX >= 0);
+			DebugAssert(viewY >= 0);
+			DebugAssert(viewWidth >= 0);
+			DebugAssert(viewHeight >= 0);
+			DebugAssert((viewX + viewWidth) <= width);
+			DebugAssert((viewY + viewHeight) <= height);
+		}
+
 		this->data = data;
 		this->width = width;
 		this->height = height;
@@ -78,34 +86,55 @@ public:
 
 	T &get(int x, int y)
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		const int index = this->getIndex(x, y);
 		return this->data[index];
 	}
 
 	const T &get(int x, int y) const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		const int index = this->getIndex(x, y);
 		return this->data[index];
 	}
 
 	int getWidth() const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->viewWidth;
 	}
 
 	int getHeight() const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->viewHeight;
 	}
 
 	void set(int x, int y, const T &value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
+
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		const int index = this->getIndex(x, y);
 		this->data[index] = value;
 	}
@@ -113,7 +142,12 @@ public:
 	void set(int x, int y, T &&value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
+
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		const int index = this->getIndex(x, y);
 		this->data[index] = std::move(value);
 	}
@@ -121,7 +155,11 @@ public:
 	void fill(const T &value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
+		
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
 
 		for (int y = 0; y < this->viewHeight; y++)
 		{
@@ -143,5 +181,8 @@ public:
 		this->viewHeight = 0;
 	}
 };
+
+template <typename T>
+using UncheckedBufferView2D = BufferView2D<T, false>;
 
 #endif
