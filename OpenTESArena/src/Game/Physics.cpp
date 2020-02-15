@@ -1128,8 +1128,6 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 			currentVoxel.x += step.x;
 			facing = visibleWallFacings[0];
 			voxelIsValid &= (currentVoxel.x >= 0) && (currentVoxel.x < voxelGrid.getWidth());
-
-			// @todo: probably needs to include axisLen for each X/Y/Z case? MUST VISUALIZE THIS!
 			rayDistance = (static_cast<double>(currentVoxel.x) -
 				rayStart.x + static_cast<double>((1 - step.x) / 2)) / rayDirection.x;
 		}
