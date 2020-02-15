@@ -450,7 +450,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
 	double daytimePercent, double latitude, double ambient, double fogDistance,
-	double chasmAnimPercent, bool sunExists)
+	double chasmAnimPercent, bool isExterior)
 {
 	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
@@ -517,7 +517,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 			(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
 	}();
 
-	this->sunExists = sunExists;
+	this->isExterior = isExterior;
 	this->ambient = ambient;
 
 	// At their darkest, distant objects are ~1/4 of their intensity.
@@ -3676,7 +3676,7 @@ void SoftwareRenderer::drawChasmPixels(int x, const DrawRange &drawRange, double
 	const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
 	const FrameView &frame)
 {
-	const bool useAmbientChasmShading = shadingInfo.sunExists && !emissive;
+	const bool useAmbientChasmShading = shadingInfo.isExterior && !emissive;
 	const bool useTrueChasmDepth = true;
 
 	if (useAmbientChasmShading)
@@ -3822,7 +3822,7 @@ void SoftwareRenderer::drawPerspectiveChasmPixels(int x, const DrawRange &drawRa
 	const Double3 &normal, bool emissive, const ChasmTexture &texture,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
 {
-	const bool useAmbientChasmShading = shadingInfo.sunExists && !emissive;
+	const bool useAmbientChasmShading = shadingInfo.isExterior && !emissive;
 	const bool useTrueChasmDepth = true;
 
 	if (useAmbientChasmShading)
@@ -7429,7 +7429,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-	bool parallaxSky, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	bool parallaxSky, bool isExterior, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, uint32_t *colorBuffer)
 {
@@ -7449,9 +7450,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
-	const bool sunExists = this->distantObjects.sunTextureIndex != DistantObjects::NO_SUN;
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
-		ambient, this->fogDistance, chasmAnimPercent, sunExists);
+		ambient, this->fogDistance, chasmAnimPercent, isExterior);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.

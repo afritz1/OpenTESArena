@@ -219,11 +219,11 @@ private:
 		// Returns whether the current clock time is before noon.
 		bool isAM;
 
-		// Whether there is a sun in the current world.
-		bool sunExists;
+		// Whether the current location is strictly outdoors (does not count outdoor dungeons).
+		bool isExterior;
 
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
-			double ambient, double fogDistance, double chasmAnimPercent, bool sunExists);
+			double ambient, double fogDistance, double chasmAnimPercent, bool isExterior);
 
 		const Double3 &getFogColor() const;
 	};
@@ -868,7 +868,8 @@ public:
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-		bool parallaxSky, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		bool parallaxSky, bool isExterior, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, uint32_t *colorBuffer);
 };

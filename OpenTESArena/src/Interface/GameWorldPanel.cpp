@@ -2776,10 +2776,12 @@ void GameWorldPanel::render(Renderer &renderer)
 		return location.getLatitude(gameData.getCityDataFile());
 	}();
 
+	const bool isExterior = worldData.getActiveWorldType() != WorldType::Interior;
+
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
 		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
-		level.getCeilingHeight(), level.getOpenDoors(), level.getFadingVoxels(),
+		isExterior, level.getCeilingHeight(), level.getOpenDoors(), level.getFadingVoxels(),
 		level.getVoxelGrid(), level.getEntityManager());
 
 	auto &textureManager = this->getGame().getTextureManager();

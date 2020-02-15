@@ -739,7 +739,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
 	double ambient, double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
-	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	bool isExterior, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager)
 {
@@ -759,7 +759,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
-		latitude, parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid,
+		latitude, parallaxSky, isExterior, ceilingHeight, openDoors, fadingVoxels, voxelGrid,
 		entityManager, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
