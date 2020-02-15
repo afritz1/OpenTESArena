@@ -4410,6 +4410,1097 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 	}
 }
 
+void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+
+	if (voxelDef.dataType == VoxelDataType::Wall)
+	{
+		// Draw inner ceiling, wall, and floor.
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			farCeilingPoint.y,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			voxelYReal,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			farFloorPoint.y,
+			nearPoint.y);
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+			nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Ceiling.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+			nearZ, farZ, -Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
+			shadingInfo, occlusion, frame);
+
+		// Wall.
+		SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
+			shadingInfo, occlusion, frame);
+
+		// Floor.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+			farZ, nearZ, Double3::UnitY, textures.at(wallData.floorID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Do nothing. Floors can only be seen from above.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Draw bottom of ceiling voxel if the camera is below it.
+		if (camera.eye.y < voxelYReal)
+		{
+			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
+
+			const Double3 nearFloorPoint(
+				nearPoint.x,
+				voxelYReal,
+				nearPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
+		{
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else if (camera.eye.y < nearFloorPoint.y)
+		{
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+				camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Do nothing. Transparent walls have no back-faces.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+			voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				edgeTopPoint.x,
+				voxelYReal + edgeData.yOffset,
+				edgeTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Render back-face.
+		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+
+		// Find which far face on the chasm was intersected.
+		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+
+		// Wet chasms and lava chasms are unaffected by ceiling height.
+		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+			voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			farCeilingPoint.y - chasmDepth,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			farFloorPoint.y,
+			nearPoint.y);
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+		const ChasmTexture *chasmTexture;
+		SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+			shadingInfo.chasmAnimPercent, &chasmTexture);
+
+		// Chasm floor (drawn before far wall for occlusion buffer).
+		const Double3 floorNormal = Double3::UnitY;
+		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			*chasmTexture, shadingInfo, occlusion, frame);
+
+		// Far.
+		if (chasmData.faceIsVisible(farFacing))
+		{
+			const double farU = [&farPoint, farFacing]()
+			{
+				const double uVal = [&farPoint, farFacing]()
+				{
+					if (farFacing == VoxelFacing::PositiveX)
+					{
+						return farPoint.y - std::floor(farPoint.y);
+					}
+					else if (farFacing == VoxelFacing::NegativeX)
+					{
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					}
+					else if (farFacing == VoxelFacing::PositiveZ)
+					{
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					}
+					else
+					{
+						return farPoint.x - std::floor(farPoint.x);
+					}
+				}();
+
+				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
+			}();
+
+			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
+			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, vStart, Constants::JustBelowOne, hit.normal,
+					textures.at(doorData.id), shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+		}
+	}
+}
+
+void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+
+	if (voxelDef.dataType == VoxelDataType::Wall)
+	{
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
+
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearFloorPoint, farFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Floor.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+			farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Do nothing. Floors can only be seen from above.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Draw bottom of ceiling voxel.
+		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
+
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearFloorPoint, farFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
+			occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
+		{
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else if (camera.eye.y < nearFloorPoint.y)
+		{
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+				camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Do nothing. Transparent walls have no back-faces.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+			voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				hit.point.x,
+				voxelYReal + edgeData.yOffset,
+				hit.point.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Ignore. Chasms should never be above the player's voxel.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, vStart, Constants::JustBelowOne, hit.normal,
+					textures.at(doorData.id), shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+		}
+	}
+}
+
+void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+
+	if (voxelDef.dataType == VoxelDataType::Wall)
+	{
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			farCeilingPoint.y,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			farCeilingPoint, nearCeilingPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Ceiling.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+			nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Draw top of floor voxel.
+		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			farCeilingPoint.y,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			farCeilingPoint, nearCeilingPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Ceiling.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
+			occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Do nothing. Ceilings can only be seen from below.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
+		{
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				farCeilingPoint, nearCeilingPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else if (camera.eye.y < nearFloorPoint.y)
+		{
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
+				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
+				camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Do nothing. Transparent walls have no back-faces.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialEdgeIntersection(
+			voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				hit.point.x,
+				voxelYReal + edgeData.yOffset,
+				hit.point.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Render back-face.
+		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+
+		// Find which far face on the chasm was intersected.
+		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
+			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+
+		// Wet chasms and lava chasms are unaffected by ceiling height.
+		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+			voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			farCeilingPoint.y - chasmDepth,
+			farPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			farFloorPoint.y,
+			nearPoint.y);
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+		const ChasmTexture *chasmTexture;
+		SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+			shadingInfo.chasmAnimPercent, &chasmTexture);
+
+		// Chasm floor (drawn before far wall for occlusion buffer).
+		const Double3 floorNormal = Double3::UnitY;
+		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			*chasmTexture, shadingInfo, occlusion, frame);
+
+		// Far.
+		if (chasmData.faceIsVisible(farFacing))
+		{
+			const double farU = [&farPoint, farFacing]()
+			{
+				const double uVal = [&farPoint, farFacing]()
+				{
+					if (farFacing == VoxelFacing::PositiveX)
+					{
+						return farPoint.y - std::floor(farPoint.y);
+					}
+					else if (farFacing == VoxelFacing::NegativeX)
+					{
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					}
+					else if (farFacing == VoxelFacing::PositiveZ)
+					{
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					}
+					else
+					{
+						return farPoint.x - std::floor(farPoint.x);
+					}
+				}();
+
+				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
+			}();
+
+			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
+			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, vStart, Constants::JustBelowOne, hit.normal,
+					textures.at(doorData.id), shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+		}
+	}
+}
+
 void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
@@ -4455,818 +5546,76 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	// this voxel column.
 	const Double3 wallNormal = -VoxelDefinition::getNormal(facing);
 
-	auto drawInitialVoxel = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
+	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
+	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
+
+	// Draw the player's current voxel first.
+	SoftwareRenderer::drawInitialVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray,
+		facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
+		openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+
+	// Draw voxels below the player's voxel.
+	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+		SoftwareRenderer::drawInitialVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray,
+			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
+			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+	}
 
-		if (voxelDef.dataType == VoxelDataType::Wall)
-		{
-			// Draw inner ceiling, wall, and floor.
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				farCeilingPoint.y,
-				nearPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				voxelYReal,
-				farPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				farFloorPoint.y,
-				nearPoint.y);
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
-				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
-				nearZ, farZ, -Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
-
-			// Wall.
-			SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-				shadingInfo, occlusion, frame);
-
-			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
-				farZ, nearZ, Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Do nothing. Floors can only be seen from above.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Draw bottom of ceiling voxel if the camera is below it.
-			if (camera.eye.y < voxelYReal)
-			{
-				const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
-
-				const Double3 nearFloorPoint(
-					nearPoint.x,
-					voxelYReal,
-					nearPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
-
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, nearCeilingPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
-					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
-					camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				const Double3 diagTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight,
-					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
-					voxelYReal,
-					diagTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Do nothing. Transparent walls have no back-faces.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					edgeTopPoint.x,
-					voxelYReal + edgeData.yOffset,
-					edgeTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Render back-face.
-			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-
-			// Find which far face on the chasm was intersected.
-			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
-
-			// Wet chasms and lava chasms are unaffected by ceiling height.
-			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				farCeilingPoint.y - chasmDepth,
-				farPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				farFloorPoint.y,
-				nearPoint.y);
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-
-			const ChasmTexture *chasmTexture;
-			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
-				shadingInfo.chasmAnimPercent, &chasmTexture);
-
-			// Chasm floor (drawn before far wall for occlusion buffer).
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
-
-			// Far.
-			if (chasmData.faceIsVisible(farFacing))
-			{
-				const double farU = [&farPoint, farFacing]()
-				{
-					const double uVal = [&farPoint, farFacing]()
-					{
-						if (farFacing == VoxelFacing::PositiveX)
-						{
-							return farPoint.y - std::floor(farPoint.y);
-						}
-						else if (farFacing == VoxelFacing::NegativeX)
-						{
-							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
-						}
-						else if (farFacing == VoxelFacing::PositiveZ)
-						{
-							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
-						}
-						else
-						{
-							return farPoint.x - std::floor(farPoint.x);
-						}
-					}();
-
-					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
-				}();
-
-				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, vStart, Constants::JustBelowOne, hit.normal,
-						textures.at(doorData.id), shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
-	auto drawInitialVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
+	// Draw voxels above the player's voxel.
+	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+		SoftwareRenderer::drawInitialVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray,
+			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
+			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+	}
+}
 
-		if (voxelDef.dataType == VoxelDataType::Wall)
-		{
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
+void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				farCeilingPoint.y,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Draw top of floor voxel.
-			const VoxelDefinition::FloorData &floorData = voxelDef.floor;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				farCeilingPoint.y,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
-				occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Do nothing. Ceilings can only be seen from below.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
-
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, nearCeilingPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
-					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
-					camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				const Double3 diagTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight,
-					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
-					voxelYReal,
-					diagTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Do nothing. Transparent walls have no back-faces.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					hit.point.x,
-					voxelYReal + edgeData.yOffset,
-					hit.point.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Render back-face.
-			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-
-			// Find which far face on the chasm was intersected.
-			const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-				voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
-
-			// Wet chasms and lava chasms are unaffected by ceiling height.
-			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				farCeilingPoint.y - chasmDepth,
-				farPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				farFloorPoint.y,
-				nearPoint.y);
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-
-			const ChasmTexture *chasmTexture;
-			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
-				shadingInfo.chasmAnimPercent, &chasmTexture);
-			
-			// Chasm floor (drawn before far wall for occlusion buffer).
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
-
-			// Far.
-			if (chasmData.faceIsVisible(farFacing))
-			{
-				const double farU = [&farPoint, farFacing]()
-				{
-					const double uVal = [&farPoint, farFacing]()
-					{
-						if (farFacing == VoxelFacing::PositiveX)
-						{
-							return farPoint.y - std::floor(farPoint.y);
-						}
-						else if (farFacing == VoxelFacing::NegativeX)
-						{
-							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
-						}
-						else if (farFacing == VoxelFacing::PositiveZ)
-						{
-							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
-						}
-						else
-						{
-							return farPoint.x - std::floor(farPoint.x);
-						}
-					}();
-
-					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
-				}();
-
-				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, vStart, Constants::JustBelowOne, hit.normal,
-						textures.at(doorData.id), shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
-	auto drawInitialVoxelAbove = [x, voxelX, voxelZ, &camera, &ray, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
+	if (voxelDef.dataType == VoxelDataType::Wall)
 	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+		// Draw side.
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		if (voxelDef.dataType == VoxelDataType::Wall)
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearCeilingPoint, nearFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		SoftwareRenderer::drawPixels(x, drawRange, nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Do nothing. Floors can only be seen from above.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Draw bottom of ceiling voxel if the camera is below it.
+		if (camera.eye.y < voxelYReal)
 		{
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				nearFloorPoint.y,
-				farPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Do nothing. Floors can only be seen from above.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Draw bottom of ceiling voxel.
 			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
 			const Double3 nearFloorPoint(
@@ -5287,269 +5636,1077 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
 				occlusion, frame);
 		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
 		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
 
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
 
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
 
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					farCeilingPoint, nearCeilingPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-					nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
-					nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
-					camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
 		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
+		else if (camera.eye.y < nearFloorPoint.y)
 		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
 
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
 
-			if (success)
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Draw transparent side.
+		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearCeilingPoint, nearFloorPoint, camera, frame);
+
+		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+			edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				hit.point.x,
+				voxelYReal + edgeData.yOffset,
+				hit.point.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Render front and back-faces.
+		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+
+		// Find which faces on the chasm were intersected.
+		const VoxelFacing nearFacing = facing;
+		const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
+			voxelX, voxelZ, nearFacing, camera, ray);
+
+		// Wet chasms and lava chasms are unaffected by ceiling height.
+		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+			voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			nearCeilingPoint.y - chasmDepth,
+			nearPoint.y);
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			nearCeilingPoint.y,
+			farPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const ChasmTexture *chasmTexture;
+		SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+			shadingInfo.chasmAnimPercent, &chasmTexture);
+
+		// Near (drawn separately from far + chasm floor).
+		if (chasmData.faceIsVisible(nearFacing))
+		{
+			const double nearU = Constants::JustBelowOne - wallU;
+			const Double3 nearNormal = wallNormal;
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
+
+			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
+				Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+		// Chasm floor (drawn before far wall for occlusion buffer).
+		const Double3 floorNormal = Double3::UnitY;
+		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			*chasmTexture, shadingInfo, occlusion, frame);
+
+		// Far.
+		if (chasmData.faceIsVisible(farFacing))
+		{
+			const double farU = [&farPoint, farFacing]()
 			{
-				const Double3 diagTopPoint(
+				const double uVal = [&farPoint, farFacing]()
+				{
+					if (farFacing == VoxelFacing::PositiveX)
+					{
+						return farPoint.y - std::floor(farPoint.y);
+					}
+					else if (farFacing == VoxelFacing::NegativeX)
+					{
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					}
+					else if (farFacing == VoxelFacing::PositiveZ)
+					{
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					}
+					else
+					{
+						return farPoint.x - std::floor(farPoint.x);
+					}
+				}();
+
+				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
+			}();
+
+			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
+			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
 					voxelYReal,
-					diagTopPoint.z);
+					doorTopPoint.z);
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
+					doorTopPoint, doorBottomPoint, camera, frame);
 
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+					occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
 					shadingInfo, occlusion, frame);
 			}
 		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Do nothing. Transparent walls have no back-faces.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialEdgeIntersection(
-				voxelX, voxelZ, edgeData.facing, edgeData.flipped, nearPoint, farPoint,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					hit.point.x,
-					voxelYReal + edgeData.yOffset,
-					hit.point.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Ignore. Chasms should never be above the player's voxel.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, nearPoint, farPoint, camera, ray, voxelGrid, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, vStart, Constants::JustBelowOne, hit.normal,
-						textures.at(doorData.id), shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
-	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
-	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
-
-	// Draw the player's current voxel first.
-	drawInitialVoxel(adjustedVoxelY);
-
-	// Draw voxels below the player's voxel.
-	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
-	{
-		drawInitialVoxelBelow(voxelY);
 	}
+}
 
-	// Draw voxels above the player's voxel.
-	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
+void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+
+	if (voxelDef.dataType == VoxelDataType::Wall)
 	{
-		drawInitialVoxelAbove(voxelY);
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Wall.
+		SoftwareRenderer::drawPixels(x, drawRanges.at(0), nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
+			shadingInfo, occlusion, frame);
+
+		// Floor.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+			nearZ, farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Do nothing. Floors can only be seen from above.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Draw bottom of ceiling voxel.
+		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
+
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearFloorPoint, farFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
+			occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
+		{
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+		}
+		else if (camera.eye.y < nearFloorPoint.y)
+		{
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Draw transparent side.
+		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearCeilingPoint, nearFloorPoint, camera, frame);
+
+		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+			edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				hit.point.x,
+				voxelYReal + edgeData.yOffset,
+				hit.point.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Ignore. Chasms should never be above the player's voxel.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+					occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+		}
+	}
+}
+
+void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
+	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+	const double voxelHeight = ceilingHeight;
+	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
+
+	if (voxelDef.dataType == VoxelDataType::Wall)
+	{
+		const VoxelDefinition::WallData &wallData = voxelDef.wall;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			farCeilingPoint.y,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		// Ceiling.
+		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint, farZ,
+			nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent, shadingInfo,
+			occlusion, frame);
+
+		// Wall.
+		SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Floor)
+	{
+		// Draw top of floor voxel.
+		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
+
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			voxelYReal + voxelHeight,
+			farPoint.y);
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			farCeilingPoint.y,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			farCeilingPoint, nearCeilingPoint, camera, frame);
+		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			voxelX, voxelY, voxelZ, fadingVoxels);
+
+		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
+			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
+			occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Ceiling)
+	{
+		// Do nothing. Ceilings can only be seen from below.
+	}
+	else if (voxelDef.dataType == VoxelDataType::Raised)
+	{
+		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal + (raisedData.yOffset * voxelHeight),
+			nearPoint.y);
+
+		// Draw order depends on the player's Y position relative to the platform.
+		if (camera.eye.y > nearCeilingPoint.y)
+		{
+			// Above platform.
+			const Double3 farCeilingPoint(
+				farPoint.x,
+				nearCeilingPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Ceiling.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
+				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
+				shadingInfo, occlusion, frame);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+		}
+		else if (camera.eye.y < nearFloorPoint.y)
+		{
+			// Below platform.
+			const Double3 farFloorPoint(
+				farPoint.x,
+				nearFloorPoint.y,
+				farPoint.y);
+
+			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			// Wall.
+			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+
+			// Floor.
+			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
+				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+		else
+		{
+			// Between top and bottom.
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
+				raisedData.vTop, raisedData.vBottom, wallNormal,
+				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Diagonal)
+	{
+		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = diagData.type1 ?
+			SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
+			SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
+
+		if (success)
+		{
+			const Double3 diagTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight,
+				hit.point.y);
+			const Double3 diagBottomPoint(
+				diagTopPoint.x,
+				voxelYReal,
+				diagTopPoint.z);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				diagTopPoint, diagBottomPoint, camera, frame);
+			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+				voxelX, voxelY, voxelZ, fadingVoxels);
+
+			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
+				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
+	{
+		// Draw transparent side.
+		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			voxelYReal,
+			nearPoint.y);
+
+		const auto drawRange = SoftwareRenderer::makeDrawRange(
+			nearCeilingPoint, nearFloorPoint, camera, frame);
+
+		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
+			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
+			shadingInfo, occlusion, frame);
+	}
+	else if (voxelDef.dataType == VoxelDataType::Edge)
+	{
+		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
+
+		// Find intersection.
+		RayHit hit;
+		const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
+			edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
+			camera, ray, hit);
+
+		if (success)
+		{
+			const Double3 edgeTopPoint(
+				hit.point.x,
+				voxelYReal + voxelHeight + edgeData.yOffset,
+				hit.point.y);
+			const Double3 edgeBottomPoint(
+				hit.point.x,
+				voxelYReal + edgeData.yOffset,
+				hit.point.y);
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				edgeTopPoint, edgeBottomPoint, camera, frame);
+
+			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
+				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
+				shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Chasm)
+	{
+		// Render front and back-faces.
+		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+
+		// Wet chasms and lava chasms are unaffected by ceiling height.
+		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+			voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+
+		// Find which faces on the chasm were intersected.
+		const VoxelFacing nearFacing = facing;
+		const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
+			voxelX, voxelZ, nearFacing, camera, ray);
+
+		const Double3 nearCeilingPoint(
+			nearPoint.x,
+			voxelYReal + voxelHeight,
+			nearPoint.y);
+		const Double3 nearFloorPoint(
+			nearPoint.x,
+			nearCeilingPoint.y - chasmDepth,
+			nearPoint.y);
+		const Double3 farCeilingPoint(
+			farPoint.x,
+			nearCeilingPoint.y,
+			farPoint.y);
+		const Double3 farFloorPoint(
+			farPoint.x,
+			nearFloorPoint.y,
+			farPoint.y);
+
+		const ChasmTexture *chasmTexture;
+		SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
+			shadingInfo.chasmAnimPercent, &chasmTexture);
+
+		// Near (drawn separately from far + chasm floor).
+		if (chasmData.faceIsVisible(nearFacing))
+		{
+			const double nearU = Constants::JustBelowOne - wallU;
+			const Double3 nearNormal = wallNormal;
+
+			const auto drawRange = SoftwareRenderer::makeDrawRange(
+				nearCeilingPoint, nearFloorPoint, camera, frame);
+
+			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
+				Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+
+		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
+			farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
+
+		// Chasm floor (drawn before far wall for occlusion buffer).
+		const Double3 floorNormal = Double3::UnitY;
+		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			*chasmTexture, shadingInfo, occlusion, frame);
+
+		// Far.
+		if (chasmData.faceIsVisible(farFacing))
+		{
+			const double farU = [&farPoint, farFacing]()
+			{
+				const double uVal = [&farPoint, farFacing]()
+				{
+					if (farFacing == VoxelFacing::PositiveX)
+					{
+						return farPoint.y - std::floor(farPoint.y);
+					}
+					else if (farFacing == VoxelFacing::NegativeX)
+					{
+						return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
+					}
+					else if (farFacing == VoxelFacing::PositiveZ)
+					{
+						return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
+					}
+					else
+					{
+						return farPoint.x - std::floor(farPoint.x);
+					}
+				}();
+
+				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
+			}();
+
+			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
+			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
+				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
+		}
+	}
+	else if (voxelDef.dataType == VoxelDataType::Door)
+	{
+		const VoxelDefinition::DoorData &doorData = voxelDef.door;
+		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
+			voxelX, voxelZ, openDoors);
+
+		RayHit hit;
+		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
+			doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
+
+		if (success)
+		{
+			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
+					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			{
+				// Top point is fixed, bottom point depends on percent open.
+				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
+
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal + raisedAmount,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				// The start of the vertical texture coordinate depends on the percent open.
+				const double vStart = raisedAmount / voxelHeight;
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
+					occlusion, frame);
+			}
+			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			{
+				const Double3 doorTopPoint(
+					hit.point.x,
+					voxelYReal + voxelHeight,
+					hit.point.y);
+				const Double3 doorBottomPoint(
+					doorTopPoint.x,
+					voxelYReal,
+					doorTopPoint.z);
+
+				const auto drawRange = SoftwareRenderer::makeDrawRange(
+					doorTopPoint, doorBottomPoint, camera, frame);
+
+				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
+					shadingInfo, occlusion, frame);
+			}
+		}
 	}
 }
 
@@ -5605,1149 +6762,28 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	// this voxel column.
 	const Double3 wallNormal = VoxelDefinition::getNormal(facing);
 
-	auto drawVoxel = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
-	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
-
-		if (voxelDef.dataType == VoxelDataType::Wall)
-		{
-			// Draw side.
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			SoftwareRenderer::drawPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Do nothing. Floors can only be seen from above.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Draw bottom of ceiling voxel if the camera is below it.
-			if (camera.eye.y < voxelYReal)
-			{
-				const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
-
-				const Double3 nearFloorPoint(
-					nearPoint.x,
-					voxelYReal,
-					nearPoint.y);
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-					farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
-					occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
-
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearCeilingPoint, nearFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				const Double3 diagTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight,
-					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
-					voxelYReal,
-					diagTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Draw transparent side.
-			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
-
-			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					hit.point.x,
-					voxelYReal + edgeData.yOffset,
-					hit.point.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Render front and back-faces.
-			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-
-			// Find which faces on the chasm were intersected.
-			const VoxelFacing nearFacing = facing;
-			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
-				voxelX, voxelZ, nearFacing, camera, ray);
-
-			// Wet chasms and lava chasms are unaffected by ceiling height.
-			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				nearCeilingPoint.y - chasmDepth,
-				nearPoint.y);
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				nearCeilingPoint.y,
-				farPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				nearFloorPoint.y,
-				farPoint.y);
-
-			const ChasmTexture *chasmTexture;
-			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
-				shadingInfo.chasmAnimPercent, &chasmTexture);
-
-			// Near (drawn separately from far + chasm floor).
-			if (chasmData.faceIsVisible(nearFacing))
-			{
-				const double nearU = Constants::JustBelowOne - wallU;
-				const Double3 nearNormal = wallNormal;
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearCeilingPoint, nearFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-
-			// Chasm floor (drawn before far wall for occlusion buffer).
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
-
-			// Far.
-			if (chasmData.faceIsVisible(farFacing))
-			{
-				const double farU = [&farPoint, farFacing]()
-				{
-					const double uVal = [&farPoint, farFacing]()
-					{
-						if (farFacing == VoxelFacing::PositiveX)
-						{
-							return farPoint.y - std::floor(farPoint.y);
-						}
-						else if (farFacing == VoxelFacing::NegativeX)
-						{
-							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
-						}
-						else if (farFacing == VoxelFacing::PositiveZ)
-						{
-							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
-						}
-						else
-						{
-							return farPoint.x - std::floor(farPoint.x);
-						}
-					}();
-
-					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
-				}();
-
-				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-						occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
-	auto drawVoxelBelow = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &chasmTextureGroups, &occlusion, &frame](int voxelY)
-	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
-
-		if (voxelDef.dataType == VoxelDataType::Wall)
-		{
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				farCeilingPoint.y,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			// Ceiling.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent, shadingInfo,
-				occlusion, frame);
-
-			// Wall.
-			SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Draw top of floor voxel.
-			const VoxelDefinition::FloorData &floorData = voxelDef.floor;
-
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				voxelYReal + voxelHeight,
-				farPoint.y);
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				farCeilingPoint.y,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-				nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo, 
-				occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Do nothing. Ceilings can only be seen from below.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
-
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearCeilingPoint, nearFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				const Double3 diagTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight,
-					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
-					voxelYReal,
-					diagTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Draw transparent side.
-			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
-
-			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					hit.point.x,
-					voxelYReal + edgeData.yOffset,
-					hit.point.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Render front and back-faces.
-			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-
-			// Wet chasms and lava chasms are unaffected by ceiling height.
-			const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
-				voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
-
-			// Find which faces on the chasm were intersected.
-			const VoxelFacing nearFacing = facing;
-			const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
-				voxelX, voxelZ, nearFacing, camera, ray);
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				nearCeilingPoint.y - chasmDepth,
-				nearPoint.y);
-			const Double3 farCeilingPoint(
-				farPoint.x,
-				nearCeilingPoint.y,
-				farPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				nearFloorPoint.y,
-				farPoint.y);
-
-			const ChasmTexture *chasmTexture;
-			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
-				shadingInfo.chasmAnimPercent, &chasmTexture);
-
-			// Near (drawn separately from far + chasm floor).
-			if (chasmData.faceIsVisible(nearFacing))
-			{
-				const double nearU = Constants::JustBelowOne - wallU;
-				const Double3 nearNormal = wallNormal;
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearCeilingPoint, nearFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-					Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-
-			// Chasm floor (drawn before far wall for occlusion buffer).
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
-
-			// Far.
-			if (chasmData.faceIsVisible(farFacing))
-			{
-				const double farU = [&farPoint, farFacing]()
-				{
-					const double uVal = [&farPoint, farFacing]()
-					{
-						if (farFacing == VoxelFacing::PositiveX)
-						{
-							return farPoint.y - std::floor(farPoint.y);
-						}
-						else if (farFacing == VoxelFacing::NegativeX)
-						{
-							return Constants::JustBelowOne - (farPoint.y - std::floor(farPoint.y));
-						}
-						else if (farFacing == VoxelFacing::PositiveZ)
-						{
-							return Constants::JustBelowOne - (farPoint.x - std::floor(farPoint.x));
-						}
-						else
-						{
-							return farPoint.x - std::floor(farPoint.x);
-						}
-					}();
-
-					return std::clamp(uVal, 0.0, Constants::JustBelowOne);
-				}();
-
-				const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
-				SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-						occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
-	auto drawVoxelAbove = [x, voxelX, voxelZ, &camera, &ray, facing, &wallNormal, &nearPoint,
-		&farPoint, nearZ, farZ, wallU, &shadingInfo, ceilingHeight, &openDoors, &fadingVoxels,
-		&voxelGrid, &textures, &occlusion, &frame](int voxelY)
-	{
-		const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const double voxelHeight = ceilingHeight;
-		const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
-
-		if (voxelDef.dataType == VoxelDataType::Wall)
-		{
-			const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				nearFloorPoint.y,
-				farPoint.y);
-
-			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-			
-			// Wall.
-			SoftwareRenderer::drawPixels(x, drawRanges.at(0), nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-				shadingInfo, occlusion, frame);
-
-			// Floor.
-			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
-				nearZ, farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Floor)
-		{
-			// Do nothing. Floors can only be seen from above.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Ceiling)
-		{
-			// Draw bottom of ceiling voxel.
-			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
-
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-			const Double3 farFloorPoint(
-				farPoint.x,
-				nearFloorPoint.y,
-				farPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-				voxelX, voxelY, voxelZ, fadingVoxels);
-
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
-				occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Raised)
-		{
-			const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal + (raisedData.yOffset * voxelHeight),
-				nearPoint.y);
-
-			// Draw order depends on the player's Y position relative to the platform.
-			if (camera.eye.y > nearCeilingPoint.y)
-			{
-				// Above platform.
-				const Double3 farCeilingPoint(
-					farPoint.x,
-					nearCeilingPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Ceiling.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
-					farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-					shadingInfo, occlusion, frame);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-			else if (camera.eye.y < nearFloorPoint.y)
-			{
-				// Below platform.
-				const Double3 farFloorPoint(
-					farPoint.x,
-					nearFloorPoint.y,
-					farPoint.y);
-
-				const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
-					nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				// Wall.
-				SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-
-				// Floor.
-				SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
-					nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-			else
-			{
-				// Between top and bottom.
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					nearCeilingPoint, nearFloorPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
-					raisedData.vTop, raisedData.vBottom, wallNormal,
-					textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Diagonal)
-		{
-			const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = diagData.type1 ?
-				SoftwareRenderer::findDiag1Intersection(voxelX, voxelZ, nearPoint, farPoint, hit) :
-				SoftwareRenderer::findDiag2Intersection(voxelX, voxelZ, nearPoint, farPoint, hit);
-
-			if (success)
-			{
-				const Double3 diagTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight,
-					hit.point.y);
-				const Double3 diagBottomPoint(
-					diagTopPoint.x,
-					voxelYReal,
-					diagTopPoint.z);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					diagTopPoint, diagBottomPoint, camera, frame);
-				const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
-					voxelX, voxelY, voxelZ, fadingVoxels);
-
-				SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
-					Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::TransparentWall)
-		{
-			// Draw transparent side.
-			const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
-
-			const Double3 nearCeilingPoint(
-				nearPoint.x,
-				voxelYReal + voxelHeight,
-				nearPoint.y);
-			const Double3 nearFloorPoint(
-				nearPoint.x,
-				voxelYReal,
-				nearPoint.y);
-
-			const auto drawRange = SoftwareRenderer::makeDrawRange(
-				nearCeilingPoint, nearFloorPoint, camera, frame);
-
-			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
-				Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-				shadingInfo, occlusion, frame);
-		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
-		{
-			const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-			// Find intersection.
-			RayHit hit;
-			const bool success = SoftwareRenderer::findEdgeIntersection(voxelX, voxelZ,
-				edgeData.facing, edgeData.flipped, facing, nearPoint, farPoint, wallU,
-				camera, ray, hit);
-
-			if (success)
-			{
-				const Double3 edgeTopPoint(
-					hit.point.x,
-					voxelYReal + voxelHeight + edgeData.yOffset,
-					hit.point.y);
-				const Double3 edgeBottomPoint(
-					hit.point.x,
-					voxelYReal + edgeData.yOffset,
-					hit.point.y);
-
-				const auto drawRange = SoftwareRenderer::makeDrawRange(
-					edgeTopPoint, edgeBottomPoint, camera, frame);
-
-				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
-					0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-					shadingInfo, occlusion, frame);
-			}
-		}
-		else if (voxelDef.dataType == VoxelDataType::Chasm)
-		{
-			// Ignore. Chasms should never be above the player's voxel.
-		}
-		else if (voxelDef.dataType == VoxelDataType::Door)
-		{
-			const VoxelDefinition::DoorData &doorData = voxelDef.door;
-			const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-				voxelX, voxelZ, openDoors);
-
-			RayHit hit;
-			const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
-				doorData.type, percentOpen, facing, nearPoint, farPoint, wallU, hit);
-
-			if (success)
-			{
-				if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
-						hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
-				{
-					// Top point is fixed, bottom point depends on percent open.
-					const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
-					const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
-
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal + raisedAmount,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					// The start of the vertical texture coordinate depends on the percent open.
-					const double vStart = raisedAmount / voxelHeight;
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-						occlusion, frame);
-				}
-				else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
-				{
-					const Double3 doorTopPoint(
-						hit.point.x,
-						voxelYReal + voxelHeight,
-						hit.point.y);
-					const Double3 doorBottomPoint(
-						doorTopPoint.x,
-						voxelYReal,
-						doorTopPoint.z);
-
-					const auto drawRange = SoftwareRenderer::makeDrawRange(
-						doorTopPoint, doorBottomPoint, camera, frame);
-
-					SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
-						Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-						shadingInfo, occlusion, frame);
-				}
-			}
-		}
-	};
-
 	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
 
 	// Draw voxel straight ahead first.
-	drawVoxel(adjustedVoxelY);
+	SoftwareRenderer::drawVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray, facing,
+		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
+		fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
-		drawVoxelBelow(voxelY);
+		SoftwareRenderer::drawVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
+			fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 
 	// Draw voxels above the voxel.
 	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
-		drawVoxelAbove(voxelY);
+		SoftwareRenderer::drawVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
+			fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 

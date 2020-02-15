@@ -725,10 +725,59 @@ private:
 		double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
+	// Helper functions for drawing the initial voxel column.
+	static void drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawInitialVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawInitialVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+
+	// Helper functions for drawing a voxel column.
+	static void drawVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
