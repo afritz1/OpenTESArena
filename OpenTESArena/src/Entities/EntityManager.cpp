@@ -340,8 +340,12 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 
 int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) const
 {
-	DebugAssert(outEntities != nullptr);
-	DebugAssert(outSize >= 0);
+	// Apparently std::vector::data() can be either null or non-null when the container is empty,
+	// so can't assume the given pointer is not null.
+	if ((outEntities == nullptr) || (outSize == 0))
+	{
+		return 0;
+	}
 
 	// Fill the output buffer with as many entities as will fit.
 	int writeIndex = 0;
