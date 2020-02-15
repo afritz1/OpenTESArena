@@ -4717,6 +4717,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
 				shadingInfo.chasmAnimPercent, &chasmTexture);
 
+			// Chasm floor (drawn before far wall for occlusion buffer).
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
+
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
 			{
@@ -4750,12 +4756,6 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
 					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
-
-			// Chasm floor.
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5092,6 +5092,12 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 			const ChasmTexture *chasmTexture;
 			SoftwareRenderer::getChasmTextureGroupTexture(chasmTextureGroups, chasmData.type,
 				shadingInfo.chasmAnimPercent, &chasmTexture);
+			
+			// Chasm floor (drawn before far wall for occlusion buffer).
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
 
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
@@ -5126,12 +5132,6 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
 					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
-
-			// Chasm floor.
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -5871,6 +5871,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 
+			// Chasm floor (drawn before far wall for occlusion buffer).
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
+
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
 			{
@@ -5904,12 +5910,6 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
 					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
-
-			// Chasm floor.
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
-				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
@@ -6278,6 +6278,12 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 
+			// Chasm floor (drawn before far wall for occlusion buffer).
+			const Double3 floorNormal = Double3::UnitY;
+			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
+				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				*chasmTexture, shadingInfo, occlusion, frame);
+
 			// Far.
 			if (chasmData.faceIsVisible(farFacing))
 			{
@@ -6311,12 +6317,6 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 					Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
 					textures.at(chasmData.id), *chasmTexture, shadingInfo, occlusion, frame);
 			}
-
-			// Chasm floor.
-			const Double3 floorNormal = Double3::UnitY;
-			SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-				farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type), 
-				*chasmTexture, shadingInfo, occlusion, frame);
 		}
 		else if (voxelDef.dataType == VoxelDataType::Door)
 		{
