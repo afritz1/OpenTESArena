@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 
 #include "EntityManager.h"
 #include "EntityType.h"
