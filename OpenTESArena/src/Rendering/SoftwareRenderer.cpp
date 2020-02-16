@@ -25,6 +25,9 @@ namespace
 {
 	// Hardcoded graphics options (will be loaded at runtime at some point).
 	constexpr int TextureFilterMode = 0;
+	constexpr int MaxLightsPerPixel = 8;
+	constexpr bool LightContributionCap = true;
+	constexpr bool PlayerHasLight = true;
 
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
@@ -815,16 +818,17 @@ void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
 	this->doneVisTesting = false;
 }
 
-void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
-	std::vector<OcclusionData> &occlusion)
+void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &voxelTextures,
+	const ChasmTextureGroups &chasmTextureGroups, std::vector<OcclusionData> &occlusion)
 {
 	this->threadsDone = 0;
 	this->ceilingHeight = ceilingHeight;
 	this->openDoors = &openDoors;
 	this->fadingVoxels = &fadingVoxels;
+	this->visibleLights = &visibleLights;
 	this->voxelGrid = &voxelGrid;
 	this->voxelTextures = &voxelTextures;
 	this->chasmTextureGroups = &chasmTextureGroups;
@@ -1674,6 +1678,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
 
+	if constexpr (PlayerHasLight)
+	{
+		// Add player light.
+		VisibleLight playerVisLight;
+		playerVisLight.init(camera.eye, 5.0);
+		this->visibleLights.push_back(std::move(playerVisLight));
+	}
+
 	// Potentially visible flat determination algorithm, given the current camera.
 	// Also calculates visible lights.
 	for (int i = 0; i < entityCount; i++)
@@ -1687,6 +1699,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 
 		// See if the entity is a light.
 		const int *lightIntensity = entityDef.getLightIntensity();
+		const int lightIntensityValue = lightIntensity != nullptr ? *lightIntensity : 2;
 		const bool isLight = lightIntensity != nullptr;
 		if (isLight)
 		{
@@ -3183,6 +3196,47 @@ void SoftwareRenderer::getLightVisibilityData(const EntityManager::EntityVisibil
 	outVisData->init(lightPosition, lightRadius, intersectsFrustum);
 }
 
+UncheckedBufferView<const SoftwareRenderer::VisibleLight> SoftwareRenderer::getVisibleLightsView(
+	const std::vector<VisibleLight> &visLights)
+{
+	const int visLightsCount = static_cast<int>(visLights.size());
+	return UncheckedBufferView<const VisibleLight>(visLights.data(), visLightsCount);
+}
+
+template <int MaxLights, bool CappedSum>
+double SoftwareRenderer::getLightContributionAtPoint(const Double2 &point,
+	const UncheckedBufferView<const VisibleLight> &lights)
+{
+	const int count = std::min(lights.getCount(), MaxLights);
+	const VisibleLight *lightsPtr = lights.get();
+
+	double lightContributionPercent = 0.0;
+	for (int i = 0; i < count; i++)
+	{
+		const VisibleLight &light = lightsPtr[i];
+		const double lightDist = std::sqrt(
+			((light.position.x - point.x) * (light.position.x - point.x)) +
+			((light.position.z - point.y) * (light.position.z - point.y)));
+
+		// @todo: is this check necessary?
+		if (lightDist <= light.radius)
+		{
+			const double val = (light.radius - lightDist) / light.radius;
+			lightContributionPercent += std::clamp(val, 0.0, 1.0);
+
+			if constexpr (CappedSum)
+			{
+				if (lightContributionPercent >= 1.0)
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	return lightContributionPercent;
+}
+
 // @todo: might be better as a macro so there's no chance of a function call in the pixel loop.
 template <int FilterMode, bool Transparency>
 void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
@@ -3400,7 +3454,8 @@ template <bool Fading>
 void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawRange,
 	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
-	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
+	const UncheckedBufferView<const VisibleLight> &lights, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Draw range values.
 	const double yProjStart = drawRange.yProjStart;
@@ -3416,8 +3471,7 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
 		0.0, 1.0 - shadingInfo.ambient);
 
-	// Shading on the texture.
-	// - @todo: contribution from lights.
+	// Base shading on the texture.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -3473,11 +3527,16 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 			SoftwareRenderer::sampleVoxelTexture<TextureFilterMode, TextureTransparency>(
 				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
+			// Light contribution.
+			const Double2 currentPoint(currentPointX, currentPointY);
+			const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(currentPoint, lights);
+
 			// Shading from light.
 			constexpr double shadingMax = 1.0;
-			colorR *= std::min(shading.x + colorEmission, shadingMax);
-			colorG *= std::min(shading.y + colorEmission, shadingMax);
-			colorB *= std::min(shading.z + colorEmission, shadingMax);
+			colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
+			colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
+			colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
 
 			if constexpr (Fading)
 			{
@@ -3513,19 +3572,20 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
-	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
+	const UncheckedBufferView<const VisibleLight> &lights, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	if (fadePercent == 1.0)
 	{
 		constexpr bool fading = false;
 		SoftwareRenderer::drawPerspectivePixelsShader<fading>(x, drawRange, startPoint, endPoint,
-			depthStart, depthEnd, normal, texture, fadePercent, shadingInfo, occlusion, frame);
+			depthStart, depthEnd, normal, texture, fadePercent, lights, shadingInfo, occlusion, frame);
 	}
 	else
 	{
 		constexpr bool fading = true;
 		SoftwareRenderer::drawPerspectivePixelsShader<fading>(x, drawRange, startPoint, endPoint,
-			depthStart, depthEnd, normal, texture, fadePercent, shadingInfo, occlusion, frame);
+			depthStart, depthEnd, normal, texture, fadePercent, lights, shadingInfo, occlusion, frame);
 	}
 }
 
@@ -4485,7 +4545,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -4524,7 +4585,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
 			nearZ, farZ, -Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
-			shadingInfo, occlusion, frame);
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 		// Wall.
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
@@ -4534,7 +4595,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
 			farZ, nearZ, Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-			shadingInfo, occlusion, frame);
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -4561,9 +4622,10 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
-			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint,
-				nearZ, farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
+				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+				frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Raised)
@@ -4596,7 +4658,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+				frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -4614,7 +4677,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+				frame);
 		}
 		else
 		{
@@ -4637,7 +4701,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+				frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
@@ -4647,7 +4712,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+				frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -4886,7 +4952,8 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -4916,7 +4983,8 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 			farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-			shadingInfo, occlusion, frame);
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion,
+			frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -4942,8 +5010,8 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
-			occlusion, frame);
+			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Raised)
 	{
@@ -4975,7 +5043,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -4993,7 +5061,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else
 		{
@@ -5016,7 +5084,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
@@ -5026,7 +5094,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -5196,7 +5264,8 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -5226,7 +5295,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 			nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
-			shadingInfo, occlusion, frame);
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -5249,8 +5318,8 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
-			occlusion, frame);
+			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent,
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Ceiling)
 	{
@@ -5286,7 +5355,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 				nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -5304,7 +5373,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else
 		{
@@ -5327,7 +5396,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
@@ -5337,7 +5406,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -5576,7 +5645,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -5623,14 +5693,16 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	// Draw the player's current voxel first.
 	SoftwareRenderer::drawInitialVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray,
 		facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
-		openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		openDoors, fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups, occlusion,
+		frame);
 
 	// Draw voxels below the player's voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawInitialVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray,
 			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
-			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			openDoors, fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups,
+			occlusion, frame);
 	}
 
 	// Draw voxels above the player's voxel.
@@ -5638,7 +5710,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	{
 		SoftwareRenderer::drawInitialVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray,
 			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight,
-			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			openDoors, fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups,
+			occlusion, frame);
 	}
 }
 
@@ -5646,7 +5719,8 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -5704,8 +5778,8 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
-				occlusion, frame);
+				farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Raised)
@@ -5738,7 +5812,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
@@ -5766,7 +5840,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else
 		{
@@ -6051,7 +6125,8 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -6090,7 +6165,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
 			nearZ, farZ, -Double3::UnitY, textures.at(wallData.floorID), fadePercent,
-			shadingInfo, occlusion, frame);
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -6116,8 +6191,8 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
-			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent, shadingInfo,
-			occlusion, frame);
+			farZ, -Double3::UnitY, textures.at(ceilingData.id), fadePercent,
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Raised)
 	{
@@ -6149,7 +6224,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
@@ -6177,7 +6252,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else
 		{
@@ -6374,7 +6449,8 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -6407,8 +6483,8 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint, farZ,
-			nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent, shadingInfo,
-			occlusion, frame);
+			nearZ, Double3::UnitY, textures.at(wallData.ceilingID), fadePercent,
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 		// Wall.
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
@@ -6435,8 +6511,8 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
-			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent, shadingInfo,
-			occlusion, frame);
+			nearZ, Double3::UnitY, textures.at(floorData.id), fadePercent,
+			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Ceiling)
 	{
@@ -6472,7 +6548,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
 				farZ, nearZ, Double3::UnitY, textures.at(raisedData.ceilingID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
@@ -6500,7 +6576,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
 				nearZ, farZ, -Double3::UnitY, textures.at(raisedData.floorID), fadePercent,
-				shadingInfo, occlusion, frame);
+				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 		}
 		else
 		{
@@ -6785,7 +6861,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -6839,14 +6916,14 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	// Draw voxel straight ahead first.
 	SoftwareRenderer::drawVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray, facing,
 		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
-		fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
 			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
-			fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 
 	// Draw voxels above the voxel.
@@ -6854,7 +6931,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 	{
 		SoftwareRenderer::drawVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
 			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, ceilingHeight, openDoors,
-			fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
@@ -7020,7 +7097,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -7114,8 +7192,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
-			zDistance, shadingInfo, ceilingHeight, openDoors, fadingVoxels, voxelGrid, textures,
-			chasmTextureGroups, occlusion, frame);
+			zDistance, shadingInfo, ceilingHeight, openDoors, fadingVoxels, visibleLights,
+			voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -7192,7 +7270,8 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
 			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, ceilingHeight, 
-			openDoors, fadingVoxels, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			openDoors, fadingVoxels, visibleLights, voxelGrid, textures, chasmTextureGroups,
+			occlusion, frame);
 	}
 }
 
@@ -7375,7 +7454,8 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 	std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
@@ -7399,7 +7479,8 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 
 		// Cast the 2D ray and fill in the column's pixels with color.
 		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, ceilingHeight, openDoors,
-			fadingVoxels, voxelGrid, voxelTextures, chasmTextureGroups, occlusion.at(x), frame);
+			fadingVoxels, visibleLights, voxelGrid, voxelTextures, chasmTextureGroups,
+			occlusion.at(x), frame);
 	}
 }
 
@@ -7505,6 +7586,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Wait for other threads to finish distant sky objects.
 		threadBarrier(distantSky);
 
+		// @todo: wait for visible light determination to finish.
+
 		// Number of columns to skip per ray cast (for interleaved ray casting as a means of
 		// load-balancing).
 		const int strideX = threadData.totalThreads;
@@ -7512,8 +7595,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of voxels.
 		RenderThreadData::Voxels &voxels = threadData.voxels;
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera,
-			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, *voxels.voxelGrid,
-			*voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion,
+			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, *voxels.visibleLights,
+			*voxels.voxelGrid, *voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion,
 			*threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish voxels.
@@ -7571,8 +7654,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom,
 		this->skyGradientRowCache);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
-	this->threadData.voxels.init(ceilingHeight, openDoors, fadingVoxels, voxelGrid,
-		this->voxelTextures, this->chasmTextureGroups, this->occlusion);
+	this->threadData.voxels.init(ceilingHeight, openDoors, fadingVoxels, this->visibleLights,
+		voxelGrid, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextureGroups);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread

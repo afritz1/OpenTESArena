@@ -2755,20 +2755,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const auto &worldData = gameData.getWorldData();
 	const auto &level = worldData.getActiveLevel();
 	const auto &options = this->getGame().getOptions();
-	const double ambientPercent = [&gameData, &worldData]()
-	{
-		// Interiors are always completely dark, but for testing purposes, they
-		// will be 100% bright until lights are implemented.
-		// @todo: take into account "outdoorDungeon". Add it to LevelData?
-		if (worldData.getActiveWorldType() == WorldType::Interior)
-		{
-			return 1.0;
-		}
-		else
-		{
-			return gameData.getAmbientPercent();
-		}
-	}();
+	const double ambientPercent = gameData.getAmbientPercent();
 
 	const double latitude = [&gameData]()
 	{
