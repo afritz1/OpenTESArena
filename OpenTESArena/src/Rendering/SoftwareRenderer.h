@@ -724,14 +724,14 @@ private:
 	template <bool AmbientShading, bool TrueDepth>
 	static void drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		const ChasmTexture &chasmTexture, double lightContributionPercent,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of chasm pixels that can either be a wall texture or screen-space texture.
 	static void drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, bool emissive, const VoxelTexture &texture,
-		const ChasmTexture &chasmTexture, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		const ChasmTexture &chasmTexture, double lightContributionPercent,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Low-level shader for perspective chasm pixel rendering. This shader only cares about sampling
 	// the screen-space texture instead of branching on chasm wall texels.
