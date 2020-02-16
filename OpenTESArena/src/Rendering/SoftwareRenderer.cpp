@@ -838,11 +838,13 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight, cons
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
 	const std::vector<VisibleFlat> &visibleFlats,
+	const std::vector<VisibleLight> &visibleLights,
 	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
 	this->visibleFlats = &visibleFlats;
+	this->visibleLights = &visibleLights;
 	this->flatTextureGroups = &flatTextureGroups;
 	this->doneSorting = false;
 }
@@ -3362,7 +3364,6 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 		0.0, 1.0 - shadingInfo.ambient);
 
 	// Shading on the texture.
-	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -3615,7 +3616,6 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 		0.0, 1.0 - shadingInfo.ambient);
 
 	// Shading on the texture.
-	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -7055,7 +7055,8 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 	const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo,
-	const FlatTexture &texture, const FrameView &frame)
+	const FlatTexture &texture, const UncheckedBufferView<const VisibleLight> &lights,
+	const FrameView &frame)
 {
 	// Contribution from the sun.
 	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
@@ -7115,7 +7116,6 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(projectedYEnd, frame.height);
 
 	// Shading on the texture.
-	// - @todo: contribution from lights.
 	const Double3 shading(
 		shadingInfo.ambient + sunComponent.x,
 		shadingInfo.ambient + sunComponent.y,
@@ -7136,7 +7136,12 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
 
 		// Get the true XZ distance for the depth.
-		const double depth = (Double2(topPoint.x, topPoint.z) - eye).length();
+		const Double2 topPointXZ(topPoint.x, topPoint.z);
+		const double depth = (topPointXZ - eye).length();
+
+		// Light contribution per column.
+		const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(topPointXZ, lights);
 
 		// Linearly interpolated fog.
 		const Double3 &fogColor = shadingInfo.getFogColor();
@@ -7182,9 +7187,9 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat,
 					{
 						// Texture color with shading.
 						const double shadingMax = 1.0;
-						colorR = texel.r * std::min(shading.x, shadingMax);
-						colorG = texel.g * std::min(shading.y, shadingMax);
-						colorB = texel.b * std::min(shading.z, shadingMax);
+						colorR = texel.r * std::min(shading.x + lightContributionPercent, shadingMax);
+						colorG = texel.g * std::min(shading.y + lightContributionPercent, shadingMax);
+						colorB = texel.b * std::min(shading.z + lightContributionPercent, shadingMax);
 					}
 
 					// Linearly interpolate with fog.
@@ -7605,8 +7610,12 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+	const ShadingInfo &shadingInfo, const std::vector<VisibleLight> &visibleLights,
+	const FrameView &frame)
 {
+	const UncheckedBufferView<const VisibleLight> visibleLightsView =
+		SoftwareRenderer::getVisibleLightsView(visibleLights);
+
 	// Iterate through all flats, rendering those visible within the given X range of 
 	// the screen.
 	for (const VisibleFlat &flat : visibleFlats)
@@ -7635,7 +7644,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		const Double2 eye2D(camera.eye.x, camera.eye.z);
 
 		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D,
-			shadingInfo, texture, frame);
+			shadingInfo, texture, visibleLightsView, frame);
 	}
 }
 
@@ -7731,7 +7740,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Draw this thread's portion of flats.
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal,
-			*flats.visibleFlats, *flats.flatTextureGroups, *threadData.shadingInfo, *threadData.frame);
+			*flats.visibleFlats, *flats.flatTextureGroups, *threadData.shadingInfo,
+			*flats.visibleLights, *threadData.frame);
 
 		// Wait for other threads to finish flats.
 		threadBarrier(flats);
@@ -7777,7 +7787,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(ceilingHeight, openDoors, fadingVoxels, this->visibleLights,
 		voxelGrid, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
-	this->threadData.flats.init(flatNormal, this->visibleFlats, this->flatTextureGroups);
+	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights,
+		this->flatTextureGroups);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.

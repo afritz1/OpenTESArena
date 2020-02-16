@@ -448,10 +448,12 @@ private:
 			int threadsDone;
 			const Double3 *flatNormal;
 			const std::vector<VisibleFlat> *visibleFlats;
+			const std::vector<VisibleLight> *visibleLights;
 			const std::unordered_map<int, FlatTextureGroup> *flatTextureGroups;
 			bool doneSorting; // True when render threads can start rendering flats.
 
 			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
+				const std::vector<VisibleLight> &visibleLights,
 				const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups);
 		};
 
@@ -850,7 +852,8 @@ private:
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat,
 		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo, 
-		const FlatTexture &texture, const FrameView &frame);
+		const FlatTexture &texture, const UncheckedBufferView<const VisibleLight> &lights,
+		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
@@ -887,8 +890,9 @@ private:
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
 		const std::vector<VisibleFlat> &visibleFlats,
-		const std::unordered_map<int, FlatTextureGroup> &flatTextures,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
+		const ShadingInfo &shadingInfo, const std::vector<VisibleLight> &visibleLights,
+		const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
