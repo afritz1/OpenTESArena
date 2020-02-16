@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 
 #include "Constants.h"
@@ -34,6 +35,36 @@ double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
 
 	const double halfDim = aspectRatio * std::tan((fovY * 0.50) * Constants::DegToRad);
 	return (2.0 * std::atan(halfDim)) * Constants::RadToDeg;
+}
+
+bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint,
+	const Double2 &normal)
+{
+	return (point - dividerPoint).normalized().dot(normal) >= 0.0;
+}
+
+bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+	const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius)
+{
+	const Double2 p0p1 = triangleP1 - triangleP0;
+	const Double2 p1p2 = triangleP2 - triangleP1;
+	const Double2 p2p0 = triangleP0 - triangleP2;
+
+	const Double2 p0p1Inner = p0p1.leftPerp().normalized();
+	const Double2 p1p2Inner = p1p2.leftPerp().normalized();
+	const Double2 p2p0Inner = p2p0.leftPerp().normalized();
+
+	// Easy case: check if the circle center is inside the triangle.
+	if (MathUtils::isPointInHalfSpace(circlePoint, triangleP0, p0p1Inner) &&
+		MathUtils::isPointInHalfSpace(circlePoint, triangleP1, p1p2Inner) &&
+		MathUtils::isPointInHalfSpace(circlePoint, triangleP2, p2p0Inner))
+	{
+		return true;
+	}
+
+	// @todo: get line segment from circle center to closest point on triangle perimeter;
+	// if that segment length squared is less than the circle radius squared, success.
+	return false;
 }
 
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,

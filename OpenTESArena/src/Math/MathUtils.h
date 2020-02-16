@@ -1,8 +1,7 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
-#include <algorithm>
-
+#include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
 namespace MathUtils
@@ -21,6 +20,14 @@ namespace MathUtils
 
 	// Converts vertical field of view to horizontal field of view.
 	double verticalFovToHorizontalFov(double fovY, double aspectRatio);
+
+	// Returns whether the given point lies in the half space divided at the given divider point.
+	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);
+
+	// Returns whether the given triangle and circle intersect each other. Assumes triangle points
+	// are ordered counter-clockwise.
+	bool triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
+		const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius);
 
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
