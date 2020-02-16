@@ -686,14 +686,14 @@ private:
 	template <bool Fading>
 	static void drawPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with no perspective or transparency.
 	static void drawPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Low-level shader for perspective pixel rendering.
 	template <bool Fading>

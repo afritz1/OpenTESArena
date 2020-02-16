@@ -25,7 +25,7 @@ namespace
 {
 	// Hardcoded graphics options (will be loaded at runtime at some point).
 	constexpr int TextureFilterMode = 0;
-	constexpr int MaxLightsPerPixel = 8;
+	constexpr int MaxLightsPerPixel = 16;
 	constexpr bool LightContributionCap = true;
 	constexpr bool PlayerHasLight = true;
 
@@ -3339,8 +3339,8 @@ void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double sc
 template <bool Fading>
 void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, double depth,
 	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-	double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-	const FrameView &frame)
+	double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Draw range values.
 	const double yProjStart = drawRange.yProjStart;
@@ -3397,9 +3397,9 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 
 			// Shading from light.
 			constexpr double shadingMax = 1.0;
-			colorR *= std::min(shading.x + colorEmission, shadingMax);
-			colorG *= std::min(shading.y + colorEmission, shadingMax);
-			colorB *= std::min(shading.z + colorEmission, shadingMax);
+			colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
+			colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
+			colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
 
 			if constexpr (Fading)
 			{
@@ -3434,20 +3434,20 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 
 void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double depth, double u,
 	double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-	double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-	const FrameView &frame)
+	double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	if (fadePercent == 1.0)
 	{
 		constexpr bool fading = false;
 		SoftwareRenderer::drawPixelsShader<fading>(x, drawRange, depth, u, vStart, vEnd, normal, texture,
-			fadePercent, shadingInfo, occlusion, frame);
+			fadePercent, lightContributionPercent, shadingInfo, occlusion, frame);
 	}
 	else
 	{
 		constexpr bool fading = true;
 		SoftwareRenderer::drawPixelsShader<fading>(x, drawRange, depth, u, vStart, vEnd, normal, texture,
-			fadePercent, shadingInfo, occlusion, frame);
+			fadePercent, lightContributionPercent, shadingInfo, occlusion, frame);
 	}
 }
 
@@ -4589,9 +4589,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 		// Wall.
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
@@ -4742,10 +4744,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
@@ -5123,10 +5127,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
@@ -5435,10 +5441,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
@@ -5748,10 +5756,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 			nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 		SoftwareRenderer::drawPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -5879,10 +5889,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
@@ -6157,11 +6169,13 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 		// Wall.
 		SoftwareRenderer::drawPixels(x, drawRanges.at(0), nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
@@ -6291,10 +6305,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
@@ -6488,9 +6504,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 		// Wall.
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(wallData.sideID), fadePercent,
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Floor)
 	{
@@ -6615,10 +6633,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::TransparentWall)
