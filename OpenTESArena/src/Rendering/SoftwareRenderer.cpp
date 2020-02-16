@@ -507,15 +507,23 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		return Double3(dir.x, dir.y, dir.z).normalized();
 	}();
 	
-	this->sunColor = [this]()
+	this->sunColor = [this, isExterior]()
 	{
-		const Double3 baseSunColor(0.90, 0.875, 0.85);
+		if (isExterior)
+		{
+			const Double3 baseSunColor(0.90, 0.875, 0.85);
 
-		// Darken the sun color if it's below the horizon so wall faces aren't lit 
-		// as much during the night. This is just an artistic value to compensate
-		// for the lack of shadows.
-		return (this->sunDirection.y >= 0.0) ? baseSunColor :
-			(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
+			// Darken the sun color if it's below the horizon so wall faces aren't lit 
+			// as much during the night. This is just an artistic value to compensate
+			// for the lack of shadows.
+			return (this->sunDirection.y >= 0.0) ? baseSunColor :
+				(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
+		}
+		else
+		{
+			// No sunlight indoors.
+			return Double3::Zero;
+		}
 	}();
 
 	this->isExterior = isExterior;
