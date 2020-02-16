@@ -3592,7 +3592,8 @@ void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
 
 void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, double depth,
 	double u, double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-	const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame)
+	double lightContributionPercent, const ShadingInfo &shadingInfo,
+	const OcclusionData &occlusion, const FrameView &frame)
 {
 	// Draw range values.
 	const double yProjStart = drawRange.yProjStart;
@@ -3650,9 +3651,9 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 			{
 				// Shading from light.
 				constexpr double shadingMax = 1.0;
-				colorR *= std::min(shading.x + colorEmission, shadingMax);
-				colorG *= std::min(shading.y + colorEmission, shadingMax);
-				colorB *= std::min(shading.z + colorEmission, shadingMax);
+				colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
+				colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
+				colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;
@@ -4708,9 +4709,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 				frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
@@ -4745,7 +4748,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -4779,10 +4782,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -4883,10 +4888,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -4901,10 +4908,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -4927,9 +4936,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
-					textures.at(doorData.id), shadingInfo, occlusion, frame);
+					textures.at(doorData.id), wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -4944,10 +4956,12 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}
@@ -5092,9 +5106,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
@@ -5128,7 +5144,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -5162,10 +5178,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -5197,10 +5215,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -5215,10 +5235,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -5241,9 +5263,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
-					textures.at(doorData.id), shadingInfo, occlusion, frame);
+					textures.at(doorData.id), wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -5258,10 +5283,12 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}
@@ -5406,9 +5433,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(2), farPoint, nearPoint,
@@ -5442,7 +5471,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(farPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -5476,10 +5505,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -5580,10 +5611,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -5598,10 +5631,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -5624,9 +5659,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
-					textures.at(doorData.id), shadingInfo, occlusion, frame);
+					textures.at(doorData.id), wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -5641,10 +5679,12 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}
@@ -5826,9 +5866,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -5844,9 +5886,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
@@ -5858,10 +5902,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 			// Between top and bottom.
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -5890,7 +5936,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -5913,10 +5959,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Edge)
 	{
@@ -5941,10 +5989,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -6064,10 +6114,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -6082,10 +6134,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -6108,9 +6162,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-					occlusion, frame);
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), wallLightPercent,
+					shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -6125,10 +6182,12 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}
@@ -6242,9 +6301,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -6260,9 +6321,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
@@ -6274,10 +6337,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			// Between top and bottom.
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -6306,7 +6371,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -6329,10 +6394,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Edge)
 	{
@@ -6357,10 +6424,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -6392,10 +6461,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -6410,10 +6481,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -6436,9 +6509,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-					occlusion, frame);
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), wallLightPercent,
+					shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -6453,10 +6529,12 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}
@@ -6570,9 +6648,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 				SoftwareRenderer::getVisibleLightsView(visibleLights), shadingInfo, occlusion, frame);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 		else if (camera.eye.y < nearFloorPoint.y)
 		{
@@ -6588,9 +6668,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(1), nearPoint, farPoint,
@@ -6602,10 +6684,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			// Between top and bottom.
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
-				textures.at(raisedData.sideID), shadingInfo, occlusion, frame);
+				textures.at(raisedData.sideID), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Diagonal)
@@ -6634,7 +6718,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.at(diagData.id), fadePercent,
@@ -6657,10 +6741,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
+		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+			MaxLightsPerPixel, LightContributionCap>(nearPoint, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.at(transparentWallData.id),
-			shadingInfo, occlusion, frame);
+			wallLightPercent, shadingInfo, occlusion, frame);
 	}
 	else if (voxelDef.dataType == VoxelDataType::Edge)
 	{
@@ -6685,10 +6771,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
+			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+				MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.at(edgeData.id),
-				shadingInfo, occlusion, frame);
+				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Chasm)
@@ -6808,10 +6896,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
@@ -6826,10 +6916,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
@@ -6852,9 +6944,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 				// The start of the vertical texture coordinate depends on the percent open.
 				const double vStart = raisedAmount / voxelHeight;
 
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
+
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
-					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), shadingInfo,
-					occlusion, frame);
+					Constants::JustBelowOne, hit.normal, textures.at(doorData.id), wallLightPercent,
+					shadingInfo, occlusion, frame);
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
@@ -6869,10 +6964,12 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
+				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
+					MaxLightsPerPixel, LightContributionCap>(hit.point, SoftwareRenderer::getVisibleLightsView(visibleLights));
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.at(doorData.id),
-					shadingInfo, occlusion, frame);
+					wallLightPercent, shadingInfo, occlusion, frame);
 			}
 		}
 	}

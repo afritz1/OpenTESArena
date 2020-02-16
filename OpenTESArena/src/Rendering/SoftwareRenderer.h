@@ -714,7 +714,8 @@ private:
 	// Draws a column of pixels with transparency but no perspective.
 	static void drawTransparentPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame);
+		double lightContributionPercent, const ShadingInfo &shadingInfo,
+		const OcclusionData &occlusion, const FrameView &frame);
 
 	// Low-level shader for chasm pixel rendering.
 	// @todo: consider template bool for treating screen-space texels as regular texels.
