@@ -35,6 +35,7 @@ public:
 	struct ProfilerData
 	{
 		int width, height;
+		int visFlatCount, visLightCount;
 	};
 private:
 	struct VoxelTexel

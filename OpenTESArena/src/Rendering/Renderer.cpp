@@ -767,6 +767,8 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const SoftwareRenderer::ProfilerData swProfilerData = this->softwareRenderer.getProfilerData();
 	this->profilerData.width = swProfilerData.width;
 	this->profilerData.height = swProfilerData.height;
+	this->profilerData.visFlatCount = swProfilerData.visFlatCount;
+	this->profilerData.visLightCount = swProfilerData.visLightCount;
 	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /
 		static_cast<double>(std::nano::den);
 

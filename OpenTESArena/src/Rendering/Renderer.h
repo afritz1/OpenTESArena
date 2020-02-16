@@ -53,6 +53,9 @@ public:
 		// Internal renderer resolution.
 		int width, height;
 
+		// Visible flats and lights.
+		int visFlatCount, visLightCount;
+
 		double frameTime;
 
 		ProfilerData();

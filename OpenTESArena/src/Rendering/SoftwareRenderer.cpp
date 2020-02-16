@@ -907,6 +907,8 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	ProfilerData data;
 	data.width = this->width;
 	data.height = this->height;
+	data.visFlatCount = static_cast<int>(this->visibleFlats.size());
+	data.visLightCount = static_cast<int>(this->visibleLights.size());
 	return data;
 }
 

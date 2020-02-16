@@ -2538,7 +2538,9 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
 
 		const std::string text =
-			"3D render: " + renderTime + "ms" + "\n\n" +
+			"3D render: " + renderTime + "ms" + "\n" +
+			"Vis flats: " + std::to_string(profilerData.visFlatCount) +
+			", lights: " + std::to_string(profilerData.visLightCount) + "\n" +
 			"FPS Graph:" + '\n' +
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
 			"                               " + std::to_string(0);
