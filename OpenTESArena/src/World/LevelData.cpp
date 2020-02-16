@@ -1473,8 +1473,9 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				const bool transparent = false; // Apparently ghost properties aren't in .INF files.
 				const bool ceiling = false;
 				const bool mediumScale = false;
+				const std::optional<int> lightIntensity = std::nullopt;
 				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
-					largeScale, dark, transparent, ceiling, mediumScale);
+					largeScale, dark, transparent, ceiling, mediumScale, lightIntensity);
 			}
 			else if (isHumanEnemy)
 			{
@@ -1486,7 +1487,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 
 				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale);
+					flatData.transparent, flatData.ceiling, flatData.mediumScale,
+					flatData.lightIntensity);
 			}
 			else
 			{
@@ -1494,7 +1496,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				std::string displayName;
 				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale);
+					flatData.transparent, flatData.ceiling, flatData.mediumScale,
+					flatData.lightIntensity);
 			}
 
 			// Add entity animation data. Static entities have only idle animations (and maybe on/off

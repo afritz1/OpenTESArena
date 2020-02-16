@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../Entities/EntityManager.h"
 #include "../Game/Options.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
@@ -123,7 +124,8 @@ private:
 		double rightAspectedX, rightAspectedZ; // Right * aspect components.
 		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
 		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
-		double fovY, zoom, aspect;
+		double fovX, fovY; // Horizontal and vertical field of view.
+		double zoom, aspect;
 		double yAngleRadians; // Angle of the camera above or below the horizon.
 		double yShear; // Projected Y-coordinate translation.
 
@@ -374,6 +376,25 @@ private:
 		void clear();
 	};
 
+	// Instance of an entity light in the world.
+	struct VisibleLight
+	{
+		Double3 position;
+		double radius;
+
+		void init(const Double3 &position, double radius);
+	};
+
+	// Data about a light and whether it's visible. Used with visible light determination.
+	struct LightVisibilityData
+	{
+		Double3 position;
+		double radius;
+		bool intersectsFrustum;
+
+		void init(const Double3 &position, double radius, bool intersectsFrustum);
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -475,6 +496,7 @@ private:
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
+	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
@@ -628,6 +650,11 @@ private:
 	static bool findDoorIntersection(int voxelX, int voxelZ,
 		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
 		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
+
+	// Calculates light visibility data for a given entity.
+	static void getLightVisibilityData(const EntityManager::EntityVisibilityData &visData,
+		int lightIntensity, const Double2 &eye2D, const Double2 &cameraDir, double fovX,
+		double viewDistance, LightVisibilityData *outVisData);
 
 	// Low-level texture sampling function.
 	template <int FilterMode, bool Transparency>

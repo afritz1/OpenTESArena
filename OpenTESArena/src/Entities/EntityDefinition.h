@@ -1,6 +1,7 @@
 #ifndef ENTITY_DEFINITION_H
 #define ENTITY_DEFINITION_H
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -25,6 +26,7 @@ private:
 	bool transparent;
 	bool ceiling;
 	bool mediumScale;
+	std::optional<int> lightIntensity;
 
 	// .INF flat index.
 	// @todo: remove dependency on this .INF data index? I.e. just keep all the equivalent data
@@ -34,7 +36,8 @@ public:
 	EntityDefinition();
 
 	void init(std::string &&displayName, int flatIndex, int yOffset, bool collider, bool puddle,
-		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale);
+		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
+		const std::optional<int> &lightIntensity);
 
 	std::string_view getDisplayName() const;
 	int getFlatIndex() const;
@@ -46,6 +49,7 @@ public:
 	bool isTransparent() const;
 	bool isOnCeiling() const;
 	bool isMediumScale() const;
+	const int *getLightIntensity() const;
 
 	EntityAnimationData &getAnimationData();
 	const EntityAnimationData &getAnimationData() const;

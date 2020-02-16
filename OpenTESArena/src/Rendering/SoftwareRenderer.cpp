@@ -329,6 +329,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->rightX = rightXZ.x;
 	this->rightZ = rightXZ.z;
 
+	this->fovX = MathUtils::verticalFovToHorizontalFov(fovY, aspect);
 	this->fovY = fovY;
 
 	// Zoom of the camera, based on vertical field of view.
@@ -769,6 +770,20 @@ void SoftwareRenderer::VisDistantObjects::clear()
 	this->sunEnd = 0;
 	this->starStart = 0;
 	this->starEnd = 0;
+}
+
+void SoftwareRenderer::VisibleLight::init(const Double3 &position, double radius)
+{
+	this->position = position;
+	this->radius = radius;
+}
+
+void SoftwareRenderer::LightVisibilityData::init(const Double3 &position, double radius,
+	bool intersectsFrustum)
+{
+	this->position = position;
+	this->radius = radius;
+	this->intersectsFrustum = intersectsFrustum;
 }
 
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
@@ -1633,6 +1648,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
+	this->visibleLights.clear();
 
 	// Potentially visible entities buffer. Don't need to clear because it gets
 	// overwritten with a set amount of new data each frame.
@@ -1651,6 +1667,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	// Potentially visible flat determination algorithm, given the current camera.
+	// Also calculates visible lights.
 	for (int i = 0; i < entityCount; i++)
 	{
 		const Entity &entity = *this->potentiallyVisibleFlats[i];
@@ -1659,6 +1676,25 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 		EntityManager::EntityVisibilityData visData;
 		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir,
 			ceilingHeight, voxelGrid, visData);
+
+		// See if the entity is a light.
+		const int *lightIntensity = entityDef.getLightIntensity();
+		const bool isLight = lightIntensity != nullptr;
+		if (isLight)
+		{
+			// See if the light is visible.
+			SoftwareRenderer::LightVisibilityData lightVisData;
+			SoftwareRenderer::getLightVisibilityData(visData, *lightIntensity, eye2D, cameraDir,
+				camera.fovX, fogDistance, &lightVisData);
+
+			if (lightVisData.intersectsFrustum)
+			{
+				// Add a new visible light.
+				VisibleLight visLight;
+				visLight.init(lightVisData.position, lightVisData.radius);
+				this->visibleLights.push_back(std::move(visLight));
+			}
+		}
 
 		const double flatWidth = visData.keyframe.getWidth();
 		const double flatHeight = visData.keyframe.getHeight();
@@ -3110,6 +3146,33 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 		// Invalid door type.
 		return false;
 	}
+}
+
+void SoftwareRenderer::getLightVisibilityData(const EntityManager::EntityVisibilityData &visData,
+	int lightIntensity, const Double2 &eye2D, const Double2 &cameraDir, double fovX,
+	double viewDistance, LightVisibilityData *outVisData)
+{
+	// Put the light position at the center of the entity.
+	// @todo: maybe base it on the first frame so there's no jitter if the entity height is variable?
+	const double entityHalfHeight = visData.keyframe.getHeight() * 0.50;
+	const Double3 lightPosition = visData.flatPosition + (Double3::UnitY * entityHalfHeight);
+	const Double2 lightPosition2D(lightPosition.x, lightPosition.z);
+
+	// Point at max view distance away from current camera view.
+	const Double2 cameraMaxPoint = eye2D + (cameraDir * viewDistance);
+
+	// Distance from max view point to left or right far frustum corner.
+	const double frustumHalfWidth = viewDistance * std::tan((fovX * 0.50) * Constants::DegToRad);
+
+	const Double2 cameraFrustumP0 = eye2D;
+	const Double2 cameraFrustumP1 = cameraMaxPoint + (cameraDir.rightPerp() * frustumHalfWidth);
+	const Double2 cameraFrustumP2 = cameraMaxPoint + (cameraDir.leftPerp() * frustumHalfWidth);
+
+	const double lightRadius = static_cast<double>(lightIntensity);
+	const bool intersectsFrustum = MathUtils::triangleCircleIntersection(
+		cameraFrustumP0, cameraFrustumP1, cameraFrustumP2, lightPosition2D, lightRadius);
+
+	outVisData->init(lightPosition, lightRadius, intersectsFrustum);
 }
 
 // @todo: might be better as a macro so there's no chance of a function call in the pixel loop.

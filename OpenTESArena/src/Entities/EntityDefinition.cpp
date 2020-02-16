@@ -14,7 +14,8 @@ EntityDefinition::EntityDefinition()
 }
 
 void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
-	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale)
+	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
+	const std::optional<int> &lightIntensity)
 {
 	this->displayName = std::move(displayName);
 	this->flatIndex = flatIndex;
@@ -26,6 +27,7 @@ void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffse
 	this->transparent = transparent;
 	this->ceiling = ceiling;
 	this->mediumScale = mediumScale;
+	this->lightIntensity = lightIntensity;
 }
 
 std::string_view EntityDefinition::getDisplayName() const
@@ -76,6 +78,11 @@ bool EntityDefinition::isOnCeiling() const
 bool EntityDefinition::isMediumScale() const
 {
 	return this->mediumScale;
+}
+
+const int *EntityDefinition::getLightIntensity() const
+{
+	return this->lightIntensity.has_value() ? &(*this->lightIntensity) : nullptr;
 }
 
 EntityAnimationData &EntityDefinition::getAnimationData()
