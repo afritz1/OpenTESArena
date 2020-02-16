@@ -434,6 +434,7 @@ private:
 			const ChasmTextureGroups *chasmTextureGroups;
 			std::vector<OcclusionData> *occlusion;
 			double ceilingHeight;
+			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
 			void init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 				const std::vector<LevelData::FadeState> &fadingVoxels,

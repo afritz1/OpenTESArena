@@ -833,6 +833,7 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(double ceilingHeight, cons
 	this->voxelTextures = &voxelTextures;
 	this->chasmTextureGroups = &chasmTextureGroups;
 	this->occlusion = &occlusion;
+	this->doneLightVisTesting = false;
 }
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
@@ -7586,14 +7587,17 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Wait for other threads to finish distant sky objects.
 		threadBarrier(distantSky);
 
-		// @todo: wait for visible light determination to finish.
+		// Wait for visible light testing to finish.
+		RenderThreadData::Voxels &voxels = threadData.voxels;
+		lk.lock();
+		threadData.condVar.wait(lk, [&voxels]() { return voxels.doneLightVisTesting; });
+		lk.unlock();
 
 		// Number of columns to skip per ray cast (for interleaved ray casting as a means of
 		// load-balancing).
 		const int strideX = threadData.totalThreads;
 
 		// Draw this thread's portion of voxels.
-		RenderThreadData::Voxels &voxels = threadData.voxels;
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera,
 			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, *voxels.visibleLights,
 			*voxels.voxelGrid, *voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion,
@@ -7684,13 +7688,23 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Let the render threads know that they can start drawing distant objects.
 	this->threadData.distantSky.doneVisTesting = true;
-
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
 	this->updateVisibleFlats(camera, ceilingHeight, fogDistance, voxelGrid, entityManager);
+
+	lk.lock();
+	this->threadData.condVar.wait(lk, [this]()
+	{
+		return this->threadData.distantSky.threadsDone == this->threadData.totalThreads;
+	});
+
+	// Let the render threads know that they can start drawing voxels.
+	this->threadData.voxels.doneLightVisTesting = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
