@@ -15,7 +15,7 @@ EntityDefinition::EntityDefinition()
 
 void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
 	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
-	const std::optional<int> &lightIntensity)
+	const std::optional<int> &lightIntensity, const std::optional<uint8_t> &creatureSoundIndex)
 {
 	this->displayName = std::move(displayName);
 	this->flatIndex = flatIndex;
@@ -28,6 +28,7 @@ void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffse
 	this->ceiling = ceiling;
 	this->mediumScale = mediumScale;
 	this->lightIntensity = lightIntensity;
+	this->creatureSoundIndex = creatureSoundIndex;
 }
 
 std::string_view EntityDefinition::getDisplayName() const
@@ -83,6 +84,11 @@ bool EntityDefinition::isMediumScale() const
 const int *EntityDefinition::getLightIntensity() const
 {
 	return this->lightIntensity.has_value() ? &(*this->lightIntensity) : nullptr;
+}
+
+const uint8_t *EntityDefinition::getCreatureSoundIndex() const
+{
+	return this->creatureSoundIndex.has_value() ? &(*this->creatureSoundIndex) : nullptr;
 }
 
 EntityAnimationData &EntityDefinition::getAnimationData()

@@ -27,6 +27,7 @@ private:
 	bool ceiling;
 	bool mediumScale;
 	std::optional<int> lightIntensity;
+	std::optional<uint8_t> creatureSoundIndex;
 
 	// .INF flat index.
 	// @todo: remove dependency on this .INF data index? I.e. just keep all the equivalent data
@@ -37,7 +38,7 @@ public:
 
 	void init(std::string &&displayName, int flatIndex, int yOffset, bool collider, bool puddle,
 		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
-		const std::optional<int> &lightIntensity);
+		const std::optional<int> &lightIntensity, const std::optional<uint8_t> &creatureSoundIndex);
 
 	std::string_view getDisplayName() const;
 	int getFlatIndex() const;
@@ -50,6 +51,7 @@ public:
 	bool isOnCeiling() const;
 	bool isMediumScale() const;
 	const int *getLightIntensity() const;
+	const uint8_t *getCreatureSoundIndex() const;
 
 	EntityAnimationData &getAnimationData();
 	const EntityAnimationData &getAnimationData() const;

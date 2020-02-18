@@ -1466,6 +1466,8 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				DebugAssertIndex(creatureYOffsets, creatureIndex);
 				const int yOffset = creatureYOffsets[creatureIndex];
 
+				const uint8_t creatureSoundIndex = exeData.entities.creatureSounds[creatureIndex];
+
 				const bool collider = true;
 				const bool puddle = false;
 				const bool largeScale = false;
@@ -1475,7 +1477,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				const bool mediumScale = false;
 				const std::optional<int> lightIntensity = std::nullopt;
 				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
-					largeScale, dark, transparent, ceiling, mediumScale, lightIntensity);
+					largeScale, dark, transparent, ceiling, mediumScale, lightIntensity, creatureSoundIndex);
 			}
 			else if (isHumanEnemy)
 			{
@@ -1488,7 +1490,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 					flatData.transparent, flatData.ceiling, flatData.mediumScale,
-					flatData.lightIntensity);
+					flatData.lightIntensity, std::nullopt);
 			}
 			else
 			{
@@ -1497,7 +1499,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 					flatData.transparent, flatData.ceiling, flatData.mediumScale,
-					flatData.lightIntensity);
+					flatData.lightIntensity, std::nullopt);
 			}
 
 			// Add entity animation data. Static entities have only idle animations (and maybe on/off
