@@ -39,7 +39,7 @@ BoxCollider3D::BoxCollider3D(const Matrix4d &transform, double width, double hei
 QuadCollider3D::QuadCollider3D(const Double3 &center, const Double3 &normal, double width, double height) : Collider3D(Matrix4d::identity())
 {
 	Point = center;
-	Normal = normal;
+	Normal = normal.normalized();
 	Width = width;
 	Height = height;
 }
@@ -161,10 +161,10 @@ bool BoxCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 
 bool QuadCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 {
-	auto processHit = [this, &other](ColliderHit &hit) {
+	auto processHit = [this, &other](ColliderHit &hit, bool flipNormal) {
 		Double3 pointOfImpactOnA = hit.A == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
 		Double3 pointOfImpactOnB = hit.B == &other ? hit.PointOfImpactOnB : hit.PointOfImpactOnA;
-		Double3 normal = hit.Normal;
+		Double3 normal = hit.Normal * (flipNormal ? -1.0 : 1.0);
 		hit = ColliderHit(
 			static_cast<Collider3D *>(this),
 			&other,
@@ -178,7 +178,7 @@ bool QuadCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 		bool collided = Collider3D::CheckCollisionCapsuleQuad(static_cast<const CapsuleCollider3D &>(other), *this, hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
 			return true;
 		}
 	}
@@ -187,7 +187,16 @@ bool QuadCollider3D::CheckCollision(const Collider3D &other, ColliderHit &hit)
 		bool collided = Collider3D::CheckCollisionQuadBox(*this, static_cast<const BoxCollider3D &>(other), hit);
 		if (collided)
 		{
-			processHit(hit);
+			processHit(hit, false);
+			return true;
+		}
+	}
+	else if (dynamic_cast<const AxisAlignedCylinderCollider3D*>(&other) != nullptr)
+	{
+		bool collided = Collider3D::CheckCollisionCylinderQuad(static_cast<const AxisAlignedCylinderCollider3D&>(other), *this, hit);
+		if (collided)
+		{
+			processHit(hit, true);
 			return true;
 		}
 	}
@@ -868,14 +877,14 @@ bool Collider3D::CheckCollisionCylinderQuad(const AxisAlignedCylinderCollider3D 
 	auto aPos = A.Transform.w.toXYZ();
 	auto aTop = aPos + Double3(0, A.Height, 0);
 
-	auto bPos = (B.Transform * Double4(0, 0, 0, 1)).toXYZ();
+	auto bPos = B.Point;
 	auto bNorm = (B.Transform * Double4(B.Normal.x, B.Normal.y, B.Normal.z, 0)).toXYZ();
 
 	Double3 nearestPointInPlane;
 	auto distance = distanceBetweenLineSegmentAndPlane(bPos, bNorm, aPos, aTop - aPos, nearestPointInPlane);
 
 	// If the distance between the plane and the center of the cylinder is greater than the radius of the cylinder, there's no way it could be colliding
-	if (distance > A.Radius)
+	if (abs(distance) > A.Radius)
 		return false;
 
 	if (nearestPointInPlane.y > aTop.y) // Check if the plane point is above the cylinder
@@ -919,7 +928,7 @@ bool Collider3D::CheckCollisionCylinderQuad(const AxisAlignedCylinderCollider3D 
 		// The plane point is within the radius and between the top and bottom of the cylinder. We just need a cylinder point
 		Double3 nearestPointOnCylinderCore = Double3(aPos.x, nearestPointInPlane.y, aPos.z);
 		Double3 normal = (nearestPointOnCylinderCore - nearestPointInPlane).normalized();;
-		Double3 nearestPointOnCylinder = nearestPointOnCylinderCore - hit.Normal * A.Radius;
+		Double3 nearestPointOnCylinder = nearestPointOnCylinderCore - normal * A.Radius;
 
 		handleCollision(nearestPointOnCylinder, nearestPointInPlane, normal);
 		return true;
