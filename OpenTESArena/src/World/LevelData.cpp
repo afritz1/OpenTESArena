@@ -1475,9 +1475,11 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				const bool transparent = false; // Apparently ghost properties aren't in .INF files.
 				const bool ceiling = false;
 				const bool mediumScale = false;
+				const bool streetLight = false;
 				const std::optional<int> lightIntensity = std::nullopt;
 				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
-					largeScale, dark, transparent, ceiling, mediumScale, lightIntensity, creatureSoundIndex);
+					largeScale, dark, transparent, ceiling, mediumScale, streetLight,
+					lightIntensity, creatureSoundIndex);
 			}
 			else if (isHumanEnemy)
 			{
@@ -1487,18 +1489,20 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				DebugAssertIndex(charClassNames, charClassIndex);
 				const std::string_view charClassName = charClassNames[charClassIndex];
 
+				const bool streetLight = false;
 				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
 					flatData.lightIntensity, std::nullopt);
 			}
 			else
 			{
 				// No display name.
 				std::string displayName;
+				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex);
 				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
 					flatData.lightIntensity, std::nullopt);
 			}
 

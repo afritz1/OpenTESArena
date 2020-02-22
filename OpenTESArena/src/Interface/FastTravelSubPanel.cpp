@@ -402,8 +402,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		// Choose time-based music and enter the game world.
-		auto &clock = gameData.getClock();
-		const MusicName musicName = clock.nightMusicIsActive() ?
+		const MusicName musicName = gameData.nightMusicIsActive() ?
 			MusicName::Night : GameData::getExteriorMusicName(weatherType);
 		game.setMusic(musicName);
 		game.setPanel<GameWorldPanel>(game);

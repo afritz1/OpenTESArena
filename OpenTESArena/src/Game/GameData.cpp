@@ -67,6 +67,26 @@ const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY)
 const double GameData::CHASM_ANIM_PERIOD = 1.0 / 2.0;
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
 
+const Clock GameData::Midnight(0, 0, 0);
+const Clock GameData::Night1(0, 1, 0);
+const Clock GameData::EarlyMorning(3, 0, 0);
+const Clock GameData::Morning(6, 0, 0);
+const Clock GameData::Noon(12, 0, 0);
+const Clock GameData::Afternoon(12, 1, 0);
+const Clock GameData::Evening(18, 0, 0);
+const Clock GameData::Night2(21, 0, 0);
+
+const Clock GameData::AmbientStartBrightening(6, 0, 0);
+const Clock GameData::AmbientEndBrightening(6, 15, 0);
+const Clock GameData::AmbientStartDimming(17, 45, 0);
+const Clock GameData::AmbientEndDimming(18, 0, 0);
+
+const Clock GameData::LamppostActivate(17, 45, 0);
+const Clock GameData::LamppostDeactivate(6, 15, 0);
+
+const Clock GameData::MusicSwitchToDay(6, 19, 0);
+const Clock GameData::MusicSwitchToNight(17, 45, 0);
+
 GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	: player(std::move(player))
 {
@@ -247,6 +267,26 @@ MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &ran
 	}
 }
 
+bool GameData::nightMusicIsActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeDayMusicChange =
+		clockTime < GameData::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange =
+		clockTime >= GameData::MusicSwitchToNight.getPreciseTotalSeconds();
+	return beforeDayMusicChange || afterNightMusicChange;
+}
+
+bool GameData::nightLightsAreActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate =
+		clockTime < GameData::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate =
+		clockTime >= GameData::LamppostActivate.getPreciseTotalSeconds();
+	return beforeLamppostDeactivate || afterLamppostActivate;
+}
+
 void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
@@ -340,7 +380,7 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 	const double fogDistance = GameData::getFogDistanceFromWeather(this->weatherType);
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
@@ -460,7 +500,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
@@ -551,7 +591,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gatePos,
@@ -611,7 +651,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 const std::array<WeatherType, 36> &GameData::getWeathersArray() const
@@ -703,14 +743,10 @@ double GameData::getAmbientPercent() const
 
 		// Time ranges where the ambient light changes. The start times are inclusive,
 		// and the end times are exclusive.
-		const double startBrighteningTime =
-			Clock::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime =
-			Clock::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime =
-			Clock::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime =
-			Clock::AmbientEndDimming.getPreciseTotalSeconds();
+		const double startBrighteningTime = GameData::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime = GameData::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime = GameData::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime = GameData::AmbientEndDimming.getPreciseTotalSeconds();
 
 		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
 		// some values here that make testing easier.

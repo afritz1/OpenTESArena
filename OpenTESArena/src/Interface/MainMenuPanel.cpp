@@ -401,7 +401,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// Make sure to get updated weather type from game data and not
 					// local variable so it gets the filtered weather type.
 					const WeatherType weatherType = gameData->getWeatherType();
-					return clock.nightMusicIsActive() ?
+					return gameData->nightMusicIsActive() ?
 						MusicName::Night : GameData::getExteriorMusicName(weatherType);
 				}
 				else

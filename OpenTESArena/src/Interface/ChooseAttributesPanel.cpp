@@ -356,8 +356,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 									game.getMiscAssets(), game.getTextureManager(), renderer);
 
 								// Set music based on weather and time.
-								const auto &clock = gameData.getClock();
-								const MusicName musicName = clock.nightMusicIsActive() ?
+								const MusicName musicName = gameData.nightMusicIsActive() ?
 									MusicName::Night : MusicFile::fromWeather(weatherType);
 								game.setMusic(musicName);
 							};

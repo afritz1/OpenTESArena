@@ -88,6 +88,30 @@ private:
 
 	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
+	// Clock times for when each time range begins.
+	static const Clock Midnight;
+	static const Clock Night1;
+	static const Clock EarlyMorning;
+	static const Clock Morning;
+	static const Clock Noon;
+	static const Clock Afternoon;
+	static const Clock Evening;
+	static const Clock Night2;
+
+	// Clock times for changes in ambient lighting.
+	static const Clock AmbientStartBrightening;
+	static const Clock AmbientEndBrightening;
+	static const Clock AmbientStartDimming;
+	static const Clock AmbientEndDimming;
+
+	// Clock times for lamppost activation.
+	static const Clock LamppostActivate;
+	static const Clock LamppostDeactivate;
+
+	// Clock times for changes in music.
+	static const Clock MusicSwitchToDay;
+	static const Clock MusicSwitchToNight;
+
 	// Creates incomplete game data with no active world, to be further initialized later.
 	GameData(Player &&player, const MiscAssets &miscAssets);
 	GameData(GameData&&) = default;
@@ -106,6 +130,12 @@ public:
 	// Gets the music name associated with a .MIF filename. If the selection involves
 	// choosing from a list, the RNG will be used.
 	static MusicName getInteriorMusicName(const std::string &mifName, Random &random);
+
+	// Returns whether the current music should be for day or night.
+	bool nightMusicIsActive() const;
+
+	// Returns whether night lights (i.e., lampposts) should currently be active.
+	bool nightLightsAreActive() const;
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
 	void loadInterior(const MIFFile &mif, const Location &location, const MiscAssets &miscAssets,

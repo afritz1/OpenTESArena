@@ -373,14 +373,14 @@ GameWorldPanel::GameWorldPanel(Game &game)
 						// uniformly distributed -- midnight and noon are only one minute.
 						const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
 						{
-							std::make_pair(Clock::Midnight, 6),
-							std::make_pair(Clock::Night1, 5),
-							std::make_pair(Clock::EarlyMorning, 0),
-							std::make_pair(Clock::Morning, 1),
-							std::make_pair(Clock::Noon, 2),
-							std::make_pair(Clock::Afternoon, 3),
-							std::make_pair(Clock::Evening, 4),
-							std::make_pair(Clock::Night2, 5)
+							std::make_pair(GameData::Midnight, 6),
+							std::make_pair(GameData::Night1, 5),
+							std::make_pair(GameData::EarlyMorning, 0),
+							std::make_pair(GameData::Morning, 1),
+							std::make_pair(GameData::Noon, 2),
+							std::make_pair(GameData::Afternoon, 3),
+							std::make_pair(GameData::Evening, 4),
+							std::make_pair(GameData::Night2, 5)
 						};
 
 						const Clock &presentClock = gameData.getClock();
@@ -1994,7 +1994,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			location.localCityID, location.provinceID, miscAssets);
 		const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 			gameData.getWeatherType(), climateType);
-		const MusicName musicName = !clock.nightMusicIsActive() ?
+		const MusicName musicName = !gameData.nightMusicIsActive() ?
 			GameData::getExteriorMusicName(filteredWeatherType) :
 			MusicName::Night;
 
@@ -2189,10 +2189,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						location.localCityID, location.provinceID, game.getMiscAssets());
 					const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
-					const auto &clock = gameData.getClock();
-					return !clock.nightMusicIsActive() ?
-						GameData::getExteriorMusicName(filteredWeatherType) :
-						MusicName::Night;
+					return !gameData.nightMusicIsActive() ?
+						GameData::getExteriorMusicName(filteredWeatherType) : MusicName::Night;
 				}();
 
 				game.setMusic(musicName);
@@ -2647,8 +2645,8 @@ void GameWorldPanel::tick(double dt)
 	// See if the clock passed the boundary between night and day, and vice versa.
 	const double oldClockTime = oldClock.getPreciseTotalSeconds();
 	const double newClockTime = newClock.getPreciseTotalSeconds();
-	const double lamppostActivateTime = Clock::LamppostActivate.getPreciseTotalSeconds();
-	const double lamppostDeactivateTime = Clock::LamppostDeactivate.getPreciseTotalSeconds();
+	const double lamppostActivateTime = GameData::LamppostActivate.getPreciseTotalSeconds();
+	const double lamppostDeactivateTime = GameData::LamppostDeactivate.getPreciseTotalSeconds();
 	const bool activateNightLights =
 		(oldClockTime < lamppostActivateTime) &&
 		(newClockTime >= lamppostActivateTime);
@@ -2671,8 +2669,8 @@ void GameWorldPanel::tick(double dt)
 	// Check for changes in exterior music depending on the time.
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 	{
-		const double dayMusicStartTime = Clock::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = Clock::MusicSwitchToNight.getPreciseTotalSeconds();
+		const double dayMusicStartTime = GameData::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = GameData::MusicSwitchToNight.getPreciseTotalSeconds();
 		const bool changeToDayMusic =
 			(oldClockTime < dayMusicStartTime) &&
 			(newClockTime >= dayMusicStartTime);
