@@ -454,7 +454,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
 	double daytimePercent, double latitude, double ambient, double fogDistance,
-	double chasmAnimPercent, bool isExterior)
+	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior)
 {
 	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
@@ -462,6 +462,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
 	// and forwards in the PM (horizon is earliest in the palette).
 	this->isAM = daytimePercent < 0.50;
+	this->nightLightsAreActive = nightLightsAreActive;
 	const int slideDirection = this->isAM ? -1 : 1;
 
 	// Get the real index (not the integer index) of the color for the current time as a
@@ -1661,8 +1662,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
-void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHeight,
-	double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager)
+void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
+	double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
 	this->visibleLights.clear();
@@ -1703,14 +1704,28 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, double ceilingHe
 			ceilingHeight, voxelGrid, visData);
 
 		// See if the entity is a light.
-		const int *lightIntensity = entityDef.getLightIntensity();
-		const int lightIntensityValue = lightIntensity != nullptr ? *lightIntensity : 2;
-		const bool isLight = lightIntensity != nullptr;
+		const int lightIntensity = [&shadingInfo, &entityDef]()
+		{
+			const int *lightIntensityPtr = entityDef.getLightIntensity();
+			if (lightIntensityPtr != nullptr)
+			{
+				return *lightIntensityPtr;
+			}
+			else
+			{
+				const int streetLightIntensity = 4;
+				const bool isActiveStreetLight =
+					entityDef.isStreetLight() && shadingInfo.nightLightsAreActive;
+				return isActiveStreetLight ? streetLightIntensity : 0;
+			}
+		}();
+
+		const bool isLight = lightIntensity > 0;
 		if (isLight)
 		{
 			// See if the light is visible.
 			SoftwareRenderer::LightVisibilityData lightVisData;
-			SoftwareRenderer::getLightVisibilityData(visData, *lightIntensity, eye2D, cameraDir,
+			SoftwareRenderer::getLightVisibilityData(visData, lightIntensity, eye2D, cameraDir,
 				camera.fovX, fogDistance, &lightVisData);
 
 			if (lightVisData.intersectsFrustum)
@@ -7772,7 +7787,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-	bool parallaxSky, bool isExterior, double ceilingHeight,
+	bool parallaxSky, bool nightLightsAreActive, bool isExterior, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, uint32_t *colorBuffer)
@@ -7794,7 +7809,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
-		ambient, this->fogDistance, chasmAnimPercent, isExterior);
+		ambient, this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.
@@ -7843,7 +7858,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
-	this->updateVisibleFlats(camera, ceilingHeight, fogDistance, voxelGrid, entityManager);
+	this->updateVisibleFlats(camera, shadingInfo, ceilingHeight, voxelGrid, entityManager);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

@@ -221,14 +221,18 @@ private:
 		// Percent through the chasm animation.
 		double chasmAnimPercent;
 
-		// Returns whether the current clock time is before noon.
+		// Whether the current clock time is before noon.
 		bool isAM;
+
+		// Whether street lights and building lights are on.
+		bool nightLightsAreActive;
 
 		// Whether the current location is strictly outdoors (does not count outdoor dungeons).
 		bool isExterior;
 
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
-			double ambient, double fogDistance, double chasmAnimPercent, bool isExterior);
+			double ambient, double fogDistance, double chasmAnimPercent, bool nightLightsAreActive,
+			bool isExterior);
 
 		const Double3 &getFogColor() const;
 	};
@@ -533,8 +537,8 @@ private:
 		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera, double ceilingHeight,
-		double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
+	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -978,7 +982,7 @@ public:
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-		bool parallaxSky, bool isExterior, double ceilingHeight,
+		bool parallaxSky, bool nightLightsAreActive, bool isExterior, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, uint32_t *colorBuffer);
