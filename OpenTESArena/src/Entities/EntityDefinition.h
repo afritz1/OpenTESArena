@@ -26,6 +26,7 @@ private:
 	bool transparent;
 	bool ceiling;
 	bool mediumScale;
+	bool streetLight;
 	std::optional<int> lightIntensity;
 	std::optional<uint8_t> creatureSoundIndex;
 
@@ -38,7 +39,8 @@ public:
 
 	void init(std::string &&displayName, int flatIndex, int yOffset, bool collider, bool puddle,
 		bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
-		const std::optional<int> &lightIntensity, const std::optional<uint8_t> &creatureSoundIndex);
+		bool streetLight, const std::optional<int> &lightIntensity,
+		const std::optional<uint8_t> &creatureSoundIndex);
 
 	std::string_view getDisplayName() const;
 	int getFlatIndex() const;
@@ -50,6 +52,7 @@ public:
 	bool isTransparent() const;
 	bool isOnCeiling() const;
 	bool isMediumScale() const;
+	bool isStreetLight() const;
 	const int *getLightIntensity() const;
 	const uint8_t *getCreatureSoundIndex() const;
 

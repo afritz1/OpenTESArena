@@ -11,11 +11,13 @@ EntityDefinition::EntityDefinition()
 	this->transparent = false;
 	this->ceiling = false;
 	this->mediumScale = false;
+	this->streetLight = false;
 }
 
 void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffset, bool collider,
 	bool puddle, bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
-	const std::optional<int> &lightIntensity, const std::optional<uint8_t> &creatureSoundIndex)
+	bool streetLight, const std::optional<int> &lightIntensity,
+	const std::optional<uint8_t> &creatureSoundIndex)
 {
 	this->displayName = std::move(displayName);
 	this->flatIndex = flatIndex;
@@ -27,6 +29,7 @@ void EntityDefinition::init(std::string &&displayName, int flatIndex, int yOffse
 	this->transparent = transparent;
 	this->ceiling = ceiling;
 	this->mediumScale = mediumScale;
+	this->streetLight = streetLight;
 	this->lightIntensity = lightIntensity;
 	this->creatureSoundIndex = creatureSoundIndex;
 }
@@ -79,6 +82,11 @@ bool EntityDefinition::isOnCeiling() const
 bool EntityDefinition::isMediumScale() const
 {
 	return this->mediumScale;
+}
+
+bool EntityDefinition::isStreetLight() const
+{
+	return this->streetLight;
 }
 
 const int *EntityDefinition::getLightIntensity() const

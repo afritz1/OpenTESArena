@@ -123,6 +123,8 @@ namespace ArenaAnimUtils
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
+	int getStreetLightActiveIndex();
+	int getStreetLightInactiveIndex();
 	bool isStreetLightFlatIndex(int flatIndex);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling

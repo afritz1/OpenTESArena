@@ -66,9 +66,20 @@ int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(int itemIndex)
 	return itemIndex - 55;
 }
 
+int ArenaAnimUtils::getStreetLightActiveIndex()
+{
+	return 29;
+}
+
+int ArenaAnimUtils::getStreetLightInactiveIndex()
+{
+	return 30;
+}
+
 bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex)
 {
-	return flatIndex == 29;
+	return (flatIndex == ArenaAnimUtils::getStreetLightActiveIndex()) ||
+		(flatIndex == ArenaAnimUtils::getStreetLightInactiveIndex());
 }
 
 void ArenaAnimUtils::getBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight)
