@@ -3245,6 +3245,7 @@ double SoftwareRenderer::getLightContributionAtPoint(const Double2 &point,
 		{
 			if (lightContributionPercent >= 1.0)
 			{
+				lightContributionPercent = 1.0;
 				break;
 			}
 		}
