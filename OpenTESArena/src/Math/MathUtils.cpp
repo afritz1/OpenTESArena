@@ -46,24 +46,78 @@ bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerP
 bool MathUtils::triangleCircleIntersection(const Double2 &triangleP0, const Double2 &triangleP1,
 	const Double2 &triangleP2, const Double2 &circlePoint, double circleRadius)
 {
+	const double circleRadiusSqr = circleRadius * circleRadius;
 	const Double2 p0p1 = triangleP1 - triangleP0;
 	const Double2 p1p2 = triangleP2 - triangleP1;
 	const Double2 p2p0 = triangleP0 - triangleP2;
 
-	const Double2 p0p1Inner = p0p1.leftPerp().normalized();
-	const Double2 p1p2Inner = p1p2.leftPerp().normalized();
-	const Double2 p2p0Inner = p2p0.leftPerp().normalized();
+	// Check if the circle center is inside the triangle.
+	const bool circleCenterInTriangle = [&triangleP0, &triangleP1, &triangleP2, &circlePoint,
+		&p0p1, &p1p2, &p2p0]()
+	{
+		const Double2 p0p1Inner = p0p1.leftPerp().normalized();
+		const Double2 p1p2Inner = p1p2.leftPerp().normalized();
+		const Double2 p2p0Inner = p2p0.leftPerp().normalized();
 
-	// Easy case: check if the circle center is inside the triangle.
-	if (MathUtils::isPointInHalfSpace(circlePoint, triangleP0, p0p1Inner) &&
-		MathUtils::isPointInHalfSpace(circlePoint, triangleP1, p1p2Inner) &&
-		MathUtils::isPointInHalfSpace(circlePoint, triangleP2, p2p0Inner))
+		return MathUtils::isPointInHalfSpace(circlePoint, triangleP0, p0p1Inner) &&
+			MathUtils::isPointInHalfSpace(circlePoint, triangleP1, p1p2Inner) &&
+			MathUtils::isPointInHalfSpace(circlePoint, triangleP2, p2p0Inner);
+	}();
+
+	if (circleCenterInTriangle)
 	{
 		return true;
 	}
 
-	// @todo: get line segment from circle center to closest point on triangle perimeter;
-	// if that segment length squared is less than the circle radius squared, success.
+	// Check if any of the triangle vertices are in the circle.
+	const bool anyTriangleVertexInCircle = [&triangleP0, &triangleP1, &triangleP2,
+		&circlePoint, circleRadiusSqr]()
+	{
+		auto isVertexInCircle = [&circlePoint, circleRadiusSqr](const Double2 &vertex)
+		{
+			return (vertex - circlePoint).lengthSquared() <= circleRadiusSqr;
+		};
+
+		return isVertexInCircle(triangleP0) || isVertexInCircle(triangleP1) ||
+			isVertexInCircle(triangleP2);
+	}();
+
+	if (anyTriangleVertexInCircle)
+	{
+		return true;
+	}
+
+	// Check if the circle intersects any of the triangle edges.
+	const bool anyEdgeCircleIntersection = [&triangleP0, &triangleP1, &triangleP2,
+		&p0p1, &p1p2, &p2p0, &circlePoint, circleRadiusSqr]()
+	{
+		auto isEdgeIntersectingCircle = [&circlePoint, circleRadiusSqr](
+			const Double2 &vStart, const Double2 &vEnd, const Double2 &vDiff)
+		{
+			// Vector projection, heavily simplified. Project circle point onto edge.
+			const Double2 vals = (circlePoint - vStart) * vDiff;
+			const double t = (vals.x + vals.y) / vDiff.lengthSquared();
+			if ((t >= 0.0) && (t <= 1.0))
+			{
+				// Projection is inside the line segment. Check distance from circle center.
+				const Double2 edgePoint = vStart + (vDiff * t);
+				return (edgePoint - circlePoint).lengthSquared() <= circleRadiusSqr;
+			}
+
+			// Projection is outside the line segment.
+			return false;
+		};
+
+		return isEdgeIntersectingCircle(triangleP0, triangleP1, p0p1) ||
+			isEdgeIntersectingCircle(triangleP1, triangleP2, p1p2) ||
+			isEdgeIntersectingCircle(triangleP2, triangleP0, p2p0);
+	}();
+
+	if (anyEdgeCircleIntersection)
+	{
+		return true;
+	}
+
 	return false;
 }
 
