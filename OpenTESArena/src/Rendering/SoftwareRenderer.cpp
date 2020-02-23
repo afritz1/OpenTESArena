@@ -3238,18 +3238,14 @@ double SoftwareRenderer::getLightContributionAtPoint(const Double2 &point,
 			((light.position.x - point.x) * (light.position.x - point.x)) +
 			((light.position.z - point.y) * (light.position.z - point.y)));
 
-		// @todo: is this check necessary?
-		if (lightDist <= light.radius)
-		{
-			const double val = (light.radius - lightDist) / light.radius;
-			lightContributionPercent += std::clamp(val, 0.0, 1.0);
+		const double val = (light.radius - lightDist) / light.radius;
+		lightContributionPercent += std::clamp(val, 0.0, 1.0);
 
-			if constexpr (CappedSum)
+		if constexpr (CappedSum)
+		{
+			if (lightContributionPercent >= 1.0)
 			{
-				if (lightContributionPercent >= 1.0)
-				{
-					break;
-				}
+				break;
 			}
 		}
 	}
