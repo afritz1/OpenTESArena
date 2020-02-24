@@ -246,9 +246,13 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-EntityAnimationData::State ArenaAnimUtils::makeStaticEntityIdleAnimState(int flatIndex,
-	const INFFile &inf, const ExeData &exeData)
+void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &inf,
+	const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates,
+	std::vector<EntityAnimationData::State> *outActivatedStates)
 {
+	DebugAssert(outIdleStates != nullptr);
+	DebugAssert(outActivatedStates != nullptr);
+
 	const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 	const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
 
@@ -297,7 +301,7 @@ EntityAnimationData::State ArenaAnimUtils::makeStaticEntityIdleAnimState(int fla
 			animState.addKeyframe(std::move(keyframe));
 		}
 
-		return animState;
+		outIdleStates->push_back(std::move(animState));
 	}
 	else if (isIMG)
 	{
@@ -315,18 +319,16 @@ EntityAnimationData::State ArenaAnimUtils::makeStaticEntityIdleAnimState(int fla
 
 		EntityAnimationData::Keyframe keyframe(width, height, textureID);
 		animState.addKeyframe(std::move(keyframe));
-		return animState;
+		outIdleStates->push_back(std::move(animState));
 	}
 	else if (noExtension)
 	{
 		// Ignore texture names with no extension. They appear to be lore-related names
 		// that were used at one point in Arena's development.
-		return animState;
 	}
 	else
 	{
 		DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
-		return animState;
 	}
 }
 

@@ -159,8 +159,9 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Static entity animation state for idle.
-	EntityAnimationData::State makeStaticEntityIdleAnimState(int flatIndex,
-		const INFFile &inf, const ExeData &exeData);
+	void makeStaticEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
+		std::vector<EntityAnimationData::State> *outIdleStates,
+		std::vector<EntityAnimationData::State> *outActivatedStates);
 
 	// Write out to lists of dynamic entity animation states for each animation direction.
 	// For any of the dynamic entity anim states, if the returned state list is empty,

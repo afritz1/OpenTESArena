@@ -1510,26 +1510,30 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			// state for lampposts). Dynamic entities have several animation states and directions.
 			auto &entityAnimData = newEntityDef.getAnimationData();
 			std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
-				attackStates, deathStates;
+				attackStates, deathStates, activatedStates;
 
 			// Cache for .CFA files referenced multiple times.
 			ArenaAnimUtils::AnimFileCache<CFAFile> cfaCache;
 
 			if (entityType == EntityType::Static)
 			{
-				EntityAnimationData::State animState =
-					ArenaAnimUtils::makeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
+				ArenaAnimUtils::makeStaticEntityAnimStates(flatIndex, this->inf, exeData,
+					&idleStates, &activatedStates);
 
-				// The entity can only be instantiated if there is at least one animation frame.
-				const bool success = animState.getKeyframes().getCount() > 0;
-				if (success)
-				{
-					idleStates.push_back(std::move(animState));
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-				}
-				else
+				// The entity can only be instantiated if there is at least one idle animation frame.
+				const bool success = (idleStates.size() > 0) &&
+					(idleStates.front().getKeyframes().getCount() > 0);
+
+				if (!success)
 				{
 					continue;
+				}
+
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+
+				if (activatedStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(activatedStates));
 				}
 			}
 			else if (entityType == EntityType::Dynamic)
@@ -1700,6 +1704,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 			addTexturesFromStateList(walkStates);
 			addTexturesFromStateList(attackStates);
 			addTexturesFromStateList(deathStates);
+			addTexturesFromStateList(activatedStates);
 		}
 	};
 

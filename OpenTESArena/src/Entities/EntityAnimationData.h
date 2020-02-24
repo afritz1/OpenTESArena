@@ -17,7 +17,8 @@ public:
 		Look,
 		Walk,
 		Attack,
-		Death
+		Death,
+		Activated
 	};
 
 	class Keyframe
