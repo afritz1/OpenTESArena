@@ -33,7 +33,9 @@ namespace ArenaAnimUtils
 
 	// Animation values for static .DFA files.
 	constexpr double StaticIdleSecondsPerFrame = 1.0 / 12.0;
+	constexpr double StaticActivatedSecondsPerFrame = StaticIdleSecondsPerFrame;
 	const bool StaticIdleLoop = true;
+	const bool StaticActivatedLoop = StaticIdleLoop;
 
 	// Animation values for creatures with .CFA files.
 	constexpr double CreatureIdleSecondsPerFrame = 1.0 / 12.0;
@@ -158,8 +160,11 @@ namespace ArenaAnimUtils
 	// Writes the human type data into the given filename if possible.
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
-	// Static entity animation state for idle.
+	// Static entity animation state functions.
 	void makeStaticEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
+		std::vector<EntityAnimationData::State> *outIdleStates,
+		std::vector<EntityAnimationData::State> *outActivatedStates);
+	void makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outActivatedStates);
 

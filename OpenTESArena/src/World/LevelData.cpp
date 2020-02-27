@@ -1600,6 +1600,11 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				}();
 
 				entity->init(dataIndex);
+				
+				
+				// @todo: need daytimePercent given to this method so we know whether to set
+				// streetlights on or off at initialization.
+				//entity->getAnimation
 
 				const Double2 positionXZ(
 					static_cast<double>(position.x) + 0.50,

@@ -19,6 +19,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
+#include "../Entities/EntityType.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
@@ -1835,6 +1836,43 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	}
 }
 
+void GameWorldPanel::handleNightLightChange(bool active)
+{
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &gameData = game.getGameData();
+	auto &worldData = gameData.getWorldData();
+	auto &levelData = worldData.getActiveLevel();
+	auto &entityManager = levelData.getEntityManager();
+
+	// Turn streetlights on or off.
+	Buffer<Entity*> entityBuffer(entityManager.getCount(EntityType::Static));
+	const int entityCount = entityManager.getEntities(
+		EntityType::Static, entityBuffer.get(), entityBuffer.getCount());
+
+	for (int i = 0; i < entityCount; i++)
+	{
+		Entity *entity = entityBuffer.get(i);
+		const int dataIndex = entity->getDataIndex();
+		const EntityDefinition *entityDef = entityManager.getEntityDef(dataIndex);
+		if (entityDef == nullptr)
+		{
+			DebugLogError("Missing entity definition " + std::to_string(dataIndex) + ".");
+			continue;
+		}
+
+		if (entityDef->isStreetLight())
+		{
+			auto &entityAnim = entity->getAnimation();
+			const EntityAnimationData::StateType newStateType = active ?
+				EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
+			entityAnim.setStateType(newStateType);
+		}
+	}
+
+	renderer.setNightLightsActive(active);
+}
+
 void GameWorldPanel::handleTriggers(const Int2 &voxel)
 {
 	auto &game = this->getGame();
@@ -2656,11 +2694,11 @@ void GameWorldPanel::tick(double dt)
 
 	if (activateNightLights)
 	{
-		renderer.setNightLightsActive(true);
+		this->handleNightLightChange(true);
 	}
 	else if (deactivateNightLights)
 	{
-		renderer.setNightLightsActive(false);
+		this->handleNightLightChange(false);
 	}
 
 	auto &worldData = gameData.getWorldData();

@@ -253,6 +253,14 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 	DebugAssert(outIdleStates != nullptr);
 	DebugAssert(outActivatedStates != nullptr);
 
+	// The animations to load depend on the flat index.
+	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
+	if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex))
+	{
+		ArenaAnimUtils::makeStreetlightAnimStates(inf, exeData, outIdleStates, outActivatedStates);
+		return;
+	}
+
 	const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 	const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
 
@@ -275,7 +283,8 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 		return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
 	};
 
-	EntityAnimationData::State animState = makeAnimState(
+	// All static entity anims should have an idle state (unless they are not shown).
+	EntityAnimationData::State idleState = makeAnimState(
 		EntityAnimationData::StateType::Idle,
 		StaticIdleSecondsPerFrame,
 		StaticIdleLoop);
@@ -289,7 +298,7 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 			DebugCrash("Couldn't init .DFA file \"" + flatTextureName + "\".");
 		}
 
-		animState.setTextureName(std::string(flatTextureName));
+		idleState.setTextureName(std::string(flatTextureName));
 
 		for (int i = 0; i < dfa.getImageCount(); i++)
 		{
@@ -298,10 +307,10 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 			const int textureID = i;
 
 			EntityAnimationData::Keyframe keyframe(width, height, textureID);
-			animState.addKeyframe(std::move(keyframe));
+			idleState.addKeyframe(std::move(keyframe));
 		}
 
-		outIdleStates->push_back(std::move(animState));
+		outIdleStates->push_back(std::move(idleState));
 	}
 	else if (isIMG)
 	{
@@ -311,15 +320,15 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 			DebugCrash("Couldn't init .IMG file \"" + flatTextureName + "\".");
 		}
 
-		animState.setTextureName(std::string(flatTextureName));
+		idleState.setTextureName(std::string(flatTextureName));
 
 		const double width = makeKeyframeDimension(img.getWidth());
 		const double height = makeKeyframeDimension(img.getHeight());
 		const int textureID = 0;
 
 		EntityAnimationData::Keyframe keyframe(width, height, textureID);
-		animState.addKeyframe(std::move(keyframe));
-		outIdleStates->push_back(std::move(animState));
+		idleState.addKeyframe(std::move(keyframe));
+		outIdleStates->push_back(std::move(idleState));
 	}
 	else if (noExtension)
 	{
@@ -330,6 +339,87 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &in
 	{
 		DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
 	}
+}
+
+void ArenaAnimUtils::makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
+	std::vector<EntityAnimationData::State> *outIdleStates,
+	std::vector<EntityAnimationData::State> *outActivatedStates)
+{
+	const int idleFlatIndex = ArenaAnimUtils::getStreetLightInactiveIndex();
+	const int activeFlatIndex = ArenaAnimUtils::getStreetLightActiveIndex();
+
+	const INFFile::FlatData &idleFlatData = inf.getFlat(idleFlatIndex);
+	const INFFile::FlatData &activeFlatData = inf.getFlat(activeFlatIndex);
+	const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
+
+	// @todo: leaving this code brittle for now -- we assume that streetlights are an .IMG + .DFA pair.
+	DebugAssertIndex(flatTextures, idleFlatData.textureIndex);
+	DebugAssertIndex(flatTextures, activeFlatData.textureIndex);
+	const INFFile::FlatTextureData &idleFlatTextureData = flatTextures[idleFlatData.textureIndex];
+	const INFFile::FlatTextureData &activeFlatTextureData = flatTextures[activeFlatData.textureIndex];
+	const std::string &idleFlatTextureName = idleFlatTextureData.filename;
+	const std::string &activeFlatTextureName = activeFlatTextureData.filename;
+
+	// A flat's appearance may be modified by some .INF properties.
+	constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
+	constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
+	const double idleDimensionModifier = idleFlatData.largeScale ? largeScaleValue :
+		(idleFlatData.mediumScale ? mediumScaleValue : 1.0);
+	const double activeDimensionModifier = activeFlatData.largeScale ? largeScaleValue :
+		(activeFlatData.mediumScale ? mediumScaleValue : 1.0);
+
+	auto makeKeyframeDimension = [](int value, double modifier)
+	{
+		return (static_cast<double>(value) * modifier) / MIFFile::ARENA_UNITS;
+	};
+
+	// Idle state animation.
+	EntityAnimationData::State idleState = makeAnimState(
+		EntityAnimationData::StateType::Idle,
+		StaticIdleSecondsPerFrame,
+		StaticIdleLoop);
+
+	IMGFile img;
+	if (!img.init(idleFlatTextureName.c_str()))
+	{
+		DebugCrash("Couldn't init .IMG file \"" + idleFlatTextureName + "\".");
+	}
+
+	idleState.setTextureName(std::string(idleFlatTextureName));
+
+	const double width = makeKeyframeDimension(img.getWidth(), idleDimensionModifier);
+	const double height = makeKeyframeDimension(img.getHeight(), idleDimensionModifier);
+	const int textureID = 0;
+
+	EntityAnimationData::Keyframe keyframe(width, height, textureID);
+	idleState.addKeyframe(std::move(keyframe));
+	outIdleStates->push_back(std::move(idleState));
+	
+	// Activated state animation.
+	EntityAnimationData::State activeState = makeAnimState(
+		EntityAnimationData::StateType::Activated,
+		StaticActivatedSecondsPerFrame,
+		StaticActivatedLoop);
+
+	DFAFile dfa;
+	if (!dfa.init(activeFlatTextureName.c_str()))
+	{
+		DebugCrash("Couldn't init .DFA file \"" + activeFlatTextureName + "\".");
+	}
+
+	activeState.setTextureName(std::string(activeFlatTextureName));
+
+	for (int i = 0; i < dfa.getImageCount(); i++)
+	{
+		const double width = makeKeyframeDimension(dfa.getWidth(), activeDimensionModifier);
+		const double height = makeKeyframeDimension(dfa.getHeight(), activeDimensionModifier);
+		const int textureID = i;
+
+		EntityAnimationData::Keyframe keyframe(width, height, textureID);
+		activeState.addKeyframe(std::move(keyframe));
+	}
+
+	outActivatedStates->push_back(std::move(activeState));
 }
 
 void ArenaAnimUtils::makeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
