@@ -227,10 +227,10 @@ void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &
 	}
 }
 
-void InteriorLevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void InteriorLevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	LevelData::setActive(miscAssets, textureManager, renderer);
+	LevelData::setActive(nightLightsAreActive, miscAssets, textureManager, renderer);
 
 	// Set interior sky color.
 	renderer.setSkyPalette(&this->skyColor, 1);

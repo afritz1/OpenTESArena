@@ -1309,8 +1309,8 @@ void LevelData::updateFadingVoxels(double dt)
 	}
 }
 
-void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void LevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1411,7 +1411,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 	};
 	
 	// Initializes entities from the flat defs list and write their textures to the renderer.
-	auto loadEntities = [this, &miscAssets, &textureManager, &renderer, &palette]()
+	auto loadEntities = [this, nightLightsAreActive, &miscAssets, &textureManager, &renderer, &palette]()
 	{
 		const auto &exeData = miscAssets.getExeData();
 		for (const auto &flatDef : this->flatsLists)
@@ -1571,6 +1571,7 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 					std::to_string(static_cast<int>(entityType)) + "\".");
 			}
 
+			const bool isStreetlight = newEntityDef.isStreetLight();
 			this->entityManager.addEntityDef(std::move(newEntityDef));
 
 			// Initialize each instance of the flat def.
@@ -1600,16 +1601,20 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 				}();
 
 				entity->init(dataIndex);
-				
-				
-				// @todo: need daytimePercent given to this method so we know whether to set
-				// streetlights on or off at initialization.
-				//entity->getAnimation
 
 				const Double2 positionXZ(
 					static_cast<double>(position.x) + 0.50,
 					static_cast<double>(position.y) + 0.50);
 				entity->setPosition(positionXZ);
+
+				// Need to turn streetlights on or off at initialization.
+				if (isStreetlight)
+				{
+					auto &entityAnim = entity->getAnimation();
+					const EntityAnimationData::StateType streetlightStateType = nightLightsAreActive ?
+						EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
+					entityAnim.setStateType(streetlightStateType);
+				}
 			}
 
 			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](

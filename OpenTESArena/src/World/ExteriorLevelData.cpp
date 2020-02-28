@@ -1186,10 +1186,10 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 	return false;
 }
 
-void ExteriorLevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void ExteriorLevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	LevelData::setActive(miscAssets, textureManager, renderer);
+	LevelData::setActive(nightLightsAreActive, miscAssets, textureManager, renderer);
 
 	// @todo: fetch this palette from somewhere better.
 	COLFile col;

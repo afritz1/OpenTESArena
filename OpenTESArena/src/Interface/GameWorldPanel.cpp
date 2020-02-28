@@ -2326,7 +2326,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Lambda for transitioning the player to the given level.
-		auto switchToLevel = [&game, &interior, &player, &destinationXZ,
+		auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
 			&dirToNewVoxel](int levelIndex)
 		{
 			// Clear all open doors and fading voxels in the level the player is switching
@@ -2340,8 +2340,8 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
-			newActiveLevel.setActive(game.getMiscAssets(), game.getTextureManager(),
-				game.getRenderer());
+			newActiveLevel.setActive(gameData.nightLightsAreActive(), game.getMiscAssets(),
+				game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
