@@ -997,9 +997,10 @@ Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }
 
-ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
-	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
-	int gridWidth, int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)
+ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provinceID, 
+	const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount,
+	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
+	TextureManager &textureManager)
 {
 	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
 	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
@@ -1021,8 +1022,6 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	// Generate building names.
 	// @todo: pass these as arguments to loadPremadeCity() instead of hardcoding them.
 	const auto &cityData = miscAssets.getCityDataFile();
-	const int localCityID = 0;
-	const int provinceID = 8;
 	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	ArenaRandom random(citySeed);
 	const bool isCoastal = false;
@@ -1186,10 +1185,10 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 	return false;
 }
 
-void ExteriorLevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorld,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	LevelData::setActive(nightLightsAreActive, miscAssets, textureManager, renderer);
+	LevelData::setActive(nightLightsAreActive, parentWorld, miscAssets, textureManager, renderer);
 
 	// @todo: fetch this palette from somewhere better.
 	COLFile col;

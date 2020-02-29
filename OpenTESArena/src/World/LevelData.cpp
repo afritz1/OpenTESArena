@@ -25,7 +25,9 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../World/ExteriorWorldData.h"
 #include "../World/VoxelFacing.h"
+#include "../World/WorldData.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -1309,8 +1311,8 @@ void LevelData::updateFadingVoxels(double dt)
 	}
 }
 
-void LevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorld,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1409,10 +1411,25 @@ void LevelData::setActive(bool nightLightsAreActive, const MiscAssets &miscAsset
 		writeChasmAnim(VoxelDefinition::ChasmData::Type::Wet, "WATERANI.RCI");
 		writeChasmAnim(VoxelDefinition::ChasmData::Type::Lava, "LAVAANI.RCI");
 	};
-	
+
 	// Initializes entities from the flat defs list and write their textures to the renderer.
-	auto loadEntities = [this, nightLightsAreActive, &miscAssets, &textureManager, &renderer, &palette]()
+	auto loadEntities = [this, nightLightsAreActive, &parentWorld, &miscAssets, &textureManager,
+		&renderer, &palette]()
 	{
+		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
+		const std::optional<bool> optRulerIsMale = [&parentWorld]() -> std::optional<bool>
+		{
+			if (parentWorld.getBaseWorldType() != WorldType::Interior)
+			{
+				const ExteriorWorldData &exterior = static_cast<const ExteriorWorldData&>(parentWorld);
+				return exterior.isRulerMale();
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}();
+
 		const auto &exeData = miscAssets.getExeData();
 		for (const auto &flatDef : this->flatsLists)
 		{

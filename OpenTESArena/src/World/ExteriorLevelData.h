@@ -67,9 +67,10 @@ public:
 	static Int2 getCenteredWildOrigin(const Int2 &voxel);
 
 	// Premade exterior level with a pre-defined .INF file. Only used by center province.
-	static ExteriorLevelData loadPremadeCity(const MIFFile::Level &level, WeatherType weatherType,
-		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+	static ExteriorLevelData loadPremadeCity(int localCityID, int provinceID,
+		const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount,
+		const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
+		TextureManager &textureManager);
 
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
@@ -93,8 +94,8 @@ public:
 	virtual bool isOutdoorDungeon() const override;
 
 	// Calls the base level data method then does some exterior-specific work.
-	virtual void setActive(bool nightLightsAreActive, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer) override;
+	virtual void setActive(bool nightLightsAreActive, const WorldData &parentWorld,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
 	virtual void tick(Game &game, double dt) override;
