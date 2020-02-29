@@ -203,7 +203,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					description.replace(index, 3, locationData.name);
 
 					const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
-					const bool isMale = (rulerSeed & 0x3) != 0;
+					const bool isMale = cityData.isRulerMale(localCityID, provinceID);
 
 					// Replace %t with ruler title (if it exists).
 					random.srand(rulerSeed);

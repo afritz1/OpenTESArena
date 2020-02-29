@@ -534,6 +534,12 @@ uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
 	return (baseSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
+bool CityDataFile::isRulerMale(int localCityID, int provinceID) const
+{
+	const uint32_t rulerSeed = this->getRulerSeed(localCityID, provinceID);
+	return (rulerSeed & 0x3) != 0;
+}
+
 Int2 CityDataFile::getGlobalPoint(int localCityID, int provinceID) const
 {
 	const auto &province = this->getProvinceData(provinceID);
