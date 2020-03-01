@@ -76,8 +76,14 @@ int ArenaAnimUtils::getStreetLightInactiveIndex()
 	return 30;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex)
+bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex, bool isWilderness)
 {
+	// Wilderness does not have streetlights.
+	if (isWilderness)
+	{
+		return false;
+	}
+
 	return (flatIndex == ArenaAnimUtils::getStreetLightActiveIndex()) ||
 		(flatIndex == ArenaAnimUtils::getStreetLightInactiveIndex());
 }
@@ -246,16 +252,17 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, const INFFile &inf,
+void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, bool isWilderness, const INFFile &inf,
 	const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates,
 	std::vector<EntityAnimationData::State> *outActivatedStates)
 {
 	DebugAssert(outIdleStates != nullptr);
 	DebugAssert(outActivatedStates != nullptr);
 
-	// The animations to load depend on the flat index.
+	// The animations to load depend on the flat index. The wilderness does not have any streetlights
+	// (there is no ID for them).
 	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
-	if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex))
+	if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isWilderness))
 	{
 		ArenaAnimUtils::makeStreetlightAnimStates(inf, exeData, outIdleStates, outActivatedStates);
 		return;

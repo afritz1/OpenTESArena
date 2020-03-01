@@ -127,7 +127,7 @@ namespace ArenaAnimUtils
 	// game give them a light source and toggle them between on and off states.
 	int getStreetLightActiveIndex();
 	int getStreetLightInactiveIndex();
-	bool isStreetLightFlatIndex(int flatIndex);
+	bool isStreetLightFlatIndex(int flatIndex, bool isWilderness);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -161,8 +161,8 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Static entity animation state functions.
-	void makeStaticEntityAnimStates(int flatIndex, const INFFile &inf, const ExeData &exeData,
-		std::vector<EntityAnimationData::State> *outIdleStates,
+	void makeStaticEntityAnimStates(int flatIndex, bool isWilderness, const INFFile &inf,
+		const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outActivatedStates);
 	void makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
 		std::vector<EntityAnimationData::State> *outIdleStates,
