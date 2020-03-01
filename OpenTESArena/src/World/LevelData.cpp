@@ -894,10 +894,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					if (flatIndex > 0)
-					{
-						this->addFlatInstance(flatIndex, Int2(x, z));
-					}
+					this->addFlatInstance(flatIndex, Int2(x, z));
 				}
 				else if (mostSigNibble == 0x9)
 				{
