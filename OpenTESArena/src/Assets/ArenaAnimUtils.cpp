@@ -76,16 +76,37 @@ int ArenaAnimUtils::getStreetLightInactiveIndex()
 	return 30;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex, bool isWilderness)
+bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex, bool isCity)
 {
-	// Wilderness does not have streetlights.
-	if (isWilderness)
+	// Wilderness and interiors do not have streetlights.
+	if (!isCity)
 	{
 		return false;
 	}
 
 	return (flatIndex == ArenaAnimUtils::getStreetLightActiveIndex()) ||
 		(flatIndex == ArenaAnimUtils::getStreetLightInactiveIndex());
+}
+
+int ArenaAnimUtils::getRulerKingIndex()
+{
+	return 0;
+}
+
+int ArenaAnimUtils::getRulerQueenIndex()
+{
+	return 1;
+}
+
+bool ArenaAnimUtils::isRulerFlatIndex(int flatIndex, bool isPalace)
+{
+	if (!isPalace)
+	{
+		return false;
+	}
+
+	return (flatIndex == ArenaAnimUtils::getRulerKingIndex()) ||
+		(flatIndex == ArenaAnimUtils::getRulerQueenIndex());
 }
 
 void ArenaAnimUtils::getBaseFlatDimensions(int width, int height, uint16_t scale, int *baseWidth, int *baseHeight)
@@ -252,8 +273,9 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, bool isWilderness, const INFFile &inf,
-	const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates,
+void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, StaticAnimCondition condition,
+	const std::optional<bool> &rulerIsMale, const INFFile &inf, const ExeData &exeData,
+	std::vector<EntityAnimationData::State> *outIdleStates,
 	std::vector<EntityAnimationData::State> *outActivatedStates)
 {
 	DebugAssert(outIdleStates != nullptr);
@@ -262,7 +284,13 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, bool isWilderness
 	// The animations to load depend on the flat index. The wilderness does not have any streetlights
 	// (there is no ID for them).
 	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
-	if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isWilderness))
+	if (ArenaAnimUtils::isRulerFlatIndex(flatIndex, condition == StaticAnimCondition::IsPalace))
+	{
+		DebugAssert(rulerIsMale.has_value());
+		ArenaAnimUtils::makeRulerAnimStates(*rulerIsMale, inf, exeData, outIdleStates);
+		return;
+	}
+	else if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, condition == StaticAnimCondition::IsCity))
 	{
 		ArenaAnimUtils::makeStreetlightAnimStates(inf, exeData, outIdleStates, outActivatedStates);
 		return;
@@ -348,6 +376,53 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, bool isWilderness
 	}
 }
 
+void ArenaAnimUtils::makeRulerAnimStates(bool rulerIsMale, const INFFile &inf,
+	const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates)
+{
+	const int rulerFlatIndex = rulerIsMale ?
+		ArenaAnimUtils::getRulerKingIndex() : ArenaAnimUtils::getRulerQueenIndex();
+
+	const INFFile::FlatData &flatData = inf.getFlat(rulerFlatIndex);
+	const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
+
+	// Rulers are just a static image.
+	DebugAssertIndex(flatTextures, flatData.textureIndex);
+	const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
+	const std::string &flatTextureName = flatTextureData.filename;
+
+	// A flat's appearance may be modified by some .INF properties.
+	constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
+	constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
+	const double idleDimensionModifier = flatData.largeScale ? largeScaleValue :
+		(flatData.mediumScale ? mediumScaleValue : 1.0);
+
+	auto makeKeyframeDimension = [](int value, double modifier)
+	{
+		return (static_cast<double>(value) * modifier) / MIFFile::ARENA_UNITS;
+	};
+
+	EntityAnimationData::State idleState = makeAnimState(
+		EntityAnimationData::StateType::Idle,
+		StaticIdleSecondsPerFrame,
+		StaticIdleLoop);
+
+	IMGFile img;
+	if (!img.init(flatTextureName.c_str()))
+	{
+		DebugCrash("Couldn't init .IMG file \"" + flatTextureName + "\".");
+	}
+
+	idleState.setTextureName(std::string(flatTextureName));
+
+	const double width = makeKeyframeDimension(img.getWidth(), idleDimensionModifier);
+	const double height = makeKeyframeDimension(img.getHeight(), idleDimensionModifier);
+	const int textureID = 0;
+
+	EntityAnimationData::Keyframe keyframe(width, height, textureID);
+	idleState.addKeyframe(std::move(keyframe));
+	outIdleStates->push_back(std::move(idleState));
+}
+
 void ArenaAnimUtils::makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
 	std::vector<EntityAnimationData::State> *outIdleStates,
 	std::vector<EntityAnimationData::State> *outActivatedStates)
@@ -401,7 +476,7 @@ void ArenaAnimUtils::makeStreetlightAnimStates(const INFFile &inf, const ExeData
 	EntityAnimationData::Keyframe keyframe(width, height, textureID);
 	idleState.addKeyframe(std::move(keyframe));
 	outIdleStates->push_back(std::move(idleState));
-	
+
 	// Activated state animation.
 	EntityAnimationData::State activeState = makeAnimState(
 		EntityAnimationData::StateType::Activated,

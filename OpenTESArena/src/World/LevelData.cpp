@@ -1430,7 +1430,22 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorl
 			}
 		}();
 
-		const bool isWilderness = parentWorld.getActiveWorldType() == WorldType::Wilderness;
+		const bool isCity = parentWorld.getActiveWorldType() == WorldType::City;
+		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [isCity]()
+		{
+			if (isCity)
+			{
+				return ArenaAnimUtils::StaticAnimCondition::IsCity;
+			}
+			else if (false) // @todo: determine if current level is a palace interior.
+			{
+				return ArenaAnimUtils::StaticAnimCondition::IsPalace;
+			}
+			else
+			{
+				return ArenaAnimUtils::StaticAnimCondition::None;
+			}
+		}();
 
 		const auto &exeData = miscAssets.getExeData();
 		for (const auto &flatDef : this->flatsLists)
@@ -1518,7 +1533,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorl
 			{
 				// No display name.
 				std::string displayName;
-				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isWilderness);
+				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
 				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
@@ -1536,8 +1551,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorl
 
 			if (entityType == EntityType::Static)
 			{
-				ArenaAnimUtils::makeStaticEntityAnimStates(flatIndex, isWilderness, this->inf,
-					exeData, &idleStates, &activatedStates);
+				ArenaAnimUtils::makeStaticEntityAnimStates(flatIndex, staticAnimCondition, optRulerIsMale,
+					this->inf, exeData, &idleStates, &activatedStates);
 
 				// The entity can only be instantiated if there is at least one idle animation frame.
 				const bool success = (idleStates.size() > 0) &&

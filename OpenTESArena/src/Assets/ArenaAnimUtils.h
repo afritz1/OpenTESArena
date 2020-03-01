@@ -2,6 +2,7 @@
 #define ARENA_ANIM_UTILS_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -30,6 +31,14 @@ namespace ArenaAnimUtils
 	// First flipped animation ID that requires a mapping to a non-flipped ID for use
 	// with a creature .CFA file.
 	constexpr int FirstFlippedAnimID = 6;
+
+	// Various special case conditions for generating static animations.
+	enum class StaticAnimCondition
+	{
+		None,
+		IsCity,
+		IsPalace
+	};
 
 	// Animation values for static .DFA files.
 	constexpr double StaticIdleSecondsPerFrame = 1.0 / 12.0;
@@ -127,7 +136,12 @@ namespace ArenaAnimUtils
 	// game give them a light source and toggle them between on and off states.
 	int getStreetLightActiveIndex();
 	int getStreetLightInactiveIndex();
-	bool isStreetLightFlatIndex(int flatIndex, bool isWilderness);
+	bool isStreetLightFlatIndex(int flatIndex, bool isCity);
+
+	// Ruler flats are either a king or queen.
+	int getRulerKingIndex();
+	int getRulerQueenIndex();
+	bool isRulerFlatIndex(int flatIndex, bool isPalace);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -161,9 +175,12 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Static entity animation state functions.
-	void makeStaticEntityAnimStates(int flatIndex, bool isWilderness, const INFFile &inf,
-		const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates,
+	void makeStaticEntityAnimStates(int flatIndex, StaticAnimCondition condition,
+		const std::optional<bool> &rulerIsMale, const INFFile &inf, const ExeData &exeData,
+		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outActivatedStates);
+	void makeRulerAnimStates(bool rulerIsMale, const INFFile &inf,
+		const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates);
 	void makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
 		std::vector<EntityAnimationData::State> *outIdleStates,
 		std::vector<EntityAnimationData::State> *outActivatedStates);
