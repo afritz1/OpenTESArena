@@ -13,11 +13,10 @@ ExteriorWorldData::InteriorState::InteriorState(InteriorWorldData &&worldData,
 	const Int2 &returnVoxel)
 	: worldData(std::move(worldData)), returnVoxel(returnVoxel) { }
 
-ExteriorWorldData::ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity, bool rulerIsMale)
+ExteriorWorldData::ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity)
 	: levelData(std::move(levelData))
 {
 	this->isCity = isCity;
-	this->rulerIsMale = rulerIsMale;
 }
 
 ExteriorWorldData::~ExteriorWorldData()
@@ -163,14 +162,9 @@ ExteriorWorldData ExteriorWorldData::loadPremadeCity(const MIFFile &mif, Climate
 		textureManager);
 
 	const bool isCity = true;
-	const bool rulerIsMale = [&miscAssets, localCityID, provinceID]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		return cityData.isRulerMale(localCityID, provinceID);
-	}();
 
 	// Generate world data from the level data.
-	ExteriorWorldData worldData(std::move(levelData), isCity, rulerIsMale);
+	ExteriorWorldData worldData(std::move(levelData), isCity);
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
@@ -205,14 +199,9 @@ ExteriorWorldData ExteriorWorldData::loadCity(int localCityID, int provinceID, c
 		miscAssets, textureManager);
 
 	const bool isCity = true;
-	const bool rulerIsMale = [&miscAssets, localCityID, provinceID]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		return cityData.isRulerMale(localCityID, provinceID);
-	}();
 
 	// Generate world data from the level data.
-	ExteriorWorldData worldData(std::move(levelData), isCity, rulerIsMale);
+	ExteriorWorldData worldData(std::move(levelData), isCity);
 
 	// Convert start points from the old coordinate system to the new one.
 	for (const auto &point : mif.getStartPoints())
@@ -243,22 +232,12 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(int localCityID, int provinc
 		miscAssets, textureManager);
 
 	const bool isCity = false;
-	const bool rulerIsMale = [&miscAssets, localCityID, provinceID]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		return cityData.isRulerMale(localCityID, provinceID);
-	}();
 
 	// Generate world data from the wilderness data.
-	ExteriorWorldData worldData(std::move(levelData), isCity, rulerIsMale);
+	ExteriorWorldData worldData(std::move(levelData), isCity);
 	worldData.mifName = "WILD.MIF";
 
 	return worldData;
-}
-
-bool ExteriorWorldData::isRulerMale() const
-{
-	return this->rulerIsMale;
 }
 
 InteriorWorldData *ExteriorWorldData::getInterior() const

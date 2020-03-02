@@ -32,9 +32,8 @@ private:
 	ExteriorLevelData levelData;
 	std::unique_ptr<InteriorState> interior; // Non-null when the player is in an interior.
 	bool isCity; // True if city, false if wilderness.
-	bool rulerIsMale;
 
-	ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity, bool rulerIsMale);
+	ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity);
 
 	// Generates the .INF name for a city given a climate and current weather.
 	static std::string generateCityInfName(ClimateType climateType, WeatherType weatherType);
@@ -60,8 +59,6 @@ public:
 	static ExteriorWorldData loadWilderness(int localCityID, int provinceID,
 		WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager);
-
-	bool isRulerMale() const;
 
 	// Returns the current active interior (if any).
 	InteriorWorldData *getInterior() const;
