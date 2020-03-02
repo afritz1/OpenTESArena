@@ -2129,7 +2129,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 					}
 
-					gameData.enterInterior(mif, Int2(returnVoxel.x, returnVoxel.z),
+					gameData.enterInterior(menuType, mif, Int2(returnVoxel.x, returnVoxel.z),
 						miscAssets, game.getTextureManager(), game.getRenderer());
 
 					// Change to interior music.
@@ -2341,7 +2341,8 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-				game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
+				gameData.getLocation(), game.getMiscAssets(), game.getTextureManager(),
+				game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(

@@ -432,7 +432,8 @@ void FastTravelSubPanel::switchToNextPanel()
 
 			const Location location = Location::makeDungeon(
 				localDungeonID, this->travelData.provinceID);
-			gameData.loadInterior(mif, location, miscAssets, game.getTextureManager(), game.getRenderer());
+			gameData.loadInterior(VoxelDefinition::WallData::MenuType::Dungeon,
+				mif, location, miscAssets, game.getTextureManager(), game.getRenderer());
 
 			const bool isStaffDungeon = localDungeonID == 0;
 
@@ -454,7 +455,8 @@ void FastTravelSubPanel::switchToNextPanel()
 			// Random named dungeon.
 			const bool isArtifactDungeon = false;
 			gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
-				isArtifactDungeon, miscAssets, game.getTextureManager(), game.getRenderer());
+				isArtifactDungeon, VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
+				game.getTextureManager(), game.getRenderer());
 
 			// Choose random dungeon music and enter game world.
 			const MusicName musicName = GameData::getDungeonMusicName(random);

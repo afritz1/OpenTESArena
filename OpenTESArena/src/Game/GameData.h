@@ -138,13 +138,15 @@ public:
 	bool nightLightsAreActive() const;
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, const Location &location, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void loadInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		const Int2 &returnVoxel, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Leaves the current interior and returns to the exterior. Only call this method if the
 	// player is in an interior that has an outside area to return to.
@@ -154,13 +156,14 @@ public:
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
 	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-		const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).

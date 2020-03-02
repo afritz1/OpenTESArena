@@ -26,6 +26,9 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ExteriorWorldData.h"
+#include "../World/InteriorWorldData.h"
+#include "../World/Location.h"
+#include "../World/LocationDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/WorldData.h"
 #include "../World/WorldType.h"
@@ -1308,8 +1311,9 @@ void LevelData::updateFadingVoxels(double dt)
 	}
 }
 
-void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorld,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
+	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1410,16 +1414,16 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorl
 	};
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
-	auto loadEntities = [this, nightLightsAreActive, &parentWorld, &miscAssets, &textureManager,
-		&renderer, &palette]()
+	auto loadEntities = [this, nightLightsAreActive, &worldData, &location, &miscAssets,
+		&textureManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
-		const std::optional<bool> optRulerIsMale = [&parentWorld]() -> std::optional<bool>
+		const std::optional<bool> optRulerIsMale = [&location, &miscAssets]() -> std::optional<bool>
 		{
-			if (parentWorld.getBaseWorldType() != WorldType::Interior)
+			if (location.dataType == LocationDataType::City)
 			{
-				const ExteriorWorldData &exterior = static_cast<const ExteriorWorldData&>(parentWorld);
-				return exterior.isRulerMale();
+				const auto &cityData = miscAssets.getCityDataFile();
+				return cityData.isRulerMale(location.localCityID, location.provinceID);
 			}
 			else
 			{
@@ -1427,14 +1431,29 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &parentWorl
 			}
 		}();
 
-		const bool isCity = parentWorld.getActiveWorldType() == WorldType::City;
-		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [isCity]()
+		const bool isCity = worldData.getActiveWorldType() == WorldType::City;
+		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [&worldData, isCity]()
 		{
+			const bool isPalace = [&worldData]()
+			{
+				const bool isInterior = worldData.getBaseWorldType() == WorldType::Interior;
+				if (isInterior)
+				{
+					const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
+					const VoxelDefinition::WallData::MenuType interiorType = interior.getInteriorType();
+					return interiorType == VoxelDefinition::WallData::MenuType::Palace;
+				}
+				else
+				{
+					return false;
+				}
+			}();
+
 			if (isCity)
 			{
 				return ArenaAnimUtils::StaticAnimCondition::IsCity;
 			}
-			else if (false) // @todo: determine if current level is a palace interior.
+			else if (isPalace)
 			{
 				return ArenaAnimUtils::StaticAnimCondition::IsPalace;
 			}

@@ -94,8 +94,9 @@ public:
 	virtual bool isOutdoorDungeon() const override;
 
 	// Calls the base level data method then does some exterior-specific work.
-	virtual void setActive(bool nightLightsAreActive, const WorldData &parentWorld,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer) override;
+	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
+		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
 	virtual void tick(Game &game, double dt) override;
