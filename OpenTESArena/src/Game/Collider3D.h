@@ -4,7 +4,6 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Matrix4.h"
-#include "../World/VoxelData.h"
 
 class CapsuleCollider3D;
 class AxisAlignedCylinderCollider3D;
