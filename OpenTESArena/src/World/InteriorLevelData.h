@@ -52,7 +52,8 @@ public:
 	virtual bool isOutdoorDungeon() const override;
 
 	// Calls the base level data method then does some interior-specific work.
-	virtual void setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
+	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
+		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer) override;
 };
 

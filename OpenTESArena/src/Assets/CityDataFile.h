@@ -144,6 +144,9 @@ public:
 	// wilderness block coordinates.
 	uint32_t getWildernessDungeonSeed(int provinceID, int wildBlockX, int wildBlockY) const;
 
+	// Gets whether the ruler of a location should be male.
+	bool isRulerMale(int localCityID, int provinceID) const;
+
 	// Gets the global X and Y coordinates of a local city in the given province.
 	Int2 getGlobalPoint(int localCityID, int provinceID) const;
 

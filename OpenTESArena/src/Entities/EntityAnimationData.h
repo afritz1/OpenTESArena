@@ -17,7 +17,8 @@ public:
 		Look,
 		Walk,
 		Attack,
-		Death
+		Death,
+		Activated
 	};
 
 	class Keyframe
@@ -68,7 +69,7 @@ public:
 	public:
 		Instance();
 
-		// Animation data is passed by reference because its EntityData owner is
+		// Animation data is passed by reference because its EntityDefinition owner is
 		// allocated on the heap and can become dangling if a pointer is stored here.
 
 		const std::vector<State> &getStateList(const EntityAnimationData &animationData) const;
@@ -89,6 +90,8 @@ private:
 
 	const std::vector<State> *findStateList(StateType stateType) const;
 public:
+	bool hasStateList(StateType stateType) const;
+
 	void addStateList(std::vector<State> &&stateList);
 	void removeStateList(StateType stateType);
 	void clear();

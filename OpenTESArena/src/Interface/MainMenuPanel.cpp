@@ -85,19 +85,19 @@ namespace
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
 	// These also need ".MIF" appended at the end.
-	const std::vector<std::pair<std::string, std::pair<int, int>>> InteriorLocations =
+	const std::vector<std::tuple<std::string, std::pair<int, int>, VoxelDefinition::WallData::MenuType>> InteriorLocations =
 	{
-		{ "BS", { 1, 8 } },
-		{ "EQUIP", { 1, 8 } },
-		{ "MAGE", { 1, 8 } },
-		{ "NOBLE", { 1, 8 } },
-		{ "PALACE", { 1, 5 } },
-		{ "TAVERN", { 1, 8 } },
-		{ "TEMPLE", { 1, 8 } },
-		{ "TOWER", { 1, 8 } },
-		{ "TOWNPAL", { 1, 3 } },
-		{ "VILPAL", { 1, 3 } },
-		{ "WCRYPT", { 1, 8 } }
+		{ "BS", { 1, 8 }, VoxelDefinition::WallData::MenuType::House },
+		{ "EQUIP", { 1, 8 }, VoxelDefinition::WallData::MenuType::Equipment },
+		{ "MAGE", { 1, 8 }, VoxelDefinition::WallData::MenuType::MagesGuild },
+		{ "NOBLE", { 1, 8 }, VoxelDefinition::WallData::MenuType::Noble },
+		{ "PALACE", { 1, 5 }, VoxelDefinition::WallData::MenuType::Palace },
+		{ "TAVERN", { 1, 8 }, VoxelDefinition::WallData::MenuType::Tavern },
+		{ "TEMPLE", { 1, 8 }, VoxelDefinition::WallData::MenuType::Temple },
+		{ "TOWER", { 1, 8 }, VoxelDefinition::WallData::MenuType::Tower },
+		{ "TOWNPAL", { 1, 3 }, VoxelDefinition::WallData::MenuType::Palace },
+		{ "VILPAL", { 1, 3 }, VoxelDefinition::WallData::MenuType::Palace },
+		{ "WCRYPT", { 1, 8 }, VoxelDefinition::WallData::MenuType::Crypt }
 	};
 
 	const std::string ImperialMIF = "IMPERIAL.MIF";
@@ -223,6 +223,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->quickStartButton = [&game]()
 	{
 		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
+			const std::optional<VoxelDefinition::WallData::MenuType> &optInteriorType,
 			WeatherType weatherType, WorldType worldType)
 		{
 			// Initialize 3D renderer.
@@ -325,7 +326,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 					}();
 
-					gameData->loadInterior(mif, location, miscAssets,
+					DebugAssert(optInteriorType.has_value());
+					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
+					gameData->loadInterior(interiorType, mif, location, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 				else
@@ -333,12 +336,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// Pick a random dungeon based on the dungeon type.
 					const int provinceID = random.next(8);
 					const bool isArtifactDungeon = false;
+					DebugAssert(optInteriorType.has_value());
+					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
 
 					if (mifName == RandomNamedDungeon)
 					{
 						const int localDungeonID = 2 + random.next(14);
 						gameData->loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
-							miscAssets, game.getTextureManager(), renderer);
+							interiorType, miscAssets, game.getTextureManager(), renderer);
 
 						// Set random named dungeon name and visibility for testing.
 						auto &cityData = gameData->getCityDataFile();
@@ -352,8 +357,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int wildBlockX = random.next(RMDFile::WIDTH);
 						const int wildBlockY = random.next(RMDFile::DEPTH);
 						gameData->loadWildernessDungeon(provinceID, wildBlockX, wildBlockY,
-							miscAssets.getCityDataFile(), miscAssets, game.getTextureManager(),
-							renderer);
+							interiorType, miscAssets.getCityDataFile(), miscAssets,
+							game.getTextureManager(), renderer);
 					}
 					else
 					{
@@ -401,7 +406,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// Make sure to get updated weather type from game data and not
 					// local variable so it gets the filtered weather type.
 					const WeatherType weatherType = gameData->getWeatherType();
-					return clock.nightMusicIsActive() ?
+					return gameData->nightMusicIsActive() ?
 						MusicName::Night : GameData::getExteriorMusicName(weatherType);
 				}
 				else
@@ -417,7 +422,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			game.setPanel<GameWorldPanel>(game);
 			game.setMusic(musicName);
 		};
-		return Button<Game&, int, int, const std::string&, WeatherType, WorldType>(function);
+		return Button<Game&, int, int, const std::string&,
+			const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType>(function);
 	}();
 
 	this->exitButton = []()
@@ -572,8 +578,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Interior range.
 			const auto &interior = InteriorLocations.at(panel.testIndex);
-			const int minIndex = interior.second.first;
-			const int maxIndex = interior.second.second;
+			const int minIndex = std::get<1>(interior).first;
+			const int maxIndex = std::get<1>(interior).second;
 
 			panel.testIndex2 = (panel.testIndex2 < maxIndex) ? (panel.testIndex2 + 1) : minIndex;
 		};
@@ -592,8 +598,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Interior range.
 			const auto &interior = InteriorLocations.at(panel.testIndex);
-			const int minIndex = interior.second.first;
-			const int maxIndex = interior.second.second;
+			const int minIndex = std::get<1>(interior).first;
+			const int maxIndex = std::get<1>(interior).second;
 
 			panel.testIndex2 = (panel.testIndex2 > minIndex) ? (panel.testIndex2 - 1) : maxIndex;
 		};
@@ -686,7 +692,7 @@ std::string MainMenuPanel::getSelectedTestName() const
 	else if (this->testType == TestType_Interior)
 	{
 		const auto &interior = InteriorLocations.at(this->testIndex);
-		return interior.first + std::to_string(this->testIndex2) + ".MIF";
+		return std::get<0>(interior) + std::to_string(this->testIndex2) + ".MIF";
 	}
 	else if (this->testType == TestType_City)
 	{
@@ -699,6 +705,28 @@ std::string MainMenuPanel::getSelectedTestName() const
 	else
 	{
 		return DungeonLocations.at(this->testIndex);
+	}
+}
+
+std::optional<VoxelDefinition::WallData::MenuType> MainMenuPanel::getSelectedTestInteriorType() const
+{
+	if (this->testType == TestType_MainQuest || this->testType == TestType_Dungeon)
+	{
+		return VoxelDefinition::WallData::MenuType::Dungeon;
+	}
+	else if (this->testType == TestType_Interior)
+	{
+		const auto &interior = InteriorLocations.at(this->testIndex);
+		return std::get<2>(interior);
+	}
+	else if (this->testType == TestType_City || this->testType == TestType_Wilderness)
+	{
+		return std::nullopt;
+	}
+	else
+	{
+		DebugCrash("Unimplemented test type \"" + std::to_string(this->testType) + "\".");
+		return std::nullopt;
 	}
 }
 
@@ -764,6 +792,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 			this->testType,
 			this->testIndex,
 			this->getSelectedTestName(),
+			this->getSelectedTestInteriorType(),
 			this->getSelectedTestWeatherType(),
 			this->getSelectedTestWorldType());
 	}
@@ -796,6 +825,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 				this->testType,
 				this->testIndex,
 				this->getSelectedTestName(),
+				this->getSelectedTestInteriorType(),
 				this->getSelectedTestWeatherType(),
 				this->getSelectedTestWorldType());
 		}

@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <functional>
+#include <optional>
 
 #include "LevelData.h"
-#include "VoxelData.h"
 #include "VoxelDataType.h"
+#include "VoxelDefinition.h"
+#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/DFAFile.h"
@@ -11,6 +13,7 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MiscAssets.h"
+#include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/EntityType.h"
@@ -22,874 +25,18 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../World/ExteriorWorldData.h"
+#include "../World/InteriorWorldData.h"
+#include "../World/Location.h"
+#include "../World/LocationDataType.h"
+#include "../World/VoxelFacing.h"
+#include "../World/WorldData.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
-
-namespace
-{
-	// Number of directions a dynamic entity can face.
-	constexpr int MAX_ANIM_DIRECTIONS = 8;
-
-	// First flipped animation ID that requires a mapping to a non-flipped ID for use
-	// with a creature .CFA file.
-	constexpr int FIRST_FLIPPED_ANIM_ID = 6;
-
-	// Animation values for creatures with .CFA files.
-	constexpr double CREATURE_ANIM_IDLE_SECONDS_PER_FRAME = 1.0 / 4.0;
-	constexpr double CREATURE_ANIM_LOOK_SECONDS_PER_FRAME = 1.0 / 4.0;
-	constexpr double CREATURE_ANIM_WALK_SECONDS_PER_FRAME = 1.0 / 8.0;
-	constexpr double CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME = 1.0 / 8.0;
-	constexpr double CREATURE_ANIM_DEATH_SECONDS_PER_FRAME = 1.0 / 4.0;
-	constexpr int CREATURE_ANIM_ATTACK_FRAME_INDEX = 10;
-	const bool CREATURE_ANIM_IDLE_LOOP = true;
-	const bool CREATURE_ANIM_LOOK_LOOP = false;
-	const bool CREATURE_ANIM_WALK_LOOP = true;
-	const bool CREATURE_ANIM_ATTACK_LOOP = false;
-	const bool CREATURE_ANIM_DEATH_LOOP = false;
-	const std::vector<int> CreatureAnimIndicesIdle = { 0 };
-	const std::vector<int> CreatureAnimIndicesLook = { 6, 0, 7, 0 };
-	const std::vector<int> CreatureAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
-	const std::vector<int> CreatureAnimIndicesAttack = { 8, 9, 10, 11 };
-
-	// Animation values for human enemies with .CFA files.
-	constexpr double HUMAN_ANIM_IDLE_SECONDS_PER_FRAME = CREATURE_ANIM_IDLE_SECONDS_PER_FRAME;
-	constexpr double HUMAN_ANIM_WALK_SECONDS_PER_FRAME = CREATURE_ANIM_WALK_SECONDS_PER_FRAME;
-	constexpr double HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME = CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME;
-	constexpr double HUMAN_ANIM_DEATH_SECONDS_PER_FRAME = CREATURE_ANIM_DEATH_SECONDS_PER_FRAME;
-	const bool HUMAN_ANIM_IDLE_LOOP = true;
-	const bool HUMAN_ANIM_WALK_LOOP = true;
-	const bool HUMAN_ANIM_ATTACK_LOOP = false;
-	const bool HUMAN_ANIM_DEATH_LOOP = false;
-	const std::vector<int> HumanAnimIndicesIdle = { 0 };
-	const std::vector<int> HumanAnimIndicesWalk = { 0, 1, 2, 3, 4, 5 };
-
-	// Cache for .CFA/.DFA files referenced multiple times during entity loading.
-	template <typename T>
-	class AnimFileCache
-	{
-	private:
-		std::unordered_map<std::string, T> files;
-	public:
-		bool tryGet(const std::string &filename, const T **outFile)
-		{
-			auto iter = this->files.find(filename);
-			if (iter == this->files.end())
-			{
-				T file;
-				if (!file.init(filename.c_str()))
-				{
-					DebugLogError("Couldn't init cached anim file \"" + filename + "\".");
-					return false;
-				}
-
-				iter = this->files.emplace(std::make_pair(filename, std::move(file))).first;
-			}
-
-			*outFile = &iter->second;
-			return true;
-		}
-	};
-
-	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
-	// human enemies, but they are treated like a creature.
-	bool IsFinalBossIndex(int itemIndex)
-	{
-		return itemIndex == 73;
-	}
-
-	// *ITEM 32 to 54 are creatures (rat, goblin, etc.). The final boss is a special case.
-	bool IsCreatureIndex(int itemIndex, bool *outIsFinalBoss)
-	{
-		const bool isFinalBoss = IsFinalBossIndex(itemIndex);
-		*outIsFinalBoss = isFinalBoss;
-		return (itemIndex >= 32 && itemIndex <= 54) || isFinalBoss;
-	}
-
-	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
-	bool IsHumanEnemyIndex(int itemIndex)
-	{
-		return itemIndex >= 55 && itemIndex <= 72;
-	}
-
-	// Returns whether the given flat index is for a static or dynamic entity.
-	EntityType GetEntityTypeFromFlat(int flatIndex, const INFFile &inf)
-	{
-		const auto &flatData = inf.getFlat(flatIndex);
-		if (flatData.itemIndex.has_value())
-		{
-			const int itemIndex = flatData.itemIndex.value();
-
-			// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
-			// are higher.
-			bool dummy;
-			return (IsCreatureIndex(itemIndex, &dummy) || IsHumanEnemyIndex(itemIndex)) ?
-				EntityType::Dynamic : EntityType::Static;
-		}
-		else
-		{
-			return EntityType::Static;
-		}
-	}
-
-	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
-	int GetCreatureIDFromItemIndex(int itemIndex)
-	{
-		return itemIndex - 31;
-	}
-
-	// The final boss is a special case, essentially hardcoded at the end of the creatures.
-	int GetFinalBossCreatureID()
-	{
-		return 24;
-	}
-
-	// Character classes (mage, warrior, etc.) used by human enemies.
-	int GetCharacterClassIndexFromItemIndex(int itemIndex)
-	{
-		return itemIndex - 55;
-	}
-
-	// Streetlights are hardcoded in the original game to flat index 29. This lets the
-	// game give them a light source and toggle them between on and off states.
-	bool IsStreetLightFlatIndex(int flatIndex)
-	{
-		return flatIndex == 29;
-	}
-
-	// Original sprite scaling function. Takes sprite texture dimensions and scaling
-	// value and outputs dimensions for the final displayed entity.
-	void GetBaseFlatDimensions(int width, int height, uint16_t scale,
-		int *baseWidth, int *baseHeight)
-	{
-		*baseWidth = (width * scale) / 256;
-		*baseHeight = (((height * scale) / 256) * 200) / 256;
-	}
-
-	// Returns whether the given original animation state ID would be for a flipped animation.
-	// Animation state IDs are 1-based, 1 being the entity looking at the player.
-	bool IsAnimDirectionFlipped(int animDirectionID)
-	{
-		DebugAssert(animDirectionID >= 1);
-		DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
-		return animDirectionID >= FIRST_FLIPPED_ANIM_ID;
-	}
-
-	// Given a creature direction anim ID like 7, will return the index of the non-flipped anim.
-	int GetDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped)
-	{
-		// If the animation direction points to a flipped animation, the ID needs to be
-		// corrected to point to the non-flipped version.
-		if (IsAnimDirectionFlipped(animDirectionID))
-		{
-			*outIsFlipped = true;
-			return ((FIRST_FLIPPED_ANIM_ID - 1) * 2) - animDirectionID;
-		}
-		else
-		{
-			*outIsFlipped = false;
-			return animDirectionID;
-		}
-	}
-
-	// Helper function for generating a default entity animation state for later modification.
-	EntityAnimationData::State MakeAnimState(EntityAnimationData::StateType stateType,
-		double secondsPerFrame, bool loop, bool flipped = false)
-	{
-		return EntityAnimationData::State(stateType, secondsPerFrame, loop, flipped);
-	}
-
-	// Works for both creature and human enemy filenames.
-	bool TrySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID)
-	{
-		DebugAssert(filename.size() > 0);
-		DebugAssert(animDirectionID >= 1);
-		DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
-
-		const size_t index = filename.find('@');
-		if (index != std::string::npos)
-		{
-			const char animDirectionChar = '0' + animDirectionID;
-			filename[index] = animDirectionChar;
-			return true;
-		}
-		else
-		{
-			DebugLogError("Couldn't replace direction in \"" + filename + "\".");
-			return false;
-		}
-	}
-
-	void GetHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
-		int *outTypeIndex, bool *outIsMale)
-	{
-		const auto &exeData = miscAssets.getExeData();
-
-		const int charClassIndex = GetCharacterClassIndexFromItemIndex(itemIndex);
-		const auto &charClasses = miscAssets.getClassDefinitions();
-		DebugAssertIndex(charClasses, charClassIndex);
-		const CharacterClass &charClass = charClasses[charClassIndex];
-
-		// Properties about the character class.
-		*outTypeIndex = [&exeData, &charClass]()
-		{
-			// Find which armors the class can wear.
-			bool hasPlate = false;
-			bool hasChain = false;
-			bool hasLeather = false;
-
-			const auto &allowedArmors = charClass.getAllowedArmors();
-			for (const ArmorMaterialType armorType : allowedArmors)
-			{
-				hasPlate |= armorType == ArmorMaterialType::Plate;
-				hasChain |= armorType == ArmorMaterialType::Chain;
-				hasLeather |= armorType == ArmorMaterialType::Leather;
-			}
-
-			if (hasPlate)
-			{
-				return 0;
-			}
-			else if (hasChain)
-			{
-				return 1;
-			}
-			else if (hasLeather)
-			{
-				return 2;
-			}
-			else if (charClass.canCastMagic())
-			{
-				// Spellcaster.
-				return 4;
-			}
-			else if (charClass.getClassIndex() == 12)
-			{
-				// Monk.
-				return 5;
-			}
-			else if (charClass.getClassIndex() == 15)
-			{
-				// Barbarian.
-				return 6;
-			}
-			else
-			{
-				// Unarmored.
-				return 3;
-			}
-		}();
-
-		// Assume all non-randomly generated enemies are male.
-		*outIsMale = true;
-	}
-
-	bool TrySetHumanFilenameGender(std::string &filename, bool isMale)
-	{
-		DebugAssert(filename.size() > 0);
-		filename[0] = isMale ? '0' : '1';
-		return true;
-	}
-
-	bool TrySetHumanFilenameType(std::string &filename, const std::string_view &type)
-	{
-		DebugAssert(filename.size() > 0);
-		DebugAssert(type.size() == 3);
-
-		const size_t index = filename.find("XXX");
-		if (index != std::string::npos)
-		{
-			filename.replace(index, type.size(), type.data());
-			return true;
-		}
-		else
-		{
-			DebugLogError("Couldn't replace type in \"" + filename + "\".");
-			return false;
-		}
-	}
-
-	// Static entity animation state for idle.
-	EntityAnimationData::State MakeStaticEntityIdleAnimState(int flatIndex,
-		const INFFile &inf, const ExeData &exeData)
-	{
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-		const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
-
-		DebugAssertIndex(flatTextures, flatData.textureIndex);
-		const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
-		const std::string &flatTextureName = flatTextureData.filename;
-		const std::string_view extension = StringView::getExtension(flatTextureName);
-		const bool isDFA = extension == "DFA";
-		const bool isIMG = extension == "IMG";
-		const bool noExtension = extension.size() == 0;
-
-		// A flat's appearance may be modified by some .INF properties.
-		constexpr double mediumScaleValue = INFFile::FlatData::MEDIUM_SCALE / 100.0;
-		constexpr double largeScaleValue = INFFile::FlatData::LARGE_SCALE / 100.0;
-		const double dimensionModifier = flatData.largeScale ? largeScaleValue :
-			(flatData.mediumScale ? mediumScaleValue : 1.0);
-
-		auto makeKeyframeDimension = [dimensionModifier](int value)
-		{
-			return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
-		};
-
-		EntityAnimationData::State animState = MakeAnimState(
-			EntityAnimationData::StateType::Idle, 1.0 / 12.0, true);
-
-		// Determine how to populate the animation state with keyframes.
-		if (isDFA)
-		{
-			DFAFile dfa;
-			if (!dfa.init(flatTextureName.c_str()))
-			{
-				DebugCrash("Couldn't init .DFA file \"" + flatTextureName + "\".");
-			}
-
-			animState.setTextureName(std::string(flatTextureName));
-
-			for (int i = 0; i < dfa.getImageCount(); i++)
-			{
-				const double width = makeKeyframeDimension(dfa.getWidth());
-				const double height = makeKeyframeDimension(dfa.getHeight());
-				const int textureID = i;
-
-				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				animState.addKeyframe(std::move(keyframe));
-			}
-
-			return animState;
-		}
-		else if (isIMG)
-		{
-			IMGFile img;
-			if (!img.init(flatTextureName.c_str()))
-			{
-				DebugCrash("Couldn't init .IMG file \"" + flatTextureName + "\".");
-			}
-
-			animState.setTextureName(std::string(flatTextureName));
-
-			const double width = makeKeyframeDimension(img.getWidth());
-			const double height = makeKeyframeDimension(img.getHeight());
-			const int textureID = 0;
-
-			EntityAnimationData::Keyframe keyframe(width, height, textureID);
-			animState.addKeyframe(std::move(keyframe));
-			return animState;
-		}
-		else if (noExtension)
-		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			return animState;
-		}
-		else
-		{
-			DebugLogError("Unrecognized flat texture name \"" + flatTextureName + "\".");
-			return animState;
-		}
-	}
-
-	// For any of the dynamic entity anim states, if the returned state list is empty,
-	// it is assumed that the entity has no information for that state.
-
-	// Write out to lists of dynamic entity animation states for each animation direction.
-	void MakeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
-		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
-		std::vector<EntityAnimationData::State> *outIdleStates,
-		std::vector<EntityAnimationData::State> *outLookStates,
-		std::vector<EntityAnimationData::State> *outWalkStates,
-		std::vector<EntityAnimationData::State> *outAttackStates,
-		std::vector<EntityAnimationData::State> *outDeathStates)
-	{
-		DebugAssert(outIdleStates != nullptr);
-		DebugAssert(outLookStates != nullptr);
-		DebugAssert(outWalkStates != nullptr);
-		DebugAssert(outAttackStates != nullptr);
-		DebugAssert(outDeathStates != nullptr);
-
-		const auto &exeData = miscAssets.getExeData();
-		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-		const std::optional<int> &optItemIndex = flatData.itemIndex;
-		DebugAssert(optItemIndex.has_value());
-		const int itemIndex = *optItemIndex;
-
-		bool isFinalBoss;
-		const bool isCreature = IsCreatureIndex(itemIndex, &isFinalBoss);
-		const bool isHuman = IsHumanEnemyIndex(itemIndex);
-
-		// Lambda for converting creature dimensions to the in-engine values.
-		auto makeCreatureKeyframeDimensions = [&exeData](int creatureIndex, int width, int height,
-			double *outWidth, double *outHeight)
-		{
-			// Get the scale value of the creature.
-			const uint16_t creatureScale = [&exeData, creatureIndex]()
-			{
-				const auto &creatureScales = exeData.entities.creatureScales;
-
-				DebugAssertIndex(creatureScales, creatureIndex);
-				const uint16_t scaleValue = creatureScales[creatureIndex];
-
-				// Special case: 0 == 256.
-				return (scaleValue == 0) ? 256 : scaleValue;
-			}();
-
-			int baseWidth, baseHeight;
-			GetBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
-			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
-		};
-
-		// Lambda for converting human dimensions to the in-engine values.
-		auto makeHumanKeyframeDimensions = [](int width, int height, double *outWidth, double *outHeight)
-		{
-			const uint16_t humanScale = 256;
-			int baseWidth, baseHeight;
-			GetBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
-			*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-			*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
-		};
-
-		// Write animation states for idle, look, and walk for the given anim direction.
-		auto tryWriteAnimStates = [&miscAssets, &cfaCache, outIdleStates, outLookStates, outWalkStates,
-			&exeData, itemIndex, isFinalBoss, isCreature, isHuman, &makeCreatureKeyframeDimensions,
-			&makeHumanKeyframeDimensions](int animDirectionID)
-		{
-			DebugAssert(animDirectionID >= 1);
-			DebugAssert(animDirectionID <= MAX_ANIM_DIRECTIONS);
-
-			bool animIsFlipped;
-			const int correctedAnimDirID = GetDynamicEntityCorrectedAnimID(animDirectionID, &animIsFlipped);
-
-			// Determine which dynamic entity animation to load.
-			if (isCreature)
-			{
-				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
-				const int creatureIndex = creatureID - 1;
-
-				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
-				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, correctedAnimDirID))
-				{
-					DebugLogError("Couldn't set creature filename direction \"" +
-						creatureFilename + "\" (" + std::to_string(correctedAnimDirID) + ").");
-					return false;
-				}
-
-				// Load the .CFA of the creature at the given direction.
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
-				{
-					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
-					return false;
-				}
-
-				// Prepare the states to write out.
-				EntityAnimationData::State idleState = MakeAnimState(
-					EntityAnimationData::StateType::Idle,
-					CREATURE_ANIM_IDLE_SECONDS_PER_FRAME,
-					CREATURE_ANIM_IDLE_LOOP,
-					animIsFlipped);
-				EntityAnimationData::State lookState = MakeAnimState(
-					EntityAnimationData::StateType::Look,
-					CREATURE_ANIM_LOOK_SECONDS_PER_FRAME,
-					CREATURE_ANIM_LOOK_LOOP,
-					animIsFlipped);
-				EntityAnimationData::State walkState = MakeAnimState(
-					EntityAnimationData::StateType::Walk,
-					CREATURE_ANIM_WALK_SECONDS_PER_FRAME,
-					CREATURE_ANIM_WALK_LOOP,
-					animIsFlipped);
-
-				// Lambda for writing keyframes to an anim state.
-				auto writeStateKeyframes = [&makeCreatureKeyframeDimensions, creatureIndex, &cfa](
-					EntityAnimationData::State *outState, const std::vector<int> &indices)
-				{
-					for (size_t i = 0; i < indices.size(); i++)
-					{
-						const int frameIndex = indices[i];
-
-						double width, height;
-						makeCreatureKeyframeDimensions(
-							creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
-						const int textureID = frameIndex;
-
-						EntityAnimationData::Keyframe keyframe(width, height, textureID);
-						outState->addKeyframe(std::move(keyframe));
-					}
-				};
-
-				writeStateKeyframes(&idleState, CreatureAnimIndicesIdle);
-				writeStateKeyframes(&lookState, CreatureAnimIndicesLook);
-				writeStateKeyframes(&walkState, CreatureAnimIndicesWalk);
-
-				// Write animation filename to each.
-				idleState.setTextureName(std::string(creatureFilename));
-				lookState.setTextureName(std::string(creatureFilename));
-				walkState.setTextureName(std::string(creatureFilename));
-
-				// Write out the states to their respective state lists.
-				outIdleStates->push_back(std::move(idleState));
-				outLookStates->push_back(std::move(lookState));
-				outWalkStates->push_back(std::move(walkState));
-				return true;
-			}
-			else if (isHuman)
-			{
-				int humanFilenameTypeIndex;
-				bool isMale;
-				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
-
-				const int templateIndex = 0; // Idle/walk template index.
-				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
-				DebugAssertIndex(humanFilenameTemplates, templateIndex);
-				std::string animName = humanFilenameTemplates[templateIndex];
-				if (!TrySetDynamicEntityFilenameDirection(animName, correctedAnimDirID))
-				{
-					DebugLogError("Couldn't set human filename direction \"" +
-						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
-					return false;
-				}
-
-				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
-				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
-				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
-				if (!TrySetHumanFilenameType(animName, humanFilenameType))
-				{
-					DebugLogError("Couldn't set human filename type \"" +
-						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
-					return false;
-				}
-
-				// Special case for plate sprites: female is replaced with male, since they would
-				// apparently look the same in armor.
-				const bool isPlate = humanFilenameTypeIndex == 0;
-
-				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
-				{
-					DebugLogError("Couldn't set human filename gender \"" +
-						animName + "\" (" + std::to_string(correctedAnimDirID) + ").");
-					return false;
-				}
-
-				animName = String::toUppercase(animName);
-
-				// Not all permutations of human filenames exist. If a series is missing,
-				// then probably need to have special behavior.
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(animName.c_str(), &cfa))
-				{
-					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
-					return false;
-				}
-
-				// Prepare the states to write out. Human enemies don't have look animations.
-				EntityAnimationData::State idleState = MakeAnimState(
-					EntityAnimationData::StateType::Idle,
-					HUMAN_ANIM_IDLE_SECONDS_PER_FRAME,
-					HUMAN_ANIM_IDLE_LOOP,
-					animIsFlipped);
-				EntityAnimationData::State walkState = MakeAnimState(
-					EntityAnimationData::StateType::Walk,
-					HUMAN_ANIM_WALK_SECONDS_PER_FRAME,
-					HUMAN_ANIM_WALK_LOOP,
-					animIsFlipped);
-
-				// Lambda for writing keyframes to an anim state.
-				auto writeStateKeyframes = [&makeHumanKeyframeDimensions, &cfa](
-					EntityAnimationData::State *outState, const std::vector<int> &indices)
-				{
-					for (size_t i = 0; i < indices.size(); i++)
-					{
-						const int frameIndex = indices[i];
-
-						double width, height;
-						makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
-						const int textureID = frameIndex;
-
-						EntityAnimationData::Keyframe keyframe(width, height, textureID);
-						outState->addKeyframe(std::move(keyframe));
-					}
-				};
-
-				writeStateKeyframes(&idleState, HumanAnimIndicesIdle);
-				writeStateKeyframes(&walkState, HumanAnimIndicesWalk);
-
-				// Write animation filename to each.
-				idleState.setTextureName(std::string(animName));
-				walkState.setTextureName(std::string(animName));
-
-				// Write out the states to their respective state lists.
-				outIdleStates->push_back(std::move(idleState));
-				outWalkStates->push_back(std::move(walkState));
-				return true;
-			}
-			else
-			{
-				DebugLogError("Not implemented.");
-				return false;
-			}
-		};
-
-		auto tryWriteAttackAnimStates = [&miscAssets, &cfaCache, outAttackStates, &exeData, itemIndex,
-			isFinalBoss, isCreature, isHuman, &makeCreatureKeyframeDimensions, &makeHumanKeyframeDimensions]()
-		{
-			// Attack state is only in the first .CFA file.
-			const int animDirectionID = 1;
-			const bool animIsFlipped = false;
-
-			if (isCreature)
-			{
-				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-
-				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
-				const int creatureIndex = creatureID - 1;
-
-				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
-				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
-				{
-					DebugLogError("Couldn't set creature filename direction \"" +
-						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
-					return false;
-				}
-
-				// Load the .CFA of the creature at the given direction.
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
-				{
-					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
-					return false;
-				}
-
-				EntityAnimationData::State attackState = MakeAnimState(
-					EntityAnimationData::StateType::Attack,
-					CREATURE_ANIM_ATTACK_SECONDS_PER_FRAME,
-					CREATURE_ANIM_ATTACK_LOOP,
-					animIsFlipped);
-
-				for (size_t i = 0; i < CreatureAnimIndicesAttack.size(); i++)
-				{
-					const int frameIndex = CreatureAnimIndicesAttack[i];
-
-					double width, height;
-					makeCreatureKeyframeDimensions(
-						creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
-					const int textureID = frameIndex;
-
-					EntityAnimationData::Keyframe keyframe(width, height, textureID);
-					attackState.addKeyframe(std::move(keyframe));
-				}
-
-				// Write animation filename.
-				attackState.setTextureName(std::move(creatureFilename));
-
-				outAttackStates->push_back(std::move(attackState));
-				return true;
-			}
-			else if (isHuman)
-			{
-				int humanFilenameTypeIndex;
-				bool isMale;
-				GetHumanEnemyProperties(itemIndex, miscAssets, &humanFilenameTypeIndex, &isMale);
-
-				const int attackTemplateIndex = 1;
-				const auto &humanFilenameTemplates = exeData.entities.humanFilenameTemplates;
-				DebugAssertIndex(humanFilenameTemplates, attackTemplateIndex);
-				std::string animName = humanFilenameTemplates[attackTemplateIndex];
-				if (!TrySetDynamicEntityFilenameDirection(animName, animDirectionID))
-				{
-					DebugLogError("Couldn't set human attack filename direction \"" +
-						animName + "\" (" + std::to_string(animDirectionID) + ").");
-					return false;
-				}
-
-				const auto &humanFilenameTypes = exeData.entities.humanFilenameTypes;
-				DebugAssertIndex(humanFilenameTypes, humanFilenameTypeIndex);
-				const std::string_view humanFilenameType = humanFilenameTypes[humanFilenameTypeIndex];
-				if (!TrySetHumanFilenameType(animName, humanFilenameType))
-				{
-					DebugLogError("Couldn't set human attack filename type \"" +
-						animName + "\" (" + std::to_string(animDirectionID) + ").");
-					return false;
-				}
-
-				// Special case for plate sprites: female is replaced with male, since they would
-				// apparently look the same in armor.
-				const bool isPlate = humanFilenameTypeIndex == 0;
-
-				if (!TrySetHumanFilenameGender(animName, isMale || isPlate))
-				{
-					DebugLogError("Couldn't set human attack filename gender \"" +
-						animName + "\" (" + std::to_string(animDirectionID) + ").");
-					return false;
-				}
-
-				animName = String::toUppercase(animName);
-
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(animName.c_str(), &cfa))
-				{
-					DebugLogError("Couldn't get cached .CFA file \"" + animName + "\".");
-					return false;
-				}
-
-				EntityAnimationData::State attackState = MakeAnimState(
-					EntityAnimationData::StateType::Attack,
-					HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME,
-					HUMAN_ANIM_ATTACK_LOOP,
-					animIsFlipped);
-
-				for (int i = 0; i < cfa->getImageCount(); i++)
-				{
-					const int frameIndex = i;
-
-					double width, height;
-					makeHumanKeyframeDimensions(cfa->getWidth(), cfa->getHeight(), &width, &height);
-					const int textureID = frameIndex;
-
-					EntityAnimationData::Keyframe keyframe(width, height, textureID);
-					attackState.addKeyframe(std::move(keyframe));
-				}
-
-				// Write animation filename.
-				attackState.setTextureName(std::move(animName));
-
-				outAttackStates->push_back(std::move(attackState));
-				return true;
-			}
-			else
-			{
-				DebugLogError("Not implemented.");
-				return false;
-			}
-		};
-
-		auto tryWriteDeathAnimStates = [&inf, &cfaCache, outDeathStates, &exeData, itemIndex, isFinalBoss,
-			isCreature, isHuman, &makeCreatureKeyframeDimensions]()
-		{
-			const bool animIsFlipped = false;
-
-			if (isCreature)
-			{
-				// Death state is only in the last .CFA file.
-				const int animDirectionID = 6;
-
-				const auto &creatureAnimFilenames = exeData.entities.creatureAnimationFilenames;
-				const int creatureID = isFinalBoss ?
-					GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
-				const int creatureIndex = creatureID - 1;
-
-				DebugAssertIndex(creatureAnimFilenames, creatureIndex);
-				std::string creatureFilename = String::toUppercase(creatureAnimFilenames[creatureIndex]);
-				if (!TrySetDynamicEntityFilenameDirection(creatureFilename, animDirectionID))
-				{
-					DebugLogError("Couldn't set creature filename direction \"" +
-						creatureFilename + "\" (" + std::to_string(animDirectionID) + ").");
-					return false;
-				}
-
-				// Load the .CFA of the creature at the given direction.
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(creatureFilename.c_str(), &cfa))
-				{
-					DebugLogError("Couldn't get cached .CFA file \"" + creatureFilename + "\".");
-					return false;
-				}
-
-				EntityAnimationData::State deathState = MakeAnimState(
-					EntityAnimationData::StateType::Death,
-					CREATURE_ANIM_DEATH_SECONDS_PER_FRAME,
-					CREATURE_ANIM_DEATH_LOOP,
-					animIsFlipped);
-
-				for (int i = 0; i < cfa->getImageCount(); i++)
-				{
-					double width, height;
-					makeCreatureKeyframeDimensions(
-						creatureIndex, cfa->getWidth(), cfa->getHeight(), &width, &height);
-					const int textureID = i;
-
-					EntityAnimationData::Keyframe keyframe(width, height, textureID);
-					deathState.addKeyframe(std::move(keyframe));
-				}
-
-				// Write animation filename.
-				deathState.setTextureName(std::move(creatureFilename));
-
-				outDeathStates->push_back(std::move(deathState));
-				return true;
-			}
-			else if (isHuman)
-			{
-				// Humans use a single dead body image.
-				const int corpseItemIndex = 2;
-				const INFFile::FlatData *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
-				DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
-				const int corpseFlatTextureIndex = corpseFlat->textureIndex;
-				const auto &flatTextures = inf.getFlatTextures();
-				DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
-				std::string animName = String::toUppercase(flatTextures[corpseFlatTextureIndex].filename);
-
-				IMGFile img;
-				if (!img.init(animName.c_str()))
-				{
-					DebugLogError("Couldn't init .IMG file \"" + animName + "\".");
-					return false;
-				}
-
-				EntityAnimationData::State deathState = MakeAnimState(
-					EntityAnimationData::StateType::Death,
-					HUMAN_ANIM_ATTACK_SECONDS_PER_FRAME,
-					HUMAN_ANIM_ATTACK_LOOP,
-					animIsFlipped);
-
-				deathState.setTextureName(std::string(animName));
-
-				// Human corpse is not affected by human scaling values.
-				const double width = static_cast<double>(img.getWidth()) / MIFFile::ARENA_UNITS;
-				const double height = static_cast<double>(img.getHeight()) / MIFFile::ARENA_UNITS;
-				const int textureID = 0;
-
-				EntityAnimationData::Keyframe keyframe(width, height, textureID);
-				deathState.addKeyframe(std::move(keyframe));
-				outDeathStates->push_back(std::move(deathState));
-				return true;
-			}
-			else
-			{
-				DebugLogError("Not implemented.");
-				return false;
-			}
-		};
-
-		for (int i = 1; i <= MAX_ANIM_DIRECTIONS; i++)
-		{
-			if (!tryWriteAnimStates(i))
-			{
-				DebugLogError("Couldn't make anim states for direction \"" + std::to_string(i) + "\".");
-			}
-		}
-
-		if (!tryWriteAttackAnimStates())
-		{
-			DebugLogError("Couldn't make attack anim states.");
-		}
-
-		if (!tryWriteDeathAnimStates())
-		{
-			DebugLogError("Couldn't make death anim states.");
-		}
-	}
-}
 
 LevelData::FlatDef::FlatDef(int flatIndex)
 {
@@ -1188,14 +335,13 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		else
 		{
 			// Insert new mapping.
-			const int index = this->voxelGrid.addVoxelData(
-				VoxelData::makeFloor(floorTextureID));
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeFloor(floorTextureID));
 			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
 	};
 
-	using ChasmDataFunc = VoxelData(*)(const INFFile &inf, const std::array<bool, 4>&);
+	using ChasmDataFunc = VoxelDefinition(*)(const INFFile &inf, const std::array<bool, 4>&);
 
 	// Lambda for obtaining the voxel data index of a chasm voxel. The given function argument
 	// returns the created voxel data if there was no previous mapping.
@@ -1215,14 +361,14 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelData(chasmFunc(inf, adjacentFaces));
+			const int index = this->voxelGrid.addVoxelDef(chasmFunc(inf, adjacentFaces));
 			this->chasmDataMappings.push_back(std::make_tuple(florVoxel, adjacentFaces, index));
 			return index;
 		}
 	};
 
 	// Helper lambdas for creating each type of chasm voxel data.
-	auto makeDryChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeDryChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int dryChasmID = [&inf]()
 		{
@@ -1239,12 +385,12 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(dryChasmID,
+		return VoxelDefinition::makeChasm(dryChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Dry);
+			VoxelDefinition::ChasmData::Type::Dry);
 	};
 
-	auto makeLavaChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeLavaChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int lavaChasmID = [&inf]()
 		{
@@ -1261,12 +407,12 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(lavaChasmID,
+		return VoxelDefinition::makeChasm(lavaChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Lava);
+			VoxelDefinition::ChasmData::Type::Lava);
 	};
 
-	auto makeWetChasmVoxelData = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeWetChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
 	{
 		const int wetChasmID = [&inf]()
 		{
@@ -1283,9 +429,9 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 		}();
 
 		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelData::makeChasm(wetChasmID,
+		return VoxelDefinition::makeChasm(wetChasmID,
 			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelData::ChasmData::Type::Wet);
+			VoxelDefinition::ChasmData::Type::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -1341,19 +487,19 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				if (floorTextureID == MIFFile::DRY_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeDryChasmVoxelData, adjacentFaces);
+						florVoxel, makeDryChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::LAVA_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeLavaChasmVoxelData, adjacentFaces);
+						florVoxel, makeLavaChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 				else if (floorTextureID == MIFFile::WET_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeWetChasmVoxelData, adjacentFaces);
+						florVoxel, makeWetChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
 			}
@@ -1393,7 +539,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	// Lambda for obtaining the voxel data index of a general-case MAP1 object. The function
 	// parameter returns the created voxel data if no previous mapping exists, and is intended
 	// for general cases where the voxel data type does not need extra parameters.
-	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelData(*func)(uint16_t))
+	auto getDataIndex = [this, &findWallMapping](uint16_t map1Voxel, VoxelDefinition(*func)(uint16_t))
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
@@ -1402,7 +548,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelData(func(map1Voxel));
+			const int index = this->voxelGrid.addVoxelDef(func(map1Voxel));
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -1430,7 +576,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 				// Determine what the type of the wall is (level up/down, menu, 
 				// or just plain solid).
-				const VoxelData::WallData::Type type = [&inf, textureIndex, isMenu]()
+				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
 				{
 					// Returns whether the given index pointer is non-null and
 					// matches the current texture index.
@@ -1441,36 +587,36 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 					if (matchesIndex(inf.getLevelUpIndex()))
 					{
-						return VoxelData::WallData::Type::LevelUp;
+						return VoxelDefinition::WallData::Type::LevelUp;
 					}
 					else if (matchesIndex(inf.getLevelDownIndex()))
 					{
-						return VoxelData::WallData::Type::LevelDown;
+						return VoxelDefinition::WallData::Type::LevelDown;
 					}
 					else if (isMenu)
 					{
-						return VoxelData::WallData::Type::Menu;
+						return VoxelDefinition::WallData::Type::Menu;
 					}
 					else
 					{
-						return VoxelData::WallData::Type::Solid;
+						return VoxelDefinition::WallData::Type::Solid;
 					}
 				}();
 
-				VoxelData voxelData = VoxelData::makeWall(textureIndex, textureIndex, textureIndex,
-					(isMenu ? &menuIndex : nullptr), type);
+				VoxelDefinition voxelDef = VoxelDefinition::makeWall(
+					textureIndex, textureIndex, textureIndex, (isMenu ? &menuIndex : nullptr), type);
 
 				// Set the *MENU index if it's a menu voxel.
 				if (isMenu)
 				{
-					VoxelData::WallData &wallData = voxelData.wall;
+					VoxelDefinition::WallData &wallData = voxelDef.wall;
 					wallData.menuID = menuIndex;
 				}
 
-				return voxelData;
+				return voxelDef;
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeWallVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeWallVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -1589,11 +735,11 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelData::makeRaised(sideID, floorID, ceilingID,
+				return VoxelDefinition::makeRaised(sideID, floorID, ceilingID,
 					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeRaisedVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeRaisedVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -1604,7 +750,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool collider = (map1Voxel & 0x0100) == 0;
-		return VoxelData::makeTransparentWall(textureIndex, collider);
+		return VoxelDefinition::makeTransparentWall(textureIndex, collider);
 	};
 
 	// Lambda for obtaining the voxel data index of a type 0xA voxel.
@@ -1638,34 +784,34 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				// graphics and gates are type 0xA colliders, I believe.
 				const bool flipped = collider;
 
-				const VoxelData::Facing facing = [map1Voxel]()
+				const VoxelFacing facing = [map1Voxel]()
 				{
 					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
 					// and C is east. It is stored in two bits above the texture index.
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelData::Facing::PositiveX;
+						return VoxelFacing::PositiveX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelData::Facing::NegativeZ;
+						return VoxelFacing::NegativeZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelData::Facing::NegativeX;
+						return VoxelFacing::NegativeX;
 					}
 					else
 					{
-						return VoxelData::Facing::PositiveZ;
+						return VoxelFacing::PositiveZ;
 					}
 				}();
 
-				return VoxelData::makeEdge(
+				return VoxelDefinition::makeEdge(
 					textureIndex, yOffset, collider, flipped, facing);
 			};
 
-			const int index = this->voxelGrid.addVoxelData(makeTypeAVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(makeTypeAVoxelData());
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -1675,31 +821,31 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	auto makeTypeBVoxelData = [](uint16_t map1Voxel)
 	{
 		const int textureIndex = (map1Voxel & 0x003F) - 1;
-		const VoxelData::DoorData::Type doorType = [map1Voxel]()
+		const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
 		{
 			const int type = (map1Voxel & 0x00C0) >> 4;
 			if (type == 0x0)
 			{
-				return VoxelData::DoorData::Type::Swinging;
+				return VoxelDefinition::DoorData::Type::Swinging;
 			}
 			else if (type == 0x4)
 			{
-				return VoxelData::DoorData::Type::Sliding;
+				return VoxelDefinition::DoorData::Type::Sliding;
 			}
 			else if (type == 0x8)
 			{
-				return VoxelData::DoorData::Type::Raising;
+				return VoxelDefinition::DoorData::Type::Raising;
 			}
 			else
 			{
 				// I don't believe any doors in Arena split (but they are
 				// supported by the engine).
 				DebugUnhandledReturnMsg(
-					VoxelData::DoorData::Type, std::to_string(type));
+					VoxelDefinition::DoorData::Type, std::to_string(type));
 			}
 		}();
 
-		return VoxelData::makeDoor(textureIndex, doorType);
+		return VoxelDefinition::makeDoor(textureIndex, doorType);
 	};
 
 	// Lambda for creating type 0xD voxel data.
@@ -1707,7 +853,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-		return VoxelData::makeDiagonal(textureIndex, isRightDiag);
+		return VoxelDefinition::makeDiagonal(textureIndex, isRightDiag);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -1751,10 +897,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					if (flatIndex > 0)
-					{
-						this->addFlatInstance(flatIndex, Int2(x, z));
-					}
+					this->addFlatInstance(flatIndex, Int2(x, z));
 				}
 				else if (mostSigNibble == 0x9)
 				{
@@ -1850,9 +993,9 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
 			const int *menuID = nullptr;
-			const int index = this->voxelGrid.addVoxelData(VoxelData::makeWall(
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
 				textureIndex, textureIndex, textureIndex, menuID,
-				VoxelData::WallData::Type::Solid));
+				VoxelDefinition::WallData::Type::Solid));
 			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
 			return index;
 		}
@@ -1894,8 +1037,7 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 	}();
 
 	// Define the ceiling voxel data.
-	const int index = this->voxelGrid.addVoxelData(
-		VoxelData::makeCeiling(ceilingIndex));
+	const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeCeiling(ceilingIndex));
 
 	// Set all the ceiling voxels.
 	for (int x = 0; x < width; x++)
@@ -1918,7 +1060,259 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 	}
 }
 
-void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
+void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
+	uint16_t *outEastID, uint16_t *outWestID) const
+{
+	auto getVoxelIdOrAir = [this](const Int3 &voxel)
+	{
+		// The voxel is air if outside the grid.
+		return this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z) ?
+			this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z) : 0;
+	};
+
+	const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
+	const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
+	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
+	const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+
+	if (outNorthID != nullptr)
+	{
+		*outNorthID = getVoxelIdOrAir(northVoxel);
+	}
+
+	if (outSouthID != nullptr)
+	{
+		*outSouthID = getVoxelIdOrAir(southVoxel);
+	}
+
+	if (outEastID != nullptr)
+	{
+		*outEastID = getVoxelIdOrAir(eastVoxel);
+	}
+
+	if (outWestID != nullptr)
+	{
+		*outWestID = getVoxelIdOrAir(westVoxel);
+	}
+}
+
+void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
+{
+	// Ignore if outside the grid.
+	if (!this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z))
+	{
+		return;
+	}
+
+	const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
+
+	// Ignore if not a chasm (no faces to update).
+	if (voxelDef.dataType != VoxelDataType::Chasm)
+	{
+		return;
+	}
+
+	const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+
+	// Query surrounding voxels to see which faces should be set.
+	uint16_t northID, southID, eastID, westID;
+	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
+
+	const VoxelDefinition &northDef = this->voxelGrid.getVoxelDef(northID);
+	const VoxelDefinition &southDef = this->voxelGrid.getVoxelDef(southID);
+	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
+	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
+
+	auto voxelDefIsChasm = [](const VoxelDefinition &voxelDef)
+	{
+		return voxelDef.dataType == VoxelDataType::Chasm;
+	};
+
+	// Booleans for each face of the new chasm voxel.
+	bool hasNorthFace = !voxelDefIsChasm(northDef);
+	bool hasSouthFace = !voxelDefIsChasm(southDef);
+	bool hasEastFace = !voxelDefIsChasm(eastDef);
+	bool hasWestFace = !voxelDefIsChasm(westDef);
+
+	const VoxelDefinition newVoxelDef = VoxelDefinition::makeChasm(
+		chasmData.id, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, chasmData.type);
+
+	// Find chasm voxel data with the matching faces, adding if missing.
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
+		[&newVoxelDef](const VoxelDefinition &voxelDef)
+	{
+		if (voxelDef.dataType == VoxelDataType::Chasm)
+		{
+			DebugAssert(newVoxelDef.dataType == VoxelDataType::Chasm);
+			const VoxelDefinition::ChasmData &newChasmData = newVoxelDef.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+			return chasmData.matches(newChasmData);
+		}
+		else
+		{
+			return false;
+		}
+	});
+
+	// Use the chasm ID if it exists, or add a new voxel data to the grid and use its ID.
+	const uint16_t actualChasmID = optChasmID.has_value() ?
+		*optChasmID : this->voxelGrid.addVoxelDef(newVoxelDef);
+
+	// Update the chasm's voxel ID in the grid.
+	this->voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, actualChasmID);
+}
+
+uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
+{
+	DebugAssert(this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z));
+
+	// Get voxel IDs of adjacent voxels (potentially air).
+	uint16_t northID, southID, eastID, westID;
+	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
+
+	const VoxelDefinition &northDef = this->voxelGrid.getVoxelDef(northID);
+	const VoxelDefinition &southDef = this->voxelGrid.getVoxelDef(southID);
+	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
+	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
+
+	auto voxelDataIsChasm = [](const VoxelDefinition &voxelDef)
+	{
+		return voxelDef.dataType == VoxelDataType::Chasm;
+	};
+
+	// Booleans for each face of the new chasm voxel.
+	bool hasNorthFace = !voxelDataIsChasm(northDef);
+	bool hasSouthFace = !voxelDataIsChasm(southDef);
+	bool hasEastFace = !voxelDataIsChasm(eastDef);
+	bool hasWestFace = !voxelDataIsChasm(westDef);
+
+	// Based on how the original game behaves, it seems to be the chasm type closest to the player,
+	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities
+	// like creating a dry chasm next to lava, which results in continued oddities like having a
+	// big difference in chasm depth between the two (depending on ceiling height).
+	const VoxelDefinition::ChasmData::Type newChasmType = []()
+	{
+		// @todo: include player position. If there are no chasms to pick from, then default to
+		// wet chasm.
+		// @todo: getNearestChasmType(const Int3 &voxel)
+		return VoxelDefinition::ChasmData::Type::Wet;
+	}();
+
+	const int newTextureID = [this, newChasmType]()
+	{
+		const int *chasmIndexPtr = nullptr;
+
+		// Ask the .INF file what the chasm texture is.
+		switch (newChasmType)
+		{
+		case VoxelDefinition::ChasmData::Type::Dry:
+			chasmIndexPtr = this->inf.getDryChasmIndex();
+			break;
+		case VoxelDefinition::ChasmData::Type::Wet:
+			chasmIndexPtr = this->inf.getWetChasmIndex();
+			break;
+		case VoxelDefinition::ChasmData::Type::Lava:
+			chasmIndexPtr = this->inf.getLavaChasmIndex();
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(newChasmType)));
+			break;
+		}
+
+		// Default to whatever the first texture is if one is not found.
+		return (chasmIndexPtr != nullptr) ? *chasmIndexPtr : 0;
+	}();
+
+	const VoxelDefinition newDef = VoxelDefinition::makeChasm(
+		newTextureID, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, newChasmType);
+
+	// Find chasm voxel data with the matching faces, adding if missing.
+	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
+		[&newDef](const VoxelDefinition &voxelDef)
+	{
+		if (voxelDef.dataType == VoxelDataType::Chasm)
+		{
+			DebugAssert(newDef.dataType == VoxelDataType::Chasm);
+			const VoxelDefinition::ChasmData &newChasmData = newDef.chasm;
+			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+			return chasmData.matches(newChasmData);
+		}
+		else
+		{
+			return false;
+		}
+	});
+
+	if (optChasmID.has_value())
+	{
+		return *optChasmID;
+	}
+	else
+	{
+		// Need to add a new voxel data to the voxel grid.
+		return this->voxelGrid.addVoxelDef(newDef);
+	}
+}
+
+void LevelData::updateFadingVoxels(double dt)
+{
+	std::vector<Int3> completedVoxels;
+
+	// Reverse iterate, removing voxels that are done fading out.
+	for (int i = static_cast<int>(this->fadingVoxels.size()) - 1; i >= 0; i--)
+	{
+		FadeState &fadingVoxel = this->fadingVoxels[i];
+		const Int3 &voxel = fadingVoxel.getVoxel();
+		fadingVoxel.update(dt);
+
+		if (fadingVoxel.isDoneFading())
+		{
+			completedVoxels.push_back(voxel);
+
+			const bool isFloorVoxel = voxel.y == 0;
+			const uint16_t newVoxelID = [this, &voxel, isFloorVoxel]() -> uint16_t
+			{
+				if (isFloorVoxel)
+				{
+					// Convert from floor to chasm.
+					return this->getChasmIdFromFadedFloorVoxel(voxel);
+				}
+				else
+				{
+					// Clear the voxel.
+					return 0;
+				}
+			}();
+
+			// Change the voxel in the grid to its empty representation (either air or chasm) and
+			// erase the fading voxel from the list.
+			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
+			this->fadingVoxels.erase(this->fadingVoxels.begin() + i);
+		}
+	}
+
+	// Update adjacent chasm faces (not sure why this has to be done after, but it works).
+	for (const Int3 &voxel : completedVoxels)
+	{
+		const bool isFloorVoxel = voxel.y == 0;
+
+		if (isFloorVoxel)
+		{
+			const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
+			const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
+			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
+			const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+			this->tryUpdateChasmVoxel(northVoxel);
+			this->tryUpdateChasmVoxel(southVoxel);
+			this->tryUpdateChasmVoxel(eastVoxel);
+			this->tryUpdateChasmVoxel(westVoxel);
+		}
+	}
+}
+
+void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
+	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
@@ -1932,305 +1326,457 @@ void LevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureM
 	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
 	const Palette &palette = col.getPalette();
 
-	// Load .INF voxel textures into the renderer.
-	const auto &voxelTextures = this->inf.getVoxelTextures();
-	const int voxelTextureCount = static_cast<int>(voxelTextures.size());
-	for (int i = 0; i < voxelTextureCount; i++)
+	// Loads .INF voxel textures into the renderer.
+	auto loadVoxelTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		DebugAssertIndex(voxelTextures, i);
-		const auto &textureData = voxelTextures[i];
-
-		const std::string textureName = String::toUppercase(textureData.filename);
-		const std::string_view extension = StringView::getExtension(textureName);
-		const bool isIMG = extension == "IMG";
-		const bool isSET = extension == "SET";
-		const bool noExtension = extension.size() == 0;
-
-		if (isIMG)
+		const auto &voxelTextures = this->inf.getVoxelTextures();
+		const int voxelTextureCount = static_cast<int>(voxelTextures.size());
+		for (int i = 0; i < voxelTextureCount; i++)
 		{
-			IMGFile img;
-			if (!img.init(textureName.c_str()))
-			{
-				DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
-			}
+			DebugAssertIndex(voxelTextures, i);
+			const auto &textureData = voxelTextures[i];
 
-			renderer.setVoxelTexture(i, img.getPixels(), palette);
-		}
-		else if (isSET)
-		{
-			SETFile set;
-			if (!set.init(textureName.c_str()))
-			{
-				DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
-			}
-
-			// Use the texture data's .SET index to obtain the correct surface.
-			DebugAssert(textureData.setIndex.has_value());
-			const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
-			renderer.setVoxelTexture(i, srcPixels, palette);
-		}
-		else if (noExtension)
-		{
-			// Ignore texture names with no extension. They appear to be lore-related names
-			// that were used at one point in Arena's development.
-			static_cast<void>(textureData);
-		}
-		else
-		{
-			DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
-		}
-	}
-
-	// Initialize entities from the flat defs list and write their textures to the renderer.
-	const auto &exeData = miscAssets.getExeData();
-	for (const auto &flatDef : this->flatsLists)
-	{
-		const int flatIndex = flatDef.getFlatIndex();
-		const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
-		const EntityType entityType = GetEntityTypeFromFlat(flatIndex, this->inf);
-		const std::optional<int> &optItemIndex = flatData.itemIndex;
-
-		bool isFinalBoss;
-		const bool isCreature = optItemIndex.has_value() &&
-			IsCreatureIndex(*optItemIndex, &isFinalBoss);
-
-		// Must be at least one instance of the entity for the loop to try and
-		// instantiate it and write textures to the renderer.
-		DebugAssert(flatDef.getPositions().size() > 0);
-
-		// Entity data index is currently the flat index (depends on .INF file).
-		const int dataIndex = flatIndex;
-
-		// Add a new entity data instance.
-		// @todo: assign creature data here from .exe data if the flat is a creature.
-		DebugAssert(this->entityManager.getEntityData(dataIndex) == nullptr);
-		EntityData newEntityData;
-		if (isCreature)
-		{
-			// Read from .exe data instead for creatures.
-			const int itemIndex = *optItemIndex;
-			const int creatureID = isFinalBoss ?
-				GetFinalBossCreatureID() : GetCreatureIDFromItemIndex(itemIndex);
-			const int creatureIndex = creatureID - 1;
-			const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
-			DebugAssertIndex(creatureYOffsets, creatureIndex);
-
-			const int yOffset = creatureYOffsets[creatureIndex];
-			const bool collider = true;
-			const bool puddle = false;
-			const bool largeScale = false;
-			const bool dark = false;
-			const bool transparent = false; // Apparently ghost properties aren't in .INF files.
-			const bool ceiling = false;
-			const bool mediumScale = false;
-			newEntityData.init(flatIndex, yOffset, collider, puddle, largeScale, dark,
-				transparent, ceiling, mediumScale);
-		}
-		else
-		{
-			newEntityData.init(flatIndex, flatData.yOffset, flatData.collider,
-				flatData.puddle, flatData.largeScale, flatData.dark, flatData.transparent,
-				flatData.ceiling, flatData.mediumScale);
-		}
-
-		// Add entity animation data. Static entities have only idle animations (and maybe on/off
-		// state for lampposts). Dynamic entities have several animation states and directions.
-		auto &entityAnimData = newEntityData.getAnimationData();
-		std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
-			attackStates, deathStates;
-
-		// Cache for .CFA files referenced multiple times.
-		AnimFileCache<CFAFile> cfaCache;
-
-		if (entityType == EntityType::Static)
-		{
-			EntityAnimationData::State animState =
-				MakeStaticEntityIdleAnimState(flatIndex, this->inf, exeData);
-
-			// The entity can only be instantiated if there is at least one animation frame.
-			const bool success = animState.getKeyframes().getCount() > 0;
-			if (success)
-			{
-				idleStates.push_back(std::move(animState));
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-			}
-			else
-			{
-				continue;
-			}
-		}
-		else if (entityType == EntityType::Dynamic)
-		{
-			MakeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
-				&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
-
-			// Must at least have an idle state.
-			DebugAssert(idleStates.size() > 0);
-			entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-
-			if (lookStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
-			}
-
-			if (walkStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
-			}
-
-			if (attackStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
-			}
-
-			if (deathStates.size() > 0)
-			{
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
-			}
-		}
-		else
-		{
-			DebugCrash("Unrecognized entity type \"" +
-				std::to_string(static_cast<int>(entityType)) + "\".");
-		}
-
-		this->entityManager.addEntityData(std::move(newEntityData));
-
-		// Initialize each instance of the flat def.
-		for (const Int2 &position : flatDef.getPositions())
-		{
-			Entity *entity = [this, entityType]() -> Entity*
-			{
-				if (entityType == EntityType::Static)
-				{
-					StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
-					staticEntity->setDerivedType(StaticEntityType::Doodad);
-					return staticEntity;
-				}
-				else if (entityType == EntityType::Dynamic)
-				{
-					DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
-					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
-					dynamicEntity->setDirection(Double2::UnitX);
-					return dynamicEntity;
-				}
-				else
-				{
-					DebugCrash("Unrecognized entity type \"" +
-						std::to_string(static_cast<int>(entityType)) + "\".");
-					return nullptr;
-				}
-			}();
-
-			entity->init(dataIndex);
-
-			const Double2 positionXZ(
-				static_cast<double>(position.x) + 0.50,
-				static_cast<double>(position.y) + 0.50);
-			entity->setPosition(positionXZ);
-		}
-
-		auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
-			const EntityAnimationData::State &animState, int angleID)
-		{
-			// Check whether the animation direction ID is for a flipped animation.
-			const bool isFlipped = IsAnimDirectionFlipped(angleID);
-
-			// Write the flat def's textures to the renderer.
-			const std::string &entityAnimName = animState.getTextureName();
-			const std::string_view extension = StringView::getExtension(entityAnimName);
-			const bool isCFA = extension == "CFA";
-			const bool isDFA = extension == "DFA";
+			const std::string textureName = String::toUppercase(textureData.filename);
+			const std::string_view extension = StringView::getExtension(textureName);
 			const bool isIMG = extension == "IMG";
+			const bool isSET = extension == "SET";
 			const bool noExtension = extension.size() == 0;
 
-			// Entities can be partially transparent. Some palette indices determine whether
-			// there should be any "alpha blending" (in the original game, it implements alpha
-			// using light level diminishing with 13 different levels in an .LGT file).
-			auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
-				int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
-			{
-				renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
-					width, height, palette);
-			};
-
-			if (isCFA)
-			{
-				const CFAFile *cfa;
-				if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
-				{
-					DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
-				}
-
-				for (int i = 0; i < cfa->getImageCount(); i++)
-				{
-					addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
-						flatIndex, animState.getType(), angleID);
-				}
-			}
-			else if (isDFA)
-			{
-				DFAFile dfa;
-				if (!dfa.init(entityAnimName.c_str()))
-				{
-					DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
-				}
-
-				for (int i = 0; i < dfa.getImageCount(); i++)
-				{
-					addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
-						flatIndex, animState.getType(), angleID);
-				}
-			}
-			else if (isIMG)
+			if (isIMG)
 			{
 				IMGFile img;
-				if (!img.init(entityAnimName.c_str()))
+				if (!img.init(textureName.c_str()))
 				{
-					DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+					DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
 				}
 
-				addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
-					flatIndex, animState.getType(), angleID);
+				renderer.setVoxelTexture(i, img.getPixels(), palette);
+			}
+			else if (isSET)
+			{
+				SETFile set;
+				if (!set.init(textureName.c_str()))
+				{
+					DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
+				}
+
+				// Use the texture data's .SET index to obtain the correct surface.
+				DebugAssert(textureData.setIndex.has_value());
+				const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
+				renderer.setVoxelTexture(i, srcPixels, palette);
 			}
 			else if (noExtension)
 			{
 				// Ignore texture names with no extension. They appear to be lore-related names
 				// that were used at one point in Arena's development.
-				static_cast<void>(entityAnimName);
+				static_cast<void>(textureData);
 			}
 			else
 			{
-				DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
+				DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 			}
-		};
+		}
+	};
 
-		auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
-			const std::vector<EntityAnimationData::State> &animStateList)
+	// Loads screen-space chasm textures into the renderer.
+	auto loadChasmTextures = [this, &renderer, &palette]()
+	{
+		const int chasmWidth = RCIFile::WIDTH;
+		const int chasmHeight = RCIFile::HEIGHT;
+		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
+
+		// Dry chasm (just a single color).
+		const uint8_t dryChasmColor = 112;
+		chasmBuffer.fill(dryChasmColor);
+		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
+			chasmWidth, chasmHeight, palette);
+
+		// Lambda for writing an .RCI animation to the renderer.
+		auto writeChasmAnim = [&renderer, &palette, chasmWidth, chasmHeight](
+			VoxelDefinition::ChasmData::Type chasmType, const std::string &rciName)
 		{
-			for (size_t i = 0; i < animStateList.size(); i++)
+			RCIFile rci;
+			if (!rci.init(rciName.c_str()))
 			{
-				const auto &animState = animStateList[i];
-				const int angleID = static_cast<int>(i + 1);
-				addTexturesFromState(animState, angleID);
+				DebugLogError("Couldn't init .RCI \"" + rciName + "\".");
+				return;
+			}
+
+			for (int i = 0; i < rci.getImageCount(); i++)
+			{
+				const uint8_t *rciPixels = rci.getPixels(i);
+				renderer.addChasmTexture(chasmType, rciPixels, chasmWidth, chasmHeight, palette);
 			}
 		};
 
-		// Add textures to the renderer for each of the entity's animation states.
-		// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
-		// in the renderer implementation, because it seems to group textures by flat index only,
-		// which could be wasteful).
-		// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
-		//   in the addTextureFromState lambda.
-		addTexturesFromStateList(idleStates);
-		addTexturesFromStateList(lookStates);
-		addTexturesFromStateList(walkStates);
-		addTexturesFromStateList(attackStates);
-		addTexturesFromStateList(deathStates);
-	}
+		writeChasmAnim(VoxelDefinition::ChasmData::Type::Wet, "WATERANI.RCI");
+		writeChasmAnim(VoxelDefinition::ChasmData::Type::Lava, "LAVAANI.RCI");
+	};
+
+	// Initializes entities from the flat defs list and write their textures to the renderer.
+	auto loadEntities = [this, nightLightsAreActive, &worldData, &location, &miscAssets,
+		&textureManager, &renderer, &palette]()
+	{
+		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
+		const std::optional<bool> optRulerIsMale = [&location, &miscAssets]() -> std::optional<bool>
+		{
+			if (location.dataType == LocationDataType::City)
+			{
+				const auto &cityData = miscAssets.getCityDataFile();
+				return cityData.isRulerMale(location.localCityID, location.provinceID);
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}();
+
+		const bool isCity = worldData.getActiveWorldType() == WorldType::City;
+		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [&worldData, isCity]()
+		{
+			const bool isPalace = [&worldData]()
+			{
+				const bool isInterior = worldData.getBaseWorldType() == WorldType::Interior;
+				if (isInterior)
+				{
+					const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
+					const VoxelDefinition::WallData::MenuType interiorType = interior.getInteriorType();
+					return interiorType == VoxelDefinition::WallData::MenuType::Palace;
+				}
+				else
+				{
+					return false;
+				}
+			}();
+
+			if (isCity)
+			{
+				return ArenaAnimUtils::StaticAnimCondition::IsCity;
+			}
+			else if (isPalace)
+			{
+				return ArenaAnimUtils::StaticAnimCondition::IsPalace;
+			}
+			else
+			{
+				return ArenaAnimUtils::StaticAnimCondition::None;
+			}
+		}();
+
+		const auto &exeData = miscAssets.getExeData();
+		for (const auto &flatDef : this->flatsLists)
+		{
+			const int flatIndex = flatDef.getFlatIndex();
+			const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
+			const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
+			const std::optional<int> &optItemIndex = flatData.itemIndex;
+
+			bool isFinalBoss;
+			const bool isCreature = optItemIndex.has_value() &&
+				ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
+			const bool isHumanEnemy = optItemIndex.has_value() &&
+				ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+
+			// Must be at least one instance of the entity for the loop to try and
+			// instantiate it and write textures to the renderer.
+			DebugAssert(flatDef.getPositions().size() > 0);
+
+			// Entity data index is currently the flat index (depends on .INF file).
+			const int dataIndex = flatIndex;
+
+			// Add a new entity data instance.
+			// @todo: assign creature data here from .exe data if the flat is a creature.
+			DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
+			EntityDefinition newEntityDef;
+			if (isCreature)
+			{
+				// Read from .exe data instead for creatures.
+				const int itemIndex = *optItemIndex;
+				const int creatureID = isFinalBoss ?
+					ArenaAnimUtils::getFinalBossCreatureID() :
+					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+				const int creatureIndex = creatureID - 1;
+
+				std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
+				{
+					if (!isFinalBoss)
+					{
+						const auto &creatureNames = exeData.entities.creatureNames;
+						DebugAssertIndex(creatureNames, creatureIndex);
+						return creatureNames[creatureIndex];
+					}
+					else
+					{
+						// @todo: return final boss class name?
+						return std::string("TODO");
+					}
+				}();
+
+				const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
+				DebugAssertIndex(creatureYOffsets, creatureIndex);
+				const int yOffset = creatureYOffsets[creatureIndex];
+
+				const uint8_t creatureSoundIndex = exeData.entities.creatureSounds[creatureIndex];
+
+				const bool collider = true;
+				const bool puddle = false;
+				const bool largeScale = false;
+				const bool dark = false;
+				const bool transparent = false; // Apparently ghost properties aren't in .INF files.
+				const bool ceiling = false;
+				const bool mediumScale = false;
+				const bool streetLight = false;
+				const std::optional<int> lightIntensity = std::nullopt;
+				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
+					largeScale, dark, transparent, ceiling, mediumScale, streetLight,
+					lightIntensity, creatureSoundIndex);
+			}
+			else if (isHumanEnemy)
+			{
+				// Use character class name as the display name.
+				const auto &charClassNames = exeData.charClasses.classNames;
+				const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
+				DebugAssertIndex(charClassNames, charClassIndex);
+				const std::string_view charClassName = charClassNames[charClassIndex];
+
+				const bool streetLight = false;
+				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
+					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
+					flatData.lightIntensity, std::nullopt);
+			}
+			else
+			{
+				// No display name.
+				std::string displayName;
+				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
+				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
+					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
+					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
+					flatData.lightIntensity, std::nullopt);
+			}
+
+			// Add entity animation data. Static entities have only idle animations (and maybe on/off
+			// state for lampposts). Dynamic entities have several animation states and directions.
+			auto &entityAnimData = newEntityDef.getAnimationData();
+			std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
+				attackStates, deathStates, activatedStates;
+
+			// Cache for .CFA files referenced multiple times.
+			ArenaAnimUtils::AnimFileCache<CFAFile> cfaCache;
+
+			if (entityType == EntityType::Static)
+			{
+				ArenaAnimUtils::makeStaticEntityAnimStates(flatIndex, staticAnimCondition, optRulerIsMale,
+					this->inf, exeData, &idleStates, &activatedStates);
+
+				// The entity can only be instantiated if there is at least one idle animation frame.
+				const bool success = (idleStates.size() > 0) &&
+					(idleStates.front().getKeyframes().getCount() > 0);
+
+				if (!success)
+				{
+					continue;
+				}
+
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+
+				if (activatedStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(activatedStates));
+				}
+			}
+			else if (entityType == EntityType::Dynamic)
+			{
+				ArenaAnimUtils::makeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
+					&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
+
+				// Must at least have an idle state.
+				DebugAssert(idleStates.size() > 0);
+				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
+
+				if (lookStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
+				}
+
+				if (walkStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
+				}
+
+				if (attackStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
+				}
+
+				if (deathStates.size() > 0)
+				{
+					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
+				}
+			}
+			else
+			{
+				DebugCrash("Unrecognized entity type \"" +
+					std::to_string(static_cast<int>(entityType)) + "\".");
+			}
+
+			const bool isStreetlight = newEntityDef.isStreetLight();
+			this->entityManager.addEntityDef(std::move(newEntityDef));
+
+			// Initialize each instance of the flat def.
+			for (const Int2 &position : flatDef.getPositions())
+			{
+				Entity *entity = [this, entityType]() -> Entity*
+				{
+					if (entityType == EntityType::Static)
+					{
+						StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
+						staticEntity->setDerivedType(StaticEntityType::Doodad);
+						return staticEntity;
+					}
+					else if (entityType == EntityType::Dynamic)
+					{
+						DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
+						dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+						dynamicEntity->setDirection(Double2::UnitX);
+						return dynamicEntity;
+					}
+					else
+					{
+						DebugCrash("Unrecognized entity type \"" +
+							std::to_string(static_cast<int>(entityType)) + "\".");
+						return nullptr;
+					}
+				}();
+
+				entity->init(dataIndex);
+
+				const Double2 positionXZ(
+					static_cast<double>(position.x) + 0.50,
+					static_cast<double>(position.y) + 0.50);
+				entity->setPosition(positionXZ);
+
+				// Need to turn streetlights on or off at initialization.
+				if (isStreetlight)
+				{
+					auto &entityAnim = entity->getAnimation();
+					const EntityAnimationData::StateType streetlightStateType = nightLightsAreActive ?
+						EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
+					entityAnim.setStateType(streetlightStateType);
+				}
+			}
+
+			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
+				const EntityAnimationData::State &animState, int angleID)
+			{
+				// Check whether the animation direction ID is for a flipped animation.
+				const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID);
+
+				// Write the flat def's textures to the renderer.
+				const std::string &entityAnimName = animState.getTextureName();
+				const std::string_view extension = StringView::getExtension(entityAnimName);
+				const bool isCFA = extension == "CFA";
+				const bool isDFA = extension == "DFA";
+				const bool isIMG = extension == "IMG";
+				const bool noExtension = extension.size() == 0;
+
+				// Entities can be partially transparent. Some palette indices determine whether
+				// there should be any "alpha blending" (in the original game, it implements alpha
+				// using light level diminishing with 13 different levels in an .LGT file).
+				auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
+					int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
+				{
+					renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
+						width, height, palette);
+				};
+
+				if (isCFA)
+				{
+					const CFAFile *cfa;
+					if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
+					{
+						DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
+					}
+
+					for (int i = 0; i < cfa->getImageCount(); i++)
+					{
+						addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
+							flatIndex, animState.getType(), angleID);
+					}
+				}
+				else if (isDFA)
+				{
+					DFAFile dfa;
+					if (!dfa.init(entityAnimName.c_str()))
+					{
+						DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
+					}
+
+					for (int i = 0; i < dfa.getImageCount(); i++)
+					{
+						addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
+							flatIndex, animState.getType(), angleID);
+					}
+				}
+				else if (isIMG)
+				{
+					IMGFile img;
+					if (!img.init(entityAnimName.c_str()))
+					{
+						DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
+					}
+
+					addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
+						flatIndex, animState.getType(), angleID);
+				}
+				else if (noExtension)
+				{
+					// Ignore texture names with no extension. They appear to be lore-related names
+					// that were used at one point in Arena's development.
+					static_cast<void>(entityAnimName);
+				}
+				else
+				{
+					DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
+				}
+			};
+
+			auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
+				const std::vector<EntityAnimationData::State> &animStateList)
+			{
+				for (size_t i = 0; i < animStateList.size(); i++)
+				{
+					const auto &animState = animStateList[i];
+					const int angleID = static_cast<int>(i + 1);
+					addTexturesFromState(animState, angleID);
+				}
+			};
+
+			// Add textures to the renderer for each of the entity's animation states.
+			// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
+			// in the renderer implementation, because it seems to group textures by flat index only,
+			// which could be wasteful).
+			// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
+			//   in the addTextureFromState lambda.
+			addTexturesFromStateList(idleStates);
+			addTexturesFromStateList(lookStates);
+			addTexturesFromStateList(walkStates);
+			addTexturesFromStateList(attackStates);
+			addTexturesFromStateList(deathStates);
+			addTexturesFromStateList(activatedStates);
+		}
+	};
+
+	loadVoxelTextures();
+	loadChasmTextures();
+	loadEntities();
 }
 
 void LevelData::tick(Game &game, double dt)
 {
+	this->updateFadingVoxels(dt);
+
+	// Update entities.
 	this->entityManager.tick(game, dt);
 }

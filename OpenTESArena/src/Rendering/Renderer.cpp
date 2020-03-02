@@ -9,6 +9,7 @@
 #include "Surface.h"
 #include "../Interface/CursorAlignment.h"
 #include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
 #include "../Utilities/Platform.h"
@@ -240,6 +241,47 @@ Surface Renderer::getScreenshot() const
 const Renderer::ProfilerData &Renderer::getProfilerData() const
 {
 	return this->profilerData;
+}
+
+bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
+	int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
+	const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
+	const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const
+{
+	DebugAssert(this->softwareRenderer.isInited());
+	const Entity &entity = *visData.entity;
+
+	// Do a ray test to see if the ray intersects.
+	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, visData.flatPosition,
+		entityForward, outHitPoint))
+	{
+		const Double3 diff = (*outHitPoint) - visData.flatPosition;
+
+		// Get the texture coordinates. It's okay if they are outside the entity.
+		const Double2 uv(
+			0.5 - (diff.dot(entityRight) / entityWidth),
+			1.0 - (diff.dot(entityUp) / entityHeight));
+
+		// See if the ray successfully hit a point on the entity, and that point is considered
+		// selectable (i.e. it's not transparent).
+		bool isSelected;
+		const bool withinEntity = this->softwareRenderer.tryGetEntitySelectionData(uv, flatIndex,
+			visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType,
+			pixelPerfect, &isSelected);
+
+		return withinEntity && isSelected;
+	}
+	else
+	{
+		// Did not intersect the entity's plane.
+		return false;
+	}
+}
+
+Double3 Renderer::screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+	double fovY, double aspect) const
+{
+	return SoftwareRenderer::screenPointToRay(xPercent, yPercent, cameraDirection, fovY, aspect);
 }
 
 Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
@@ -575,6 +617,13 @@ void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stat
 		srcTexels, width, height, palette);
 }
 
+void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+	int width, int height, const Palette &palette)
+{
+	DebugAssert(this->softwareRenderer.isInited());
+	this->softwareRenderer.addChasmTexture(chasmType, colors, width, height, palette);
+}
+
 void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
@@ -688,8 +737,9 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY,
-	double ambient, double daytimePercent, double latitude, bool parallaxSky, double ceilingHeight,
+void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
+	double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
+	bool nightLightsAreActive, bool isExterior, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager)
@@ -709,15 +759,17 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent,
-		latitude, parallaxSky, ceilingHeight, openDoors, fadingVoxels, voxelGrid,
-		entityManager, gameWorldPixels);
+	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
+		latitude, parallaxSky, nightLightsAreActive, isExterior, ceilingHeight, openDoors,
+		fadingVoxels, voxelGrid, entityManager, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.
 	const SoftwareRenderer::ProfilerData swProfilerData = this->softwareRenderer.getProfilerData();
 	this->profilerData.width = swProfilerData.width;
 	this->profilerData.height = swProfilerData.height;
+	this->profilerData.visFlatCount = swProfilerData.visFlatCount;
+	this->profilerData.visLightCount = swProfilerData.visLightCount;
 	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /
 		static_cast<double>(std::nano::den);
 

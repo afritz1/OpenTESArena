@@ -12,7 +12,7 @@ class Color;
 class Renderer;
 class Surface;
 class TextBox;
-class VoxelData;
+class VoxelDefinition;
 class VoxelGrid;
 
 enum class CardinalDirectionName;
@@ -27,8 +27,10 @@ private:
 
 	// Gets the display color for a pixel on the automap, given its associated floor
 	// and wall voxel data definitions.
-	static const Color &getPixelColor(const VoxelData &floorData, const VoxelData &wallData);
-	static const Color &getWildPixelColor(const VoxelData &floorData, const VoxelData &wallData);
+	static const Color &getPixelColor(const VoxelDefinition &floorDef,
+		const VoxelDefinition &wallDef);
+	static const Color &getWildPixelColor(const VoxelDefinition &floorDef,
+		const VoxelDefinition &wallDef);
 
 	// Generates a surface of the automap to be converted to a texture for rendering.
 	static Surface makeAutomap(const Int2 &playerVoxel, CardinalDirectionName playerDir,

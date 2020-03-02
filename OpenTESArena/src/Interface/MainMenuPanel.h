@@ -1,10 +1,12 @@
 #ifndef MAIN_MENU_PANEL_H
 #define MAIN_MENU_PANEL_H
 
+#include <optional>
 #include <string>
 
 #include "Button.h"
 #include "Panel.h"
+#include "../World/VoxelDefinition.h"
 
 class Renderer;
 
@@ -15,7 +17,8 @@ class MainMenuPanel : public Panel
 {
 private:
 	Button<Game&> loadButton, newButton;
-	Button<Game&, int, int, const std::string&, WeatherType, WorldType> quickStartButton;
+	Button<Game&, int, int, const std::string&,
+		const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType> quickStartButton;
 	Button<> exitButton;
 	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
 		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testWeatherUpButton,
@@ -23,6 +26,7 @@ private:
 	int testType, testIndex, testIndex2, testWeather; // Test values for quickstart.
 
 	std::string getSelectedTestName() const;
+	std::optional<VoxelDefinition::WallData::MenuType> getSelectedTestInteriorType() const;
 	WeatherType getSelectedTestWeatherType() const;
 	WorldType getSelectedTestWorldType() const;
 public:

@@ -153,10 +153,12 @@ void set##section##_##name(const std::string &value) \
 	OPTION_STRING(Audio, MidiConfig)
 	OPTION_INT(Audio, SoundChannels)
 	OPTION_INT(Audio, SoundResampling)
+	OPTION_BOOL(Audio, Is3DAudio)
 
 	OPTION_DOUBLE(Input, HorizontalSensitivity)
 	OPTION_DOUBLE(Input, VerticalSensitivity)
 	OPTION_DOUBLE(Input, CameraPitchLimit)
+	OPTION_BOOL(Input, PixelPerfectSelection)
 
 	OPTION_STRING(Misc, ArenaPath)
 	OPTION_STRING(Misc, ArenaSavesPath)

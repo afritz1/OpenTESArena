@@ -1,9 +1,23 @@
 #include <algorithm>
+#include <cmath>
 
 #include "EntityManager.h"
 #include "EntityType.h"
+#include "../Assets/MIFFile.h"
+#include "../Math/Constants.h"
+#include "../Math/MathUtils.h"
+#include "../Math/Matrix4.h"
+#include "../World/VoxelDataType.h"
 
 #include "components/debug/Debug.h"
+
+EntityManager::EntityVisibilityData::EntityVisibilityData() :
+	flatPosition(Double3::Zero), keyframe(EntityAnimationData::Keyframe(0, 0, 0))
+{
+	this->entity = nullptr;
+	this->anglePercent = 0.0;
+	this->stateType = EntityAnimationData::StateType::Idle;
+}
 
 template <typename T>
 int EntityManager::EntityGroup<T>::getCount() const
@@ -327,8 +341,12 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 
 int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) const
 {
-	DebugAssert(outEntities != nullptr);
-	DebugAssert(outSize >= 0);
+	// Apparently std::vector::data() can be either null or non-null when the container is empty,
+	// so can't assume the given pointer is not null.
+	if ((outEntities == nullptr) || (outSize == 0))
+	{
+		return 0;
+	}
 
 	// Fill the output buffer with as many entities as will fit.
 	int writeIndex = 0;
@@ -355,21 +373,127 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
-const EntityData *EntityManager::getEntityData(int flatIndex) const
+const EntityDefinition *EntityManager::getEntityDef(int flatIndex) const
 {
-	const auto iter = std::find_if(this->entityData.begin(), this->entityData.end(),
-		[flatIndex](const EntityData &data)
+	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
+		[flatIndex](const EntityDefinition &def)
 	{
-		return data.getFlatIndex() == flatIndex;
+		return def.getFlatIndex() == flatIndex;
 	});
 
-	return (iter != this->entityData.end()) ? &(*iter) : nullptr;
+	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
 }
 
-EntityData *EntityManager::addEntityData(EntityData &&data)
+EntityDefinition *EntityManager::addEntityDef(EntityDefinition &&def)
 {
-	this->entityData.push_back(std::move(data));
-	return &this->entityData.back();
+	this->entityDefs.push_back(std::move(def));
+	return &this->entityDefs.back();
+}
+
+void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
+	const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid,
+	EntityVisibilityData &outVisData) const
+{
+	outVisData.entity = &entity;
+	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
+	const EntityAnimationData &entityAnimData = entityDef.getAnimationData();
+
+	// Get active state
+	const EntityAnimationData::Instance &animInstance = entity.getAnimation();
+	const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
+	const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
+
+	// Calculate state index based on entity direction relative to camera.
+	const double animAngle = [&entity, &eye2D, &cameraDir, stateCount]()
+	{
+		if (entity.getEntityType() == EntityType::Static)
+		{
+			// Static entities always face the camera.
+			return 0.0;
+		}
+		else if (entity.getEntityType() == EntityType::Dynamic)
+		{
+			// Dynamic entities are angle-dependent.
+			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
+			const Double2 &entityDir = dynamicEntity.getDirection();
+			const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
+
+			const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
+			const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);
+
+			// Use the difference of the two vectors as the angle vector.
+			const Double2 resultDir = entityDir - diffDir;
+			const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir.y, resultDir.x);
+
+			// Angle bias so the final direction is centered within its angle range.
+			const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
+
+			return std::fmod(resultAngle + angleBias, Constants::TwoPi);
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(double,
+				std::to_string(static_cast<int>(entity.getEntityType())));
+		}
+	}();
+
+	outVisData.anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
+
+	const int stateIndex = [&outVisData, stateCount]()
+	{
+		const int index = static_cast<int>(static_cast<double>(stateCount) * outVisData.anglePercent);
+		return std::clamp(index, 0, stateCount - 1);
+	}();
+
+	DebugAssertIndex(stateList, stateIndex);
+	const EntityAnimationData::State &animState = stateList[stateIndex];
+	outVisData.stateType = animState.getType();
+
+	// Get the entity's current animation frame (dimensions, texture, etc.).
+	outVisData.keyframe = [&entity, &entityAnimData, &animInstance, stateIndex, &animState]()
+		-> const EntityAnimationData::Keyframe&
+	{
+		const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
+		const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
+		return keyframes.get(keyframeIndex);
+	}();
+
+	const double flatWidth = outVisData.keyframe.getWidth();
+	const double flatHeight = outVisData.keyframe.getHeight();
+	const double flatHalfWidth = flatWidth * 0.50;
+
+	const Double2 &entityPos = entity.getPosition();
+	const double entityPosX = entityPos.x;
+	const double entityPosZ = entityPos.y;
+
+	const double flatYOffset = static_cast<double>(-entityDef.getYOffset()) / MIFFile::ARENA_UNITS;
+
+	// If the entity is in a raised platform voxel, they are set on top of it.
+	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
+	{
+		const Int2 entityVoxelPos(
+			static_cast<int>(entityPos.x),
+			static_cast<int>(entityPos.y));
+		const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
+		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+
+		if (voxelDef.dataType == VoxelDataType::Raised)
+		{
+			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
+			return (raised.yOffset + raised.ySize) * ceilingHeight;
+		}
+		else
+		{
+			// No raised platform offset.
+			return 0.0;
+		}
+	}();
+
+	// Bottom center of flat.
+	outVisData.flatPosition = Double3(
+		entityPosX,
+		ceilingHeight + flatYOffset + raisedPlatformYOffset,
+		entityPosZ);
 }
 
 void EntityManager::remove(int id)
@@ -406,7 +530,7 @@ void EntityManager::clear()
 	this->staticGroup.clear();
 	this->dynamicGroup.clear();
 
-	this->entityData.clear();
+	this->entityDefs.clear();
 
 	this->freeIDs.clear();
 	this->nextID = 0;

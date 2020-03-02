@@ -2,6 +2,8 @@
 
 #include "MusicFile.h"
 #include "MusicName.h"
+#include "../World/ClimateType.h"
+#include "../World/LocationType.h"
 #include "../World/WeatherType.h"
 
 namespace
@@ -61,6 +63,22 @@ namespace
 		{ WeatherType::Overcast2, MusicName::Overcast },
 		{ WeatherType::SnowOvercast2, MusicName::Snowing }
 	};
+
+	// Mappings of location types to non-desert jingles.
+	const std::unordered_map<LocationType, MusicName> LocationJingles =
+	{
+		{ LocationType::CityState, MusicName::CityEnter },
+		{ LocationType::Town, MusicName::TownEnter },
+		{ LocationType::Village, MusicName::VillageEnter }
+	};
+
+	// Mappings of location types to desert jingles.
+	const std::unordered_map<LocationType, MusicName> DesertLocationJingles =
+	{
+		{ LocationType::CityState, MusicName::ArabCityEnter },
+		{ LocationType::Town, MusicName::ArabTownEnter },
+		{ LocationType::Village, MusicName::ArabVillageEnter }
+	};
 }
 
 const std::string &MusicFile::fromName(MusicName musicName)
@@ -72,5 +90,17 @@ const std::string &MusicFile::fromName(MusicName musicName)
 MusicName MusicFile::fromWeather(WeatherType weatherType)
 {
 	const MusicName musicName = WeatherMusicNames.at(weatherType);
+	return musicName;
+}
+
+MusicName MusicFile::jingleFromLocationAndClimate(LocationType locationType, ClimateType climateType)
+{
+	const MusicName musicName = [locationType, climateType]()
+	{
+		const bool isDesert = climateType == ClimateType::Desert;
+		const auto &jingleMap = isDesert ? DesertLocationJingles : LocationJingles;
+		return jingleMap.at(locationType);
+	}();
+
 	return musicName;
 }

@@ -16,7 +16,7 @@ class Entity
 private:
 	EntityAnimationData::Instance animation;
 	int id;
-	int dataIndex; // EntityData index in entity manager.
+	int dataIndex; // EntityDefinition index in entity manager.
 protected:
 	Double2 position;
 public:

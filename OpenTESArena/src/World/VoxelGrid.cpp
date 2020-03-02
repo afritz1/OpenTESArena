@@ -16,12 +16,7 @@ VoxelGrid::VoxelGrid(int width, int height, int depth)
 
 int VoxelGrid::getIndex(int x, int y, int z) const
 {
-	DebugAssert(x >= 0);
-	DebugAssert(y >= 0);
-	DebugAssert(z >= 0);
-	DebugAssert(x < this->width);
-	DebugAssert(y < this->height);
-	DebugAssert(z < this->depth);
+	DebugAssert(this->coordIsValid(x, y, z));
 	return x + (y * this->width) + (z * this->width * this->height);
 }
 
@@ -57,6 +52,12 @@ int VoxelGrid::getDepth() const
 	return this->depth;
 }
 
+bool VoxelGrid::coordIsValid(int x, int y, int z) const
+{
+	return (x >= 0) && (x < this->width) && (y >= 0) && (y < this->height) &&
+		(z >= 0) && (z < this->depth);
+}
+
 uint16_t *VoxelGrid::getVoxels()
 {
 	return this->voxels.data();
@@ -73,21 +74,34 @@ uint16_t VoxelGrid::getVoxel(int x, int y, int z) const
 	return this->voxels.data()[index];
 }
 
-VoxelData &VoxelGrid::getVoxelData(uint16_t id)
+VoxelDefinition &VoxelGrid::getVoxelDef(uint16_t id)
 {
-	return this->voxelData.at(id);
+	return this->voxelDefs.at(id);
 }
 
-const VoxelData &VoxelGrid::getVoxelData(uint16_t id) const
+const VoxelDefinition &VoxelGrid::getVoxelDef(uint16_t id) const
 {
-	return this->voxelData.at(id);
+	return this->voxelDefs.at(id);
 }
 
-uint16_t VoxelGrid::addVoxelData(const VoxelData &voxelData)
+std::optional<uint16_t> VoxelGrid::findVoxelDef(const VoxelDefPredicate &predicate) const
 {
-	this->voxelData.push_back(voxelData);
+	const auto iter = std::find_if(this->voxelDefs.begin(), this->voxelDefs.end(), predicate);
+	if (iter != this->voxelDefs.end())
+	{
+		return static_cast<uint16_t>(std::distance(this->voxelDefs.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
 
-	return static_cast<uint16_t>(this->voxelData.size() - 1);
+uint16_t VoxelGrid::addVoxelDef(const VoxelDefinition &voxelDef)
+{
+	this->voxelDefs.push_back(voxelDef);
+
+	return static_cast<uint16_t>(this->voxelDefs.size() - 1);
 }
 
 void VoxelGrid::setVoxel(int x, int y, int z, uint16_t id)

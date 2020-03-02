@@ -16,8 +16,10 @@
 #include "../Entities/EntityManager.h"
 #include "../Entities/GenderName.h"
 #include "../Entities/Player.h"
+#include "../Interface/TextAlignment.h"
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
+#include "../Media/FontName.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
@@ -49,12 +51,41 @@ namespace
 		{ WeatherType::Overcast2, 30.0 },
 		{ WeatherType::SnowOvercast2, 20.0 }
 	};
+
+	// Colors for UI text.
+	const Color TriggerTextColor(215, 121, 8);
+	const Color TriggerTextShadowColor(12, 12, 24);
+	const Color ActionTextColor(195, 0, 0);
+	const Color ActionTextShadowColor(12, 12, 24);
+	const Color EffectTextColor(251, 239, 77);
+	const Color EffectTextShadowColor(190, 113, 0);
 }
 
 // One real second = twenty game seconds.
 const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
+const double GameData::CHASM_ANIM_PERIOD = 1.0 / 2.0;
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
+
+const Clock GameData::Midnight(0, 0, 0);
+const Clock GameData::Night1(0, 1, 0);
+const Clock GameData::EarlyMorning(3, 0, 0);
+const Clock GameData::Morning(6, 0, 0);
+const Clock GameData::Noon(12, 0, 0);
+const Clock GameData::Afternoon(12, 1, 0);
+const Clock GameData::Evening(18, 0, 0);
+const Clock GameData::Night2(21, 0, 0);
+
+const Clock GameData::AmbientStartBrightening(6, 0, 0);
+const Clock GameData::AmbientEndBrightening(6, 15, 0);
+const Clock GameData::AmbientStartDimming(17, 45, 0);
+const Clock GameData::AmbientEndDimming(18, 0, 0);
+
+const Clock GameData::LamppostActivate(17, 45, 0);
+const Clock GameData::LamppostDeactivate(6, 15, 0);
+
+const Clock GameData::MusicSwitchToDay(6, 19, 0);
+const Clock GameData::MusicSwitchToNight(17, 45, 0);
 
 GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	: player(std::move(player))
@@ -101,6 +132,8 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeather(miscAssets.getExeData());
+
+	this->chasmAnimSeconds = 0.0;
 }
 
 GameData::~GameData()
@@ -234,17 +267,39 @@ MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &ran
 	}
 }
 
-void GameData::loadInterior(const MIFFile &mif, const Location &location,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+bool GameData::nightMusicIsActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeDayMusicChange =
+		clockTime < GameData::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange =
+		clockTime >= GameData::MusicSwitchToNight.getPreciseTotalSeconds();
+	return beforeDayMusicChange || afterNightMusicChange;
+}
+
+bool GameData::nightLightsAreActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate =
+		clockTime < GameData::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate =
+		clockTime >= GameData::LamppostActivate.getPreciseTotalSeconds();
+	return beforeLamppostDeactivate || afterLamppostActivate;
+}
+
+void GameData::loadInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	// Call interior WorldData loader.
 	const auto &exeData = miscAssets.getExeData();
 	this->worldData = std::make_unique<InteriorWorldData>(
-		InteriorWorldData::loadInterior(mif, exeData));
+		InteriorWorldData::loadInterior(interiorType, mif, exeData));
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -262,8 +317,9 @@ void GameData::loadInterior(const MIFFile &mif, const Location &location,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+void GameData::enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+	const Int2 &returnVoxel, const MiscAssets &miscAssets, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	DebugAssert(this->worldData.get() != nullptr);
 	DebugAssert(this->worldData->getActiveWorldType() != WorldType::Interior);
@@ -272,14 +328,15 @@ void GameData::enterInterior(const MIFFile &mif, const Int2 &returnVoxel,
 	DebugAssert(exterior.getInterior() == nullptr);
 
 	const auto &exeData = miscAssets.getExeData();
-	InteriorWorldData interior = InteriorWorldData::loadInterior(mif, exeData);
+	InteriorWorldData interior = InteriorWorldData::loadInterior(interiorType, mif, exeData);
 
 	// Give the interior world data to the active exterior.
 	exterior.enterInterior(std::move(interior), returnVoxel);
 
 	// Set interior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *exterior.getInterior(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = exterior.getInterior()->getStartPoints().front();
@@ -308,7 +365,8 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 
 	// Set exterior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), exterior, this->location, miscAssets,
+		textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 startPoint(
@@ -327,11 +385,12 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 	const double fogDistance = GameData::getFogDistanceFromWeather(this->weatherType);
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+	VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Dungeon ID must be for a named dungeon, not main quest dungeon.
 	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
@@ -345,20 +404,21 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 	const int widthChunks = 2;
 	const int depthChunks = 1;
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
-		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData));
+		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));
+
+	// Set location.
+	this->location = Location::makeDungeon(localDungeonID, provinceID);
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
 		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
-
-	// Set location.
-	this->location = Location::makeDungeon(localDungeonID, provinceID);
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
@@ -368,8 +428,8 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 }
 
 void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-	const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Verify that the wilderness block coordinates are valid (0..63).
 	DebugAssertMsg((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
@@ -387,21 +447,22 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	const int depthChunks = 2;
 	const bool isArtifactDungeon = false;
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
-		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData));
+		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));
+
+	// Set location (since wilderness dungeons aren't their own location, use a placeholder
+	// value for testing).
+	this->location = Location::makeSpecialCase(Location::SpecialCaseType::WildDungeon, provinceID);
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
 		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
-
-	// Set location (since wilderness dungeons aren't their own location, use a placeholder
-	// value for testing).
-	this->location = Location::makeSpecialCase(Location::SpecialCaseType::WildDungeon, provinceID);
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
@@ -424,18 +485,19 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 		mif, climateType, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
+	// Set location.
+	this->location = Location::makeCity(localCityID, provinceID);
+
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
-
-	// Set location.
-	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
@@ -447,7 +509,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
@@ -515,18 +577,19 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		localCityID, provinceID, mif, cityDim, isCoastal, reservedBlocks, startPosition,
 		weatherType, this->date.getDay(), starCount, miscAssets, textureManager));
 
+	// Set location.
+	this->location = Location::makeCity(localCityID, provinceID);
+
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
-
-	// Set location.
-	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
@@ -538,7 +601,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gatePos,
@@ -551,9 +614,13 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 		localCityID, provinceID, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
+	// Set location.
+	this->location = Location::makeCity(localCityID, provinceID);
+
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
+		miscAssets, textureManager, renderer);
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
@@ -585,9 +652,6 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
-	// Set location.
-	this->location = Location::makeCity(localCityID, provinceID);
-
 	// Regular sky palette based on weather.
 	const std::vector<uint32_t> skyPalette =
 		GameData::makeExteriorSkyPalette(weatherType, textureManager);
@@ -598,22 +662,7 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->clock.nightLightsAreActive());
-}
-
-TimedTextBox &GameData::getTriggerText()
-{
-	return this->triggerText;
-}
-
-TimedTextBox &GameData::getActionText()
-{
-	return this->actionText;
-}
-
-TimedTextBox &GameData::getEffectText()
-{
-	return this->effectText;
+	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
 const std::array<WeatherType, 36> &GameData::getWeathersArray() const
@@ -663,6 +712,12 @@ double GameData::getDaytimePercent() const
 		static_cast<double>(Clock::SECONDS_IN_A_DAY);
 }
 
+double GameData::getChasmAnimPercent() const
+{
+	const double percent = this->chasmAnimSeconds / GameData::CHASM_ANIM_PERIOD;
+	return std::clamp(percent, 0.0, Constants::JustBelowOne);
+}
+
 double GameData::getFogDistance() const
 {
 	return this->fogDistance;
@@ -699,18 +754,14 @@ double GameData::getAmbientPercent() const
 
 		// Time ranges where the ambient light changes. The start times are inclusive,
 		// and the end times are exclusive.
-		const double startBrighteningTime =
-			Clock::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime =
-			Clock::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime =
-			Clock::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime =
-			Clock::AmbientEndDimming.getPreciseTotalSeconds();
+		const double startBrighteningTime = GameData::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime = GameData::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime = GameData::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime = GameData::AmbientEndDimming.getPreciseTotalSeconds();
 
 		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
 		// some values here that make testing easier.
-		const double minAmbient = 0.30;
+		const double minAmbient = 0.15;
 		const double maxAmbient = 1.0;
 
 		if ((clockPreciseSeconds >= endBrighteningTime) &&
@@ -756,6 +807,115 @@ double GameData::getBetterAmbientPercent() const
 std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
 {
 	return this->onLevelUpVoxelEnter;
+}
+
+bool GameData::triggerTextIsVisible() const
+{
+	return this->triggerText.hasRemainingDuration();
+}
+
+bool GameData::actionTextIsVisible() const
+{
+	return this->actionText.hasRemainingDuration();
+}
+
+bool GameData::effectTextIsVisible() const
+{
+	return this->effectText.hasRemainingDuration();
+}
+
+void GameData::getTriggerTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->triggerText.textBox->getTexture();
+	}
+}
+
+void GameData::getActionTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->actionText.textBox->getTexture();
+	}
+}
+
+void GameData::getEffectTextRenderInfo(const Texture **outTexture) const
+{
+	if (outTexture != nullptr)
+	{
+		*outTexture = &this->effectText.textBox->getTexture();
+	}
+}
+
+void GameData::setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	const int lineSpacing = 1;
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		TriggerTextColor,
+		TextAlignment::Center,
+		lineSpacing,
+		fontManager);
+
+	const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+
+	// Create the text box for display (set position to zero; the renderer will
+	// decide where to draw it).
+	auto textBox = std::make_unique<TextBox>(
+		Int2(0, 0),
+		richText,
+		&shadowData,
+		renderer);
+
+	// Assign the text box and its duration to the triggered text member.
+	const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
+	this->triggerText = TimedTextBox(duration, std::move(textBox));
+}
+
+void GameData::setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	const RichTextString richText(
+		text,
+		FontName::Arena,
+		ActionTextColor,
+		TextAlignment::Center,
+		fontManager);
+
+	const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+
+	// Create the text box for display (set position to zero; the renderer will decide
+	// where to draw it).
+	auto textBox = std::make_unique<TextBox>(
+		Int2(0, 0),
+		richText,
+		&shadowData,
+		renderer);
+
+	// Assign the text box and its duration to the action text.
+	const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
+	this->actionText = TimedTextBox(duration, std::move(textBox));
+}
+
+void GameData::setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+{
+	// @todo
+}
+
+void GameData::resetTriggerText()
+{
+	this->triggerText.reset();
+}
+
+void GameData::resetActionText()
+{
+	this->actionText.reset();
+}
+
+void GameData::resetEffectText()
+{
+	this->effectText.reset();
 }
 
 void GameData::updateWeather(const ExeData &exeData)
@@ -824,4 +984,24 @@ void GameData::tickTime(double dt, Game &game)
 		// Increment the day.
 		this->date.incrementDay();
 	}
+
+	// Tick chasm animation.
+	this->chasmAnimSeconds += dt;
+	if (this->chasmAnimSeconds >= GameData::CHASM_ANIM_PERIOD)
+	{
+		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, GameData::CHASM_ANIM_PERIOD);
+	}
+
+	// Tick on-screen text messages.
+	auto tryTickTextBox = [dt](TimedTextBox &textBox)
+	{
+		if (textBox.hasRemainingDuration())
+		{
+			textBox.remainingDuration -= dt;
+		}
+	};
+
+	tryTickTextBox(this->triggerText);
+	tryTickTextBox(this->actionText);
+	tryTickTextBox(this->effectText);
 }

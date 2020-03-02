@@ -5,6 +5,8 @@
 
 // Static class for accessing Arena music filenames.
 
+enum class ClimateType;
+enum class LocationType;
 enum class MusicName;
 enum class WeatherType;
 
@@ -16,6 +18,7 @@ private:
 public:
 	static const std::string &fromName(MusicName musicName);
 	static MusicName fromWeather(WeatherType weatherType);
+	static MusicName jingleFromLocationAndClimate(LocationType locationType, ClimateType climateType);
 };
 
 #endif

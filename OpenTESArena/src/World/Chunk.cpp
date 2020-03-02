@@ -10,11 +10,11 @@ Chunk::Chunk(int x, int y, int height)
 	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->voxels.fill(0);
 
-	this->voxelData.fill(VoxelData());
-	this->activeVoxelData.fill(false);
+	this->voxelDefs.fill(VoxelDefinition());
+	this->activeVoxelDefs.fill(false);
 
 	// Let the first voxel data (air) be usable immediately. All default voxel IDs can safely point to it.
-	this->activeVoxelData.front() = true;
+	this->activeVoxelDefs.front() = true;
 
 	this->x = x;
 	this->y = y;
@@ -50,17 +50,17 @@ VoxelID Chunk::get(int x, int y, int z) const
 	return this->voxels.get(x, y, z);
 }
 
-const VoxelData &Chunk::getVoxelData(VoxelID id) const
+const VoxelDefinition &Chunk::getVoxelDef(VoxelID id) const
 {
-	DebugAssert(id < this->voxelData.size());
-	DebugAssert(this->activeVoxelData[id]);
-	return this->voxelData[id];
+	DebugAssert(id < this->voxelDefs.size());
+	DebugAssert(this->activeVoxelDefs[id]);
+	return this->voxelDefs[id];
 }
 
-int Chunk::debug_getVoxelDataCount() const
+int Chunk::debug_getVoxelDefCount() const
 {
 	return static_cast<int>(
-		std::count(this->activeVoxelData.begin(), this->activeVoxelData.end(), true));
+		std::count(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), true));
 }
 
 void Chunk::set(int x, int y, int z, VoxelID value)
@@ -68,23 +68,23 @@ void Chunk::set(int x, int y, int z, VoxelID value)
 	this->voxels.set(x, y, z, value);
 }
 
-VoxelID Chunk::addVoxelData(VoxelData &&voxelData)
+VoxelID Chunk::addVoxelDef(VoxelDefinition &&voxelDef)
 {
 	// Find a place to add the voxel data.
-	const auto iter = std::find(this->activeVoxelData.begin(), this->activeVoxelData.end(), false);
+	const auto iter = std::find(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), false);
 
 	// If we ever hit this, we need more bits per voxel.
-	DebugAssert(iter != this->activeVoxelData.end());
+	DebugAssert(iter != this->activeVoxelDefs.end());
 
-	const VoxelID id = static_cast<VoxelID>(std::distance(this->activeVoxelData.begin(), iter));
-	this->voxelData[id] = std::move(voxelData);
-	this->activeVoxelData[id] = true;
+	const VoxelID id = static_cast<VoxelID>(std::distance(this->activeVoxelDefs.begin(), iter));
+	this->voxelDefs[id] = std::move(voxelDef);
+	this->activeVoxelDefs[id] = true;
 	return id;
 }
 
-void Chunk::removeVoxelData(VoxelID id)
+void Chunk::removeVoxelDef(VoxelID id)
 {
-	DebugAssert(id < this->voxelData.size());
-	this->voxelData[id] = VoxelData();
-	this->activeVoxelData[id] = false;
+	DebugAssert(id < this->voxelDefs.size());
+	this->voxelDefs[id] = VoxelDefinition();
+	this->activeVoxelDefs[id] = false;
 }

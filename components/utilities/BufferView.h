@@ -10,7 +10,7 @@
 
 // Useful when separating a container from the usage of its data.
 
-template <typename T>
+template <typename T, bool Checked = true>
 class BufferView
 {
 private:
@@ -37,11 +37,15 @@ public:
 
 	void init(T *data, int count, int viewOffset, int viewCount)
 	{
-		DebugAssert(data != nullptr);
-		DebugAssert(count >= 0);
-		DebugAssert(viewOffset >= 0);
-		DebugAssert(viewCount >= 0);
-		DebugAssert((viewOffset + viewCount) <= count);
+		if constexpr (Checked)
+		{
+			DebugAssert(data != nullptr);
+			DebugAssert(count >= 0);
+			DebugAssert(viewOffset >= 0);
+			DebugAssert(viewCount >= 0);
+			DebugAssert((viewOffset + viewCount) <= count);
+		}
+		
 		this->data = data + viewOffset;
 		this->count = viewCount;
 	}
@@ -58,72 +62,115 @@ public:
 
 	T *get()
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+		
 		return this->data;
 	}
 
 	const T *get() const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->data;
 	}
 
 	T &get(int index)
 	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->count);
+		}
+
 		return this->data[index];
 	}
 
 	const T &get(int index) const
 	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->count);
+		}
+
 		return this->data[index];
 	}
 
 	T *end()
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->data + this->count;
 	}
 
 	const T *end() const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->data + this->count;
 	}
 
 	int getCount() const
 	{
-		DebugAssert(this->isValid());
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		return this->count;
 	}
 
 	void set(int index, const T &value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
+
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->count);
+		}
+
 		this->data[index] = value;
 	}
 
 	void set(int index, T &&value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
+
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+			DebugAssert(index >= 0);
+			DebugAssert(index < this->count);
+		}
+
 		this->data[index] = std::move(value);
 	}
 
 	void fill(const T &value)
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
-		DebugAssert(this->isValid());
+
+		if constexpr (Checked)
+		{
+			DebugAssert(this->isValid());
+		}
+
 		std::fill(this->data, this->end(), value);
 	}
 
@@ -133,5 +180,8 @@ public:
 		this->count = 0;
 	}
 };
+
+template <typename T>
+using UncheckedBufferView = BufferView<T, false>;
 
 #endif

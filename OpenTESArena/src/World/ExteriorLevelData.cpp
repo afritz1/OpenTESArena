@@ -185,10 +185,10 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 	// match the given menu type.
 	auto generateNames = [this, localCityID, provinceID, &citySeed, &random, isCoastal, isCity,
 		gridWidth, gridDepth, &miscAssets, &exeData, globalCityID, &localCityPoint](
-			VoxelData::WallData::MenuType menuType)
+			VoxelDefinition::WallData::MenuType menuType)
 	{
-		if ((menuType == VoxelData::WallData::MenuType::Equipment) ||
-			(menuType == VoxelData::WallData::MenuType::Temple))
+		if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
+			(menuType == VoxelDefinition::WallData::MenuType::Temple))
 		{
 			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 			random.srand(citySeed);
@@ -321,9 +321,9 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 			{
 				const auto &voxelGrid = this->getVoxelGrid();
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
-				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-				return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
-					(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
+				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
 			}();
 
 			if (matchesTargetType)
@@ -332,7 +332,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 				int hash;
 				std::string name;
 
-				if (menuType == VoxelData::WallData::MenuType::Tavern)
+				if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
 				{
 					// Tavern.
 					int m, n;
@@ -345,7 +345,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 
 					name = createTavernName(m, n);
 				}
-				else if (menuType == VoxelData::WallData::MenuType::Equipment)
+				else if (menuType == VoxelDefinition::WallData::MenuType::Equipment)
 				{
 					// Equipment store.
 					int m, n;
@@ -389,7 +389,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 		}
 
 		// Fix some edge cases used with the main quest.
-		if ((menuType == VoxelData::WallData::MenuType::Temple) &&
+		if ((menuType == VoxelDefinition::WallData::MenuType::Temple) &&
 			((globalCityID == 2) || (globalCityID == 0xE0)))
 		{
 			// Added an index variable since Arena apparently stores its menu names in a way
@@ -412,9 +412,9 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 		}
 	};
 
-	generateNames(VoxelData::WallData::MenuType::Tavern);
-	generateNames(VoxelData::WallData::MenuType::Equipment);
-	generateNames(VoxelData::WallData::MenuType::Temple);
+	generateNames(VoxelDefinition::WallData::MenuType::Tavern);
+	generateNames(VoxelDefinition::WallData::MenuType::Equipment);
+	generateNames(VoxelDefinition::WallData::MenuType::Temple);
 }
 
 void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int provinceID,
@@ -423,7 +423,7 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
 	auto generateNames = [this, localCityID, provinceID, &miscAssets](
-		int wildX, int wildY, VoxelData::WallData::MenuType menuType)
+		int wildX, int wildY, VoxelDefinition::WallData::MenuType menuType)
 	{
 		const auto &exeData = miscAssets.getExeData();
 		const uint32_t wildChunkSeed = (wildY << 16) + wildX;
@@ -486,9 +486,9 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 				const auto &voxelGrid = this->getVoxelGrid();
 				const bool isCity = false; // Wilderness only.
 				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
-				const VoxelData &voxelData = voxelGrid.getVoxelData(voxelID);
-				return (voxelData.dataType == VoxelDataType::Wall) && voxelData.wall.isMenu() &&
-					(VoxelData::WallData::getMenuType(voxelData.wall.menuID, isCity) == menuType);
+				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
 			}();
 
 			if (matchesTargetType)
@@ -496,7 +496,7 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 				// Get the *MENU block's display name.
 				const std::string name = [menuType, &random, &createTavernName, &createTempleName]()
 				{
-					if (menuType == VoxelData::WallData::MenuType::Tavern)
+					if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
 					{
 						// Tavern.
 						const int m = random.next() % 23;
@@ -534,8 +534,8 @@ void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int prov
 	{
 		for (int x = 0; x < wildChunksPerSide; x++)
 		{
-			generateNames(x, y, VoxelData::WallData::MenuType::Tavern);
-			generateNames(x, y, VoxelData::WallData::MenuType::Temple);
+			generateNames(x, y, VoxelDefinition::WallData::MenuType::Tavern);
+			generateNames(x, y, VoxelDefinition::WallData::MenuType::Temple);
 		}
 	}
 }
@@ -997,9 +997,10 @@ Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }
 
-ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level,
-	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
-	int gridWidth, int gridDepth, const MiscAssets &miscAssets, TextureManager &textureManager)
+ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provinceID, 
+	const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount,
+	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
+	TextureManager &textureManager)
 {
 	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
 	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
@@ -1009,7 +1010,7 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
 	const auto &exeData = miscAssets.getExeData();
@@ -1021,8 +1022,6 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const MIFFile::Level &level
 	// Generate building names.
 	// @todo: pass these as arguments to loadPremadeCity() instead of hardcoding them.
 	const auto &cityData = miscAssets.getCityDataFile();
-	const int localCityID = 0;
-	const int provinceID = 8;
 	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	ArenaRandom random(citySeed);
 	const bool isCoastal = false;
@@ -1054,7 +1053,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	const auto &cityData = miscAssets.getCityDataFile();
 	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	ArenaRandom random(citySeed);
-	
+
 	// Generate the bulk of city data and write it into the temp buffers.
 	ExteriorLevelData::generateCity(localCityID, provinceID, cityDim, gridDepth, reservedBlocks,
 		startPosition, citySeed, random, miscAssets, tempFlor, tempMap1, tempMap2);
@@ -1066,7 +1065,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	const auto &exeData = miscAssets.getExeData();
@@ -1156,7 +1155,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 		infName, levelName);
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	const auto &exeData = miscAssets.getExeData();
@@ -1186,10 +1185,12 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 	return false;
 }
 
-void ExteriorLevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
+void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
+	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
-	LevelData::setActive(miscAssets, textureManager, renderer);
+	LevelData::setActive(nightLightsAreActive, worldData, location, miscAssets,
+		textureManager, renderer);
 
 	// @todo: fetch this palette from somewhere better.
 	COLFile col;

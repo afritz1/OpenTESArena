@@ -29,30 +29,6 @@ public:
 
 	static const int SECONDS_IN_A_DAY;
 
-	// Clock times for when each time range begins.
-	static const Clock Midnight;
-	static const Clock Night1;
-	static const Clock EarlyMorning;
-	static const Clock Morning;
-	static const Clock Noon;
-	static const Clock Afternoon;
-	static const Clock Evening;
-	static const Clock Night2;
-
-	// Clock times for changes in ambient lighting.
-	static const Clock AmbientStartBrightening;
-	static const Clock AmbientEndBrightening;
-	static const Clock AmbientStartDimming;
-	static const Clock AmbientEndDimming;
-
-	// Clock times for lamppost activation.
-	static const Clock LamppostActivate;
-	static const Clock LamppostDeactivate;
-
-	// Clock times for changes in music.
-	static const Clock MusicSwitchToDay;
-	static const Clock MusicSwitchToNight;
-
 	// Gets the current hours in 24-hour format.
 	int getHours24() const;
 
@@ -77,12 +53,6 @@ public:
 
 	// Returns whether the current hour is before noon.
 	bool isAM() const;
-
-	// Returns whether the current music should be for day or night.
-	bool nightMusicIsActive() const;
-
-	// Returns whether night lights (i.e., lampposts) should currently be active.
-	bool nightLightsAreActive() const;
 
 	// Increments the hour by 1.
 	void incrementHour();

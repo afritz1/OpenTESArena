@@ -232,11 +232,13 @@ const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
 // Audio.
 const std::string OptionsPanel::SOUND_CHANNELS_NAME = "Sound Channels";
 const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
+const std::string OptionsPanel::IS_3D_AUDIO_NAME = "Is 3D Audio";
 
 // Input.
 const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 const std::string OptionsPanel::VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
 const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
+const std::string OptionsPanel::PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Selection";
 
 // Misc.
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
@@ -561,6 +563,20 @@ OptionsPanel::OptionsPanel(Game &game)
 	soundResamplingOption->setDisplayOverrides({ "Default", "Fastest", "Medium", "Best" });
 	this->audioOptions.push_back(std::move(soundResamplingOption));
 
+	this->audioOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::IS_3D_AUDIO_NAME,
+		"Determines whether sounds in the game world have a 3D position.\nSet to false for classic behavior.",
+		options.getAudio_Is3DAudio(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setAudio_Is3DAudio(value);
+
+		auto &audioManager = game.getAudioManager();
+		audioManager.set3D(value);
+	}));
+
 	// Create input options.
 	this->inputOptions.push_back(std::make_unique<DoubleOption>(
 		OptionsPanel::HORIZONTAL_SENSITIVITY_NAME,
@@ -611,6 +627,17 @@ OptionsPanel::OptionsPanel(Game &game)
 		const Double3 lookAtPoint = player.getPosition() +
 			Double3(groundDirection.x, 0.0, groundDirection.y);
 		player.lookAt(lookAtPoint);
+	}));
+
+	this->inputOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::PIXEL_PERFECT_SELECTION_NAME,
+		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
+		options.getInput_PixelPerfectSelection(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setInput_PixelPerfectSelection(value);
 	}));
 
 	// Create miscellaneous options.

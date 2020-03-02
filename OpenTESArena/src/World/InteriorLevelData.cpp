@@ -35,7 +35,7 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, i
 		Color::Gray.toARGB() : Color::Black.toARGB();
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
@@ -168,7 +168,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	levelData.skyColor = Color::Black.toARGB();
 
 	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelData(VoxelData());
+	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
@@ -227,10 +227,12 @@ void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &
 	}
 }
 
-void InteriorLevelData::setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
+void InteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
+	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
-	LevelData::setActive(miscAssets, textureManager, renderer);
+	LevelData::setActive(nightLightsAreActive, worldData, location, miscAssets,
+		textureManager, renderer);
 
 	// Set interior sky color.
 	renderer.setSkyPalette(&this->skyColor, 1);

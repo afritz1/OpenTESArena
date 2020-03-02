@@ -37,14 +37,16 @@ namespace
 		{ "SoundVolume", OptionType::Double },
 		{ "MidiConfig", OptionType::String },
 		{ "SoundChannels", OptionType::Int },
-		{ "SoundResampling", OptionType::Int }
+		{ "SoundResampling", OptionType::Int },
+		{ "Is3DAudio", OptionType::Bool }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> InputMappings =
 	{
 		{ "HorizontalSensitivity", OptionType::Double },
 		{ "VerticalSensitivity", OptionType::Double },
-		{ "CameraPitchLimit", OptionType::Double }
+		{ "CameraPitchLimit", OptionType::Double },
+		{ "PixelPerfectSelection", OptionType::Bool }
 	};
 
 	const std::vector<std::pair<std::string, OptionType>> MiscMappings =
@@ -394,7 +396,7 @@ void Options::setBool(const std::string &section, const std::string &key, bool v
 	}
 
 	Options::BoolMap &sectionMap = sectionIter->second.bools;
-	
+
 	// Check that the key exists. If not, add it.
 	auto iter = sectionMap.find(key);
 	if (iter == sectionMap.end())

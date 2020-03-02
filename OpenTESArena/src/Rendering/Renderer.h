@@ -53,6 +53,9 @@ public:
 		// Internal renderer resolution.
 		int width, height;
 
+		// Visible flats and lights.
+		int visFlatCount, visLightCount;
+
 		double frameTime;
 
 		ProfilerData();
@@ -117,6 +120,20 @@ public:
 	// Gets profiler data (timings, renderer properties, etc.).
 	const ProfilerData &getProfilerData() const;
 
+	// Tests whether an entity is intersected by the given ray. Intended for ray cast selection.
+	// 'pixelPerfect' determines whether the entity's texture is involved in the calculation.
+	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
+	// function because the exact method of testing may depend on the 3D representation of the entity.
+	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
+		int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
+		const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
+		const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const;
+
+	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
+	// dependent on renderer details.
+	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect) const;
+
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
 	// or outside the 320x200 limit when returned.
@@ -180,6 +197,8 @@ public:
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
 		bool flipped, const uint8_t *srcTexels, int width, int height, const Palette &palette);
+	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
@@ -204,9 +223,10 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, 
-		double ambient, double daytimePercent, double latitude, bool parallaxSky,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
+		double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
+		bool nightLightsAreActive, bool isExterior, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager);
 

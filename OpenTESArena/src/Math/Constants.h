@@ -1,8 +1,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#include <cmath>
-
 // Math constants.
 namespace Constants
 {
@@ -12,7 +10,7 @@ namespace Constants
 	constexpr double TwoPi = Pi * 2.0;
 	constexpr double DegToRad = Pi / 180.0;
 	constexpr double RadToDeg = 180.0 / Pi;
-	const double JustBelowOne = std::nextafter(1.0, 0.0);
+	constexpr double JustBelowOne = 1.0 - Epsilon;
 }
 
 #endif

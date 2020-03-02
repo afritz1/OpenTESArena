@@ -10,13 +10,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../Entities/EntityManager.h"
+#include "../Game/Options.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
 #include "../World/DistantSky.h"
 #include "../World/LevelData.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
+
+#include "components/utilities/BufferView.h"
 
 // This class runs the CPU-based 3D rendering for the application.
 
@@ -31,6 +35,7 @@ public:
 	struct ProfilerData
 	{
 		int width, height;
+		int visFlatCount, visLightCount;
 	};
 private:
 	struct VoxelTexel
@@ -64,6 +69,15 @@ private:
 		static SkyTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
 	};
 
+	struct ChasmTexel
+	{
+		double r, g, b;
+
+		ChasmTexel();
+
+		static ChasmTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+	};
+
 	struct VoxelTexture
 	{
 		static const int WIDTH = 64;
@@ -90,6 +104,15 @@ private:
 		SkyTexture();
 	};
 
+	struct ChasmTexture
+	{
+		static const int WIDTH = 320;
+		static const int HEIGHT = 100;
+		static const int TEXEL_COUNT = ChasmTexture::WIDTH * ChasmTexture::HEIGHT;
+
+		std::array<ChasmTexel, ChasmTexture::TEXEL_COUNT> texels;
+	};
+
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
 	struct Camera
 	{
@@ -104,7 +127,8 @@ private:
 		double rightAspectedX, rightAspectedZ; // Right * aspect components.
 		double frustumLeftX, frustumLeftZ; // Components of left edge of 2D frustum.
 		double frustumRightX, frustumRightZ; // Components of right edge of 2D frustum.
-		double fovY, zoom, aspect;
+		double fovX, fovY; // Horizontal and vertical field of view.
+		double zoom, aspect;
 		double yAngleRadians; // Angle of the camera above or below the horizon.
 		double yShear; // Projected Y-coordinate translation.
 
@@ -194,11 +218,21 @@ private:
 		// Distance at which fog is maximum.
 		double fogDistance;
 
-		// Returns whether the current clock time is before noon.
+		// Percent through the chasm animation.
+		double chasmAnimPercent;
+
+		// Whether the current clock time is before noon.
 		bool isAM;
 
+		// Whether street lights and building lights are on.
+		bool nightLightsAreActive;
+
+		// Whether the current location is strictly outdoors (does not count outdoor dungeons).
+		bool isExterior;
+
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
-			double ambient, double fogDistance);
+			double ambient, double fogDistance, double chasmAnimPercent, bool nightLightsAreActive,
+			bool isExterior);
 
 		const Double3 &getFogColor() const;
 	};
@@ -244,6 +278,10 @@ private:
 		void addTexture(EntityAnimationData::StateType stateType, int angleID, bool flipped,
 			const uint8_t *srcTexels, int width, int height, const Palette &palette);
 	};
+
+	// Each chasm texture group contains one animation's worth of textures.
+	using ChasmTextureGroup = std::vector<ChasmTexture>;
+	using ChasmTextureGroups = std::unordered_map<int, ChasmTextureGroup>;
 
 	// Visible flat data. A flat is a 2D surface always facing perpendicular to the Y axis,
 	// and opposite to the camera's XZ direction.
@@ -345,6 +383,25 @@ private:
 		void clear();
 	};
 
+	// Instance of an entity light in the world.
+	struct VisibleLight
+	{
+		Double3 position;
+		double radius;
+
+		void init(const Double3 &position, double radius);
+	};
+
+	// Data about a light and whether it's visible. Used with visible light determination.
+	struct LightVisibilityData
+	{
+		Double3 position;
+		double radius;
+		bool intersectsFrustum;
+
+		void init(const Double3 &position, double radius, bool intersectsFrustum);
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -376,15 +433,19 @@ private:
 			int threadsDone;
 			const std::vector<LevelData::DoorState> *openDoors;
 			const std::vector<LevelData::FadeState> *fadingVoxels;
+			const std::vector<VisibleLight> *visibleLights;
 			const VoxelGrid *voxelGrid;
 			const std::vector<VoxelTexture> *voxelTextures;
+			const ChasmTextureGroups *chasmTextureGroups;
 			std::vector<OcclusionData> *occlusion;
 			double ceilingHeight;
+			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
 			void init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-				const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+				const std::vector<LevelData::FadeState> &fadingVoxels,
+				const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
 				const std::vector<VoxelTexture> &voxelTextures,
-				std::vector<OcclusionData> &occlusion);
+				const ChasmTextureGroups &chasmTextureGroups, std::vector<OcclusionData> &occlusion);
 		};
 
 		struct Flats
@@ -392,10 +453,12 @@ private:
 			int threadsDone;
 			const Double3 *flatNormal;
 			const std::vector<VisibleFlat> *visibleFlats;
+			const std::vector<VisibleLight> *visibleLights;
 			const std::unordered_map<int, FlatTextureGroup> *flatTextureGroups;
 			bool doneSorting; // True when render threads can start rendering flats.
 
 			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
+				const std::vector<VisibleLight> &visibleLights,
 				const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups);
 		};
 
@@ -427,6 +490,9 @@ private:
 	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
 	//static const int DEFAULT_FLAT_TEXTURE_COUNT;
 
+	// Height ratio between normal pixels and tall pixels.
+	static const double TALL_PIXEL_RATIO;
+
 	// Amount of a sliding/raising door that is visible when fully open.
 	static const double DOOR_MIN_VISIBLE;
 
@@ -442,8 +508,10 @@ private:
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
+	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
+	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
 	std::vector<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
@@ -469,14 +537,26 @@ private:
 		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera, double ceilingHeight,
-		double fogDistance, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
+	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 	
 	// Gets the facing value for the far side of a chasm.
-	static VoxelData::Facing getInitialChasmFarFacing(int voxelX, int voxelZ,
+	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
 		const Double2 &eye, const Ray &ray);
-	static VoxelData::Facing getChasmFarFacing(int voxelX, int voxelZ,
-		VoxelData::Facing nearFacing, const Camera &camera, const Ray &ray);
+	static VoxelFacing getChasmFarFacing(int voxelX, int voxelZ,
+		VoxelFacing nearFacing, const Camera &camera, const Ray &ray);
+
+	// Converts the given chasm type to its chasm ID.
+	static int getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType);
+
+	// Returns whether the chasm type is emissive and ignores ambient shading.
+	static bool isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType);
+
+	// Tries to convert the chasm animation percent to the associated texture within the chasm
+	// texture group for the given chasm type.
+	static void getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
+		VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
+		const ChasmTexture **outTexture);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
@@ -485,6 +565,10 @@ private:
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
 	static double getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
 		const std::vector<LevelData::FadeState> &fadingVoxels);
+
+	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
+	// and the zoom of the camera (dependent on vertical field of view).
+	static double getYShear(double angleRadians, double zoom);
 
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
@@ -544,15 +628,15 @@ private:
 
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
-	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
+	static bool findInitialEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
 		bool flipped, const Double2 &nearPoint, const Double2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
-	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelData::Facing edgeFacing,
-		bool flipped, VoxelData::Facing nearFacing, const Double2 &nearPoint,
+	static bool findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
+		bool flipped, VoxelFacing nearFacing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
@@ -563,63 +647,112 @@ private:
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
 	static bool findInitialDoorIntersection(int voxelX, int voxelZ,
-		VoxelData::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
+		VoxelDefinition::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
 		const Double2 &farPoint, const Camera &camera, const Ray &ray, const VoxelGrid &voxelGrid,
 		RayHit &hit);
 
 	// Helper method for findDoorIntersection() for swinging doors.
 	static bool findSwingingDoorIntersection(int voxelX, int voxelZ, double percentOpen,
-		VoxelData::Facing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+		VoxelFacing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
-	static bool findDoorIntersection(int voxelX, int voxelZ, VoxelData::DoorData::Type doorType,
-		double percentOpen, VoxelData::Facing nearFacing, const Double2 &nearPoint,
-		const Double2 &farPoint, double nearU, RayHit &hit);
+	static bool findDoorIntersection(int voxelX, int voxelZ,
+		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
+		const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit);
 
-	// Casts a 3D ray from the default start point (eye) and returns the color.
-	// (Unused for now; keeping for reference).
-	//Double3 castRay(const Double3 &direction, const VoxelGrid &voxelGrid) const;
+	// Calculates light visibility data for a given entity.
+	static void getLightVisibilityData(const EntityManager::EntityVisibilityData &visData,
+		int lightIntensity, const Double2 &eye2D, const Double2 &cameraDir, double fovX,
+		double viewDistance, LightVisibilityData *outVisData);
+
+	// Temporary placeholder until each voxel has its own light list given to it when drawing.
+	static UncheckedBufferView<const VisibleLight> getVisibleLightsView(
+		const std::vector<VisibleLight> &visLights);
+
+	// Gets the amount of light at a point. Capped at 100% intensity if not unlimited.
+	// @todo: replace MaxLights template param with actual given lights so the for loop can be
+	// completely inlined for each light count.
+	template <int MaxLights, bool CappedSum>
+	static double getLightContributionAtPoint(const Double2 &point,
+		const UncheckedBufferView<const VisibleLight> &lights);
 
 	// Low-level texture sampling function.
 	template <int FilterMode, bool Transparency>
 	static void sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
 		double *r, double *g, double *b, double *emission, bool *transparent);
 
+	// Low-level screen-space chasm texture sampling function.
+	static void sampleChasmTexture(const ChasmTexture &texture, double screenXPercent,
+		double screenYPercent, double *r, double *g, double *b);
+
 	// Low-level shader for wall pixel rendering. Template parameters are used for
 	// compile-time generation of shader permutations.
 	template <bool Fading>
 	static void drawPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with no perspective or transparency.
 	static void drawPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		double fadePercent, const ShadingInfo &shadingInfo, OcclusionData &occlusion,
-		const FrameView &frame);
+		double fadePercent, double lightContributionPercent, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Low-level shader for perspective pixel rendering.
 	template <bool Fading>
 	static void drawPerspectivePixelsShader(int x, const DrawRange &drawRange,
 		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
 		const Double3 &normal, const VoxelTexture &texture, double fadePercent,
-		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+		const UncheckedBufferView<const VisibleLight> &lights, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with perspective but no transparency. The pixel drawing order is 
 	// top to bottom, so the start and end values should be passed with that in mind.
 	static void drawPerspectivePixels(int x, const DrawRange &drawRange, const Double2 &startPoint,
 		const Double2 &endPoint, double depthStart, double depthEnd, const Double3 &normal,
-		const VoxelTexture &texture, double fadePercent, const ShadingInfo &shadingInfo,
+		const VoxelTexture &texture, double fadePercent,
+		const UncheckedBufferView<const VisibleLight> &lights, const ShadingInfo &shadingInfo,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels with transparency but no perspective.
 	static void drawTransparentPixels(int x, const DrawRange &drawRange, double depth, double u,
 		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
-		const ShadingInfo &shadingInfo, const OcclusionData &occlusion, const FrameView &frame);
+		double lightContributionPercent, const ShadingInfo &shadingInfo,
+		const OcclusionData &occlusion, const FrameView &frame);
+
+	// Low-level shader for chasm pixel rendering.
+	// @todo: consider template bool for treating screen-space texels as regular texels.
+	template <bool AmbientShading, bool TrueDepth>
+	static void drawChasmPixelsShader(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, const VoxelTexture &texture,
+		const ChasmTexture &chasmTexture, double lightContributionPercent,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+
+	// Draws a column of chasm pixels that can either be a wall texture or screen-space texture.
+	static void drawChasmPixels(int x, const DrawRange &drawRange, double depth, double u,
+		double vStart, double vEnd, const Double3 &normal, bool emissive, const VoxelTexture &texture,
+		const ChasmTexture &chasmTexture, double lightContributionPercent,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
+
+	// Low-level shader for perspective chasm pixel rendering. This shader only cares about sampling
+	// the screen-space texture instead of branching on chasm wall texels.
+	// @todo: consider template bool for treating screen-space texels as regular texels.
+	template <bool AmbientShading, bool TrueDepth>
+	static void drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
+		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+		const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
+		OcclusionData &occlusion, const FrameView &frame);
+
+	// Draws a column of chasm pixels with perspective and no transparency. The pixel drawing order
+	// is top to bottom, so the start and end values should be passed with that in mind.
+	static void drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
+		const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+		const Double3 &normal, bool emissive, const ChasmTexture &texture,
+		const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a column of pixels for a distant sky object (mountain, cloud, etc.). The 'emissive'
 	// parameter is for animated objects like volcanoes.
@@ -645,38 +778,97 @@ private:
 		double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
+	// Helper functions for drawing the initial voxel column.
+	static void drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawInitialVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawInitialVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
+		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
+		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
-		const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+
+	// Helper functions for drawing a voxel column.
+	static void drawVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+	static void drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-		const Ray &ray, VoxelData::Facing facing, const Double2 &nearPoint,
+		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
-		const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat,
 		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo, 
-		const FlatTexture &texture, const FrameView &frame);
+		const FlatTexture &texture, const UncheckedBufferView<const VisibleLight> &lights,
+		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, OcclusionData &occlusion,
-		const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
@@ -695,15 +887,17 @@ private:
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &voxelTextures, std::vector<OcclusionData> &occlusion,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const std::vector<VisibleLight> &visibleLights, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
+		std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
 		const std::vector<VisibleFlat> &visibleFlats,
-		const std::unordered_map<int, FlatTextureGroup> &flatTextures,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
+		const ShadingInfo &shadingInfo, const std::vector<VisibleLight> &visibleLights,
+		const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
@@ -715,13 +909,20 @@ public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
 
-	// Height ratio between normal pixels and tall pixels.
-	static const double TALL_PIXEL_RATIO;
-
 	bool isInited() const;
 
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const;
+
+	// Tries to write out selection data for the given entity. Returns whether selection data was
+	// successfully written.
+	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int textureID,
+		double anglePercent, EntityAnimationData::StateType animStateType, bool pixelPerfect,
+		bool *outIsSelected) const;
+
+	// Converts a screen point to a ray into the game world.
+	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		double fovY, double aspect);
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
@@ -743,6 +944,10 @@ public:
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
 	void setSkyPalette(const uint32_t *colors, int count);
+
+	// Adds a screen-space chasm texture to the given chasm type's texture list.
+	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+		int width, int height, const Palette &palette);
 
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
@@ -776,8 +981,9 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
-		double ambient, double daytimePercent, double latitude, bool parallaxSky,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
+		bool parallaxSky, bool nightLightsAreActive, bool isExterior, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, uint32_t *colorBuffer);
 };

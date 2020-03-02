@@ -33,6 +33,7 @@
 class ArenaRandom;
 class ExeData;
 class Game;
+class Location;
 class MiscAssets;
 class Renderer;
 class TextureManager;
@@ -161,6 +162,20 @@ protected:
 	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
 	void readCeiling(const INFFile &inf, int width, int depth);
 	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth);
+
+	// Gets voxel IDs surrounding the given voxel. If one of the IDs would point to a voxel
+	// outside the grid, it is air.
+	void getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
+		uint16_t *outEastID, uint16_t *outWestID) const;
+
+	// Refreshes a chasm voxel, after one of its neighbors presumably just changed from a
+	// floor voxel.
+	void tryUpdateChasmVoxel(const Int3 &voxel);
+
+	// Gets the new voxel ID of a floor voxel after figuring out what chasm it would be.
+	uint16_t getChasmIdFromFadedFloorVoxel(const Int3 &voxel);
+
+	void updateFadingVoxels(double dt);
 public:
 	LevelData(LevelData&&) = default;
 	virtual ~LevelData();
@@ -187,7 +202,8 @@ public:
 
 	// Sets this level active in the renderer. It's virtual so derived level data classes can
 	// do some extra work (like set interior sky colors in the renderer).
-	virtual void setActive(const MiscAssets &miscAssets, TextureManager &textureManager,
+	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
+		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.

@@ -70,10 +70,10 @@ void Entity::tick(Game &game, double dt)
 		const WorldData &worldData = game.getGameData().getWorldData();
 		const LevelData &levelData = worldData.getActiveLevel();
 		const EntityManager &entityManager = levelData.getEntityManager();
-		const EntityData *entityData = entityManager.getEntityData(this->getDataIndex());
-		DebugAssert(entityData != nullptr);
+		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDataIndex());
+		DebugAssert(entityDef != nullptr);
 
-		return entityData->getAnimationData();
+		return entityDef->getAnimationData();
 	}();
 
 	// Animate.

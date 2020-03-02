@@ -561,6 +561,22 @@ void ExeData::Meta::init(const char *data, const KeyValueFile &keyValueFile)
 	this->dataSegmentOffset = ExeData::get(section, "DataSegmentOffset", keyValueFile);
 }
 
+void ExeData::Quests::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const std::string section = "Quests";
+	const int mainQuestItemNamesOffset = ExeData::get(section, "MainQuestItemNames", keyValueFile);
+	const int staffPiecesOffset = ExeData::get(section, "StaffPieces", keyValueFile);
+	const int keyNamesOffset = ExeData::get(section, "KeyNames", keyValueFile);
+	const int keyPickedUpOffset = ExeData::get(section, "KeyPickedUp", keyValueFile);
+	const int doorUnlockedWithKeyOffset = ExeData::get(section, "DoorUnlockedWithKey", keyValueFile);
+
+	initStringArray(this->mainQuestItemNames, data + mainQuestItemNamesOffset);
+	this->staffPieces = ExeData::readString(data + staffPiecesOffset);
+	initStringArray(this->keyNames, data + keyNamesOffset);
+	this->keyPickedUp = ExeData::readString(data + keyPickedUpOffset);
+	this->doorUnlockedWithKey = ExeData::readString(data + doorUnlockedWithKeyOffset);
+}
+
 void ExeData::Races::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string section = "Races";
@@ -644,6 +660,7 @@ void ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 	const int race3HelmetPaletteValuesOffset = ExeData::get(section, "Race3HelmetPaletteValues", keyValueFile);
 	const int race4HelmetPaletteValuesOffset = ExeData::get(section, "Race4HelmetPaletteValues", keyValueFile);
 	const int currentWorldPositionOffset = ExeData::get(section, "CurrentWorldPosition", keyValueFile);
+	const int inspectedEntityNameOffset = ExeData::get(section, "InspectedEntityName", keyValueFile);
 
 	this->chooseClassList.init(data + chooseClassListOffset);
 	this->buyingWeapons.init(data + buyingWeaponsOffset);
@@ -665,6 +682,7 @@ void ExeData::UI::init(const char *data, const KeyValueFile &keyValueFile)
 	initInt8Array(this->race3HelmetPaletteValues, data + race3HelmetPaletteValuesOffset);
 	initInt8Array(this->race4HelmetPaletteValues, data + race4HelmetPaletteValuesOffset);
 	this->currentWorldPosition = ExeData::readString(data + currentWorldPositionOffset);
+	this->inspectedEntityName = ExeData::readString(data + inspectedEntityNameOffset);
 }
 
 void ExeData::WallHeightTables::init(const char *data, const KeyValueFile &keyValueFile)
@@ -843,6 +861,7 @@ bool ExeData::init(bool floppyVersion)
 	this->locations.init(dataPtr, keyValueFile);
 	this->logbook.init(dataPtr, keyValueFile);
 	this->meta.init(dataPtr, keyValueFile);
+	this->quests.init(dataPtr, keyValueFile);
 	this->races.init(dataPtr, keyValueFile);
 	this->status.init(dataPtr, keyValueFile);
 	this->travel.init(dataPtr, keyValueFile);

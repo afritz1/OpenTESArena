@@ -9,7 +9,7 @@
 #include "TextBox.h"
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
-#include "../World/VoxelData.h"
+#include "../World/VoxelDefinition.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 
@@ -55,15 +55,15 @@ private:
 	// true for left clicks, false for right clicks.
 	void handleClickInWorld(const Int2 &nativePoint, bool primaryClick, bool debugFadeVoxel);
 
+	// Handles changing night-light-related things on and off.
+	void handleNightLightChange(bool active);
+
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
 	void handleTriggers(const Int2 &voxel);
 
 	// Handles updating of doors that are not closed.
 	void handleDoors(double dt, const Double2 &playerPos);
-
-	// Handles updating of any fading voxels.
-	void handleFadingVoxels(double dt);
 
 	// Handles the behavior for when the player activates a *MENU block and transitions
 	// from one world to another (i.e., from an interior to an exterior).

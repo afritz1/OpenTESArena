@@ -177,6 +177,13 @@ IsEmpty=0x42F45
 [Meta]
 DataSegmentOffset=0x32560
 
+[Quests]
+MainQuestItemNames=0x402D8
+StaffPieces=0x40358
+KeyNames=0x3EB27
+KeyPickedUp=0x4036B
+DoorUnlockedWithKey=0x40382
+
 [Races]
 SingularNames=0x3E290
 PluralNames=0x3E245
@@ -225,6 +232,7 @@ Race1HelmetPaletteValues=0x37CDE
 Race3HelmetPaletteValues=0x37CFC
 Race4HelmetPaletteValues=0x37D1A
 CurrentWorldPosition=0x43D5F
+InspectedEntityName=0x43B30
 
 [WallHeightTables]
 Box1A=0x48206

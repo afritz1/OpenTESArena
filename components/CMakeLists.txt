@@ -29,7 +29,6 @@ SET(COMP_SOURCES
 IF (WIN32)
 	FILE(GLOB COMP_WIN32_SOURCES
 		misc/*.h
-		misc/*.c
 		misc/*.hpp
 		misc/*.cpp)
 ENDIF (WIN32)

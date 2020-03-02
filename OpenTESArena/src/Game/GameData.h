@@ -28,10 +28,12 @@
 // need to load data into the game data object.
 
 class CharacterClass;
+class FontManager;
 class INFFile;
 class MIFFile;
 class Renderer;
 class TextBox;
+class Texture;
 class TextureManager;
 
 enum class GenderName;
@@ -45,6 +47,9 @@ private:
 	// The time scale determines how long or short a real-time second is. If the time 
 	// scale is 5.0, then each real-time second is five game seconds, etc..
 	static const double TIME_SCALE;
+
+	// Seconds per chasm animation loop.
+	static const double CHASM_ANIM_PERIOD;
 
 	// Arbitrary value for interior fog distance (mostly for testing purposes).
 	static const double DEFAULT_INTERIOR_FOG_DIST;
@@ -69,6 +74,7 @@ private:
 	Clock clock;
 	ArenaRandom arenaRandom;
 	double fogDistance;
+	double chasmAnimSeconds;
 	WeatherType weatherType;
 
 	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
@@ -82,6 +88,30 @@ private:
 
 	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
+	// Clock times for when each time range begins.
+	static const Clock Midnight;
+	static const Clock Night1;
+	static const Clock EarlyMorning;
+	static const Clock Morning;
+	static const Clock Noon;
+	static const Clock Afternoon;
+	static const Clock Evening;
+	static const Clock Night2;
+
+	// Clock times for changes in ambient lighting.
+	static const Clock AmbientStartBrightening;
+	static const Clock AmbientEndBrightening;
+	static const Clock AmbientStartDimming;
+	static const Clock AmbientEndDimming;
+
+	// Clock times for lamppost activation.
+	static const Clock LamppostActivate;
+	static const Clock LamppostDeactivate;
+
+	// Clock times for changes in music.
+	static const Clock MusicSwitchToDay;
+	static const Clock MusicSwitchToNight;
+
 	// Creates incomplete game data with no active world, to be further initialized later.
 	GameData(Player &&player, const MiscAssets &miscAssets);
 	GameData(GameData&&) = default;
@@ -101,14 +131,22 @@ public:
 	// choosing from a list, the RNG will be used.
 	static MusicName getInteriorMusicName(const std::string &mifName, Random &random);
 
+	// Returns whether the current music should be for day or night.
+	bool nightMusicIsActive() const;
+
+	// Returns whether night lights (i.e., lampposts) should currently be active.
+	bool nightLightsAreActive() const;
+
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(const MIFFile &mif, const Location &location, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void loadInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(const MIFFile &mif, const Int2 &returnVoxel, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	void enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		const Int2 &returnVoxel, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Leaves the current interior and returns to the exterior. Only call this method if the
 	// player is in an interior that has an outside area to return to.
@@ -118,13 +156,14 @@ public:
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
 	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-		const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
 	// the center province uses this).
@@ -142,10 +181,6 @@ public:
 		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
 
-	TimedTextBox &getTriggerText();
-	TimedTextBox &getActionText();
-	TimedTextBox &getEffectText();
-
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 
 	Player &getPlayer();
@@ -159,6 +194,9 @@ public:
 	// Gets a percentage representing how far along the current day is. 0.0 is 
 	// 12:00am and 0.50 is noon.
 	double getDaytimePercent() const;
+
+	// Gets a percentage representing the current progress through the looping chasm animation.
+	double getChasmAnimPercent() const;
 
 	double getFogDistance() const;
 	WeatherType getWeatherType() const;
@@ -177,6 +215,26 @@ public:
 
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
+
+	// On-screen text is visible if it has remaining duration.
+	bool triggerTextIsVisible() const;
+	bool actionTextIsVisible() const;
+	bool effectTextIsVisible() const;
+
+	// On-screen text render info for the game world.
+	void getTriggerTextRenderInfo(const Texture **outTexture) const;
+	void getActionTextRenderInfo(const Texture **outTexture) const;
+	void getEffectTextRenderInfo(const Texture **outTexture) const;
+
+	// Sets on-screen text for various types of in-game messages.
+	void setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+	void setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+	void setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+
+	// Resets on-screen text boxes to empty and hidden.
+	void resetTriggerText();
+	void resetActionText();
+	void resetEffectText();
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeather(const ExeData &exeData);

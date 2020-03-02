@@ -53,6 +53,10 @@ SoundChannels=32
 # 0: default, 1: fastest, 2: medium, 3: best.
 SoundResampling=0
 
+# Whether audio played in the game world has a 3D position or is centered
+# on the player like the original game.
+Is3DAudio=true
+
 [Input]
 # Look sensitivity is normally between 3.0 and 10.0.
 HorizontalSensitivity=5.0
@@ -61,6 +65,10 @@ VerticalSensitivity=5.0
 # The camera pitch limit determines in degrees how high or low the camera
 # can look relative to the horizon in modern mode. Must be less than 90.
 CameraPitchLimit=30.0
+
+# Filters clicks on entities to only opaque parts of the entity's texture
+# if enabled. Otherwise, clicks register anywhere in the entity's shape.
+PixelPerfectSelection=false
 
 [Misc]
 # Change "ArenaPath" to your desired path. In the future, this should be
