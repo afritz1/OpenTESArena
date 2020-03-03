@@ -168,6 +168,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Misc, ShowCompass)
 	OPTION_DOUBLE(Misc, TimeScale)
 	OPTION_INT(Misc, StarDensity)
+	OPTION_BOOL(Misc, PlayerHasLight)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);

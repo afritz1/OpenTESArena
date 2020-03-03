@@ -161,6 +161,7 @@ private:
 	static const std::string SHOW_INTRO_NAME;
 	static const std::string TIME_SCALE_NAME;
 	static const std::string STAR_DENSITY_NAME;
+	static const std::string PLAYER_HAS_LIGHT_NAME;
 
 	// Dev.
 	static const std::string COLLISION_NAME;

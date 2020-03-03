@@ -245,6 +245,7 @@ const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
 const std::string OptionsPanel::SHOW_INTRO_NAME = "Show Intro";
 const std::string OptionsPanel::TIME_SCALE_NAME = "Time Scale";
 const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
+const std::string OptionsPanel::PLAYER_HAS_LIGHT_NAME = "Player Has Light";
 
 // Dev.
 const std::string OptionsPanel::COLLISION_NAME = "Collision";
@@ -693,6 +694,17 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	starDensityOption->setDisplayOverrides({ "Classic", "Moderate", "High" });
 	this->miscOptions.push_back(std::move(starDensityOption));
+
+	this->miscOptions.push_back(std::make_unique<BoolOption>(
+		OptionsPanel::PLAYER_HAS_LIGHT_NAME,
+		"Whether the player has a light attached like in the original game.",
+		options.getMisc_PlayerHasLight(),
+		[this](bool value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_PlayerHasLight(value);
+	}));
 
 	// Create developer options.
 	this->devOptions.push_back(std::make_unique<BoolOption>(

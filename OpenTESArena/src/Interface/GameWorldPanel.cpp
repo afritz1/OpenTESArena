@@ -2807,8 +2807,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
 		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
-		gameData.nightLightsAreActive(), isExterior, level.getCeilingHeight(), level.getOpenDoors(),
-		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager());
+		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
+		level.getCeilingHeight(), level.getOpenDoors(), level.getFadingVoxels(),
+		level.getVoxelGrid(), level.getEntityManager());
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));

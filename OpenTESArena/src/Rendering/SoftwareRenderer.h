@@ -230,9 +230,12 @@ private:
 		// Whether the current location is strictly outdoors (does not count outdoor dungeons).
 		bool isExterior;
 
+		// Whether the player has a light attached like the original game.
+		bool playerHasLight;
+
 		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
 			double ambient, double fogDistance, double chasmAnimPercent, bool nightLightsAreActive,
-			bool isExterior);
+			bool isExterior, bool playerHasLight);
 
 		const Double3 &getFogColor() const;
 	};
@@ -982,8 +985,8 @@ public:
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-		bool parallaxSky, bool nightLightsAreActive, bool isExterior, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
+		bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, uint32_t *colorBuffer);
 };

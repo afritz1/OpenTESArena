@@ -97,3 +97,6 @@ TimeScale=1.0
 # Affects number of stars in the night sky.
 # 0: classic, 1: moderate, 2: high
 StarDensity=0
+
+# Whether the player has a light attached like in the original game.
+PlayerHasLight=true

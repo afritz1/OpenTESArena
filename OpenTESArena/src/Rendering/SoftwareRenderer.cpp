@@ -27,7 +27,6 @@ namespace
 	constexpr int TextureFilterMode = 0;
 	constexpr int MaxLightsPerPixel = 16;
 	constexpr bool LightContributionCap = true;
-	constexpr bool PlayerHasLight = true;
 
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
@@ -454,7 +453,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
 	double daytimePercent, double latitude, double ambient, double fogDistance,
-	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior)
+	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
 	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
@@ -538,6 +537,8 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 
 	this->fogDistance = fogDistance;
 	this->chasmAnimPercent = chasmAnimPercent;
+
+	this->playerHasLight = playerHasLight;
 }
 
 const Double3 &SoftwareRenderer::ShadingInfo::getFogColor() const
@@ -1684,7 +1685,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
 
-	if constexpr (PlayerHasLight)
+	if (shadingInfo.playerHasLight)
 	{
 		// Add player light.
 		VisibleLight playerVisLight;
@@ -7784,8 +7785,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
 	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-	bool parallaxSky, bool nightLightsAreActive, bool isExterior, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
+	bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
+	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, uint32_t *colorBuffer)
 {
@@ -7805,8 +7806,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
-	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude,
-		ambient, this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior);
+	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude, ambient,
+		this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior, playerHasLight);
 	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.

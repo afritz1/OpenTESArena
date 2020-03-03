@@ -58,7 +58,8 @@ namespace
 		{ "ShowIntro", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
 		{ "TimeScale", OptionType::Double },
-		{ "StarDensity", OptionType::Int }
+		{ "StarDensity", OptionType::Int },
+		{ "PlayerHasLight", OptionType::Bool }
 	};
 }
 
