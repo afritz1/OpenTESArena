@@ -129,6 +129,10 @@ public:
 	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, double ceilingHeight,
 		const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
 
+	// Gets the entity's 3D bounding box. This is view-dependent!
+	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
+		Double3 *outMin, Double3 *outMax) const;
+
 	// Deletes an entity.
 	void remove(int id);
 

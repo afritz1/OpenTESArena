@@ -155,26 +155,17 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 		entityManager.getEntityVisibilityData(entity, cameraPosXZ, ceilingHeight, voxelGrid, visData);
 
 		// Use a bounding box to determine which voxels the entity could be in.
-		// Start with a bounding cylinder.
-		const double radius = visData.keyframe.getWidth() / 2.0;
-		const double height = visData.keyframe.getHeight();
-
-		// Convert the bounding cylinder to an axis-aligned bounding box.
-		const double minX = visData.flatPosition.x - radius;
-		const double maxX = visData.flatPosition.x + radius;
-		const double minY = visData.flatPosition.y;
-		const double maxY = visData.flatPosition.y + height;
-		const double minZ = visData.flatPosition.z - radius;
-		const double maxZ = visData.flatPosition.z + radius;
+		Double3 minPoint, maxPoint;
+		entityManager.getEntityBoundingBox(entity, visData, &minPoint, &maxPoint);
 
 		// Only iterate over voxels the entity could be in (at least partially).
 		// This loop should always hit at least 1 voxel.
-		const int startX = static_cast<int>(std::floor(minX));
-		const int endX = static_cast<int>(std::floor(maxX));
-		const int startY = static_cast<int>(std::floor(minY / ceilingHeight));
-		const int endY = static_cast<int>(std::floor(maxY / ceilingHeight));
-		const int startZ = static_cast<int>(std::floor(minZ));
-		const int endZ = static_cast<int>(std::floor(maxZ));
+		const int startX = static_cast<int>(std::floor(minPoint.x));
+		const int endX = static_cast<int>(std::floor(maxPoint.x));
+		const int startY = static_cast<int>(std::floor(minPoint.y / ceilingHeight));
+		const int endY = static_cast<int>(std::floor(maxPoint.y / ceilingHeight));
+		const int startZ = static_cast<int>(std::floor(minPoint.z));
+		const int endZ = static_cast<int>(std::floor(maxPoint.z));
 
 		for (int z = startZ; z <= endZ; z++)
 		{

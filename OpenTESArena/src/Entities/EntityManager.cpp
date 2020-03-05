@@ -495,6 +495,22 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		entityPosZ);
 }
 
+void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
+	Double3 *outMin, Double3 *outMax) const
+{
+	// Start with a bounding cylinder.
+	const double radius = visData.keyframe.getWidth() / 2.0;
+	const double height = visData.keyframe.getHeight();
+
+	// Convert the bounding cylinder to an axis-aligned bounding box.
+	outMin->x = visData.flatPosition.x - radius;
+	outMin->y = visData.flatPosition.y;
+	outMin->z = visData.flatPosition.z - radius;
+	outMax->x = visData.flatPosition.x + radius;
+	outMax->y = visData.flatPosition.y + height;
+	outMax->z = visData.flatPosition.z + radius;
+}
+
 void EntityManager::remove(int id)
 {
 	// Find which entity group the given ID is in.
