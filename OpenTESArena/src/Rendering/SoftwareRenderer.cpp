@@ -1701,8 +1701,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(entity, eye2D, cameraDir,
-			ceilingHeight, voxelGrid, visData);
+		entityManager.getEntityVisibilityData(entity, eye2D, ceilingHeight, voxelGrid, visData);
 
 		// See if the entity is a light.
 		const int lightIntensity = [&shadingInfo, &entityDef]()

@@ -125,6 +125,10 @@ public:
 	// Adds an entity data definition to the definitions list and returns a pointer to it.
 	EntityDefinition *addEntityDef(EntityDefinition &&def);
 
+	// Gets the data necessary for rendering and ray cast selection.
+	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, double ceilingHeight,
+		const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
+
 	// Deletes an entity.
 	void remove(int id);
 
@@ -133,10 +137,6 @@ public:
 
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);
-
-	// Gets the data necessary for rendering and ray cast selection.
-	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, const Double2 &cameraDir,
-		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
 };
 
 #endif

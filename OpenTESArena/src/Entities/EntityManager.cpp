@@ -391,8 +391,7 @@ EntityDefinition *EntityManager::addEntityDef(EntityDefinition &&def)
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
-	const Double2 &cameraDir, double ceilingHeight, const VoxelGrid &voxelGrid,
-	EntityVisibilityData &outVisData) const
+	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
 	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
@@ -404,7 +403,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
 
 	// Calculate state index based on entity direction relative to camera.
-	const double animAngle = [&entity, &eye2D, &cameraDir, stateCount]()
+	const double animAngle = [&entity, &eye2D, stateCount]()
 	{
 		if (entity.getEntityType() == EntityType::Static)
 		{

@@ -152,7 +152,7 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 		}
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(entity, cameraPosXZ, cameraDirXZ, ceilingHeight, voxelGrid, visData);
+		entityManager.getEntityVisibilityData(entity, cameraPosXZ, ceilingHeight, voxelGrid, visData);
 
 		// Use a bounding box to determine which voxels the entity could be in.
 		// Start with a bounding cylinder.
