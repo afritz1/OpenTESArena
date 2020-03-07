@@ -308,7 +308,7 @@ bool MiscAssets::TemplateDat::init()
 	int key = Entry::NO_KEY;
 	char letter = Entry::NO_LETTER;
 
-	enum Mode { None, Key, Section };
+	enum class Mode { None, Key, Section };
 	Mode mode = Mode::None;
 
 	auto parseKeyLine = [&key, &letter](const std::string &line)
