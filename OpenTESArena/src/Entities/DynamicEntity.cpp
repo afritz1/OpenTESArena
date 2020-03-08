@@ -76,7 +76,7 @@ bool DynamicEntity::withinHearingDistance(const Double3 &point, double ceilingHe
 }
 
 bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManager,
-	const ExeData &exeData, std::string *outFilename) const
+	std::string *outFilename) const
 {
 	if (this->derivedType != DynamicEntityType::NPC)
 	{
@@ -89,10 +89,8 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 		return false;
 	}
 
-	const uint8_t creatureSoundIndex = entityDef->getCreatureData().soundIndex;
-	const auto &creatureSoundNames = exeData.entities.creatureSoundNames;
-	DebugAssertIndex(creatureSoundNames, creatureSoundIndex);
-	*outFilename = String::toUppercase(creatureSoundNames[creatureSoundIndex]);
+	const std::string creatureSoundName = entityDef->getCreatureData().soundName;
+	*outFilename = String::toUppercase(creatureSoundName);
 	return true;
 }
 
@@ -161,7 +159,6 @@ void DynamicEntity::setDestination(const Double2 *point)
 
 void DynamicEntity::updateNpcState(Game &game, double dt)
 {
-	const auto &exeData = game.getMiscAssets().getExeData();
 	auto &gameData = game.getGameData();
 	const auto &worldData = gameData.getWorldData();
 	const auto &levelData = worldData.getActiveLevel();
@@ -179,7 +176,7 @@ void DynamicEntity::updateNpcState(Game &game, double dt)
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
-			if (this->tryGetCreatureSoundFilename(entityManager, exeData, &creatureSoundFilename))
+			if (this->tryGetCreatureSoundFilename(entityManager, &creatureSoundFilename))
 			{
 				auto &audioManager = game.getAudioManager();
 				this->playCreatureSound(creatureSoundFilename, ceilingHeight, audioManager);

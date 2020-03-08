@@ -34,7 +34,7 @@ private:
 
 	// Attempts to get the entity's creature sound filename (if any). Returns success.
 	bool tryGetCreatureSoundFilename(const EntityManager &entityManager,
-		const ExeData &exeData, std::string *outFilename) const;
+		std::string *outFilename) const;
 
 	// Plays the given creature sound on the entity.
 	void playCreatureSound(const std::string &soundFilename, double ceilingHeight,

@@ -46,7 +46,7 @@ void EntityDefinition::CreatureData::init(const ExeData::Entities &entities,
 	this->soundIndex = entities.creatureSounds[creatureIndex];
 
 	std::snprintf(std::begin(this->soundName), std::size(this->soundName),
-		"%s", entities.creatureSoundNames[creatureIndex].c_str());
+		"%s", entities.creatureSoundNames[this->soundIndex].c_str());
 
 	this->minDamage = entities.creatureDamages[creatureIndex].first;
 	this->maxDamage = entities.creatureDamages[creatureIndex].second;
