@@ -1706,16 +1706,16 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		// See if the entity is a light.
 		const int lightIntensity = [&shadingInfo, &entityDef]()
 		{
-			const int *lightIntensityPtr = entityDef.getLightIntensity();
-			if (lightIntensityPtr != nullptr)
+			const std::optional<int> &optLightIntensity = entityDef.getInfData().lightIntensity;
+			if (optLightIntensity.has_value())
 			{
-				return *lightIntensityPtr;
+				return *optLightIntensity;
 			}
 			else
 			{
 				const int streetLightIntensity = 4;
-				const bool isActiveStreetLight =
-					entityDef.isStreetLight() && shadingInfo.nightLightsAreActive;
+				const bool isActiveStreetLight = (entityDef.isOther() &&
+					entityDef.getInfData().streetLight) && shadingInfo.nightLightsAreActive;
 				return isActiveStreetLight ? streetLightIntensity : 0;
 			}
 		}();
@@ -1766,7 +1766,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
-			visFlat.flatIndex = entityDef.getFlatIndex();
+			visFlat.flatIndex = entityDef.getInfData().flatIndex;
 			visFlat.animStateType = visData.stateType;
 
 			// Calculate each corner of the flat in world space.

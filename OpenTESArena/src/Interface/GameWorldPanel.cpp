@@ -1861,7 +1861,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 			continue;
 		}
 
-		if (entityDef->isStreetLight())
+		if (entityDef->isOther() && entityDef->getInfData().streetLight)
 		{
 			auto &entityAnim = entity->getAnimation();
 			const EntityAnimationData::StateType newStateType = active ?

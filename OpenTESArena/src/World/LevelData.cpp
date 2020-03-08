@@ -1497,39 +1497,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
-				std::string displayName = [&exeData, isFinalBoss, creatureIndex]()
-				{
-					if (!isFinalBoss)
-					{
-						const auto &creatureNames = exeData.entities.creatureNames;
-						DebugAssertIndex(creatureNames, creatureIndex);
-						return creatureNames[creatureIndex];
-					}
-					else
-					{
-						// @todo: return final boss class name?
-						return std::string("TODO");
-					}
-				}();
-
-				const auto &creatureYOffsets = exeData.entities.creatureYOffsets;
-				DebugAssertIndex(creatureYOffsets, creatureIndex);
-				const int yOffset = creatureYOffsets[creatureIndex];
-
-				const uint8_t creatureSoundIndex = exeData.entities.creatureSounds[creatureIndex];
-
-				const bool collider = true;
-				const bool puddle = false;
-				const bool largeScale = false;
-				const bool dark = false;
-				const bool transparent = false; // Apparently ghost properties aren't in .INF files.
-				const bool ceiling = false;
-				const bool mediumScale = false;
-				const bool streetLight = false;
-				const std::optional<int> lightIntensity = std::nullopt;
-				newEntityDef.init(std::move(displayName), flatIndex, yOffset, collider, puddle,
-					largeScale, dark, transparent, ceiling, mediumScale, streetLight,
-					lightIntensity, creatureSoundIndex);
+				newEntityDef.initCreature(exeData.entities, creatureIndex, isFinalBoss, flatIndex);
 			}
 			else if (isHumanEnemy)
 			{
@@ -1537,23 +1505,20 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				const auto &charClassNames = exeData.charClasses.classNames;
 				const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 				DebugAssertIndex(charClassNames, charClassIndex);
-				const std::string_view charClassName = charClassNames[charClassIndex];
+				const std::string &charClassName = charClassNames[charClassIndex];
 
-				const bool streetLight = false;
-				newEntityDef.init(std::string(charClassName), flatIndex, flatData.yOffset,
-					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
-					flatData.lightIntensity, std::nullopt);
+				newEntityDef.initHumanEnemy(charClassName.c_str(), flatIndex, flatData.yOffset,
+					flatData.collider, flatData.largeScale, flatData.dark, flatData.transparent,
+					flatData.ceiling, flatData.mediumScale, flatData.lightIntensity);
 			}
 			else
 			{
 				// No display name.
-				std::string displayName;
 				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
-				newEntityDef.init(std::move(displayName), flatIndex, flatData.yOffset,
+				newEntityDef.initOther(flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
-					flatData.lightIntensity, std::nullopt);
+					flatData.lightIntensity);
 			}
 
 			// Add entity animation data. Static entities have only idle animations (and maybe on/off
@@ -1621,7 +1586,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					std::to_string(static_cast<int>(entityType)) + "\".");
 			}
 
-			const bool isStreetlight = newEntityDef.isStreetLight();
+			const bool isStreetlight = newEntityDef.getInfData().streetLight;
 			this->entityManager.addEntityDef(std::move(newEntityDef));
 
 			// Initialize each instance of the flat def.

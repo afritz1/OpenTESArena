@@ -84,16 +84,15 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 	}
 
 	const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDataIndex());
-	const uint8_t *creatureSoundIndexPtr = entityDef->getCreatureSoundIndex();
-	if (creatureSoundIndexPtr == nullptr)
+	if (!entityDef->isCreature())
 	{
 		return false;
 	}
 
-	const uint8_t index = *creatureSoundIndexPtr;
+	const uint8_t creatureSoundIndex = entityDef->getCreatureData().soundIndex;
 	const auto &creatureSoundNames = exeData.entities.creatureSoundNames;
-	DebugAssertIndex(creatureSoundNames, index);
-	*outFilename = String::toUppercase(creatureSoundNames[index]);
+	DebugAssertIndex(creatureSoundNames, creatureSoundIndex);
+	*outFilename = String::toUppercase(creatureSoundNames[creatureSoundIndex]);
 	return true;
 }
 

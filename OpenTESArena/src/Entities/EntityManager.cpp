@@ -378,7 +378,7 @@ const EntityDefinition *EntityManager::getEntityDef(int flatIndex) const
 	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
 		[flatIndex](const EntityDefinition &def)
 	{
-		return def.getFlatIndex() == flatIndex;
+		return def.getInfData().flatIndex == flatIndex;
 	});
 
 	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
@@ -465,7 +465,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	const double entityPosX = entityPos.x;
 	const double entityPosZ = entityPos.y;
 
-	const double flatYOffset = static_cast<double>(-entityDef.getYOffset()) / MIFFile::ARENA_UNITS;
+	const double flatYOffset = static_cast<double>(-entityDef.getInfData().yOffset) / MIFFile::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()

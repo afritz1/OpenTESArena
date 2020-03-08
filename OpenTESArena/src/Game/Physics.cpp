@@ -928,7 +928,7 @@ bool Physics::testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDir
 			const double flatHeight = visData.keyframe.getHeight();
 
 			Double3 hitPoint;
-			if (renderer.getEntityRayIntersection(visData, entityDef.getFlatIndex(),
+			if (renderer.getEntityRayIntersection(visData, entityDef.getInfData().flatIndex,
 				flatForward, flatRight, flatUp, flatWidth, flatHeight, rayStart,
 				rayDirection, pixelPerfect, &hitPoint))
 			{
