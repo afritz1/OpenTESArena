@@ -799,6 +799,50 @@ void SoftwareRenderer::LightVisibilityData::init(const Double3 &position, double
 	this->intersectsFrustum = intersectsFrustum;
 }
 
+bool SoftwareRenderer::VisibleLightList::isFull() const
+{
+	return this->count == static_cast<int>(this->lightIDs.size());
+}
+
+void SoftwareRenderer::VisibleLightList::init()
+{
+	this->clear();
+}
+
+void SoftwareRenderer::VisibleLightList::add(LightID lightID)
+{
+	DebugAssert(this->count < this->lightIDs.size());
+	this->lightIDs[this->count] = lightID;
+	this->count++;
+}
+
+void SoftwareRenderer::VisibleLightList::clear()
+{
+	this->count = 0;
+}
+
+void SoftwareRenderer::VisibleLightList::sortByNearest(const Double3 &point,
+	const std::vector<VisibleLight> &visLights)
+{
+	// @todo: can only do this if we know the lightID index when sorting.
+	// Cache distance calculations for less redundant work.
+	/*std::array<bool, std::tuple_size<decltype(this->lightIDs)>::value> validCacheDists;
+	std::array<double, std::tuple_size<decltype(this->lightIDs)>::value> cachedDists;
+	validCacheDists.fill(false);*/
+
+	const auto startIter = this->lightIDs.begin();
+	const auto endIter = startIter + this->count;
+
+	std::sort(startIter, endIter, [&point, &visLights](LightID a, LightID b)
+	{
+		const VisibleLight &aLight = SoftwareRenderer::getVisibleLightByID(visLights, a);
+		const VisibleLight &bLight = SoftwareRenderer::getVisibleLightByID(visLights, b);
+		const double aDistSqr = (point - aLight.position).lengthSquared();
+		const double bDistSqr = (point - bLight.position).lengthSquared();
+		return aDistSqr < bDistSqr;
+	});
+}
+
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
 	double projectedYBottom, std::vector<Double3> &rowCache)
 {
@@ -1816,6 +1860,84 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		[](const VisibleFlat &a, const VisibleFlat &b) { return a.z > b.z; });
 }
 
+void SoftwareRenderer::updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid)
+{
+	if (!this->visLightLists.isValid() ||
+		(this->visLightLists.getWidth() != voxelGrid.getWidth() ||
+		(this->visLightLists.getHeight() != voxelGrid.getHeight())))
+	{
+		this->visLightLists.init(voxelGrid.getWidth(), voxelGrid.getDepth());
+	}
+
+	// Clear all visible light lists.
+	for (auto iter = this->visLightLists.get(); iter != this->visLightLists.end(); iter++)
+	{
+		VisibleLightList &visLightList = *iter;
+		visLightList.clear();
+	}
+
+	const int visLightCount = static_cast<int>(this->visibleLights.size());	
+
+	// Small optimization to restrict the voxel columns involved with visible light list sorting.
+	// Could still be a lot better.
+	int lowestMinX = std::numeric_limits<int>::max();
+	int highestMaxX = std::numeric_limits<int>::min();
+	int lowestMinZ = lowestMinX;
+	int highestMaxZ = highestMaxX;
+
+	for (int i = 0; i < visLightCount; i++)
+	{
+		// Iterate over all voxels columns touched by the light.
+		const VisibleLight &visLight = this->visibleLights[i];
+		const VisibleLightList::LightID visLightID = static_cast<VisibleLightList::LightID>(i);
+
+		const int minX = std::clamp(
+			static_cast<int>(visLight.position.x - visLight.radius), 0, voxelGrid.getWidth() - 1);
+		const int maxX = std::clamp(
+			static_cast<int>(visLight.position.x + visLight.radius), 0, voxelGrid.getWidth() - 1);
+		const int minZ = std::clamp(
+			static_cast<int>(visLight.position.z - visLight.radius), 0, voxelGrid.getDepth() - 1);
+		const int maxZ = std::clamp(
+			static_cast<int>(visLight.position.z + visLight.radius), 0, voxelGrid.getDepth() - 1);
+
+		lowestMinX = std::min(lowestMinX, minX);
+		highestMaxX = std::max(highestMaxX, maxX);
+		lowestMinZ = std::min(lowestMinZ, minZ);
+		highestMaxZ = std::max(highestMaxZ, maxZ);
+
+		for (int x = minX; x <= maxX; x++)
+		{
+			for (int z = minZ; z <= maxZ; z++)
+			{
+				VisibleLightList &visLightList = this->visLightLists.get(z, x);
+				if (!visLightList.isFull())
+				{
+					visLightList.add(visLightID);
+				}
+			}
+		}
+	}
+
+	// Sort all of the touched voxel columns' light references by distance (shading optimization).
+	for (int x = lowestMinX; x <= highestMaxX; x++)
+	{
+		for (int z = lowestMinZ; z <= highestMaxZ; z++)
+		{
+			VisibleLightList &visLightList = this->visLightLists.get(z, x);
+			if (visLightList.count >= 2)
+			{
+				// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
+				const Double3 voxelColumnPoint(
+					static_cast<double>(x) + 0.50,
+					ceilingHeight * 1.50,
+					static_cast<double>(z) + 0.50);
+
+				visLightList.sortByNearest(voxelColumnPoint, this->visibleLights);
+			}
+		}
+	}
+}
+
 int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 {
 	if (mode == 0)
@@ -2177,6 +2299,12 @@ void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &tex
 	const double groupRealIndex = static_cast<double>(groupSize) * chasmAnimPercent;
 	const int animIndex = std::clamp(static_cast<int>(groupRealIndex), 0, groupSize - 1);
 	*outTexture = &textureGroup[animIndex];
+}
+
+const SoftwareRenderer::VisibleLight &SoftwareRenderer::getVisibleLightByID(
+	const std::vector<VisibleLight> &visLights, VisibleLightList::LightID lightID)
+{
+	return visLights[lightID];
 }
 
 double SoftwareRenderer::getDoorPercentOpen(int voxelX, int voxelZ,
@@ -7856,6 +7984,9 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
 	this->updateVisibleFlats(camera, shadingInfo, ceilingHeight, voxelGrid, entityManager);
+
+	// Refresh visible light lists used for shading voxels and entities efficiently.
+	this->updateVisibleLightLists(ceilingHeight, voxelGrid);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

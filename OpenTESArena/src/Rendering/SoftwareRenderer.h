@@ -20,6 +20,7 @@
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 
+#include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"
 
 // This class runs the CPU-based 3D rendering for the application.
@@ -405,6 +406,24 @@ private:
 		void init(const Double3 &position, double radius, bool intersectsFrustum);
 	};
 
+	struct VisibleLightList
+	{
+		using LightID = unsigned short;
+
+		static constexpr int MAX_LIGHTS = 8;
+
+		std::array<LightID, MAX_LIGHTS> lightIDs;
+		int count;
+
+		bool isFull() const;
+		void init();
+		void add(LightID lightID);
+		void clear();
+
+		// Shading optimization, only useful when the light intensity cap is on for early-out.
+		void sortByNearest(const Double3 &point, const std::vector<VisibleLight> &visLights);
+	};
+
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
 	{
@@ -511,6 +530,7 @@ private:
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
+	Buffer2D<VisibleLightList> visLightLists; // Voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
@@ -542,6 +562,9 @@ private:
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
+
+	// Refreshes the visible light lists in each voxel column in the view frustum.
+	void updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -560,6 +583,10 @@ private:
 	static void getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
 		VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
 		const ChasmTexture **outTexture);
+
+	// Looks up a light in the visible lights list given some light ID.
+	static const VisibleLight &getVisibleLightByID(const std::vector<VisibleLight> &visLights,
+		VisibleLightList::LightID lightID);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
