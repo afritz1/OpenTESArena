@@ -1863,10 +1863,10 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 void SoftwareRenderer::updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid)
 {
 	if (!this->visLightLists.isValid() ||
-		(this->visLightLists.getWidth() != voxelGrid.getWidth() ||
-		(this->visLightLists.getHeight() != voxelGrid.getHeight())))
+		(this->visLightLists.getWidth() != voxelGrid.getDepth()) ||
+		(this->visLightLists.getHeight() != voxelGrid.getWidth()))
 	{
-		this->visLightLists.init(voxelGrid.getWidth(), voxelGrid.getDepth());
+		this->visLightLists.init(voxelGrid.getDepth(), voxelGrid.getWidth());
 	}
 
 	// Clear all visible light lists.
