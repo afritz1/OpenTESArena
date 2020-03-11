@@ -411,7 +411,7 @@ private:
 	{
 		using LightID = unsigned int;
 
-		static constexpr int MAX_LIGHTS = 8;
+		static constexpr int MAX_LIGHTS = 16;
 
 		std::array<LightID, MAX_LIGHTS> lightIDs;
 		int count;
