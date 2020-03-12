@@ -354,6 +354,11 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Clear the lore text (action text and effect text are unchanged).
 	gameData.resetTriggerText();
 
+	// Clear any on-voxel-enter event to avoid things like fast travelling out of the
+	// starting dungeon then being teleported to a random city when going through any
+	// subsequent LEVELUP voxel.
+	gameData.getOnLevelUpVoxelEnter() = std::function<void(Game&)>();
+
 	// Pop this sub-panel on the next game loop. The game loop pops old sub-panels before
 	// pushing new ones, so call order doesn't matter.
 	game.popSubPanel();
