@@ -8,6 +8,8 @@
 
 // Heap-allocated 1D array accessible as a 3D array.
 
+// Data can be null. Only need assertions on things that reach into the buffer itself.
+
 template <typename T>
 class Buffer3D
 {
@@ -56,13 +58,11 @@ public:
 
 	T *get()
 	{
-		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	const T *get() const
 	{
-		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
@@ -94,19 +94,16 @@ public:
 
 	int getWidth() const
 	{
-		DebugAssert(this->isValid());
 		return this->width;
 	}
 
 	int getHeight() const
 	{
-		DebugAssert(this->isValid());
 		return this->height;
 	}
 
 	int getDepth() const
 	{
-		DebugAssert(this->isValid());
 		return this->depth;
 	}
 

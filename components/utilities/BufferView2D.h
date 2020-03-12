@@ -10,6 +10,8 @@
 
 // More complex than 1D buffer view due to the look-up requirements of a 2D array.
 
+// Data can be null. Only need assertions on things that reach into the buffer itself.
+
 template <typename T, bool Checked = true>
 class BufferView2D
 {
@@ -54,7 +56,6 @@ public:
 	{
 		if constexpr (Checked)
 		{
-			DebugAssert(data != nullptr);
 			DebugAssert(width >= 0);
 			DebugAssert(height >= 0);
 			DebugAssert(viewX >= 0);
@@ -108,21 +109,11 @@ public:
 
 	int getWidth() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->viewWidth;
 	}
 
 	int getHeight() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->viewHeight;
 	}
 

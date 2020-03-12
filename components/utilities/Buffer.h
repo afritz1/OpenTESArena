@@ -8,6 +8,8 @@
 
 // Slightly cheaper alternative to vector for single-allocation uses.
 
+// Data can be null. Only need assertions on things that reach into the buffer itself.
+
 template <typename T>
 class Buffer
 {
@@ -39,13 +41,11 @@ public:
 
 	T *get()
 	{
-		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
 	const T *get() const
 	{
-		DebugAssert(this->isValid());
 		return this->data.get();
 	}
 
@@ -79,7 +79,6 @@ public:
 
 	int getCount() const
 	{
-		DebugAssert(this->isValid());
 		return this->count;
 	}
 

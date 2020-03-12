@@ -10,6 +10,8 @@
 
 // Useful when separating a container from the usage of its data.
 
+// Data can be null. Only need assertions on things that reach into the buffer itself.
+
 template <typename T, bool Checked = true>
 class BufferView
 {
@@ -39,7 +41,6 @@ public:
 	{
 		if constexpr (Checked)
 		{
-			DebugAssert(data != nullptr);
 			DebugAssert(count >= 0);
 			DebugAssert(viewOffset >= 0);
 			DebugAssert(viewCount >= 0);
@@ -61,22 +62,12 @@ public:
 	}
 
 	T *get()
-	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-		
+	{		
 		return this->data;
 	}
 
 	const T *get() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->data;
 	}
 
@@ -126,11 +117,6 @@ public:
 
 	int getCount() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->count;
 	}
 

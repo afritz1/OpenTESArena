@@ -10,6 +10,8 @@
 
 // More complex than 2D buffer view due to the look-up requirements of a 3D array.
 
+// Data can be null. Only need assertions on things that reach into the buffer itself.
+
 template <typename T, bool Checked = true>
 class BufferView3D
 {
@@ -59,7 +61,6 @@ public:
 	{
 		if constexpr (Checked)
 		{
-			DebugAssert(data != nullptr);
 			DebugAssert(width >= 0);
 			DebugAssert(height >= 0);
 			DebugAssert(depth >= 0);
@@ -120,31 +121,16 @@ public:
 
 	int getWidth() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->viewWidth;
 	}
 
 	int getHeight() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->viewHeight;
 	}
 
 	int getDepth() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
 		return this->viewDepth;
 	}
 
