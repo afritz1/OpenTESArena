@@ -11,6 +11,12 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	constexpr int DEFAULT_CHUNK_X = 0;
+	constexpr int DEFAULT_CHUNK_Y = 0;
+}
+
 EntityManager::EntityVisibilityData::EntityVisibilityData() :
 	flatPosition(Double3::Zero), keyframe(EntityAnimationData::Keyframe(0, 0, 0))
 {
@@ -206,8 +212,10 @@ void EntityManager::EntityGroup<T>::clear()
 
 const int EntityManager::NO_ID = -1;
 
-EntityManager::EntityManager()
+void EntityManager::init(int chunkCountX, int chunkCountY)
 {
+	this->staticGroups.init(chunkCountX, chunkCountY);
+	this->dynamicGroups.init(chunkCountX, chunkCountY);
 	this->nextID = 0;
 }
 
@@ -229,10 +237,17 @@ int EntityManager::nextFreeID()
 	}
 }
 
+bool EntityManager::isValidChunk(int chunkX, int chunkY) const
+{
+	return (chunkX >= 0) && (chunkX < this->staticGroups.getWidth()) &&
+		(chunkY >= 0) && (chunkY < this->staticGroups.getHeight());
+}
+
 StaticEntity *EntityManager::makeStaticEntity()
 {
 	const int id = this->nextFreeID();
-	StaticEntity *entity = this->staticGroup.addEntity(id);
+	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Y);
+	StaticEntity *entity = staticGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
 }
@@ -240,26 +255,39 @@ StaticEntity *EntityManager::makeStaticEntity()
 DynamicEntity *EntityManager::makeDynamicEntity()
 {
 	const int id = this->nextFreeID();
-	DynamicEntity *entity = this->dynamicGroup.addEntity(id);
+	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Y);
+	DynamicEntity *entity = dynamicGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
 }
 
 Entity *EntityManager::get(int id)
 {
-	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
-	{
-		// Static entity.
-		return this->staticGroup.getEntityAtIndex(entityIndex.value());
-	}
+	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
+	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
 
-	entityIndex = this->dynamicGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
+	// Find which entity group the given entity ID is in. This is a slow look-up because there is
+	// no hint where the entity is at.
+	for (int y = 0; y < this->staticGroups.getHeight(); y++)
 	{
-		// Dynamic entity.
-		return this->dynamicGroup.getEntityAtIndex(entityIndex.value());
+		for (int x = 0; x < this->staticGroups.getWidth(); x++)
+		{
+			auto &staticGroup = this->staticGroups.get(x, y);
+			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Static entity.
+				return staticGroup.getEntityAtIndex(*entityIndex);
+			}
+
+			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			entityIndex = dynamicGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Dynamic entity.
+				return dynamicGroup.getEntityAtIndex(*entityIndex);
+			}
+		}
 	}
 
 	// Not in any entity group.
@@ -268,19 +296,31 @@ Entity *EntityManager::get(int id)
 
 const Entity *EntityManager::get(int id) const
 {
-	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
-	{
-		// Static entity.
-		return this->staticGroup.getEntityAtIndex(entityIndex.value());
-	}
+	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
+	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
 
-	entityIndex = this->dynamicGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
+	// Find which entity group the given entity ID is in. This is a slow look-up because there is
+	// no hint where the entity is at.
+	for (int y = 0; y < this->staticGroups.getHeight(); y++)
 	{
-		// Dynamic entity.
-		return this->dynamicGroup.getEntityAtIndex(entityIndex.value());
+		for (int x = 0; x < this->staticGroups.getWidth(); x++)
+		{
+			const auto &staticGroup = this->staticGroups.get(x, y);
+			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Static entity.
+				return staticGroup.getEntityAtIndex(*entityIndex);
+			}
+
+			const auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			entityIndex = dynamicGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Dynamic entity.
+				return dynamicGroup.getEntityAtIndex(*entityIndex);
+			}
+		}
 	}
 
 	// Not in any entity group.
@@ -289,20 +329,50 @@ const Entity *EntityManager::get(int id) const
 
 int EntityManager::getCount(EntityType entityType) const
 {
+	auto getCountFromGroups = [](const auto &entityGroups)
+	{
+		int count = 0;
+		for (int y = 0; y < entityGroups.getHeight(); y++)
+		{
+			for (int x = 0; x < entityGroups.getWidth(); x++)
+			{
+				const auto &entityGroup = entityGroups.get(x, y);
+				count += entityGroup.getCount();
+			}
+		}
+
+		return count;
+	};
+
 	switch (entityType)
 	{
 	case EntityType::Static:
-		return this->staticGroup.getCount();
+		return getCountFromGroups(this->staticGroups);
 	case EntityType::Dynamic:
-		return this->dynamicGroup.getCount();
+		return getCountFromGroups(this->dynamicGroups);
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
 }
 
+int EntityManager::getTotalCountInChunk(int chunkX, int chunkY) const
+{
+	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
+	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
+
+	if (!this->isValidChunk(chunkX, chunkY))
+	{
+		return 0;
+	}
+
+	const auto &staticGroup = this->staticGroups.get(chunkX, chunkY);
+	const auto &dynamicGroup = this->dynamicGroups.get(chunkX, chunkY);
+	return staticGroup.getCount() + dynamicGroup.getCount();
+}
+
 int EntityManager::getTotalCount() const
 {
-	return this->staticGroup.getCount() + this->dynamicGroup.getCount();
+	return this->getCount(EntityType::Static) + this->getCount(EntityType::Dynamic);
 }
 
 int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int outSize)
@@ -310,13 +380,33 @@ int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int 
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);
 
+	auto getEntitiesFromGroups = [](auto &entityGroups, Entity **outEntities, int outSize)
+	{
+		int writeIndex = 0;
+		for (int y = 0; y < entityGroups.getHeight(); y++)
+		{
+			for (int x = 0; x < entityGroups.getWidth(); x++)
+			{
+				if (writeIndex == outSize)
+				{
+					break;
+				}
+
+				auto &entityGroup = entityGroups.get(x, y);
+				writeIndex += entityGroup.getEntities(outEntities + writeIndex, outSize - writeIndex);
+			}
+		}
+
+		return writeIndex;
+	};
+
 	// Get entities from the desired type.
 	switch (entityType)
 	{
 	case EntityType::Static:
-		return this->staticGroup.getEntities(outEntities, outSize);
+		return getEntitiesFromGroups(this->staticGroups, outEntities, outSize);
 	case EntityType::Dynamic:
-		return this->dynamicGroup.getEntities(outEntities, outSize);
+		return getEntitiesFromGroups(this->dynamicGroups, outEntities, outSize);
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
@@ -327,22 +417,46 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);
 
+	auto getEntitiesFromGroups = [](const auto &entityGroups, const Entity **outEntities, int outSize)
+	{
+		int writeIndex = 0;
+		for (int y = 0; y < entityGroups.getHeight(); y++)
+		{
+			for (int x = 0; x < entityGroups.getWidth(); x++)
+			{
+				if (writeIndex == outSize)
+				{
+					break;
+				}
+
+				const auto &entityGroup = entityGroups.get(x, y);
+				writeIndex += entityGroup.getEntities(outEntities + writeIndex, outSize - writeIndex);
+			}
+		}
+
+		return writeIndex;
+	};
+
 	// Get entities from the desired type.
 	switch (entityType)
 	{
 	case EntityType::Static:
-		return this->staticGroup.getEntities(outEntities, outSize);
+		return getEntitiesFromGroups(this->staticGroups, outEntities, outSize);
 	case EntityType::Dynamic:
-		return this->dynamicGroup.getEntities(outEntities, outSize);
+		return getEntitiesFromGroups(this->dynamicGroups, outEntities, outSize);
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(entityType)));
 	}
 }
 
-int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) const
+int EntityManager::getTotalEntitiesInChunk(int chunkX, int chunkY, const Entity **outEntities, int outSize) const
 {
-	// Apparently std::vector::data() can be either null or non-null when the container is empty,
-	// so can't assume the given pointer is not null.
+	if (!this->isValidChunk(chunkX, chunkY))
+	{
+		return 0;
+	}
+
+	// Can't assume the given pointer is not null.
 	if ((outEntities == nullptr) || (outSize == 0))
 	{
 		return 0;
@@ -367,8 +481,37 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 		}
 	};
 
-	tryWriteEntities(this->staticGroup);
-	tryWriteEntities(this->dynamicGroup);
+	auto &staticGroup = this->staticGroups.get(chunkX, chunkY);
+	auto &dynamicGroup = this->dynamicGroups.get(chunkX, chunkY);
+	tryWriteEntities(staticGroup);
+	tryWriteEntities(dynamicGroup);
+
+	return writeIndex;
+}
+
+int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) const
+{
+	// Apparently std::vector::data() can be either null or non-null when the container is empty,
+	// so can't assume the given pointer is not null.
+	if ((outEntities == nullptr) || (outSize == 0))
+	{
+		return 0;
+	}
+
+	// Fill the output buffer with as many entities as will fit.
+	int writeIndex = 0;
+	for (int y = 0; y < this->staticGroups.getHeight(); y++)
+	{
+		for (int x = 0; x < this->staticGroups.getWidth(); x++)
+		{
+			if (writeIndex == outSize)
+			{
+				break;
+			}
+
+			writeIndex += this->getTotalEntitiesInChunk(x, y, outEntities + writeIndex, outSize - writeIndex);
+		}
+	}
 
 	return writeIndex;
 }
@@ -513,27 +656,39 @@ void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisib
 
 void EntityManager::remove(int id)
 {
-	// Find which entity group the given ID is in.
-	std::optional<int> entityIndex = this->staticGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
+	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
+	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
+
+	// Find which entity group the given entity ID is in. This is a slow look-up because there is
+	// no hint where the entity is at.
+	for (int y = 0; y < this->staticGroups.getHeight(); y++)
 	{
-		// Static entity.
-		this->staticGroup.remove(id);
+		for (int x = 0; x < this->staticGroups.getWidth(); x++)
+		{
+			auto &staticGroup = this->staticGroups.get(x, y);
+			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Static entity.
+				staticGroup.remove(id);
 
-		// Insert entity ID into the free list.
-		this->freeIDs.push_back(id);
-		return;
-	}
+				// Insert entity ID into the free list.
+				this->freeIDs.push_back(id);
+				return;
+			}
 
-	entityIndex = this->dynamicGroup.getEntityIndex(id);
-	if (entityIndex.has_value())
-	{
-		// Dynamic entity.
-		this->dynamicGroup.remove(id);
+			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			entityIndex = dynamicGroup.getEntityIndex(id);
+			if (entityIndex.has_value())
+			{
+				// Dynamic entity.
+				dynamicGroup.remove(id);
 
-		// Insert entity ID into the free list.
-		this->freeIDs.push_back(id);
-		return;
+				// Insert entity ID into the free list.
+				this->freeIDs.push_back(id);
+				return;
+			}
+		}
 	}
 
 	// Not in any entity group.
@@ -542,8 +697,16 @@ void EntityManager::remove(int id)
 
 void EntityManager::clear()
 {
-	this->staticGroup.clear();
-	this->dynamicGroup.clear();
+	for (int y = 0; y < this->staticGroups.getHeight(); y++)
+	{
+		for (int x = 0; x < this->staticGroups.getWidth(); x++)
+		{
+			auto &staticGroup = this->staticGroups.get(x, y);
+			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			staticGroup.clear();
+			dynamicGroup.clear();
+		}
+	}
 
 	this->entityDefs.clear();
 
@@ -553,20 +716,28 @@ void EntityManager::clear()
 
 void EntityManager::tick(Game &game, double dt)
 {
-	auto tickEntityGroup = [&game, dt](auto &entityGroup)
+	// @todo: probably only want to tick entities near the player, so get the chunks near the player.
+	auto tickEntityGroups = [&game, dt](auto &entityGroups)
 	{
-		const int entityCount = entityGroup.getCount();
-
-		for (int i = 0; i < entityCount; i++)
+		for (int y = 0; y < entityGroups.getHeight(); y++)
 		{
-			auto *entity = entityGroup.getEntityAtIndex(i);
-			if (entity != nullptr)
+			for (int x = 0; x < entityGroups.getWidth(); x++)
 			{
-				entity->tick(game, dt);
+				auto &entityGroup = entityGroups.get(x, y);
+				const int entityCount = entityGroup.getCount();
+
+				for (int i = 0; i < entityCount; i++)
+				{
+					auto *entity = entityGroup.getEntityAtIndex(i);
+					if (entity != nullptr)
+					{
+						entity->tick(game, dt);
+					}
+				}
 			}
 		}
 	};
 
-	tickEntityGroup(this->staticGroup);
-	tickEntityGroup(this->dynamicGroup);
+	tickEntityGroups(this->staticGroups);
+	tickEntityGroups(this->dynamicGroups);
 }

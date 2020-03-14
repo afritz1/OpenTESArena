@@ -13,6 +13,8 @@
 #include "../Math/Vector3.h"
 #include "../World/VoxelGrid.h"
 
+#include "components/utilities/Buffer2D.h"
+
 class Game;
 
 enum class EntityType;
@@ -75,9 +77,9 @@ private:
 		void clear();
 	};
 
-	// One group per entity type.
-	EntityGroup<StaticEntity> staticGroup;
-	EntityGroup<DynamicEntity> dynamicGroup;
+	// One group per chunk, split into static and dynamic types.
+	Buffer2D<EntityGroup<StaticEntity>> staticGroups;
+	Buffer2D<EntityGroup<DynamicEntity>> dynamicGroups;
 
 	// Entity definitions.
 	std::vector<EntityDefinition> entityDefs;
@@ -89,14 +91,14 @@ private:
 	// Obtains an available ID to be assigned to a new entity, incrementing the current max
 	// if no previously owned IDs are available to reuse.
 	int nextFreeID();
+
+	bool isValidChunk(int chunkX, int chunkY) const;
 public:
 	// The default ID assigned to entities that have no ID.
 	static const int NO_ID;
-	
-	EntityManager();
-	EntityManager(EntityManager &&entityManager) = default;
 
-	EntityManager &operator=(EntityManager &&entityManager) = default;
+	// Requires the chunks per X and Y side in the voxel grid for allocating entity groups.
+	void init(int chunkCountX, int chunkCountY);
 
 	// Factory functions. These assign the entity an available ID.
 	StaticEntity *makeStaticEntity();
@@ -109,12 +111,18 @@ public:
 	// Gets number of entities of the given type in the manager.
 	int getCount(EntityType entityType) const;
 
+	// Gets total number of entities in a chunk.
+	int getTotalCountInChunk(int chunkX, int chunkY) const;
+
 	// Gets total number of entities in the manager.
 	int getTotalCount() const;
 
 	// Gets pointers to entities of the given type. Returns number of entities written.
 	int getEntities(EntityType entityType, Entity **outEntities, int outSize);
 	int getEntities(EntityType entityType, const Entity **outEntities, int outSize) const;
+
+	// Gets pointers to all entities in a chunk. Returns number of entities written.
+	int getTotalEntitiesInChunk(int chunkX, int chunkY, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;

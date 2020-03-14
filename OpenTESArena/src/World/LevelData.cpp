@@ -197,6 +197,10 @@ LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::st
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
 {
+	const int chunkCountX = (gridWidth + (RMDFile::WIDTH - 1)) / RMDFile::WIDTH;
+	const int chunkCountY = (gridDepth + (RMDFile::DEPTH - 1)) / RMDFile::DEPTH;
+	this->entityManager.init(chunkCountX, chunkCountY);
+
 	if (!this->inf.init(infName.c_str()))
 	{
 		DebugCrash("Could not init .INF file \"" + infName + "\".");
