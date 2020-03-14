@@ -26,6 +26,7 @@ namespace
 	// Hardcoded graphics options (will be loaded at runtime at some point).
 	constexpr int TextureFilterMode = 0;
 	constexpr bool LightContributionCap = true;
+	constexpr int ChunkDistance = 1;
 
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
@@ -957,6 +958,7 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	ProfilerData data;
 	data.width = this->width;
 	data.height = this->height;
+	data.potentiallyVisFlatCount = static_cast<int>(this->potentiallyVisibleFlats.size());
 	data.visFlatCount = static_cast<int>(this->visibleFlats.size());
 	data.visLightCount = static_cast<int>(this->visibleLights.size());
 	return data;
@@ -1711,18 +1713,93 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
+void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
+	const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+	std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount)
+{
+	// Get the min and max chunk coordinates to loop over.
+	int minChunkX, minChunkY, maxChunkX, maxChunkY;
+	SoftwareRenderer::getPotentiallyVisibleChunkRanges(camera, ChunkDistance,
+		voxelGrid.getWidth(), voxelGrid.getDepth(), &minChunkX, &minChunkY, &maxChunkX, &maxChunkY);
+
+	// Number of chunks along each axis (i.e. 3x3).
+	const Int2 totalChunkDims(maxChunkX - minChunkX, maxChunkY - minChunkY);
+
+	auto getChunkPotentiallyVisFlatCount = [&entityManager](int chunkX, int chunkY)
+	{
+		// @todo: per chunk
+		//return entityManager.getTotalCount();
+		return 0;
+	};
+
+	auto getTotalPotentiallyVisFlatCount = [](const BufferView2D<const int> &chunkPotentiallyVisFlatCounts)
+	{
+		int count = 0;
+		for (int y = 0; y < chunkPotentiallyVisFlatCounts.getHeight(); y++)
+		{
+			for (int x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
+			{
+				count += chunkPotentiallyVisFlatCounts.get(x, y);
+			}
+		}
+
+		return count;
+	};
+
+	// Get potentially visible flat counts for each chunk.
+	Buffer2D<int> chunkPotentiallyVisFlatCounts(totalChunkDims.x, totalChunkDims.y);
+	for (int y = 0; y < chunkPotentiallyVisFlatCounts.getHeight(); y++)
+	{
+		for (int x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
+		{
+			const int chunkX = minChunkX + x;
+			const int chunkY = minChunkY + y;
+			const int count = getChunkPotentiallyVisFlatCount(chunkX, chunkY);
+			chunkPotentiallyVisFlatCounts.set(x, y, count);
+		}
+	}
+
+	// Total potentially visible flat count (in the chunks surrounding the player).
+	const int potentiallyVisFlatCount = getTotalPotentiallyVisFlatCount(BufferView2D<const int>(
+		chunkPotentiallyVisFlatCounts.get(), chunkPotentiallyVisFlatCounts.getWidth(),
+		chunkPotentiallyVisFlatCounts.getHeight()));
+
+	auto addPotentiallyVisFlatsInChunk = [&entityManager, outPotentiallyVisFlats, minChunkX, minChunkY,
+		&chunkPotentiallyVisFlatCounts](int chunkX, int chunkY, int insertIndex)
+	{
+		const Entity **entitiesPtr = outPotentiallyVisFlats->data() + insertIndex;
+		const int count = chunkPotentiallyVisFlatCounts.get(chunkX - minChunkX, chunkY - minChunkY);
+		entityManager.getTotalEntities(entitiesPtr, count); // @todo: per chunk
+	};
+
+	outPotentiallyVisFlats->resize(potentiallyVisFlatCount);
+
+	int potentiallyVisFlatInsertIndex = 0;
+	for (int y = 0; y < totalChunkDims.y; y++)
+	{
+		for (int x = 0; x < totalChunkDims.x; x++)
+		{
+			const int chunkPotentiallyVisFlatCount = chunkPotentiallyVisFlatCounts.get(x, y);
+			const int chunkX = minChunkX + x;
+			const int chunkY = minChunkY + y;
+			addPotentiallyVisFlatsInChunk(chunkX, chunkY, potentiallyVisFlatInsertIndex);
+			potentiallyVisFlatInsertIndex += chunkPotentiallyVisFlatCount;
+		}
+	}
+
+	*outEntityCount = potentiallyVisFlatInsertIndex;
+}
+
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
 	double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	this->visibleFlats.clear();
 	this->visibleLights.clear();
 
-	// Potentially visible entities buffer. Don't need to clear because it gets
-	// overwritten with a set amount of new data each frame.
-	this->potentiallyVisibleFlats.resize(entityManager.getTotalCount());
-	const int entityCount = entityManager.getTotalEntities(
-		this->potentiallyVisibleFlats.data(),
-		static_cast<int>(this->potentiallyVisibleFlats.size()));
+	// Update potentially visible flats so this method knows what to work with.
+	int potentiallyVisFlatCount;
+	SoftwareRenderer::updatePotentiallyVisibleFlats(camera, voxelGrid, entityManager,
+		&this->potentiallyVisibleFlats, &potentiallyVisFlatCount);
 
 	// Each flat shares the same axes. The forward direction always faces opposite to 
 	// the camera direction.
@@ -1743,7 +1820,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 	// Potentially visible flat determination algorithm, given the current camera.
 	// Also calculates visible lights.
-	for (int i = 0; i < entityCount; i++)
+	for (int i = 0; i < potentiallyVisFlatCount; i++)
 	{
 		const Entity &entity = *this->potentiallyVisibleFlats[i];
 		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
@@ -1866,6 +1943,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 void SoftwareRenderer::updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid)
 {
+	// @todo: only look at potentially visible chunks (this is too slow in the wilderness).
 	if (!this->visLightLists.isValid() ||
 		(this->visLightLists.getWidth() != voxelGrid.getDepth()) ||
 		(this->visLightLists.getHeight() != voxelGrid.getWidth()))
@@ -1981,6 +2059,30 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 	{
 		DebugUnhandledReturnMsg(int, std::to_string(mode));
 	}
+}
+
+Int2 SoftwareRenderer::getCameraChunk(const Camera &camera, int gridWidth, int gridDepth)
+{
+	constexpr int CHUNK_DIM = 64;
+
+	// To get chunk coords, need to be in original coordinates.
+	const Int2 originalVoxelXZ = VoxelGrid::getTransformedCoordinate(
+		Int2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
+	return Int2(originalVoxelXZ.x / CHUNK_DIM, originalVoxelXZ.y / CHUNK_DIM);
+}
+
+void SoftwareRenderer::getPotentiallyVisibleChunkRanges(const Camera &camera, int chunkDist,
+	int gridWidth, int gridDepth, int *outMinChunkX, int *outMinChunkY, int *outMaxChunkX,
+	int *outMaxChunkY)
+{
+	const Int2 cameraChunk = SoftwareRenderer::getCameraChunk(camera, gridWidth, gridDepth);
+
+	// Chunk distance is goes away from the camera in X or Y (to obtain 3x3, 5x5, etc.).
+	DebugAssert(chunkDist >= 1);
+	*outMinChunkX = cameraChunk.x - chunkDist;
+	*outMinChunkY = cameraChunk.y - chunkDist;
+	*outMaxChunkX = cameraChunk.x + chunkDist;
+	*outMaxChunkY = cameraChunk.y + chunkDist;
 }
 
 VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,

@@ -28,6 +28,9 @@ Renderer::ProfilerData::ProfilerData()
 {
 	this->width = 0;
 	this->height = 0;
+	this->potentiallyVisFlatCount = 0;
+	this->visFlatCount = 0;
+	this->visLightCount = 0;
 	this->frameTime = 0.0;
 }
 
@@ -768,6 +771,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const SoftwareRenderer::ProfilerData swProfilerData = this->softwareRenderer.getProfilerData();
 	this->profilerData.width = swProfilerData.width;
 	this->profilerData.height = swProfilerData.height;
+	this->profilerData.potentiallyVisFlatCount = swProfilerData.potentiallyVisFlatCount;
 	this->profilerData.visFlatCount = swProfilerData.visFlatCount;
 	this->profilerData.visLightCount = swProfilerData.visLightCount;
 	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /

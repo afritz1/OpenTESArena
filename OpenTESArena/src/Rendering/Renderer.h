@@ -54,7 +54,7 @@ public:
 		int width, height;
 
 		// Visible flats and lights.
-		int visFlatCount, visLightCount;
+		int potentiallyVisFlatCount, visFlatCount, visLightCount;
 
 		double frameTime;
 

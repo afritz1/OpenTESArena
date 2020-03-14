@@ -37,7 +37,7 @@ public:
 	struct ProfilerData
 	{
 		int width, height;
-		int visFlatCount, visLightCount;
+		int potentiallyVisFlatCount, visFlatCount, visLightCount;
 	};
 private:
 	struct VoxelTexel
@@ -564,12 +564,26 @@ private:
 	void updateVisibleDistantObjects(bool parallaxSky, const ShadingInfo &shadingInfo,
 		const Camera &camera, const FrameView &frame);
 
+	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
+	// calculation).
+	static void updatePotentiallyVisibleFlats(const Camera &camera, const VoxelGrid &voxelGrid,
+		const EntityManager &entityManager, std::vector<const Entity*> *outPotentiallyVisFlats,
+		int *outEntityCount);
+
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
 	void updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid);
+
+	// Gets the chunk coordinate the camera is in.
+	static Int2 getCameraChunk(const Camera &camera, int gridWidth, int gridDepth);
+
+	// Gets the potentially visible chunks coordinates around the camera position.
+	static void getPotentiallyVisibleChunkRanges(const Camera &camera, int chunkDist,
+		int gridWidth, int gridDepth, int *outMinChunkX, int *outMinChunkY, int *outMaxChunkX,
+		int *outMaxChunkY);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,

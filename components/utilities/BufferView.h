@@ -97,22 +97,12 @@ public:
 
 	T *end()
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
-		return this->data + this->count;
+		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
 	}
 
 	const T *end() const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
-		return this->data + this->count;
+		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
 	}
 
 	int getCount() const

@@ -2576,7 +2576,8 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 		const std::string text =
 			"3D render: " + renderTime + "ms" + "\n" +
-			"Vis flats: " + std::to_string(profilerData.visFlatCount) +
+			"Vis flats: " + std::to_string(profilerData.visFlatCount) + " (" +
+			std::to_string(profilerData.potentiallyVisFlatCount) + ")" +
 			", lights: " + std::to_string(profilerData.visLightCount) + "\n" +
 			"FPS Graph:" + '\n' +
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
