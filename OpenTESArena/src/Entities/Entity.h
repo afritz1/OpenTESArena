@@ -7,7 +7,9 @@
 // Entities are any objects in the world that aren't part of the voxel grid. Every entity
 // has a world position and a unique referencing ID.
 
+class EntityManager;
 class Game;
+class VoxelGrid;
 
 enum class EntityType;
 
@@ -22,8 +24,6 @@ protected:
 public:
 	Entity();
 	virtual ~Entity() = default;
-
-	Entity &operator=(const Entity&) = delete;
 
 	// Initializes the entity state (some values are initialized separately).
 	void init(int dataIndex);
@@ -47,8 +47,9 @@ public:
 	// Sets the entity's ID.
 	void setID(int id);
 
-	// Sets the XZ position of the entity.
-	void setPosition(const Double2 &position);
+	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
+	void setPosition(const Double2 &position, EntityManager &entityManager,
+		const VoxelGrid &voxelGrid);
 
 	// Clears all entity data so it can be used for another entity of the same type.
 	virtual void reset();

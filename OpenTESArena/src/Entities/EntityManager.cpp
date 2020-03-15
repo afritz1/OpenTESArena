@@ -132,15 +132,8 @@ std::optional<int> EntityManager::EntityGroup<T>::getEntityIndex(int id) const
 }
 
 template <typename T>
-T *EntityManager::EntityGroup<T>::addEntity(int id)
+int EntityManager::EntityGroup<T>::nextFreeIndex()
 {
-	DebugAssert(id != EntityManager::NO_ID);
-	DebugAssert(this->validEntities.size() == this->entities.size());
-
-	// Entity ID must not already be in use.
-	DebugAssert(!this->getEntityIndex(id).has_value());
-
-	// Find available position in entities array.
 	int index;
 	if (this->freeIndices.size() > 0)
 	{
@@ -159,6 +152,21 @@ T *EntityManager::EntityGroup<T>::addEntity(int id)
 		this->validEntities.push_back(true);
 	}
 
+	return index;
+}
+
+template <typename T>
+T *EntityManager::EntityGroup<T>::addEntity(int id)
+{
+	DebugAssert(id != EntityManager::NO_ID);
+	DebugAssert(this->validEntities.size() == this->entities.size());
+
+	// Entity ID must not already be in use.
+	DebugAssert(!this->getEntityIndex(id).has_value());
+
+	// Find available position in entities array, allocating space if needed.
+	const int index = this->nextFreeIndex();
+
 	// Initialize basic entity data.
 	DebugAssertIndex(this->entities, index);
 	T &entitySlot = this->entities[index];
@@ -169,6 +177,33 @@ T *EntityManager::EntityGroup<T>::addEntity(int id)
 	this->indices.insert(std::make_pair(id, index));
 
 	return &entitySlot;
+}
+
+template <typename T>
+void EntityManager::EntityGroup<T>::acquireEntity(int id, EntityGroup<T> &oldGroup)
+{
+	DebugAssert(id != EntityManager::NO_ID);
+
+	// Entity ID must not already be in use.
+	DebugAssert(!this->getEntityIndex(id).has_value());
+
+	std::optional<int> oldEntityIndex = oldGroup.getEntityIndex(id);
+	if (!oldEntityIndex.has_value())
+	{
+		DebugLogWarning("Entity \"" + std::to_string(id) + "\" not in old group.");
+		return;
+	}
+
+	// Move entity from old group to new group.
+	const int newEntityIndex = this->nextFreeIndex();
+	DebugAssertIndex(this->entities, newEntityIndex);
+	this->entities[newEntityIndex] = std::move(oldGroup.entities[*oldEntityIndex]);
+	this->indices.insert(std::make_pair(id, newEntityIndex));
+
+	// Clean up old group.
+	oldGroup.validEntities[*oldEntityIndex] = false;
+	oldGroup.indices.erase(id);
+	oldGroup.freeIndices.push_back(*oldEntityIndex);
 }
 
 template <typename T>
@@ -652,6 +687,91 @@ void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisib
 	outMax->x = visData.flatPosition.x + radius;
 	outMax->y = visData.flatPosition.y + height;
 	outMax->z = visData.flatPosition.z + radius;
+}
+
+void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid)
+{
+	if (entity == nullptr)
+	{
+		DebugLogWarning("Can't update null entity's chunk.");
+		return;
+	}
+
+	// Find which chunk they were in.
+	int oldChunkX = -1;
+	int oldChunkY = -1;
+
+	auto tryGetEntityGroupInfo = [entity, &oldChunkX, &oldChunkY](auto &entityGroups, auto **groupPtr)
+	{
+		// Find which entity group the given entity ID is in. This is a slow look-up because there is
+		// no hint where the entity is at.
+		for (int y = 0; y < entityGroups.getHeight(); y++)
+		{
+			for (int x = 0; x < entityGroups.getWidth(); x++)
+			{
+				auto &entityGroup = entityGroups.get(x, y);
+				const std::optional<int> entityIndex = entityGroup.getEntityIndex(entity->getID());
+				if (entityIndex.has_value())
+				{
+					oldChunkX = x;
+					oldChunkY = y;
+					*groupPtr = &entityGroup;
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
+	auto trySwapEntityGroup = [&voxelGrid, &oldChunkX, &oldChunkY](Entity *entity,
+		auto &oldGroup, auto &entityGroups)
+	{
+		auto swapEntityGroup = [](Entity *entity, auto &oldGroup, auto &newGroup)
+		{
+			newGroup.acquireEntity(entity->getID(), oldGroup);
+		};
+
+		const Double2 &entityPosXZ = entity->getPosition();
+		const Int2 entityVoxelXZ(
+			static_cast<int>(entityPosXZ.x),
+			static_cast<int>(entityPosXZ.y));
+		const Int2 originalVoxelXZ = VoxelGrid::getTransformedCoordinate(
+			entityVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+		constexpr int CHUNK_DIM = 64;
+		const int newChunkX = originalVoxelXZ.x / CHUNK_DIM;
+		const int newChunkY = originalVoxelXZ.y / CHUNK_DIM;
+
+		const bool groupHasChanged = (newChunkX != oldChunkX) || (newChunkY != oldChunkY);
+		if (groupHasChanged)
+		{
+			auto &newGroup = entityGroups.get(newChunkX, newChunkY);
+			swapEntityGroup(entity, oldGroup, newGroup);
+		}
+	};
+
+	if (entity->getEntityType() == EntityType::Static)
+	{
+		EntityGroup<StaticEntity> *staticEntityGroupPtr = nullptr;
+		if (tryGetEntityGroupInfo(this->staticGroups, &staticEntityGroupPtr))
+		{
+			trySwapEntityGroup(entity, *staticEntityGroupPtr, this->staticGroups);
+		}
+	}
+	else if (entity->getEntityType() == EntityType::Dynamic)
+	{
+		EntityGroup<DynamicEntity> *dynamicEntityGroupPtr = nullptr;
+		if (tryGetEntityGroupInfo(this->dynamicGroups, &dynamicEntityGroupPtr))
+		{
+			trySwapEntityGroup(entity, *dynamicEntityGroupPtr, this->dynamicGroups);
+		}
+	}
+	else
+	{
+		DebugLogError("Unhandled entity type \"" +
+			std::to_string(static_cast<int>(entity->getEntityType())) + "\".");
+	}
 }
 
 void EntityManager::remove(int id)

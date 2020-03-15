@@ -47,9 +47,11 @@ void Entity::setID(int id)
 	this->id = id;
 }
 
-void Entity::setPosition(const Double2 &position)
+void Entity::setPosition(const Double2 &position, EntityManager &entityManager,
+	const VoxelGrid &voxelGrid)
 {
 	this->position = position;
+	entityManager.updateEntityChunk(this, voxelGrid);
 }
 
 void Entity::reset()

@@ -51,6 +51,9 @@ private:
 
 		// List of previously-owned entity indices that can be replaced with new entities.
 		std::vector<int> freeIndices;
+
+		// Finds the next free entity index to add to, allocating if necessary.
+		int nextFreeIndex();
 	public:
 		// Gets number of entities in the group. Intended for iterating over the entire group,
 		// so it also includes any empty entries.
@@ -69,6 +72,9 @@ private:
 
 		// Inserts a new entity and assigns it the given ID.
 		T *addEntity(int id);
+
+		// Moves an entity from the old group to this group.
+		void acquireEntity(int id, EntityGroup<T> &oldGroup);
 
 		// Removes an entity from the group.
 		void remove(int id);
@@ -140,6 +146,9 @@ public:
 	// Gets the entity's 3D bounding box. This is view-dependent!
 	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
 		Double3 *outMin, Double3 *outMax) const;
+
+	// Puts the entity into the chunk representative of their 3D position.
+	void updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid);
 
 	// Deletes an entity.
 	void remove(int id);

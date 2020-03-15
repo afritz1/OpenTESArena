@@ -1768,7 +1768,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 		const Entity **entitiesPtr = outPotentiallyVisFlats->data() + insertIndex;
 		const int count = chunkPotentiallyVisFlatCounts.get(chunkX - minChunkX, chunkY - minChunkY);
 		const int writtenCount = entityManager.getTotalEntitiesInChunk(chunkX, chunkY, entitiesPtr, count);
-		DebugAssert(writtenCount == count);
+		DebugAssert(writtenCount <= count);
 	};
 
 	outPotentiallyVisFlats->resize(potentiallyVisFlatCount);
@@ -1821,11 +1821,18 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	// Also calculates visible lights.
 	for (int i = 0; i < potentiallyVisFlatCount; i++)
 	{
-		const Entity &entity = *this->potentiallyVisibleFlats[i];
-		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
+		const Entity *entity = this->potentiallyVisibleFlats[i];
+
+		// Entities can currently be null because of EntityGroup implementation details.
+		if (entity == nullptr)
+		{
+			continue;
+		}
+
+		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity->getDataIndex());
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(entity, eye2D, ceilingHeight, voxelGrid, visData);
+		entityManager.getEntityVisibilityData(*entity, eye2D, ceilingHeight, voxelGrid, visData);
 
 		// See if the entity is a light.
 		const int lightIntensity = [&shadingInfo, &entityDef]()

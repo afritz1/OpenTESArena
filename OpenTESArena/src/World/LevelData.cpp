@@ -1624,7 +1624,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				const Double2 positionXZ(
 					static_cast<double>(position.x) + 0.50,
 					static_cast<double>(position.y) + 0.50);
-				entity->setPosition(positionXZ);
+				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 
 				// Need to turn streetlights on or off at initialization.
 				if (isStreetlight)
