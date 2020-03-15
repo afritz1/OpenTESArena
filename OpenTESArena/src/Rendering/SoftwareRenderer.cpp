@@ -28,10 +28,6 @@ namespace
 	constexpr bool LightContributionCap = true;
 	constexpr int ChunkDistance = 1;
 
-	// Number of voxels per side on a chunk.
-	// @todo: don't hardcode here.
-	constexpr int CHUNK_DIM = 64;
-
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
