@@ -142,6 +142,11 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 	VoxelEntityMap voxelEntityMap;
 	for (const Entity *entityPtr : entities)
 	{
+		if (entityPtr == nullptr)
+		{
+			continue;
+		}
+
 		const Entity &entity = *entityPtr;
 
 		// Skip any entities that are behind the camera.

@@ -416,8 +416,9 @@ private:
 		std::array<LightID, MAX_LIGHTS> lightIDs;
 		int count;
 
+		VisibleLightList();
+
 		bool isFull() const;
-		void init();
 		void add(LightID lightID);
 		void clear();
 
@@ -575,7 +576,8 @@ private:
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
-	void updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid);
+	void updateVisibleLightLists(const Camera &camera, double ceilingHeight,
+		const VoxelGrid &voxelGrid);
 
 	// Gets the chunk coordinate the camera is in.
 	static Int2 getCameraChunk(const Camera &camera, int gridWidth, int gridDepth);

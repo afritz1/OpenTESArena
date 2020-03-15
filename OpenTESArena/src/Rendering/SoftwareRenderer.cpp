@@ -28,6 +28,10 @@ namespace
 	constexpr bool LightContributionCap = true;
 	constexpr int ChunkDistance = 1;
 
+	// Number of voxels per side on a chunk.
+	// @todo: don't hardcode here.
+	constexpr int CHUNK_DIM = 64;
+
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
@@ -799,14 +803,14 @@ void SoftwareRenderer::LightVisibilityData::init(const Double3 &position, double
 	this->intersectsFrustum = intersectsFrustum;
 }
 
+SoftwareRenderer::VisibleLightList::VisibleLightList()
+{
+	this->clear();
+}
+
 bool SoftwareRenderer::VisibleLightList::isFull() const
 {
 	return this->count == static_cast<int>(this->lightIDs.size());
-}
-
-void SoftwareRenderer::VisibleLightList::init()
-{
-	this->clear();
 }
 
 void SoftwareRenderer::VisibleLightList::add(LightID lightID)
@@ -1947,9 +1951,9 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		[](const VisibleFlat &a, const VisibleFlat &b) { return a.z > b.z; });
 }
 
-void SoftwareRenderer::updateVisibleLightLists(double ceilingHeight, const VoxelGrid &voxelGrid)
+void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, double ceilingHeight,
+	const VoxelGrid &voxelGrid)
 {
-	// @todo: only look at potentially visible chunks (this is too slow in the wilderness).
 	if (!this->visLightLists.isValid() ||
 		(this->visLightLists.getWidth() != voxelGrid.getDepth()) ||
 		(this->visLightLists.getHeight() != voxelGrid.getWidth()))
@@ -1957,11 +1961,46 @@ void SoftwareRenderer::updateVisibleLightLists(double ceilingHeight, const Voxel
 		this->visLightLists.init(voxelGrid.getDepth(), voxelGrid.getWidth());
 	}
 
-	// Clear all visible light lists.
-	for (auto iter = this->visLightLists.get(); iter != this->visLightLists.end(); iter++)
+	// Clear all potentially visible light lists.
+	int minChunkX, maxChunkX;
+	int minChunkY, maxChunkY;
+	SoftwareRenderer::getPotentiallyVisibleChunkRanges(camera, ChunkDistance, voxelGrid.getWidth(),
+		voxelGrid.getDepth(), &minChunkX, &minChunkY, &maxChunkX, &maxChunkY);
+
+	for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++)
 	{
-		VisibleLightList &visLightList = *iter;
-		visLightList.clear();
+		for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++)
+		{
+			const bool chunkIsValid = (chunkX >= 0) && (chunkX < CHUNK_DIM) &&
+				(chunkY >= 0) && (chunkY < CHUNK_DIM);
+
+			if (!chunkIsValid)
+			{
+				continue;
+			}
+
+			const int xOffset = chunkX * CHUNK_DIM;
+			const int yOffset = chunkY * CHUNK_DIM;
+			for (int y = 0; y < CHUNK_DIM; y++)
+			{
+				for (int x = 0; x < CHUNK_DIM; x++)
+				{
+					const int visLightListsX = xOffset + x;
+					const int visLightListsY = yOffset + y;
+					const bool visLightListsCoordIsValid = (visLightListsX >= 0) &&
+						(visLightListsX < this->visLightLists.getWidth()) && (visLightListsY >= 0) &&
+						(visLightListsY < this->visLightLists.getHeight());
+
+					if (!visLightListsCoordIsValid)
+					{
+						continue;
+					}
+
+					VisibleLightList &visLightList = this->visLightLists.get(visLightListsX, visLightListsY);
+					visLightList.clear();
+				}
+			}
+		}
 	}
 
 	const int visLightCount = static_cast<int>(this->visibleLights.size());	
@@ -2069,8 +2108,6 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 
 Int2 SoftwareRenderer::getCameraChunk(const Camera &camera, int gridWidth, int gridDepth)
 {
-	constexpr int CHUNK_DIM = 64;
-
 	// To get chunk coords, need to be in original coordinates.
 	const Int2 originalVoxelXZ = VoxelGrid::getTransformedCoordinate(
 		Int2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
@@ -8142,7 +8179,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	this->updateVisibleFlats(camera, shadingInfo, ceilingHeight, voxelGrid, entityManager);
 
 	// Refresh visible light lists used for shading voxels and entities efficiently.
-	this->updateVisibleLightLists(ceilingHeight, voxelGrid);
+	this->updateVisibleLightLists(camera, ceilingHeight, voxelGrid);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
