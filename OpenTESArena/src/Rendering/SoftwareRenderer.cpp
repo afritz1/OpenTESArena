@@ -18,6 +18,7 @@
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -1967,19 +1968,19 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, double ceil
 	{
 		for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++)
 		{
-			const bool chunkIsValid = (chunkX >= 0) && (chunkX < CHUNK_DIM) &&
-				(chunkY >= 0) && (chunkY < CHUNK_DIM);
+			const bool chunkIsValid = (chunkX >= 0) && (chunkX < VoxelUtils::CHUNK_DIM) &&
+				(chunkY >= 0) && (chunkY < VoxelUtils::CHUNK_DIM);
 
 			if (!chunkIsValid)
 			{
 				continue;
 			}
 
-			const int xOffset = chunkX * CHUNK_DIM;
-			const int yOffset = chunkY * CHUNK_DIM;
-			for (int y = 0; y < CHUNK_DIM; y++)
+			const int xOffset = chunkX * VoxelUtils::CHUNK_DIM;
+			const int yOffset = chunkY * VoxelUtils::CHUNK_DIM;
+			for (int y = 0; y < VoxelUtils::CHUNK_DIM; y++)
 			{
-				for (int x = 0; x < CHUNK_DIM; x++)
+				for (int x = 0; x < VoxelUtils::CHUNK_DIM; x++)
 				{
 					const int visLightListsX = xOffset + x;
 					const int visLightListsY = yOffset + y;
@@ -2107,7 +2108,7 @@ Int2 SoftwareRenderer::getCameraChunk(const Camera &camera, int gridWidth, int g
 	// To get chunk coords, need to be in original coordinates.
 	const Int2 originalVoxelXZ = VoxelGrid::getTransformedCoordinate(
 		Int2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
-	return Int2(originalVoxelXZ.x / CHUNK_DIM, originalVoxelXZ.y / CHUNK_DIM);
+	return Int2(originalVoxelXZ.x / VoxelUtils::CHUNK_DIM, originalVoxelXZ.y / VoxelUtils::CHUNK_DIM);
 }
 
 void SoftwareRenderer::getPotentiallyVisibleChunkRanges(const Camera &camera, int chunkDist,
