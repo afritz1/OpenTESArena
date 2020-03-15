@@ -1057,8 +1057,8 @@ void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int wid
 {
 	for (const auto &lock : locks)
 	{
-		const Int2 lockPosition = VoxelGrid::getTransformedCoordinate(
-			Int2(lock.x, lock.y), width, depth);
+		const NewInt2 lockPosition = VoxelUtils::originalVoxelToNewVoxel(
+			OriginalInt2(lock.x, lock.y), width, depth);
 		this->locks.insert(std::make_pair(
 			lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
 	}

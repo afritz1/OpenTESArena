@@ -7,6 +7,7 @@
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Texture.h"
+#include "../World/VoxelUtils.h"
 
 class Color;
 class Renderer;
@@ -37,11 +38,11 @@ private:
 		bool isWild, const VoxelGrid &voxelGrid);
 
 	// Calculates screen offset of automap for rendering.
-	static Double2 makeAutomapOffset(const Int2 &playerVoxel, bool isWild,
-		int gridWidth, int gridDepth);
+	static Double2 makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
+		NSInt gridWidth, EWInt gridDepth);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
-	static Int2 makeRelativeWildOrigin(const Int2 &voxel, int gridWidth, int gridDepth);
+	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth);
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);

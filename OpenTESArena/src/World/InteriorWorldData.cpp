@@ -29,9 +29,9 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	}
 
 	// Convert start points from the old coordinate system to the new one.
-	for (const auto &point : mif.getStartPoints())
+	for (const Double2 &point : mif.getStartPoints())
 	{
-		worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
+		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
 			point, mif.getDepth(), mif.getWidth()));
 	}
 
@@ -128,7 +128,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	const Double2 startPoint(
 		10.50 + (firstTransitionChunkX * chunkDimReal),
 		10.50 + (firstTransitionChunkZ * chunkDimReal));
-	worldData.startPoints.push_back(VoxelGrid::getTransformedCoordinate(
+	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
 		startPoint, gridWidth, gridDepth));
 
 	worldData.levelIndex = 0;

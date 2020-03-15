@@ -1728,7 +1728,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 
 	auto getChunkPotentiallyVisFlatCount = [&entityManager](int chunkX, int chunkY)
 	{
-		return entityManager.getTotalCountInChunk(chunkX, chunkY);
+		return entityManager.getTotalCountInChunk(ChunkInt2(chunkX, chunkY));
 	};
 
 	auto getTotalPotentiallyVisFlatCount = [](const BufferView2D<const int> &chunkPotentiallyVisFlatCounts)
@@ -1768,7 +1768,8 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 	{
 		const Entity **entitiesPtr = outPotentiallyVisFlats->data() + insertIndex;
 		const int count = chunkPotentiallyVisFlatCounts.get(chunkX - minChunkX, chunkY - minChunkY);
-		const int writtenCount = entityManager.getTotalEntitiesInChunk(chunkX, chunkY, entitiesPtr, count);
+		const int writtenCount = entityManager.getTotalEntitiesInChunk(
+			ChunkInt2(chunkX, chunkY), entitiesPtr, count);
 		DebugAssert(writtenCount <= count);
 	};
 
@@ -2106,8 +2107,8 @@ int SoftwareRenderer::getRenderThreadsFromMode(int mode)
 Int2 SoftwareRenderer::getCameraChunk(const Camera &camera, int gridWidth, int gridDepth)
 {
 	// To get chunk coords, need to be in original coordinates.
-	const Int2 originalVoxelXZ = VoxelGrid::getTransformedCoordinate(
-		Int2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
+	const OriginalInt2 originalVoxelXZ = VoxelUtils::newVoxelToOriginalVoxel(
+		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
 	return Int2(originalVoxelXZ.x / VoxelUtils::CHUNK_DIM, originalVoxelXZ.y / VoxelUtils::CHUNK_DIM);
 }
 

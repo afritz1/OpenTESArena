@@ -1,4 +1,5 @@
 #include "InteriorLevelData.h"
+#include "VoxelUtils.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
@@ -205,8 +206,8 @@ void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &
 	for (const auto &trigger : triggers)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const Int2 voxel = VoxelGrid::getTransformedCoordinate(
-			Int2(trigger.x, trigger.y), width, depth);
+		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(
+			OriginalInt2(trigger.x, trigger.y), width, depth);
 
 		// There can be a text trigger and sound trigger in the same voxel.
 		const bool isTextTrigger = trigger.textIndex != -1;

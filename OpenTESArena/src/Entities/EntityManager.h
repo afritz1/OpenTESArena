@@ -12,6 +12,7 @@
 #include "StaticEntity.h"
 #include "../Math/Vector3.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 
@@ -98,13 +99,13 @@ private:
 	// if no previously owned IDs are available to reuse.
 	int nextFreeID();
 
-	bool isValidChunk(int chunkX, int chunkY) const;
+	bool isValidChunk(const ChunkInt2 &chunk) const;
 public:
 	// The default ID assigned to entities that have no ID.
 	static const int NO_ID;
 
 	// Requires the chunks per X and Y side in the voxel grid for allocating entity groups.
-	void init(int chunkCountX, int chunkCountY);
+	void init(EWInt chunkCountX, SNInt chunkCountY);
 
 	// Factory functions. These assign the entity an available ID.
 	StaticEntity *makeStaticEntity();
@@ -118,7 +119,7 @@ public:
 	int getCount(EntityType entityType) const;
 
 	// Gets total number of entities in a chunk.
-	int getTotalCountInChunk(int chunkX, int chunkY) const;
+	int getTotalCountInChunk(const ChunkInt2 &chunk) const;
 
 	// Gets total number of entities in the manager.
 	int getTotalCount() const;
@@ -128,7 +129,7 @@ public:
 	int getEntities(EntityType entityType, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities in a chunk. Returns number of entities written.
-	int getTotalEntitiesInChunk(int chunkX, int chunkY, const Entity **outEntities, int outSize) const;
+	int getTotalEntitiesInChunk(const ChunkInt2 &chunk, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;

@@ -7,6 +7,7 @@
 
 #include "DistantSky.h"
 #include "LevelData.h"
+#include "VoxelUtils.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
 
@@ -59,7 +60,7 @@ public:
 	// position. This space always contains 4 wild chunks.
 	// @todo: when changing to chunks, probably use chunk X and Y here instead of absolute [0,4095],
 	// and return the chunk coordinate that contains the origin.
-	static Int2 getRelativeWildOrigin(const Int2 &voxel);
+	static OriginalInt2 getRelativeWildOrigin(const Int2 &voxel);
 
 	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
 	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.

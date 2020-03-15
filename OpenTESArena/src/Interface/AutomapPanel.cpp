@@ -521,8 +521,8 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 	return surface;
 }
 
-Double2 AutomapPanel::makeAutomapOffset(const Int2 &playerVoxel, bool isWild,
-	int gridWidth, int gridDepth)
+Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
+	NSInt gridWidth, EWInt gridDepth)
 {
 	if (!isWild)
 	{
@@ -534,26 +534,25 @@ Double2 AutomapPanel::makeAutomapOffset(const Int2 &playerVoxel, bool isWild,
 	else
 	{
 		// Wilderness.
-		const Int2 relativeOrigin = AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
+		const NewInt2 relativeOrigin = AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
 		return Double2(
 			static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
 			static_cast<double>(playerVoxel.y - relativeOrigin.y) + 0.50);
 	}
 }
 
-Int2 AutomapPanel::makeRelativeWildOrigin(const Int2 &voxel, int gridWidth, int gridDepth)
+NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
 {
-	const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(voxel, gridWidth, gridDepth);
-	const Int2 relativeOrigin = ExteriorLevelData::getCenteredWildOrigin(originalVoxel);
-	const Int2 newRelativeOrigin = VoxelGrid::getTransformedCoordinate(
-		relativeOrigin, gridWidth, gridDepth);
+	const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel, gridWidth, gridDepth);
+	const OriginalInt2 relativeOrigin = ExteriorLevelData::getCenteredWildOrigin(originalVoxel);
+	const NewInt2 newRelativeOrigin = VoxelUtils::originalVoxelToNewVoxel(relativeOrigin, gridWidth, gridDepth);
 
 	// Offset by two chunks to use the bottom-left corner instead of top-right.
 	const int offsetDist = RMDFile::WIDTH * 2;
 	DebugAssert(gridWidth >= offsetDist);
 	DebugAssert(gridDepth >= offsetDist);
 
-	return Int2(
+	return NewInt2(
 		std::clamp(newRelativeOrigin.x - offsetDist + 1, 0, gridWidth - offsetDist),
 		std::clamp(newRelativeOrigin.y - offsetDist + 1, 0, gridDepth - offsetDist));
 }

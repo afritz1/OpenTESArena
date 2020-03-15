@@ -856,10 +856,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			const auto &level = worldData.getActiveLevel();
 			const auto &voxelGrid = level.getVoxelGrid();
 
-			const Int2 displayedCoords = [&worldData, &player, &voxelGrid]()
+			const OriginalInt2 displayedCoords = [&worldData, &player, &voxelGrid]()
 			{
-				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
-					Int2(player.getVoxelPosition().x, player.getVoxelPosition().z),
+				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
+					NewInt2(player.getVoxelPosition().x, player.getVoxelPosition().z),
 					voxelGrid.getWidth(), voxelGrid.getDepth());
 
 				// The displayed coordinates in the wilderness behave differently in the original
@@ -2051,15 +2051,15 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		if (isTransitionVoxel)
 		{
 			auto &voxelGrid = activeLevel.getVoxelGrid();
-			const Int2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
+			const NewInt2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
 			const bool isTransitionToInterior = VoxelDefinition::WallData::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
 			{
-				const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
 					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
 
-				const Int2 doorVoxel = [isCity, &originalVoxel]()
+				const OriginalInt2 doorVoxel = [isCity, &originalVoxel]()
 				{
 					if (isCity)
 					{
@@ -2069,8 +2069,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						// Get the door voxel using the relative wilderness origin near the player
 						// as the reference.
-						const Int2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
-						const Int2 relativeVoxel = originalVoxel - relativeOrigin;
+						const OriginalInt2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+						const OriginalInt2 relativeVoxel = originalVoxel - relativeOrigin;
 						return relativeVoxel;
 					}
 				}();
@@ -2129,7 +2129,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 					}
 
-					gameData.enterInterior(menuType, mif, Int2(returnVoxel.x, returnVoxel.z),
+					gameData.enterInterior(menuType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
 						miscAssets, game.getTextureManager(), game.getRenderer());
 
 					// Change to interior music.
@@ -2156,7 +2156,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
-					const Int2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
+					const NewInt2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
 					const Int2 transitionDir = [&voxelHit]()
 					{
 						// Assuming this is a wall voxel.
@@ -2185,7 +2185,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						}
 					}();
 
-					const Int2 originalGateVoxel = VoxelGrid::getTransformedCoordinate(
+					const OriginalInt2 originalGateVoxel = VoxelUtils::newVoxelToOriginalVoxel(
 						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 					const bool ignoreGatePos = false;
@@ -2535,10 +2535,10 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			const auto &activeLevel = static_cast<const ExteriorLevelData&>(worldData.getActiveLevel());
 			const auto &voxelGrid = activeLevel.getVoxelGrid();
 
-			const Int2 playerVoxel(
+			const NewInt2 playerVoxel(
 				static_cast<int>(position.x),
 				static_cast<int>(position.z));
-			const Int2 originalVoxel = VoxelGrid::getTransformedCoordinate(
+			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
 				playerVoxel, voxelGrid.getWidth(), voxelGrid.getDepth());
 			const Int2 chunkCoord(
 				originalVoxel.x / RMDFile::WIDTH,

@@ -983,9 +983,9 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	}
 }
 
-Int2 ExteriorLevelData::getRelativeWildOrigin(const Int2 &voxel)
+OriginalInt2 ExteriorLevelData::getRelativeWildOrigin(const Int2 &voxel)
 {
-	return Int2(
+	return OriginalInt2(
 		voxel.x - (voxel.x % (RMDFile::WIDTH * 2)),
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
