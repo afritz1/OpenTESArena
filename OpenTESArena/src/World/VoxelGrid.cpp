@@ -4,7 +4,7 @@
 
 #include "components/debug/Debug.h"
 
-VoxelGrid::VoxelGrid(int width, int height, int depth)
+VoxelGrid::VoxelGrid(NSInt width, int height, EWInt depth)
 {
 	const int voxelCount = width * height * depth;
 	this->voxels = std::vector<uint16_t>(voxelCount, 0);
@@ -14,13 +14,13 @@ VoxelGrid::VoxelGrid(int width, int height, int depth)
 	this->depth = depth;
 }
 
-int VoxelGrid::getIndex(int x, int y, int z) const
+int VoxelGrid::getIndex(NSInt x, int y, EWInt z) const
 {
 	DebugAssert(this->coordIsValid(x, y, z));
 	return x + (y * this->width) + (z * this->width * this->height);
 }
 
-int VoxelGrid::getWidth() const
+NSInt VoxelGrid::getWidth() const
 {
 	return this->width;
 }
@@ -30,12 +30,12 @@ int VoxelGrid::getHeight() const
 	return this->height;
 }
 
-int VoxelGrid::getDepth() const
+EWInt VoxelGrid::getDepth() const
 {
 	return this->depth;
 }
 
-bool VoxelGrid::coordIsValid(int x, int y, int z) const
+bool VoxelGrid::coordIsValid(NSInt x, int y, EWInt z) const
 {
 	return (x >= 0) && (x < this->width) && (y >= 0) && (y < this->height) &&
 		(z >= 0) && (z < this->depth);
@@ -51,7 +51,7 @@ const uint16_t *VoxelGrid::getVoxels() const
 	return this->voxels.data();
 }
 
-uint16_t VoxelGrid::getVoxel(int x, int y, int z) const
+uint16_t VoxelGrid::getVoxel(NSInt x, int y, EWInt z) const
 {
 	const int index = this->getIndex(x, y, z);
 	return this->voxels.data()[index];
@@ -59,12 +59,14 @@ uint16_t VoxelGrid::getVoxel(int x, int y, int z) const
 
 VoxelDefinition &VoxelGrid::getVoxelDef(uint16_t id)
 {
-	return this->voxelDefs.at(id);
+	DebugAssertIndex(this->voxelDefs, id);
+	return this->voxelDefs[id];
 }
 
 const VoxelDefinition &VoxelGrid::getVoxelDef(uint16_t id) const
 {
-	return this->voxelDefs.at(id);
+	DebugAssertIndex(this->voxelDefs, id);
+	return this->voxelDefs[id];
 }
 
 std::optional<uint16_t> VoxelGrid::findVoxelDef(const VoxelDefPredicate &predicate) const
@@ -87,7 +89,7 @@ uint16_t VoxelGrid::addVoxelDef(const VoxelDefinition &voxelDef)
 	return static_cast<uint16_t>(this->voxelDefs.size() - 1);
 }
 
-void VoxelGrid::setVoxel(int x, int y, int z, uint16_t id)
+void VoxelGrid::setVoxel(NSInt x, int y, EWInt z, uint16_t id)
 {
 	const int index = this->getIndex(x, y, z);
 	this->voxels.data()[index] = id;

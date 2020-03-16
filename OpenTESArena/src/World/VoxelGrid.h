@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "VoxelDefinition.h"
+#include "VoxelUtils.h"
 #include "../Math/Vector2.h"
 
 // A voxel grid is a 3D array of voxel IDs with their associated voxel definitions.
@@ -22,27 +23,29 @@ public:
 private:
 	std::vector<uint16_t> voxels;
 	std::vector<VoxelDefinition> voxelDefs;
-	int width, height, depth;
+	NSInt width; // Width is north/south.
+	int height;
+	EWInt depth; // Depth is east/west.
 
 	// Converts XYZ coordinate to index.
-	int getIndex(int x, int y, int z) const;
+	int getIndex(NSInt x, int y, EWInt z) const;
 public:
-	VoxelGrid(int width, int height, int depth);
+	VoxelGrid(NSInt width, int height, EWInt depth);
 
 	// Gets the dimensions of the voxel grid.
-	int getWidth() const;
+	NSInt getWidth() const;
 	int getHeight() const;
-	int getDepth() const;
+	EWInt getDepth() const;
 
 	// Returns whether the given coordinate lies within the voxel grid.
-	bool coordIsValid(int x, int y, int z) const;
+	bool coordIsValid(NSInt x, int y, EWInt z) const;
 
 	// Gets a pointer to the voxel grid data.
 	uint16_t *getVoxels();
 	const uint16_t *getVoxels() const;
 
 	// Convenience method for getting a voxel's ID.
-	uint16_t getVoxel(int x, int y, int z) const;
+	uint16_t getVoxel(NSInt x, int y, EWInt z) const;
 
 	// Gets the voxel definitions associated with an ID.
 	VoxelDefinition &getVoxelDef(uint16_t id);
@@ -55,7 +58,7 @@ public:
 	uint16_t addVoxelDef(const VoxelDefinition &voxelDef);
 
 	// Convenience method for setting a voxel's ID.
-	void setVoxel(int x, int y, int z, uint16_t id);
+	void setVoxel(NSInt x, int y, EWInt z, uint16_t id);
 };
 
 #endif

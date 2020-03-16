@@ -578,14 +578,6 @@ private:
 	// Refreshes the visible light lists in each voxel column in the view frustum.
 	void updateVisibleLightLists(const Camera &camera, double ceilingHeight,
 		const VoxelGrid &voxelGrid);
-
-	// Gets the chunk coordinate the camera is in.
-	static Int2 getCameraChunk(const Camera &camera, int gridWidth, int gridDepth);
-
-	// Gets the potentially visible chunks coordinates around the camera position.
-	static void getPotentiallyVisibleChunkRanges(const Camera &camera, int chunkDist,
-		int gridWidth, int gridDepth, int *outMinChunkX, int *outMinChunkY, int *outMaxChunkX,
-		int *outMaxChunkY);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,

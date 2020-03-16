@@ -2,6 +2,32 @@
 
 #include "components/debug/Debug.h"
 
+int VoxelUtils::getNextHigherChunkMultiple(int coord)
+{
+	const int remainder = coord % VoxelUtils::CHUNK_DIM;
+	return (remainder == 0) ? coord : (coord + VoxelUtils::CHUNK_DIM - remainder);
+}
+
+void VoxelUtils::getChunkCounts(NSInt gridWidth, EWInt gridDepth, EWInt *outChunkCountX,
+	SNInt *outChunkCountY)
+{
+	auto chunksForDimension = [](int dim)
+	{
+		return VoxelUtils::getNextHigherChunkMultiple(dim) / CHUNK_DIM;
+	};
+
+	*outChunkCountX = chunksForDimension(gridDepth);
+	*outChunkCountY = chunksForDimension(gridWidth);
+}
+
+void VoxelUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDist, ChunkInt2 *outMinChunk,
+	ChunkInt2 *outMaxChunk)
+{
+	DebugAssert(chunkDist >= 1);
+	*outMinChunk = ChunkInt2(chunk.x - chunkDist, chunk.y - chunkDist);
+	*outMaxChunk = ChunkInt2(chunk.x + chunkDist, chunk.y + chunkDist);
+}
+
 NewInt2 VoxelUtils::originalVoxelToNewVoxel(const OriginalInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
 {
 	// These have a -1 since all .MIF start points are in the center of a voxel, giving a minimum
@@ -26,21 +52,26 @@ Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel, NSInt gridWidth, E
 NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel,
 	NSInt gridWidth, EWInt gridDepth)
 {
-	DebugNotImplemented();
 	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel = voxel + (chunk * CHUNK_DIM);
-	return NewInt2((gridWidth - 1) - absoluteChunkVoxel.y, absoluteChunkVoxel.x);
+
+	// Need to offset the east/west value since the chunk origin is to the left of the new voxel
+	// grid origin, so there might be a gap.
+	const EWInt nextHigherChunkX = VoxelUtils::getNextHigherChunkMultiple(gridDepth);
+	const EWInt nextHigherXDiff = nextHigherChunkX - gridDepth;
+
+	return NewInt2((gridWidth - 1) - absoluteChunkVoxel.y, absoluteChunkVoxel.x - nextHigherXDiff);
 }
 
 ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
 {
-	// @todo: probably need to include "next higher multiple of 64" for newVoxel.
-	// - i.e. if gridWidth (NSInt) is 80, it's in chunk 0,1.
+	// @todo: need to handle voxel outside grid.
+	const EWInt nextHigherChunkX = VoxelUtils::getNextHigherChunkMultiple(gridDepth);
+	const SNInt nextHigherChunkY = VoxelUtils::getNextHigherChunkMultiple(gridWidth);
 
-	// Can assume that the chunk space will always be equal to or greater than the new voxel space
-	// (i.e. if the level is 80x80 voxels, the chunk grid would be 2x2).
+	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel(
+		nextHigherChunkX - (nextHigherChunkX - voxel.y), // @todo: don't think this is right.
+		(gridWidth - 1) - voxel.x);
 
-	DebugNotImplemented();
-	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel((gridWidth - 1) - voxel.y, voxel.x); // <<< currently wrong! newVoxel +Z 5 might be absoluteChunkVoxel +X 40 or something.
 	ChunkCoord chunkCoord;
 	chunkCoord.chunk = ChunkInt2(absoluteChunkVoxel.x / CHUNK_DIM, absoluteChunkVoxel.y / CHUNK_DIM);
 	chunkCoord.voxel = ChunkVoxelInt2(absoluteChunkVoxel.x % CHUNK_DIM, absoluteChunkVoxel.y % CHUNK_DIM);
@@ -49,5 +80,6 @@ ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidt
 
 ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
 {
-	DebugNotImplemented();
+	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel, gridWidth, gridDepth);
+	return chunkCoord.chunk;
 }
