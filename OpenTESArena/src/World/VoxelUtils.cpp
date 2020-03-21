@@ -20,6 +20,15 @@ void VoxelUtils::getChunkCounts(NSInt gridWidth, EWInt gridDepth, EWInt *outChun
 	*outChunkCountY = chunksForDimension(gridWidth);
 }
 
+void VoxelUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, EWInt *outChunkCountX,
+	SNInt *outChunkCountY)
+{
+	DebugAssert(chunkDistance >= 1);
+	const int count = 1 + (chunkDistance * 2);
+	*outChunkCountX = count;
+	*outChunkCountY = count;
+}
+
 void VoxelUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDist, ChunkInt2 *outMinChunk,
 	ChunkInt2 *outMaxChunk)
 {
@@ -62,6 +71,14 @@ NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxe
 	return NewInt2((gridWidth - 1) - absoluteChunkVoxel.y, absoluteChunkVoxel.x - nextHigherXDiff);
 }
 
+AbsoluteChunkVoxelInt2 VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(const ChunkInt2 &chunk,
+	const ChunkVoxelInt2 &voxel)
+{
+	return AbsoluteChunkVoxelInt2(
+		(chunk.x * VoxelUtils::CHUNK_DIM) + voxel.x,
+		(chunk.y * VoxelUtils::CHUNK_DIM) + voxel.y);
+}
+
 ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
 {
 	// @todo: need to handle voxel outside grid.
@@ -83,4 +100,19 @@ ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel, NSInt gridWidth, EWI
 {
 	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel, gridWidth, gridDepth);
 	return chunkCoord.chunk;
+}
+
+AbsoluteChunkVoxelInt2 VoxelUtils::newVoxelToAbsoluteChunkVoxel(const NewInt2 &voxel,
+	NSInt gridWidth, EWInt gridDepth)
+{
+	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel, gridWidth, gridDepth);
+	return VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(chunkCoord.chunk, chunkCoord.voxel);
+}
+
+ChunkCoord VoxelUtils::absoluteChunkVoxelToChunkVoxel(const AbsoluteChunkVoxelInt2 &voxel)
+{
+	ChunkCoord chunkCoord;
+	chunkCoord.chunk = ChunkInt2(voxel.x / VoxelUtils::CHUNK_DIM, voxel.y / VoxelUtils::CHUNK_DIM);
+	chunkCoord.voxel = ChunkVoxelInt2(voxel.x % VoxelUtils::CHUNK_DIM, voxel.y % VoxelUtils::CHUNK_DIM);
+	return chunkCoord;
 }

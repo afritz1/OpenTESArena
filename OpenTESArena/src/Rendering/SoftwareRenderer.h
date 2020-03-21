@@ -536,7 +536,7 @@ private:
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
-	Buffer2D<VisibleLightList> visLightLists; // Voxel column references to visible lights.
+	Buffer2D<VisibleLightList> visLightLists; // Potentially-visible voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
 	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
@@ -567,7 +567,7 @@ private:
 
 	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
 	// calculation).
-	static void updatePotentiallyVisibleFlats(const Camera &camera, const VoxelGrid &voxelGrid,
+	static void updatePotentiallyVisibleFlats(const Camera &camera, NSInt gridWidth, EWInt gridDepth,
 		const EntityManager &entityManager, std::vector<const Entity*> *outPotentiallyVisFlats,
 		int *outEntityCount);
 
@@ -576,8 +576,7 @@ private:
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
-	void updateVisibleLightLists(const Camera &camera, double ceilingHeight,
-		const VoxelGrid &voxelGrid);
+	void updateVisibleLightLists(const Camera &camera, double ceilingHeight, const VoxelGrid &voxelGrid);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -603,7 +602,8 @@ private:
 
 	// Gets the visible light list associated with some voxel column.
 	static const VisibleLightList &getVisibleLightList(
-		const BufferView2D<const VisibleLightList> &visLightLists, int voxelX, int voxelZ);
+		const BufferView2D<const VisibleLightList> &visLightLists, NSInt voxelX, EWInt voxelZ,
+		NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
@@ -907,10 +907,11 @@ private:
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
-	static void drawFlat(int startX, int endX, const VisibleFlat &flat,
-		const Double3 &normal, const Double2 &eye, const ShadingInfo &shadingInfo, 
+	static void drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
+		const Double2 &eye, const NewInt2 &eyeVoxelXZ, const ShadingInfo &shadingInfo,
 		const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
+		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
@@ -951,7 +952,7 @@ private:
 		const std::vector<VisibleFlat> &visibleFlats,
 		const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
 		const ShadingInfo &shadingInfo, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists,
+		const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 		const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and

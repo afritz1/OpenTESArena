@@ -34,6 +34,9 @@ namespace VoxelUtils
 	// new voxel grid space.
 	void getChunkCounts(NSInt gridWidth, EWInt gridDepth, EWInt *outChunkCountX, SNInt *outChunkCountY);
 
+	// Gets the number of chunks that are potentially visible at any given time.
+	void getPotentiallyVisibleChunkCounts(int chunkDistance, EWInt *outChunkCountX, SNInt *outChunkCountY);
+
 	// Gets chunks in an NxN pattern around the given chunk. Useful for potentially visible chunk
 	// coordinates around the camera position. Chunk distance is the distance away from the given
 	// chunk in X or Y to reach (to obtain 3x3, 5x5, etc.).
@@ -51,11 +54,22 @@ namespace VoxelUtils
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel,
 		NSInt gridWidth, EWInt gridDepth);
 
+	// Converts a voxel from chunk space to absolute chunk voxel space.
+	AbsoluteChunkVoxelInt2 chunkVoxelToAbsoluteChunkVoxel(const ChunkInt2 &chunk,
+		const ChunkVoxelInt2 &voxel);
+
 	// Converts a voxel from new voxel grid space to chunk voxel space.
 	ChunkCoord newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth);
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth);
+
+	// Converts a voxel from new voxel space to absolute chunk voxel space.
+	AbsoluteChunkVoxelInt2 newVoxelToAbsoluteChunkVoxel(const NewInt2 &voxel,
+		NSInt gridWidth, EWInt gridDepth);
+
+	// Converts a voxel from absolute chunk voxel space to chunk voxel space.
+	ChunkCoord absoluteChunkVoxelToChunkVoxel(const AbsoluteChunkVoxelInt2 &voxel);
 }
 
 #endif
