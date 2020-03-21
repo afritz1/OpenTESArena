@@ -1818,10 +1818,6 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double2 eye2D(camera.eye.x, camera.eye.z);
 	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
 
-	const ChunkInt2 temp = VoxelUtils::newVoxelToChunk(
-		NewInt2(static_cast<int>(eye2D.x), static_cast<int>(eye2D.y)),
-		voxelGrid.getWidth(), voxelGrid.getDepth());
-
 	if (shadingInfo.playerHasLight)
 	{
 		// Add player light.

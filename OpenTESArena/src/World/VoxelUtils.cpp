@@ -86,7 +86,7 @@ ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidt
 	const SNInt nextHigherChunkY = VoxelUtils::getNextHigherChunkMultiple(gridWidth);
 
 	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel(
-		voxel.y + (nextHigherChunkX - gridDepth),
+		nextHigherChunkX - voxel.y + (nextHigherChunkX - gridDepth),
 		(gridWidth - 1) - voxel.x);
 
 	ChunkCoord chunkCoord;
