@@ -69,11 +69,12 @@ ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel, NSInt gridWidt
 	const SNInt nextHigherChunkY = VoxelUtils::getNextHigherChunkMultiple(gridWidth);
 
 	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel(
-		nextHigherChunkX - (nextHigherChunkX - voxel.y), // @todo: don't think this is right.
+		voxel.y + (nextHigherChunkX - gridDepth),
 		(gridWidth - 1) - voxel.x);
 
 	ChunkCoord chunkCoord;
 	chunkCoord.chunk = ChunkInt2(absoluteChunkVoxel.x / CHUNK_DIM, absoluteChunkVoxel.y / CHUNK_DIM);
+	// @todo: probably want (int)Floor() instead of modulo.
 	chunkCoord.voxel = ChunkVoxelInt2(absoluteChunkVoxel.x % CHUNK_DIM, absoluteChunkVoxel.y % CHUNK_DIM);
 	return chunkCoord;
 }
