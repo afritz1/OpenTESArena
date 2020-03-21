@@ -1726,8 +1726,8 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 	VoxelUtils::getSurroundingChunks(cameraChunk, ChunkDistance, &minChunk, &maxChunk);
 
 	// Number of chunks along each axis (i.e. 3x3).
-	const EWInt chunkCountX = maxChunk.x - minChunk.x;
-	const SNInt chunkCountY = maxChunk.y - minChunk.y;
+	const EWInt chunkCountX = (maxChunk.x - minChunk.x) + 1;
+	const SNInt chunkCountY = (maxChunk.y - minChunk.y) + 1;
 
 	auto getChunkPotentiallyVisFlatCount = [&entityManager](EWInt chunkX, SNInt chunkY)
 	{
