@@ -225,8 +225,8 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
-		bool nightLightsAreActive, bool isExterior, bool playerHasLight, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
+		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager);
 

@@ -464,9 +464,11 @@ private:
 			const ChasmTextureGroups *chasmTextureGroups;
 			std::vector<OcclusionData> *occlusion;
 			double ceilingHeight;
+			int chunkDistance;
 			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
-			void init(double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+			void init(int chunkDistance, double ceilingHeight,
+				const std::vector<LevelData::DoorState> &openDoors,
 				const std::vector<LevelData::FadeState> &fadingVoxels,
 				const std::vector<VisibleLight> &visLights,
 				const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -568,15 +570,16 @@ private:
 	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
 	// calculation).
 	static void updatePotentiallyVisibleFlats(const Camera &camera, NSInt gridWidth, EWInt gridDepth,
-		const EntityManager &entityManager, std::vector<const Entity*> *outPotentiallyVisFlats,
-		int *outEntityCount);
+		int chunkDistance, const EntityManager &entityManager,
+		std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount);
 
 	// Refreshes the list of flats to be drawn.
-	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
+	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo, int chunkDistance,
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
-	void updateVisibleLightLists(const Camera &camera, double ceilingHeight, const VoxelGrid &voxelGrid);
+	void updateVisibleLightLists(const Camera &camera, int chunkDistance, double ceilingHeight,
+		const VoxelGrid &voxelGrid);
 	
 	// Gets the facing value for the far side of a chasm.
 	static VoxelFacing getInitialChasmFarFacing(int voxelX, int voxelZ,
@@ -603,7 +606,8 @@ private:
 	// Gets the visible light list associated with some voxel column.
 	static const VisibleLightList &getVisibleLightList(
 		const BufferView2D<const VisibleLightList> &visLightLists, NSInt voxelX, EWInt voxelZ,
-		NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth);
+		NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth,
+		int chunkDistance);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
 	static double getDoorPercentOpen(int voxelX, int voxelZ,
@@ -826,7 +830,7 @@ private:
 	static void drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
@@ -836,7 +840,7 @@ private:
 	static void drawInitialVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
@@ -846,7 +850,7 @@ private:
 	static void drawInitialVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
@@ -858,7 +862,7 @@ private:
 	static void drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -869,7 +873,7 @@ private:
 	static void drawVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -878,7 +882,7 @@ private:
 	static void drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -887,7 +891,7 @@ private:
 	static void drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -898,7 +902,7 @@ private:
 	static void drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
 		const Double2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -909,14 +913,14 @@ private:
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
 		const Double2 &eye, const NewInt2 &eyeVoxelXZ, const ShadingInfo &shadingInfo,
-		const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
+		int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
-		const ShadingInfo &shadingInfo, double ceilingHeight,
+		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
@@ -939,8 +943,8 @@ private:
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
-	static void drawVoxels(int startX, int stride, const Camera &camera, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
+	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
@@ -951,7 +955,7 @@ private:
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
 		const std::vector<VisibleFlat> &visibleFlats,
 		const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
-		const ShadingInfo &shadingInfo, const BufferView<const VisibleLight> &visLights,
+		const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 		const FrameView &frame);
 
@@ -1039,7 +1043,7 @@ public:
 	void render(const Double3 &eye, const Double3 &direction, double fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
 		bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, uint32_t *colorBuffer);
 };

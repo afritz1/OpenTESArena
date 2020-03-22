@@ -128,8 +128,8 @@ void Physics::Hit::setT(double t)
 }
 
 Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPosition,
-	const Double3 &cameraDirection, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager)
+	const Double3 &cameraDirection, int chunkDistance, double ceilingHeight,
+	const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 {
 	const Double2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
 	const Double2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
@@ -140,7 +140,6 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 	const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
 		cameraVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
 
-	const int chunkDistance = 1; // @todo: get from Options
 	ChunkInt2 minChunk, maxChunk;
 	VoxelUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
@@ -1223,8 +1222,8 @@ void Physics::rayCastInternal(const Double3 &rayStart, const Double3 &rayDirecti
 	}
 }
 
-bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
-	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
+	double ceilingHeight, const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
 	Physics::Hit &hit)
 {
@@ -1236,7 +1235,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 	if (includeEntities)
 	{
 		voxelEntityMap = Physics::makeVoxelEntityMap(
-			rayStart, rayDirection, ceilingHeight, voxelGrid, entityManager);
+			rayStart, rayDirection, chunkDistance, ceilingHeight, voxelGrid, entityManager);
 	}
 
 	// Ray cast through the voxel grid, populating the output hit data.
@@ -1247,12 +1246,12 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, doub
 	return hit.getT() < Hit::MAX_T;
 }
 
-bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection,
+bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
 	Physics::Hit &hit)
 {
 	constexpr double ceilingHeight = 1.0;
-	return Physics::rayCast(rayStart, rayDirection, ceilingHeight, cameraForward, pixelPerfect,
-		includeEntities, entityManager, voxelGrid, renderer, hit);
+	return Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight, cameraForward,
+		pixelPerfect, includeEntities, entityManager, voxelGrid, renderer, hit);
 }

@@ -69,8 +69,8 @@ private:
 	// Builds a set of voxels that are at least partially touched by entities. Ignores entities
 	// behind the camera.
 	static VoxelEntityMap makeVoxelEntityMap(const Double3 &cameraPosition,
-		const Double3 &cameraDirection, double ceilingHeight, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager);
+		const Double3 &cameraDirection, int chunkDistance, double ceilingHeight,
+		const VoxelGrid &voxelGrid, const EntityManager &entityManager);
 
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
@@ -102,11 +102,11 @@ public:
 
 	// Casts a ray through the world and writes any intersection data into the output
 	// parameter. Returns true if the ray hit something.
-	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, double ceilingHeight,
-		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
+		double ceilingHeight, const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
 		Physics::Hit &hit);
-	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection,
+	static bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
 		Physics::Hit &hit);

@@ -107,6 +107,7 @@ namespace
 		auto &gameData = game.getGameData();
 		
 		const auto &options = game.getOptions();
+		const int chunkDistance = options.getMisc_ChunkDistance();
 		const double verticalFOV = options.getGraphics_VerticalFOV();
 		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
@@ -138,9 +139,9 @@ namespace
 				const bool includeEntities = false;
 
 				Physics::Hit hit;
-				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight,
-					cameraDirection, pixelPerfect, includeEntities, entityManager, voxelGrid,
-					renderer, hit);
+				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance,
+					ceilingHeight, cameraDirection, pixelPerfect, includeEntities, entityManager,
+					voxelGrid, renderer, hit);
 
 				if (success)
 				{
@@ -210,9 +211,10 @@ namespace
 		const bool includeEntities = true;
 
 		Physics::Hit hit;
-		const bool success = Physics::rayCast(rayStart, rayDirection, levelData.getCeilingHeight(),
-			cameraDirection, options.getInput_PixelPerfectSelection(), includeEntities,
-			entityManager, voxelGrid, renderer, hit);
+		const bool success = Physics::rayCast(rayStart, rayDirection,
+			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), cameraDirection,
+			options.getInput_PixelPerfectSelection(), includeEntities, entityManager, voxelGrid,
+			renderer, hit);
 
 		std::string text;
 		if (success)
@@ -1563,14 +1565,17 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
 
+	const int chunkDistance = options.getMisc_ChunkDistance();
+
 	// Pixel-perfect selection determines whether an entity's texture is used in the
 	// selection calculation.
 	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
 	const bool includeEntities = true;
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingHeight, cameraDirection,
-		pixelPerfectSelection, includeEntities, entityManager, voxelGrid, game.getRenderer(), hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
+		cameraDirection, pixelPerfectSelection, includeEntities, entityManager, voxelGrid,
+		game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -2809,8 +2814,8 @@ void GameWorldPanel::render(Renderer &renderer)
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
 		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
 		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
-		level.getCeilingHeight(), level.getOpenDoors(), level.getFadingVoxels(),
-		level.getVoxelGrid(), level.getEntityManager());
+		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level.getOpenDoors(),
+		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager());
 
 	auto &textureManager = this->getGame().getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
