@@ -4,10 +4,12 @@
 #include "EntityManager.h"
 #include "EntityType.h"
 #include "../Assets/MIFFile.h"
+#include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../World/VoxelDataType.h"
+#include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -838,28 +840,52 @@ void EntityManager::clear()
 
 void EntityManager::tick(Game &game, double dt)
 {
-	// @todo: probably only want to tick entities near the player, so get the chunks near the player.
-	auto tickEntityGroups = [&game, dt](auto &entityGroups)
+	// Only want to tick entities near the player, so get the chunks near the player.
+	const ChunkInt2 playerChunk = [&game]()
 	{
-		for (SNInt y = 0; y < entityGroups.getHeight(); y++)
-		{
-			for (EWInt x = 0; x < entityGroups.getWidth(); x++)
-			{
-				auto &entityGroup = entityGroups.get(x, y);
-				const int entityCount = entityGroup.getCount();
+		auto &gameData = game.getGameData();
+		const auto &worldData = gameData.getWorldData();
+		const auto &levelData = worldData.getActiveLevel();
+		const auto &voxelGrid = levelData.getVoxelGrid();
+		const Double3 &playerPosition = gameData.getPlayer().getPosition();
+		const NewInt2 playerVoxelXZ(
+			static_cast<int>(std::floor(playerPosition.x)),
+			static_cast<int>(std::floor(playerPosition.z)));
+		return VoxelUtils::newVoxelToChunk(
+			playerVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+	}();
 
-				for (int i = 0; i < entityCount; i++)
+	const int chunkDistance = 1; // @todo: get from Options
+	ChunkInt2 minChunk, maxChunk;
+	VoxelUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
+
+	auto tickNearbyEntityGroups = [&game, dt, &minChunk, &maxChunk](auto &entityGroups)
+	{
+		for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+		{
+			for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+			{
+				const bool coordIsValid = (x >= 0) && (x < entityGroups.getWidth()) &&
+					(y >= 0) && (y < entityGroups.getHeight());
+
+				if (coordIsValid)
 				{
-					auto *entity = entityGroup.getEntityAtIndex(i);
-					if (entity != nullptr)
+					auto &entityGroup = entityGroups.get(x, y);
+					const int entityCount = entityGroup.getCount();
+
+					for (int i = 0; i < entityCount; i++)
 					{
-						entity->tick(game, dt);
+						auto *entity = entityGroup.getEntityAtIndex(i);
+						if (entity != nullptr)
+						{
+							entity->tick(game, dt);
+						}
 					}
 				}
 			}
 		}
 	};
 
-	tickEntityGroups(this->staticGroups);
-	tickEntityGroups(this->dynamicGroups);
+	tickNearbyEntityGroups(this->staticGroups);
+	tickNearbyEntityGroups(this->dynamicGroups);
 }
