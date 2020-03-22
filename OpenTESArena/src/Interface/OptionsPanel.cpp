@@ -244,6 +244,7 @@ const std::string OptionsPanel::PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Se
 const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
 const std::string OptionsPanel::SHOW_INTRO_NAME = "Show Intro";
 const std::string OptionsPanel::TIME_SCALE_NAME = "Time Scale";
+const std::string OptionsPanel::CHUNK_DISTANCE_NAME = "Chunk Distance";
 const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
 const std::string OptionsPanel::PLAYER_HAS_LIGHT_NAME = "Player Has Light";
 
@@ -676,6 +677,20 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		options.setMisc_TimeScale(value);
+	}));
+
+	this->miscOptions.push_back(std::make_unique<IntOption>(
+		OptionsPanel::CHUNK_DISTANCE_NAME,
+		"Affects how many chunks away from the player chunks are\nsimulated and rendered.\n\nNot fully implemented yet.",
+		options.getMisc_ChunkDistance(),
+		1,
+		Options::MIN_CHUNK_DISTANCE,
+		std::numeric_limits<int>::max(),
+		[this](int value)
+	{
+		auto &game = this->getGame();
+		auto &options = game.getOptions();
+		options.setMisc_ChunkDistance(value);
 	}));
 
 	auto starDensityOption = std::make_unique<IntOption>(

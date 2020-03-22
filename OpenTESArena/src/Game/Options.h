@@ -82,6 +82,7 @@ public:
 	static const int RESAMPLING_OPTION_COUNT;
 	static const double MIN_TIME_SCALE;
 	static const double MAX_TIME_SCALE;
+	static const int MIN_CHUNK_DISTANCE;
 	static const int MIN_STAR_DENSITY_MODE;
 	static const int MAX_STAR_DENSITY_MODE;
 	static const int MIN_PROFILER_LEVEL;
@@ -167,6 +168,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)
 	OPTION_DOUBLE(Misc, TimeScale)
+	OPTION_INT(Misc, ChunkDistance)
 	OPTION_INT(Misc, StarDensity)
 	OPTION_BOOL(Misc, PlayerHasLight)
 

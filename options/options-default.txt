@@ -94,6 +94,10 @@ ShowCompass=true
 # Accepted values are between 0.50 and 1.0.
 TimeScale=1.0
 
+# Affects the number of chunks around the player simulated and rendered.
+# Min is 1.
+ChunkDistance=1
+
 # Affects number of stars in the night sky.
 # 0: classic, 1: moderate, 2: high
 StarDensity=0

@@ -58,6 +58,7 @@ namespace
 		{ "ShowIntro", OptionType::Bool },
 		{ "ShowCompass", OptionType::Bool },
 		{ "TimeScale", OptionType::Double },
+		{ "ChunkDistance", OptionType::Int },
 		{ "StarDensity", OptionType::Int },
 		{ "PlayerHasLight", OptionType::Bool }
 	};
@@ -100,6 +101,7 @@ const int Options::MIN_SOUND_CHANNELS = 1;
 const int Options::RESAMPLING_OPTION_COUNT = 4;
 const double Options::MIN_TIME_SCALE = 0.50;
 const double Options::MAX_TIME_SCALE = 1.0;
+const int Options::MIN_CHUNK_DISTANCE = 1;
 const int Options::MIN_STAR_DENSITY_MODE = 0;
 const int Options::MAX_STAR_DENSITY_MODE = 2;
 const int Options::MIN_PROFILER_LEVEL = 0;
@@ -609,6 +611,13 @@ void Options::checkMisc_TimeScale(double value) const
 	DebugAssertMsg(value <= Options::MAX_TIME_SCALE,
 		"Time scale cannot be greater than " +
 		String::fixedPrecision(Options::MAX_TIME_SCALE, 1) + ".");
+}
+
+void Options::checkMisc_ChunkDistance(int value) const
+{
+	DebugAssertMsg(value >= Options::MIN_CHUNK_DISTANCE,
+		"Chunk distance cannot be less than " +
+		std::to_string(Options::MIN_CHUNK_DISTANCE) + ".");
 }
 
 void Options::checkMisc_StarDensity(int value) const
