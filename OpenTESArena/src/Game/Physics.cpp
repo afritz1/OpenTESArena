@@ -11,6 +11,7 @@
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -130,13 +131,53 @@ Physics::VoxelEntityMap Physics::makeVoxelEntityMap(const Double3 &cameraPositio
 	const Double3 &cameraDirection, double ceilingHeight, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager)
 {
-	// Get all the entities.
-	std::vector<const Entity*> entities(entityManager.getTotalCount());
-	const int entityCount = entityManager.getTotalEntities(
-		entities.data(), static_cast<int>(entities.size()));
-
 	const Double2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
 	const Double2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
+
+	const NewInt2 cameraVoxelXZ(
+		static_cast<int>(std::floor(cameraPosXZ.x)),
+		static_cast<int>(std::floor(cameraPosXZ.y)));
+	const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
+		cameraVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+
+	const int chunkDistance = 1; // @todo: get from Options
+	ChunkInt2 minChunk, maxChunk;
+	VoxelUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
+
+	// Gather up entities in nearby chunks.
+	const int totalNearbyEntities = [&entityManager, &minChunk, &maxChunk]()
+	{
+		int count = 0;
+		for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+		{
+			for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+			{
+				count += entityManager.getTotalCountInChunk(ChunkInt2(x, y));
+			}
+		}
+
+		return count;
+	}();
+
+	std::vector<const Entity*> entities(totalNearbyEntities, nullptr);
+	int entityInsertIndex = 0;
+	auto addEntitiesFromChunk = [&entityManager, &entities, &entityInsertIndex](EWInt chunkX, SNInt chunkY)
+	{
+		const Entity **entitiesPtr = entities.data() + entityInsertIndex;
+		const int size = static_cast<int>(entities.size()) - entityInsertIndex;
+		const int writtenCount = entityManager.getTotalEntitiesInChunk(
+			ChunkInt2(chunkX, chunkY), entitiesPtr, size);
+		DebugAssert(writtenCount <= size);
+		entityInsertIndex += writtenCount;
+	};
+
+	for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+	{
+		for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+		{
+			addEntitiesFromChunk(x, y);
+		}
+	}
 
 	// Build mappings of voxels to entities.
 	VoxelEntityMap voxelEntityMap;
