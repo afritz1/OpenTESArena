@@ -2006,11 +2006,11 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 		// Bounding box around the light's reach in the XZ plane.
 		const NewInt2 visLightMin(
-			std::clamp(static_cast<NSInt>(visLight.position.x - visLight.radius), 0, voxelGrid.getWidth() - 1),
-			std::clamp(static_cast<EWInt>(visLight.position.z - visLight.radius), 0, voxelGrid.getDepth() - 1));
+			std::clamp(static_cast<NSInt>(std::floor(visLight.position.x - visLight.radius)), 0, voxelGrid.getWidth() - 1),
+			std::clamp(static_cast<EWInt>(std::floor(visLight.position.z - visLight.radius)), 0, voxelGrid.getDepth() - 1));
 		const NewInt2 visLightMax(
-			std::clamp(static_cast<NSInt>(visLight.position.x + visLight.radius), 0, voxelGrid.getWidth() - 1),
-			std::clamp(static_cast<EWInt>(visLight.position.z + visLight.radius), 0, voxelGrid.getDepth() - 1));
+			std::clamp(static_cast<NSInt>(std::floor(visLight.position.x + visLight.radius)), 0, voxelGrid.getWidth() - 1),
+			std::clamp(static_cast<EWInt>(std::floor(visLight.position.z + visLight.radius)), 0, voxelGrid.getDepth() - 1));
 
 		// Since these are in a different coordinate system, can't rely on min < max.
 		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA =
@@ -2023,10 +2023,13 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 		const AbsoluteChunkVoxelInt2 relativeChunkVoxelB = visLightAbsoluteChunkVoxelB - minAbsoluteChunkVoxel;
 
 		// Have to rely on delta between A and B instead of min/max due to coordinate system transform.
-		const Int2 relativeChunkVoxelDelta = relativeChunkVoxelB - relativeChunkVoxelA;
-		for (SNInt y = relativeChunkVoxelA.y; y != relativeChunkVoxelB.y; y += relativeChunkVoxelDelta.y)
+		const Int2 relativeChunkVoxelDeltaStep(
+			((relativeChunkVoxelB.x - relativeChunkVoxelA.x) > 0) ? 1 : -1,
+			((relativeChunkVoxelB.y - relativeChunkVoxelA.y) > 0) ? 1 : -1);
+
+		for (SNInt y = relativeChunkVoxelA.y; y != relativeChunkVoxelB.y; y += relativeChunkVoxelDeltaStep.y)
 		{
-			for (EWInt x = relativeChunkVoxelA.x; x != relativeChunkVoxelB.x; x += relativeChunkVoxelDelta.x)
+			for (EWInt x = relativeChunkVoxelA.x; x != relativeChunkVoxelB.x; x += relativeChunkVoxelDeltaStep.x)
 			{
 				const bool coordIsValid = (x >= 0) && (x < visLightListVoxelCountX) &&
 					(y >= 0) && (y < visLightListVoxelCountY);
@@ -2447,12 +2450,6 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	const BufferView2D<const VisibleLightList> &visLightLists, NSInt voxelX, EWInt voxelZ,
 	NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth, int chunkDistance)
 {
-	// @todo: the math in here is wrong somewhere. Was able to get visLightListY = -1 by starting test wilderness.
-	return visLightLists.get(0, 0);
-
-	// ...
-
-
 	// Convert new voxel grid coordinates to potentially-visible light list space
 	// (chunk space but its origin depends on the camera).
 	const NewInt2 newVoxel(voxelX, voxelZ);
