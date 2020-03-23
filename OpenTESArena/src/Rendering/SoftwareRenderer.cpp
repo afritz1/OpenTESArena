@@ -2006,11 +2006,11 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 		// Bounding box around the light's reach in the XZ plane.
 		const NewInt2 visLightMin(
-			std::clamp(static_cast<NSInt>(std::floor(visLight.position.x - visLight.radius)), 0, voxelGrid.getWidth() - 1),
-			std::clamp(static_cast<EWInt>(std::floor(visLight.position.z - visLight.radius)), 0, voxelGrid.getDepth() - 1));
+			static_cast<NSInt>(std::floor(visLight.position.x - visLight.radius)),
+			static_cast<EWInt>(std::floor(visLight.position.z - visLight.radius)));
 		const NewInt2 visLightMax(
-			std::clamp(static_cast<NSInt>(std::floor(visLight.position.x + visLight.radius)), 0, voxelGrid.getWidth() - 1),
-			std::clamp(static_cast<EWInt>(std::floor(visLight.position.z + visLight.radius)), 0, voxelGrid.getDepth() - 1));
+			static_cast<NSInt>(std::ceil(visLight.position.x + visLight.radius)),
+			static_cast<EWInt>(std::ceil(visLight.position.z + visLight.radius)));
 
 		// Since these are in a different coordinate system, can't rely on min < max.
 		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA =
@@ -2470,6 +2470,22 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 
 	const int visLightListX = absoluteChunkVoxel.x - minAbsoluteChunkVoxel.x;
 	const int visLightListY = absoluteChunkVoxel.y - minAbsoluteChunkVoxel.y;
+
+	// @todo: temp hack to avoid crash from bad coordinate math. Not sure how to fix it
+	// because sometimes the XY is too low or too high, so it doesn't feel like a simple
+	// off-by- +/- one in some coordinate system transform :/ it'll hopefully get fixed
+	// when NewInt2 gets removed.
+	const bool coordIsValid =
+		(visLightListX >= 0) && (visLightListX < visLightLists.getWidth()) &&
+		(visLightListY >= 0) && (visLightListY < visLightLists.getHeight());
+
+	if (!coordIsValid)
+	{
+		return visLightLists.get(
+			std::clamp(visLightListX, 0, visLightLists.getWidth() - 1),
+			std::clamp(visLightListY, 0, visLightLists.getHeight() - 1));
+	}
+
 	return visLightLists.get(visLightListX, visLightListY);
 }
 
