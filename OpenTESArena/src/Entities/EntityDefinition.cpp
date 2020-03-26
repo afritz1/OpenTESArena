@@ -105,6 +105,7 @@ void EntityDefinition::initCreature(const ExeData::Entities &entities, int creat
 {
 	this->creatureData.init(entities, creatureIndex, isFinalBoss);
 	this->infData.flatIndex = flatIndex;
+	this->infData.yOffset = this->creatureData.yOffset;
 	this->infData.collider = true;
 
 	this->isCreatureInited = true;
