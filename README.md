@@ -2,7 +2,7 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++17 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows, Linux, and macOS.
 
-- Version: 0.10.0
+- Version: 0.11.0
 - License: MIT
 - Discord: https://discord.gg/DgHe2jG
 
@@ -23,6 +23,7 @@ Here are some keys in the game world:
 - Esc - pause menu
 - Tab - character sheet
 - F - draw/sheathe weapon
+- G - hold and click voxel to destroy
 - L - logbook
 - M - world map
 - N - automap
