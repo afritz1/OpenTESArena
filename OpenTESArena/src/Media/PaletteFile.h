@@ -8,13 +8,9 @@
 
 enum class PaletteName;
 
-class PaletteFile
+namespace PaletteFile
 {
-private:
-	PaletteFile() = delete;
-	~PaletteFile() = delete;
-public:
-	static const std::string &fromName(PaletteName paletteName);
-};
+	const std::string &fromName(PaletteName paletteName);
+}
 
 #endif

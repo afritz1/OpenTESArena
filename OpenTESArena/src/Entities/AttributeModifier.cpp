@@ -3,6 +3,7 @@
 #include "AttributeModifier.h"
 #include "AttributeModifierName.h"
 
+// @todo: very old, replace this with ExeData.
 const std::unordered_map<AttributeModifierName, std::string> AttributeModifierDisplayNames =
 {
 	{ AttributeModifierName::MeleeDamage, "Melee Damage" },

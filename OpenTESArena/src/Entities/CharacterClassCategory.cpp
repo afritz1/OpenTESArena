@@ -3,6 +3,7 @@
 #include "CharacterClassCategory.h"
 #include "CharacterClassCategoryName.h"
 
+// @todo: very old, replace with ExeData.
 const std::unordered_map<CharacterClassCategoryName, std::string> CharacterClassCategoryDisplayNames =
 {
 	{ CharacterClassCategoryName::Mage, "Mage" },

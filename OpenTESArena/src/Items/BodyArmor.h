@@ -13,7 +13,6 @@
 
 class ArmorMaterial;
 class BodyArmorArtifactData;
-class BodyPart;
 
 enum class BodyPartName;
 

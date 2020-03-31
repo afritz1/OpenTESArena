@@ -10,12 +10,8 @@
 // Various composite types used with Arena's binary data files. Struct sizes are hardcoded
 // to show intent and to avoid issues with padding since they map directly to Arena's data.
 
-class ArenaTypes
+namespace ArenaTypes
 {
-private:
-	ArenaTypes() = delete;
-	~ArenaTypes() = delete;
-public:
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;
@@ -513,6 +509,6 @@ public:
 
 		void init(const uint8_t *data);
 	};
-};
+}
 
 #endif

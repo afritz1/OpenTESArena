@@ -3,7 +3,7 @@
 
 #include <string>
 
-// This class takes care of mapping hardcoded texture names to filenames.
+// This namespace takes care of mapping hardcoded texture names to filenames.
 // Certain texture names are hardcoded because they should never change for the 
 // lifetime of the application and are known beforehand.
 
@@ -12,14 +12,10 @@
 enum class TextureName;
 enum class TextureSequenceName;
 
-class TextureFile
+namespace TextureFile
 {
-private:
-	TextureFile() = delete;
-	~TextureFile() = delete;
-public:
-	static const std::string &fromName(TextureName textureName);
-	static const std::string &fromName(TextureSequenceName sequenceName);
-};
+	const std::string &fromName(TextureName textureName);
+	const std::string &fromName(TextureSequenceName sequenceName);
+}
 
 #endif

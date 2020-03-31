@@ -9,20 +9,16 @@
 
 enum class CardinalDirectionName;
 
-class CardinalDirection
+namespace CardinalDirection
 {
-private:
-	CardinalDirection() = delete;
-	~CardinalDirection() = delete;
-public:
 	// Cardinal directions in the XZ plane (bird's eye view).
-	static const Double2 North;
-	static const Double2 South;
-	static const Double2 East;
-	static const Double2 West;
+	const Double2 North(1.0, 0.0);
+	const Double2 South(-1.0, 0.0);
+	const Double2 East(0.0, 1.0);
+	const Double2 West(0.0, -1.0);
 
-	static CardinalDirectionName getDirectionName(const Double2 &direction);
-	static const std::string &toString(CardinalDirectionName directionName);
-};
+	CardinalDirectionName getDirectionName(const Double2 &direction);
+	const std::string &toString(CardinalDirectionName directionName);
+}
 
 #endif

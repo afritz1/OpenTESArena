@@ -16,27 +16,40 @@
 #include <sys/types.h>
 #endif
 
-const std::string Platform::XDGDataHome = "XDG_DATA_HOME";
-const std::string Platform::XDGConfigHome = "XDG_CONFIG_HOME";
-
-std::string Platform::getHomeEnv()
+namespace Platform
 {
-	const char *homeEnvPtr = SDL_getenv("HOME");
-	return (homeEnvPtr != nullptr) ? std::string(homeEnvPtr) : std::string();
-}
+	// Linux user environment variables. Data home is "~/.local/share" and config home is
+	// "~/.config". If getenv("XDG_...") is null, then try getenv("HOME") with the desired
+	// subdirectory appended (i.e., "./local/share").
+	const std::string XDGDataHome = "XDG_DATA_HOME";
+	const std::string XDGConfigHome = "XDG_CONFIG_HOME";
 
-std::string Platform::getXDGDataHomeEnv()
-{
-	const char *xdgEnv = SDL_getenv(Platform::XDGDataHome.c_str());
-	return (xdgEnv != nullptr) ? std::string(xdgEnv) :
-		(Platform::getHomeEnv() + "/.local/share");
-}
+	// Gets the user's home environment variable ($HOME). Does not have a trailing slash.
+	std::string getHomeEnv()
+	{
+		const char *homeEnvPtr = SDL_getenv("HOME");
+		return (homeEnvPtr != nullptr) ? std::string(homeEnvPtr) : std::string();
+	}
 
-std::string Platform::getXDGConfigHomeEnv()
-{
-	const char *xdgEnv = SDL_getenv(Platform::XDGConfigHome.c_str());
-	return (xdgEnv != nullptr) ? std::string(xdgEnv) :
-		(Platform::getHomeEnv() + "/.config");
+	// Gets the data home directory from $XDG_DATA_HOME (or $HOME/.local/share as a fallback).
+	// Does not have a trailing slash. Basically the same as SDL_GetPrefPath() on Linux systems
+	// (without the slash).
+	std::string getXDGDataHomeEnv()
+	{
+		const char *xdgEnv = SDL_getenv(Platform::XDGDataHome.c_str());
+		return (xdgEnv != nullptr) ? std::string(xdgEnv) :
+			(Platform::getHomeEnv() + "/.local/share");
+	}
+
+	// Gets the config home directory from $XDG_CONFIG_HOME (or $HOME/.config as a fallback).
+	// Does not have a trailing slash. SDL does not supply a matching function for this (unlike
+	// SDL_GetPrefPath()).
+	std::string getXDGConfigHomeEnv()
+	{
+		const char *xdgEnv = SDL_getenv(Platform::XDGConfigHome.c_str());
+		return (xdgEnv != nullptr) ? std::string(xdgEnv) :
+			(Platform::getHomeEnv() + "/.config");
+	}
 }
 
 std::string Platform::getPlatform()

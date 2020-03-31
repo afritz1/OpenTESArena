@@ -6,12 +6,8 @@
 
 // Various helper records for composite data in the executable, primarily used with the
 // ExeData class.
-class ExeTypes
+namespace ExeTypes
 {
-private:
-	ExeTypes() = delete;
-	~ExeTypes() = delete;
-public:
 	struct Rect16
 	{
 		static const size_t SIZE;
@@ -34,6 +30,6 @@ public:
 
 		void init(const char *data);
 	};
-};
+}
 
 #endif

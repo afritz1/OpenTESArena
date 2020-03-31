@@ -19,11 +19,6 @@ const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDi
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-const Double2 CardinalDirection::North = Double2(1.0, 0.0);
-const Double2 CardinalDirection::South = Double2(-1.0, 0.0);
-const Double2 CardinalDirection::East = Double2(0.0, 1.0);
-const Double2 CardinalDirection::West = Double2(0.0, -1.0);
-
 CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.

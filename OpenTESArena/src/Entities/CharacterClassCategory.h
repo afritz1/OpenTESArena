@@ -3,19 +3,15 @@
 
 #include <string>
 
-// This static class exists mostly for implementing the "toString()" method for 
+// This namespace exists mostly for implementing the "toString()" method for 
 // class categories. Otherwise, the character class would have two methods which 
 // fight over a similar name.
 
 enum class CharacterClassCategoryName;
 
-class CharacterClassCategory
+namespace CharacterClassCategory
 {
-private:
-	CharacterClassCategory() = delete;
-	~CharacterClassCategory() = delete;
-public:
-	static const std::string &toString(CharacterClassCategoryName categoryName);
-};
+	const std::string &toString(CharacterClassCategoryName categoryName);
+}
 
 #endif

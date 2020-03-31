@@ -3,17 +3,13 @@
 
 #include <string>
 
-// Static class for accessing Arena sound filenames.
+// Namespace for accessing Arena sound filenames.
 
 enum class SoundName;
 
-class SoundFile
+namespace SoundFile
 {
-private:
-	SoundFile() = delete;
-	~SoundFile() = delete;
-public:
-	static const std::string &fromName(SoundName soundName);
-};
+	const std::string &fromName(SoundName soundName);
+}
 
 #endif

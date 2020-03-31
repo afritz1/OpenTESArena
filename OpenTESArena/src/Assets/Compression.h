@@ -10,25 +10,19 @@
 #include "components/debug/Debug.h"
 
 // There are a few different methods used for compressing textures in Arena.
-// The reusable decompression algorithms will be kept in this class.
+// The reusable decompression algorithms will be kept in this namespace.
 
-class Compression
+namespace Compression
 {
-private:
-	Compression() = delete;
-	~Compression() = delete;
-public:
 	// Uncompresses an RLE run of bytes.
-	static void decodeRLE(const uint8_t *src, int stopCount,
-		std::vector<uint8_t> &out);
+	void decodeRLE(const uint8_t *src, int stopCount, std::vector<uint8_t> &out);
 
 	// Uncompresses an RLE run of words. Used with .RMD files.
-	static void decodeRLEWords(const uint8_t *src, int stopCount,
-		std::vector<uint8_t> &out);
+	void decodeRLEWords(const uint8_t *src, int stopCount, std::vector<uint8_t> &out);
 
 	// Works with .IMG and .CIF type 4 files.
 	template <typename T>
-	static void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
+	void decodeType04(T src, T srcend, std::vector<uint8_t> &out)
 	{
 		auto dst = out.begin();
 
@@ -89,7 +83,7 @@ public:
 
 	// Works with type 8 .IMG and .CIF files, and voxel data in .MIF files.
 	template <typename T>
-	static void decodeType08(T src, T srcend, std::vector<uint8_t> &out)
+	void decodeType08(T src, T srcend, std::vector<uint8_t> &out)
 	{
 		static const std::array<uint8_t, 256> highOffsetBits{
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -289,6 +283,6 @@ public:
 			}
 		}
 	}
-};
+}
 
 #endif

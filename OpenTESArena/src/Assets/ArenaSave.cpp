@@ -6,6 +6,20 @@
 
 #include "components/debug/Debug.h"
 
+namespace ArenaSave
+{
+	const std::string AUTOMAP_FILENAME = "AUTOMAP";
+	const std::string IN_FILENAME = "IN";
+	const std::string LOG_FILENAME = "LOG";
+	const std::string NAMES_FILENAME = "NAMES.DAT";
+	const std::string RE_FILENAME = "RE";
+	const std::string SAVEENGN_FILENAME = "SAVEENGN";
+	const std::string SAVEGAME_FILENAME = "SAVEGAME";
+	const std::string SPELLS_FILENAME = "SPELLS";
+	const std::string SPELLSG_FILENAME = "SPELLSG";
+	const std::string STATE_FILENAME = "STATE";
+}
+
 namespace
 {
 	// Makes a numbered extension for the given save index.
@@ -50,17 +64,6 @@ namespace
 		}
 	}
 }
-
-const std::string ArenaSave::AUTOMAP_FILENAME = "AUTOMAP";
-const std::string ArenaSave::IN_FILENAME = "IN";
-const std::string ArenaSave::LOG_FILENAME = "LOG";
-const std::string ArenaSave::NAMES_FILENAME = "NAMES.DAT";
-const std::string ArenaSave::RE_FILENAME = "RE";
-const std::string ArenaSave::SAVEENGN_FILENAME = "SAVEENGN";
-const std::string ArenaSave::SAVEGAME_FILENAME = "SAVEGAME";
-const std::string ArenaSave::SPELLS_FILENAME = "SPELLS";
-const std::string ArenaSave::SPELLSG_FILENAME = "SPELLSG";
-const std::string ArenaSave::STATE_FILENAME = "STATE";
 
 std::unique_ptr<ArenaTypes::Automap> ArenaSave::loadAUTOMAP(const std::string &savePath, int index)
 {

@@ -2,8 +2,8 @@
 
 #include "TextEntry.h"
 
-bool TextEntry::updateText(std::string &text, const SDL_Event &e,
-	bool backspace, bool(*charIsAllowed)(char), size_t maxLength)
+bool TextEntry::updateText(std::string &text, const SDL_Event &e, bool backspace,
+	bool(*charIsAllowed)(char), size_t maxLength)
 {
 	if (backspace)
 	{
