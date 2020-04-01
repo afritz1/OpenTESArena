@@ -1,8 +1,12 @@
+#include <algorithm>
+
+#include "Location.h"
 #include "ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
 
-void ProvinceDefinition::init(const CityDataFile::ProvinceData &provinceData)
+void ProvinceDefinition::init(int provinceID, const CityDataFile::ProvinceData &provinceData,
+	const ExeData::CityGeneration &cityGen)
 {
 	this->name = provinceData.name;
 	this->globalX = provinceData.globalX;
@@ -10,32 +14,98 @@ void ProvinceDefinition::init(const CityDataFile::ProvinceData &provinceData)
 	this->globalW = provinceData.globalW;
 	this->globalH = provinceData.globalH;
 
-	auto tryAddLocationDef = [this](const CityDataFile::ProvinceData::LocationData &locationData)
+	auto canAddLocation = [](const CityDataFile::ProvinceData::LocationData &locationData)
 	{
-		if (locationData.name.size() > 0)
+		// @todo: don't think this works for dungeons because they are renamed when set visible.
+		//return locationData.name.size() > 0;
+		return true;
+	};
+
+	auto tryAddCity = [this, &canAddLocation](LocationDefinition::CityDefinition::Type type,
+		const CityDataFile::ProvinceData::LocationData &locationData, bool coastal, bool premade)
+	{
+		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.init(locationData);
+			locationDef.initCity(type, locationData, coastal, premade);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
 
-	auto tryAddLocationDefs = [&tryAddLocationDef](const auto &locations)
+	auto tryAddDungeon = [this, &canAddLocation](const CityDataFile::ProvinceData::LocationData &locationData)
 	{
-		for (const CityDataFile::ProvinceData::LocationData &locationData : locations)
+		if (canAddLocation(locationData))
 		{
-			tryAddLocationDef(locationData);
+			LocationDefinition locationDef;
+			locationDef.initDungeon(locationData);
+			this->locations.push_back(std::move(locationDef));
 		}
 	};
 
-	tryAddLocationDefs(provinceData.cityStates);
-	tryAddLocationDefs(provinceData.towns);
-	tryAddLocationDefs(provinceData.villages);
+	auto tryAddMainQuestDungeon = [this, &canAddLocation](LocationDefinition::MainQuestDungeonDefinition::Type type,
+		const CityDataFile::ProvinceData::LocationData &locationData)
+	{
+		if (canAddLocation(locationData))
+		{
+			LocationDefinition locationDef;
+			locationDef.initMainQuestDungeon(type, locationData);
+			this->locations.push_back(std::move(locationDef));
+		}
+	};
 
-	tryAddLocationDef(provinceData.secondDungeon);
-	tryAddLocationDef(provinceData.firstDungeon);
+	const bool isCenterProvince = provinceID == Location::CENTER_PROVINCE_ID;
 
-	tryAddLocationDefs(provinceData.randomDungeons);
+	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](const auto &locations,
+		LocationDefinition::CityDefinition::Type type, int startID)
+	{
+		auto isCoastal = [provinceID, &cityGen](int localCityID)
+		{
+			const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+			return std::find(cityGen.coastalCityList.begin(),
+				cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
+		};
+
+		for (size_t i = 0; i < locations.size(); i++)
+		{
+			const auto &location = locations[i];
+			const int localCityID = startID + static_cast<int>(i);
+			const bool coastal = isCoastal(localCityID);
+			const bool premade = isCenterProvince && (localCityID == 0);
+			tryAddCity(type, location, coastal, premade);
+		}
+	};
+
+	auto tryAddDungeons = [&tryAddDungeon](const auto &locations)
+	{
+		for (size_t i = 0; i < locations.size(); i++)
+		{
+			const auto &location = locations[i];
+			tryAddDungeon(location);
+		}
+	};
+
+	tryAddCities(provinceData.cityStates, LocationDefinition::CityDefinition::Type::City, 0);
+	tryAddCities(provinceData.towns, LocationDefinition::CityDefinition::Type::Town,
+		static_cast<int>(provinceData.cityStates.size()));
+	tryAddCities(provinceData.villages, LocationDefinition::CityDefinition::Type::Village,
+		static_cast<int>(provinceData.cityStates.size() + provinceData.towns.size()));
+
+	tryAddDungeons(provinceData.randomDungeons);
+
+	tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Map, provinceData.firstDungeon);
+	tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Staff, provinceData.secondDungeon);
+
+	const bool hasStartDungeon = isCenterProvince;
+	if (hasStartDungeon)
+	{
+		CityDataFile::ProvinceData::LocationData startDungeonLocation;
+		startDungeonLocation.name = std::string();
+		startDungeonLocation.x = 0;
+		startDungeonLocation.y = 0;
+		startDungeonLocation.setVisible(false);
+
+		tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Start, startDungeonLocation);
+	}
 }
 
 int ProvinceDefinition::getLocationCount() const

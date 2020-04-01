@@ -5,6 +5,7 @@
 
 #include "LocationDefinition.h"
 #include "../Assets/CityDataFile.h"
+#include "../Assets/ExeData.h"
 #include "../Math/Rect.h"
 
 class ProvinceDefinition
@@ -15,7 +16,8 @@ private:
 	int globalX, globalY, globalW, globalH; // Province-to-world-map projection.
 public:
 	// Initialize from original game data.
-	void init(const CityDataFile::ProvinceData &provinceData);
+	void init(int provinceID, const CityDataFile::ProvinceData &provinceData,
+		const ExeData::CityGeneration &cityGen);
 	// @todo: eventually have init(const char *filename) for custom provinces.
 
 	// Gets the number of locations in the province.

@@ -2,14 +2,15 @@
 
 #include "components/debug/Debug.h"
 
-void WorldMapDefinition::init(const CityDataFile &cityData)
+void WorldMapDefinition::init(const CityDataFile &cityData, const ExeData::CityGeneration &cityGen)
 {
+	this->provinces.clear();
 	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
 	{
 		const CityDataFile::ProvinceData &provinceData = cityData.getProvinceData(i);
 
 		ProvinceDefinition provinceDef;
-		provinceDef.init(provinceData);
+		provinceDef.init(i, provinceData, cityGen);
 		this->provinces.push_back(std::move(provinceDef));
 	}
 }
@@ -23,9 +24,4 @@ const ProvinceDefinition &WorldMapDefinition::getProvinceDef(int index) const
 {
 	DebugAssertIndex(this->provinces, index);
 	return this->provinces[index];
-}
-
-void WorldMapDefinition::clear()
-{
-	this->provinces.clear();
 }
