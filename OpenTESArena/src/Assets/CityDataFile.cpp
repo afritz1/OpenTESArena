@@ -480,7 +480,11 @@ uint32_t CityDataFile::getWildernessSeed(int localCityID, int provinceID) const
 	const auto &province = this->getProvinceData(provinceID);
 	const auto &location = province.getLocationData(Location::cityToLocationID(localCityID));
 	const std::string &locationName = location.name;
-	DebugAssertMsg(locationName.size() >= 4, "Name \"" + locationName + "\" too short.");
+	if (locationName.size() < 4)
+	{
+		// Can't generate seed -- return 0 for now. Can change later if there are short names in mods.
+		return 0;
+	}
 
 	// Use the first four letters as the seed.
 	const uint8_t *ptr = reinterpret_cast<const uint8_t*>(locationName.data());
