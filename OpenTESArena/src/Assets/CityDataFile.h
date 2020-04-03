@@ -140,6 +140,9 @@ public:
 	// the dungeon ID is between 0 and 15.
 	uint32_t getDungeonSeed(int localDungeonID, int provinceID) const;
 
+	// Gets the 32-bit seed for a province. Used with wilderness dungeons.
+	uint32_t getProvinceSeed(int provinceID) const;
+
 	// Gets the 32-bit seed for a wilderness dungeon, given a province ID and X and Y
 	// wilderness block coordinates.
 	uint32_t getWildernessDungeonSeed(int provinceID, int wildBlockX, int wildBlockY) const;

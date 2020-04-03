@@ -526,12 +526,18 @@ uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
 	return (~Bytes::rol(seed, 5)) & 0xFFFFFFFF;
 }
 
+uint32_t CityDataFile::getProvinceSeed(int provinceID) const
+{
+	const auto &province = this->provinces.at(provinceID);
+	const uint32_t provinceSeed = ((province.globalX << 16) + province.globalY) * provinceID;
+	return provinceSeed;
+}
+
 uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
 	int wildBlockX, int wildBlockY) const
 {
-	const auto &province = this->provinces.at(provinceID);
-	const uint32_t baseSeed = ((province.globalX << 16) + province.globalY) * provinceID;
-	return (baseSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
+	const uint32_t provinceSeed = this->getProvinceSeed(provinceID);
+	return (provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
 bool CityDataFile::isRulerMale(int localCityID, int provinceID) const
