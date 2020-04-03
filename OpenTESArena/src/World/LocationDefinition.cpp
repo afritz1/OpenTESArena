@@ -37,7 +37,7 @@ void LocationDefinition::init(LocationDefinition::Type type,
 	this->name = locationData.name;
 	this->x = locationData.x;
 	this->y = locationData.y;
-	this->visibleByDefault = type == LocationDefinition::Type::City;
+	this->visibleByDefault = (locationData.name.size() > 0) && (type == LocationDefinition::Type::City);
 	this->type = type;
 }
 
