@@ -7,10 +7,8 @@ void WorldMapDefinition::init(const CityDataFile &cityData, const ExeData::CityG
 	this->provinces.clear();
 	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
 	{
-		const CityDataFile::ProvinceData &provinceData = cityData.getProvinceData(i);
-
 		ProvinceDefinition provinceDef;
-		provinceDef.init(i, provinceData, cityGen);
+		provinceDef.init(i, cityData, cityGen);
 		this->provinces.push_back(std::move(provinceDef));
 	}
 }

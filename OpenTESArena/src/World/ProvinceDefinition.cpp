@@ -5,9 +5,10 @@
 
 #include "components/debug/Debug.h"
 
-void ProvinceDefinition::init(int provinceID, const CityDataFile::ProvinceData &provinceData,
+void ProvinceDefinition::init(int provinceID, const CityDataFile &cityData,
 	const ExeData::CityGeneration &cityGen)
 {
+	const auto &provinceData = cityData.getProvinceData(provinceID);
 	this->name = provinceData.name;
 	this->globalX = provinceData.globalX;
 	this->globalY = provinceData.globalY;
@@ -21,13 +22,16 @@ void ProvinceDefinition::init(int provinceID, const CityDataFile::ProvinceData &
 		return true;
 	};
 
-	auto tryAddCity = [this, &canAddLocation](LocationDefinition::CityDefinition::Type type,
-		const CityDataFile::ProvinceData::LocationData &locationData, bool coastal, bool premade)
+	auto tryAddCity = [this, &provinceData, &canAddLocation](int localCityID, int provinceID,
+		bool coastal, bool premade, LocationDefinition::CityDefinition::Type type,
+		const CityDataFile &cityData)
 	{
+		const auto &locationData = provinceData.getLocationData(localCityID);
+
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initCity(type, locationData, coastal, premade);
+			locationDef.initCity(localCityID, provinceID, coastal, premade, type, cityData);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
@@ -55,8 +59,8 @@ void ProvinceDefinition::init(int provinceID, const CityDataFile::ProvinceData &
 
 	const bool isCenterProvince = provinceID == Location::CENTER_PROVINCE_ID;
 
-	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](const auto &locations,
-		LocationDefinition::CityDefinition::Type type, int startID)
+	auto tryAddCities = [provinceID, &cityData, &cityGen, &tryAddCity, isCenterProvince](
+		const auto &locations, LocationDefinition::CityDefinition::Type type, int startID)
 	{
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
 		{
@@ -71,7 +75,7 @@ void ProvinceDefinition::init(int provinceID, const CityDataFile::ProvinceData &
 			const int localCityID = startID + static_cast<int>(i);
 			const bool coastal = isCoastal(localCityID);
 			const bool premade = isCenterProvince && (localCityID == 0);
-			tryAddCity(type, location, coastal, premade);
+			tryAddCity(localCityID, provinceID, coastal, premade, type, cityData);
 		}
 	};
 

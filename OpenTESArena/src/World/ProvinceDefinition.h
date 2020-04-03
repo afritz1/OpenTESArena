@@ -16,8 +16,7 @@ private:
 	int globalX, globalY, globalW, globalH; // Province-to-world-map projection.
 public:
 	// Initialize from original game data.
-	void init(int provinceID, const CityDataFile::ProvinceData &provinceData,
-		const ExeData::CityGeneration &cityGen);
+	void init(int provinceID, const CityDataFile &cityData, const ExeData::CityGeneration &cityGen);
 	// @todo: eventually have init(const char *filename) for custom provinces.
 
 	// Gets the number of locations in the province.

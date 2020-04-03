@@ -2,11 +2,23 @@
 
 #include "components/debug/Debug.h"
 
-void LocationDefinition::CityDefinition::init(CityDefinition::Type type, bool coastal, bool premade)
+void LocationDefinition::CityDefinition::init(CityDefinition::Type type, uint32_t citySeed,
+	uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
+	bool coastal, bool premade)
 {
 	this->type = type;
+	this->citySeed = citySeed;
+	this->wildSeed = wildSeed;
+	this->provinceSeed = provinceSeed;
+	this->rulerSeed = rulerSeed;
+	this->distantSkySeed = distantSkySeed;
 	this->coastal = coastal;
 	this->premade = premade;
+}
+
+uint32_t LocationDefinition::CityDefinition::getWildDungeonSeed(int wildBlockX, int wildBlockY) const
+{
+	return (this->provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
 void LocationDefinition::DungeonDefinition::init()
@@ -19,21 +31,29 @@ void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefini
 	this->type = type;
 }
 
-void LocationDefinition::init(LocationDefinition::Type type, 
+void LocationDefinition::init(LocationDefinition::Type type,
 	const CityDataFile::ProvinceData::LocationData &locationData)
 {
 	this->name = locationData.name;
 	this->x = locationData.x;
 	this->y = locationData.y;
-	this->visibleByDefault = locationData.isVisible();
+	this->visibleByDefault = type == LocationDefinition::Type::City;
 	this->type = type;
 }
 
-void LocationDefinition::initCity(CityDefinition::Type type,
-	const CityDataFile::ProvinceData::LocationData &locationData, bool coastal, bool premade)
+void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal, bool premade,
+	CityDefinition::Type type, const CityDataFile &cityData)
 {
+	const auto &provinceData = cityData.getProvinceData(provinceID);
+	const auto &locationData = provinceData.getLocationData(localCityID);
 	this->init(LocationDefinition::Type::City, locationData);
-	this->city.init(type, coastal, premade);
+
+	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
+	const uint32_t provinceSeed = cityData.getProvinceSeed(provinceID);
+	const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
+	const uint32_t distantSkySeed = cityData.getDistantSkySeed(localCityID, provinceID);
+	this->city.init(type, citySeed, wildSeed, provinceSeed, rulerSeed, distantSkySeed, coastal, premade);
 }
 
 void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData)

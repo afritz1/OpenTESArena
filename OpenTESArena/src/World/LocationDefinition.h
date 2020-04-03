@@ -21,15 +21,26 @@ public:
 		enum class Type { City, Town, Village };
 
 		Type type;
+		uint32_t citySeed;
+		uint32_t wildSeed;
+		uint32_t provinceSeed; // Used with wilderness dungeons.
+		uint32_t rulerSeed;
+		uint32_t distantSkySeed;
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 
-		void init(CityDefinition::Type type, bool coastal, bool premade);
+		void init(CityDefinition::Type type, uint32_t citySeed, uint32_t wildSeed,
+			uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed, bool coastal,
+			bool premade);
+
+		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};
 
 	struct DungeonDefinition
 	{
-		// Nothing
+		// @todo: combine with main quest def?
+		//uint32_t dungeonSeed;
+
 		void init();
 	};
 
@@ -40,6 +51,9 @@ public:
 		// @todo: main quest code should look through world map definition to find start dungeon def
 		// instead of assuming/hardcoding anything about its .MIF file. At that point, make a
 		// StartDungeonDefinition to put the filename/etc. into.
+
+		// @todo: combine with dungeon def?
+		//uint32_t dungeonSeed;
 
 		Type type;
 
@@ -63,8 +77,8 @@ private:
 	void init(LocationDefinition::Type type, const CityDataFile::ProvinceData::LocationData &locationData);
 public:
 	// Initialize from original game data.
-	void initCity(CityDefinition::Type type, const CityDataFile::ProvinceData::LocationData &locationData,
-		bool coastal, bool premade);
+	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
+		CityDefinition::Type type, const CityDataFile &cityData);
 	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData);
 	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData);
