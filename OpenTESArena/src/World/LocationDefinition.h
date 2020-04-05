@@ -4,7 +4,10 @@
 #include <string>
 
 #include "../Assets/CityDataFile.h"
-#include "../Assets/ExeData.h"
+
+class MiscAssets;
+
+enum class ClimateType;
 
 class LocationDefinition
 {
@@ -26,12 +29,13 @@ public:
 		uint32_t provinceSeed; // Used with wilderness dungeons.
 		uint32_t rulerSeed;
 		uint32_t distantSkySeed;
+		ClimateType climateType;
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 
 		void init(CityDefinition::Type type, uint32_t citySeed, uint32_t wildSeed,
-			uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed, bool coastal,
-			bool premade);
+			uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
+			ClimateType climateType, bool coastal, bool premade);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};
@@ -74,11 +78,12 @@ private:
 		MainQuestDungeonDefinition mainQuest;
 	};
 
+	// Internal init method for original game data.
 	void init(LocationDefinition::Type type, const CityDataFile::ProvinceData::LocationData &locationData);
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
-		CityDefinition::Type type, const CityDataFile &cityData);
+		CityDefinition::Type type, const MiscAssets &miscAssets);
 	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData);
 	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData);

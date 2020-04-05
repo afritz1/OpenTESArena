@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "ProvinceDefinition.h"
-#include "../Assets/CityDataFile.h"
-#include "../Assets/ExeData.h"
+
+class MiscAssets;
 
 class WorldMapDefinition
 {
@@ -13,7 +13,7 @@ private:
 	std::vector<ProvinceDefinition> provinces;
 public:
 	// Initialize from original game data.
-	void init(const CityDataFile &cityData, const ExeData::CityGeneration &cityGen);
+	void init(const MiscAssets &miscAssets);
 	// @todo: eventually have init(const char *filename) for custom world maps.
 
 	// Gets the number of provinces in the world map.

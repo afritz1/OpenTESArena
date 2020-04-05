@@ -1,10 +1,12 @@
+#include "Location.h"
 #include "LocationDefinition.h"
+#include "../Assets/MiscAssets.h"
 
 #include "components/debug/Debug.h"
 
 void LocationDefinition::CityDefinition::init(CityDefinition::Type type, uint32_t citySeed,
 	uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
-	bool coastal, bool premade)
+	ClimateType climateType, bool coastal, bool premade)
 {
 	this->type = type;
 	this->citySeed = citySeed;
@@ -12,6 +14,7 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, uint32_
 	this->provinceSeed = provinceSeed;
 	this->rulerSeed = rulerSeed;
 	this->distantSkySeed = distantSkySeed;
+	this->climateType = climateType;
 	this->coastal = coastal;
 	this->premade = premade;
 }
@@ -42,8 +45,9 @@ void LocationDefinition::init(LocationDefinition::Type type,
 }
 
 void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal, bool premade,
-	CityDefinition::Type type, const CityDataFile &cityData)
+	CityDefinition::Type type, const MiscAssets &miscAssets)
 {
+	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	const auto &locationData = provinceData.getLocationData(localCityID);
 	this->init(LocationDefinition::Type::City, locationData);
@@ -53,7 +57,9 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t provinceSeed = cityData.getProvinceSeed(provinceID);
 	const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
 	const uint32_t distantSkySeed = cityData.getDistantSkySeed(localCityID, provinceID);
-	this->city.init(type, citySeed, wildSeed, provinceSeed, rulerSeed, distantSkySeed, coastal, premade);
+	const ClimateType climateType = Location::getCityClimateType(localCityID, provinceID, miscAssets);
+	this->city.init(type, citySeed, wildSeed, provinceSeed, rulerSeed, distantSkySeed,
+		climateType, coastal, premade);
 }
 
 void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData)

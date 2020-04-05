@@ -15,6 +15,8 @@
 #include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
 #include "../Game/CharacterQuestion.h"
+#include "../World/WorldMapDefinition.h"
+#include "../World/WorldMapInstance.h"
 
 // This class stores various miscellaneous data from Arena assets.
 
@@ -129,6 +131,8 @@ private:
 	TradeText tradeText;
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
+	WorldMapDefinition worldMapDefinition;
+	WorldMapInstance worldMapInstance;
 	ArenaTypes::Spellsg standardSpells; // From SPELLSG.65.
 	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
 	std::vector<RMDFile> wildernessChunks; // WILD001 to WILD070.
@@ -169,6 +173,9 @@ private:
 	// Loads wilderness .RMD files.
 	bool initWildernessChunks();
 
+	// Loads world map definitions from CITYDATA.65.
+	bool initWorldMapDefs(const ExeData &exeData);
+
 	// Reads the mask data from TAMRIEL.MNU.
 	bool initWorldMapMasks();
 public:
@@ -208,8 +215,11 @@ public:
 	// Creates a random NPC name from the given parameters.
 	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;
 
-	// Gets the data object for world map locations.
+	// Gets the world map location data -- CityDataFile is the original game's data format.
 	const CityDataFile &getCityDataFile() const;
+	const WorldMapDefinition &getWorldMapDefinition() const;
+	WorldMapInstance &getWorldMapInstance();
+	const WorldMapInstance &getWorldMapInstance() const;
 
 	// Gets the spells list for spell and effect definitions.
 	const ArenaTypes::Spellsg &getStandardSpells() const;

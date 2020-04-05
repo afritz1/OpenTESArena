@@ -665,9 +665,6 @@ bool MiscAssets::init(bool floppyVersion)
 	// Read in SPELLMKR.TXT.
 	success &= this->initSpellMakerDescriptions();
 
-	// Read city data file.
-	success &= this->cityDataFile.init("CITYDATA.65");
-
 	// Read in the world map mask data from TAMRIEL.MNU.
 	success &= this->initWorldMapMasks();
 
@@ -676,6 +673,9 @@ bool MiscAssets::init(bool floppyVersion)
 
 	// Read in the terrain map from TERRAIN.IMG.
 	success &= this->worldMapTerrain.init("TERRAIN.IMG");
+
+	// Read world map definitions. Relies on world map terrain.
+	success &= this->initWorldMapDefs(this->getExeData());
 
 	return success;
 }
@@ -1356,6 +1356,48 @@ bool MiscAssets::initWildernessChunks()
 	return true;
 }
 
+bool MiscAssets::initWorldMapDefs(const ExeData &exeData)
+{
+	const char *filename = "CITYDATA.65";
+	if (!this->cityDataFile.init(filename))
+	{
+		DebugLogError("Could not init \"" + std::string(filename) + "\".");
+		return false;
+	}
+
+	// @todo: re-organize this so we don't need to pass MiscAssets directly. It's secretly
+	// using WorldMapTerrain for climate in location definitions.
+	this->worldMapDefinition.init(*this);
+
+	// Initialize world map instance to default.
+	this->worldMapInstance.init(this->worldMapDefinition);
+
+	// @temp: set main quest dungeons visible for testing.
+	for (int i = 0; i < this->worldMapInstance.getProvinceCount(); i++)
+	{
+		ProvinceInstance &provinceInst = this->worldMapInstance.getProvinceInstance(i);
+		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+		const ProvinceDefinition &provinceDef = this->worldMapDefinition.getProvinceDef(provinceDefIndex);
+
+		for (int j = 0; j < provinceInst.getLocationCount(); j++)
+		{
+			LocationInstance &locationInst = provinceInst.getLocationInstance(j);
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+			// Main quest dungeons are visible for testing.
+			const bool shouldBeVisible = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+
+			if (shouldBeVisible && !locationInst.isVisible())
+			{
+				locationInst.toggleVisibility();
+			}
+		}
+	}
+
+	return true;
+}
+
 bool MiscAssets::initWorldMapMasks()
 {
 	const char *filename = "TAMRIEL.MNU";
@@ -1539,6 +1581,21 @@ std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &ra
 const CityDataFile &MiscAssets::getCityDataFile() const
 {
 	return this->cityDataFile;
+}
+
+const WorldMapDefinition &MiscAssets::getWorldMapDefinition() const
+{
+	return this->worldMapDefinition;
+}
+
+WorldMapInstance &MiscAssets::getWorldMapInstance()
+{
+	return this->worldMapInstance;
+}
+
+const WorldMapInstance &MiscAssets::getWorldMapInstance() const
+{
+	return this->worldMapInstance;
 }
 
 const ArenaTypes::Spellsg &MiscAssets::getStandardSpells() const
