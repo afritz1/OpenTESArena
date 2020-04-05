@@ -1,12 +1,13 @@
 #include "Location.h"
 #include "LocationDefinition.h"
+#include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
 
 #include "components/debug/Debug.h"
 
 void LocationDefinition::CityDefinition::init(CityDefinition::Type type, uint32_t citySeed,
 	uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
-	ClimateType climateType, bool coastal, bool premade)
+	ClimateType climateType, int cityBlocksPerSide, bool coastal, bool premade)
 {
 	this->type = type;
 	this->citySeed = citySeed;
@@ -15,6 +16,7 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, uint32_
 	this->rulerSeed = rulerSeed;
 	this->distantSkySeed = distantSkySeed;
 	this->climateType = climateType;
+	this->cityBlocksPerSide = cityBlocksPerSide;
 	this->coastal = coastal;
 	this->premade = premade;
 }
@@ -57,9 +59,24 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t provinceSeed = cityData.getProvinceSeed(provinceID);
 	const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
 	const uint32_t distantSkySeed = cityData.getDistantSkySeed(localCityID, provinceID);
-	const ClimateType climateType = Location::getCityClimateType(localCityID, provinceID, miscAssets);
+	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
+	const int cityBlocksPerSide = [type]()
+	{
+		switch (type)
+		{
+		case CityDefinition::Type::City:
+			return 6;
+		case CityDefinition::Type::Town:
+			return 5;
+		case CityDefinition::Type::Village:
+			return 4;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
+		}
+	}();
+
 	this->city.init(type, citySeed, wildSeed, provinceSeed, rulerSeed, distantSkySeed,
-		climateType, coastal, premade);
+		climateType, cityBlocksPerSide, coastal, premade);
 }
 
 void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData)

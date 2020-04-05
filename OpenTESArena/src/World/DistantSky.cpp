@@ -4,6 +4,7 @@
 #include "ClimateType.h"
 #include "DistantSky.h"
 #include "Location.h"
+#include "LocationUtils.h"
 #include "WeatherType.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/COLFile.h"
@@ -273,8 +274,7 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Add mountains and clouds first. Get the climate type of the city.
-	const ClimateType climateType = Location::getCityClimateType(
-		localCityID, provinceID, miscAssets);
+	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 
 	const auto &exeData = miscAssets.getExeData();
 	const auto &distantMountainFilenames = exeData.locations.distantMountainFilenames;

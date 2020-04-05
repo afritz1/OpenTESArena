@@ -3,6 +3,7 @@
 #include "InteriorWorldData.h"
 #include "Location.h"
 #include "LocationType.h"
+#include "LocationUtils.h"
 #include "WeatherType.h"
 #include "VoxelUtils.h"
 #include "WorldType.h"
@@ -188,8 +189,7 @@ ExteriorWorldData ExteriorWorldData::loadCity(int localCityID, int provinceID, c
 	const auto &level = mif.getLevels().front();
 
 	// Obtain climate from city data.
-	const ClimateType climateType = Location::getCityClimateType(
-		localCityID, provinceID, miscAssets);
+	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 
 	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
 
@@ -221,8 +221,7 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(int localCityID, int provinc
 	TextureManager &textureManager)
 {
 	// Obtain climate from city data.
-	const ClimateType climateType = Location::getCityClimateType(
-		localCityID, provinceID, miscAssets);
+	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 
 	const std::string infName =
 		ExteriorWorldData::generateWildernessInfName(climateType, weatherType);

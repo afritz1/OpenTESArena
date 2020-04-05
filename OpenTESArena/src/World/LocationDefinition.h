@@ -30,12 +30,13 @@ public:
 		uint32_t rulerSeed;
 		uint32_t distantSkySeed;
 		ClimateType climateType;
+		int cityBlocksPerSide;
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 
 		void init(CityDefinition::Type type, uint32_t citySeed, uint32_t wildSeed,
 			uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
-			ClimateType climateType, bool coastal, bool premade);
+			ClimateType climateType, int cityBlocksPerSide, bool coastal, bool premade);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};

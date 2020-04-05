@@ -7,6 +7,7 @@
 #include "../Math/Random.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 #include "../World/VoxelDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -470,7 +471,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 {
 	const auto &province = this->getProvinceData(provinceID);
-	const int locationID = Location::cityToLocationID(localCityID);
+	const int locationID = LocationUtils::cityToLocationID(localCityID);
 	const auto &location = province.getLocationData(locationID);
 	return static_cast<uint32_t>((location.x << 16) + location.y);
 }
@@ -478,7 +479,7 @@ uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
 uint32_t CityDataFile::getWildernessSeed(int localCityID, int provinceID) const
 {
 	const auto &province = this->getProvinceData(provinceID);
-	const auto &location = province.getLocationData(Location::cityToLocationID(localCityID));
+	const auto &location = province.getLocationData(LocationUtils::cityToLocationID(localCityID));
 	const std::string &locationName = location.name;
 	if (locationName.size() < 4)
 	{
@@ -553,7 +554,7 @@ bool CityDataFile::isRulerMale(int localCityID, int provinceID) const
 Int2 CityDataFile::getGlobalPoint(int localCityID, int provinceID) const
 {
 	const auto &province = this->getProvinceData(provinceID);
-	const int locationID = Location::cityToLocationID(localCityID);
+	const int locationID = LocationUtils::cityToLocationID(localCityID);
 	const auto &location = province.getLocationData(locationID);
 	const Int2 localPoint(location.x, location.y);
 	const Int2 globalPoint = CityDataFile::localPointToGlobal(

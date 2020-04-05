@@ -19,6 +19,7 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -377,7 +378,7 @@ void FastTravelSubPanel::switchToNextPanel()
 				localPoint, provinceData.getGlobalRect());
 			const int globalQuarter = cityData.getGlobalQuarter(globalPoint);
 			const WeatherType type = gameData.getWeathersArray().at(globalQuarter);
-			const ClimateType climateType = Location::getCityClimateType(
+			const ClimateType climateType = LocationUtils::getCityClimateType(
 				this->travelData.locationID, this->travelData.provinceID, game.getMiscAssets());
 			return GameData::getFilteredWeatherType(type, climateType);
 		}();

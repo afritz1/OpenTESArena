@@ -39,6 +39,7 @@
 #include "../Rendering/Texture.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
+#include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
 
 #include "components/debug/Debug.h"
@@ -182,11 +183,11 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	{
 		if (currentLocation.dataType == LocationDataType::City)
 		{
-			return Location::cityToLocationID(currentLocation.localCityID);
+			return LocationUtils::cityToLocationID(currentLocation.localCityID);
 		}
 		else if (currentLocation.dataType == LocationDataType::Dungeon)
 		{
-			return Location::dungeonToLocationID(currentLocation.localDungeonID);
+			return LocationUtils::dungeonToLocationID(currentLocation.localDungeonID);
 		}
 		else if (currentLocation.dataType == LocationDataType::SpecialCase)
 		{
@@ -196,11 +197,11 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 			if (specialCaseType == Location::SpecialCaseType::StartDungeon)
 			{
 				// Technically this shouldn't be allowed, so just use a placeholder.
-				return Location::dungeonToLocationID(0);
+				return LocationUtils::dungeonToLocationID(0);
 			}
 			else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
 			{
-				return Location::cityToLocationID(currentLocation.localCityID);
+				return LocationUtils::cityToLocationID(currentLocation.localCityID);
 			}
 			else
 			{

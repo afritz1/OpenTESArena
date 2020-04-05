@@ -30,6 +30,7 @@
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
@@ -477,8 +478,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 	// Climate for center province.
 	const int localCityID = 0;
 	const int provinceID = Location::CENTER_PROVINCE_ID;
-	const ClimateType climateType = Location::getCityClimateType(
-		localCityID, provinceID, miscAssets);
+	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 
 	// Call premade city loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(

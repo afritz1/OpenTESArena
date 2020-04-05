@@ -39,6 +39,7 @@
 #include "../Rendering/Texture.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
 #include "../World/WorldType.h"
 
@@ -286,7 +287,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}();
 
 					const int provinceID = random.next(8);
-					const ClimateType climateType = Location::getCityClimateType(
+					const ClimateType climateType = LocationUtils::getCityClimateType(
 						localCityID, provinceID, miscAssets);
 					const WeatherType filteredWeatherType =
 						GameData::getFilteredWeatherType(weatherType, climateType);
@@ -372,7 +373,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
 
-				const ClimateType climateType = Location::getCityClimateType(
+				const ClimateType climateType = LocationUtils::getCityClimateType(
 					localCityID, provinceID, miscAssets);
 				const WeatherType filteredWeatherType =
 					GameData::getFilteredWeatherType(weatherType, climateType);

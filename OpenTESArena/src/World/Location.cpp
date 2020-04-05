@@ -2,6 +2,7 @@
 #include "Location.h"
 #include "LocationDataType.h"
 #include "LocationType.h"
+#include "LocationUtils.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
@@ -89,57 +90,19 @@ LocationType Location::getDungeonType(int localDungeonID)
 	}
 }
 
-ClimateType Location::getClimateType(int locationID, int provinceID,
-	const MiscAssets &miscAssets)
-{
-	const auto &cityData = miscAssets.getCityDataFile();
-	const auto &province = cityData.getProvinceData(provinceID);
-	const auto &location = province.getLocationData(locationID);
-	const Int2 localPoint(location.x, location.y);
-	const Int2 globalPoint = CityDataFile::localPointToGlobal(
-		localPoint, province.getGlobalRect());
-	const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
-	const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
-	return MiscAssets::WorldMapTerrain::toClimateType(terrain);
-}
-
-ClimateType Location::getCityClimateType(int localCityID, int provinceID,
-	const MiscAssets &miscAssets)
-{
-	const int locationID = Location::cityToLocationID(localCityID);
-	return Location::getClimateType(locationID, provinceID, miscAssets);
-}
-
-ClimateType Location::getDungeonClimateType(int localDungeonID, int provinceID,
-	const MiscAssets &miscAssets)
-{
-	const int locationID = Location::dungeonToLocationID(localDungeonID);
-	return Location::getClimateType(locationID, provinceID, miscAssets);
-}
-
-int Location::cityToLocationID(int localCityID)
-{
-	return localCityID;
-}
-
-int Location::dungeonToLocationID(int localDungeonID)
-{
-	return localDungeonID + 32;
-}
-
 const std::string &Location::getName(const CityDataFile &cityData, const ExeData &exeData) const
 {
 	const auto &province = cityData.getProvinceData(this->provinceID);
 
 	if (this->dataType == LocationDataType::City)
 	{
-		const int locationID = Location::cityToLocationID(this->localCityID);
+		const int locationID = LocationUtils::cityToLocationID(this->localCityID);
 		const auto &locationData = province.getLocationData(locationID);
 		return locationData.name;
 	}
 	else if (this->dataType == LocationDataType::Dungeon)
 	{
-		const int locationID = Location::dungeonToLocationID(this->localDungeonID);
+		const int locationID = LocationUtils::dungeonToLocationID(this->localDungeonID);
 		const auto &locationData = province.getLocationData(locationID);
 		return locationData.name;
 	}
@@ -152,7 +115,7 @@ const std::string &Location::getName(const CityDataFile &cityData, const ExeData
 		else if (this->specialCaseType == Location::SpecialCaseType::WildDungeon)
 		{
 			// Return the name of the city the wild dungeon is near.
-			const int locationID = Location::cityToLocationID(this->localCityID);
+			const int locationID = LocationUtils::cityToLocationID(this->localCityID);
 			const auto &locationData = province.getLocationData(locationID);
 			return locationData.name;
 		}
@@ -177,11 +140,11 @@ double Location::getLatitude(const CityDataFile &cityData) const
 		{
 			if (this->dataType == LocationDataType::City)
 			{
-				return Location::cityToLocationID(this->localCityID);
+				return LocationUtils::cityToLocationID(this->localCityID);
 			}
 			else if (this->dataType == LocationDataType::Dungeon)
 			{
-				return Location::dungeonToLocationID(this->localDungeonID);
+				return LocationUtils::dungeonToLocationID(this->localDungeonID);
 			}
 			else if (this->dataType == LocationDataType::SpecialCase)
 			{
@@ -193,7 +156,7 @@ double Location::getLatitude(const CityDataFile &cityData) const
 				else if (this->specialCaseType == Location::SpecialCaseType::WildDungeon)
 				{
 					// Return the point of the city the wild dungeon is near.
-					return Location::cityToLocationID(this->localCityID);
+					return LocationUtils::cityToLocationID(this->localCityID);
 				}
 				else
 				{
