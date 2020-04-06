@@ -135,7 +135,7 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
 	if ((menuType == VoxelDefinition::WallData::MenuType::Palace) &&
-		(provinceID == 8) && (localCityID == 0))
+		(provinceID == Location::CENTER_PROVINCE_ID) && (localCityID == 0))
 	{
 		return String::toUppercase(exeData.locations.finalDungeonMifName);
 	}

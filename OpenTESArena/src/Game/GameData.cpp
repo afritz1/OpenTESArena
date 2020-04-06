@@ -29,6 +29,9 @@
 #include "../World/ClimateType.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
+#include "../World/LocationDataType.h"
+#include "../World/LocationDefinition.h"
+#include "../World/LocationInstance.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelGrid.h"
@@ -95,41 +98,37 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	// the world state, etc..
 	DebugLog("Initializing.");
 
-	// Make a copy of the global constant city data. This is the "instance" city data
-	// that can be assigned to.
-	this->cityData = miscAssets.getCityDataFile();
+	// Initialize world map instance to default.
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	this->worldMapInst.init(worldMapDef);
 
-	// Set default location visibilities.
-	for (int i = 0; i < 8; i++)
+	// @temp: set main quest dungeons visible for testing.
+	for (int i = 0; i < this->worldMapInst.getProvinceCount(); i++)
 	{
-		auto &provinceData = this->cityData.getProvinceData(i);
-		for (auto &cityState : provinceData.cityStates)
-		{
-			cityState.setVisible(true);
-		}
+		ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(i);
+		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-		for (auto &town : provinceData.towns)
+		for (int j = 0; j < provinceInst.getLocationCount(); j++)
 		{
-			town.setVisible(true);
-		}
+			LocationInstance &locationInst = provinceInst.getLocationInstance(j);
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const std::string &locationName = locationInst.hasNameOverride() ?
+				locationInst.getNameOverride() : locationDef.getName();
 
-		for (auto &village : provinceData.villages)
-		{
-			village.setVisible(true);
-		}
+			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+			const bool isStartDungeon = isMainQuestDungeon &&
+				(locationDef.getMainQuestDungeonDefinition().type == LocationDefinition::MainQuestDungeonDefinition::Type::Start);
+			const bool shouldSetVisible = (locationName.size() > 0) &&
+				isMainQuestDungeon && !isStartDungeon && !locationInst.isVisible();
 
-		// Make main quest dungeons visible for testing.
-		provinceData.firstDungeon.setVisible(true);
-		provinceData.secondDungeon.setVisible(true);
-
-		for (auto &dungeon : provinceData.randomDungeons)
-		{
-			dungeon.setVisible(false);
+			if (shouldSetVisible)
+			{
+				locationInst.toggleVisibility();
+			}
 		}
 	}
-
-	auto &centerProvinceData = this->cityData.getProvinceData(8);
-	centerProvinceData.cityStates.front().setVisible(true);
 
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeather(miscAssets.getExeData());
@@ -398,7 +397,7 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 		"\" must not be for main quest dungeon.");
 
 	// Generate dungeon seed.
-	const uint32_t dungeonSeed = this->cityData.getDungeonSeed(localDungeonID, provinceID);
+	const uint32_t dungeonSeed = miscAssets.getCityDataFile().getDungeonSeed(localDungeonID, provinceID);
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const auto &exeData = miscAssets.getExeData();
@@ -686,9 +685,95 @@ Location &GameData::getLocation()
 	return this->location;
 }
 
-CityDataFile &GameData::getCityDataFile()
+WorldMapInstance &GameData::getWorldMapInstance()
 {
-	return this->cityData;
+	return this->worldMapInst;
+}
+
+ProvinceInstance &GameData::getProvinceInstance()
+{
+	// @todo: don't rely on original game's province ID for this.
+	// - maybe make the province index be nullable until the game session is active.
+	const int provinceIndex = this->location.provinceID;
+	return this->worldMapInst.getProvinceInstance(provinceIndex);
+}
+
+const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefinition &worldMapDef) const
+{
+	// @todo: don't rely on original game's location/province ID for this.
+	// - maybe make the province index + location index pair be nullable until the game session is active.
+	const int provinceIndex = this->location.provinceID;
+	const int locationIndex = [this]()
+	{
+		switch (this->location.dataType)
+		{
+		case LocationDataType::City:
+			return this->location.localCityID;
+		case LocationDataType::Dungeon:
+			return 32 + this->location.localDungeonID;
+		case LocationDataType::SpecialCase:
+		{
+			switch (this->location.specialCaseType)
+			{
+			case Location::SpecialCaseType::StartDungeon:
+				return 48;
+			case Location::SpecialCaseType::WildDungeon:
+				return this->location.localCityID;
+			default:
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
+			}
+		}
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.dataType)));
+		}
+	}();
+
+	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < worldMapDef.getProvinceCount()),
+		"Province index \"" + std::to_string(provinceIndex) + "\" out of range.");
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+
+	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceDef.getLocationCount()),
+		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");
+	return provinceDef.getLocationDef(locationIndex);
+}
+
+LocationInstance &GameData::getLocationInstance()
+{
+	// @todo: don't rely on original game's location/province ID for this.
+	// - maybe make the province index + location index pair be nullable until the game session is active.
+	const int provinceIndex = this->location.provinceID;
+	const int locationIndex = [this]()
+	{
+		switch (this->location.dataType)
+		{
+		case LocationDataType::City:
+			return this->location.localCityID;
+		case LocationDataType::Dungeon:
+			return 32 + this->location.localDungeonID;
+		case LocationDataType::SpecialCase:
+		{
+			switch (this->location.specialCaseType)
+			{
+			case Location::SpecialCaseType::StartDungeon:
+				return 48;
+			case Location::SpecialCaseType::WildDungeon:
+				return this->location.localCityID;
+			default:
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
+			}
+		}
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.dataType)));
+		}
+	}();
+
+	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < this->worldMapInst.getProvinceCount()),
+		"Province index \"" + std::to_string(provinceIndex) + "\" out of range.");
+	ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(provinceIndex);
+
+	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceInst.getLocationCount()),
+		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");
+	return provinceInst.getLocationInstance(locationIndex);
 }
 
 Date &GameData::getDate()

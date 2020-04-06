@@ -73,21 +73,18 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 		{
 			SDL_StopTextInput();
 
-			auto &gameData = game.getGameData();
-			const auto &cityData = gameData.getCityDataFile();
-
 			// Determine what to do with the current location name. If it is a valid match
 			// with one of the visible locations in the province, then select that location.
-			// Otherwise, display the list box of locations sorted by their location ID.
-			const int *exactLocationID = nullptr;
-			panel.locationsListIDs = ProvinceSearchSubPanel::getMatchingLocations(
-				panel.locationName, panel.provinceID, cityData, &exactLocationID);
+			// Otherwise, display the list box of locations sorted by their location index.
+			const int *exactLocationIndex = nullptr;
+			panel.locationsListIndices = ProvinceSearchSubPanel::getMatchingLocations(game,
+				panel.locationName, panel.provinceID, &exactLocationIndex);
 
-			if (exactLocationID != nullptr)
+			if (exactLocationIndex != nullptr)
 			{
 				// The location name is an exact match. Try to select the location in the province
 				// map panel based on whether the player is already there.
-				panel.provinceMapPanel.trySelectLocation(*exactLocationID);
+				panel.provinceMapPanel.trySelectLocation(*exactLocationIndex);
 
 				// Return to the province map panel.
 				game.popSubPanel();
@@ -177,32 +174,46 @@ Panel::CursorData ProvinceSearchSubPanel::getCurrentCursor() const
 	}
 }
 
-std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(const std::string &locationName,
-	int provinceID, const CityDataFile &cityData, const int **exactLocationID)
+std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
+	const std::string &locationName, int provinceIndex, const int **exactLocationIndex)
 {
-	const auto &provinceData = cityData.getProvinceData(provinceID);
-	const int locationCount = 48;
+	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
+
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+	auto getLocationName = [](const LocationInstance &locationInst,
+		const LocationDefinition &locationDef) -> const std::string&
+	{
+		return locationInst.hasNameOverride() ? locationInst.getNameOverride() : locationDef.getName();
+	};
 
 	// Iterate through all locations in the province. If any visible location's name has
 	// a match with the one entered, then add the location to the matching IDs.
-	std::vector<int> locationIDs;
-	for (int i = 0; i < locationCount; i++)
+	std::vector<int> locationIndices;
+	for (int i = 0; i < provinceInst.getLocationCount(); i++)
 	{
-		const auto &locationData = provinceData.getLocationData(i);
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
 
 		// Only check visible locations.
-		const bool locationIsVisible = locationData.isVisible();
-
-		if (locationIsVisible)
+		if (locationInst.isVisible())
 		{
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const std::string &curLocationName = getLocationName(locationInst, locationDef);
+
 			// See if the location names are an exact match.
-			const bool isExactMatch = String::caseInsensitiveEquals(
-				locationName, locationData.name);
+			const bool isExactMatch = String::caseInsensitiveEquals(locationName, curLocationName);
 
 			if (isExactMatch)
 			{
-				locationIDs.push_back(i);
-				*exactLocationID = &locationIDs.back();
+				locationIndices.push_back(i);
+				*exactLocationIndex = &locationIndices.back();
 				break;
 			}
 			else
@@ -210,53 +221,58 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(const std::string 
 				// Approximate match behavior. If the given location name is a case-insensitive
 				// substring of the current location, it's a match.
 				const std::string locNameLower = String::toLowercase(locationName);
-				const std::string locDataNameLower = String::toLowercase(locationData.name);
+				const std::string locDataNameLower = String::toLowercase(curLocationName);
 				const bool isApproxMatch = locDataNameLower.find(locNameLower) != std::string::npos;
 
 				if (isApproxMatch)
 				{
-					locationIDs.push_back(i);
+					locationIndices.push_back(i);
 				}
 			}
 		}
 	}
 
 	// If no exact or approximate matches, just fill the list with all visible location IDs.
-	if (locationIDs.empty())
+	if (locationIndices.empty())
 	{
-		for (int i = 0; i < locationCount; i++)
+		for (int i = 0; i < provinceInst.getLocationCount(); i++)
 		{
-			const auto &locationData = provinceData.getLocationData(i);
-			const bool locationIsVisible = locationData.isVisible();
-
-			if (locationIsVisible)
+			const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+			if (locationInst.isVisible())
 			{
-				locationIDs.push_back(i);
+				locationIndices.push_back(i);
 			}
 		}
 	}
 
 	// If one approximate match was found and no exact match was found, treat the approximate
 	// match as the nearest.
-	if ((locationIDs.size() == 1) && (*exactLocationID == nullptr))
+	if ((locationIndices.size() == 1) && (*exactLocationIndex == nullptr))
 	{
-		*exactLocationID = &locationIDs.front();
+		*exactLocationIndex = &locationIndices.front();
 	}
 
-	// The original game orders locations by their ID, but that's hardly helpful for the
-	// player because they memorize places by name. Therefore, this feature will deviate
-	// from the original behavior for the sake of convenience. If the list isn't sorted
-	// alphabetically, then it takes the player linear time to find a location in it,
-	// which essentially isn't any faster than hovering over each location individually.
-	std::sort(locationIDs.begin(), locationIDs.end(),
-		[&provinceData](int a, int b)
+	// The original game orders locations by their location ID, but that's hardly helpful for the
+	// player because they memorize places by name. Therefore, this feature will deviate from
+	// the original behavior for the sake of convenience. If the list isn't sorted alphabetically,
+	// then it takes the player linear time to find a location in it, which essentially isn't any
+	// faster than hovering over each location individually.
+	std::sort(locationIndices.begin(), locationIndices.end(),
+		[&provinceInst, &provinceDef, &getLocationName](int a, int b)
 	{
-		const std::string &aName = provinceData.getLocationData(a).name;
-		const std::string &bName = provinceData.getLocationData(b).name;
+		const LocationInstance &locationInstA = provinceInst.getLocationInstance(a);
+		const LocationInstance &locationInstB = provinceInst.getLocationInstance(b);
+		const int locationDefIndexA = locationInstA.getLocationDefIndex();
+		const int locationDefIndexB = locationInstB.getLocationDefIndex();
+		const LocationDefinition &locationDefA = provinceDef.getLocationDef(locationDefIndexA);
+		const LocationDefinition &locationDefB = provinceDef.getLocationDef(locationDefIndexB);
+
+		const std::string &aName = getLocationName(locationInstA, locationDefA);
+		const std::string &bName = getLocationName(locationInstB, locationDefB);
 		return aName.compare(bName) < 0;
 	});
 
-	return locationIDs;
+	return locationIndices;
 }
 
 std::string ProvinceSearchSubPanel::getBackgroundFilename() const
@@ -280,15 +296,23 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 		const int y = 34;
 
 		auto &gameData = game.getGameData();
-		const auto &cityData = gameData.getCityDataFile();
-		const auto &provinceData = cityData.getProvinceData(this->provinceID);
+		const auto &miscAssets = game.getMiscAssets();
+		const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+		const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-		std::vector<std::string> elements;
-
-		for (const int locationID : this->locationsListIDs)
+		std::vector<std::string> locationNames;
+		for (const int locationIndex : this->locationsListIndices)
 		{
-			const auto &locationData = provinceData.getLocationData(locationID);
-			elements.push_back(locationData.name);
+			const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const std::string &locationName = locationInst.hasNameOverride() ?
+				locationInst.getNameOverride() : locationDef.getName();
+
+			locationNames.push_back(locationName);
 		}
 
 		const int maxDisplayed = 6;
@@ -296,7 +320,7 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 			x,
 			y,
 			Color(52, 24, 8),
-			elements,
+			locationNames,
 			FontName::Arena,
 			maxDisplayed,
 			game.getFontManager(),
@@ -405,7 +429,7 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 				if ((index >= 0) && (index < this->locationsListBox->getElementCount()))
 				{
 					this->listAcceptButton.click(this->getGame(), *this,
-						this->locationsListIDs.at(index));
+						this->locationsListIndices.at(index));
 				}
 			}
 			else if (mouseWheelUp)

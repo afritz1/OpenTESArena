@@ -9,7 +9,6 @@
 
 #include "Clock.h"
 #include "Date.h"
-#include "../Assets/CityDataFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
@@ -18,6 +17,7 @@
 #include "../Math/Vector2.h"
 #include "../World/Location.h"
 #include "../World/WorldData.h"
+#include "../World/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 
 // while a player is loaded (i.e., not in the main menu).
@@ -28,8 +28,11 @@
 // need to load data into the game data object.
 
 class CharacterClass;
+class CityDataFile;
 class FontManager;
 class INFFile;
+class LocationDefinition;
+class LocationInstance;
 class MIFFile;
 class Renderer;
 class TextBox;
@@ -69,7 +72,7 @@ private:
 	Player player;
 	std::unique_ptr<WorldData> worldData;
 	Location location;
-	CityDataFile cityData;
+	WorldMapInstance worldMapInst;
 	Date date;
 	Clock clock;
 	ArenaRandom arenaRandom;
@@ -185,8 +188,11 @@ public:
 
 	Player &getPlayer();
 	WorldData &getWorldData();
-	Location &getLocation();
-	CityDataFile &getCityDataFile();
+	Location &getLocation(); // @todo: deprecate and remove
+	WorldMapInstance &getWorldMapInstance();
+	ProvinceInstance &getProvinceInstance();
+	const LocationDefinition &getLocationDefinition(const WorldMapDefinition &worldMapDef) const;
+	LocationInstance &getLocationInstance();
 	Date &getDate();
 	Clock &getClock();
 	ArenaRandom &getRandom();

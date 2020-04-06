@@ -8,6 +8,7 @@
 
 void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 {
+	const ExeData &exeData = miscAssets.getExeData();
 	const CityDataFile &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	this->name = provinceData.name;
@@ -48,14 +49,14 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddMainQuestDungeon = [this, &miscAssets, &canAddLocation](
+	auto tryAddMainQuestDungeon = [this, &miscAssets, &exeData, &canAddLocation](
 		LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(type, locationData);
+			locationDef.initMainQuestDungeon(type, locationData, exeData);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};

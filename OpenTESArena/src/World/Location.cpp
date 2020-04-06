@@ -90,48 +90,6 @@ LocationType Location::getDungeonType(int localDungeonID)
 	}
 }
 
-const std::string &Location::getName(const CityDataFile &cityData, const ExeData &exeData) const
-{
-	const auto &province = cityData.getProvinceData(this->provinceID);
-
-	if (this->dataType == LocationDataType::City)
-	{
-		const int locationID = LocationUtils::cityToLocationID(this->localCityID);
-		const auto &locationData = province.getLocationData(locationID);
-		return locationData.name;
-	}
-	else if (this->dataType == LocationDataType::Dungeon)
-	{
-		const int locationID = LocationUtils::dungeonToLocationID(this->localDungeonID);
-		const auto &locationData = province.getLocationData(locationID);
-		return locationData.name;
-	}
-	else if (this->dataType == LocationDataType::SpecialCase)
-	{
-		if (this->specialCaseType == Location::SpecialCaseType::StartDungeon)
-		{
-			return exeData.locations.startDungeonName;
-		}
-		else if (this->specialCaseType == Location::SpecialCaseType::WildDungeon)
-		{
-			// Return the name of the city the wild dungeon is near.
-			const int locationID = LocationUtils::cityToLocationID(this->localCityID);
-			const auto &locationData = province.getLocationData(locationID);
-			return locationData.name;
-		}
-		else
-		{
-			throw DebugException("Bad special case type \"" +
-				std::to_string(static_cast<int>(this->specialCaseType)) + "\".");
-		}
-	}
-	else
-	{
-		throw DebugException("Bad location data type \"" +
-			std::to_string(static_cast<int>(this->dataType)) + "\".");
-	}
-}
-
 double Location::getLatitude(const CityDataFile &cityData) const
 {
 	const Int2 globalPoint = [this, &cityData]()

@@ -347,11 +347,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 							interiorType, miscAssets, game.getTextureManager(), renderer);
 
 						// Set random named dungeon name and visibility for testing.
-						auto &cityData = gameData->getCityDataFile();
-						auto &provinceData = cityData.getProvinceData(provinceID);
-						auto &locationData = provinceData.randomDungeons.at(localDungeonID - 2);
-						locationData.name = "Test Dungeon";
-						locationData.setVisible(true);
+						const int provinceIndex = provinceID;
+						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
+						WorldMapInstance &worldMapInst = gameData->getWorldMapInstance();
+						ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
+						LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+						locationInst.setNameOverride("Test Dungeon");
+
+						if (!locationInst.isVisible())
+						{
+							locationInst.toggleVisibility();
+						}
 					}
 					else if (mifName == RandomWildDungeon)
 					{

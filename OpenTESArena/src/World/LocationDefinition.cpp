@@ -36,13 +36,12 @@ void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefini
 	this->type = type;
 }
 
-void LocationDefinition::init(LocationDefinition::Type type,
-	const CityDataFile::ProvinceData::LocationData &locationData)
+void LocationDefinition::init(LocationDefinition::Type type, const std::string &name, int x, int y)
 {
-	this->name = locationData.name;
-	this->x = locationData.x;
-	this->y = locationData.y;
-	this->visibleByDefault = (locationData.name.size() > 0) && (type == LocationDefinition::Type::City);
+	this->name = name;
+	this->x = x;
+	this->y = y;
+	this->visibleByDefault = (type == LocationDefinition::Type::City) && (name.size() > 0);
 	this->type = type;
 }
 
@@ -52,7 +51,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	const auto &locationData = provinceData.getLocationData(localCityID);
-	this->init(LocationDefinition::Type::City, locationData);
+	this->init(LocationDefinition::Type::City, locationData.name, locationData.x, locationData.y);
 
 	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
@@ -81,14 +80,30 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 
 void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData)
 {
-	this->init(LocationDefinition::Type::Dungeon, locationData);
+	this->init(LocationDefinition::Type::Dungeon, locationData.name, locationData.x, locationData.y);
 	this->dungeon.init();
 }
 
 void LocationDefinition::initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
-	const CityDataFile::ProvinceData::LocationData &locationData)
+	const CityDataFile::ProvinceData::LocationData &locationData, const ExeData &exeData)
 {
-	this->init(LocationDefinition::Type::MainQuestDungeon, locationData);
+	// Start dungeon's display name is custom.
+	std::string name = [type, &locationData, &exeData]()
+	{
+		switch (type)
+		{
+		case MainQuestDungeonDefinition::Type::Start:
+			return exeData.locations.startDungeonName;
+		case MainQuestDungeonDefinition::Type::Map:
+		case MainQuestDungeonDefinition::Type::Staff:
+			return locationData.name;
+		default:
+			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(type)));
+		}
+	}();
+
+	this->init(LocationDefinition::Type::MainQuestDungeon, std::move(name),
+		locationData.x, locationData.y);
 	this->mainQuest.init(type);
 }
 

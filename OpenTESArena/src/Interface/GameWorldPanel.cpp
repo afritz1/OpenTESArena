@@ -361,7 +361,12 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				auto &gameData = game.getGameData();
 				const auto &miscAssets = game.getMiscAssets();
 				const auto &exeData = miscAssets.getExeData();
-				const Location &location = game.getGameData().getLocation();
+				const Location &location = gameData.getLocation();
+				const LocationDefinition &locationDef =
+					gameData.getLocationDefinition(miscAssets.getWorldMapDefinition());
+				const LocationInstance &locationinst = gameData.getLocationInstance();
+				const std::string &locationName = locationinst.hasNameOverride() ?
+					locationinst.getNameOverride() : locationDef.getName();
 
 				const std::string timeString = [&game, &gameData, &exeData]()
 				{
@@ -416,7 +421,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 				// Replace first %s with location name.
 				size_t index = baseText.find("%s");
-				baseText.replace(index, 2, location.getName(gameData.getCityDataFile(), exeData));
+				baseText.replace(index, 2, locationName);
 
 				// Replace second %s with time string.
 				index = baseText.find("%s", index);
@@ -573,33 +578,20 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const auto &worldData = gameData.getWorldData();
 				const auto &level = worldData.getActiveLevel();
 				const auto &player = gameData.getPlayer();
-				const Location &location = gameData.getLocation();
+				const auto &miscAssets = game.getMiscAssets();
+				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+				const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
+				const LocationInstance &locationInst = gameData.getLocationInstance();
 				const Double3 &position = player.getPosition();
 
 				// Some places (like named/wild dungeons) do not display a name on the automap.
-				const std::string automapLocationName = [&gameData, &exeData, &location]()
+				const std::string automapLocationName = [&gameData, &exeData, &locationDef, &locationInst]()
 				{
-					const bool isCity = location.dataType == LocationDataType::City;
-					const bool isMainQuestDungeon = [&location]()
-					{
-						if (location.dataType == LocationDataType::Dungeon)
-						{
-							return (location.localDungeonID == 0) ||
-								(location.localDungeonID == 1);
-						}
-						else if (location.dataType == LocationDataType::SpecialCase)
-						{
-							return location.specialCaseType ==
-								Location::SpecialCaseType::StartDungeon;
-						}
-						else
-						{
-							return false;
-						}
-					}();
-
-					return (isCity || isMainQuestDungeon) ?
-						location.getName(gameData.getCityDataFile(), exeData) : std::string();
+					const std::string &locationName = locationInst.hasNameOverride() ?
+						locationInst.getNameOverride() : locationDef.getName();
+					const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
+					const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
+					return (isCity || isMainQuestDungeon) ? locationName : std::string();
 				}();
 
 				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z),
@@ -2081,13 +2073,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 				}();
 
-				const auto &cityDataFile = gameData.getCityDataFile();
-				const Location &location = gameData.getLocation();
 				const auto &miscAssets = game.getMiscAssets();
+				const auto &cityDataFile = miscAssets.getCityDataFile();
+				const Location &location = gameData.getLocation();
 				const auto &exeData = miscAssets.getExeData();
-				const std::string mifName = cityDataFile.getDoorVoxelMifName(
-					doorVoxel.x, doorVoxel.y, menuID, location.localCityID,
-					location.provinceID, isCity, exeData);
+				const std::string mifName = cityDataFile.getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
+					menuID, location.localCityID, location.provinceID, isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
@@ -2796,17 +2787,19 @@ void GameWorldPanel::render(Renderer &renderer)
 	// Draw game world onto the native frame buffer. The game world buffer
 	// might not completely fill up the native buffer (bottom corners), so
 	// clearing the native buffer beforehand is still necessary.
-	auto &gameData = this->getGame().getGameData();
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
 	auto &player = gameData.getPlayer();
 	const auto &worldData = gameData.getWorldData();
 	const auto &level = worldData.getActiveLevel();
-	const auto &options = this->getGame().getOptions();
+	const auto &options = game.getOptions();
 	const double ambientPercent = gameData.getAmbientPercent();
 
-	const double latitude = [&gameData]()
+	const double latitude = [&gameData, &miscAssets]()
 	{
 		const Location &location = gameData.getLocation();
-		return location.getLatitude(gameData.getCityDataFile());
+		return location.getLatitude(miscAssets.getCityDataFile());
 	}();
 
 	const bool isExterior = worldData.getActiveWorldType() != WorldType::Interior;
@@ -2818,13 +2811,13 @@ void GameWorldPanel::render(Renderer &renderer)
 		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level.getOpenDoors(),
 		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager());
 
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &textureManager = game.getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
 	const auto &gameInterface = textureManager.getTexture(
 		TextureFile::fromName(TextureName::GameWorldInterface), renderer);
 
-	const auto &inputManager = this->getGame().getInputManager();
+	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 

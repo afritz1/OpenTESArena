@@ -132,7 +132,6 @@ private:
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
 	WorldMapDefinition worldMapDefinition;
-	WorldMapInstance worldMapInstance;
 	ArenaTypes::Spellsg standardSpells; // From SPELLSG.65.
 	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
 	std::vector<RMDFile> wildernessChunks; // WILD001 to WILD070.
@@ -218,8 +217,6 @@ public:
 	// Gets the world map location data -- CityDataFile is the original game's data format.
 	const CityDataFile &getCityDataFile() const;
 	const WorldMapDefinition &getWorldMapDefinition() const;
-	WorldMapInstance &getWorldMapInstance();
-	const WorldMapInstance &getWorldMapInstance() const;
 
 	// Gets the spells list for spell and effect definitions.
 	const ArenaTypes::Spellsg &getStandardSpells() const;

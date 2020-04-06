@@ -23,6 +23,7 @@ public:
 	// selected destination.
 	struct TravelData
 	{
+		// @todo: change from 'ID' to 'index' to show it's not dependent on original game's 0-32 format.
 		int locationID, provinceID, travelDays;
 
 		TravelData(int locationID, int provinceID, int travelDays);

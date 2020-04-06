@@ -39,6 +39,8 @@
 #include "../Rendering/Texture.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
+#include "../World/LocationDefinition.h"
+#include "../World/LocationInstance.h"
 #include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
 
@@ -176,6 +178,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
 
 	// Get the current location to compare with.
 	const auto &currentLocation = gameData.getLocation();
@@ -223,15 +226,13 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	if (!matchesPlayerLocation)
 	{
 		// Set the travel data for the selected location and reset the blink timer.
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &cityData = gameData.getCityDataFile();
+		const auto &cityData = miscAssets.getCityDataFile();
 		const Date &currentDate = gameData.getDate();
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
 		ArenaRandom tempRandom = gameData.getRandom();
-		const int travelDays = cityData.getTravelDays(
-			currentLocationID, currentLocation.provinceID,
+		const int travelDays = cityData.getTravelDays(currentLocationID, currentLocation.provinceID,
 			selectedLocationID, this->provinceID, currentDate.getMonth(),
 			gameData.getWeathersArray(), tempRandom, miscAssets);
 
@@ -240,18 +241,26 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		this->blinkTimer = 0.0;
 
 		// Create pop-up travel dialog.
-		const std::string travelText = this->makeTravelText(currentLocationID,
-			currentLocation, selectedLocationID, *this->travelData.get());
+		const std::string travelText = this->makeTravelText(currentLocationID, currentLocation,
+			selectedLocationID, *this->travelData.get());
 		std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
 		game.pushSubPanel(std::move(textPopUp));
 	}
 	else
 	{
 		// Cannot travel to the player's current location. Create an error pop-up.
-		const std::string errorText = [&game, &gameData, &currentLocation]()
+		const std::string errorText = [&gameData, &miscAssets]()
 		{
-			const auto &cityData = gameData.getCityDataFile();
-			const auto &exeData = game.getMiscAssets().getExeData();
+			const std::string &currentLocationName = [&gameData, &miscAssets]() -> const std::string&
+			{
+				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+				const LocationDefinition &currentLocationDef = gameData.getLocationDefinition(worldMapDef);
+				const LocationInstance &currentLocationInst = gameData.getLocationInstance();
+				return currentLocationInst.hasNameOverride() ?
+					currentLocationInst.getNameOverride() : currentLocationDef.getName();
+			}();
+
+			const auto &exeData = miscAssets.getExeData();
 			std::string text = exeData.travel.alreadyAtDestination;
 
 			// Remove carriage return at end.
@@ -262,7 +271,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 
 			// Replace %s with location name.
 			size_t index = text.find("%s");
-			text.replace(index, 2, currentLocation.getName(cityData, exeData));
+			text.replace(index, 2, currentLocationName);
 
 			return text;
 		}();
@@ -349,6 +358,7 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	{
 		const Int2 diff = point - originalPosition;
 		const Int2 closestDiff = closestPosition - originalPosition;
+		// @todo: change to distance squared
 		const double distance = std::sqrt((diff.x * diff.x) + (diff.y * diff.y));
 		const double closestDistance = std::sqrt(
 			(closestDiff.x * closestDiff.x) + (closestDiff.y * closestDiff.y));
@@ -356,27 +366,36 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	};
 
 	// Look through all visible locations to find the one closest to the mouse.
-	int closestID = -1;
-	const auto &cityData = this->getGame().getGameData().getCityDataFile();
-	const auto &provinceData = cityData.getProvinceData(this->provinceID);
-	for (int i = 0; i < 48; i++)
-	{
-		const auto &locationData = provinceData.getLocationData(i);
+	int closestIndex = -1;
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
 
-		if (locationData.isVisible())
+	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	{
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		if (locationInst.isVisible())
 		{
-			const Int2 point(locationData.x, locationData.y);
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 
 			if (closerThanCurrentClosest(point))
 			{
 				closestPosition = point;
-				closestID = i;
+				closestIndex = i;
 			}
 		}
 	}
 
-	DebugAssertMsg(closestID >= 0, "No closest location ID found.");
-	return closestID;
+	DebugAssertMsg(closestIndex >= 0, "No closest location ID found.");
+	return closestIndex;
 }
 
 std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
@@ -387,9 +406,20 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 	auto &gameData = this->getGame().getGameData();
 	const auto &miscAssets = game.getMiscAssets();
 	const auto &exeData = miscAssets.getExeData();
-	const auto &cityData = gameData.getCityDataFile();
-	const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
-	const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
+	const auto &cityData = miscAssets.getCityDataFile();
+	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const ProvinceInstance &closestProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+	const LocationInstance &closestLocationInst = closestProvinceInst.getLocationInstance(closestLocationID);
+
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const int closestProvinceDefIndex = closestProvinceInst.getProvinceDefIndex();
+	const ProvinceDefinition &closestProvinceDef = worldMapDef.getProvinceDef(closestProvinceDefIndex);
+	const int closestLocationDefIndex = closestLocationInst.getLocationDefIndex();
+	const LocationDefinition &closestLocationDef = closestProvinceDef.getLocationDef(closestLocationDefIndex);
+
+	const std::string &closestLocationName = closestLocationInst.hasNameOverride() ?
+		closestLocationInst.getNameOverride() : closestLocationDef.getName();
+
 	const Date &currentDate = gameData.getDate();
 	const Date destinationDate = [&currentDate, &travelData]()
 	{
@@ -402,11 +432,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		return newDate;
 	}();
 
-	const std::string locationFormatText = [this, &exeData, &closestProvinceData,
-		closestLocationID, &closestLocationData]()
+	const std::string locationFormatText = [this, &exeData, &closestProvinceDef,
+		closestLocationID, &closestLocationName]()
 	{
-		std::string formatText = [this, &exeData, &closestProvinceData,
-			closestLocationID, &closestLocationData]()
+		std::string formatText = [this, &exeData, &closestProvinceDef, closestLocationID,
+			&closestLocationName]()
 		{
 			// Decide the format based on whether it's the center province.
 			if (this->provinceID != Location::CENTER_PROVINCE_ID)
@@ -442,11 +472,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 					// Replace second %s with location name.
 					index = text.find("%s", index);
-					text.replace(index, 2, closestLocationData.name);
+					text.replace(index, 2, closestLocationName);
 
 					// Replace third %s with province name.
 					index = text.find("%s", index);
-					text.replace(index, 2, closestProvinceData.name);
+					text.replace(index, 2, closestProvinceDef.getName());
 
 					return text;
 				}
@@ -457,11 +487,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 					// Replace first %s with dungeon name.
 					size_t index = text.find("%s");
-					text.replace(index, 2, closestLocationData.name);
+					text.replace(index, 2, closestLocationName);
 
 					// Replace second %s with province name.
 					index = text.find("%s", index);
-					text.replace(index, 2, closestProvinceData.name);
+					text.replace(index, 2, closestProvinceDef.getName());
 
 					return text;
 				}
@@ -473,11 +503,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 
 				// Replace first %s with center province city name.
 				size_t index = text.find("%s");
-				text.replace(index, 2, closestLocationData.name);
+				text.replace(index, 2, closestLocationName);
 
 				// Replace second %s with center province name.
 				index = text.find("%s", index);
-				text.replace(index, 2, closestProvinceData.name);
+				text.replace(index, 2, closestProvinceDef.getName());
 
 				return text;
 			}
@@ -550,24 +580,21 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
 	}();
 
+	const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
+	const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
+
 	const int travelDistance = [this, &cityData, &currentLocation,
 		currentLocationID, &closestProvinceData, &closestLocationData]()
 	{
-		const auto &currentProvinceData =
-			cityData.getProvinceData(currentLocation.provinceID);
-		const auto &currentLocationData =
-			currentProvinceData.getLocationData(currentLocationID);
+		const auto &currentProvinceData = cityData.getProvinceData(currentLocation.provinceID);
+		const auto &currentLocationData = currentProvinceData.getLocationData(currentLocationID);
 		const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
 		const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
 		const Int2 currentLocationGlobalPoint = cityData.localPointToGlobal(
-			Int2(currentLocationData.x, currentLocationData.y),
-			currentProvinceRect);
+			Int2(currentLocationData.x, currentLocationData.y), currentProvinceRect);
 		const Int2 closestLocationGlobalPoint = cityData.localPointToGlobal(
-			Int2(closestLocationData.x, closestLocationData.y),
-			closestProvinceRect);
-
-		return cityData.getDistance(
-			currentLocationGlobalPoint, closestLocationGlobalPoint);
+			Int2(closestLocationData.x, closestLocationData.y), closestProvinceRect);
+		return cityData.getDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
 	}();
 
 	const std::string distanceString = [&exeData, travelDistance]()
@@ -657,18 +684,6 @@ void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
 void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	// Lambda for drawing a location icon if it's visible.
-	auto drawIconIfVisible = [this, &renderer](
-		const CityDataFile::ProvinceData::LocationData &location, const Texture &icon)
-	{
-		// Only draw visible locations.
-		if (location.isVisible())
-		{
-			const Int2 point(location.x, location.y);
-			this->drawCenteredIcon(icon, point, renderer);
-		}
-	};
-
 	const auto &cityStateIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename, renderer);
 	const auto &townIcon = textureManager.getTexture(
@@ -678,42 +693,78 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	const auto &dungeonIcon = textureManager.getTexture(
 		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename, renderer);
 
-	const auto &cityData = this->getGame().getGameData().getCityDataFile();
-	const auto &province = cityData.getProvinceData(this->provinceID);
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
+	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	// Draw city-state icons.
-	for (const auto &cityState : province.cityStates)
+	// Gets the displayed icon for a location.
+	auto getLocationIcon = [this, &backgroundFilename, &textureManager, &renderer, &cityStateIcon,
+		&townIcon, &villageIcon, &dungeonIcon](const LocationDefinition &locationDef) -> const Texture&
 	{
-		drawIconIfVisible(cityState, cityStateIcon);
-	}
+		switch (locationDef.getType())
+		{
+		case LocationDefinition::Type::City:
+		{
+			switch (locationDef.getCityDefinition().type)
+			{
+			case LocationDefinition::CityDefinition::Type::City:
+				return cityStateIcon;
+			case LocationDefinition::CityDefinition::Type::Town:
+				return townIcon;
+			case LocationDefinition::CityDefinition::Type::Village:
+				return villageIcon;
+			default:
+				throw DebugException(std::to_string(
+					static_cast<int>(locationDef.getCityDefinition().type)));
+			}
+		}
+		case LocationDefinition::Type::Dungeon:
+			return dungeonIcon;
+		case LocationDefinition::Type::MainQuestDungeon:
+		{
+			const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType =
+				locationDef.getMainQuestDungeonDefinition().type;
 
-	// Draw town icons.
-	for (const auto &town : province.towns)
+			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
+			{
+				const auto &staffDungeonIcons = textureManager.getTextures(
+					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename, renderer);
+				DebugAssertIndex(staffDungeonIcons, this->provinceID);
+				return staffDungeonIcons[this->provinceID];
+			}
+			else
+			{
+				return dungeonIcon;
+			}
+		}
+		default:
+			throw DebugException(std::to_string(static_cast<int>(locationDef.getType())));
+		}
+	};
+
+	auto drawIconIfVisible = [this, &renderer, &provinceDef, &getLocationIcon](
+		const LocationInstance &locationInst)
 	{
-		drawIconIfVisible(town, townIcon);
-	}
+		if (locationInst.isVisible())
+		{
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
+			const Texture &icon = getLocationIcon(locationDef);
+			this->drawCenteredIcon(icon, point, renderer);
+		}
+	};
 
-	// Draw village icons.
-	for (const auto &village : province.villages)
+	// Draw all visible location icons in the province.
+	for (int i = 0; i < provinceInst.getLocationCount(); i++)
 	{
-		drawIconIfVisible(village, villageIcon);
-	}
-
-	// Draw dungeon icons.
-	drawIconIfVisible(province.firstDungeon, dungeonIcon);
-
-	if (this->provinceID != Location::CENTER_PROVINCE_ID)
-	{
-		// Only draw staff dungeon if not the center province.
-		const auto &staffDungeonIcon = textureManager.getTextures(
-			TextureFile::fromName(TextureName::StaffDungeonIcons),
-			backgroundFilename, renderer).at(this->provinceID);
-		drawIconIfVisible(province.secondDungeon, staffDungeonIcon);
-	}
-
-	for (const auto &dungeon : province.randomDungeons)
-	{
-		drawIconIfVisible(dungeon, dungeonIcon);
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		drawIconIfVisible(locationInst);
 	}
 }
 
@@ -728,7 +779,9 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 		this->drawCenteredIcon(highlight, point, renderer);
 	};
 
-	const auto &cityData = this->getGame().getGameData().getCityDataFile();
+	auto &game = this->getGame();
+	const auto &miscAssets = game.getMiscAssets();
+	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &province = cityData.getProvinceData(location.provinceID);
 
 	// Generic highlights (city, town, village, and dungeon).
@@ -868,14 +921,24 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
-	auto &gameData = this->getGame().getGameData();
-	const auto &cityData = gameData.getCityDataFile();
-	const auto &province = cityData.getProvinceData(this->provinceID);
-	const auto &location = province.getLocationData(locationID);
-	const Int2 center(location.x, location.y);
+	auto &game = this->getGame();
+	auto &gameData = game.getGameData();
+	const auto &miscAssets = game.getMiscAssets();
+	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+	const LocationInstance &locationInst = provinceInst.getLocationInstance(locationID);
+	const int locationDefIndex = locationInst.getLocationDefIndex();
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+	const Int2 center(locationDef.getScreenX(), locationDef.getScreenY());
+	const std::string &locationName = locationInst.hasNameOverride() ?
+		locationInst.getNameOverride() : locationDef.getName();
 
 	const RichTextString richText(
-		location.name,
+		locationName,
 		FontName::Arena,
 		Color(158, 0, 0),
 		TextAlignment::Center,

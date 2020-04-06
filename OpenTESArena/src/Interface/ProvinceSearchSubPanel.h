@@ -13,7 +13,6 @@
 // The province search sub-panel lets the player enter a location name and travel to it
 // as a convenience.
 
-class CityDataFile;
 class ProvinceMapPanel;
 
 class ProvinceSearchSubPanel : public Panel
@@ -31,17 +30,17 @@ private:
 	Button<Game&, ProvinceSearchSubPanel&, int> listAcceptButton;
 	Button<ProvinceSearchSubPanel&> listUpButton, listDownButton;
 	ProvinceMapPanel &provinceMapPanel;
-	std::vector<int> locationsListIDs;
+	std::vector<int> locationsListIndices;
 	std::string locationName;
 	Mode mode;
 	int provinceID;
 
-	// Returns a list of all visible location IDs in the given province that have a match with
-	// the given location name. Technically, this should only return up to one ID, but returning
-	// a list allows functionality for approximate matches. The exact location ID points into
+	// Returns a list of all visible location indices in the given province that have a match with
+	// the given location name. Technically, this should only return up to one index, but returning
+	// a list allows functionality for approximate matches. The exact location index points into
 	// the vector if there is an exact match, or null otherwise.
-	static std::vector<int> getMatchingLocations(const std::string &locationName, int provinceID,
-		const CityDataFile &cityData, const int **exactLocationID);
+	static std::vector<int> getMatchingLocations(Game &game, const std::string &locationName,
+		int provinceIndex, const int **exactLocationIndex);
 
 	// Gets the .IMG filename of the background image.
 	std::string getBackgroundFilename() const;

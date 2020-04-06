@@ -5,6 +5,7 @@
 
 #include "../Assets/CityDataFile.h"
 
+class ExeData;
 class MiscAssets;
 
 enum class ClimateType;
@@ -80,14 +81,14 @@ private:
 	};
 
 	// Internal init method for original game data.
-	void init(LocationDefinition::Type type, const CityDataFile::ProvinceData::LocationData &locationData);
+	void init(LocationDefinition::Type type, const std::string &name, int x, int y);
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
 		CityDefinition::Type type, const MiscAssets &miscAssets);
 	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData);
 	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
-		const CityDataFile::ProvinceData::LocationData &locationData);
+		const CityDataFile::ProvinceData::LocationData &locationData, const ExeData &exeData);
 	// @todo: eventually have init(const char *filename) for custom locations.
 
 	// Gets the display name of the location.

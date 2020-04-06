@@ -18,6 +18,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 
@@ -68,18 +69,21 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 	const std::string text = [this, &game]()
 	{
 		auto &gameData = game.getGameData();
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &exeData = miscAssets.getExeData();
 
-		const auto &cityData = gameData.getCityDataFile();
+		// @todo: change these to 'index' so it's clear they don't rely on original game's 0-32, etc..
 		const int provinceID = this->travelData.provinceID;
 		const int localCityID = this->travelData.locationID;
-		const auto &provinceData = cityData.getProvinceData(provinceID);
-		const auto &locationData = provinceData.getLocationData(localCityID);
 
-		const std::string locationString = [this, &gameData, &exeData, &cityData,
-			localCityID, &provinceData, &locationData]()
+		const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+		const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+
+		const std::string locationString = [this, &gameData, &exeData, provinceID, localCityID,
+			&provinceDef, &locationDef]()
 		{
-			if (this->travelData.provinceID != Location::CENTER_PROVINCE_ID)
+			if (provinceID != Location::CENTER_PROVINCE_ID)
 			{
 				// The <city type> of <city name> in <province> Province.
 				// Replace first %s with location type.
@@ -110,11 +114,11 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 				// Replace second %s with location name.
 				index = text.find("%s", index);
-				text.replace(index, 2, locationData.name);
+				text.replace(index, 2, locationDef.getName());
 
 				// Replace third %s with province name.
 				index = text.find("%s", index);
-				text.replace(index, 2, provinceData.name);
+				text.replace(index, 2, provinceDef.getName());
 
 				return exeData.travel.arrivalPopUpLocation + text;
 			}
@@ -144,7 +148,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		}();
 
 		const std::string locationDescriptionString = [&game, &gameData, &exeData,
-			&cityData, provinceID, localCityID, &locationData]()
+			provinceID, localCityID, &locationDef]()
 		{
 			const auto &miscAssets = game.getMiscAssets();
 			const LocationType locationType = Location::getCityType(localCityID);
@@ -152,8 +156,8 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text
 			// directly.
-			const std::string description = [&gameData, &exeData, &cityData, provinceID,
-				localCityID, &locationData, locationType, &miscAssets]()
+			const std::string description = [&gameData, &exeData, provinceID, localCityID,
+				&locationDef, locationType, &miscAssets]()
 			{
 				// City descriptions start at #0600. The three town descriptions are at #1422,
 				// and the three village descriptions are at #1423.
@@ -201,8 +205,9 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 					// Replace %cn with city name.
 					size_t index = description.find("%cn");
-					description.replace(index, 3, locationData.name);
+					description.replace(index, 3, locationDef.getName());
 
+					const auto &cityData = miscAssets.getCityDataFile();
 					const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
 					const bool isMale = cityData.isRulerMale(localCityID, provinceID);
 
@@ -368,9 +373,9 @@ void FastTravelSubPanel::switchToNextPanel()
 	if (this->travelData.locationID < 32)
 	{
 		// Get weather type from game data.
-		const WeatherType weatherType = [this, &game, &gameData]()
+		const WeatherType weatherType = [this, &game, &gameData, &miscAssets]()
 		{
-			const auto &cityData = gameData.getCityDataFile();
+			const auto &cityData = miscAssets.getCityDataFile();
 			const auto &provinceData = cityData.getProvinceData(this->travelData.provinceID);
 			const auto &locationData = provinceData.getLocationData(this->travelData.locationID);
 			const Int2 localPoint(locationData.x, locationData.y);
@@ -425,7 +430,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		{
 			// Main quest dungeon. The staff dungeons have a splash image before going
 			// to the game world panel.
-			const auto &cityData = gameData.getCityDataFile();
+			const auto &cityData = miscAssets.getCityDataFile();
 			const uint32_t dungeonSeed = cityData.getDungeonSeed(
 				localDungeonID, this->travelData.provinceID);
 			
