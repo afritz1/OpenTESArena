@@ -21,9 +21,9 @@ bool LocationInstance::hasNameOverride() const
 	return this->nameOverride.size() > 0;
 }
 
-const std::string &LocationInstance::getNameOverride() const
+const std::string &LocationInstance::getName(const LocationDefinition &locationDef) const
 {
-	return this->nameOverride;
+	return this->hasNameOverride() ? this->nameOverride : locationDef.getName();
 }
 
 void LocationInstance::toggleVisibility()

@@ -187,12 +187,6 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	auto getLocationName = [](const LocationInstance &locationInst,
-		const LocationDefinition &locationDef) -> const std::string&
-	{
-		return locationInst.hasNameOverride() ? locationInst.getNameOverride() : locationDef.getName();
-	};
-
 	// Iterate through all locations in the province. If any visible location's name has
 	// a match with the one entered, then add the location to the matching IDs.
 	std::vector<int> locationIndices;
@@ -205,7 +199,7 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const std::string &curLocationName = getLocationName(locationInst, locationDef);
+			const std::string &curLocationName = locationInst.getName(locationDef);
 
 			// See if the location names are an exact match.
 			const bool isExactMatch = String::caseInsensitiveEquals(locationName, curLocationName);
@@ -258,7 +252,7 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 	// then it takes the player linear time to find a location in it, which essentially isn't any
 	// faster than hovering over each location individually.
 	std::sort(locationIndices.begin(), locationIndices.end(),
-		[&provinceInst, &provinceDef, &getLocationName](int a, int b)
+		[&provinceInst, &provinceDef](int a, int b)
 	{
 		const LocationInstance &locationInstA = provinceInst.getLocationInstance(a);
 		const LocationInstance &locationInstB = provinceInst.getLocationInstance(b);
@@ -267,8 +261,8 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 		const LocationDefinition &locationDefA = provinceDef.getLocationDef(locationDefIndexA);
 		const LocationDefinition &locationDefB = provinceDef.getLocationDef(locationDefIndexB);
 
-		const std::string &aName = getLocationName(locationInstA, locationDefA);
-		const std::string &bName = getLocationName(locationInstB, locationDefB);
+		const std::string &aName = locationInstA.getName(locationDefA);
+		const std::string &bName = locationInstB.getName(locationDefB);
 		return aName.compare(bName) < 0;
 	});
 
@@ -309,8 +303,7 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 			const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const std::string &locationName = locationInst.hasNameOverride() ?
-				locationInst.getNameOverride() : locationDef.getName();
+			const std::string &locationName = locationInst.getName(locationDef);
 
 			locationNames.push_back(locationName);
 		}

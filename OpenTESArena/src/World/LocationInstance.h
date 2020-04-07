@@ -11,6 +11,9 @@ private:
 	std::string nameOverride; // Useful for quest dungeons.
 	int locationDefIndex; // Index in province location definitions.
 	bool visible;
+
+	// Whether the location instance's name overrides the location definition's.
+	bool hasNameOverride() const;
 public:
 	void init(int locationDefIndex, const LocationDefinition &locationDef);
 
@@ -20,11 +23,9 @@ public:
 	// Whether the location is visible in the province map.
 	bool isVisible() const;
 
-	// Whether the location instance's name overrides the location definition's.
-	bool hasNameOverride() const;
-
-	// Gets the location instance's name. Empty if unset.
-	const std::string &getNameOverride() const;
+	// Gets the location instance's name if it overrides its location definition's,
+	// otherwise defaults to the location definition's.
+	const std::string &getName(const LocationDefinition &locationDef) const;
 
 	// Toggles location visibility on the world map.
 	void toggleVisibility();

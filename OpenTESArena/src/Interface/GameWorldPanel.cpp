@@ -365,8 +365,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const LocationDefinition &locationDef =
 					gameData.getLocationDefinition(miscAssets.getWorldMapDefinition());
 				const LocationInstance &locationinst = gameData.getLocationInstance();
-				const std::string &locationName = locationinst.hasNameOverride() ?
-					locationinst.getNameOverride() : locationDef.getName();
+				const std::string &locationName = locationinst.getName(locationDef);
 
 				const std::string timeString = [&game, &gameData, &exeData]()
 				{
@@ -587,8 +586,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				// Some places (like named/wild dungeons) do not display a name on the automap.
 				const std::string automapLocationName = [&gameData, &exeData, &locationDef, &locationInst]()
 				{
-					const std::string &locationName = locationInst.hasNameOverride() ?
-						locationInst.getNameOverride() : locationDef.getName();
+					const std::string &locationName = locationInst.getName(locationDef);
 					const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
 					const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
 					return (isCity || isMainQuestDungeon) ? locationName : std::string();

@@ -256,8 +256,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
 				const LocationDefinition &currentLocationDef = gameData.getLocationDefinition(worldMapDef);
 				const LocationInstance &currentLocationInst = gameData.getLocationInstance();
-				return currentLocationInst.hasNameOverride() ?
-					currentLocationInst.getNameOverride() : currentLocationDef.getName();
+				return currentLocationInst.getName(currentLocationDef);
 			}();
 
 			const auto &exeData = miscAssets.getExeData();
@@ -416,9 +415,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 	const ProvinceDefinition &closestProvinceDef = worldMapDef.getProvinceDef(closestProvinceDefIndex);
 	const int closestLocationDefIndex = closestLocationInst.getLocationDefIndex();
 	const LocationDefinition &closestLocationDef = closestProvinceDef.getLocationDef(closestLocationDefIndex);
-
-	const std::string &closestLocationName = closestLocationInst.hasNameOverride() ?
-		closestLocationInst.getNameOverride() : closestLocationDef.getName();
+	const std::string &closestLocationName = closestLocationInst.getName(closestLocationDef);
 
 	const Date &currentDate = gameData.getDate();
 	const Date destinationDate = [&currentDate, &travelData]()
@@ -934,8 +931,7 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 
 	const Int2 center(locationDef.getScreenX(), locationDef.getScreenY());
-	const std::string &locationName = locationInst.hasNameOverride() ?
-		locationInst.getNameOverride() : locationDef.getName();
+	const std::string &locationName = locationInst.getName(locationDef);
 
 	const RichTextString richText(
 		locationName,

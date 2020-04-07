@@ -114,8 +114,7 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 			LocationInstance &locationInst = provinceInst.getLocationInstance(j);
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const std::string &locationName = locationInst.hasNameOverride() ?
-				locationInst.getNameOverride() : locationDef.getName();
+			const std::string &locationName = locationInst.getName(locationDef);
 
 			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
 			const bool isStartDungeon = isMainQuestDungeon &&
