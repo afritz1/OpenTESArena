@@ -2476,9 +2476,425 @@ void UnitTestCylinder_Quad_NoCollision_NormalNegative()
 
 #pragma region Unit Tests - Cylinder near Sides of Quad
 
+void UnitTestCylinder_Quad_NoCollision_NormalPositive_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.11, 0, 0), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalPositive_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.099, 0, 0), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalPositive_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1.075, 0, 0), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.975, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.975, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalNegative_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1, 0, -0.11), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalNegative_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1, 0, -0.099), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, -1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalNegative_PositiveXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(1, 0, -0.075), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0.025)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, -1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(1, 0.25, 0.025)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(1, 0.25, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalPositive_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0, 0, 1.11), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalPositive_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0, 0, 1.099), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, -1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalPositive_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0, 0, 1.075), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, -1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 0.975)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(0, 0, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 0.975)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalNegative_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.11, 0, 1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalNegative_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.099, 0, 1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalNegative_NegativeXEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(-0.075, 0, 1), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.025, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, 0)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.025, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0, 0.25, 1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
 #pragma endregion Unit Tests - Cylinder near Sides of Quad
 
 #pragma region Unit Tests - Cylinder near Top/Bottom of Quad
+
+void UnitTestCylinder_Quad_NoCollision_NormalPositive_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, 1.01, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalPositive_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, 1, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.495, 1, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.495, 1, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalPositive_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, 0.99, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.495, 1, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.495, 1, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalNegative_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, 1.01, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalNegative_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, 1, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.505, 1, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.505, 1, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalNegative_PositiveYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, 0.99, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.505, 1, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.505, 1, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 1, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalPositive_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, -0.51, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalPositive_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, -0.5, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.495, 0, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.495, 0, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalPositive_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.495, -0.49, 0.495), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.495, 0, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.495, 0, 0.495) + (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_NoCollision_NormalNegative_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, -0.51, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(!A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(!B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+}
+
+void UnitTestCylinder_Quad_Touching_NormalNegative_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, -0.5, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.505, 0, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.505, 0, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
+
+void UnitTestCylinder_Quad_Interpenetrating_NormalNegative_NegativeYEdge()
+{
+	QuadCollider3D A(Double3(0.5, 0.5, 0.5), Double3(-1, 0, -1), sqrt(2), 1);
+	AxisAlignedCylinderCollider3D B(Double3(0.505, -0.49, 0.505), 0.1, 0.5);
+
+	Collider3D::ColliderHit hitInfo(nullptr, nullptr, Double3::Zero, Double3::Zero, Double3::Zero);
+	DebugAssertMsg(A.CheckCollision(static_cast<const Collider3D&>(B), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(-1, 0, -1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.505,0 , 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+
+	DebugAssertMsg(B.CheckCollision(static_cast<const Collider3D&>(A), hitInfo), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect return value"));
+	DebugAssertMsg(hitInfo.A == static_cast<const Collider3D*>(&B), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for A"));
+	DebugAssertMsg(hitInfo.B == static_cast<const Collider3D*>(&A), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for B"));
+	DebugAssertMsg(CloseEnough(hitInfo.Normal, Double3(1, 0, 1).normalized()), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect Normal"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnA, Double3(0.505, 0, 0.505) - (Double3(1, 0, 1).normalized() * 0.1)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+	DebugAssertMsg(CloseEnough(hitInfo.PointOfImpactOnB, Double3(0.5, 0, 0.5)), std::string("Failed ") + __FUNCTION__ + std::string(": Incorrect value for PointOfImpactOnA"));
+}
 
 #pragma endregion Unit Tests - Cylinder near Top/Bottom of Quad
 
@@ -2624,9 +3040,35 @@ void UnitTests_Cylinder_Quad()
 	UnitTestCylinder_Quad_Touching_NormalNegative();
 	UnitTestCylinder_Quad_NoCollision_NormalNegative();
 
-	// TODO: Test collisions near sides of quad
+	// Test collisions near sides of quad
+	UnitTestCylinder_Quad_NoCollision_NormalPositive_PositiveXEdge();
+	UnitTestCylinder_Quad_Touching_NormalPositive_PositiveXEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalPositive_PositiveXEdge();
+	UnitTestCylinder_Quad_NoCollision_NormalNegative_PositiveXEdge();
+	UnitTestCylinder_Quad_Touching_NormalNegative_PositiveXEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalNegative_PositiveXEdge();
 
-	// TODO: Test collisions near top/bottom of quad
+	UnitTestCylinder_Quad_NoCollision_NormalPositive_NegativeXEdge();
+	UnitTestCylinder_Quad_Touching_NormalPositive_NegativeXEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalPositive_NegativeXEdge();
+	UnitTestCylinder_Quad_NoCollision_NormalNegative_NegativeXEdge();
+	UnitTestCylinder_Quad_Touching_NormalNegative_NegativeXEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalNegative_NegativeXEdge();
+
+	// Test collisions near top/bottom of quad
+	UnitTestCylinder_Quad_NoCollision_NormalPositive_PositiveYEdge();
+	UnitTestCylinder_Quad_Touching_NormalPositive_PositiveYEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalPositive_PositiveYEdge();
+	UnitTestCylinder_Quad_NoCollision_NormalNegative_PositiveYEdge();
+	UnitTestCylinder_Quad_Touching_NormalNegative_PositiveYEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalNegative_PositiveYEdge();
+
+	UnitTestCylinder_Quad_NoCollision_NormalPositive_NegativeYEdge();
+	UnitTestCylinder_Quad_Touching_NormalPositive_NegativeYEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalPositive_NegativeYEdge();
+	UnitTestCylinder_Quad_NoCollision_NormalNegative_NegativeYEdge();
+	UnitTestCylinder_Quad_Touching_NormalNegative_NegativeYEdge();
+	UnitTestCylinder_Quad_Interpenetrating_NormalNegative_NegativeYEdge();
 
 	// TODO: Test collisions near corners of quad
 }

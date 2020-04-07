@@ -325,7 +325,8 @@ inline double distanceBetweenLineSegmentAndPlane(const Double3 &point, const Dou
 inline double distanceBetweenLineSegmentAndPoint(const Double3 &p0, const Double3 &p0p1, const Double3 &q, Double3 &Ps)
 {
 	Double3 p0q = q - p0;
-	double s = (p0p1.cross(p0q) / p0p1.lengthSquared()).length();
+
+	double s = p0p1.dot(p0q) / p0p1.lengthSquared();
 
 	s = std::clamp(s, 0.0, 1.0);
 
@@ -336,7 +337,9 @@ inline double distanceBetweenLineSegmentAndPoint(const Double3 &p0, const Double
 inline double distanceBetweenLineAndPoint(const Double3 &p0, const Double3 &u, const Double3 &q, Double3 &Ps)
 {
 	Double3 p0q = q - p0;
-	double s = (u.cross(p0q) / u.lengthSquared()).length();
+	double s = u.dot(p0q) / u.lengthSquared();
+
+	s = std::clamp(s, 0.0, 1.0);
 
 	Ps = p0 + (u * s);
 	return (Ps - q).length();
@@ -925,13 +928,57 @@ bool Collider3D::CheckCollisionCylinderQuad(const AxisAlignedCylinderCollider3D 
 	}
 	else
 	{
-		// The plane point is within the radius and between the top and bottom of the cylinder. We just need a cylinder point
-		Double3 nearestPointOnCylinderCore = Double3(aPos.x, nearestPointInPlane.y, aPos.z);
-		Double3 normal = (nearestPointOnCylinderCore - nearestPointInPlane).normalized();;
-		Double3 nearestPointOnCylinder = nearestPointOnCylinderCore - normal * A.Radius;
+		// The plane point is within the radius and between the top and bottom of the cylinder.
 
-		handleCollision(nearestPointOnCylinder, nearestPointInPlane, normal);
-		return true;
+		// We need to determine if the plane point is within the bounds of the quad
+		const Double3 nearestPointInQuad = [&B, &nearestPointInPlane]() {
+			// Get the U and V world-space vectors
+			const Double3 U = Double3::UnitY.cross(B.Normal).normalized();
+			const Double3 V = B.Normal.cross(U).normalized();
+
+			// Find the vector from the center of the quad to the nearest point in the plane
+			const Double3 nearPointToCenter = nearestPointInPlane - B.Point;
+
+			// Get the scalar components of the vector, clamped to be within the quad region
+			const double s = std::clamp(nearPointToCenter.dot(U), -B.Width / 2, B.Width / 2);
+			const double t = std::clamp(nearPointToCenter.dot(V), -B.Height / 2, B.Height / 2);
+			
+			// Get the final point in the quad using the center, the U and V directions, and the scalar components
+			return B.Point + (U * s) + (V * t);
+		}();
+
+		if ((nearestPointInQuad - nearestPointInPlane).lengthSquared() < Constants::Epsilon)
+		{
+			// The cylinder is colliding with the face of the quad
+			//We just need a cylinder point
+			Double3 nearestPointOnCylinderCore = Double3(aPos.x, nearestPointInPlane.y, aPos.z);
+			Double3 normal = (nearestPointOnCylinderCore - nearestPointInPlane).normalized();
+			Double3 nearestPointOnCylinder = nearestPointOnCylinderCore - normal * A.Radius;
+
+			handleCollision(nearestPointOnCylinder, nearestPointInPlane, normal);
+			return true;
+		}
+		else
+		{
+			// If the cylinder is purely above or below the quad, then there can be no collision
+			if ((aPos.y > nearestPointInQuad.y) || (aTop.y < nearestPointInQuad.y))
+			{ /* The cylinder is outside the bounds of the quad, vertically */ }
+			else
+			{
+				// The nearest point in the quad is not the nearest point in the plane. We need to check for an edge/vertex collision
+				Double3 nearestPointOnCylinderCore = aPos;
+				double distance = distanceBetweenLineSegmentAndPoint(aPos, aTop - aPos, nearestPointInQuad, nearestPointOnCylinderCore);
+				if (distance < A.Radius)
+				{
+					// The cylinder is touching the quad
+					Double3 normal = (nearestPointOnCylinderCore - nearestPointInQuad).normalized();
+					Double3 nearestPointOnCylinder = nearestPointOnCylinderCore - normal * A.Radius;
+
+					handleCollision(nearestPointOnCylinder, nearestPointInQuad, normal);
+					return true;
+				}
+			}
+		}
 	}
 
 	return false;
