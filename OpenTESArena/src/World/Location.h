@@ -46,10 +46,6 @@ public:
 	// Functions for obtaining the local location type from a local city/dungeon ID.
 	static LocationType getCityType(int localCityID);
 	static LocationType getDungeonType(int localDungeonID);
-
-	// Gets the latitude of a location in normalized [-1.0, 1.0] Arena angle units. 0 at the
-	// equator, 1.0 at the north pole, and -1.0 at the south pole.
-	double getLatitude(const CityDataFile &cityData) const;
 };
 
 #endif

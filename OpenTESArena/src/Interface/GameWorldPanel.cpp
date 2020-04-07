@@ -2799,7 +2799,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const double latitude = [&gameData, &miscAssets]()
 	{
 		const Location &location = gameData.getLocation();
-		return location.getLatitude(miscAssets.getCityDataFile());
+		return LocationUtils::getLatitude(location, miscAssets.getCityDataFile());
 	}();
 
 	const bool isExterior = worldData.getActiveWorldType() != WorldType::Interior;
