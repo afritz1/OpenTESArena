@@ -25,8 +25,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	};
 
 	auto tryAddCity = [this, &miscAssets, &provinceData, &canAddLocation](int localCityID,
-		int provinceID, bool coastal, bool premade,
-		LocationDefinition::CityDefinition::Type type, const MiscAssets &miscAssets)
+		int provinceID, bool coastal, bool premade, LocationDefinition::CityDefinition::Type type)
 	{
 		const auto &locationData = provinceData.getLocationData(localCityID);
 
@@ -38,7 +37,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddDungeon = [this, &miscAssets, &canAddLocation](
+	auto tryAddDungeon = [this, &canAddLocation](
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
@@ -49,7 +48,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddMainQuestDungeon = [this, &miscAssets, &exeData, &canAddLocation](
+	auto tryAddMainQuestDungeon = [this, &exeData, &canAddLocation](
 		LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
@@ -64,7 +63,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	const bool isCenterProvince = provinceID == Location::CENTER_PROVINCE_ID;
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 
-	auto tryAddCities = [provinceID, &miscAssets, &cityGen, &tryAddCity, isCenterProvince](
+	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
 		const auto &locations, LocationDefinition::CityDefinition::Type type, int startID)
 	{
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
@@ -80,11 +79,11 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 			const int localCityID = startID + static_cast<int>(i);
 			const bool coastal = isCoastal(localCityID);
 			const bool premade = isCenterProvince && (localCityID == 0);
-			tryAddCity(localCityID, provinceID, coastal, premade, type, miscAssets);
+			tryAddCity(localCityID, provinceID, coastal, premade, type);
 		}
 	};
 
-	auto tryAddDungeons = [provinceID, &miscAssets, &tryAddDungeon](const auto &locations)
+	auto tryAddDungeons = [provinceID, &tryAddDungeon](const auto &locations)
 	{
 		for (size_t i = 0; i < locations.size(); i++)
 		{
