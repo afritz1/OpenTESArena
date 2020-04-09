@@ -146,7 +146,8 @@ public:
 		std::array<std::string, 24> creatureAnimationFilenames;
 
 		// Attribute arrays for male/female races and guards. 255 is displayed as 100.
-		std::array<std::array<uint8_t, 8>, 8> maleMainRaceAttributes, femaleMainRaceAttributes;
+		// The race arrays alternate male/female/male/female.
+		std::array<std::array<uint8_t, 8>, 16> raceAttributes;
 		std::array<std::array<uint8_t, 8>, 9> guardAttributes;
 
 		// Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.

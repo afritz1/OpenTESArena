@@ -337,8 +337,7 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	const int creatureDiseaseChancesOffset = ExeData::get(section, "CreatureDiseaseChances", keyValueFile);
 	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes", keyValueFile);
 	const int creatureAnimFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames", keyValueFile);
-	const int maleMainRaceAttrsOffset = ExeData::get(section, "MaleMainRaceAttributes", keyValueFile);
-	const int femaleMainRaceAttrsOffset = ExeData::get(section, "FemaleMainRaceAttributes", keyValueFile);
+	const int raceAttributesOffset = ExeData::get(section, "RaceAttributes", keyValueFile);
 	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes", keyValueFile);
 	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames", keyValueFile);
 	const int femaleCitizenAnimFilenamesOffset = ExeData::get(section, "FemaleCitizenAnimationFilenames", keyValueFile);
@@ -366,8 +365,7 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	initInt8Array(this->creatureDiseaseChances, data + creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
 	initStringArray(this->creatureAnimationFilenames, data + creatureAnimFilenamesOffset);
-	init2DInt8Array(this->maleMainRaceAttributes, data + maleMainRaceAttrsOffset);
-	init2DInt8Array(this->femaleMainRaceAttributes, data + femaleMainRaceAttrsOffset);
+	init2DInt8Array(this->raceAttributes, data + raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
 	initStringArray(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
 	initStringArray(this->femaleCitizenAnimationFilenames, data + femaleCitizenAnimFilenamesOffset);
