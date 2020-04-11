@@ -47,53 +47,12 @@ ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinc
 	return LocationUtils::getClimateType(locationID, provinceID, miscAssets);
 }
 
-double LocationUtils::getLatitude(const Location &location, const CityDataFile &cityData)
+Int2 LocationUtils::getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect)
 {
-	const Int2 globalPoint = [&location, &cityData]()
-	{
-		const int locationID = [&location]()
-		{
-			if (location.dataType == LocationDataType::City)
-			{
-				return LocationUtils::cityToLocationID(location.localCityID);
-			}
-			else if (location.dataType == LocationDataType::Dungeon)
-			{
-				return LocationUtils::dungeonToLocationID(location.localDungeonID);
-			}
-			else if (location.dataType == LocationDataType::SpecialCase)
-			{
-				if (location.specialCaseType == Location::SpecialCaseType::StartDungeon)
-				{
-					// Get location ID of the center city.
-					return 0;
-				}
-				else if (location.specialCaseType == Location::SpecialCaseType::WildDungeon)
-				{
-					// Return the point of the city the wild dungeon is near.
-					return LocationUtils::cityToLocationID(location.localCityID);
-				}
-				else
-				{
-					DebugUnhandledReturnMsg(int,
-						std::to_string(static_cast<int>(location.specialCaseType)));
-				}
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(location.dataType)));
-			}
-		}();
+	return CityDataFile::localPointToGlobal(localPoint, provinceRect);
+}
 
-		const auto &province = cityData.getProvinceData(location.provinceID);
-		const Int2 localPoint = [&province, locationID]()
-		{
-			const auto &location = province.getLocationData(locationID);
-			return Int2(location.x, location.y);
-		}();
-
-		return CityDataFile::localPointToGlobal(localPoint, province.getGlobalRect());
-	}();
-
+double LocationUtils::getLatitude(const Int2 &globalPoint)
+{
 	return (100.0 - static_cast<double>(globalPoint.y)) / 100.0;
 }

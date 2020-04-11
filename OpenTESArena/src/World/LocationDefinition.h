@@ -68,6 +68,7 @@ public:
 private:
 	std::string name;
 	int x, y;
+	double latitude;
 	bool visibleByDefault;
 
 	// Determines union access.
@@ -81,14 +82,16 @@ private:
 	};
 
 	// Internal init method for original game data.
-	void init(LocationDefinition::Type type, const std::string &name, int x, int y);
+	void init(LocationDefinition::Type type, const std::string &name, int x, int y, double latitude);
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
 		CityDefinition::Type type, const MiscAssets &miscAssets);
-	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData);
+	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData,
+		const CityDataFile::ProvinceData &provinceData);
 	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
-		const CityDataFile::ProvinceData::LocationData &locationData, const ExeData &exeData);
+		const CityDataFile::ProvinceData::LocationData &locationData,
+		const CityDataFile::ProvinceData &provinceData, const ExeData &exeData);
 	// @todo: eventually have init(const char *filename) for custom locations.
 
 	// Gets the display name of the location.
@@ -97,6 +100,10 @@ public:
 	// Pixel coordinates of the location.
 	int getScreenX() const;
 	int getScreenY() const;
+
+	// Latitude of the location in normalized [-1, 1] range across the world map's height,
+	// where 0 is at the equator and 1.0 is at the north pole.
+	double getLatitude() const;
 
 	// Whether the location needs to be discovered for it to be visible on the map.
 	bool isVisibleByDefault() const;

@@ -36,11 +36,13 @@ void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefini
 	this->type = type;
 }
 
-void LocationDefinition::init(LocationDefinition::Type type, const std::string &name, int x, int y)
+void LocationDefinition::init(LocationDefinition::Type type, const std::string &name,
+	int x, int y, double latitude)
 {
 	this->name = name;
 	this->x = x;
 	this->y = y;
+	this->latitude = latitude;
 	this->visibleByDefault = (type == LocationDefinition::Type::City) && (name.size() > 0);
 	this->type = type;
 }
@@ -51,7 +53,15 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	const auto &locationData = provinceData.getLocationData(localCityID);
-	this->init(LocationDefinition::Type::City, locationData.name, locationData.x, locationData.y);
+	const double latitude = [&provinceData, &locationData]()
+	{
+		const Int2 globalPoint = LocationUtils::getGlobalPoint(
+			Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
+		return LocationUtils::getLatitude(globalPoint);
+	}();
+
+	this->init(LocationDefinition::Type::City, locationData.name,
+		locationData.x, locationData.y, latitude);
 
 	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
 	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
@@ -78,14 +88,24 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		climateType, cityBlocksPerSide, coastal, premade);
 }
 
-void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData)
+void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData,
+	const CityDataFile::ProvinceData &provinceData)
 {
-	this->init(LocationDefinition::Type::Dungeon, locationData.name, locationData.x, locationData.y);
+	const double latitude = [&locationData, &provinceData]()
+	{
+		const Int2 globalPoint = LocationUtils::getGlobalPoint(
+			Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
+		return LocationUtils::getLatitude(globalPoint);
+	}();
+
+	this->init(LocationDefinition::Type::Dungeon, locationData.name,
+		locationData.x, locationData.y, latitude);
 	this->dungeon.init();
 }
 
 void LocationDefinition::initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
-	const CityDataFile::ProvinceData::LocationData &locationData, const ExeData &exeData)
+	const CityDataFile::ProvinceData::LocationData &locationData,
+	const CityDataFile::ProvinceData &provinceData, const ExeData &exeData)
 {
 	// Start dungeon's display name is custom.
 	std::string name = [type, &locationData, &exeData]()
@@ -102,8 +122,15 @@ void LocationDefinition::initMainQuestDungeon(MainQuestDungeonDefinition::Type t
 		}
 	}();
 
+	const double latitude = [&locationData, &provinceData]()
+	{
+		const Int2 globalPoint = LocationUtils::getGlobalPoint(
+			Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
+		return LocationUtils::getLatitude(globalPoint);
+	}();
+
 	this->init(LocationDefinition::Type::MainQuestDungeon, std::move(name),
-		locationData.x, locationData.y);
+		locationData.x, locationData.y, latitude);
 	this->mainQuest.init(type);
 }
 
@@ -120,6 +147,11 @@ int LocationDefinition::getScreenX() const
 int LocationDefinition::getScreenY() const
 {
 	return this->y;
+}
+
+double LocationDefinition::getLatitude() const
+{
+	return this->latitude;
 }
 
 bool LocationDefinition::isVisibleByDefault() const

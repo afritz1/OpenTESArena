@@ -37,25 +37,25 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddDungeon = [this, &canAddLocation](
+	auto tryAddDungeon = [this, &provinceData, &canAddLocation](
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initDungeon(locationData);
+			locationDef.initDungeon(locationData, provinceData);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
 
-	auto tryAddMainQuestDungeon = [this, &exeData, &canAddLocation](
+	auto tryAddMainQuestDungeon = [this, &provinceData, &exeData, &canAddLocation](
 		LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(type, locationData, exeData);
+			locationDef.initMainQuestDungeon(type, locationData, provinceData, exeData);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};

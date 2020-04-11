@@ -1,8 +1,11 @@
 #ifndef LOCATION_UTILS_H
 #define LOCATION_UTILS_H
 
+#include "../Math/Vector2.h"
+
 class Location;
 class MiscAssets;
+class Rect;
 
 enum class ClimateType;
 
@@ -19,9 +22,12 @@ namespace LocationUtils
 	ClimateType getCityClimateType(int localCityID, int provinceID, const MiscAssets &miscAssets);
 	ClimateType getDungeonClimateType(int localDungeonID, int provinceID, const MiscAssets &miscAssets);
 
-	// Gets the latitude of a location in normalized [-1.0, 1.0] Arena angle units. 0 at the
-	// equator, 1.0 at the north pole, and -1.0 at the south pole.
-	double getLatitude(const Location &location, const CityDataFile &cityData);
+	// Converts a location point in a province map to the equivalent world map point.
+	Int2 getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect);
+
+	// Gets the latitude of a location on the world map in normalized [-1.0, 1.0] Arena angle units.
+	// 0 at the equator, 1.0 at the north pole, and -1.0 at the south pole.
+	double getLatitude(const Int2 &globalPoint);
 }
 
 #endif
