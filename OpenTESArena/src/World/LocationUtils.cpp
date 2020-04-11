@@ -1,6 +1,7 @@
 #include "Location.h"
 #include "LocationDataType.h"
 #include "LocationUtils.h"
+#include "../Assets/CityDataFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
 
@@ -32,6 +33,16 @@ int LocationUtils::dungeonToLocationID(int localDungeonID)
 	return localDungeonID + 32;
 }
 
+int LocationUtils::getGlobalCityID(int localCityID, int provinceID)
+{
+	return (provinceID << 5) + localCityID;
+}
+
+std::pair<int, int> LocationUtils::getLocalCityAndProvinceID(int globalCityID)
+{
+	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
+}
+
 ClimateType LocationUtils::getCityClimateType(int localCityID, int provinceID,
 	const MiscAssets &miscAssets)
 {
@@ -58,6 +69,53 @@ Int2 LocationUtils::getLocalPoint(const Int2 &globalPoint, const Rect &provinceR
 	const int localX = ((globalPoint.x - provinceRect.getLeft()) * 100) / ((provinceRect.getWidth() * 100) / 320);
 	const int localY = ((globalPoint.y - provinceRect.getTop()) * 100) / ((provinceRect.getHeight() * 100) / 200);
 	return Int2(localX, localY);
+}
+
+int LocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityDataFile &cityData)
+{
+	// Find the province that contains the global point.
+	int provinceID = -1;
+	Rect provinceRect;
+	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
+	{
+		const CityDataFile::ProvinceData &province = cityData.getProvinceData(i);
+		const Rect &curProvinceRect = province.getGlobalRect();
+
+		if (curProvinceRect.containsInclusive(globalPoint))
+		{
+			provinceID = i;
+			provinceRect = curProvinceRect;
+			break;
+		}
+	}
+
+	DebugAssertMsg(provinceID != -1, "No matching province for global point (" +
+		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
+
+	const Int2 localPoint = LocationUtils::getLocalPoint(globalPoint, provinceRect);
+
+	// Get the global quarter index.
+	const int globalQuarter = [&localPoint, provinceID]()
+	{
+		int index = provinceID * 4;
+		const bool inRightHalf = localPoint.x >= 160;
+		const bool inBottomHalf = localPoint.y >= 100;
+
+		// Add to the index depending on which quadrant the local point is in.
+		if (inRightHalf)
+		{
+			index++;
+		}
+
+		if (inBottomHalf)
+		{
+			index += 2;
+		}
+
+		return index;
+	}();
+
+	return globalQuarter;
 }
 
 double LocationUtils::getLatitude(const Int2 &globalPoint)

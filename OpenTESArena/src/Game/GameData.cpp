@@ -513,7 +513,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
 
 	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
 	// loadPremadeCity() should be called instead for that case.

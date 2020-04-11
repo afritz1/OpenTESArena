@@ -70,8 +70,6 @@ const CityDataFile::ProvinceData::LocationData &CityDataFile::ProvinceData::getL
 	}
 }
 
-const int CityDataFile::PROVINCE_COUNT = 9;
-
 CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
 {
 	return this->provinces.at(index);
@@ -80,16 +78,6 @@ CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index)
 const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 {
 	return this->provinces.at(index);
-}
-
-int CityDataFile::getGlobalCityID(int localCityID, int provinceID)
-{
-	return (provinceID << 5) + localCityID;
-}
-
-std::pair<int, int> CityDataFile::getLocalCityAndProvinceID(int globalCityID)
-{
-	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
 int CityDataFile::getDistance(const Int2 &globalSrc, const Int2 &globalDst)
@@ -337,48 +325,6 @@ int CityDataFile::getWildernessServiceSaveFileNumber(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
-{
-	Rect provinceRect;
-
-	// Find the province that contains the global point.
-	const auto iter = std::find_if(this->provinces.begin(), this->provinces.end(),
-		[&globalPoint, &provinceRect](const CityDataFile::ProvinceData &province)
-	{
-		provinceRect = province.getGlobalRect();
-		return provinceRect.containsInclusive(globalPoint);
-	});
-
-	DebugAssertMsg(iter != this->provinces.end(), "No matching province for global point (" +
-		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
-
-	const Int2 localPoint = LocationUtils::getLocalPoint(globalPoint, provinceRect);
-	const int provinceID = static_cast<int>(std::distance(this->provinces.begin(), iter));
-
-	// Get the global quarter index.
-	const int globalQuarter = [&localPoint, provinceID]()
-	{
-		int index = provinceID * 4;
-		const bool inRightHalf = localPoint.x >= 160;
-		const bool inBottomHalf = localPoint.y >= 100;
-
-		// Add to the index depending on which quadrant the local point is in.
-		if (inRightHalf)
-		{
-			index++;
-		}
-
-		if (inBottomHalf)
-		{
-			index += 2;
-		}
-
-		return index;
-	}();
-
-	return globalQuarter;
-}
-
 int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
 	int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
 	ArenaRandom &random, const MiscAssets &miscAssets) const
@@ -405,7 +351,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 		const int weatherIndex = [this, &weathers, &point]()
 		{
 			// Find which province quarter the global point is in.
-			const int quarterIndex = this->getGlobalQuarter(point);
+			const int quarterIndex = LocationUtils::getGlobalQuarter(point, *this);
 
 			// Convert the weather type to its equivalent index.
 			return static_cast<int>(weathers.at(quarterIndex));

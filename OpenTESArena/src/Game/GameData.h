@@ -207,6 +207,7 @@ public:
 	double getFogDistance() const;
 	WeatherType getWeatherType() const;
 
+	// @todo: this should be in some LocationUtils or WeatherUtils or something.
 	// Returns a filtered version of the given weather so that, i.e., deserts can't
 	// have snow.
 	static WeatherType getFilteredWeatherType(WeatherType weatherType, ClimateType climateType);

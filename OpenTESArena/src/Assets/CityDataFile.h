@@ -54,21 +54,15 @@ public:
 		// Gets the location associated with the given location ID.
 		const CityDataFile::ProvinceData::LocationData &getLocationData(int locationID) const;
 	};
+
+	static constexpr int PROVINCE_COUNT = 9;
 private:
 	// These are ordered the same as usual (read left to right, and center is last).
-	std::array<ProvinceData, 9> provinces;
+	std::array<ProvinceData, PROVINCE_COUNT> provinces;
 public:
-	static const int PROVINCE_COUNT;
-
 	// Gets the province data at the given province index.
 	CityDataFile::ProvinceData &getProvinceData(int index);
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
-
-	// Converts a local city ID + province ID pair to a global city ID.
-	static int getGlobalCityID(int localCityID, int provinceID);
-
-	// Converts a global city ID to a local city ID + province ID pair.
-	static std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
 	// Gets the approximation of the linear distance between two global points.
 	static int getDistance(const Int2 &globalSrc, const Int2 &globalDst);
@@ -76,14 +70,17 @@ public:
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);
 
+	// @todo: this should be in some LevelUtils namespace.
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
 	static uint16_t getDoorVoxelOffset(int x, int y);
 
+	// @todo: this should be in some LevelUtils namespace.
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(int x, int y, int menuID, int localCityID, int provinceID,
 		bool isCity, const ExeData &exeData) const;
 
+	// @todo: this should be in some LevelUtils namespace.
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);
 
@@ -104,12 +101,10 @@ public:
 	// Gets an index into the city reserved block list.
 	static int getCityReservedBlockListIndex(bool isCoastal, int templateID);
 
+	// @todo: this should be in some LevelUtils namespace.
 	// Gets the '#' number used in IN#.0x and RE#.0x save files.
 	static int getServiceSaveFileNumber(int doorX, int doorY);
 	static int getWildernessServiceSaveFileNumber(int wildX, int wildY);
-
-	// Gets the quarter within a province (to determine weather).
-	int getGlobalQuarter(const Int2 &globalPoint) const;
 
 	// Gets the number of days required to travel from one location to another.
 	int getTravelDays(int startLocationID, int startProvinceID, int endLocationID,

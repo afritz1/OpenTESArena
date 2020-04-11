@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "Location.h"
+#include "LocationUtils.h"
 #include "ProvinceDefinition.h"
 #include "../Assets/MiscAssets.h"
 
@@ -68,7 +69,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	{
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
 		{
-			const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+			const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
 			return std::find(cityGen.coastalCityList.begin(),
 				cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
 		};

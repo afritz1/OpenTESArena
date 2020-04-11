@@ -11,6 +11,7 @@
 #include "../Rendering/Renderer.h"
 #include "../World/Location.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
 
 #include "components/debug/Debug.h"
@@ -178,7 +179,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 	const MiscAssets &miscAssets)
 {
 	const auto &exeData = miscAssets.getExeData();
-	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
 	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
@@ -832,7 +833,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	}
 
 	// Get city generation info.
-	const int globalCityID = CityDataFile::getGlobalCityID(localCityID, provinceID);
+	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
 	DebugAssertMsg((globalCityID >= 0) && (globalCityID <= 256),
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
 
