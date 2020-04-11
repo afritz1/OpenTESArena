@@ -15,8 +15,7 @@ namespace LocationUtils
 		const auto &province = cityData.getProvinceData(provinceID);
 		const auto &location = province.getLocationData(locationID);
 		const Int2 localPoint(location.x, location.y);
-		const Int2 globalPoint = CityDataFile::localPointToGlobal(
-			localPoint, province.getGlobalRect());
+		const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
 		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
 		const uint8_t terrain = worldMapTerrain.getFailSafeAt(globalPoint.x, globalPoint.y);
 		return MiscAssets::WorldMapTerrain::toClimateType(terrain);
@@ -49,7 +48,16 @@ ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinc
 
 Int2 LocationUtils::getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect)
 {
-	return CityDataFile::localPointToGlobal(localPoint, provinceRect);
+	const int globalX = ((localPoint.x * ((provinceRect.getWidth() * 100) / 320)) / 100) + provinceRect.getLeft();
+	const int globalY = ((localPoint.y * ((provinceRect.getHeight() * 100) / 200)) / 100) + provinceRect.getTop();
+	return Int2(globalX, globalY);
+}
+
+Int2 LocationUtils::getLocalPoint(const Int2 &globalPoint, const Rect &provinceRect)
+{
+	const int localX = ((globalPoint.x - provinceRect.getLeft()) * 100) / ((provinceRect.getWidth() * 100) / 320);
+	const int localY = ((globalPoint.y - provinceRect.getTop()) * 100) / ((provinceRect.getHeight() * 100) / 200);
+	return Int2(localX, localY);
 }
 
 double LocationUtils::getLatitude(const Int2 &globalPoint)

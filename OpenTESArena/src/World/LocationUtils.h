@@ -25,6 +25,10 @@ namespace LocationUtils
 	// Converts a location point in a province map to the equivalent world map point.
 	Int2 getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect);
 
+	// Converts a global XY coordinate to local coordinates. The rectangle comes from
+	// the province header.
+	Int2 getLocalPoint(const Int2 &globalPoint, const Rect &provinceRect);
+
 	// Gets the latitude of a location on the world map in normalized [-1.0, 1.0] Arena angle units.
 	// 0 at the equator, 1.0 at the north pole, and -1.0 at the south pole.
 	double getLatitude(const Int2 &globalPoint);

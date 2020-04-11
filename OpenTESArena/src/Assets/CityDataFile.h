@@ -73,14 +73,6 @@ public:
 	// Gets the approximation of the linear distance between two global points.
 	static int getDistance(const Int2 &globalSrc, const Int2 &globalDst);
 
-	// Converts a local XY coordinate to global coordinates. The rectangle comes from
-	// the province header.
-	static Int2 localPointToGlobal(const Int2 &localPoint, const Rect &rect);
-
-	// Converts a global XY coordinate to local coordinates. The rectangle comes from
-	// the province header.
-	static Int2 globalPointToLocal(const Int2 &globalPoint, const Rect &rect);
-
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	static std::string getMainQuestDungeonMifName(uint32_t seed);
 

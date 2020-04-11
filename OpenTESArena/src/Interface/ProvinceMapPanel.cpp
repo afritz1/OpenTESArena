@@ -587,11 +587,11 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		const auto &currentLocationData = currentProvinceData.getLocationData(currentLocationID);
 		const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
 		const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
-		const Int2 currentLocationGlobalPoint = cityData.localPointToGlobal(
+		const Int2 currentLocationGlobalPoint = LocationUtils::getGlobalPoint(
 			Int2(currentLocationData.x, currentLocationData.y), currentProvinceRect);
-		const Int2 closestLocationGlobalPoint = cityData.localPointToGlobal(
+		const Int2 closestLocationGlobalPoint = LocationUtils::getGlobalPoint(
 			Int2(closestLocationData.x, closestLocationData.y), closestProvinceRect);
-		return cityData.getDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
+		return CityDataFile::getDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
 	}();
 
 	const std::string distanceString = [&exeData, travelDistance]()

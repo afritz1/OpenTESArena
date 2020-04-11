@@ -379,7 +379,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			const auto &provinceData = cityData.getProvinceData(this->travelData.provinceID);
 			const auto &locationData = provinceData.getLocationData(this->travelData.locationID);
 			const Int2 localPoint(locationData.x, locationData.y);
-			const Int2 globalPoint = CityDataFile::localPointToGlobal(
+			const Int2 globalPoint = LocationUtils::getGlobalPoint(
 				localPoint, provinceData.getGlobalRect());
 			const int globalQuarter = cityData.getGlobalQuarter(globalPoint);
 			const WeatherType type = gameData.getWeathersArray().at(globalQuarter);

@@ -99,20 +99,6 @@ int CityDataFile::getDistance(const Int2 &globalSrc, const Int2 &globalDst)
 	return std::max(dx, dy) + (std::min(dx, dy) / 4);
 }
 
-Int2 CityDataFile::localPointToGlobal(const Int2 &localPoint, const Rect &rect)
-{
-	const int globalX = ((localPoint.x * ((rect.getWidth() * 100) / 320)) / 100) + rect.getLeft();
-	const int globalY = ((localPoint.y * ((rect.getHeight() * 100) / 200)) / 100) + rect.getTop();
-	return Int2(globalX, globalY);
-}
-
-Int2 CityDataFile::globalPointToLocal(const Int2 &globalPoint, const Rect &rect)
-{
-	const int localX = ((globalPoint.x - rect.getLeft()) * 100) / ((rect.getWidth() * 100) / 320);
-	const int localY = ((globalPoint.y - rect.getTop()) * 100) / ((rect.getHeight() * 100) / 200);
-	return Int2(localX, localY);
-}
-
 std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
 {
 	const std::string seedString = std::to_string(seed);
@@ -366,7 +352,7 @@ int CityDataFile::getGlobalQuarter(const Int2 &globalPoint) const
 	DebugAssertMsg(iter != this->provinces.end(), "No matching province for global point (" +
 		std::to_string(globalPoint.x) + ", " + std::to_string(globalPoint.y) + ").");
 
-	const Int2 localPoint = CityDataFile::globalPointToLocal(globalPoint, provinceRect);
+	const Int2 localPoint = LocationUtils::getLocalPoint(globalPoint, provinceRect);
 	const int provinceID = static_cast<int>(std::distance(this->provinces.begin(), iter));
 
 	// Get the global quarter index.
@@ -401,7 +387,7 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 	{
 		const auto &province = this->getProvinceData(provinceID);
 		const auto &location = province.getLocationData(locationID);
-		return CityDataFile::localPointToGlobal(
+		return LocationUtils::getGlobalPoint(
 			Int2(location.x, location.y), province.getGlobalRect());
 	};
 
@@ -557,8 +543,7 @@ Int2 CityDataFile::getGlobalPoint(int localCityID, int provinceID) const
 	const int locationID = LocationUtils::cityToLocationID(localCityID);
 	const auto &location = province.getLocationData(locationID);
 	const Int2 localPoint(location.x, location.y);
-	const Int2 globalPoint = CityDataFile::localPointToGlobal(
-		localPoint, province.getGlobalRect());
+	const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
 	return globalPoint;
 }
 
