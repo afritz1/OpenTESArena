@@ -1041,8 +1041,11 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provin
 		isCity, gridWidth, gridDepth, miscAssets);
 
 	// Generate distant sky.
-	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
-		starCount, miscAssets, textureManager);
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);
 
 	return levelData;
 }
@@ -1096,8 +1099,11 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 		isCity, gridWidth, gridDepth, miscAssets);
 
 	// Generate distant sky.
-	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
-		starCount, miscAssets, textureManager);
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);
 
 	return levelData;
 }
@@ -1190,8 +1196,11 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	levelData.generateWildChunkBuildingNames(localCityID, provinceID, miscAssets);
 
 	// Generate distant sky.
-	levelData.distantSky.init(localCityID, provinceID, weatherType, currentDay,
-		starCount, miscAssets, textureManager);
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);
 
 	return levelData;
 }

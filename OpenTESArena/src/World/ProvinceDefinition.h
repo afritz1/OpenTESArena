@@ -14,6 +14,7 @@ private:
 	std::vector<LocationDefinition> locations;
 	std::string name;
 	int globalX, globalY, globalW, globalH; // Province-to-world-map projection.
+	bool animatedDistantLand;
 public:
 	// Initialize from original game data.
 	void init(int provinceID, const MiscAssets &miscAssets);
@@ -30,6 +31,10 @@ public:
 	
 	// Creates a rectangle from the province's global X, Y, W, and H values.
 	Rect getGlobalRect() const;
+
+	// Whether the province contains any animated distant land like volcanoes.
+	// @todo: expand this into an actual data structure
+	bool hasAnimatedDistantLand() const;
 };
 
 #endif

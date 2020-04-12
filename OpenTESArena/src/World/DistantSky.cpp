@@ -4,12 +4,13 @@
 #include "ClimateType.h"
 #include "DistantSky.h"
 #include "Location.h"
+#include "LocationDefinition.h"
 #include "LocationUtils.h"
+#include "ProvinceDefinition.h"
 #include "WeatherType.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -270,14 +271,14 @@ std::optional<int> DistantSky::getTextureSetEntryIndex(const std::string_view &f
 	}
 }
 
-void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
-	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
+void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	WeatherType weatherType, int currentDay, int starCount, const ExeData &exeData,
+	TextureManager &textureManager)
 {
-	// Add mountains and clouds first. Get the climate type of the city.
-	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
-
-	const auto &exeData = miscAssets.getExeData();
-	const auto &distantMountainFilenames = exeData.locations.distantMountainFilenames;
+	// Add mountains and clouds first. Get the climate type of the city. Only cities have climate.
+	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const ClimateType climateType = cityDef.climateType;
 
 	// Get the mountain traits associated with the given climate type.
 	const DistantMountainTraits &mtnTraits = [climateType]()
@@ -294,17 +295,11 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 		return iter->second;
 	}();
 
-	const std::string &baseFilename = distantMountainFilenames.at(mtnTraits.filenameIndex);
-	const auto &cityData = miscAssets.getCityDataFile();
-	const auto &province = cityData.getProvinceData(provinceID);
-	const uint32_t skySeed = [localCityID, provinceID, &cityData, &province]()
-	{
-		const auto &location = province.getLocationData(localCityID);
-		const Int2 localPoint(location.x, location.y);
-		return LocationUtils::getDistantSkySeed(localPoint, provinceID, province.getGlobalRect());
-	}();
+	const auto &distantMountainFilenames = exeData.locations.distantMountainFilenames;
+	DebugAssertIndex(distantMountainFilenames, mtnTraits.filenameIndex);
+	const std::string &baseFilename = distantMountainFilenames[mtnTraits.filenameIndex];
 
-	ArenaRandom random(skySeed);
+	ArenaRandom random(cityDef.distantSkySeed);
 	const int count = (random.next() % 4) + 2;
 
 	// Converts an Arena angle to an actual angle in radians.
@@ -410,15 +405,12 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	}
 
 	// Initialize animated lands (if any).
-	const bool hasAnimLand = provinceID == 3;
-	if (hasAnimLand)
+	if (provinceDef.hasAnimatedDistantLand())
 	{
-		const uint32_t citySeed = LocationUtils::getCitySeed(localCityID, province);
-
 		// Position of animated land on province map; determines where it is on the horizon
 		// for each location.
 		const Int2 animLandGlobalPos(132, 52);
-		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(citySeed);
+		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(cityDef.citySeed);
 
 		// Distance on province map from current location to the animated land.
 		const int dist = CityDataFile::getDistance(locationGlobalPos, animLandGlobalPos);

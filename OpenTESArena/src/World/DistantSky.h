@@ -15,7 +15,9 @@
 // Contains data for distant objects (mountains, clouds, stars). Each distant object's image
 // is owned by the texture manager.
 
-class MiscAssets;
+class ExeData;
+class LocationDefinition;
+class ProvinceDefinition;
 class TextureManager;
 
 enum class WeatherType;
@@ -175,8 +177,9 @@ public:
 	static const double IDENTITY_DIM;
 	static const double IDENTITY_ANGLE_RADIANS;
 
-	void init(int localCityID, int provinceID, WeatherType weatherType, int currentDay,
-		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
+	void init(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		WeatherType weatherType, int currentDay, int starCount, const ExeData &exeData,
+		TextureManager &textureManager);
 
 	int getLandObjectCount() const;
 	int getAnimatedLandObjectCount() const;

@@ -17,6 +17,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	this->globalY = provinceData.globalY;
 	this->globalW = provinceData.globalW;
 	this->globalH = provinceData.globalH;
+	this->animatedDistantLand = provinceID == 3;
 
 	auto canAddLocation = [](const CityDataFile::ProvinceData::LocationData &locationData)
 	{
@@ -140,4 +141,9 @@ const std::string &ProvinceDefinition::getName() const
 Rect ProvinceDefinition::getGlobalRect() const
 {
 	return Rect(this->globalX, this->globalY, this->globalW, this->globalH);
+}
+
+bool ProvinceDefinition::hasAnimatedDistantLand() const
+{
+	return this->animatedDistantLand;
 }
