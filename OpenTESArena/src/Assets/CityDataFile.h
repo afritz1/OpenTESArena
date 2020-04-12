@@ -83,11 +83,6 @@ public:
 	static int getServiceSaveFileNumber(int doorX, int doorY);
 	static int getWildernessServiceSaveFileNumber(int wildX, int wildY);
 
-	// Gets the number of days required to travel from one location to another.
-	int getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
-		int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
-		ArenaRandom &random, const MiscAssets &miscAssets) const;
-
 	bool init(const char *filename);
 };
 

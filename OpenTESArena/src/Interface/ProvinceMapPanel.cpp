@@ -232,8 +232,8 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
 		ArenaRandom tempRandom = gameData.getRandom();
-		const int travelDays = cityData.getTravelDays(currentLocationID, currentLocation.provinceID,
-			selectedLocationID, this->provinceID, currentDate.getMonth(),
+		const int travelDays = LocationUtils::getTravelDays(currentLocationID,
+			currentLocation.provinceID, selectedLocationID, this->provinceID, currentDate.getMonth(),
 			gameData.getWeathersArray(), tempRandom, miscAssets);
 
 		this->travelData = std::make_unique<TravelData>(

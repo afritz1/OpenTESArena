@@ -1,12 +1,14 @@
 #ifndef LOCATION_UTILS_H
 #define LOCATION_UTILS_H
 
+#include <array>
 #include <cstdint>
 #include <string>
 
 #include "../Assets/CityDataFile.h"
 #include "../Math/Vector2.h"
 
+class ArenaRandom;
 class Location;
 class MiscAssets;
 class Rect;
@@ -56,6 +58,11 @@ namespace LocationUtils
 	// Gets the approximation of the linear distance between two global points. This value is
 	// used to display the distance in kilometers.
 	int getMapDistance(const Int2 &globalSrc, const Int2 &globalDst);
+
+	// Gets the number of days required to travel from one location to another.
+	int getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
+		int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
+		ArenaRandom &random, const MiscAssets &miscAssets);
 
 	// Gets the 32-bit seed for a city in the given province.
 	uint32_t getCitySeed(int localCityID, const CityDataFile::ProvinceData &province);

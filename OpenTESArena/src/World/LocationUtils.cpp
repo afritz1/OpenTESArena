@@ -6,6 +6,7 @@
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
+#include "../Math/Random.h"
 #include "../Math/Vector2.h"
 
 #include "components/debug/Debug.h"
@@ -144,6 +145,84 @@ int LocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &globalDst)
 	const int dx = std::abs(globalSrc.x - globalDst.x);
 	const int dy = std::abs(globalSrc.y - globalDst.y);
 	return std::max(dx, dy) + (std::min(dx, dy) / 4);
+}
+
+int LocationUtils::getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
+	int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
+	ArenaRandom &random, const MiscAssets &miscAssets)
+{
+	const auto &cityData = miscAssets.getCityDataFile();
+
+	auto getGlobalPoint = [&cityData](int locationID, int provinceID)
+	{
+		const auto &province = cityData.getProvinceData(provinceID);
+		const auto &location = province.getLocationData(locationID);
+		const Int2 localPoint(location.x, location.y);
+		return LocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
+	};
+
+	// The two world map points to calculate between.
+	const Int2 startGlobalPoint = getGlobalPoint(startLocationID, startProvinceID);
+	const Int2 endGlobalPoint = getGlobalPoint(endLocationID, endProvinceID);
+
+	// Get all the points along the line between the two points.
+	const std::vector<Int2> points = Int2::bresenhamLine(startGlobalPoint, endGlobalPoint);
+
+	int totalTime = 0;
+	for (const Int2 &point : points)
+	{
+		const int monthIndex = (month + (totalTime / 3000)) % 12;
+		const int weatherIndex = [&weathers, &cityData, &point]()
+		{
+			// Find which province quarter the global point is in.
+			const int quarterIndex = LocationUtils::getGlobalQuarter(point, cityData);
+
+			// Convert the weather type to its equivalent index.
+			DebugAssertIndex(weathers, quarterIndex);
+			return static_cast<int>(weathers[quarterIndex]);
+		}();
+
+		// The type of terrain at the world map point.
+		const auto &worldMapTerrain = miscAssets.getWorldMapTerrain();
+		const uint8_t terrainIndex = MiscAssets::WorldMapTerrain::getNormalizedIndex(
+			worldMapTerrain.getAt(point.x, point.y));
+
+		// Calculate the travel speed based on climate and weather.
+		const auto &exeData = miscAssets.getExeData();
+		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
+		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
+		const int climateSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex);
+		const int weatherMod = [terrainIndex, weatherIndex, &weatherSpeedTables]()
+		{
+			const int weatherSpeed = weatherSpeedTables.at(terrainIndex).at(weatherIndex);
+
+			// Special case: 0 equals 100.
+			return (weatherSpeed == 0) ? 100 : weatherSpeed;
+		}();
+
+		const int travelSpeed = (climateSpeed * weatherMod) / 100;
+
+		// Add the pixel's travel time onto the total time.
+		const int pixelTravelTime = 2000 / travelSpeed;
+		totalTime += pixelTravelTime;
+	}
+
+	// Calculate the actual travel days based on the total time.
+	const int travelDays = [&random, totalTime]()
+	{
+		const int minDays = 1;
+		const int maxDays = 2000;
+		int days = std::clamp(totalTime / 100, minDays, maxDays);
+
+		if (days > 20)
+		{
+			days += (random.next() % 10) - 5;
+		}
+
+		return days;
+	}();
+
+	return travelDays;
 }
 
 uint32_t LocationUtils::getCitySeed(int localCityID, const CityDataFile::ProvinceData &province)
