@@ -3,23 +3,19 @@
 
 #include <string>
 
-class File
+namespace File
 {
-private:
-	File() = delete;
-	~File() = delete;
-public:
 	// Reads all of a file's text into a string.
-	static std::string readAllText(const char *filename);
+	std::string readAllText(const char *filename);
 
 	// Checks that a file exists.
-	static bool exists(const char *filename);
+	bool exists(const char *filename);
 
 	// Checks if the path to a file is relative or absolute.
-	static bool pathIsRelative(const char *filename);
+	bool pathIsRelative(const char *filename);
 
 	// Copies a file to a destination file.
-	static void copy(const char *srcFilename, const char *dstFilename);
-};
+	void copy(const char *srcFilename, const char *dstFilename);
+}
 
 #endif
