@@ -15,6 +15,7 @@ class Rect;
 
 enum class ClimateType;
 enum class LocationType;
+enum class WeatherType;
 
 // Various functions for working with original game values like location IDs.
 

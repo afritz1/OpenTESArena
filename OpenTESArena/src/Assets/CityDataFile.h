@@ -6,20 +6,12 @@
 #include <string>
 
 #include "../Math/Rect.h"
-#include "../Math/Vector2.h"
 
 // CITYDATA.00 contains basic data for locations in each province on the world map.
 // It has the names of each place and their XY coordinates on the screen.
 
 // *.64 files are for swapping, *.65 files are templates for new characters, and
 // *.0x files contain save-specific modifications (i.e., to save random dungeon names).
-
-class ArenaRandom;
-class ExeData;
-class MiscAssets;
-
-enum class LocationType;
-enum class WeatherType;
 
 class CityDataFile
 {
@@ -63,25 +55,6 @@ public:
 	// Gets the province data at the given province index.
 	CityDataFile::ProvinceData &getProvinceData(int index);
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
-
-	// @todo: this should be in some LevelUtils namespace.
-	// Gets the offset value of a door voxel in the world. Used with various calculations
-	// (.MIF name, lock level).
-	static uint16_t getDoorVoxelOffset(int x, int y);
-
-	// @todo: this should be in some LevelUtils namespace.
-	// Gets the .MIF name for a door voxel in a city or the wilderness.
-	std::string getDoorVoxelMifName(int x, int y, int menuID, int localCityID, int provinceID,
-		bool isCity, const ExeData &exeData) const;
-
-	// @todo: this should be in some LevelUtils namespace.
-	// Gets the lock level for a door voxel at the given XY coordinate.
-	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);
-
-	// @todo: this should be in some LevelUtils namespace.
-	// Gets the '#' number used in IN#.0x and RE#.0x save files.
-	static int getServiceSaveFileNumber(int doorX, int doorY);
-	static int getWildernessServiceSaveFileNumber(int wildX, int wildY);
 
 	bool init(const char *filename);
 };

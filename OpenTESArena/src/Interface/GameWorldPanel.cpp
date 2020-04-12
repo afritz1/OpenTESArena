@@ -51,6 +51,7 @@
 #include "../World/InteriorLevelData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
+#include "../World/LevelUtils.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
@@ -2072,11 +2073,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				}();
 
 				const auto &miscAssets = game.getMiscAssets();
-				const auto &cityDataFile = miscAssets.getCityDataFile();
+				const auto &cityData = miscAssets.getCityDataFile();
 				const Location &location = gameData.getLocation();
+				const auto &province = cityData.getProvinceData(location.provinceID);
 				const auto &exeData = miscAssets.getExeData();
-				const std::string mifName = cityDataFile.getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
-					menuID, location.localCityID, location.provinceID, isCity, exeData);
+				const std::string mifName = LevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
+					menuID, location.localCityID, location.provinceID, province, isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
