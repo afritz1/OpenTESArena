@@ -78,23 +78,6 @@ public:
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	static int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);
 
-	// Gets the side length of a city in city blocks.
-	static int getCityDimensions(LocationType locationType);
-
-	// Gets the number of .MIF templates to choose from for a city.
-	static int getCityTemplateCount(bool isCoastal, bool isCityState);
-
-	// Gets an index into the template name array (town%d.mif, ..., cityw%d.mif).
-	static int getCityTemplateNameIndex(LocationType locationType, bool isCoastal);
-
-	// Gets an index into the city starting positions list. This determines how city blocks
-	// are offset within the city skeleton.
-	static int getCityStartingPositionIndex(LocationType locationType,
-		bool isCoastal, int templateID);
-
-	// Gets an index into the city reserved block list.
-	static int getCityReservedBlockListIndex(bool isCoastal, int templateID);
-
 	// @todo: this should be in some LevelUtils namespace.
 	// Gets the '#' number used in IN#.0x and RE#.0x save files.
 	static int getServiceSaveFileNumber(int doorX, int doorY);

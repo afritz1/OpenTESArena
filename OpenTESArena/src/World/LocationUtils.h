@@ -12,6 +12,7 @@ class MiscAssets;
 class Rect;
 
 enum class ClimateType;
+enum class LocationType;
 
 // Various functions for working with original game values like location IDs.
 
@@ -83,6 +84,19 @@ namespace LocationUtils
 
 	// Gets whether the ruler of a city in the given province should be male.
 	bool isRulerMale(int localCityID, const CityDataFile::ProvinceData &province);
+
+	// Gets the number of .MIF templates to choose from for a city.
+	int getCityTemplateCount(bool isCoastal, bool isCityState);
+
+	// Gets an index into the template name array (town%d.mif, ..., cityw%d.mif).
+	int getCityTemplateNameIndex(LocationType locationType, bool isCoastal);
+
+	// Gets an index into the city starting positions list. This determines how city blocks
+	// are offset within the city skeleton.
+	int getCityStartingPositionIndex(LocationType locationType, bool isCoastal, int templateID);
+
+	// Gets an index into the city reserved block list.
+	int getCityReservedBlockListIndex(bool isCoastal, int templateID);
 }
 
 #endif

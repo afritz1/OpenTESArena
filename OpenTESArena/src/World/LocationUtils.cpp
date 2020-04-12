@@ -3,6 +3,7 @@
 
 #include "Location.h"
 #include "LocationDataType.h"
+#include "LocationType.h"
 #include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
@@ -226,4 +227,55 @@ bool LocationUtils::isRulerMale(int localCityID, const CityDataFile::ProvinceDat
 	const Int2 localPoint(location.x, location.y);
 	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
 	return (rulerSeed & 0x3) != 0;
+}
+
+int LocationUtils::getCityTemplateCount(bool isCoastal, bool isCityState)
+{
+	return isCoastal ? (isCityState ? 3 : 2) : 5;
+}
+
+int LocationUtils::getCityTemplateNameIndex(LocationType locationType, bool isCoastal)
+{
+	if (locationType == LocationType::CityState)
+	{
+		return isCoastal ? 5 : 4;
+	}
+	else if (locationType == LocationType::Town)
+	{
+		return isCoastal ? 1 : 0;
+	}
+	else if (locationType == LocationType::Village)
+	{
+		return isCoastal ? 3 : 2;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
+	}
+}
+
+int LocationUtils::getCityStartingPositionIndex(LocationType locationType,
+	bool isCoastal, int templateID)
+{
+	if (locationType == LocationType::CityState)
+	{
+		return isCoastal ? (19 + templateID) : (14 + templateID);
+	}
+	else if (locationType == LocationType::Town)
+	{
+		return isCoastal ? (5 + templateID) : templateID;
+	}
+	else if (locationType == LocationType::Village)
+	{
+		return isCoastal ? (12 + templateID) : (7 + templateID);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
+	}
+}
+
+int LocationUtils::getCityReservedBlockListIndex(bool isCoastal, int templateID)
+{
+	return isCoastal ? (5 + templateID) : templateID;
 }

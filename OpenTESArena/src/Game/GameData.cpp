@@ -531,19 +531,23 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	DebugAssertMsg((globalCityID >= 0) && (globalCityID < 256),
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
 
+	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+
 	// Determine city traits from the given city ID.
 	const LocationType locationType = Location::getCityType(localCityID);
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 	const bool isCityState = locationType == LocationType::CityState;
-	const bool isCoastal = std::find(cityGen.coastalCityList.begin(),
-		cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
-	const int templateCount = CityDataFile::getCityTemplateCount(isCoastal, isCityState);
+	const bool isCoastal = cityDef.coastal;
+	const int templateCount = LocationUtils::getCityTemplateCount(isCoastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
 	const std::string mifName = [locationType, &cityGen, isCoastal, templateID]()
 	{
 		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-		const int nameIndex = CityDataFile::getCityTemplateNameIndex(locationType, isCoastal);
+		const int nameIndex = LocationUtils::getCityTemplateNameIndex(locationType, isCoastal);
 
 		// Get the template name associated with the city ID.
 		std::string templateName = cityGen.templateFilenames.at(nameIndex);
@@ -559,20 +563,20 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 	}
 
-	// City block count (6x6, 5x5, 4x4).
-	const int cityDim = CityDataFile::getCityDimensions(locationType);
+	// City block count (i.e. 6x6, 5x5, ...).
+	const int cityDim = cityDef.cityBlocksPerSide;
 
 	// Get the reserved block list for the given city.
 	const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
 	{
-		const int index = CityDataFile::getCityReservedBlockListIndex(isCoastal, templateID);
+		const int index = LocationUtils::getCityReservedBlockListIndex(isCoastal, templateID);
 		return cityGen.reservedBlockLists.at(index);
 	}();
 
 	// Get the starting position of city blocks within the city skeleton.
 	const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
 	{
-		const int index = CityDataFile::getCityStartingPositionIndex(
+		const int index = LocationUtils::getCityStartingPositionIndex(
 			locationType, isCoastal, templateID);
 
 		const auto &pair = cityGen.startingPositions.at(index);
