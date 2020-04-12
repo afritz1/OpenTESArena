@@ -217,7 +217,13 @@ std::string CityDataFile::getDoorVoxelMifName(int x, int y, int menuID,
 	{
 		// Offset is based on X and Y position in world; used with variant calculation.
 		const uint16_t offset = CityDataFile::getDoorVoxelOffset(x, y);
-		const uint32_t rulerSeed = this->getRulerSeed(localCityID, provinceID);
+		const uint32_t rulerSeed = [this, localCityID, provinceID]()
+		{
+			const auto &province = this->provinces.at(provinceID);
+			const auto &location = province.getLocationData(localCityID);
+			const Int2 localPoint(location.x, location.y);
+			return LocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
+		}();
 
 		// Decide which variant of the interior to use.
 		const int variantID = [rulerSeed, offset, menuType]()
@@ -398,104 +404,6 @@ int CityDataFile::getTravelDays(int startLocationID, int startProvinceID, int en
 	}();
 
 	return travelDays;
-}
-
-uint32_t CityDataFile::getCitySeed(int localCityID, int provinceID) const
-{
-	const auto &province = this->getProvinceData(provinceID);
-	const int locationID = LocationUtils::cityToLocationID(localCityID);
-	const auto &location = province.getLocationData(locationID);
-	return static_cast<uint32_t>((location.x << 16) + location.y);
-}
-
-uint32_t CityDataFile::getWildernessSeed(int localCityID, int provinceID) const
-{
-	const auto &province = this->getProvinceData(provinceID);
-	const auto &location = province.getLocationData(LocationUtils::cityToLocationID(localCityID));
-	const std::string &locationName = location.name;
-	if (locationName.size() < 4)
-	{
-		// Can't generate seed -- return 0 for now. Can change later if there are short names in mods.
-		return 0;
-	}
-
-	// Use the first four letters as the seed.
-	const uint8_t *ptr = reinterpret_cast<const uint8_t*>(locationName.data());
-	return Bytes::getLE32(ptr);
-}
-
-uint32_t CityDataFile::getRulerSeed(int localCityID, int provinceID) const
-{
-	const Int2 globalPoint = this->getGlobalPoint(localCityID, provinceID);
-	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
-	return Bytes::rol(seed, 16);
-}
-
-uint32_t CityDataFile::getDistantSkySeed(int localCityID, int provinceID) const
-{
-	const Int2 globalPoint = this->getGlobalPoint(localCityID, provinceID);
-	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);
-	return seed * provinceID;
-}
-
-uint32_t CityDataFile::getDungeonSeed(int localDungeonID, int provinceID) const
-{
-	const auto &province = this->provinces.at(provinceID);
-	const auto &dungeon = [localDungeonID, &province]()
-	{
-		if (localDungeonID == 0)
-		{
-			// Second main quest dungeon.
-			return province.secondDungeon;
-		}
-		else if (localDungeonID == 1)
-		{
-			// First main quest dungeon.
-			return province.firstDungeon;
-		}
-		else
-		{
-			return province.randomDungeons.at(localDungeonID - 2);
-		}
-	}();
-
-	const uint32_t seed = (dungeon.y << 16) + dungeon.x + provinceID;
-	return (~Bytes::rol(seed, 5)) & 0xFFFFFFFF;
-}
-
-uint32_t CityDataFile::getProvinceSeed(int provinceID) const
-{
-	const auto &province = this->provinces.at(provinceID);
-	const uint32_t provinceSeed = ((province.globalX << 16) + province.globalY) * provinceID;
-	return provinceSeed;
-}
-
-uint32_t CityDataFile::getWildernessDungeonSeed(int provinceID,
-	int wildBlockX, int wildBlockY) const
-{
-	const uint32_t provinceSeed = this->getProvinceSeed(provinceID);
-	return (provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
-}
-
-bool CityDataFile::isRulerMale(int localCityID, int provinceID) const
-{
-	const uint32_t rulerSeed = this->getRulerSeed(localCityID, provinceID);
-	return (rulerSeed & 0x3) != 0;
-}
-
-Int2 CityDataFile::getGlobalPoint(int localCityID, int provinceID) const
-{
-	const auto &province = this->getProvinceData(provinceID);
-	const int locationID = LocationUtils::cityToLocationID(localCityID);
-	const auto &location = province.getLocationData(locationID);
-	const Int2 localPoint(location.x, location.y);
-	const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
-	return globalPoint;
-}
-
-Int2 CityDataFile::getLocalCityPoint(uint32_t citySeed)
-{
-	return Int2(citySeed >> 16, citySeed & 0xFFFF);
 }
 
 bool CityDataFile::init(const char *filename)

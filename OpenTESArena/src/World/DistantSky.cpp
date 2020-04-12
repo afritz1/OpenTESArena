@@ -295,8 +295,15 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	}();
 
 	const std::string &baseFilename = distantMountainFilenames.at(mtnTraits.filenameIndex);
-	const auto &cityDataFile = miscAssets.getCityDataFile();
-	const uint32_t skySeed = cityDataFile.getDistantSkySeed(localCityID, provinceID);
+	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &province = cityData.getProvinceData(provinceID);
+	const uint32_t skySeed = [localCityID, provinceID, &cityData, &province]()
+	{
+		const auto &location = province.getLocationData(localCityID);
+		const Int2 localPoint(location.x, location.y);
+		return LocationUtils::getDistantSkySeed(localPoint, provinceID, province.getGlobalRect());
+	}();
+
 	ArenaRandom random(skySeed);
 	const int count = (random.next() % 4) + 2;
 
@@ -406,12 +413,12 @@ void DistantSky::init(int localCityID, int provinceID, WeatherType weatherType,
 	const bool hasAnimLand = provinceID == 3;
 	if (hasAnimLand)
 	{
-		const uint32_t citySeed = cityDataFile.getCitySeed(localCityID, provinceID);
+		const uint32_t citySeed = LocationUtils::getCitySeed(localCityID, province);
 
 		// Position of animated land on province map; determines where it is on the horizon
 		// for each location.
 		const Int2 animLandGlobalPos(132, 52);
-		const Int2 locationGlobalPos = cityDataFile.getLocalCityPoint(citySeed);
+		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(citySeed);
 
 		// Distance on province map from current location to the animated land.
 		const int dist = CityDataFile::getDistance(locationGlobalPos, animLandGlobalPos);

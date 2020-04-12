@@ -208,8 +208,15 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					description.replace(index, 3, locationDef.getName());
 
 					const auto &cityData = miscAssets.getCityDataFile();
-					const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
-					const bool isMale = cityData.isRulerMale(localCityID, provinceID);
+					const auto &province = cityData.getProvinceData(provinceID);
+					const uint32_t rulerSeed = [localCityID, &cityData, &province]()
+					{
+						const auto &location = province.getLocationData(localCityID);
+						const Int2 localPoint(location.x, location.y);
+						return LocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
+					}();
+
+					const bool isMale = LocationUtils::isRulerMale(localCityID, province);
 
 					// Replace %t with ruler title (if it exists).
 					random.srand(rulerSeed);
@@ -430,9 +437,13 @@ void FastTravelSubPanel::switchToNextPanel()
 		{
 			// Main quest dungeon. The staff dungeons have a splash image before going
 			// to the game world panel.
-			const auto &cityData = miscAssets.getCityDataFile();
-			const uint32_t dungeonSeed = cityData.getDungeonSeed(
-				localDungeonID, this->travelData.provinceID);
+			const uint32_t dungeonSeed = [this, &miscAssets, localDungeonID]()
+			{
+				const int provinceID = this->travelData.provinceID;
+				const auto &cityData = miscAssets.getCityDataFile();
+				const auto &province = cityData.getProvinceData(provinceID);
+				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
+			}();
 			
 			const std::string mifName = CityDataFile::getMainQuestDungeonMifName(dungeonSeed);
 			MIFFile mif;

@@ -40,7 +40,7 @@ void ExteriorLevelData::generateCity(int localCityID, int provinceID, int cityDi
 	};
 
 	// Get the city's local X and Y, to be used later for building name generation.
-	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
+	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
 
 	const int citySize = cityDim * cityDim;
 	std::vector<BlockType> plan(citySize, BlockType::Empty);
@@ -180,7 +180,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 {
 	const auto &exeData = miscAssets.getExeData();
 	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
-	const Int2 localCityPoint = CityDataFile::getLocalCityPoint(citySeed);
+	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
@@ -908,8 +908,13 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 			return Int2(pair.first, pair.second);
 		}();
 
-		const auto &cityData = miscAssets.getCityDataFile();
-		const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+		const uint32_t citySeed = [localCityID, provinceID, &miscAssets]()
+		{
+			const auto &cityData = miscAssets.getCityDataFile();
+			const auto &province = cityData.getProvinceData(provinceID);
+			return LocationUtils::getCitySeed(localCityID, province);
+		}();
+
 		ArenaRandom random(citySeed);
 
 		// Write generated city data into the temp city buffers.
@@ -1022,8 +1027,13 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provin
 
 	// Generate building names.
 	// @todo: pass these as arguments to loadPremadeCity() instead of hardcoding them.
-	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+	const uint32_t citySeed = [localCityID, provinceID, &miscAssets]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		return LocationUtils::getCitySeed(localCityID, province);
+	}();
+
 	ArenaRandom random(citySeed);
 	const bool isCoastal = false;
 	const bool isCity = true;
@@ -1051,8 +1061,13 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 
 	// Get the city's seed for random chunk generation. It is modified later during
 	// building name generation.
-	const auto &cityData = miscAssets.getCityDataFile();
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
+	const uint32_t citySeed = [localCityID, provinceID, &miscAssets]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		return LocationUtils::getCitySeed(localCityID, province);
+	}();
+
 	ArenaRandom random(citySeed);
 
 	// Generate the bulk of city data and write it into the temp buffers.
@@ -1091,9 +1106,14 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
 	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	const auto &cityData = miscAssets.getCityDataFile();
+	const uint32_t wildSeed = [localCityID, provinceID, &miscAssets]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		return LocationUtils::getWildernessSeed(localCityID, province);
+	}();
+
 	const auto &wildData = miscAssets.getExeData().wild;
-	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
 	const Buffer2D<uint8_t> wildIndices =
 		ExteriorLevelData::generateWildernessIndices(wildSeed, wildData);
 

@@ -53,21 +53,22 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	const auto &locationData = provinceData.getLocationData(localCityID);
-	const double latitude = [&provinceData, &locationData]()
+	const Int2 localPoint(locationData.x, locationData.y);
+	const Rect provinceRect = provinceData.getGlobalRect();
+	const double latitude = [&provinceData, &locationData, &localPoint, &provinceRect]()
 	{
-		const Int2 globalPoint = LocationUtils::getGlobalPoint(
-			Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
+		const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, provinceRect);
 		return LocationUtils::getLatitude(globalPoint);
 	}();
 
 	this->init(LocationDefinition::Type::City, locationData.name,
 		locationData.x, locationData.y, latitude);
 
-	const uint32_t citySeed = cityData.getCitySeed(localCityID, provinceID);
-	const uint32_t wildSeed = cityData.getWildernessSeed(localCityID, provinceID);
-	const uint32_t provinceSeed = cityData.getProvinceSeed(provinceID);
-	const uint32_t rulerSeed = cityData.getRulerSeed(localCityID, provinceID);
-	const uint32_t distantSkySeed = cityData.getDistantSkySeed(localCityID, provinceID);
+	const uint32_t citySeed = LocationUtils::getCitySeed(localCityID, provinceData);
+	const uint32_t wildSeed = LocationUtils::getWildernessSeed(localCityID, provinceData);
+	const uint32_t provinceSeed = LocationUtils::getProvinceSeed(provinceID, provinceData);
+	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
+	const uint32_t distantSkySeed = LocationUtils::getDistantSkySeed(localPoint, provinceID, provinceRect);
 	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 	const int cityBlocksPerSide = [type]()
 	{

@@ -29,6 +29,7 @@
 #include "../World/InteriorWorldData.h"
 #include "../World/Location.h"
 #include "../World/LocationDataType.h"
+#include "../World/LocationUtils.h"
 #include "../World/VoxelFacing.h"
 #include "../World/WorldData.h"
 #include "../World/WorldType.h"
@@ -1427,7 +1428,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			if (location.dataType == LocationDataType::City)
 			{
 				const auto &cityData = miscAssets.getCityDataFile();
-				return cityData.isRulerMale(location.localCityID, location.provinceID);
+				const auto &province = cityData.getProvinceData(location.provinceID);
+				return LocationUtils::isRulerMale(location.localCityID, province);
 			}
 			else
 			{

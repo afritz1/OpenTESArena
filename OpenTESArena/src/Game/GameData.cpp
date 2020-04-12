@@ -396,7 +396,12 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtif
 		"\" must not be for main quest dungeon.");
 
 	// Generate dungeon seed.
-	const uint32_t dungeonSeed = miscAssets.getCityDataFile().getDungeonSeed(localDungeonID, provinceID);
+	const uint32_t dungeonSeed = [localDungeonID, provinceID, &miscAssets]()
+	{
+		const auto &cityData = miscAssets.getCityDataFile();
+		const auto &province = cityData.getProvinceData(provinceID);
+		return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
+	}();
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const auto &exeData = miscAssets.getExeData();
@@ -437,8 +442,12 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 		"Wild block Y \"" + std::to_string(wildBlockY) + "\" out of range.");
 
 	// Generate wilderness dungeon seed.
-	const uint32_t wildDungeonSeed = cityData.getWildernessDungeonSeed(
-		provinceID, wildBlockX, wildBlockY);
+	const uint32_t wildDungeonSeed = [provinceID, wildBlockX, wildBlockY, &cityData]()
+	{
+		const auto &province = cityData.getProvinceData(provinceID);
+		return LocationUtils::getWildernessDungeonSeed(
+			provinceID, province, wildBlockX, wildBlockY);
+	}();
 
 	// Call dungeon WorldData loader with parameters specific to wilderness dungeons.
 	const auto &exeData = miscAssets.getExeData();

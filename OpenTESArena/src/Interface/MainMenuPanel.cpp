@@ -690,8 +690,13 @@ std::string MainMenuPanel::getSelectedTestName() const
 
 			// Calculate the .MIF name from the dungeon seed.
 			const auto &cityData = miscAssets.getCityDataFile();
-			const uint32_t dungeonSeed = cityData.getDungeonSeed(
-				location.localDungeonID, location.provinceID);
+			const uint32_t dungeonSeed = [&location, &cityData]()
+			{
+				const auto &province = cityData.getProvinceData(location.provinceID);
+				return LocationUtils::getDungeonSeed(
+					location.localDungeonID, location.provinceID, province);
+			}();
+
 			const std::string mifName = cityData.getMainQuestDungeonMifName(dungeonSeed);
 			return mifName;
 		}
