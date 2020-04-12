@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "LevelUtils.h"
 #include "Location.h"
 #include "LocationType.h"
