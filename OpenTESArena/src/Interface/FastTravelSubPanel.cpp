@@ -445,7 +445,7 @@ void FastTravelSubPanel::switchToNextPanel()
 				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
 			}();
 			
-			const std::string mifName = CityDataFile::getMainQuestDungeonMifName(dungeonSeed);
+			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
 			MIFFile mif;
 			if (!mif.init(mifName.c_str()))
 			{

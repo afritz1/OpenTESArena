@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <cmath>
+
 #include "Location.h"
 #include "LocationDataType.h"
 #include "LocationUtils.h"
@@ -55,6 +58,13 @@ ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinc
 {
 	const int locationID = LocationUtils::dungeonToLocationID(localDungeonID);
 	return LocationUtils::getClimateType(locationID, provinceID, miscAssets);
+}
+
+std::string LocationUtils::getMainQuestDungeonMifName(uint32_t dungeonSeed)
+{
+	const std::string seedString = std::to_string(dungeonSeed);
+	const std::string mifName = seedString.substr(0, 8) + ".MIF";
+	return mifName;
 }
 
 Int2 LocationUtils::getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect)
@@ -126,6 +136,13 @@ int LocationUtils::getGlobalQuarter(const Int2 &globalPoint, const CityDataFile 
 double LocationUtils::getLatitude(const Int2 &globalPoint)
 {
 	return (100.0 - static_cast<double>(globalPoint.y)) / 100.0;
+}
+
+int LocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &globalDst)
+{
+	const int dx = std::abs(globalSrc.x - globalDst.x);
+	const int dy = std::abs(globalSrc.y - globalDst.y);
+	return std::max(dx, dy) + (std::min(dx, dy) / 4);
 }
 
 uint32_t LocationUtils::getCitySeed(int localCityID, const CityDataFile::ProvinceData &province)

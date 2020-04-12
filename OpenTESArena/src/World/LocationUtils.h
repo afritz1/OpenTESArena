@@ -2,6 +2,7 @@
 #define LOCATION_UTILS_H
 
 #include <cstdint>
+#include <string>
 
 #include "../Assets/CityDataFile.h"
 #include "../Math/Vector2.h"
@@ -31,6 +32,9 @@ namespace LocationUtils
 	ClimateType getCityClimateType(int localCityID, int provinceID, const MiscAssets &miscAssets);
 	ClimateType getDungeonClimateType(int localDungeonID, int provinceID, const MiscAssets &miscAssets);
 
+	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
+	std::string getMainQuestDungeonMifName(uint32_t dungeonSeed);
+
 	// Converts a location point in a province map to the equivalent world map point.
 	Int2 getGlobalPoint(const Int2 &localPoint, const Rect &provinceRect);
 
@@ -47,6 +51,10 @@ namespace LocationUtils
 	// Gets the latitude of a location on the world map in normalized [-1.0, 1.0] Arena angle units.
 	// 0 at the equator, 1.0 at the north pole, and -1.0 at the south pole.
 	double getLatitude(const Int2 &globalPoint);
+
+	// Gets the approximation of the linear distance between two global points. This value is
+	// used to display the distance in kilometers.
+	int getMapDistance(const Int2 &globalSrc, const Int2 &globalDst);
 
 	// Gets the 32-bit seed for a city in the given province.
 	uint32_t getCitySeed(int localCityID, const CityDataFile::ProvinceData &province);

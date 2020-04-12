@@ -413,7 +413,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(cityDef.citySeed);
 
 		// Distance on province map from current location to the animated land.
-		const int dist = CityDataFile::getDistance(locationGlobalPos, animLandGlobalPos);
+		const int dist = LocationUtils::getMapDistance(locationGlobalPos, animLandGlobalPos);
 
 		// Position of the animated land on the horizon.
 		const double angle = std::atan2(

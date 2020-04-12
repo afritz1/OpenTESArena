@@ -591,7 +591,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 			Int2(currentLocationData.x, currentLocationData.y), currentProvinceRect);
 		const Int2 closestLocationGlobalPoint = LocationUtils::getGlobalPoint(
 			Int2(closestLocationData.x, closestLocationData.y), closestProvinceRect);
-		return CityDataFile::getDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
+		return LocationUtils::getMapDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
 	}();
 
 	const std::string distanceString = [&exeData, travelDistance]()

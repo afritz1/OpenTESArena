@@ -697,7 +697,7 @@ std::string MainMenuPanel::getSelectedTestName() const
 					location.localDungeonID, location.provinceID, province);
 			}();
 
-			const std::string mifName = cityData.getMainQuestDungeonMifName(dungeonSeed);
+			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
 			return mifName;
 		}
 	}

@@ -64,12 +64,6 @@ public:
 	CityDataFile::ProvinceData &getProvinceData(int index);
 	const CityDataFile::ProvinceData &getProvinceData(int index) const;
 
-	// Gets the approximation of the linear distance between two global points.
-	static int getDistance(const Int2 &globalSrc, const Int2 &globalDst);
-
-	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
-	static std::string getMainQuestDungeonMifName(uint32_t seed);
-
 	// @todo: this should be in some LevelUtils namespace.
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).

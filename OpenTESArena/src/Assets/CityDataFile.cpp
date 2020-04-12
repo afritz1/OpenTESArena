@@ -80,20 +80,6 @@ const CityDataFile::ProvinceData &CityDataFile::getProvinceData(int index) const
 	return this->provinces.at(index);
 }
 
-int CityDataFile::getDistance(const Int2 &globalSrc, const Int2 &globalDst)
-{
-	const int dx = std::abs(globalSrc.x - globalDst.x);
-	const int dy = std::abs(globalSrc.y - globalDst.y);
-	return std::max(dx, dy) + (std::min(dx, dy) / 4);
-}
-
-std::string CityDataFile::getMainQuestDungeonMifName(uint32_t seed)
-{
-	const std::string seedString = std::to_string(seed);
-	const std::string mifName = seedString.substr(0, 8) + ".MIF";
-	return mifName;
-}
-
 uint16_t CityDataFile::getDoorVoxelOffset(int x, int y)
 {
 	return (y << 8) + (x << 1);
