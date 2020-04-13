@@ -48,6 +48,42 @@ std::pair<int, int> LocationUtils::getLocalCityAndProvinceID(int globalCityID)
 	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
+LocationType LocationUtils::getCityType(int localCityID)
+{
+	if (localCityID < 8)
+	{
+		return LocationType::CityState;
+	}
+	else if (localCityID < 16)
+	{
+		return LocationType::Town;
+	}
+	else if (localCityID < 32)
+	{
+		return LocationType::Village;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(LocationType, std::to_string(localCityID));
+	}
+}
+
+LocationType LocationUtils::getDungeonType(int localDungeonID)
+{
+	if (localDungeonID == 0)
+	{
+		return LocationType::StaffDungeon;
+	}
+	else if (localDungeonID == 1)
+	{
+		return LocationType::StaffMapDungeon;
+	}
+	else
+	{
+		return LocationType::NamedDungeon;
+	}
+}
+
 ClimateType LocationUtils::getCityClimateType(int localCityID, int provinceID,
 	const MiscAssets &miscAssets)
 {

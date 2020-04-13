@@ -32,6 +32,10 @@ namespace LocationUtils
 	// Converts a global city ID to a local city ID + province ID pair.
 	std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
+	// Functions for obtaining the local location type from a local city/dungeon ID.
+	LocationType getCityType(int localCityID);
+	LocationType getDungeonType(int localDungeonID);
+
 	// Functions for getting the climate type of a location.
 	ClimateType getCityClimateType(int localCityID, int provinceID, const MiscAssets &miscAssets);
 	ClimateType getDungeonClimateType(int localDungeonID, int provinceID, const MiscAssets &miscAssets);

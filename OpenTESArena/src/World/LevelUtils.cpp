@@ -35,7 +35,7 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 	// Get the prefix associated with the menu type.
 	const std::string menuName = [localCityID, &exeData, menuType]()
 	{
-		const LocationType locationType = Location::getCityType(localCityID);
+		const LocationType locationType = LocationUtils::getCityType(localCityID);
 
 		const std::string name = [&exeData, locationType, menuType]() -> std::string
 		{

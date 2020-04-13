@@ -42,10 +42,6 @@ public:
 	static Location makeDungeon(int localDungeonID, int provinceID);
 	static Location makeSpecialCase(Location::SpecialCaseType specialCaseType, int provinceID);
 	static Location makeFromLocationID(int locationID, int provinceID);
-
-	// Functions for obtaining the local location type from a local city/dungeon ID.
-	static LocationType getCityType(int localCityID);
-	static LocationType getDungeonType(int localDungeonID);
 };
 
 #endif

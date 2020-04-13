@@ -151,7 +151,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			provinceID, localCityID, &locationDef]()
 		{
 			const auto &miscAssets = game.getMiscAssets();
-			const LocationType locationType = Location::getCityType(localCityID);
+			const LocationType locationType = LocationUtils::getCityType(localCityID);
 
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text

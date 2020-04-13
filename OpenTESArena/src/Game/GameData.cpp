@@ -537,7 +537,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
 	// Determine city traits from the given city ID.
-	const LocationType locationType = Location::getCityType(localCityID);
+	const LocationType locationType = LocationUtils::getCityType(localCityID);
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 	const bool isCityState = locationType == LocationType::CityState;
 	const bool isCoastal = cityDef.coastal;

@@ -53,39 +53,3 @@ Location Location::makeFromLocationID(int locationID, int provinceID)
 		DebugUnhandledReturnMsg(Location, std::to_string(locationID));
 	}
 }
-
-LocationType Location::getCityType(int localCityID)
-{
-	if (localCityID < 8)
-	{
-		return LocationType::CityState;
-	}
-	else if (localCityID < 16)
-	{
-		return LocationType::Town;
-	}
-	else if (localCityID < 32)
-	{
-		return LocationType::Village;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(LocationType, std::to_string(localCityID));
-	}
-}
-
-LocationType Location::getDungeonType(int localDungeonID)
-{
-	if (localDungeonID == 0)
-	{
-		return LocationType::StaffDungeon;
-	}
-	else if (localDungeonID == 1)
-	{
-		return LocationType::StaffMapDungeon;
-	}
-	else
-	{
-		return LocationType::NamedDungeon;
-	}
-}

@@ -224,7 +224,7 @@ void ExteriorLevelData::generateBuildingNames(int localCityID, int provinceID, u
 			{
 				const int index = [localCityID]()
 				{
-					const LocationType locationType = Location::getCityType(localCityID);
+					const LocationType locationType = LocationUtils::getCityType(localCityID);
 					if (locationType == LocationType::CityState)
 					{
 						return 0;
@@ -845,7 +845,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	// Determine city traits from the given city ID.
 	const auto &exeData = miscAssets.getExeData();
 	const auto &cityGen = exeData.cityGen;
-	const LocationType locationType = Location::getCityType(localCityID);
+	const LocationType locationType = LocationUtils::getCityType(localCityID);
 	const bool isCityState = locationType == LocationType::CityState;
 	const bool isCoastal = cityDef.coastal;
 	const int templateCount = LocationUtils::getCityTemplateCount(isCoastal, isCityState);
