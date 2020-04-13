@@ -27,6 +27,7 @@
 #include "../Media/FontName.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
+#include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
@@ -373,7 +374,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 							// Choose random dungeon music.
 							Random random;
-							const MusicName musicName = GameData::getDungeonMusicName(random);
+							const MusicName musicName = MusicUtils::getDungeonMusicName(random);
 							game.setMusic(musicName);
 						};
 

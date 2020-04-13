@@ -20,8 +20,6 @@
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicFile.h"
-#include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
@@ -195,75 +193,6 @@ std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
 double GameData::getFogDistanceFromWeather(WeatherType weatherType)
 {
 	return WeatherFogDistances.at(weatherType);
-}
-
-MusicName GameData::getExteriorMusicName(WeatherType weatherType)
-{
-	return MusicFile::fromWeather(weatherType);
-}
-
-MusicName GameData::getDungeonMusicName(Random &random)
-{
-	const std::array<MusicName, 5> DungeonMusics =
-	{
-		MusicName::Dungeon1,
-		MusicName::Dungeon2,
-		MusicName::Dungeon3,
-		MusicName::Dungeon4,
-		MusicName::Dungeon5
-	};
-
-	return DungeonMusics.at(random.next(static_cast<int>(DungeonMusics.size())));
-}
-
-MusicName GameData::getInteriorMusicName(const std::string &mifName, Random &random)
-{
-	// Check against all of the non-dungeon interiors first.
-	const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
-	const bool isHouse = (mifName.find("BS") != std::string::npos) ||
-		(mifName.find("NOBLE") != std::string::npos);
-	const bool isMagesGuild = mifName.find("MAGE") != std::string::npos;
-	const bool isPalace = (mifName.find("PALACE") != std::string::npos) ||
-		(mifName.find("TOWNPAL") != std::string::npos) ||
-		(mifName.find("VILPAL") != std::string::npos);
-	const bool isTavern = mifName.find("TAVERN") != std::string::npos;
-	const bool isTemple = mifName.find("TEMPLE") != std::string::npos;
-
-	if (isEquipmentStore)
-	{
-		return MusicName::Equipment;
-	}
-	else if (isHouse)
-	{
-		return MusicName::Sneaking;
-	}
-	else if (isMagesGuild)
-	{
-		return MusicName::Magic;
-	}
-	else if (isPalace)
-	{
-		return MusicName::Palace;
-	}
-	else if (isTavern)
-	{
-		const std::array<MusicName, 2> TavernMusics =
-		{
-			MusicName::Square,
-			MusicName::Tavern
-		};
-
-		return TavernMusics.at(random.next(static_cast<int>(TavernMusics.size())));
-	}
-	else if (isTemple)
-	{
-		return MusicName::Temple;
-	}
-	else
-	{
-		// Dungeon.
-		return GameData::getDungeonMusicName(random);
-	}
 }
 
 bool GameData::nightMusicIsActive() const

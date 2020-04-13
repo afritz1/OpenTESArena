@@ -10,6 +10,7 @@
 #include "../Math/Random.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -66,7 +67,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		{
 			// Choose random dungeon music and enter game world.
 			Random random;
-			const MusicName musicName = GameData::getDungeonMusicName(random);
+			const MusicName musicName = MusicUtils::getDungeonMusicName(random);
 			game.setMusic(musicName);
 			game.setPanel<GameWorldPanel>(game);
 		};

@@ -40,7 +40,6 @@ class Texture;
 class TextureManager;
 
 enum class GenderName;
-enum class MusicName;
 enum class WeatherType;
 enum class WorldType;
 
@@ -122,17 +121,6 @@ public:
 
 	// Gets the date string for a given date, using strings from the executable data.
 	static std::string getDateString(const Date &date, const ExeData &exeData);
-
-	// Gets the music name associated with the given weather. The caller may need to check
-	// the current time to see if they should use night music instead.
-	static MusicName getExteriorMusicName(WeatherType weatherType);
-
-	// Gets a random dungeon music name.
-	static MusicName getDungeonMusicName(Random &random);
-
-	// Gets the music name associated with a .MIF filename. If the selection involves
-	// choosing from a list, the RNG will be used.
-	static MusicName getInteriorMusicName(const std::string &mifName, Random &random);
 
 	// Returns whether the current music should be for day or night.
 	bool nightMusicIsActive() const;

@@ -36,6 +36,7 @@
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
@@ -2030,7 +2031,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 			gameData.getWeatherType(), climateType);
 		const MusicName musicName = !gameData.nightMusicIsActive() ?
-			GameData::getExteriorMusicName(filteredWeatherType) :
+			MusicUtils::getExteriorMusicName(filteredWeatherType) :
 			MusicName::Night;
 
 		game.setMusic(musicName);
@@ -2131,7 +2132,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 					// Change to interior music.
 					Random random;
-					const MusicName musicName = GameData::getInteriorMusicName(mifName, random);
+					const MusicName musicName = MusicUtils::getInteriorMusicName(mifName, random);
 					game.setMusic(musicName);
 				}
 				else
@@ -2231,7 +2232,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
 					return !gameData.nightMusicIsActive() ?
-						GameData::getExteriorMusicName(filteredWeatherType) : MusicName::Night;
+						MusicUtils::getExteriorMusicName(filteredWeatherType) : MusicName::Night;
 				}();
 
 				game.setMusic(musicName);
@@ -2729,7 +2730,7 @@ void GameWorldPanel::tick(double dt)
 			const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
 				gameData.getWeatherType(), climateType);
 
-			const MusicName musicName = GameData::getExteriorMusicName(filteredWeatherType);
+			const MusicName musicName = MusicUtils::getExteriorMusicName(filteredWeatherType);
 			game.setMusic(musicName);
 		}
 		else if (changeToNightMusic)

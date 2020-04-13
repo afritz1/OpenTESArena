@@ -13,6 +13,7 @@
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicName.h"
+#include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -428,7 +429,7 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Choose time-based music and enter the game world.
 		const MusicName musicName = gameData.nightMusicIsActive() ?
-			MusicName::Night : GameData::getExteriorMusicName(weatherType);
+			MusicName::Night : MusicUtils::getExteriorMusicName(weatherType);
 		game.setMusic(musicName);
 		game.setPanel<GameWorldPanel>(game);
 
@@ -474,7 +475,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			else
 			{
 				// Choose random dungeon music and enter game world.
-				const MusicName musicName = GameData::getDungeonMusicName(random);
+				const MusicName musicName = MusicUtils::getDungeonMusicName(random);
 				game.setMusic(musicName);
 				game.setPanel<GameWorldPanel>(game);
 			}
@@ -488,7 +489,7 @@ void FastTravelSubPanel::switchToNextPanel()
 				game.getTextureManager(), game.getRenderer());
 
 			// Choose random dungeon music and enter game world.
-			const MusicName musicName = GameData::getDungeonMusicName(random);
+			const MusicName musicName = MusicUtils::getDungeonMusicName(random);
 			game.setMusic(musicName);
 			game.setPanel<GameWorldPanel>(game);
 		}

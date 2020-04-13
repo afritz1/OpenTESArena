@@ -28,6 +28,7 @@
 #include "../Media/FontName.h"
 #include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
+#include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -414,11 +415,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// local variable so it gets the filtered weather type.
 					const WeatherType weatherType = gameData->getWeatherType();
 					return gameData->nightMusicIsActive() ?
-						MusicName::Night : GameData::getExteriorMusicName(weatherType);
+						MusicName::Night : MusicUtils::getExteriorMusicName(weatherType);
 				}
 				else
 				{
-					return GameData::getInteriorMusicName(mifName, random);
+					return MusicUtils::getInteriorMusicName(mifName, random);
 				}
 			}();
 
