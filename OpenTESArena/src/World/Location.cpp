@@ -9,8 +9,6 @@
 
 #include "components/debug/Debug.h"
 
-const int Location::CENTER_PROVINCE_ID = 8;
-
 Location Location::makeCity(int localCityID, int provinceID)
 {
 	Location location;

@@ -484,7 +484,7 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 {
 	// Climate for center province.
 	const int localCityID = 0;
-	const int provinceID = Location::CENTER_PROVINCE_ID;
+	const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
 	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
 
 	// Call premade city loader.
@@ -526,7 +526,7 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 
 	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
 	// loadPremadeCity() should be called instead for that case.
-	DebugAssertMsg(provinceID != Location::CENTER_PROVINCE_ID,
+	DebugAssertMsg(provinceID != LocationUtils::CENTER_PROVINCE_ID,
 		"Use loadPremadeCity() instead for center province.");
 	DebugAssertMsg((globalCityID >= 0) && (globalCityID < 256),
 		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");

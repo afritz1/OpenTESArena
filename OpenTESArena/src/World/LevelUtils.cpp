@@ -26,8 +26,11 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
-	if ((menuType == VoxelDefinition::WallData::MenuType::Palace) &&
-		(provinceID == Location::CENTER_PROVINCE_ID) && (localCityID == 0))
+	const bool isFinalDungeonEntrance =
+		(menuType == VoxelDefinition::WallData::MenuType::Palace) &&
+		(provinceID == LocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
+
+	if (isFinalDungeonEntrance)
 	{
 		return String::toUppercase(exeData.locations.finalDungeonMifName);
 	}

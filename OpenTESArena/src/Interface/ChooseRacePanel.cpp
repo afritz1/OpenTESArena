@@ -26,6 +26,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
+#include "../World/LocationUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -485,7 +486,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	{
 		// Ignore the center province and the "Exit" button.
 		const int exitButtonID = 9;
-		if ((maskID == Location::CENTER_PROVINCE_ID) || (maskID == exitButtonID))
+		if ((maskID == LocationUtils::CENTER_PROVINCE_ID) || (maskID == exitButtonID))
 		{
 			continue;
 		}

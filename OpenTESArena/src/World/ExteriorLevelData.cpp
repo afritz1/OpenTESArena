@@ -855,7 +855,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 		isCoastal, templateID]()
 	{
 		// Special case for center province.
-		if (provinceID == Location::CENTER_PROVINCE_ID)
+		if (provinceID == LocationUtils::CENTER_PROVINCE_ID)
 		{
 			return String::toUppercase(exeData.locations.centerProvinceCityMifName);
 		}
@@ -887,10 +887,11 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	std::vector<uint16_t> cityMap1(level.map1.begin(), level.map1.end());
 	std::vector<uint16_t> cityMap2(level.map2.begin(), level.map2.end());
 
-	// Run city generation if it's not the center province. The center province does not have
+	// Run city generation if it's not a premade city. The center province's city does not have
 	// any special generation -- the .MIF buffers are simply used as-is (with some simple palace
 	// gate revisions done afterwards).
-	if (provinceID != Location::CENTER_PROVINCE_ID)
+	const bool isPremadeCity = cityDef.premade;
+	if (!isPremadeCity)
 	{
 		// City block count (i.e. 6x6, 5x5, ...).
 		const int cityDim = cityDef.cityBlocksPerSide;
@@ -912,13 +913,7 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 			return Int2(pair.first, pair.second);
 		}();
 
-		const uint32_t citySeed = [localCityID, provinceID, &miscAssets]()
-		{
-			const auto &cityData = miscAssets.getCityDataFile();
-			const auto &province = cityData.getProvinceData(provinceID);
-			return LocationUtils::getCitySeed(localCityID, province);
-		}();
-
+		const uint32_t citySeed = cityDef.citySeed;
 		ArenaRandom random(citySeed);
 
 		// Write generated city data into the temp city buffers.

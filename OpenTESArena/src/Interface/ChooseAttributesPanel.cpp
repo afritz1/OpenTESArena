@@ -38,6 +38,7 @@
 #include "../Rendering/Texture.h"
 #include "../World/ClimateType.h"
 #include "../World/LocationType.h"
+#include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
 
 #include "components/debug/Debug.h"
@@ -279,7 +280,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						const int provinceID = Location::CENTER_PROVINCE_ID;
+						const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
 						const Location location = Location::makeSpecialCase(
 							Location::SpecialCaseType::StartDungeon, provinceID);
 						gameData->loadInterior(VoxelDefinition::WallData::MenuType::Dungeon,

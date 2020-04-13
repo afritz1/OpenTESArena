@@ -2145,7 +2145,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			else
 			{
 				// City gate transition.
+				const auto &miscAssets = game.getMiscAssets();
+				const auto &worldMapDef = miscAssets.getWorldMapDefinition();
 				const auto &location = gameData.getLocation();
+				const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
 				const int starCount = DistantSky::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
 
@@ -2188,21 +2191,24 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const bool ignoreGatePos = false;
 					gameData.loadWilderness(location.localCityID, location.provinceID,
 						originalGateVoxel, transitionDir, ignoreGatePos, gameData.getWeatherType(),
-						starCount, game.getMiscAssets(), textureManager, renderer);
+						starCount, miscAssets, textureManager, renderer);
 				}
 				else
 				{
 					// From wilderness to city.
-					const bool isCenterProvince = location.provinceID == Location::CENTER_PROVINCE_ID;
-					if (!isCenterProvince)
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const bool isPremadeCity = cityDef.premade;
+
+					// @todo: this code shouldn't care if the location is premade.
+					if (!isPremadeCity)
 					{
 						gameData.loadCity(location.localCityID, location.provinceID,
-							gameData.getWeatherType(), starCount, game.getMiscAssets(),
-							textureManager, renderer);
+							gameData.getWeatherType(), starCount, miscAssets, textureManager, renderer);
 					}
 					else
 					{
 						const auto &exeData = game.getMiscAssets().getExeData();
+						// @todo: don't hardcode to center province city.
 						const std::string mifName = String::toUppercase(
 							exeData.locations.centerProvinceCityMifName);
 

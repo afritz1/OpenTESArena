@@ -83,7 +83,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		const std::string locationString = [this, &gameData, &exeData, provinceID, localCityID,
 			&provinceDef, &locationDef]()
 		{
-			if (provinceID != Location::CENTER_PROVINCE_ID)
+			if (provinceID != LocationUtils::CENTER_PROVINCE_ID)
 			{
 				// The <city type> of <city name> in <province> Province.
 				// Replace first %s with location type.
@@ -398,8 +398,15 @@ void FastTravelSubPanel::switchToNextPanel()
 		const int starCount = DistantSky::getStarCountFromDensity(
 			game.getOptions().getMisc_StarDensity());
 
-		// Load the destination city. For the center province, use the specialized method.
-		if (this->travelData.provinceID != Location::CENTER_PROVINCE_ID)
+		const auto &worldMapDef = miscAssets.getWorldMapDefinition();
+		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
+		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
+		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
+		const bool isPremadeCity = cityDef.premade;
+
+		// Load the destination city.
+		// @todo: this code shouldn't care if it's a premade city.
+		if (!isPremadeCity)
 		{
 			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID,
 				weatherType, starCount, game.getMiscAssets(), game.getTextureManager(), game.getRenderer());

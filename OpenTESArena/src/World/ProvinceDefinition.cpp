@@ -62,7 +62,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	const bool isCenterProvince = provinceID == Location::CENTER_PROVINCE_ID;
+	const bool isCenterProvince = provinceID == LocationUtils::CENTER_PROVINCE_ID;
 	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
 
 	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](

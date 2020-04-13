@@ -163,7 +163,8 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 
 	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
 	// raw palette indices (for yellow and red color swapping).
-	if (provinceID != Location::CENTER_PROVINCE_ID)
+	const bool hasStaffDungeon = provinceID != LocationUtils::CENTER_PROVINCE_ID;
+	if (hasStaffDungeon)
 	{
 		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
 		this->staffDungeonCif = CIFFile();
@@ -436,7 +437,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 			&closestLocationName]()
 		{
 			// Decide the format based on whether it's the center province.
-			if (this->provinceID != Location::CENTER_PROVINCE_ID)
+			if (this->provinceID != LocationUtils::CENTER_PROVINCE_ID)
 			{
 				// Determine whether to use the city format or dungeon format.
 				if (closestLocationID < 32)
