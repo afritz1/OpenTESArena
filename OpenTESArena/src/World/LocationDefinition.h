@@ -24,20 +24,38 @@ public:
 	{
 		enum class Type { CityState, Town, Village };
 
+		// Used with a couple special-cased temple names in the original game.
+		struct MainQuestTempleOverride
+		{
+			int modelIndex;
+			int suffixIndex;
+			int menuNamesIndex;
+
+			void init(int modelIndex, int suffixIndex, int menuNamesIndex);
+		};
+
 		Type type;
+		char typeDisplayName[16];
+
 		uint32_t citySeed;
 		uint32_t wildSeed;
 		uint32_t provinceSeed; // Used with wilderness dungeons.
 		uint32_t rulerSeed;
 		uint32_t distantSkySeed;
+
 		ClimateType climateType;
+
+		bool hasMainQuestTempleOverride;
+		MainQuestTempleOverride mainQuestTempleOverride;
+
 		int cityBlocksPerSide;
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 
-		void init(CityDefinition::Type type, uint32_t citySeed, uint32_t wildSeed,
-			uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
-			ClimateType climateType, int cityBlocksPerSide, bool coastal, bool premade);
+		void init(CityDefinition::Type type, const char *typeDisplayName, uint32_t citySeed,
+			uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
+			ClimateType climateType, const MainQuestTempleOverride *mainQuestTempleOverride,
+			int cityBlocksPerSide, bool coastal, bool premade);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};

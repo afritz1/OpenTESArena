@@ -13,6 +13,9 @@
 
 #include "components/utilities/Buffer2D.h"
 
+class LocationDefinition;
+class ProvinceDefinition;
+
 class ExteriorLevelData : public LevelData
 {
 private:
@@ -26,16 +29,16 @@ private:
 
 	// Writes city building data into the output buffers. The buffers should already be
 	// initialized with the city skeleton.
-	static void generateCity(int localCityID, int provinceID, int cityDim, int gridDepth,
-		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, uint32_t citySeed,
-		ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
+	static void generateCity(uint32_t citySeed, int cityDim, EWInt gridDepth,
+		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
+		const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 		std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2);
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
-	void generateBuildingNames(int localCityID, int provinceID, uint32_t citySeed,
-		ArenaRandom &random, bool isCoastal, bool isCity, int gridWidth, int gridDepth,
-		const MiscAssets &miscAssets);
+	void generateBuildingNames(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, uint32_t citySeed, ArenaRandom &random,
+		bool isCoastal, bool isCity, int gridWidth, int gridDepth, const MiscAssets &miscAssets);
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	void generateWildChunkBuildingNames(int localCityID, int provinceID,
