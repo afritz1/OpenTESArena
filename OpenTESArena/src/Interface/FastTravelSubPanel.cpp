@@ -22,6 +22,7 @@
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
+#include "../World/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -393,7 +394,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			const WeatherType type = gameData.getWeathersArray().at(globalQuarter);
 			const ClimateType climateType = LocationUtils::getCityClimateType(
 				this->travelData.locationID, this->travelData.provinceID, game.getMiscAssets());
-			return GameData::getFilteredWeatherType(type, climateType);
+			return WeatherUtils::getFilteredWeatherType(type, climateType);
 		}();
 
 		const int starCount = DistantSky::getStarCountFromDensity(

@@ -82,13 +82,6 @@ private:
 	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
 	// behavior is to decrement the world's level index.
 	std::function<void(Game&)> onLevelUpVoxelEnter;
-
-	// Creates a sky palette from the given weather. This palette covers the entire day
-	// (including night colors).
-	static std::vector<uint32_t> makeExteriorSkyPalette(WeatherType weatherType,
-		TextureManager &textureManager);
-
-	static double getFogDistanceFromWeather(WeatherType weatherType);
 public:
 	// Clock times for when each time range begins.
 	static const Clock Midnight;
@@ -194,11 +187,6 @@ public:
 
 	double getFogDistance() const;
 	WeatherType getWeatherType() const;
-
-	// @todo: this should be in some LocationUtils or WeatherUtils or something.
-	// Returns a filtered version of the given weather so that, i.e., deserts can't
-	// have snow.
-	static WeatherType getFilteredWeatherType(WeatherType weatherType, ClimateType climateType);
 
 	// Gets the current ambient light percent, based on the current clock time and 
 	// the player's location (interior/exterior). This function is intended to match

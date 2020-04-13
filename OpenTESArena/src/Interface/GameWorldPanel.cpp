@@ -59,6 +59,7 @@
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
+#include "../World/WeatherUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -2028,7 +2029,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		const auto &location = gameData.getLocation();
 		const ClimateType climateType = LocationUtils::getCityClimateType(
 			location.localCityID, location.provinceID, miscAssets);
-		const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 			gameData.getWeatherType(), climateType);
 		const MusicName musicName = !gameData.nightMusicIsActive() ?
 			MusicUtils::getExteriorMusicName(filteredWeatherType) :
@@ -2229,7 +2230,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					const ClimateType climateType = LocationUtils::getCityClimateType(
 						location.localCityID, location.provinceID, game.getMiscAssets());
-					const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
 					return !gameData.nightMusicIsActive() ?
 						MusicUtils::getExteriorMusicName(filteredWeatherType) : MusicName::Night;
@@ -2727,7 +2728,7 @@ void GameWorldPanel::tick(double dt)
 			const auto &location = gameData.getLocation();
 			const ClimateType climateType = LocationUtils::getCityClimateType(
 				location.localCityID, location.provinceID, game.getMiscAssets());
-			const WeatherType filteredWeatherType = GameData::getFilteredWeatherType(
+			const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 				gameData.getWeatherType(), climateType);
 
 			const MusicName musicName = MusicUtils::getExteriorMusicName(filteredWeatherType);

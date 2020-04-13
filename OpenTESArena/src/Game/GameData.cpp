@@ -24,7 +24,6 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../World/ClimateType.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LocationDataType.h"
@@ -34,6 +33,7 @@
 #include "../World/LocationUtils.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
+#include "../World/WeatherUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -41,19 +41,6 @@
 
 namespace
 {
-	// Arbitrary fog distances for each weather; the distance at which fog is maximum.
-	const std::unordered_map<WeatherType, double> WeatherFogDistances =
-	{
-		{ WeatherType::Clear, 100.0 },
-		{ WeatherType::Overcast, 30.0 },
-		{ WeatherType::Rain, 50.0 },
-		{ WeatherType::Snow, 25.0 },
-		{ WeatherType::SnowOvercast, 20.0 },
-		{ WeatherType::Rain2, 50.0 },
-		{ WeatherType::Overcast2, 30.0 },
-		{ WeatherType::SnowOvercast2, 20.0 }
-	};
-
 	// Colors for UI text.
 	const Color TriggerTextColor(215, 121, 8);
 	const Color TriggerTextShadowColor(12, 12, 24);
@@ -166,35 +153,6 @@ std::string GameData::getDateString(const Date &date, const ExeData &exeData)
 	return text;
 }
 
-std::vector<uint32_t> GameData::makeExteriorSkyPalette(WeatherType weatherType,
-	TextureManager &textureManager)
-{
-	// Get the palette name for the given weather.
-	const std::string paletteName = (weatherType == WeatherType::Clear) ?
-		"DAYTIME.COL" : "DREARY.COL";
-
-	// The palettes in the data files only cover half of the day, so some added
-	// darkness is needed for the other half.
-	const Surface &palette = textureManager.getSurface(paletteName);
-	const uint32_t *pixels = static_cast<const uint32_t*>(palette.getPixels());
-	const int pixelCount = palette.getWidth() * palette.getHeight();
-
-	// Fill palette with darkness (the first color in the palette is the closest to night).
-	const uint32_t darkness = pixels[0];
-	std::vector<uint32_t> fullPalette(pixelCount * 2, darkness);
-
-	// Copy the sky palette over the center of the full palette.
-	std::copy(pixels, pixels + pixelCount,
-		fullPalette.data() + (fullPalette.size() / 4));
-
-	return fullPalette;
-}
-
-double GameData::getFogDistanceFromWeather(WeatherType weatherType)
-{
-	return WeatherFogDistances.at(weatherType);
-}
-
 bool GameData::nightMusicIsActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
@@ -305,12 +263,12 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette =
-		GameData::makeExteriorSkyPalette(this->weatherType, textureManager);
-	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+	const Buffer<uint32_t> skyPalette =
+		WeatherUtils::makeExteriorSkyPalette(this->weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.get(), skyPalette.getCount());
 
 	// Set fog and night lights.
-	const double fogDistance = GameData::getFogDistanceFromWeather(this->weatherType);
+	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(this->weatherType);
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 	renderer.setNightLightsActive(this->nightLightsAreActive());
@@ -436,12 +394,12 @@ void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int 
 	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette =
-		GameData::makeExteriorSkyPalette(weatherType, textureManager);
-	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+	const Buffer<uint32_t> skyPalette =
+		WeatherUtils::makeExteriorSkyPalette(weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.get(), skyPalette.getCount());
 
 	// Set weather, fog, and night lights.
-	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
+	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -532,12 +490,12 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette =
-		GameData::makeExteriorSkyPalette(weatherType, textureManager);
-	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+	const Buffer<uint32_t> skyPalette =
+		WeatherUtils::makeExteriorSkyPalette(weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.get(), skyPalette.getCount());
 
 	// Set weather, fog, and night lights.
-	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
+	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -593,12 +551,12 @@ void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gateP
 	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
-	const std::vector<uint32_t> skyPalette =
-		GameData::makeExteriorSkyPalette(weatherType, textureManager);
-	renderer.setSkyPalette(skyPalette.data(), static_cast<int>(skyPalette.size()));
+	const Buffer<uint32_t> skyPalette =
+		WeatherUtils::makeExteriorSkyPalette(weatherType, textureManager);
+	renderer.setSkyPalette(skyPalette.get(), skyPalette.getCount());
 
 	// Set weather, fog, and night lights.
-	const double fogDistance = GameData::getFogDistanceFromWeather(weatherType);
+	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -752,17 +710,6 @@ double GameData::getFogDistance() const
 WeatherType GameData::getWeatherType() const
 {
 	return this->weatherType;
-}
-
-WeatherType GameData::getFilteredWeatherType(WeatherType weatherType,
-	ClimateType climateType)
-{
-	// Snow in deserts is replaced by rain.
-	const bool isSnow = (weatherType == WeatherType::Snow) ||
-		(weatherType == WeatherType::SnowOvercast) ||
-		(weatherType == WeatherType::SnowOvercast2);
-	return ((climateType == ClimateType::Desert) && isSnow) ?
-		WeatherType::Rain : weatherType;
 }
 
 double GameData::getAmbientPercent() const

@@ -42,6 +42,7 @@
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
+#include "../World/WeatherUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -291,7 +292,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const ClimateType climateType = LocationUtils::getCityClimateType(
 						localCityID, provinceID, miscAssets);
 					const WeatherType filteredWeatherType =
-						GameData::getFilteredWeatherType(weatherType, climateType);
+						WeatherUtils::getFilteredWeatherType(weatherType, climateType);
 
 					// Load city into game data. Location data is loaded, too.
 					gameData->loadCity(localCityID, provinceID, filteredWeatherType, starCount,
@@ -383,7 +384,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const ClimateType climateType = LocationUtils::getCityClimateType(
 					localCityID, provinceID, miscAssets);
 				const WeatherType filteredWeatherType =
-					GameData::getFilteredWeatherType(weatherType, climateType);
+					WeatherUtils::getFilteredWeatherType(weatherType, climateType);
 
 				// Load wilderness into game data. Location data is loaded, too.
 				const bool ignoreGatePos = true;
