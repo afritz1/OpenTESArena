@@ -22,7 +22,7 @@ public:
 
 	struct CityDefinition
 	{
-		enum class Type { City, Town, Village };
+		enum class Type { CityState, Town, Village };
 
 		Type type;
 		uint32_t citySeed;

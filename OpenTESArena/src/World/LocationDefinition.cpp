@@ -74,7 +74,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	{
 		switch (type)
 		{
-		case CityDefinition::Type::City:
+		case CityDefinition::Type::CityState:
 			return 6;
 		case CityDefinition::Type::Town:
 			return 5;

@@ -94,7 +94,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	tryAddCities(provinceData.cityStates, LocationDefinition::CityDefinition::Type::City, 0);
+	tryAddCities(provinceData.cityStates, LocationDefinition::CityDefinition::Type::CityState, 0);
 	tryAddCities(provinceData.towns, LocationDefinition::CityDefinition::Type::Town,
 		static_cast<int>(provinceData.cityStates.size()));
 	tryAddCities(provinceData.villages, LocationDefinition::CityDefinition::Type::Village,

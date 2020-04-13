@@ -709,7 +709,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 		{
 			switch (locationDef.getCityDefinition().type)
 			{
-			case LocationDefinition::CityDefinition::Type::City:
+			case LocationDefinition::CityDefinition::Type::CityState:
 				return cityStateIcon;
 			case LocationDefinition::CityDefinition::Type::Town:
 				return townIcon;
