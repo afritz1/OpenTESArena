@@ -145,48 +145,11 @@ std::string ExteriorWorldData::generateWildernessInfName(ClimateType climateType
 	return climateLetter + locationLetter + weatherLetter + ".INF";
 }
 
-ExteriorWorldData ExteriorWorldData::loadPremadeCity(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
-	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
-{
-	const auto &level = mif.getLevels().front();
-
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const ClimateType climateType = cityDef.climateType;
-	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
-
-	const int gridWidth = mif.getDepth();
-	const int gridDepth = mif.getWidth();
-
-	// Generate level data for the city.
-	ExteriorLevelData levelData = ExteriorLevelData::loadPremadeCity(locationDef, provinceDef,
-		level, weatherType, currentDay, starCount, infName, gridWidth, gridDepth, miscAssets,
-		textureManager);
-
-	const bool isCity = true; // False if wilderness.
-
-	// Generate world data from the level data.
-	ExteriorWorldData worldData(std::move(levelData), isCity);
-
-	// Convert start points from the old coordinate system to the new one.
-	for (const Double2 &point : mif.getStartPoints())
-	{
-		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-			point, mif.getDepth(), mif.getWidth()));
-	}
-
-	worldData.mifName = mif.getName();
-
-	return worldData;
-}
-
 ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
 	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	// Generate level.
-	const auto &level = mif.getLevels().front();
-
+	const MIFFile::Level &level = mif.getLevels().front();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string infName = ExteriorWorldData::generateCityInfName(cityDef.climateType, weatherType);
 
@@ -195,9 +158,8 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 		locationDef, provinceDef, level, weatherType, currentDay, starCount, infName,
 		mif.getDepth(), mif.getWidth(), miscAssets, textureManager);
 
-	const bool isCity = true; // False in wilderness.
-
 	// Generate world data from the level data.
+	const bool isCity = true; // False in wilderness.
 	ExteriorWorldData worldData(std::move(levelData), isCity);
 
 	// Convert start points from the old coordinate system to the new one.

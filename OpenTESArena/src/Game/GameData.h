@@ -150,12 +150,6 @@ public:
 		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
-	// Reads in data from a premade exterior .MIF file and writes it to the game data (only
-	// the center province uses this).
-	void loadPremadeCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType, int starCount,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
-
 	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
 	void loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,

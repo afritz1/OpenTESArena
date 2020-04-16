@@ -366,43 +366,6 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadPremadeCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType, int starCount,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
-{
-	// Call premade city loader.
-	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
-		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
-		miscAssets, textureManager));
-
-	// Set location.
-	// @temp: only keeping localCityID/provinceID pair until refactoring is done
-	this->location = Location::makeCity(localCityID, provinceID);
-
-	// Set initial level active in the renderer.
-	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
-		miscAssets, textureManager, renderer);
-
-	// Set player starting position and velocity.
-	const Double2 &startPoint = this->worldData->getStartPoints().front();
-	this->player.teleport(Double3(
-		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
-
-	// Regular sky palette based on weather.
-	const Buffer<uint32_t> skyPalette =
-		WeatherUtils::makeExteriorSkyPalette(weatherType, textureManager);
-	renderer.setSkyPalette(skyPalette.get(), skyPalette.getCount());
-
-	// Set weather, fog, and night lights.
-	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
-	this->weatherType = weatherType;
-	this->fogDistance = fogDistance;
-	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->nightLightsAreActive());
-}
-
 void GameData::loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)

@@ -403,32 +403,11 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &worldMapDef = miscAssets.getWorldMapDefinition();
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
-		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const bool isPremadeCity = cityDef.premade;
 
 		// Load the destination city.
-		// @todo: this code shouldn't care if it's a premade city.
-		if (!isPremadeCity)
-		{
-			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID, travelLocationDef,
-				travelProvinceDef, weatherType, starCount, game.getMiscAssets(), game.getTextureManager(),
-				game.getRenderer());
-		}
-		else
-		{
-			const std::string mifName = String::toUppercase(
-				exeData.locations.centerProvinceCityMifName);
-
-			MIFFile mif;
-			if (!mif.init(mifName.c_str()))
-			{
-				DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-			}
-
-			gameData.loadPremadeCity(this->travelData.locationID, this->travelData.provinceID,
-				travelLocationDef, travelProvinceDef, mif, weatherType, starCount, game.getMiscAssets(),
-				game.getTextureManager(), game.getRenderer());
-		}
+		gameData.loadCity(this->travelData.locationID, this->travelData.provinceID, travelLocationDef,
+			travelProvinceDef, weatherType, starCount, game.getMiscAssets(), game.getTextureManager(),
+			game.getRenderer());
 
 		// Choose time-based music and enter the game world.
 		const MusicName musicName = gameData.nightMusicIsActive() ?

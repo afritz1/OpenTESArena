@@ -254,20 +254,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// are randomly generated.
 				if (mifName == ImperialMIF)
 				{
-					MIFFile mif;
-					if (!mif.init(mifName.c_str()))
-					{
-						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-					}
-
-					// Load city into game data. Location data is loaded, too.
+					// Load city into game data.
 					const int localCityID = 0;
 					const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
 					const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
-					gameData->loadPremadeCity(localCityID, provinceID, locationDef, provinceDef,
-						mif, weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
+					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
+						weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
 				}
 				else
 				{

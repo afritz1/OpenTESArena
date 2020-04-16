@@ -46,11 +46,6 @@ public:
 	ExteriorWorldData(ExteriorWorldData&&) = default;
 	virtual ~ExteriorWorldData();
 
-	// Loads a premade exterior city (only used by center province in original game).
-	static ExteriorWorldData loadPremadeCity(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
-		int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
-
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static ExteriorWorldData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,

@@ -70,16 +70,9 @@ public:
 	// Given coordinates are expected to be in original coordinate system.
 	static Int2 getCenteredWildOrigin(const Int2 &voxel);
 
-	// Premade exterior level with a pre-defined .INF file. Only used by center province city in
-	// the original game.
-	static ExteriorLevelData loadPremadeCity(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
-		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
-
-	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
-	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
-	// required .MIF chunks.
+	// Exterior level with a pre-defined .INF file. If premade, this loads the premade city. Otherwise,
+	// this loads the skeleton of the level (city walls, etc.), and fills in the rest by generating
+	// the required chunks.
 	static ExteriorLevelData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
 		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,

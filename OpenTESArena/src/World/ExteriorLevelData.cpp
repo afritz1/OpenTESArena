@@ -914,42 +914,6 @@ Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }
 
-ExteriorLevelData ExteriorLevelData::loadPremadeCity(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
-	int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
-	const MiscAssets &miscAssets, TextureManager &textureManager)
-{
-	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
-	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
-	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
-
-	// Premade exterior level (only used by center province).
-	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
-
-	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
-
-	// Load FLOR, MAP1, and MAP2 voxels. No locks or triggers.
-	const auto &exeData = miscAssets.getExeData();
-	const INFFile &inf = levelData.getInfFile();
-	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
-	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
-
-	// Generate building names.
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	ArenaRandom random(cityDef.citySeed);
-	const bool isCity = true; // False if wilderness.
-	levelData.generateBuildingNames(locationDef, provinceDef, random, isCity,
-		gridWidth, gridDepth, miscAssets);
-
-	// Generate distant sky.
-	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
-		starCount, exeData, textureManager);
-
-	return levelData;
-}
-
 ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
 	int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
@@ -967,11 +931,14 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	const uint32_t citySeed = cityDef.citySeed;
 	ArenaRandom random(citySeed);
 
-	// Generate the bulk of city data and write it into the temp buffers.
-	const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
-	const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
-	ExteriorLevelData::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth,
-		reservedBlocks, blockStartPosition, random, miscAssets, tempFlor, tempMap1, tempMap2);
+	if (!cityDef.premade)
+	{
+		// Generate procedural city data and write it into the temp buffers.
+		const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
+		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
+		ExteriorLevelData::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth,
+			reservedBlocks, blockStartPosition, random, miscAssets, tempFlor, tempMap1, tempMap2);
+	}
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
