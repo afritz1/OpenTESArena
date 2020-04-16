@@ -2205,8 +2205,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// @todo: this code shouldn't care if the location is premade.
 					if (!isPremadeCity)
 					{
-						gameData.loadCity(location.localCityID, location.provinceID,
-							gameData.getWeatherType(), starCount, miscAssets, textureManager, renderer);
+						gameData.loadCity(location.localCityID, location.provinceID, locationDef,
+							provinceDef, gameData.getWeatherType(), starCount, miscAssets,
+							textureManager, renderer);
 					}
 					else
 					{

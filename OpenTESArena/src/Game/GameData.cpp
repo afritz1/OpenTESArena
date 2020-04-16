@@ -403,43 +403,12 @@ void GameData::loadPremadeCity(int localCityID, int provinceID, const LocationDe
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
-void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
+void GameData::loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
-
-	// Check that the IDs are in the proper range. Although 256 is a valid city ID,
-	// loadPremadeCity() should be called instead for that case.
-	DebugAssertMsg(provinceID != LocationUtils::CENTER_PROVINCE_ID,
-		"Use loadPremadeCity() instead for center province.");
-	DebugAssertMsg((globalCityID >= 0) && (globalCityID < 256),
-		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
-
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-
-	// Determine city traits from the given city ID.
-	const LocationType locationType = LocationUtils::getCityType(localCityID);
-	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
-	const bool isCityState = locationType == LocationType::CityState;
-	const bool isCoastal = cityDef.coastal;
-	const int templateCount = LocationUtils::getCityTemplateCount(isCoastal, isCityState);
-	const int templateID = globalCityID % templateCount;
-
-	const std::string mifName = [locationType, &cityGen, isCoastal, templateID]()
-	{
-		// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-		const int nameIndex = LocationUtils::getCityTemplateNameIndex(locationType, isCoastal);
-
-		// Get the template name associated with the city ID.
-		std::string templateName = cityGen.templateFilenames.at(nameIndex);
-		templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
-		templateName = String::toUppercase(templateName);
-
-		return templateName;
-	}();
+	const std::string mifName = cityDef.levelFilename;
 
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
@@ -447,30 +416,10 @@ void GameData::loadCity(int localCityID, int provinceID, WeatherType weatherType
 		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 	}
 
-	// City block count (i.e. 6x6, 5x5, ...).
-	const int cityDim = cityDef.cityBlocksPerSide;
-
-	// Get the reserved block list for the given city.
-	const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
-	{
-		const int index = LocationUtils::getCityReservedBlockListIndex(isCoastal, templateID);
-		return cityGen.reservedBlockLists.at(index);
-	}();
-
-	// Get the starting position of city blocks within the city skeleton.
-	const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
-	{
-		const int index = LocationUtils::getCityStartingPositionIndex(
-			locationType, isCoastal, templateID);
-
-		const auto &pair = cityGen.startingPositions.at(index);
-		return Int2(pair.first, pair.second);
-	}();
-
 	// Call city WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
-		localCityID, provinceID, mif, cityDim, isCoastal, reservedBlocks, startPosition,
-		weatherType, this->date.getDay(), starCount, miscAssets, textureManager));
+		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
+		miscAssets, textureManager));
 
 	// Set location.
 	this->location = Location::makeCity(localCityID, provinceID);

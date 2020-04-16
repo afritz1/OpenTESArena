@@ -79,11 +79,10 @@ public:
 	// Exterior level with a pre-defined .INF file (for randomly generated cities). This loads
 	// the skeleton of the level (city walls, etc.), and fills in the rest by loading the
 	// required .MIF chunks.
-	static ExteriorLevelData loadCity(const MIFFile::Level &level, int localCityID,
-		int provinceID, WeatherType weatherType, int currentDay, int starCount, int cityDim,
-		bool isCoastal, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-		const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
-		TextureManager &textureManager);
+	static ExteriorLevelData loadCity(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
+		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.

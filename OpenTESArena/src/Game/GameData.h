@@ -156,9 +156,9 @@ public:
 		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
-	// Reads in data from a city after determining its .MIF file, and writes it to the game
-	// data. The local ID is the 0-31 location index within a province.
-	void loadCity(int localCityID, int provinceID, WeatherType weatherType, int starCount,
+	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
+	void loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.

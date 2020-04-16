@@ -52,10 +52,9 @@ public:
 		int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
-	static ExteriorWorldData loadCity(int localCityID, int provinceID, const MIFFile &mif,
-		int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
-		const Int2 &startPosition, WeatherType weatherType, int currentDay, int starCount,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+	static ExteriorWorldData loadCity(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
+		int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Loads wilderness for a given city on the world map.
 	static ExteriorWorldData loadWilderness(int localCityID, int provinceID,

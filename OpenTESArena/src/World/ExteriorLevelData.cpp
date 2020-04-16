@@ -954,17 +954,11 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(const LocationDefinition &l
 	return levelData;
 }
 
-ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int localCityID,
-	int provinceID, WeatherType weatherType, int currentDay, int starCount, int cityDim,
-	bool isCoastal, const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition,
-	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
-	TextureManager &textureManager)
+ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
+	int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
 	std::vector<uint16_t> tempFlor(level.flor.begin(), level.flor.end());
@@ -973,12 +967,15 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 
 	// Get the city's seed for random chunk generation. It is modified later during
 	// building name generation.
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const uint32_t citySeed = cityDef.citySeed;
 	ArenaRandom random(citySeed);
 
 	// Generate the bulk of city data and write it into the temp buffers.
-	ExteriorLevelData::generateCity(citySeed, cityDim, gridDepth, reservedBlocks, startPosition,
-		random, miscAssets, tempFlor, tempMap1, tempMap2);
+	const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
+	const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
+	ExteriorLevelData::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth,
+		reservedBlocks, blockStartPosition, random, miscAssets, tempFlor, tempMap1, tempMap2);
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);

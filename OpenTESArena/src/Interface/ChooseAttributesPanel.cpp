@@ -322,6 +322,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							auto onLevelUpVoxelEnter = [](Game &game)
 							{
 								// Teleport the player to a random location based on their race.
+								const auto &miscAssets = game.getMiscAssets();
 								auto &gameData = game.getGameData();
 								auto &player = gameData.getPlayer();
 								player.setVelocityToZero();
@@ -329,6 +330,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								Random random;
 								const int localCityID = random.next(32);
 								const int provinceID = gameData.getPlayer().getRaceID();
+
+								const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+								const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
 								// Random weather for now.
 								// - @todo: make it depend on the location (no need to prevent
@@ -355,8 +360,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 									game.getOptions().getMisc_StarDensity());
 
 								auto &renderer = game.getRenderer();
-								gameData.loadCity(localCityID, provinceID, weatherType, starCount,
-									game.getMiscAssets(), game.getTextureManager(), renderer);
+								gameData.loadCity(localCityID, provinceID, locationDef, provinceDef,
+									weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
 
 								// Set music based on weather and time.
 								const MusicName musicName = gameData.nightMusicIsActive() ?

@@ -180,26 +180,22 @@ ExteriorWorldData ExteriorWorldData::loadPremadeCity(const LocationDefinition &l
 	return worldData;
 }
 
-ExteriorWorldData ExteriorWorldData::loadCity(int localCityID, int provinceID, const MIFFile &mif,
-	int cityDim, bool isCoastal, const std::vector<uint8_t> &reservedBlocks,
-	const Int2 &startPosition, WeatherType weatherType, int currentDay, int starCount,
-	const MiscAssets &miscAssets, TextureManager &textureManager)
+ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
+	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Generate level.
 	const auto &level = mif.getLevels().front();
 
-	// Obtain climate from city data.
-	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
-
-	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const std::string infName = ExteriorWorldData::generateCityInfName(cityDef.climateType, weatherType);
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadCity(
-		level, localCityID, provinceID, weatherType, currentDay, starCount, cityDim, isCoastal,
-		reservedBlocks, startPosition, infName, mif.getDepth(), mif.getWidth(),
-		miscAssets, textureManager);
+		locationDef, provinceDef, level, weatherType, currentDay, starCount, infName,
+		mif.getDepth(), mif.getWidth(), miscAssets, textureManager);
 
-	const bool isCity = true;
+	const bool isCity = true; // False in wilderness.
 
 	// Generate world data from the level data.
 	ExteriorWorldData worldData(std::move(levelData), isCity);

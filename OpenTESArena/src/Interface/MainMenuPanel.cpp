@@ -294,14 +294,18 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}();
 
 					const int provinceID = random.next(8);
+					const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+
 					const ClimateType climateType = LocationUtils::getCityClimateType(
 						localCityID, provinceID, miscAssets);
 					const WeatherType filteredWeatherType =
 						WeatherUtils::getFilteredWeatherType(weatherType, climateType);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadCity(localCityID, provinceID, filteredWeatherType, starCount,
-						miscAssets, game.getTextureManager(), renderer);
+					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
+						filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer);
 				}
 			}
 			else if (worldType == WorldType::Interior)

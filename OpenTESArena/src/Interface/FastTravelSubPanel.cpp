@@ -410,8 +410,9 @@ void FastTravelSubPanel::switchToNextPanel()
 		// @todo: this code shouldn't care if it's a premade city.
 		if (!isPremadeCity)
 		{
-			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID,
-				weatherType, starCount, game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
+			gameData.loadCity(this->travelData.locationID, this->travelData.provinceID, travelLocationDef,
+				travelProvinceDef, weatherType, starCount, game.getMiscAssets(), game.getTextureManager(),
+				game.getRenderer());
 		}
 		else
 		{
