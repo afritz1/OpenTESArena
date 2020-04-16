@@ -764,7 +764,7 @@ Buffer2D<uint8_t> ExteriorLevelData::generateWildernessIndices(uint32_t wildSeed
 	return indices;
 }
 
-void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
+void ExteriorLevelData::reviseWildernessCity(const LocationDefinition &locationDef,
 	Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
 	const MiscAssets &miscAssets)
 {
@@ -800,12 +800,8 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 		clearRow(map2);
 	}
 
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-
 	// Get city generation info -- the .MIF filename to load for the city skeleton.
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string mifName = cityDef.levelFilename;
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
@@ -1005,20 +1001,15 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	return levelData;
 }
 
-ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinceID,
-	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
-	const MiscAssets &miscAssets, TextureManager &textureManager)
+ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay,
+	int starCount, const std::string &infName, const MiscAssets &miscAssets,
+	TextureManager &textureManager)
 {
-	const uint32_t wildSeed = [localCityID, provinceID, &miscAssets]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		const auto &province = cityData.getProvinceData(provinceID);
-		return LocationUtils::getWildernessSeed(localCityID, province);
-	}();
-
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const auto &wildData = miscAssets.getExeData().wild;
 	const Buffer2D<uint8_t> wildIndices =
-		ExteriorLevelData::generateWildernessIndices(wildSeed, wildData);
+		ExteriorLevelData::generateWildernessIndices(cityDef.wildSeed, wildData);
 
 	// Temp buffers for voxel data.
 	Buffer2D<uint16_t> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
@@ -1069,8 +1060,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	}
 
 	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
-	ExteriorLevelData::reviseWildernessCity(
-		localCityID, provinceID, tempFlor, tempMap1, tempMap2, miscAssets);
+	ExteriorLevelData::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2, miscAssets);
 
 	// Create the level for the voxel data to be written into.
 	const int levelHeight = 6;
@@ -1093,9 +1083,6 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	levelData.generateWildChunkBuildingNames(exeData);
 
 	// Generate distant sky.
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
 		starCount, exeData, textureManager);
 

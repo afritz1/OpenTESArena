@@ -212,22 +212,20 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 	return worldData;
 }
 
-ExteriorWorldData ExteriorWorldData::loadWilderness(int localCityID, int provinceID,
-	WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
-	TextureManager &textureManager)
+ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay, int starCount,
+	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	// Obtain climate from city data.
-	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
-
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string infName =
-		ExteriorWorldData::generateWildernessInfName(climateType, weatherType);
+		ExteriorWorldData::generateWildernessInfName(cityDef.climateType, weatherType);
 
 	// Load wilderness data (no starting points to load).
 	ExteriorLevelData levelData = ExteriorLevelData::loadWilderness(
-		localCityID, provinceID, weatherType, currentDay, starCount, infName,
+		locationDef, provinceDef, weatherType, currentDay, starCount, infName,
 		miscAssets, textureManager);
 
-	const bool isCity = false;
+	const bool isCity = false; // False if wilderness.
 
 	// Generate world data from the wilderness data.
 	ExteriorWorldData worldData(std::move(levelData), isCity);

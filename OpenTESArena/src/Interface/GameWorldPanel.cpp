@@ -2192,9 +2192,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 					const bool ignoreGatePos = false;
-					gameData.loadWilderness(location.localCityID, location.provinceID,
-						originalGateVoxel, transitionDir, ignoreGatePos, gameData.getWeatherType(),
-						starCount, miscAssets, textureManager, renderer);
+					gameData.loadWilderness(location.localCityID, location.provinceID, locationDef,
+						provinceDef, originalGateVoxel, transitionDir, ignoreGatePos,
+						gameData.getWeatherType(), starCount, miscAssets, textureManager, renderer);
 				}
 				else
 				{

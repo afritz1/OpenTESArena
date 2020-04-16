@@ -448,14 +448,14 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
-void GameData::loadWilderness(int localCityID, int provinceID, const Int2 &gatePos,
-	const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
-	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void GameData::loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
+	bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
-		localCityID, provinceID, weatherType, this->date.getDay(), starCount,
+		locationDef, provinceDef, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
 	// Set location.

@@ -52,8 +52,9 @@ private:
 		const ExeData::Wilderness &wildData);
 
 	// Changes the default filler city skeleton to the one intended for the city.
-	static void reviseWildernessCity(int localCityID, int provinceID, Buffer2D<uint16_t> &flor,
-		Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2, const MiscAssets &miscAssets);
+	static void reviseWildernessCity(const LocationDefinition &locationDef,
+		Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
+		const MiscAssets &miscAssets);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
@@ -86,9 +87,10 @@ public:
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.
-	static ExteriorLevelData loadWilderness(int localCityID, int provinceID,
-		WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+	static ExteriorLevelData loadWilderness(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay,
+		int starCount, const std::string &infName, const MiscAssets &miscAssets,
+		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
 	const std::vector<std::pair<Int2, std::string>> &getMenuNames() const;

@@ -389,6 +389,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// Pick a random location and province.
 				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
+				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+				const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
 				const ClimateType climateType = LocationUtils::getCityClimateType(
 					localCityID, provinceID, miscAssets);
@@ -397,8 +400,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 				// Load wilderness into game data. Location data is loaded, too.
 				const bool ignoreGatePos = true;
-				gameData->loadWilderness(localCityID, provinceID, Int2(), Int2(),
-					ignoreGatePos, filteredWeatherType, starCount, miscAssets,
+				gameData->loadWilderness(localCityID, provinceID, locationDef, provinceDef,
+					Int2(), Int2(), ignoreGatePos, filteredWeatherType, starCount, miscAssets,
 					game.getTextureManager(), renderer);
 			}
 			else

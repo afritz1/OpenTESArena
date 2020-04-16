@@ -162,10 +162,10 @@ public:
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
-	void loadWilderness(int localCityID, int provinceID, const Int2 &gatePos,
-		const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
-		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+	void loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
+		bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 
