@@ -918,16 +918,11 @@ Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }
 
-ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provinceID, 
-	const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount,
-	const std::string &infName, int gridWidth, int gridDepth, const MiscAssets &miscAssets,
-	TextureManager &textureManager)
+ExteriorLevelData ExteriorLevelData::loadPremadeCity(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
+	int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-
 	// Load MAP1 into a temporary buffer so we can revise the palace gate graphics.
 	std::vector<uint16_t> tempMap1(level.map1.begin(), level.map1.end());
 	ExteriorLevelData::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
@@ -945,13 +940,10 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provin
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::City, gridWidth, gridDepth, exeData);
 	levelData.readMAP2(level.map2.data(), inf, gridWidth, gridDepth);
 
-	const uint32_t citySeed = cityDef.citySeed;
-
 	// Generate building names.
-	// @todo: pass these as arguments to loadPremadeCity() instead of hardcoding them.
-	ArenaRandom random(citySeed);
-	const bool isCoastal = false;
-	const bool isCity = true;
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	ArenaRandom random(cityDef.citySeed);
+	const bool isCity = true; // False if wilderness.
 	levelData.generateBuildingNames(locationDef, provinceDef, random, isCity,
 		gridWidth, gridDepth, miscAssets);
 

@@ -2148,8 +2148,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			{
 				// City gate transition.
 				const auto &miscAssets = game.getMiscAssets();
-				const auto &worldMapDef = miscAssets.getWorldMapDefinition();
 				const auto &location = gameData.getLocation();
+				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(location.provinceID);
 				const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
 				const int starCount = DistantSky::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
@@ -2220,7 +2221,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						gameData.loadPremadeCity(mif, gameData.getWeatherType(), starCount,
+						gameData.loadPremadeCity(location.localCityID, location.provinceID,
+							locationDef, provinceDef, mif, gameData.getWeatherType(), starCount,
 							game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
 					}
 				}

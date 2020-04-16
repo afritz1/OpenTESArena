@@ -12,8 +12,10 @@
 #include "../Math/Vector2.h"
 
 class ExeData;
+class LocationDefinition;
 class MIFFile;
 class MiscAssets;
+class ProvinceDefinition;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -44,10 +46,10 @@ public:
 	ExteriorWorldData(ExteriorWorldData&&) = default;
 	virtual ~ExteriorWorldData();
 
-	// Loads a premade exterior city (only used by center province).
-	static ExteriorWorldData loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-		WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
-		TextureManager &textureManager);
+	// Loads a premade exterior city (only used by center province in original game).
+	static ExteriorWorldData loadPremadeCity(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
+		int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static ExteriorWorldData loadCity(int localCityID, int provinceID, const MIFFile &mif,

@@ -2,6 +2,7 @@
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
 #include "Location.h"
+#include "LocationDefinition.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "WeatherType.h"
@@ -144,26 +145,25 @@ std::string ExteriorWorldData::generateWildernessInfName(ClimateType climateType
 	return climateLetter + locationLetter + weatherLetter + ".INF";
 }
 
-ExteriorWorldData ExteriorWorldData::loadPremadeCity(const MIFFile &mif, ClimateType climateType,
-	WeatherType weatherType, int currentDay, int starCount, const MiscAssets &miscAssets,
-	TextureManager &textureManager)
+ExteriorWorldData ExteriorWorldData::loadPremadeCity(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
+	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	// Hardcoded to center province city for now.
-	const int localCityID = 0;
-	const int provinceID = 8;
-
 	const auto &level = mif.getLevels().front();
+
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const ClimateType climateType = cityDef.climateType;
 	const std::string infName = ExteriorWorldData::generateCityInfName(climateType, weatherType);
 
 	const int gridWidth = mif.getDepth();
 	const int gridDepth = mif.getWidth();
 
 	// Generate level data for the city.
-	ExteriorLevelData levelData = ExteriorLevelData::loadPremadeCity(localCityID, provinceID,
+	ExteriorLevelData levelData = ExteriorLevelData::loadPremadeCity(locationDef, provinceDef,
 		level, weatherType, currentDay, starCount, infName, gridWidth, gridDepth, miscAssets,
 		textureManager);
 
-	const bool isCity = true;
+	const bool isCity = true; // False if wilderness.
 
 	// Generate world data from the level data.
 	ExteriorWorldData worldData(std::move(levelData), isCity);

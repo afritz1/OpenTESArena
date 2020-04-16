@@ -424,7 +424,8 @@ void FastTravelSubPanel::switchToNextPanel()
 				DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 			}
 
-			gameData.loadPremadeCity(mif, weatherType, starCount, game.getMiscAssets(),
+			gameData.loadPremadeCity(this->travelData.locationID, this->travelData.provinceID,
+				travelLocationDef, travelProvinceDef, mif, weatherType, starCount, game.getMiscAssets(),
 				game.getTextureManager(), game.getRenderer());
 		}
 

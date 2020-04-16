@@ -261,8 +261,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadPremadeCity(mif, weatherType, starCount, miscAssets,
-						game.getTextureManager(), renderer);
+					const int localCityID = 0;
+					const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
+					const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+					gameData->loadPremadeCity(localCityID, provinceID, locationDef, provinceDef,
+						mif, weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
 				}
 				else
 				{

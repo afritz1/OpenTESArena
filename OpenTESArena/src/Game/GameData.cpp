@@ -366,20 +366,17 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadPremadeCity(const MIFFile &mif, WeatherType weatherType, int starCount,
+void GameData::loadPremadeCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	// Climate for center province.
-	const int localCityID = 0;
-	const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
-	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
-
 	// Call premade city loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadPremadeCity(
-		mif, climateType, weatherType, this->date.getDay(), starCount,
+		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
 	// Set location.
+	// @temp: only keeping localCityID/provinceID pair until refactoring is done
 	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Set initial level active in the renderer.
