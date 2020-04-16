@@ -2,10 +2,12 @@
 
 #include "Location.h"
 #include "LocationDefinition.h"
+#include "LocationType.h"
 #include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int modelIndex,
 	int suffixIndex, int menuNamesIndex)
@@ -16,13 +18,14 @@ void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int model
 }
 
 void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const char *typeDisplayName,
-	uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
-	uint32_t distantSkySeed, ClimateType climateType,
-	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
-	bool premade)
+	const char *levelFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
+	uint32_t rulerSeed, uint32_t distantSkySeed, ClimateType climateType,
+	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade)
 {
 	this->type = type;
 	std::snprintf(this->typeDisplayName, std::size(this->typeDisplayName), "%s", typeDisplayName);
+	std::snprintf(this->levelFilename, std::size(this->levelFilename), "%s", levelFilename);
 
 	this->citySeed = citySeed;
 	this->wildSeed = wildSeed;
@@ -30,6 +33,9 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const c
 	this->rulerSeed = rulerSeed;
 	this->distantSkySeed = distantSkySeed;
 	this->climateType = climateType;
+	this->reservedBlocks = reservedBlocks;
+	this->blockStartPosX = blockStartPosX;
+	this->blockStartPosY = blockStartPosY;
 
 	if (mainQuestTempleOverride != nullptr)
 	{
@@ -89,7 +95,8 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	this->init(LocationDefinition::Type::City, locationData.name,
 		locationData.x, locationData.y, latitude);
 
-	const std::string &typeDisplayName = [type, &miscAssets]() -> const std::string&
+	const auto &exeData = miscAssets.getExeData();
+	const std::string &typeDisplayName = [type, &exeData]() -> const std::string&
 	{
 		const int typeNameIndex = [type]()
 		{
@@ -106,10 +113,53 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 			}
 		}();
 
-		const auto &exeData = miscAssets.getExeData();
 		const auto &locationTypeNames = exeData.locations.locationTypes;
 		DebugAssertIndex(locationTypeNames, typeNameIndex);
 		return locationTypeNames[typeNameIndex];
+	}();
+
+	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
+	const bool isCityState = type == LocationDefinition::CityDefinition::Type::CityState;
+	const int templateCount = LocationUtils::getCityTemplateCount(coastal, isCityState);
+	const int templateID = globalCityID % templateCount;
+
+	// @todo: deprecate LocationType in favor of CityDefinition::Type.
+	const LocationType locationType = [type]()
+	{
+		switch (type)
+		{
+		case CityDefinition::Type::CityState:
+			return LocationType::CityState;
+		case CityDefinition::Type::Town:
+			return LocationType::Town;
+		case CityDefinition::Type::Village:
+			return LocationType::Village;
+		default:
+			DebugUnhandledReturnMsg(LocationType, std::to_string(static_cast<int>(type)));
+		}
+	}();
+
+	const std::string levelFilename = [coastal, premade, &exeData, templateID, locationType]()
+	{
+		if (premade)
+		{
+			// @todo: don't rely on center province city's .MIF name.
+			return String::toUppercase(exeData.locations.centerProvinceCityMifName);
+		}
+		else
+		{
+			// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
+			const int nameIndex = LocationUtils::getCityTemplateNameIndex(locationType, coastal);
+
+			// Get the template name associated with the city ID.
+			const auto &templateFilenames = exeData.cityGen.templateFilenames;
+			DebugAssertIndex(templateFilenames, nameIndex);
+			std::string templateName = templateFilenames[nameIndex];
+			templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
+			templateName = String::toUppercase(templateName);
+
+			return templateName;
+		}
 	}();
 
 	const uint32_t citySeed = LocationUtils::getCitySeed(localCityID, provinceData);
@@ -118,6 +168,23 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
 	const uint32_t distantSkySeed = LocationUtils::getDistantSkySeed(localPoint, provinceID, provinceRect);
 	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
+
+	const auto &cityGen = exeData.cityGen;
+	const std::vector<uint8_t> *reservedBlocks = [coastal, templateID, &cityGen]()
+	{
+		const int index = LocationUtils::getCityReservedBlockListIndex(coastal, templateID);
+		DebugAssertIndex(cityGen.reservedBlockLists, index);
+		return &cityGen.reservedBlockLists[index];
+	}();
+
+	const OriginalInt2 blockStartPosition = [coastal, templateID, locationType, &cityGen]()
+	{
+		const int index = LocationUtils::getCityStartingPositionIndex(locationType, coastal, templateID);
+		DebugAssertIndex(cityGen.startingPositions, index);
+		const auto &pair = cityGen.startingPositions[index];
+		return OriginalInt2(pair.first, pair.second);
+	}();
+
 	const int cityBlocksPerSide = [type]()
 	{
 		switch (type)
@@ -135,7 +202,6 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 
 	CityDefinition::MainQuestTempleOverride mainQuestTempleOverride;
 	const CityDefinition::MainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
-	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
 	if (globalCityID == 2)
 	{
 		mainQuestTempleOverride.init(1, 7, 23);
@@ -149,9 +215,9 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		mainQuestTempleOverridePtr = nullptr;
 	}
 
-	this->city.init(type, typeDisplayName.c_str(), citySeed, wildSeed, provinceSeed, rulerSeed,
-		distantSkySeed, climateType, mainQuestTempleOverridePtr, cityBlocksPerSide,
-		coastal, premade);
+	this->city.init(type, typeDisplayName.c_str(), levelFilename.c_str(), citySeed, wildSeed,
+		provinceSeed, rulerSeed, distantSkySeed, climateType, reservedBlocks, blockStartPosition.x,
+		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade);
 }
 
 void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData,

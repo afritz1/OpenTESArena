@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "VoxelUtils.h"
 #include "../Assets/CityDataFile.h"
 
 class ExeData;
@@ -36,6 +37,7 @@ public:
 
 		Type type;
 		char typeDisplayName[16];
+		char levelFilename[16]; // .MIF name for most/all cases for now.
 
 		uint32_t citySeed;
 		uint32_t wildSeed;
@@ -45,6 +47,11 @@ public:
 
 		ClimateType climateType;
 
+		const std::vector<uint8_t> *reservedBlocks;
+
+		WEInt blockStartPosX; // Start position of city blocks within the city skeleton in original coordinates.
+		SNInt blockStartPosY;
+
 		bool hasMainQuestTempleOverride;
 		MainQuestTempleOverride mainQuestTempleOverride;
 
@@ -52,9 +59,10 @@ public:
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 
-		void init(CityDefinition::Type type, const char *typeDisplayName, uint32_t citySeed,
-			uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed, uint32_t distantSkySeed,
-			ClimateType climateType, const MainQuestTempleOverride *mainQuestTempleOverride,
+		void init(CityDefinition::Type type, const char *typeDisplayName, const char *levelFilename,
+			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
+			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
+			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
 			int cityBlocksPerSide, bool coastal, bool premade);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;

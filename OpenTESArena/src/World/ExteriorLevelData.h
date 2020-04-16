@@ -37,12 +37,11 @@ private:
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	void generateBuildingNames(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, uint32_t citySeed, ArenaRandom &random,
-		bool isCoastal, bool isCity, int gridWidth, int gridDepth, const MiscAssets &miscAssets);
+		const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
+		NSInt gridWidth, EWInt gridDepth, const MiscAssets &miscAssets);
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
-	void generateWildChunkBuildingNames(int localCityID, int provinceID,
-		const MiscAssets &miscAssets);
+	void generateWildChunkBuildingNames(const ExeData &exeData);
 
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.

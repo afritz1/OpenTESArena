@@ -175,16 +175,18 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, EWInt gridD
 }
 
 void ExteriorLevelData::generateBuildingNames(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, uint32_t citySeed, ArenaRandom &random,
-	bool isCoastal, bool isCity, int gridWidth, int gridDepth, const MiscAssets &miscAssets)
+	const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
+	NSInt gridWidth, EWInt gridDepth, const MiscAssets &miscAssets)
 {
 	const auto &exeData = miscAssets.getExeData();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	
+	uint32_t citySeed = cityDef.citySeed;
 	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [this, &provinceDef, &citySeed, &random, isCoastal, isCity,
+	auto generateNames = [this, &provinceDef, &citySeed, &random, isCity,
 		gridWidth, gridDepth, &miscAssets, &exeData, &cityDef, &localCityPoint](
 			VoxelDefinition::WallData::MenuType menuType)
 	{
@@ -202,10 +204,10 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 		};
 
 		// Lambdas for creating tavern, equipment store, and temple building names.
-		auto createTavernName = [isCoastal, &exeData](int m, int n)
+		auto createTavernName = [&exeData, &cityDef](int m, int n)
 		{
 			const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
-			const auto &tavernSuffixes = isCoastal ?
+			const auto &tavernSuffixes = cityDef.coastal ?
 				exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
 			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
 		};
@@ -386,15 +388,13 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 	generateNames(VoxelDefinition::WallData::MenuType::Temple);
 }
 
-void ExteriorLevelData::generateWildChunkBuildingNames(int localCityID, int provinceID,
-	const MiscAssets &miscAssets)
+void ExteriorLevelData::generateWildChunkBuildingNames(const ExeData &exeData)
 {
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [this, localCityID, provinceID, &miscAssets](
-		int wildX, int wildY, VoxelDefinition::WallData::MenuType menuType)
+	auto generateNames = [this, &exeData](int wildX, int wildY,
+		VoxelDefinition::WallData::MenuType menuType)
 	{
-		const auto &exeData = miscAssets.getExeData();
 		const uint32_t wildChunkSeed = (wildY << 16) + wildX;
 
 		// Don't need hashInSeen() for the wilderness.
@@ -800,47 +800,13 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 		clearRow(map2);
 	}
 
-	// Get city generation info.
-	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
-	DebugAssertMsg((globalCityID >= 0) && (globalCityID <= 256),
-		"Invalid city ID \"" + std::to_string(globalCityID) + "\".");
-
 	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
-	// Determine city traits from the given city ID.
-	const auto &exeData = miscAssets.getExeData();
-	const auto &cityGen = exeData.cityGen;
-	const LocationType locationType = LocationUtils::getCityType(localCityID);
-	const bool isCityState = locationType == LocationType::CityState;
-	const bool isCoastal = cityDef.coastal;
-	const int templateCount = LocationUtils::getCityTemplateCount(isCoastal, isCityState);
-	const int templateID = globalCityID % templateCount;
-
-	const std::string mifName = [provinceID, &exeData, &cityGen, locationType,
-		isCoastal, templateID]()
-	{
-		// Special case for center province.
-		if (provinceID == LocationUtils::CENTER_PROVINCE_ID)
-		{
-			return String::toUppercase(exeData.locations.centerProvinceCityMifName);
-		}
-		else
-		{
-			// Get the index into the template names array (town%d.mif, ..., cityw%d.mif).
-			const int nameIndex = LocationUtils::getCityTemplateNameIndex(locationType, isCoastal);
-
-			// Get the template name associated with the city ID.
-			std::string templateName = cityGen.templateFilenames.at(nameIndex);
-			templateName = String::replace(templateName, "%d", std::to_string(templateID + 1));
-			templateName = String::toUppercase(templateName);
-
-			return templateName;
-		}
-	}();
-
+	// Get city generation info -- the .MIF filename to load for the city skeleton.
+	const std::string mifName = cityDef.levelFilename;
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
 	{
@@ -861,32 +827,15 @@ void ExteriorLevelData::reviseWildernessCity(int localCityID, int provinceID,
 	const bool isPremadeCity = cityDef.premade;
 	if (!isPremadeCity)
 	{
-		// City block count (i.e. 6x6, 5x5, ...).
-		const int cityDim = cityDef.cityBlocksPerSide;
-
-		// Get the reserved block list for the given city.
-		const std::vector<uint8_t> &reservedBlocks = [&cityGen, isCoastal, templateID]()
-		{
-			const int index = LocationUtils::getCityReservedBlockListIndex(isCoastal, templateID);
-			return cityGen.reservedBlockLists.at(index);
-		}();
-
-		// Get the starting position of city blocks within the city skeleton.
-		const Int2 startPosition = [locationType, &cityGen, isCoastal, templateID]()
-		{
-			const int index = LocationUtils::getCityStartingPositionIndex(
-				locationType, isCoastal, templateID);
-
-			const auto &pair = cityGen.startingPositions.at(index);
-			return Int2(pair.first, pair.second);
-		}();
-
+		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
+		const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
+		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;
 		ArenaRandom random(citySeed);
 
 		// Write generated city data into the temp city buffers.
-		ExteriorLevelData::generateCity(citySeed, cityDim, mif.getWidth(), reservedBlocks,
-			startPosition, random, miscAssets, cityFlor, cityMap1, cityMap2);
+		ExteriorLevelData::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(),
+			reservedBlocks, blockStartPosition, random, miscAssets, cityFlor, cityMap1, cityMap2);
 	}
 
 	// Transform city voxels based on the wilderness rules.
@@ -1003,8 +952,8 @@ ExteriorLevelData ExteriorLevelData::loadPremadeCity(int localCityID, int provin
 	ArenaRandom random(citySeed);
 	const bool isCoastal = false;
 	const bool isCity = true;
-	levelData.generateBuildingNames(locationDef, provinceDef, citySeed, random, isCoastal,
-		isCity, gridWidth, gridDepth, miscAssets);
+	levelData.generateBuildingNames(locationDef, provinceDef, random, isCity,
+		gridWidth, gridDepth, miscAssets);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
@@ -1057,8 +1006,8 @@ ExteriorLevelData ExteriorLevelData::loadCity(const MIFFile::Level &level, int l
 
 	// Generate building names.
 	const bool isCity = true;
-	levelData.generateBuildingNames(locationDef, provinceDef, citySeed, random, isCoastal,
-		isCity, gridWidth, gridDepth, miscAssets);
+	levelData.generateBuildingNames(locationDef, provinceDef, random, isCity,
+		gridWidth, gridDepth, miscAssets);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
@@ -1152,7 +1101,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(int localCityID, int provinc
 	levelData.readMAP2(tempMap2.get(), inf, tempMap1.getWidth(), tempMap1.getHeight());
 
 	// Generate wilderness building names.
-	levelData.generateWildChunkBuildingNames(localCityID, provinceID, miscAssets);
+	levelData.generateWildChunkBuildingNames(exeData);
 
 	// Generate distant sky.
 	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
