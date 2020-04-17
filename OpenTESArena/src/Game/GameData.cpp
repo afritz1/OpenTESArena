@@ -274,28 +274,20 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
-void GameData::loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
-	VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
+	const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
-	// Dungeon ID must be for a named dungeon, not main quest dungeon.
+	// Must be for a named dungeon, not main quest dungeon.
 	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
 		"\" must not be for main quest dungeon.");
 
-	// Generate dungeon seed.
-	const uint32_t dungeonSeed = [localDungeonID, provinceID, &miscAssets]()
-	{
-		const auto &cityData = miscAssets.getCityDataFile();
-		const auto &province = cityData.getProvinceData(provinceID);
-		return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
-	}();
-
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
-	const auto &exeData = miscAssets.getExeData();
-	const int widthChunks = 2;
-	const int depthChunks = 1;
+	const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
-		dungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));
+		dungeonDef.dungeonSeed, dungeonDef.widthChunkCount, dungeonDef.heightChunkCount,
+		isArtifactDungeon, interiorType, miscAssets.getExeData()));
 
 	// Set location.
 	this->location = Location::makeDungeon(localDungeonID, provinceID);
@@ -338,8 +330,8 @@ void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlo
 
 	// Call dungeon WorldData loader with parameters specific to wilderness dungeons.
 	const auto &exeData = miscAssets.getExeData();
-	const int widthChunks = 2;
-	const int depthChunks = 2;
+	const WEInt widthChunks = 2;
+	const SNInt depthChunks = 2;
 	const bool isArtifactDungeon = false;
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));

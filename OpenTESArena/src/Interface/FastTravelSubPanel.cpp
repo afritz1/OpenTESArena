@@ -358,6 +358,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	auto &gameData = game.getGameData();
 	const auto &miscAssets = game.getMiscAssets();
 	const auto &exeData = miscAssets.getExeData();
+	const auto &worldMapDef = miscAssets.getWorldMapDefinition();
 
 	// Update game clock.
 	Random random;
@@ -400,7 +401,6 @@ void FastTravelSubPanel::switchToNextPanel()
 		const int starCount = DistantSky::getStarCountFromDensity(
 			game.getOptions().getMisc_StarDensity());
 
-		const auto &worldMapDef = miscAssets.getWorldMapDefinition();
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
@@ -466,8 +466,12 @@ void FastTravelSubPanel::switchToNextPanel()
 		{
 			// Random named dungeon.
 			const bool isArtifactDungeon = false;
+			const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
+			const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
+
 			gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
-				isArtifactDungeon, VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
+				travelLocationDef, travelProvinceDef, isArtifactDungeon,
+				VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
 				game.getTextureManager(), game.getRenderer());
 
 			// Choose random dungeon music and enter game world.

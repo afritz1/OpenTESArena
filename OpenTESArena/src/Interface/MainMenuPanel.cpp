@@ -347,13 +347,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					if (mifName == RandomNamedDungeon)
 					{
+						const int provinceIndex = provinceID;
+
 						const int localDungeonID = 2 + random.next(14);
-						gameData->loadNamedDungeon(localDungeonID, provinceID, isArtifactDungeon,
-							interiorType, miscAssets, game.getTextureManager(), renderer);
+						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
+
+						const auto &worldMapDef = miscAssets.getWorldMapDefinition();
+						const auto &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+						const auto &locationDef = provinceDef.getLocationDef(locationIndex);
+
+						gameData->loadNamedDungeon(localDungeonID, provinceID, locationDef,
+							provinceDef, isArtifactDungeon, interiorType, miscAssets,
+							game.getTextureManager(), renderer);
 
 						// Set random named dungeon name and visibility for testing.
-						const int provinceIndex = provinceID;
-						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
 						WorldMapInstance &worldMapInst = gameData->getWorldMapInstance();
 						ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
 						LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);

@@ -140,7 +140,8 @@ public:
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
-	void loadNamedDungeon(int localDungeonID, int provinceID, bool isArtifactDungeon,
+	void loadNamedDungeon(int localDungeonID, int provinceID, const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, bool isArtifactDungeon,
 		VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 

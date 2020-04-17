@@ -70,10 +70,12 @@ public:
 
 	struct DungeonDefinition
 	{
-		// @todo: combine with main quest def?
-		//uint32_t dungeonSeed;
+		uint32_t dungeonSeed;
 
-		void init();
+		int widthChunkCount;
+		int heightChunkCount;
+
+		void init(uint32_t dungeonSeed, int widthChunkCount, int heightChunkCount);
 	};
 
 	struct MainQuestDungeonDefinition
@@ -84,10 +86,9 @@ public:
 		// instead of assuming/hardcoding anything about its .MIF file. At that point, make a
 		// StartDungeonDefinition to put the filename/etc. into.
 
-		// @todo: combine with dungeon def?
-		//uint32_t dungeonSeed;
-
 		Type type;
+		// @todo: misc quest/main quest items?
+		// @todo: main quest stage? Main quest splash?
 
 		void init(MainQuestDungeonDefinition::Type type);
 	};
@@ -113,7 +114,8 @@ public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
 		CityDefinition::Type type, const MiscAssets &miscAssets);
-	void initDungeon(const CityDataFile::ProvinceData::LocationData &locationData,
+	void initDungeon(int localDungeonID, int provinceID, 
+		const CityDataFile::ProvinceData::LocationData &locationData,
 		const CityDataFile::ProvinceData &provinceData);
 	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData,

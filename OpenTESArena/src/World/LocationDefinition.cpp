@@ -57,9 +57,12 @@ uint32_t LocationDefinition::CityDefinition::getWildDungeonSeed(int wildBlockX, 
 	return (this->provinceSeed + (((wildBlockY << 6) + wildBlockX) & 0xFFFF)) & 0xFFFFFFFF;
 }
 
-void LocationDefinition::DungeonDefinition::init()
+void LocationDefinition::DungeonDefinition::init(uint32_t dungeonSeed, int widthChunkCount,
+	int heightChunkCount)
 {
-	// Do nothing
+	this->dungeonSeed = dungeonSeed;
+	this->widthChunkCount = widthChunkCount;
+	this->heightChunkCount = heightChunkCount;
 }
 
 void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefinition::Type type)
@@ -220,7 +223,8 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade);
 }
 
-void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationData &locationData,
+void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
+	const CityDataFile::ProvinceData::LocationData &locationData,
 	const CityDataFile::ProvinceData &provinceData)
 {
 	const double latitude = [&locationData, &provinceData]()
@@ -232,7 +236,12 @@ void LocationDefinition::initDungeon(const CityDataFile::ProvinceData::LocationD
 
 	this->init(LocationDefinition::Type::Dungeon, locationData.name,
 		locationData.x, locationData.y, latitude);
-	this->dungeon.init();
+
+	const uint32_t dungeonSeed = LocationUtils::getDungeonSeed(localDungeonID, provinceID, provinceData);
+	const int widthChunkCount = 2;
+	const int heightChunkCount = 1;
+
+	this->dungeon.init(dungeonSeed, widthChunkCount, heightChunkCount);
 }
 
 void LocationDefinition::initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
