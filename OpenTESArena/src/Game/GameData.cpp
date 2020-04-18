@@ -481,12 +481,10 @@ WorldMapInstance &GameData::getWorldMapInstance()
 	return this->worldMapInst;
 }
 
-ProvinceInstance &GameData::getProvinceInstance()
+const ProvinceDefinition &GameData::getProvinceDefinition(const WorldMapDefinition &worldMapDef) const
 {
-	// @todo: don't rely on original game's province ID for this.
-	// - maybe make the province index be nullable until the game session is active.
 	const int provinceIndex = this->location.provinceID;
-	return this->worldMapInst.getProvinceInstance(provinceIndex);
+	return worldMapDef.getProvinceDef(provinceIndex);
 }
 
 const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefinition &worldMapDef) const
@@ -524,6 +522,14 @@ const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefiniti
 	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceDef.getLocationCount()),
 		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");
 	return provinceDef.getLocationDef(locationIndex);
+}
+
+ProvinceInstance &GameData::getProvinceInstance()
+{
+	// @todo: don't rely on original game's province ID for this.
+	// - maybe make the province index be nullable until the game session is active.
+	const int provinceIndex = this->location.provinceID;
+	return this->worldMapInst.getProvinceInstance(provinceIndex);
 }
 
 LocationInstance &GameData::getLocationInstance()

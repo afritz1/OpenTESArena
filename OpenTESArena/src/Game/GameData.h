@@ -168,9 +168,10 @@ public:
 	Player &getPlayer();
 	WorldData &getWorldData();
 	Location &getLocation(); // @todo: deprecate and remove
+	const ProvinceDefinition &getProvinceDefinition(const WorldMapDefinition &worldMapDef) const;
+	const LocationDefinition &getLocationDefinition(const WorldMapDefinition &worldMapDef) const;
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
-	const LocationDefinition &getLocationDefinition(const WorldMapDefinition &worldMapDef) const;
 	LocationInstance &getLocationInstance();
 	Date &getDate();
 	Clock &getClock();
