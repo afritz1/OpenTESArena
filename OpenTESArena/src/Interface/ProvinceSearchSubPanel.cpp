@@ -178,9 +178,7 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 	const std::string &locationName, int provinceIndex, const int **exactLocationIndex)
 {
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
-
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
@@ -290,9 +288,8 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 		const int y = 34;
 
 		auto &gameData = game.getGameData();
-		const auto &miscAssets = game.getMiscAssets();
+		const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 		const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
-		const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
 		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);

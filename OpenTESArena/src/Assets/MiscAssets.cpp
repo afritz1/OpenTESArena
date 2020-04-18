@@ -1366,10 +1366,6 @@ bool MiscAssets::initWorldMapDefs(const ExeData &exeData)
 		return false;
 	}
 
-	// @todo: re-organize this so we don't need to pass MiscAssets directly. It's secretly
-	// using WorldMapTerrain for climate in location definitions.
-	this->worldMapDefinition.init(*this);
-
 	return true;
 }
 
@@ -1556,11 +1552,6 @@ std::string MiscAssets::generateNpcName(int raceID, bool isMale, ArenaRandom &ra
 const CityDataFile &MiscAssets::getCityDataFile() const
 {
 	return this->cityDataFile;
-}
-
-const WorldMapDefinition &MiscAssets::getWorldMapDefinition() const
-{
-	return this->worldMapDefinition;
 }
 
 const ArenaTypes::Spellsg &MiscAssets::getStandardSpells() const

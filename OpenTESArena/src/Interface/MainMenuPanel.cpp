@@ -257,7 +257,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					// Load city into game data.
 					const int localCityID = 0;
 					const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
-					const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
@@ -288,7 +288,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}();
 
 					const int provinceID = random.next(8);
-					const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
@@ -352,7 +352,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int localDungeonID = 2 + random.next(14);
 						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
 
-						const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
@@ -377,7 +377,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int wildBlockY = random.next(RMDFile::DEPTH);
 
 						const int localCityID = random.next(32);
-						const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
@@ -396,7 +396,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// Pick a random location and province.
 				const int localCityID = random.next(32);
 				const int provinceID = random.next(8);
-				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+				const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 

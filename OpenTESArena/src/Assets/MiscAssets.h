@@ -131,7 +131,6 @@ private:
 	TradeText tradeText;
 	std::vector<std::vector<std::string>> nameChunks;
 	CityDataFile cityDataFile;
-	WorldMapDefinition worldMapDefinition;
 	ArenaTypes::Spellsg standardSpells; // From SPELLSG.65.
 	std::array<std::string, 43> spellMakerDescriptions; // From SPELLMKR.TXT.
 	std::vector<RMDFile> wildernessChunks; // WILD001 to WILD070.
@@ -214,9 +213,8 @@ public:
 	// Creates a random NPC name from the given parameters.
 	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;
 
-	// Gets the world map location data -- CityDataFile is the original game's data format.
+	// Gets the original game's world map location data.
 	const CityDataFile &getCityDataFile() const;
-	const WorldMapDefinition &getWorldMapDefinition() const;
 
 	// Gets the spells list for spell and effect definitions.
 	const ArenaTypes::Spellsg &getStandardSpells() const;

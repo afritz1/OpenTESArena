@@ -250,8 +250,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		{
 			const std::string &currentLocationName = [&gameData, &miscAssets]() -> const std::string&
 			{
-				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-				const LocationDefinition &currentLocationDef = gameData.getLocationDefinition(worldMapDef);
+				const LocationDefinition &currentLocationDef = gameData.getLocationDefinition();
 				const LocationInstance &currentLocationInst = gameData.getLocationInstance();
 				return currentLocationInst.getName(currentLocationDef);
 			}();
@@ -370,7 +369,7 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	for (int i = 0; i < provinceInst.getLocationCount(); i++)
@@ -407,7 +406,7 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 	const ProvinceInstance &closestProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const LocationInstance &closestLocationInst = closestProvinceInst.getLocationInstance(closestLocationID);
 
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const int closestProvinceDefIndex = closestProvinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &closestProvinceDef = worldMapDef.getProvinceDef(closestProvinceDefIndex);
 	const int closestLocationDefIndex = closestLocationInst.getLocationDefIndex();
@@ -693,7 +692,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	// Gets the displayed icon for a location.
@@ -912,11 +911,10 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 	const LocationInstance &locationInst = provinceInst.getLocationInstance(locationID);
 	const int locationDefIndex = locationInst.getLocationDefIndex();

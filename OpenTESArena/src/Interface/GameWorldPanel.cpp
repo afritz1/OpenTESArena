@@ -365,8 +365,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const auto &miscAssets = game.getMiscAssets();
 				const auto &exeData = miscAssets.getExeData();
 				const Location &location = gameData.getLocation();
-				const LocationDefinition &locationDef =
-					gameData.getLocationDefinition(miscAssets.getWorldMapDefinition());
+				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationinst = gameData.getLocationInstance();
 				const std::string &locationName = locationinst.getName(locationDef);
 
@@ -581,8 +580,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const auto &level = worldData.getActiveLevel();
 				const auto &player = gameData.getPlayer();
 				const auto &miscAssets = game.getMiscAssets();
-				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-				const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
+				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationInst = gameData.getLocationInstance();
 				const Double3 &position = player.getPosition();
 
@@ -2148,10 +2146,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			{
 				// City gate transition.
 				const auto &miscAssets = game.getMiscAssets();
-				const auto &location = gameData.getLocation();
-				const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(location.provinceID);
-				const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
+				const Location &location = gameData.getLocation();
+				const ProvinceDefinition &provinceDef = gameData.getProvinceDefinition();
+				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const int starCount = DistantSky::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
 
@@ -2205,10 +2202,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				}
 
 				// Reset the current music (even if it's the same one).
-				const MusicName musicName = [&game, &gameData, &location]()
+				const MusicName musicName = [&game, &gameData, &locationDef]()
 				{
-					const ClimateType climateType = LocationUtils::getCityClimateType(
-						location.localCityID, location.provinceID, game.getMiscAssets());
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const ClimateType climateType = cityDef.climateType;
 					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
 					return !gameData.nightMusicIsActive() ?
@@ -2785,8 +2782,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	const double latitude = [&gameData, &miscAssets]()
 	{
-		const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-		const LocationDefinition &locationDef = gameData.getLocationDefinition(worldMapDef);
+		const LocationDefinition &locationDef = gameData.getLocationDefinition();
 		return locationDef.getLatitude();
 	}();
 

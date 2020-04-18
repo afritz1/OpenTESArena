@@ -72,6 +72,7 @@ private:
 	Player player;
 	std::unique_ptr<WorldData> worldData;
 	Location location;
+	WorldMapDefinition worldMapDef;
 	WorldMapInstance worldMapInst;
 	Date date;
 	Clock clock;
@@ -168,8 +169,9 @@ public:
 	Player &getPlayer();
 	WorldData &getWorldData();
 	Location &getLocation(); // @todo: deprecate and remove
-	const ProvinceDefinition &getProvinceDefinition(const WorldMapDefinition &worldMapDef) const;
-	const LocationDefinition &getLocationDefinition(const WorldMapDefinition &worldMapDef) const;
+	const WorldMapDefinition &getWorldMapDefinition() const;
+	const ProvinceDefinition &getProvinceDefinition() const;
+	const LocationDefinition &getLocationDefinition() const;
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();

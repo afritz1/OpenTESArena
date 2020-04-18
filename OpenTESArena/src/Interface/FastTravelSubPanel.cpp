@@ -78,7 +78,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		const int provinceID = this->travelData.provinceID;
 		const int localCityID = this->travelData.locationID;
 
-		const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+		const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
@@ -358,7 +358,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	auto &gameData = game.getGameData();
 	const auto &miscAssets = game.getMiscAssets();
 	const auto &exeData = miscAssets.getExeData();
-	const auto &worldMapDef = miscAssets.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 
 	// Update game clock.
 	Random random;

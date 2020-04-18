@@ -83,16 +83,16 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	// the world state, etc..
 	DebugLog("Initializing.");
 
-	// Initialize world map instance to default.
-	const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
-	this->worldMapInst.init(worldMapDef);
+	// Initialize world map definition and instance to default.
+	this->worldMapDef.init(miscAssets);
+	this->worldMapInst.init(this->worldMapDef);
 
 	// @temp: set main quest dungeons visible for testing.
 	for (int i = 0; i < this->worldMapInst.getProvinceCount(); i++)
 	{
 		ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(i);
 		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+		const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceDefIndex);
 
 		for (int j = 0; j < provinceInst.getLocationCount(); j++)
 		{
@@ -481,13 +481,18 @@ WorldMapInstance &GameData::getWorldMapInstance()
 	return this->worldMapInst;
 }
 
-const ProvinceDefinition &GameData::getProvinceDefinition(const WorldMapDefinition &worldMapDef) const
+const WorldMapDefinition &GameData::getWorldMapDefinition() const
 {
-	const int provinceIndex = this->location.provinceID;
-	return worldMapDef.getProvinceDef(provinceIndex);
+	return this->worldMapDef;
 }
 
-const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefinition &worldMapDef) const
+const ProvinceDefinition &GameData::getProvinceDefinition() const
+{
+	const int provinceIndex = this->location.provinceID;
+	return this->worldMapDef.getProvinceDef(provinceIndex);
+}
+
+const LocationDefinition &GameData::getLocationDefinition() const
 {
 	// @todo: don't rely on original game's location/province ID for this.
 	// - maybe make the province index + location index pair be nullable until the game session is active.
@@ -515,9 +520,9 @@ const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefiniti
 		}
 	}();
 
-	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < worldMapDef.getProvinceCount()),
+	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < this->worldMapDef.getProvinceCount()),
 		"Province index \"" + std::to_string(provinceIndex) + "\" out of range.");
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
 
 	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceDef.getLocationCount()),
 		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");

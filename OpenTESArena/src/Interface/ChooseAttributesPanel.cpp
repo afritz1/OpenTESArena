@@ -322,7 +322,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							auto onLevelUpVoxelEnter = [](Game &game)
 							{
 								// Teleport the player to a random location based on their race.
-								const auto &miscAssets = game.getMiscAssets();
 								auto &gameData = game.getGameData();
 								auto &player = gameData.getPlayer();
 								player.setVelocityToZero();
@@ -331,7 +330,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								const int localCityID = random.next(32);
 								const int provinceID = gameData.getPlayer().getRaceID();
 
-								const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+								const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 								const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
@@ -359,6 +358,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								const int starCount = DistantSky::getStarCountFromDensity(
 									game.getOptions().getMisc_StarDensity());
 
+								const auto &miscAssets = game.getMiscAssets();
 								auto &renderer = game.getRenderer();
 								gameData.loadCity(localCityID, provinceID, locationDef, provinceDef,
 									weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
