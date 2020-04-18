@@ -58,12 +58,13 @@ public:
 		int cityBlocksPerSide;
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
+		bool rulerIsMale;
 
 		void init(CityDefinition::Type type, const char *typeDisplayName, const char *levelFilename,
 			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
 			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
-			int cityBlocksPerSide, bool coastal, bool premade);
+			int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};

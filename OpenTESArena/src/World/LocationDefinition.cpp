@@ -21,7 +21,8 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const c
 	const char *levelFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
 	uint32_t rulerSeed, uint32_t distantSkySeed, ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal, bool premade)
+	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
+	bool premade, bool rulerIsMale)
 {
 	this->type = type;
 	std::snprintf(this->typeDisplayName, std::size(this->typeDisplayName), "%s", typeDisplayName);
@@ -50,6 +51,7 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const c
 	this->cityBlocksPerSide = cityBlocksPerSide;
 	this->coastal = coastal;
 	this->premade = premade;
+	this->rulerIsMale = rulerIsMale;
 }
 
 uint32_t LocationDefinition::CityDefinition::getWildDungeonSeed(int wildBlockX, int wildBlockY) const
@@ -218,9 +220,10 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		mainQuestTempleOverridePtr = nullptr;
 	}
 
+	const bool rulerIsMale = (rulerSeed & 0x3) != 0;
 	this->city.init(type, typeDisplayName.c_str(), levelFilename.c_str(), citySeed, wildSeed,
 		provinceSeed, rulerSeed, distantSkySeed, climateType, reservedBlocks, blockStartPosition.x,
-		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade);
+		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade, rulerIsMale);
 }
 
 void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
