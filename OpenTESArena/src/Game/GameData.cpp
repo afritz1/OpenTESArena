@@ -310,28 +310,19 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+void GameData::loadWildernessDungeon(int provinceID, const LocationDefinition &locationDef,
+	int wildBlockX, int wildBlockY, VoxelDefinition::WallData::MenuType interiorType,
+	const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
+	Renderer &renderer)
 {
-	// Verify that the wilderness block coordinates are valid (0..63).
-	DebugAssertMsg((wildBlockX >= 0) && (wildBlockX < RMDFile::WIDTH),
-		"Wild block X \"" + std::to_string(wildBlockX) + "\" out of range.");
-	DebugAssertMsg((wildBlockY >= 0) && (wildBlockY < RMDFile::DEPTH),
-		"Wild block Y \"" + std::to_string(wildBlockY) + "\" out of range.");
-
 	// Generate wilderness dungeon seed.
-	const uint32_t wildDungeonSeed = [provinceID, wildBlockX, wildBlockY, &cityData]()
-	{
-		const auto &province = cityData.getProvinceData(provinceID);
-		return LocationUtils::getWildernessDungeonSeed(
-			provinceID, province, wildBlockX, wildBlockY);
-	}();
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const uint32_t wildDungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
 
 	// Call dungeon WorldData loader with parameters specific to wilderness dungeons.
 	const auto &exeData = miscAssets.getExeData();
-	const WEInt widthChunks = 2;
-	const SNInt depthChunks = 2;
+	const WEInt widthChunks = LocationUtils::WILD_DUNGEON_WIDTH_CHUNK_COUNT;
+	const SNInt depthChunks = LocationUtils::WILD_DUNGEON_HEIGHT_CHUNK_COUNT;
 	const bool isArtifactDungeon = false;
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));

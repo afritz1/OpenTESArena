@@ -352,9 +352,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int localDungeonID = 2 + random.next(14);
 						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
 
-						const auto &worldMapDef = miscAssets.getWorldMapDefinition();
-						const auto &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-						const auto &locationDef = provinceDef.getLocationDef(locationIndex);
+						const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 						gameData->loadNamedDungeon(localDungeonID, provinceID, locationDef,
 							provinceDef, isArtifactDungeon, interiorType, miscAssets,
@@ -375,8 +375,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					{
 						const int wildBlockX = random.next(RMDFile::WIDTH);
 						const int wildBlockY = random.next(RMDFile::DEPTH);
-						gameData->loadWildernessDungeon(provinceID, wildBlockX, wildBlockY,
-							interiorType, miscAssets.getCityDataFile(), miscAssets,
+
+						const int localCityID = random.next(32);
+						const WorldMapDefinition &worldMapDef = miscAssets.getWorldMapDefinition();
+						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+
+						gameData->loadWildernessDungeon(provinceID, locationDef, wildBlockX,
+							wildBlockY, interiorType, miscAssets.getCityDataFile(), miscAssets,
 							game.getTextureManager(), renderer);
 					}
 					else

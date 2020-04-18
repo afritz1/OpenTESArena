@@ -147,9 +147,10 @@ public:
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
-	void loadWildernessDungeon(int provinceID, int wildBlockX, int wildBlockY,
-		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+	void loadWildernessDungeon(int provinceID, const LocationDefinition &locationDef,
+		int wildBlockX, int wildBlockY, VoxelDefinition::WallData::MenuType interiorType,
+		const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
 	void loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,

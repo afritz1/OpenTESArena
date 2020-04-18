@@ -25,6 +25,10 @@ namespace LocationUtils
 	// premade city.
 	constexpr int CENTER_PROVINCE_ID = 8;
 
+	// Width and height of wild dungeons in chunks.
+	constexpr int WILD_DUNGEON_WIDTH_CHUNK_COUNT = 2;
+	constexpr int WILD_DUNGEON_HEIGHT_CHUNK_COUNT = 2;
+
 	// Converts the given ID to a location ID (0..47). Location IDs are used with certain
 	// calculations such as travel time, and must be "local" (i.e., never mixed with a province ID).
 	int cityToLocationID(int localCityID);
