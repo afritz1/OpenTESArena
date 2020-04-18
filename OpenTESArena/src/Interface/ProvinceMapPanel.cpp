@@ -203,10 +203,6 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 				// Technically this shouldn't be allowed, so just use a placeholder.
 				return LocationUtils::dungeonToLocationID(0);
 			}
-			else if (specialCaseType == Location::SpecialCaseType::WildDungeon)
-			{
-				return LocationUtils::cityToLocationID(currentLocation.localCityID);
-			}
 			else
 			{
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(specialCaseType)));
@@ -898,11 +894,6 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 		{
 			// The starting dungeon is not technically on the world map (and the original
 			// game doesn't allow the world map to open then, either).
-		}
-		else if (location.specialCaseType == Location::SpecialCaseType::WildDungeon)
-		{
-			// Draw the highlight for the city the wild dungeon is in.
-			handleCityHighlight();
 		}
 		else
 		{

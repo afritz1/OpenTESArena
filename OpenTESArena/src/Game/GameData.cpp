@@ -310,10 +310,10 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::loadWildernessDungeon(int provinceID, const LocationDefinition &locationDef,
-	int wildBlockX, int wildBlockY, VoxelDefinition::WallData::MenuType interiorType,
-	const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+void GameData::loadWildernessDungeon(int localCityID, int provinceID,
+	const LocationDefinition &locationDef, int wildBlockX, int wildBlockY,
+	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Generate wilderness dungeon seed.
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
@@ -329,7 +329,7 @@ void GameData::loadWildernessDungeon(int provinceID, const LocationDefinition &l
 
 	// Set location (since wilderness dungeons aren't their own location, use a placeholder
 	// value for testing).
-	this->location = Location::makeSpecialCase(Location::SpecialCaseType::WildDungeon, provinceID);
+	this->location = Location::makeCity(localCityID, provinceID);
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
@@ -508,8 +508,6 @@ const LocationDefinition &GameData::getLocationDefinition(const WorldMapDefiniti
 			{
 			case Location::SpecialCaseType::StartDungeon:
 				return 48;
-			case Location::SpecialCaseType::WildDungeon:
-				return this->location.localCityID;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
 			}
@@ -547,8 +545,6 @@ LocationInstance &GameData::getLocationInstance()
 			{
 			case Location::SpecialCaseType::StartDungeon:
 				return 48;
-			case Location::SpecialCaseType::WildDungeon:
-				return this->location.localCityID;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
 			}

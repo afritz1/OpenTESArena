@@ -19,8 +19,7 @@ class Location
 public:
 	enum class SpecialCaseType
 	{
-		StartDungeon,
-		WildDungeon // Only for testing (in reality a wild dungeon doesn't affect the location).
+		StartDungeon
 	};
 
 	LocationDataType dataType; // Determines how the union is accessed.

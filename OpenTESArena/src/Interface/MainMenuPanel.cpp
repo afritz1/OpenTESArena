@@ -381,9 +381,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
-						gameData->loadWildernessDungeon(provinceID, locationDef, wildBlockX,
-							wildBlockY, interiorType, miscAssets.getCityDataFile(), miscAssets,
-							game.getTextureManager(), renderer);
+						gameData->loadWildernessDungeon(localCityID, provinceID, locationDef,
+							wildBlockX, wildBlockY, interiorType, miscAssets.getCityDataFile(),
+							miscAssets, game.getTextureManager(), renderer);
 					}
 					else
 					{
