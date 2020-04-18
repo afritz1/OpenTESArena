@@ -325,3 +325,9 @@ const LocationDefinition::MainQuestDungeonDefinition &LocationDefinition::getMai
 	DebugAssert(this->type == LocationDefinition::Type::MainQuestDungeon);
 	return this->mainQuest;
 }
+
+bool LocationDefinition::matches(const LocationDefinition &other) const
+{
+	// Can't have two different locations on the same province pixel.
+	return (this->x == other.x) && (this->y == other.y);
+}

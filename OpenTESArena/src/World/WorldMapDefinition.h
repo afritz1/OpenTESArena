@@ -21,6 +21,9 @@ public:
 
 	// Gets the province definition at the given index.
 	const ProvinceDefinition &getProvinceDef(int index) const;
+
+	// Attempts to get the index of the given province definition in the world map.
+	bool tryGetProvinceIndex(const ProvinceDefinition &provinceDef, int *outProvinceIndex) const;
 };
 
 #endif

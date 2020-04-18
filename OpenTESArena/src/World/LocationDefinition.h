@@ -144,6 +144,9 @@ public:
 	const CityDefinition &getCityDefinition() const;
 	const DungeonDefinition &getDungeonDefinition() const;
 	const MainQuestDungeonDefinition &getMainQuestDungeonDefinition() const;
+
+	// Returns whether the two definitions reference the same location in a province.
+	bool matches(const LocationDefinition &other) const;
 };
 
 #endif

@@ -155,3 +155,26 @@ bool ProvinceDefinition::hasAnimatedDistantLand() const
 {
 	return this->animatedDistantLand;
 }
+
+bool ProvinceDefinition::matches(const ProvinceDefinition &other) const
+{
+	// Can't have two different provinces with identical world map areas.
+	return (this->globalX == other.globalX) && (this->globalY == other.globalY) &&
+		(this->globalW == other.globalW) && (this->globalH == other.globalH);
+}
+
+bool ProvinceDefinition::tryGetLocationIndex(const LocationDefinition &locationDef,
+	int *outLocationIndex) const
+{
+	for (int i = 0; i < this->getLocationCount(); i++)
+	{
+		const LocationDefinition &curLocationDef = this->getLocationDef(i);
+		if (curLocationDef.matches(locationDef))
+		{
+			*outLocationIndex = i;
+			return true;
+		}
+	}
+
+	return false;
+}

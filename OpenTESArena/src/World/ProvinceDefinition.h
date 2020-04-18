@@ -39,6 +39,12 @@ public:
 	// Whether the province contains any animated distant land like volcanoes.
 	// @todo: expand this into an actual data structure
 	bool hasAnimatedDistantLand() const;
+
+	// Returns whether the two definitions reference the same province in the world map.
+	bool matches(const ProvinceDefinition &other) const;
+
+	// Attempts to get the index of the given location definition in the province.
+	bool tryGetLocationIndex(const LocationDefinition &locationDef, int *outLocationIndex) const;
 };
 
 #endif
