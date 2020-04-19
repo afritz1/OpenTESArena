@@ -279,8 +279,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
-					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
-						weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
+					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount, miscAssets,
+						game.getTextureManager(), renderer))
+					{
+						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+					}
 				}
 				else
 				{
@@ -316,8 +319,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 					// Load city into game data. Location data is loaded, too.
-					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
-						filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer);
+					if (!gameData->loadCity(locationDef, provinceDef, filteredWeatherType, starCount,
+						miscAssets, game.getTextureManager(), renderer))
+					{
+						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+					}
 				}
 			}
 			else if (worldType == WorldType::Interior)
@@ -385,8 +391,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					DebugAssert(optInteriorType.has_value());
 					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
-					gameData->loadInterior(locationDef, provinceDef, interiorType, mif, miscAssets,
-						game.getTextureManager(), renderer);
+					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif, miscAssets,
+						game.getTextureManager(), renderer))
+					{
+						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
+					}
 				}
 				else
 				{
@@ -407,9 +416,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
-						gameData->loadNamedDungeon(localDungeonID, provinceID, locationDef,
-							provinceDef, isArtifactDungeon, interiorType, miscAssets,
-							game.getTextureManager(), renderer);
+						if (!gameData->loadNamedDungeon(locationDef, provinceDef, isArtifactDungeon,
+							interiorType, miscAssets, game.getTextureManager(), renderer))
+						{
+							DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+						}
 
 						// Set random named dungeon name and visibility for testing.
 						WorldMapInstance &worldMapInst = gameData->getWorldMapInstance();
@@ -432,9 +443,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
-						gameData->loadWildernessDungeon(localCityID, provinceID, locationDef,
-							wildBlockX, wildBlockY, interiorType, miscAssets.getCityDataFile(),
-							miscAssets, game.getTextureManager(), renderer);
+						if (!gameData->loadWildernessDungeon(locationDef, provinceDef, wildBlockX,
+							wildBlockY, interiorType, miscAssets.getCityDataFile(), miscAssets,
+							game.getTextureManager(), renderer))
+						{
+							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
+						}
 					}
 					else
 					{
@@ -457,9 +471,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 				// Load wilderness into game data. Location data is loaded, too.
 				const bool ignoreGatePos = true;
-				gameData->loadWilderness(localCityID, provinceID, locationDef, provinceDef,
-					Int2(), Int2(), ignoreGatePos, filteredWeatherType, starCount, miscAssets,
-					game.getTextureManager(), renderer);
+				if (!gameData->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
+					filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer))
+				{
+					DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
+				}
 			}
 			else
 			{

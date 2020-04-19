@@ -127,11 +127,7 @@ public:
 	bool nightLightsAreActive() const;
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(int locationIndex, int provinceIndex, const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, VoxelDefinition::WallData::MenuType interiorType,
-		const MIFFile &mif, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
-	void loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
@@ -148,32 +144,24 @@ public:
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
-	void loadNamedDungeon(int localDungeonID, int provinceID, const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, bool isArtifactDungeon,
-		VoxelDefinition::WallData::MenuType interiorType, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+	bool loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
-	void loadWildernessDungeon(int localCityID, int provinceID, const LocationDefinition &locationDef,
-		int wildBlockX, int wildBlockY, VoxelDefinition::WallData::MenuType interiorType,
-		const CityDataFile &cityData, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+	bool loadWildernessDungeon(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
+		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
-	void loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
-	void loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	bool loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
-	void loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
-		bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
-	void loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	bool loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos,
 		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);

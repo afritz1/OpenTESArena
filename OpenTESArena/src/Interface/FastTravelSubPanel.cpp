@@ -406,9 +406,11 @@ void FastTravelSubPanel::switchToNextPanel()
 			game.getOptions().getMisc_StarDensity());
 
 		// Load the destination city.
-		gameData.loadCity(this->travelData.locationID, this->travelData.provinceID, travelLocationDef,
-			travelProvinceDef, weatherType, starCount, game.getMiscAssets(), game.getTextureManager(),
-			game.getRenderer());
+		if (!gameData.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
+			game.getMiscAssets(), game.getTextureManager(), game.getRenderer()))
+		{
+			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
+		}
 
 		// Choose time-based music and enter the game world.
 		const MusicName musicName = gameData.nightMusicIsActive() ?
@@ -427,11 +429,12 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
-		const int localDungeonID = this->travelData.locationID - 32; // @todo: deprecate
-		gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
-			travelLocationDef, travelProvinceDef, isArtifactDungeon,
+		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
 			VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
-			game.getTextureManager(), game.getRenderer());
+			game.getTextureManager(), game.getRenderer()))
+		{
+			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
+		}
 
 		// Choose random dungeon music and enter game world.
 		const MusicName musicName = MusicUtils::getDungeonMusicName(random);
@@ -452,9 +455,12 @@ void FastTravelSubPanel::switchToNextPanel()
 			DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 		}
 
-		gameData.loadInterior(travelLocationDef, travelProvinceDef,
+		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
 			VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
-			game.getTextureManager(), game.getRenderer());
+			game.getTextureManager(), game.getRenderer()))
+		{
+			DebugCrash("Couldn't load interior \"" + travelLocationDef.getName() + "\".");
+		}
 
 		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{

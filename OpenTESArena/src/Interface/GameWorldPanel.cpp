@@ -2184,15 +2184,21 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 					const bool ignoreGatePos = false;
-					gameData.loadWilderness(locationDef, provinceDef, originalGateVoxel,
+					if (!gameData.loadWilderness(locationDef, provinceDef, originalGateVoxel,
 						transitionDir, ignoreGatePos, gameData.getWeatherType(), starCount,
-						miscAssets, textureManager, renderer);
+						miscAssets, textureManager, renderer))
+					{
+						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
+					}
 				}
 				else
 				{
 					// From wilderness to city.
-					gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
-						starCount, miscAssets, textureManager, renderer);
+					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
+						starCount, miscAssets, textureManager, renderer))
+					{
+						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+					}
 				}
 
 				// Reset the current music (even if it's the same one).

@@ -174,14 +174,22 @@ bool GameData::nightLightsAreActive() const
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
-void GameData::loadInterior(int locationIndex, int provinceIndex, const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, VoxelDefinition::WallData::MenuType interiorType,
-	const MIFFile &mif, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
-	this->provinceIndex = provinceIndex;
-	this->locationIndex = locationIndex;
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
+	{
+		DebugLogError("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+		return false;
+	}
+
+	if (!provinceDef.tryGetLocationIndex(locationDef, &this->locationIndex))
+	{
+		DebugLogError("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+		return false;
+	}
 
 	// Call interior WorldData loader.
 	const auto &exeData = miscAssets.getExeData();
@@ -204,27 +212,8 @@ void GameData::loadInterior(int locationIndex, int provinceIndex, const Location
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-}
 
-void GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	// Determine location and province indices of the given definitions.
-	int locationIndex;
-	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
-	{
-		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
-	}
-
-	int provinceIndex;
-	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
-	{
-		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
-	}
-
-	this->loadInterior(locationIndex, provinceIndex, locationDef, provinceDef, interiorType, mif,
-		miscAssets, textureManager, renderer);
+	return true;
 }
 
 void GameData::enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
@@ -298,18 +287,26 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
-void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
-	const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Must be for a named dungeon, not main quest dungeon.
-	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
-		"\" must not be for main quest dungeon.");
+	DebugAssertMsg(locationDef.getType() == LocationDefinition::Type::Dungeon,
+		"Dungeon \"" + locationDef.getName() + "\" must not be for main quest dungeon.");
 
 	// Set location.
-	this->provinceIndex = provinceID;
-	this->locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
+	{
+		DebugLogError("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+		return false;
+	}
+
+	if (!provinceDef.tryGetLocationIndex(locationDef, &this->locationIndex))
+	{
+		DebugLogError("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+		return false;
+	}
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
@@ -333,16 +330,27 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+
+	return true;
 }
 
-void GameData::loadWildernessDungeon(int localCityID, int provinceID,
-	const LocationDefinition &locationDef, int wildBlockX, int wildBlockY,
+bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
 	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
-	this->provinceIndex = provinceID;
-	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
+	{
+		DebugLogError("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+		return false;
+	}
+
+	if (!provinceDef.tryGetLocationIndex(locationDef, &this->locationIndex))
+	{
+		DebugLogError("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+		return false;
+	}
 
 	// Generate wilderness dungeon seed.
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
@@ -372,15 +380,26 @@ void GameData::loadWildernessDungeon(int localCityID, int provinceID,
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+
+	return true;
 }
 
-void GameData::loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
-	this->provinceIndex = provinceID;
-	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
+	{
+		DebugLogError("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+		return false;
+	}
+
+	if (!provinceDef.tryGetLocationIndex(locationDef, &this->locationIndex))
+	{
+		DebugLogError("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+		return false;
+	}
 
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string mifName = cityDef.levelFilename;
@@ -388,7 +407,8 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
 	{
-		DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+		DebugLogError("Could not init .MIF file \"" + mifName + "\".");
+		return false;
 	}
 
 	// Call city WorldData loader.
@@ -418,37 +438,26 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 	renderer.setNightLightsActive(this->nightLightsAreActive());
+
+	return true;
 }
 
-void GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	// Determine location and province indices of the given definitions.
-	int locationIndex;
-	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
-	{
-		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
-	}
-
-	int provinceIndex;
-	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
-	{
-		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
-	}
-
-	this->loadCity(locationIndex, provinceIndex, locationDef, provinceDef, weatherType, starCount,
-		miscAssets, textureManager, renderer);
-}
-
-void GameData::loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
-	bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+bool GameData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
+	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
-	this->provinceIndex = provinceID;
-	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
+	{
+		DebugLogError("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+		return false;
+	}
+
+	if (!provinceDef.tryGetLocationIndex(locationDef, &this->locationIndex))
+	{
+		DebugLogError("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+		return false;
+	}
 
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
@@ -501,28 +510,8 @@ void GameData::loadWilderness(int localCityID, int provinceID, const LocationDef
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 	renderer.setNightLightsActive(this->nightLightsAreActive());
-}
 
-void GameData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
-	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
-{
-	// Determine location and province indices of the given definitions.
-	int locationIndex;
-	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
-	{
-		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
-	}
-
-	int provinceIndex;
-	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
-	{
-		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
-	}
-
-	this->loadWilderness(locationIndex, provinceIndex, locationDef, provinceDef, gatePos,
-		transitionDir, debug_ignoreGatePos, weatherType, starCount, miscAssets,
-		textureManager, renderer);
+	return true;
 }
 
 const std::array<WeatherType, 36> &GameData::getWeathersArray() const

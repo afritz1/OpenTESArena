@@ -305,8 +305,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						gameData->loadInterior(*locationDefPtr, provinceDef, VoxelDefinition::WallData::MenuType::Dungeon,
-							mif, miscAssets, textureManager, renderer);
+						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
+							VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
+							textureManager, renderer))
+						{
+							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
+						}
 
 						// Set the game data before constructing the game world panel.
 						game.setGameData(std::move(gameData));
@@ -381,8 +385,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 								const auto &miscAssets = game.getMiscAssets();
 								auto &renderer = game.getRenderer();
-								gameData.loadCity(localCityID, provinceID, locationDef, provinceDef,
-									weatherType, starCount, miscAssets, game.getTextureManager(), renderer);
+								if (!gameData.loadCity(locationDef, provinceDef, weatherType,
+									starCount, miscAssets, game.getTextureManager(), renderer))
+								{
+									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+								}
 
 								// Set music based on weather and time.
 								const MusicName musicName = gameData.nightMusicIsActive() ?
