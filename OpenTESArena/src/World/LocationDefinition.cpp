@@ -255,19 +255,18 @@ void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
 	this->dungeon.init(dungeonSeed, widthChunkCount, heightChunkCount);
 }
 
-void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID,
-	MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets)
+void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocalDungeonID,
+	int provinceID, MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets)
 {
 	const auto &cityData = miscAssets.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 
 	// Start dungeon doesn't have a well-defined world map location in the original game,
 	// so need to carefully handle looking it up here.
-	const int locationID = LocationUtils::dungeonToLocationID(localDungeonID);
 
 	// Start dungeon's display name is custom.
 	const auto &exeData = miscAssets.getExeData();
-	std::string name = [type, &provinceData, locationID, &exeData]()
+	std::string name = [type, &provinceData, &optLocalDungeonID, &exeData]()
 	{
 		switch (type)
 		{
@@ -276,6 +275,7 @@ void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID
 		case MainQuestDungeonDefinition::Type::Map:
 		case MainQuestDungeonDefinition::Type::Staff:
 		{
+			const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
 			const auto &locationData = provinceData.getLocationData(locationID);
 			return locationData.name;
 		}
@@ -293,12 +293,13 @@ void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID
 	}
 	else
 	{
+		const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
 		const auto &locationData = provinceData.getLocationData(locationID);
 		localPointX = locationData.x;
 		localPointY = locationData.y;
 	}
 
-	const double latitude = [type, &provinceData, locationID]()
+	const double latitude = [type, &optLocalDungeonID, &provinceData]()
 	{
 		if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
 		{
@@ -307,6 +308,7 @@ void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID
 		}
 		else
 		{
+			const int locationID = LocationUtils::dungeonToLocationID(*optLocalDungeonID);
 			const auto &locationData = provinceData.getLocationData(locationID);
 			const Int2 globalPoint = LocationUtils::getGlobalPoint(
 				Int2(locationData.x, locationData.y), provinceData.getGlobalRect());
@@ -317,7 +319,7 @@ void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID
 	this->init(LocationDefinition::Type::MainQuestDungeon, std::move(name),
 		localPointX, localPointY, latitude);
 
-	const std::string levelFilename = [type, localDungeonID, provinceID, &cityData,
+	const std::string levelFilename = [type, &optLocalDungeonID, provinceID, &cityData,
 		&provinceData, &exeData]()
 	{
 		if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
@@ -327,7 +329,7 @@ void LocationDefinition::initMainQuestDungeon(int localDungeonID, int provinceID
 		else if ((type == LocationDefinition::MainQuestDungeonDefinition::Type::Map) ||
 			(type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff))
 		{
-			const uint32_t dungeonSeed = LocationUtils::getDungeonSeed(localDungeonID, provinceID, provinceData);
+			const uint32_t dungeonSeed = LocationUtils::getDungeonSeed(*optLocalDungeonID, provinceID, provinceData);
 			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
 			return String::toUppercase(mifName);
 		}

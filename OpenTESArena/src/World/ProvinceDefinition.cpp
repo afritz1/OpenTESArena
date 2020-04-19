@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <optional>
 
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
@@ -51,13 +52,14 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	};
 
 	auto tryAddMainQuestDungeon = [this, &miscAssets, &provinceData, &canAddLocation](
-		int localDungeonID, int provinceID, LocationDefinition::MainQuestDungeonDefinition::Type type,
+		const std::optional<int> &optLocalDungeonID, int provinceID,
+		LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(localDungeonID, provinceID, type, miscAssets);
+			locationDef.initMainQuestDungeon(optLocalDungeonID, provinceID, type, miscAssets);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
@@ -119,7 +121,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		startDungeonLocation.setVisible(false);
 
 		// After main quest dungeons and regular dungeons (anywhere's fine in the new layout, I guess).
-		tryAddMainQuestDungeon(16, provinceID,
+		tryAddMainQuestDungeon(std::nullopt, provinceID,
 			LocationDefinition::MainQuestDungeonDefinition::Type::Start, startDungeonLocation);
 	}
 }

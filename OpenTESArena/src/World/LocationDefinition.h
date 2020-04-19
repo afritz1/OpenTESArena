@@ -1,6 +1,7 @@
 #ifndef LOCATION_DEFINITION_H
 #define LOCATION_DEFINITION_H
 
+#include <optional>
 #include <string>
 
 #include "VoxelUtils.h"
@@ -121,7 +122,7 @@ public:
 	void initDungeon(int localDungeonID, int provinceID, 
 		const CityDataFile::ProvinceData::LocationData &locationData,
 		const CityDataFile::ProvinceData &provinceData);
-	void initMainQuestDungeon(int localDungeonID, int provinceID,
+	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int provinceID,
 		MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets);
 	// @todo: eventually have init(const char *filename) for custom locations.
 
