@@ -270,22 +270,43 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						auto &textureManager = game.getTextureManager();
 						textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
 
+						// Find starting dungeon location definition.
+						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
+						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+
+						const LocationDefinition *locationDefPtr = nullptr;
+						for (int i = 0; i < provinceDef.getLocationCount(); i++)
+						{
+							const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
+							if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+							{
+								const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+									locationDef.getMainQuestDungeonDefinition();
+
+								if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+								{
+									locationDefPtr = &locationDef;
+									break;
+								}
+							}
+						}
+
+						DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find start dungeon location definition.");
+
 						// Load starting dungeon.
-						const auto &exeData = miscAssets.getExeData();
-						const std::string mifName = String::toUppercase(
-							exeData.locations.startDungeonMifName);
-						
+						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+							locationDefPtr->getMainQuestDungeonDefinition();
+						const std::string mifName = mainQuestDungeonDef.levelFilename;
+
 						MIFFile mif;
 						if (!mif.init(mifName.c_str()))
 						{
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
-						const Location location = Location::makeSpecialCase(
-							Location::SpecialCaseType::StartDungeon, provinceID);
-						gameData->loadInterior(VoxelDefinition::WallData::MenuType::Dungeon,
-							mif, location, miscAssets, textureManager, renderer);
+						gameData->loadInterior(*locationDefPtr, provinceDef, VoxelDefinition::WallData::MenuType::Dungeon,
+							mif, miscAssets, textureManager, renderer);
 
 						// Set the game data before constructing the game world panel.
 						game.setGameData(std::move(gameData));

@@ -10,7 +10,6 @@
 #include "../Math/Random.h"
 #include "../Utilities/Platform.h"
 #include "../World/ClimateType.h"
-#include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 

@@ -9,7 +9,6 @@
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Rendering/Renderer.h"
-#include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
@@ -1067,10 +1066,10 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 }
 
 void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
-	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+	const LocationDefinition &locationDef, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	LevelData::setActive(nightLightsAreActive, worldData, location, miscAssets,
+	LevelData::setActive(nightLightsAreActive, worldData, locationDef, miscAssets,
 		textureManager, renderer);
 
 	// @todo: fetch this palette from somewhere better.

@@ -1,6 +1,5 @@
 #include <algorithm>
 
-#include "Location.h"
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
 #include "../Assets/MiscAssets.h"
@@ -51,14 +50,14 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddMainQuestDungeon = [this, &provinceData, &exeData, &canAddLocation](
-		LocationDefinition::MainQuestDungeonDefinition::Type type,
+	auto tryAddMainQuestDungeon = [this, &miscAssets, &provinceData, &canAddLocation](
+		int localDungeonID, int provinceID, LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
 	{
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(type, locationData, provinceData, exeData);
+			locationDef.initMainQuestDungeon(localDungeonID, provinceID, type, miscAssets);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
@@ -103,10 +102,10 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 	tryAddCities(provinceData.villages, LocationDefinition::CityDefinition::Type::Village,
 		static_cast<int>(provinceData.cityStates.size() + provinceData.towns.size()));
 
-	tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Staff,
-		provinceData.secondDungeon);
-	tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Map,
-		provinceData.firstDungeon);
+	tryAddMainQuestDungeon(0, provinceID,
+		LocationDefinition::MainQuestDungeonDefinition::Type::Staff, provinceData.secondDungeon);
+	tryAddMainQuestDungeon(1, provinceID,
+		LocationDefinition::MainQuestDungeonDefinition::Type::Map, provinceData.firstDungeon);
 
 	tryAddDungeons(provinceData.randomDungeons);
 
@@ -119,9 +118,9 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		startDungeonLocation.y = 0;
 		startDungeonLocation.setVisible(false);
 
-		// After main quest dungeons and regular dungeons.
-		tryAddMainQuestDungeon(LocationDefinition::MainQuestDungeonDefinition::Type::Start,
-			startDungeonLocation);
+		// After main quest dungeons and regular dungeons (anywhere's fine in the new layout, I guess).
+		tryAddMainQuestDungeon(16, provinceID,
+			LocationDefinition::MainQuestDungeonDefinition::Type::Start, startDungeonLocation);
 	}
 }
 

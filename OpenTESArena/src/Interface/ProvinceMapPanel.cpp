@@ -37,8 +37,6 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../World/Location.h"
-#include "../World/LocationDataType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
 #include "../World/LocationUtils.h"
@@ -181,64 +179,42 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	auto &gameData = game.getGameData();
 	const auto &miscAssets = game.getMiscAssets();
 
-	// Get the current location to compare with.
-	const auto &currentLocation = gameData.getLocation();
-	const int currentLocationID = [&currentLocation]()
-	{
-		if (currentLocation.dataType == LocationDataType::City)
-		{
-			return LocationUtils::cityToLocationID(currentLocation.localCityID);
-		}
-		else if (currentLocation.dataType == LocationDataType::Dungeon)
-		{
-			return LocationUtils::dungeonToLocationID(currentLocation.localDungeonID);
-		}
-		else if (currentLocation.dataType == LocationDataType::SpecialCase)
-		{
-			const Location::SpecialCaseType specialCaseType =
-				currentLocation.specialCaseType;
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const ProvinceDefinition &currentProvinceDef = gameData.getProvinceDefinition();
+	const LocationDefinition &currentLocationDef = gameData.getLocationDefinition();
 
-			if (specialCaseType == Location::SpecialCaseType::StartDungeon)
-			{
-				// Technically this shouldn't be allowed, so just use a placeholder.
-				return LocationUtils::dungeonToLocationID(0);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(specialCaseType)));
-			}
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(int,
-				std::to_string(static_cast<int>(currentLocation.dataType)));
-		}
-	}();
+	const ProvinceDefinition &selectedProvinceDef = worldMapDef.getProvinceDef(this->provinceID);
+	const LocationDefinition &selectedLocationDef = selectedProvinceDef.getLocationDef(selectedLocationID);
 
 	// Only continue if the selected location is not the player's current location.
-	const bool matchesPlayerLocation =
-		(this->provinceID == currentLocation.provinceID) &&
-		(currentLocationID == selectedLocationID);
+	const bool matchesPlayerLocation = selectedProvinceDef.matches(currentProvinceDef) &&
+		selectedLocationDef.matches(currentLocationDef);
 
 	if (!matchesPlayerLocation)
 	{
 		// Set the travel data for the selected location and reset the blink timer.
-		const auto &cityData = miscAssets.getCityDataFile();
 		const Date &currentDate = gameData.getDate();
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
 		ArenaRandom tempRandom = gameData.getRandom();
-		const int travelDays = LocationUtils::getTravelDays(currentLocationID,
-			currentLocation.provinceID, selectedLocationID, this->provinceID, currentDate.getMonth(),
-			gameData.getWeathersArray(), tempRandom, miscAssets);
 
-		this->travelData = std::make_unique<TravelData>(
-			selectedLocationID, this->provinceID, travelDays);
+		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
+		{
+			const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
+			return LocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
+		};
+
+		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
+		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
+		const int travelDays = LocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
+			currentDate.getMonth(), gameData.getWeathersArray(), tempRandom, miscAssets);
+
+		this->travelData = std::make_unique<TravelData>(selectedLocationID, this->provinceID, travelDays);
 		this->blinkTimer = 0.0;
 
 		// Create pop-up travel dialog.
-		const std::string travelText = this->makeTravelText(currentLocationID, currentLocation,
+		const std::string travelText = this->makeTravelText(currentLocationDef, currentProvinceDef,
 			selectedLocationID, *this->travelData.get());
 		std::unique_ptr<Panel> textPopUp = this->makeTextPopUp(travelText);
 		game.pushSubPanel(std::move(textPopUp));
@@ -246,11 +222,10 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	else
 	{
 		// Cannot travel to the player's current location. Create an error pop-up.
-		const std::string errorText = [&gameData, &miscAssets]()
+		const std::string errorText = [&gameData, &miscAssets, &currentLocationDef]()
 		{
-			const std::string &currentLocationName = [&gameData, &miscAssets]() -> const std::string&
+			const std::string &currentLocationName = [&gameData, &currentLocationDef]() -> const std::string&
 			{
-				const LocationDefinition &currentLocationDef = gameData.getLocationDefinition();
 				const LocationInstance &currentLocationInst = gameData.getLocationInstance();
 				return currentLocationInst.getName(currentLocationDef);
 			}();
@@ -393,25 +368,24 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	return closestIndex;
 }
 
-std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
-	const Location &currentLocation, int closestLocationID,
+std::string ProvinceMapPanel::makeTravelText(const LocationDefinition &srcLocationDef,
+	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex,
 	const ProvinceMapPanel::TravelData &travelData) const
 {
 	auto &game = this->getGame();
 	auto &gameData = this->getGame().getGameData();
 	const auto &miscAssets = game.getMiscAssets();
 	const auto &exeData = miscAssets.getExeData();
-	const auto &cityData = miscAssets.getCityDataFile();
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
-	const ProvinceInstance &closestProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
-	const LocationInstance &closestLocationInst = closestProvinceInst.getLocationInstance(closestLocationID);
+	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
+	const LocationInstance &dstLocationInst = dstProvinceInst.getLocationInstance(dstLocationIndex);
 
 	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
-	const int closestProvinceDefIndex = closestProvinceInst.getProvinceDefIndex();
-	const ProvinceDefinition &closestProvinceDef = worldMapDef.getProvinceDef(closestProvinceDefIndex);
-	const int closestLocationDefIndex = closestLocationInst.getLocationDefIndex();
-	const LocationDefinition &closestLocationDef = closestProvinceDef.getLocationDef(closestLocationDefIndex);
-	const std::string &closestLocationName = closestLocationInst.getName(closestLocationDef);
+	const int dstProvinceDefIndex = dstProvinceInst.getProvinceDefIndex();
+	const ProvinceDefinition &dstProvinceDef = worldMapDef.getProvinceDef(dstProvinceDefIndex);
+	const int dstLocationDefIndex = dstLocationInst.getLocationDefIndex();
+	const LocationDefinition &dstLocationDef = dstProvinceDef.getLocationDef(dstLocationDefIndex);
+	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
 
 	const Date &currentDate = gameData.getDate();
 	const Date destinationDate = [&currentDate, &travelData]()
@@ -425,82 +399,80 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		return newDate;
 	}();
 
-	const std::string locationFormatText = [this, &exeData, &closestProvinceDef,
-		closestLocationID, &closestLocationName]()
+	const std::string locationFormatText = [this, &exeData, &dstProvinceDef,
+		dstLocationIndex, &dstLocationDef, &dstLocationName]()
 	{
-		std::string formatText = [this, &exeData, &closestProvinceDef, closestLocationID,
-			&closestLocationName]()
+		std::string formatText = [this, &exeData, &dstProvinceDef, dstLocationIndex,
+			&dstLocationDef, &dstLocationName]()
 		{
+			const auto &locationFormatTexts = exeData.travel.locationFormatTexts;
+
 			// Decide the format based on whether it's the center province.
 			if (this->provinceID != LocationUtils::CENTER_PROVINCE_ID)
 			{
 				// Determine whether to use the city format or dungeon format.
-				if (closestLocationID < 32)
+				if (dstLocationDef.getType() == LocationDefinition::Type::City)
 				{
 					// City format.
-					std::string text = exeData.travel.locationFormatTexts.at(2);
+					const int locationFormatTextsIndex = 2;
+					DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
+					std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 					// Replace first %s with location type.
-					const std::string &locationTypeName = [&exeData, closestLocationID]()
-					{
-						if (closestLocationID < 8)
-						{
-							// City.
-							return exeData.locations.locationTypes.front();
-						}
-						else if (closestLocationID < 16)
-						{
-							// Town.
-							return exeData.locations.locationTypes.at(1);
-						}
-						else
-						{
-							// Village.
-							return exeData.locations.locationTypes.at(2);
-						}
-					}();
+					const LocationDefinition::CityDefinition &cityDef = dstLocationDef.getCityDefinition();
+					const std::string_view locationTypeName = cityDef.typeDisplayName;
 
 					size_t index = text.find("%s");
 					text.replace(index, 2, locationTypeName);
 
 					// Replace second %s with location name.
 					index = text.find("%s", index);
-					text.replace(index, 2, closestLocationName);
+					text.replace(index, 2, dstLocationName);
 
 					// Replace third %s with province name.
 					index = text.find("%s", index);
-					text.replace(index, 2, closestProvinceDef.getName());
+					text.replace(index, 2, dstProvinceDef.getName());
+
+					return text;
+				}
+				else if ((dstLocationDef.getType() == LocationDefinition::Type::Dungeon) ||
+					(dstLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon))
+				{
+					// Dungeon format.
+					const int locationFormatTextsIndex = 0;
+					DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
+					std::string text = locationFormatTexts[locationFormatTextsIndex];
+
+					// Replace first %s with dungeon name.
+					size_t index = text.find("%s");
+					text.replace(index, 2, dstLocationName);
+
+					// Replace second %s with province name.
+					index = text.find("%s", index);
+					text.replace(index, 2, dstProvinceDef.getName());
 
 					return text;
 				}
 				else
 				{
-					// Dungeon format.
-					std::string text = exeData.travel.locationFormatTexts.at(0);
-
-					// Replace first %s with dungeon name.
-					size_t index = text.find("%s");
-					text.replace(index, 2, closestLocationName);
-
-					// Replace second %s with province name.
-					index = text.find("%s", index);
-					text.replace(index, 2, closestProvinceDef.getName());
-
-					return text;
+					DebugUnhandledReturnMsg(std::string,
+						std::to_string(static_cast<int>(dstLocationDef.getType())));
 				}
 			}
 			else
 			{
 				// Center province format (always the center city).
-				std::string text = exeData.travel.locationFormatTexts.at(1);
+				const int locationFormatTextsIndex = 1;
+				DebugAssertIndex(locationFormatTexts, locationFormatTextsIndex);
+				std::string text = locationFormatTexts[locationFormatTextsIndex];
 
 				// Replace first %s with center province city name.
 				size_t index = text.find("%s");
-				text.replace(index, 2, closestLocationName);
+				text.replace(index, 2, dstLocationName);
 
 				// Replace second %s with center province name.
 				index = text.find("%s", index);
-				text.replace(index, 2, closestProvinceDef.getName());
+				text.replace(index, 2, dstProvinceDef.getName());
 
 				return text;
 			}
@@ -573,21 +545,16 @@ std::string ProvinceMapPanel::makeTravelText(int currentLocationID,
 		return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
 	}();
 
-	const auto &closestProvinceData = cityData.getProvinceData(this->provinceID);
-	const auto &closestLocationData = closestProvinceData.getLocationData(closestLocationID);
-
-	const int travelDistance = [this, &cityData, &currentLocation,
-		currentLocationID, &closestProvinceData, &closestLocationData]()
+	const int travelDistance = [this, &srcLocationDef, &srcProvinceDef, &worldMapDef,
+		&dstProvinceDef, &dstLocationDef]()
 	{
-		const auto &currentProvinceData = cityData.getProvinceData(currentLocation.provinceID);
-		const auto &currentLocationData = currentProvinceData.getLocationData(currentLocationID);
-		const Rect currentProvinceRect = currentProvinceData.getGlobalRect();
-		const Rect closestProvinceRect = closestProvinceData.getGlobalRect();
-		const Int2 currentLocationGlobalPoint = LocationUtils::getGlobalPoint(
-			Int2(currentLocationData.x, currentLocationData.y), currentProvinceRect);
-		const Int2 closestLocationGlobalPoint = LocationUtils::getGlobalPoint(
-			Int2(closestLocationData.x, closestLocationData.y), closestProvinceRect);
-		return LocationUtils::getMapDistance(currentLocationGlobalPoint, closestLocationGlobalPoint);
+		const Rect srcProvinceRect = srcProvinceDef.getGlobalRect();
+		const Rect dstProvinceRect = dstProvinceDef.getGlobalRect();
+		const Int2 srcLocationGlobalPoint = LocationUtils::getGlobalPoint(
+			Int2(srcLocationDef.getScreenX(), srcLocationDef.getScreenY()), srcProvinceRect);
+		const Int2 dstLocationGlobalPoint = LocationUtils::getGlobalPoint(
+			Int2(dstLocationDef.getScreenX(), dstLocationDef.getScreenY()), dstProvinceRect);
+		return LocationUtils::getMapDistance(srcLocationGlobalPoint, dstLocationGlobalPoint);
 	}();
 
 	const std::string distanceString = [&exeData, travelDistance]()
@@ -761,21 +728,15 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	}
 }
 
-void ProvinceMapPanel::drawLocationHighlight(const Location &location,
+void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationDef,
 	LocationHighlightType highlightType, const std::string &backgroundFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	auto drawHighlight = [this, &renderer](
-		const CityDataFile::ProvinceData::LocationData &location, const Texture &highlight)
+	auto drawHighlight = [this, &locationDef, &renderer](const Texture &highlight)
 	{
-		const Int2 point(location.x, location.y);
+		const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 		this->drawCenteredIcon(highlight, point, renderer);
 	};
-
-	auto &game = this->getGame();
-	const auto &miscAssets = game.getMiscAssets();
-	const auto &cityData = miscAssets.getCityDataFile();
-	const auto &province = cityData.getProvinceData(location.provinceID);
 
 	// Generic highlights (city, town, village, and dungeon).
 	const std::string &outlinesFilename = TextureFile::fromName(
@@ -784,44 +745,61 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 	const auto &highlights = textureManager.getTextures(
 		outlinesFilename, backgroundFilename, renderer);
 
-	auto handleCityHighlight = [&renderer, &province, &location,
-		&drawHighlight, &highlights]()
+	auto handleCityHighlight = [&renderer, &locationDef, &drawHighlight, &highlights]()
 	{
-		const int localCityID = location.localCityID;
+		const int highlightIndex = [&locationDef, &highlights]()
+		{
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
-		if (localCityID < 8)
-		{
-			// City.
-			const auto &highlight = highlights.front();
-			const auto &locationData = province.cityStates.at(localCityID);
-			drawHighlight(locationData, highlight);
-		}
-		else if (localCityID < 16)
-		{
-			// Town.
-			const auto &highlight = highlights.at(1);
-			const auto &locationData = province.towns.at(localCityID - 8);
-			drawHighlight(locationData, highlight);
-		}
-		else
-		{
-			// Village.
-			const auto &highlight = highlights.at(2);
-			const auto &locationData = province.villages.at(localCityID - 16);
-			drawHighlight(locationData, highlight);
-		}
+			switch (cityDef.type)
+			{
+			case LocationDefinition::CityDefinition::Type::CityState:
+				return 0;
+			case LocationDefinition::CityDefinition::Type::Town:
+				return 1;
+			case LocationDefinition::CityDefinition::Type::Village:
+				return 2;
+			default:
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(cityDef.type)));
+			}
+		}();
+
+		DebugAssertIndex(highlights, highlightIndex);
+		const Texture &highlight = highlights[highlightIndex];
+		drawHighlight(highlight);
 	};
 
-	auto handleDungeonHighlight = [this, &renderer, &textureManager, &backgroundFilename,
-		highlightType, &province, &location, &drawHighlight, &highlights]()
+	auto handleDungeonHighlight = [this, &drawHighlight, &highlights]()
 	{
-		const int localDungeonID = location.localDungeonID;
+		// Named dungeon (they all use the same icon).
+		const int highlightIndex = 3;
+		DebugAssertIndex(highlights, highlightIndex);
+		const Texture &highlight = highlights[highlightIndex];
+		drawHighlight(highlight);
+	};
 
-		if (localDungeonID == 0)
+	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &backgroundFilename,
+		&textureManager, &renderer, &drawHighlight, &highlights]()
+	{
+		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+			locationDef.getMainQuestDungeonDefinition();
+
+		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+		{
+			// Start dungeon is not drawn.
+		}
+		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Map)
+		{
+			// Staff map dungeon.
+			const int highlightIndex = 3;
+			DebugAssertIndex(highlights, highlightIndex);
+			const Texture &highlight = highlights[highlightIndex];
+			drawHighlight(highlight);
+		}
+		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{
 			// Staff dungeon. It changes a value in the palette to give the icon's background
 			// its yellow color (since there are no highlight icons for staff dungeons).
-			const auto &locationData = province.secondDungeon;
 			const Texture highlight = [this, highlightType, &renderer]()
 			{
 				// Get the palette indices associated with the staff dungeon icon.
@@ -836,7 +814,9 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 
 				auto getColorFromIndex = [this, highlightType, &surface](int paletteIndex)
 				{
-					const Color &color = this->provinceMapPalette.get().at(paletteIndex);
+					const auto &palette = this->provinceMapPalette.get();
+					DebugAssertIndex(palette, paletteIndex);
+					const Color &color = palette[paletteIndex];
 					return surface.mapRGBA(color.r, color.g, color.b, color.a);
 				};
 
@@ -860,50 +840,28 @@ void ProvinceMapPanel::drawLocationHighlight(const Location &location,
 				return texture;
 			}();
 
-			drawHighlight(locationData, highlight);
-		}
-		else if (localDungeonID == 1)
-		{
-			// Staff map dungeon.
-			const auto &highlight = highlights.at(3);
-			const auto &locationData = province.firstDungeon;
-			drawHighlight(locationData, highlight);
+			drawHighlight(highlight);
 		}
 		else
 		{
-			// Named dungeon.
-			const auto &highlight = highlights.at(3);
-			const auto &locationData = province.randomDungeons.at(localDungeonID - 2);
-			drawHighlight(locationData, highlight);
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(mainQuestDungeonDef.type)));
 		}
 	};
 
 	// Decide how to highlight the location.
-	if (location.dataType == LocationDataType::City)
+	switch (locationDef.getType())
 	{
+	case LocationDefinition::Type::City:
 		handleCityHighlight();
-	}
-	else if (location.dataType == LocationDataType::Dungeon)
-	{
+		break;
+	case LocationDefinition::Type::Dungeon:
 		handleDungeonHighlight();
-	}
-	else if (location.dataType == LocationDataType::SpecialCase)
-	{
-		if (location.specialCaseType == Location::SpecialCaseType::StartDungeon)
-		{
-			// The starting dungeon is not technically on the world map (and the original
-			// game doesn't allow the world map to open then, either).
-		}
-		else
-		{
-			throw DebugException("Bad special location type \"" +
-				std::to_string(static_cast<int>(location.specialCaseType)) + "\".");
-		}
-	}
-	else
-	{
-		throw DebugException("Bad location data type \"" +
-			std::to_string(static_cast<int>(location.dataType)) + "\".");
+		break;
+	case LocationDefinition::Type::MainQuestDungeon:
+		handleMainQuestDungeonHighlight();
+		break;
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(locationDef.getType())));
 	}
 }
 
@@ -983,13 +941,17 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);
 
+	const auto &gameData = this->getGame().getGameData();
+	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
+	const ProvinceDefinition &playerProvinceDef = gameData.getProvinceDefinition();
+
 	// If the player is in the current province, highlight their current location.
-	auto &gameData = this->getGame().getGameData();
-	const auto &location = gameData.getLocation();
-	if (this->provinceID == location.provinceID)
+	if (provinceDef.matches(playerProvinceDef))
 	{
+		const LocationDefinition &locationDef = gameData.getLocationDefinition();
 		const auto highlightType = ProvinceMapPanel::LocationHighlightType::Current;
-		this->drawLocationHighlight(location, highlightType, backgroundFilename,
+		this->drawLocationHighlight(locationDef, highlightType, backgroundFilename,
 			textureManager, renderer);
 	}
 
@@ -1004,11 +966,11 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		// to compare them so the on-state appears before the off-state.
 		if (blinkPeriodPercent < ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON)
 		{
-			const Location selectedLocation = Location::makeFromLocationID(
-				this->travelData->locationID, this->provinceID);
-
+			const LocationDefinition &selectedLocationDef =
+				provinceDef.getLocationDef(this->travelData->locationID);
 			const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
-			this->drawLocationHighlight(selectedLocation, highlightType,
+
+			this->drawLocationHighlight(selectedLocationDef, highlightType,
 				backgroundFilename, textureManager, renderer);
 		}
 	}

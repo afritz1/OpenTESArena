@@ -1,7 +1,6 @@
 #include "ClimateType.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
-#include "Location.h"
 #include "LocationDefinition.h"
 #include "LocationType.h"
 #include "LocationUtils.h"

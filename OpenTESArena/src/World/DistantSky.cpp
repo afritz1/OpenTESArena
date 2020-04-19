@@ -3,7 +3,6 @@
 
 #include "ClimateType.h"
 #include "DistantSky.h"
-#include "Location.h"
 #include "LocationDefinition.h"
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"

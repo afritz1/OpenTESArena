@@ -1,8 +1,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Location.h"
-#include "LocationDataType.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
@@ -100,6 +98,7 @@ ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinc
 
 std::string LocationUtils::getMainQuestDungeonMifName(uint32_t dungeonSeed)
 {
+	// @todo: robustness - should this use any padding?
 	const std::string seedString = std::to_string(dungeonSeed);
 	const std::string mifName = seedString.substr(0, 8) + ".MIF";
 	return mifName;
@@ -183,23 +182,11 @@ int LocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &globalDst)
 	return std::max(dx, dy) + (std::min(dx, dy) / 4);
 }
 
-int LocationUtils::getTravelDays(int startLocationID, int startProvinceID, int endLocationID,
-	int endProvinceID, int month, const std::array<WeatherType, 36> &weathers,
-	ArenaRandom &random, const MiscAssets &miscAssets)
+int LocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
+	int month, const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
+	const MiscAssets &miscAssets)
 {
 	const auto &cityData = miscAssets.getCityDataFile();
-
-	auto getGlobalPoint = [&cityData](int locationID, int provinceID)
-	{
-		const auto &province = cityData.getProvinceData(provinceID);
-		const auto &location = province.getLocationData(locationID);
-		const Int2 localPoint(location.x, location.y);
-		return LocationUtils::getGlobalPoint(localPoint, province.getGlobalRect());
-	};
-
-	// The two world map points to calculate between.
-	const Int2 startGlobalPoint = getGlobalPoint(startLocationID, startProvinceID);
-	const Int2 endGlobalPoint = getGlobalPoint(endLocationID, endProvinceID);
 
 	// Get all the points along the line between the two points.
 	const std::vector<Int2> points = Int2::bresenhamLine(startGlobalPoint, endGlobalPoint);

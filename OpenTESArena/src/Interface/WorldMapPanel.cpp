@@ -19,7 +19,6 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
-#include "../World/Location.h"
 
 #include "components/debug/Debug.h"
 
@@ -145,7 +144,8 @@ void WorldMapPanel::render(Renderer &renderer)
 	renderer.drawOriginal(mapBackground);
 
 	// Draw yellow text over current province name.
-	const int provinceID = this->getGame().getGameData().getLocation().provinceID;
+	const auto &gameData = this->getGame().getGameData();
+	const int provinceID = gameData.getProvinceDefinition().getRaceID();
 	const auto &provinceText = textureManager.getTextures(
 		TextureFile::fromName(TextureName::ProvinceNames),
 		backgroundFilename, renderer).at(provinceID);

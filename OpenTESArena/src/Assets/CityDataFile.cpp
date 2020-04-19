@@ -5,7 +5,6 @@
 #include "ExeData.h"
 #include "MiscAssets.h"
 #include "../Math/Random.h"
-#include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDefinition.h"

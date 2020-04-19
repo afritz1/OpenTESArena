@@ -27,8 +27,6 @@
 #include "../Rendering/Renderer.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
-#include "../World/Location.h"
-#include "../World/LocationDataType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelFacing.h"
 #include "../World/WorldData.h"
@@ -1317,8 +1315,8 @@ void LevelData::updateFadingVoxels(double dt)
 }
 
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
-	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
-	Renderer &renderer)
+	const LocationDefinition &locationDef, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1419,17 +1417,16 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	};
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
-	auto loadEntities = [this, nightLightsAreActive, &worldData, &location, &miscAssets,
+	auto loadEntities = [this, nightLightsAreActive, &worldData, &locationDef, &miscAssets,
 		&textureManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
-		const std::optional<bool> optRulerIsMale = [&location, &miscAssets]() -> std::optional<bool>
+		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
 		{
-			if (location.dataType == LocationDataType::City)
+			if (locationDef.getType() == LocationDefinition::Type::City)
 			{
-				const auto &cityData = miscAssets.getCityDataFile();
-				const auto &province = cityData.getProvinceData(location.provinceID);
-				return LocationUtils::isRulerMale(location.localCityID, province);
+				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+				return cityDef.rulerIsMale;
 			}
 			else
 			{

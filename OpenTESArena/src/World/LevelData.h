@@ -33,7 +33,7 @@
 class ArenaRandom;
 class ExeData;
 class Game;
-class Location;
+class LocationDefinition;
 class MiscAssets;
 class Renderer;
 class TextureManager;
@@ -203,8 +203,8 @@ public:
 	// Sets this level active in the renderer. It's virtual so derived level data classes can
 	// do some extra work (like set interior sky colors in the renderer).
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
-		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+		const LocationDefinition &locationDef, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
 	virtual void tick(Game &game, double dt);

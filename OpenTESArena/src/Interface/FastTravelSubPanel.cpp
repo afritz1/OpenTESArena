@@ -379,30 +379,31 @@ void FastTravelSubPanel::switchToNextPanel()
 	// pushing new ones, so call order doesn't matter.
 	game.popSubPanel();
 
+	const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
+	const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
+
 	// Decide how to load the location.
-	if (this->travelData.locationID < 32)
+	if (travelLocationDef.getType() == LocationDefinition::Type::City)
 	{
 		// Get weather type from game data.
-		const WeatherType weatherType = [this, &game, &gameData, &miscAssets]()
+		const WeatherType weatherType = [this, &game, &gameData, &miscAssets,
+			&travelProvinceDef, &travelLocationDef]()
 		{
-			const auto &cityData = miscAssets.getCityDataFile();
-			const auto &provinceData = cityData.getProvinceData(this->travelData.provinceID);
-			const auto &locationData = provinceData.getLocationData(this->travelData.locationID);
-			const Int2 localPoint(locationData.x, locationData.y);
+			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
 			const Int2 globalPoint = LocationUtils::getGlobalPoint(
-				localPoint, provinceData.getGlobalRect());
+				localPoint, travelProvinceDef.getGlobalRect());
+
+			const auto &cityData = miscAssets.getCityDataFile();
 			const int globalQuarter = LocationUtils::getGlobalQuarter(globalPoint, cityData);
-			const WeatherType type = gameData.getWeathersArray().at(globalQuarter);
-			const ClimateType climateType = LocationUtils::getCityClimateType(
-				this->travelData.locationID, this->travelData.provinceID, game.getMiscAssets());
-			return WeatherUtils::getFilteredWeatherType(type, climateType);
+			const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
+
+			const auto &weathersArray = gameData.getWeathersArray();
+			DebugAssertIndex(weathersArray, globalQuarter);
+			return WeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
 		}();
 
 		const int starCount = DistantSky::getStarCountFromDensity(
 			game.getOptions().getMisc_StarDensity());
-
-		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
-		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
 		// Load the destination city.
 		gameData.loadCity(this->travelData.locationID, this->travelData.provinceID, travelLocationDef,
@@ -419,66 +420,58 @@ void FastTravelSubPanel::switchToNextPanel()
 		std::unique_ptr<Panel> arrivalPopUp = this->makeCityArrivalPopUp();
 		game.pushSubPanel(std::move(arrivalPopUp));
 	}
-	else
+	else if (travelLocationDef.getType() == LocationDefinition::Type::Dungeon)
 	{
-		const int localDungeonID = this->travelData.locationID - 32;
+		// Random named dungeon.
+		const bool isArtifactDungeon = false;
+		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
+		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
-		if ((localDungeonID == 0) || (localDungeonID == 1))
+		const int localDungeonID = this->travelData.locationID - 32; // @todo: deprecate
+		gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
+			travelLocationDef, travelProvinceDef, isArtifactDungeon,
+			VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
+			game.getTextureManager(), game.getRenderer());
+
+		// Choose random dungeon music and enter game world.
+		const MusicName musicName = MusicUtils::getDungeonMusicName(random);
+		game.setMusic(musicName);
+		game.setPanel<GameWorldPanel>(game);
+	}
+	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+	{
+		// Main quest dungeon. The staff dungeons have a splash image before going
+		// to the game world panel.
+		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+			travelLocationDef.getMainQuestDungeonDefinition();
+		const std::string mifName = mainQuestDungeonDef.levelFilename;
+
+		MIFFile mif;
+		if (!mif.init(mifName.c_str()))
 		{
-			// Main quest dungeon. The staff dungeons have a splash image before going
-			// to the game world panel.
-			const uint32_t dungeonSeed = [this, &miscAssets, localDungeonID]()
-			{
-				const int provinceID = this->travelData.provinceID;
-				const auto &cityData = miscAssets.getCityDataFile();
-				const auto &province = cityData.getProvinceData(provinceID);
-				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
-			}();
-			
-			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
-			MIFFile mif;
-			if (!mif.init(mifName.c_str()))
-			{
-				DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-			}
+			DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+		}
 
-			const Location location = Location::makeDungeon(
-				localDungeonID, this->travelData.provinceID);
-			gameData.loadInterior(VoxelDefinition::WallData::MenuType::Dungeon,
-				mif, location, miscAssets, game.getTextureManager(), game.getRenderer());
+		gameData.loadInterior(travelLocationDef, travelProvinceDef,
+			VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
+			game.getTextureManager(), game.getRenderer());
 
-			const bool isStaffDungeon = localDungeonID == 0;
-
-			if (isStaffDungeon)
-			{
-				// Go to staff dungeon splash image first.
-				game.setPanel<MainQuestSplashPanel>(game, this->travelData.provinceID);
-			}
-			else
-			{
-				// Choose random dungeon music and enter game world.
-				const MusicName musicName = MusicUtils::getDungeonMusicName(random);
-				game.setMusic(musicName);
-				game.setPanel<GameWorldPanel>(game);
-			}
+		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
+		{
+			// Go to staff dungeon splash image first.
+			game.setPanel<MainQuestSplashPanel>(game, this->travelData.provinceID);
 		}
 		else
 		{
-			// Random named dungeon.
-			const bool isArtifactDungeon = false;
-			const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
-			const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
-
-			gameData.loadNamedDungeon(localDungeonID, this->travelData.provinceID,
-				travelLocationDef, travelProvinceDef, isArtifactDungeon,
-				VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
-				game.getTextureManager(), game.getRenderer());
-
 			// Choose random dungeon music and enter game world.
 			const MusicName musicName = MusicUtils::getDungeonMusicName(random);
 			game.setMusic(musicName);
 			game.setPanel<GameWorldPanel>(game);
 		}
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(travelLocationDef.getType())));
 	}
 }
 

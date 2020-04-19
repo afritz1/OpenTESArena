@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include "../Assets/CityDataFile.h"
+#include "LocationDefinition.h"
 
 class ArenaRandom;
 class ExeData;
@@ -17,9 +17,11 @@ namespace LevelUtils
 	// (.MIF name, lock level).
 	uint16_t getDoorVoxelOffset(int x, int y);
 
-	// Gets the .MIF name for a door voxel in a city or the wilderness.
-	std::string getDoorVoxelMifName(int x, int y, int menuID, int localCityID, int provinceID,
-		const CityDataFile::ProvinceData &province, bool isCity, const ExeData &exeData);
+	// Gets the .MIF name for a door voxel in a city or the wilderness. 'palaceIsDungeon' is only
+	// true for the center province's city.
+	std::string getDoorVoxelMifName(int x, int y, int menuID, uint32_t rulerSeed,
+		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
+		bool isCity, const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);

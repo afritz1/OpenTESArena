@@ -1,15 +1,14 @@
 #include <algorithm>
 
 #include "LevelUtils.h"
-#include "Location.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 
-#include "components/utilities/Bytes.h"
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
 uint16_t LevelUtils::getDoorVoxelOffset(int x, int y)
@@ -17,8 +16,9 @@ uint16_t LevelUtils::getDoorVoxelOffset(int x, int y)
 	return (y << 8) + (x << 1);
 }
 
-std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localCityID,
-	int provinceID, const CityDataFile::ProvinceData &province, bool isCity, const ExeData &exeData)
+std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, uint32_t rulerSeed,
+	bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
+	bool isCity, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
 	const VoxelDefinition::WallData::MenuType menuType =
@@ -26,9 +26,8 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
-	const bool isFinalDungeonEntrance =
-		(menuType == VoxelDefinition::WallData::MenuType::Palace) &&
-		(provinceID == LocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
+	const bool isFinalDungeonEntrance = palaceIsMainQuestDungeon &&
+		(menuType == VoxelDefinition::WallData::MenuType::Palace);
 
 	if (isFinalDungeonEntrance)
 	{
@@ -36,10 +35,8 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 	}
 
 	// Get the prefix associated with the menu type.
-	const std::string menuName = [localCityID, &exeData, menuType]()
+	const std::string menuName = [&exeData, locationType, menuType]()
 	{
-		const LocationType locationType = LocationUtils::getCityType(localCityID);
-
 		const std::string name = [&exeData, locationType, menuType]() -> std::string
 		{
 			// Mappings of menu types to menu .MIF prefix indices. Menus that have no .MIF
@@ -83,15 +80,15 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 					{
 						if (menuType == VoxelDefinition::WallData::MenuType::Palace)
 						{
-							if (locationType == LocationType::CityState)
+							if (locationType == LocationDefinition::CityDefinition::Type::CityState)
 							{
 								return 0;
 							}
-							else if (locationType == LocationType::Town)
+							else if (locationType == LocationDefinition::CityDefinition::Type::Town)
 							{
 								return 8;
 							}
-							else if (locationType == LocationType::Village)
+							else if (locationType == LocationDefinition::CityDefinition::Type::Village)
 							{
 								return 9;
 							}
@@ -108,7 +105,8 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 					}();
 
 					const auto &prefixes = exeData.locations.menuMifPrefixes;
-					return prefixes.at(menuMifIndex);
+					DebugAssertIndex(prefixes, menuMifIndex);
+					return prefixes[menuMifIndex];
 				}
 				else
 				{
@@ -138,12 +136,6 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, int localC
 	{
 		// Offset is based on X and Y position in world; used with variant calculation.
 		const uint16_t offset = LevelUtils::getDoorVoxelOffset(x, y);
-		const uint32_t rulerSeed = [localCityID, &province]()
-		{
-			const auto &location = province.getLocationData(localCityID);
-			const Int2 localPoint(location.x, location.y);
-			return LocationUtils::getRulerSeed(localPoint, province.getGlobalRect());
-		}();
 
 		// Decide which variant of the interior to use.
 		const int variantID = [rulerSeed, offset, menuType]()

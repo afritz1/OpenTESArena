@@ -9,7 +9,8 @@
 #include "../Math/Vector2.h"
 #include "../Media/Palette.h"
 
-class Location;
+class LocationDefinition;
+class ProvinceDefinition;
 class Renderer;
 class Texture;
 class TextureManager;
@@ -50,8 +51,9 @@ private:
 	int getClosestLocationID(const Int2 &originalPosition) const;
 
 	// Generates the pop-up text for traveling to a given destination.
-	std::string makeTravelText(int currentLocationID, const Location &currentLocation,
-		int closestLocationID, const ProvinceMapPanel::TravelData &travelData) const;
+	std::string makeTravelText(const LocationDefinition &srcLocationDef,
+		const ProvinceDefinition &srcProvinceDef, int dstLocationIndex,
+		const ProvinceMapPanel::TravelData &travelData) const;
 
 	// Generates a text sub-panel with a parchment message.
 	std::unique_ptr<Panel> makeTextPopUp(const std::string &text) const;
@@ -72,8 +74,9 @@ private:
 
 	// Draws a highlight icon over the given location. Useful for either the player's
 	// current location or the currently selected location for fast travel.
-	void drawLocationHighlight(const Location &location, LocationHighlightType highlightType,
-		const std::string &backgroundFilename, TextureManager &textureManager, Renderer &renderer);
+	void drawLocationHighlight(const LocationDefinition &locationDef,
+		LocationHighlightType highlightType, const std::string &backgroundFilename,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Draws the name of a location in the current province. Intended for the location
 	// closest to the mouse cursor.

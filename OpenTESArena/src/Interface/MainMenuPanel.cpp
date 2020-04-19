@@ -38,7 +38,6 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
-#include "../World/Location.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
@@ -62,27 +61,47 @@ namespace
 	// Main quest locations. There are eight map dungeons and eight staff dungeons.
 	// The special cases are the start dungeon and the final dungeon.
 	const int MainQuestLocationCount = 18;
-	const Location StartDungeonLocation = Location::makeSpecialCase(
-		Location::SpecialCaseType::StartDungeon, 8);
-	const Location FinalDungeonLocation = Location::makeCity(0, 8);
 
-	Location getMainQuestLocationFromIndex(const ExeData &exeData, int testIndex)
+	// Small hack for main menu testing.
+	enum class SpecialCaseType { None, StartDungeon };
+
+	bool IsFinalDungeonLocation(const LocationDefinition &locationDef)
+	{
+		if (locationDef.getType() == LocationDefinition::Type::City)
+		{
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			return cityDef.palaceIsMainQuestDungeon;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	void GetMainQuestLocationFromIndex(int testIndex, const ExeData &exeData,
+		int *outLocationID, int *outProvinceID, SpecialCaseType *outSpecialCaseType)
 	{
 		if (testIndex == 0)
 		{
-			return StartDungeonLocation;
+			*outLocationID = -1;
+			*outProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+			*outSpecialCaseType = SpecialCaseType::StartDungeon;
 		}
 		else if (testIndex == (MainQuestLocationCount - 1))
 		{
-			return FinalDungeonLocation;
+			*outLocationID = 0;
+			*outProvinceID = LocationUtils::CENTER_PROVINCE_ID;
+			*outSpecialCaseType = SpecialCaseType::None;
 		}
 		else
 		{
 			// Generate the location from the executable data.
 			const auto &staffProvinces = exeData.locations.staffProvinces;
-			const int localDungeonID = testIndex % 2;
-			const int provinceID = staffProvinces.at((testIndex - 1) / 2);
-			return Location::makeDungeon(localDungeonID, provinceID);
+			const int staffProvincesIndex = (testIndex - 1) / 2;
+			DebugAssertIndex(staffProvinces, staffProvincesIndex);
+			*outProvinceID = staffProvinces[staffProvincesIndex];
+			*outLocationID = LocationUtils::dungeonToLocationID(testIndex % 2);
+			*outSpecialCaseType = SpecialCaseType::None;
 		}
 	}
 
@@ -292,10 +311,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
-					const ClimateType climateType = LocationUtils::getCityClimateType(
-						localCityID, provinceID, miscAssets);
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					const WeatherType filteredWeatherType =
-						WeatherUtils::getFilteredWeatherType(weatherType, climateType);
+						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 					// Load city into game data. Location data is loaded, too.
 					gameData->loadCity(localCityID, provinceID, locationDef, provinceDef,
@@ -313,28 +331,61 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 
 					const Player &player = gameData->getPlayer();
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
 
-					// Set some interior location data for testing, depending on whether
-					// it's a main quest dungeon.
-					const Location location = [&game, &player, testType, testIndex, &random]()
+					// Set some interior location data for testing, depending on whether it's a
+					// main quest dungeon.
+					int locationIndex, provinceIndex;
+					if (testType == TestType_MainQuest)
 					{
-						if (testType == TestType_MainQuest)
+						// Fetch from a global function.
+						const auto &exeData = game.getMiscAssets().getExeData();
+						SpecialCaseType specialCaseType;
+						GetMainQuestLocationFromIndex(testIndex, exeData, &locationIndex, &provinceIndex, &specialCaseType);
+
+						if (specialCaseType == SpecialCaseType::None)
 						{
-							// Fetch from a global function.
-							const auto &exeData = game.getMiscAssets().getExeData();
-							return getMainQuestLocationFromIndex(exeData, testIndex);
+							// Do nothing.
+						}
+						else if (specialCaseType == SpecialCaseType::StartDungeon)
+						{
+							// @temp: hacky search for start dungeon location definition.
+							const ProvinceDefinition &tempProvinceDef = worldMapDef.getProvinceDef(provinceIndex);
+							for (int i = 0; i < tempProvinceDef.getLocationCount(); i++)
+							{
+								const LocationDefinition &curLocationDef = tempProvinceDef.getLocationDef(i);
+								if (curLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+								{
+									const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+										curLocationDef.getMainQuestDungeonDefinition();
+
+									if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+									{
+										locationIndex = i;
+										break;
+									}
+								}
+							}
+
+							DebugAssertMsg(locationIndex != -1, "Couldn't find start dungeon location definition.");
 						}
 						else
 						{
-							const int localCityID = random.next(32);
-							const int provinceID = random.next(8);
-							return Location::makeCity(localCityID, provinceID);
+							DebugNotImplementedMsg(std::to_string(static_cast<int>(specialCaseType)));
 						}
-					}();
+					}
+					else
+					{
+						locationIndex = random.next(32);
+						provinceIndex = random.next(8);
+					}
+
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 					DebugAssert(optInteriorType.has_value());
 					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
-					gameData->loadInterior(interiorType, mif, location, miscAssets,
+					gameData->loadInterior(locationDef, provinceDef, interiorType, mif, miscAssets,
 						game.getTextureManager(), renderer);
 				}
 				else
@@ -400,10 +451,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
-				const ClimateType climateType = LocationUtils::getCityClimateType(
-					localCityID, provinceID, miscAssets);
+				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 				const WeatherType filteredWeatherType =
-					WeatherUtils::getFilteredWeatherType(weatherType, climateType);
+					WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				// Load wilderness into game data. Location data is loaded, too.
 				const bool ignoreGatePos = true;
@@ -707,19 +757,22 @@ std::string MainMenuPanel::getSelectedTestName() const
 		{
 			// Generate the location from the executable data, fetching data from a
 			// global function.
-			const Location location = getMainQuestLocationFromIndex(exeData, this->testIndex);
+			int locationID, provinceID;
+			SpecialCaseType specialCaseType;
+			GetMainQuestLocationFromIndex(this->testIndex, exeData, &locationID, &provinceID, &specialCaseType);
+			DebugAssert(specialCaseType == SpecialCaseType::None);
 
 			// Calculate the .MIF name from the dungeon seed.
 			const auto &cityData = miscAssets.getCityDataFile();
-			const uint32_t dungeonSeed = [&location, &cityData]()
+			const uint32_t dungeonSeed = [&cityData, locationID, provinceID]()
 			{
-				const auto &province = cityData.getProvinceData(location.provinceID);
-				return LocationUtils::getDungeonSeed(
-					location.localDungeonID, location.provinceID, province);
+				const auto &province = cityData.getProvinceData(provinceID);
+				const int localDungeonID = locationID - 32;
+				return LocationUtils::getDungeonSeed(localDungeonID, provinceID, province);
 			}();
 
 			const std::string mifName = LocationUtils::getMainQuestDungeonMifName(dungeonSeed);
-			return mifName;
+			return String::toUppercase(mifName);
 		}
 	}
 	else if (this->testType == TestType_Interior)

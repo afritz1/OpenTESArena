@@ -53,8 +53,6 @@
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
 #include "../World/LevelUtils.h"
-#include "../World/Location.h"
-#include "../World/LocationDataType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
@@ -364,10 +362,9 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				auto &gameData = game.getGameData();
 				const auto &miscAssets = game.getMiscAssets();
 				const auto &exeData = miscAssets.getExeData();
-				const Location &location = gameData.getLocation();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
-				const LocationInstance &locationinst = gameData.getLocationInstance();
-				const std::string &locationName = locationinst.getName(locationDef);
+				const LocationInstance &locationInst = gameData.getLocationInstance();
+				const std::string &locationName = locationInst.getName(locationDef);
 
 				const std::string timeString = [&game, &gameData, &exeData]()
 				{
@@ -2008,6 +2005,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	auto &activeLevel = worldData.getActiveLevel();
 	const WorldType activeWorldType = worldData.getActiveWorldType();
 
+	const LocationDefinition &locationDef = gameData.getLocationDefinition();
+	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+
 	// Decide based on the active world type.
 	if (activeWorldType == WorldType::Interior)
 	{
@@ -2024,11 +2025,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
-		const auto &location = gameData.getLocation();
-		const ClimateType climateType = LocationUtils::getCityClimateType(
-			location.localCityID, location.provinceID, miscAssets);
 		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-			gameData.getWeatherType(), climateType);
+			gameData.getWeatherType(), cityDef.climateType);
 		const MusicName musicName = !gameData.nightMusicIsActive() ?
 			MusicUtils::getExteriorMusicName(filteredWeatherType) :
 			MusicName::Night;
@@ -2073,12 +2071,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				}();
 
 				const auto &miscAssets = game.getMiscAssets();
-				const auto &cityData = miscAssets.getCityDataFile();
-				const Location &location = gameData.getLocation();
-				const auto &province = cityData.getProvinceData(location.provinceID);
 				const auto &exeData = miscAssets.getExeData();
 				const std::string mifName = LevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
-					menuID, location.localCityID, location.provinceID, province, isCity, exeData);
+					menuID, cityDef.rulerSeed, cityDef.palaceIsMainQuestDungeon, cityDef.type,
+					isCity, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
@@ -2146,7 +2142,6 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			{
 				// City gate transition.
 				const auto &miscAssets = game.getMiscAssets();
-				const Location &location = gameData.getLocation();
 				const ProvinceDefinition &provinceDef = gameData.getProvinceDefinition();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const int starCount = DistantSky::getStarCountFromDensity(
@@ -2189,16 +2184,15 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 					const bool ignoreGatePos = false;
-					gameData.loadWilderness(location.localCityID, location.provinceID, locationDef,
-						provinceDef, originalGateVoxel, transitionDir, ignoreGatePos,
-						gameData.getWeatherType(), starCount, miscAssets, textureManager, renderer);
+					gameData.loadWilderness(locationDef, provinceDef, originalGateVoxel,
+						transitionDir, ignoreGatePos, gameData.getWeatherType(), starCount,
+						miscAssets, textureManager, renderer);
 				}
 				else
 				{
 					// From wilderness to city.
-					gameData.loadCity(location.localCityID, location.provinceID, locationDef,
-						provinceDef, gameData.getWeatherType(), starCount, miscAssets,
-						textureManager, renderer);
+					gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
+						starCount, miscAssets, textureManager, renderer);
 				}
 
 				// Reset the current music (even if it's the same one).
@@ -2322,7 +2316,7 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-				gameData.getLocation(), game.getMiscAssets(), game.getTextureManager(),
+				gameData.getLocationDefinition(), game.getMiscAssets(), game.getTextureManager(),
 				game.getRenderer());
 
 			// Move the player to where they should be in the new level.
@@ -2701,11 +2695,10 @@ void GameWorldPanel::tick(double dt)
 
 		if (changeToDayMusic)
 		{
-			const auto &location = gameData.getLocation();
-			const ClimateType climateType = LocationUtils::getCityClimateType(
-				location.localCityID, location.provinceID, game.getMiscAssets());
+			const LocationDefinition &locationDef = gameData.getLocationDefinition();
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 			const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-				gameData.getWeatherType(), climateType);
+				gameData.getWeatherType(), cityDef.climateType);
 
 			const MusicName musicName = MusicUtils::getExteriorMusicName(filteredWeatherType);
 			game.setMusic(musicName);

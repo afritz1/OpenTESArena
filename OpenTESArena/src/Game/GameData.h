@@ -15,7 +15,6 @@
 #include "../Interface/TimedTextBox.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
-#include "../World/Location.h"
 #include "../World/WorldData.h"
 #include "../World/WorldMapInstance.h"
 
@@ -71,9 +70,13 @@ private:
 
 	Player player;
 	std::unique_ptr<WorldData> worldData;
-	Location location;
+	
+	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
 	WorldMapInstance worldMapInst;
+	int provinceIndex;
+	int locationIndex;
+
 	Date date;
 	Clock clock;
 	ArenaRandom arenaRandom;
@@ -124,9 +127,13 @@ public:
 	bool nightLightsAreActive() const;
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
-	void loadInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
-		const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+	void loadInterior(int locationIndex, int provinceIndex, const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, VoxelDefinition::WallData::MenuType interiorType,
+		const MIFFile &mif, const MiscAssets &miscAssets, TextureManager &textureManager,
 		Renderer &renderer);
+	void loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
@@ -157,18 +164,24 @@ public:
 	void loadCity(int localCityID, int provinceID, const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
 		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+	void loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
 	void loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
 		bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
+	void loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos,
+		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 
 	Player &getPlayer();
 	WorldData &getWorldData();
-	Location &getLocation(); // @todo: deprecate and remove
 	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;

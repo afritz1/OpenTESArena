@@ -59,12 +59,13 @@ public:
 		bool coastal;
 		bool premade; // @todo: should be a nullable data struct instead, telling what kind of premade thing.
 		bool rulerIsMale;
+		bool palaceIsMainQuestDungeon;
 
 		void init(CityDefinition::Type type, const char *typeDisplayName, const char *levelFilename,
 			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
 			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
-			int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale);
+			int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
 		uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
 	};
@@ -88,10 +89,12 @@ public:
 		// StartDungeonDefinition to put the filename/etc. into.
 
 		Type type;
+		char levelFilename[16]; // .MIF name for all cases for now.
+
 		// @todo: misc quest/main quest items?
 		// @todo: main quest stage? Main quest splash?
 
-		void init(MainQuestDungeonDefinition::Type type);
+		void init(MainQuestDungeonDefinition::Type type, const char *levelFilename);
 	};
 private:
 	std::string name;
@@ -118,9 +121,8 @@ public:
 	void initDungeon(int localDungeonID, int provinceID, 
 		const CityDataFile::ProvinceData::LocationData &locationData,
 		const CityDataFile::ProvinceData &provinceData);
-	void initMainQuestDungeon(MainQuestDungeonDefinition::Type type,
-		const CityDataFile::ProvinceData::LocationData &locationData,
-		const CityDataFile::ProvinceData &provinceData, const ExeData &exeData);
+	void initMainQuestDungeon(int localDungeonID, int provinceID,
+		MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets);
 	// @todo: eventually have init(const char *filename) for custom locations.
 
 	// Gets the display name of the location.

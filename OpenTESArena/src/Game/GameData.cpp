@@ -26,7 +26,6 @@
 #include "../Rendering/Renderer.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
-#include "../World/LocationDataType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
 #include "../World/LocationType.h"
@@ -117,6 +116,8 @@ GameData::GameData(Player &&player, const MiscAssets &miscAssets)
 	// Do initial weather update (to set each value to a valid state).
 	this->updateWeather(miscAssets.getExeData());
 
+	this->provinceIndex = -1;
+	this->locationIndex = -1;
 	this->chasmAnimSeconds = 0.0;
 }
 
@@ -173,10 +174,15 @@ bool GameData::nightLightsAreActive() const
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
-void GameData::loadInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
-	const Location &location, const MiscAssets &miscAssets, TextureManager &textureManager,
+void GameData::loadInterior(int locationIndex, int provinceIndex, const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, VoxelDefinition::WallData::MenuType interiorType,
+	const MIFFile &mif, const MiscAssets &miscAssets, TextureManager &textureManager,
 	Renderer &renderer)
 {
+	// Set location.
+	this->provinceIndex = provinceIndex;
+	this->locationIndex = locationIndex;
+
 	// Call interior WorldData loader.
 	const auto &exeData = miscAssets.getExeData();
 	this->worldData = std::make_unique<InteriorWorldData>(
@@ -184,8 +190,8 @@ void GameData::loadInterior(VoxelDefinition::WallData::MenuType interiorType, co
 
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -193,14 +199,32 @@ void GameData::loadInterior(VoxelDefinition::WallData::MenuType interiorType, co
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
-	// Set location.
-	this->location = location;
-
 	// Arbitrary interior weather and fog.
 	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
+}
+
+void GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Determine location and province indices of the given definitions.
+	int locationIndex;
+	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
+	{
+		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+	}
+
+	int provinceIndex;
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
+	{
+		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+	}
+
+	this->loadInterior(locationIndex, provinceIndex, locationDef, provinceDef, interiorType, mif,
+		miscAssets, textureManager, renderer);
 }
 
 void GameData::enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
@@ -221,8 +245,8 @@ void GameData::enterInterior(VoxelDefinition::WallData::MenuType interiorType, c
 
 	// Set interior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *exterior.getInterior(), this->location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *exterior.getInterior(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = exterior.getInterior()->getStartPoints().front();
@@ -251,8 +275,8 @@ void GameData::leaveInterior(const MiscAssets &miscAssets, TextureManager &textu
 
 	// Set exterior level active in the renderer.
 	LevelData &activeLevel = exterior.getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), exterior, this->location, miscAssets,
-		textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), exterior, this->getLocationDefinition(),
+		miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 startPoint(
@@ -283,19 +307,20 @@ void GameData::loadNamedDungeon(int localDungeonID, int provinceID,
 	DebugAssertMsg(localDungeonID >= 2, "Dungeon ID \"" + std::to_string(localDungeonID) +
 		"\" must not be for main quest dungeon.");
 
+	// Set location.
+	this->provinceIndex = provinceID;
+	this->locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
+
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
 		dungeonDef.dungeonSeed, dungeonDef.widthChunkCount, dungeonDef.heightChunkCount,
 		isArtifactDungeon, interiorType, miscAssets.getExeData()));
 
-	// Set location.
-	this->location = Location::makeDungeon(localDungeonID, provinceID);
-
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -315,6 +340,10 @@ void GameData::loadWildernessDungeon(int localCityID, int provinceID,
 	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
+	// Set location.
+	this->provinceIndex = provinceID;
+	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+
 	// Generate wilderness dungeon seed.
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const uint32_t wildDungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
@@ -327,14 +356,10 @@ void GameData::loadWildernessDungeon(int localCityID, int provinceID,
 	this->worldData = std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData));
 
-	// Set location (since wilderness dungeons aren't their own location, use a placeholder
-	// value for testing).
-	this->location = Location::makeCity(localCityID, provinceID);
-
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -353,6 +378,10 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 	const ProvinceDefinition &provinceDef, WeatherType weatherType, int starCount,
 	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
+	// Set location.
+	this->provinceIndex = provinceID;
+	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string mifName = cityDef.levelFilename;
 
@@ -367,13 +396,10 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
-	// Set location.
-	this->location = Location::makeCity(localCityID, provinceID);
-
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
@@ -394,23 +420,45 @@ void GameData::loadCity(int localCityID, int provinceID, const LocationDefinitio
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
+void GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Determine location and province indices of the given definitions.
+	int locationIndex;
+	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
+	{
+		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+	}
+
+	int provinceIndex;
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
+	{
+		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+	}
+
+	this->loadCity(locationIndex, provinceIndex, locationDef, provinceDef, weatherType, starCount,
+		miscAssets, textureManager, renderer);
+}
+
 void GameData::loadWilderness(int localCityID, int provinceID, const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const Int2 &gatePos, const Int2 &transitionDir,
 	bool debug_ignoreGatePos, WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 	TextureManager &textureManager, Renderer &renderer)
 {
+	// Set location.
+	this->provinceIndex = provinceID;
+	this->locationIndex = LocationUtils::cityToLocationID(localCityID);
+
 	// Call wilderness WorldData loader.
 	this->worldData = std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
 		locationDef, provinceDef, weatherType, this->date.getDay(), starCount,
 		miscAssets, textureManager));
 
-	// Set location.
-	this->location = Location::makeCity(localCityID, provinceID);
-
 	// Set initial level active in the renderer.
 	LevelData &activeLevel = this->worldData->getActiveLevel();
-	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(), this->location,
-		miscAssets, textureManager, renderer);
+	activeLevel.setActive(this->nightLightsAreActive(), *this->worldData.get(),
+		this->getLocationDefinition(), miscAssets, textureManager, renderer);
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
@@ -455,6 +503,28 @@ void GameData::loadWilderness(int localCityID, int provinceID, const LocationDef
 	renderer.setNightLightsActive(this->nightLightsAreActive());
 }
 
+void GameData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
+	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+{
+	// Determine location and province indices of the given definitions.
+	int locationIndex;
+	if (!provinceDef.tryGetLocationIndex(locationDef, &locationIndex))
+	{
+		DebugCrash("Couldn't find location \"" + locationDef.getName() + "\" in \"" + provinceDef.getName() + "\".");
+	}
+
+	int provinceIndex;
+	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &provinceIndex))
+	{
+		DebugCrash("Couldn't find province \"" + provinceDef.getName() + "\" in world map.");
+	}
+
+	this->loadWilderness(locationIndex, provinceIndex, locationDef, provinceDef, gatePos,
+		transitionDir, debug_ignoreGatePos, weatherType, starCount, miscAssets,
+		textureManager, renderer);
+}
+
 const std::array<WeatherType, 36> &GameData::getWeathersArray() const
 {
 	return this->weathers;
@@ -471,11 +541,6 @@ WorldData &GameData::getWorldData()
 	return *this->worldData.get();
 }
 
-Location &GameData::getLocation()
-{
-	return this->location;
-}
-
 WorldMapInstance &GameData::getWorldMapInstance()
 {
 	return this->worldMapInst;
@@ -488,90 +553,24 @@ const WorldMapDefinition &GameData::getWorldMapDefinition() const
 
 const ProvinceDefinition &GameData::getProvinceDefinition() const
 {
-	const int provinceIndex = this->location.provinceID;
-	return this->worldMapDef.getProvinceDef(provinceIndex);
+	return this->worldMapDef.getProvinceDef(this->provinceIndex);
 }
 
 const LocationDefinition &GameData::getLocationDefinition() const
 {
-	// @todo: don't rely on original game's location/province ID for this.
-	// - maybe make the province index + location index pair be nullable until the game session is active.
-	const int provinceIndex = this->location.provinceID;
-	const int locationIndex = [this]()
-	{
-		switch (this->location.dataType)
-		{
-		case LocationDataType::City:
-			return this->location.localCityID;
-		case LocationDataType::Dungeon:
-			return 32 + this->location.localDungeonID;
-		case LocationDataType::SpecialCase:
-		{
-			switch (this->location.specialCaseType)
-			{
-			case Location::SpecialCaseType::StartDungeon:
-				return 48;
-			default:
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
-			}
-		}
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.dataType)));
-		}
-	}();
-
-	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < this->worldMapDef.getProvinceCount()),
-		"Province index \"" + std::to_string(provinceIndex) + "\" out of range.");
-	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
-
-	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceDef.getLocationCount()),
-		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");
-	return provinceDef.getLocationDef(locationIndex);
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	return provinceDef.getLocationDef(this->locationIndex);
 }
 
 ProvinceInstance &GameData::getProvinceInstance()
 {
-	// @todo: don't rely on original game's province ID for this.
-	// - maybe make the province index be nullable until the game session is active.
-	const int provinceIndex = this->location.provinceID;
-	return this->worldMapInst.getProvinceInstance(provinceIndex);
+	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
 }
 
 LocationInstance &GameData::getLocationInstance()
 {
-	// @todo: don't rely on original game's location/province ID for this.
-	// - maybe make the province index + location index pair be nullable until the game session is active.
-	const int provinceIndex = this->location.provinceID;
-	const int locationIndex = [this]()
-	{
-		switch (this->location.dataType)
-		{
-		case LocationDataType::City:
-			return this->location.localCityID;
-		case LocationDataType::Dungeon:
-			return 32 + this->location.localDungeonID;
-		case LocationDataType::SpecialCase:
-		{
-			switch (this->location.specialCaseType)
-			{
-			case Location::SpecialCaseType::StartDungeon:
-				return 48;
-			default:
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.specialCaseType)));
-			}
-		}
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->location.dataType)));
-		}
-	}();
-
-	DebugAssertMsg((provinceIndex >= 0) && (provinceIndex < this->worldMapInst.getProvinceCount()),
-		"Province index \"" + std::to_string(provinceIndex) + "\" out of range.");
-	ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(provinceIndex);
-
-	DebugAssertMsg((locationIndex >= 0) && (locationIndex < provinceInst.getLocationCount()),
-		"Location index \"" + std::to_string(locationIndex) + "\" out of range.");
-	return provinceInst.getLocationInstance(locationIndex);
+	ProvinceInstance &provinceInst = this->getProvinceInstance();
+	return provinceInst.getLocationInstance(this->locationIndex);
 }
 
 Date &GameData::getDate()
