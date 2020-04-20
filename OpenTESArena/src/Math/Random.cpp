@@ -6,10 +6,8 @@
 Random::Random(int seed)
 {
 	this->generator = std::default_random_engine(seed);
-	this->integerDistribution = std::uniform_int_distribution<int>(
-		0, std::numeric_limits<int>::max());
-	this->realDistribution = std::uniform_real_distribution<double>(
-		0.0, std::nextafter(1.0, std::numeric_limits<double>::max()));
+	this->integerDistribution = std::uniform_int_distribution<int>(0, std::numeric_limits<int>::max());
+	this->realDistribution = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 
 Random::Random()
