@@ -297,7 +297,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 						// Load starting dungeon.
 						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
 							locationDefPtr->getMainQuestDungeonDefinition();
-						const std::string mifName = mainQuestDungeonDef.levelFilename;
+						const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 						MIFFile mif;
 						if (!mif.init(mifName.c_str()))

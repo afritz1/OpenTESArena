@@ -38,7 +38,7 @@ public:
 
 		Type type;
 		char typeDisplayName[16];
-		char levelFilename[16]; // .MIF name for most/all cases for now.
+		char mapFilename[16]; // .MIF name for most/all cases for now.
 
 		uint32_t citySeed;
 		uint32_t wildSeed;
@@ -62,7 +62,7 @@ public:
 		bool rulerIsMale;
 		bool palaceIsMainQuestDungeon;
 
-		void init(CityDefinition::Type type, const char *typeDisplayName, const char *levelFilename,
+		void init(CityDefinition::Type type, const char *typeDisplayName, const char *mapFilename,
 			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
 			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
@@ -90,12 +90,12 @@ public:
 		// StartDungeonDefinition to put the filename/etc. into.
 
 		Type type;
-		char levelFilename[16]; // .MIF name for all cases for now.
+		char mapFilename[16]; // .MIF name for all cases for now.
 
 		// @todo: misc quest/main quest items?
 		// @todo: main quest stage? Main quest splash?
 
-		void init(MainQuestDungeonDefinition::Type type, const char *levelFilename);
+		void init(MainQuestDungeonDefinition::Type type, const char *mapFilename);
 	};
 private:
 	std::string name;

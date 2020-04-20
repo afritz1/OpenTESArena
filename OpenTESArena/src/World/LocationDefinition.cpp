@@ -17,7 +17,7 @@ void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int model
 }
 
 void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const char *typeDisplayName,
-	const char *levelFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
+	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
 	uint32_t rulerSeed, uint32_t distantSkySeed, ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
@@ -25,7 +25,7 @@ void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const c
 {
 	this->type = type;
 	std::snprintf(this->typeDisplayName, std::size(this->typeDisplayName), "%s", typeDisplayName);
-	std::snprintf(this->levelFilename, std::size(this->levelFilename), "%s", levelFilename);
+	std::snprintf(this->mapFilename, std::size(this->mapFilename), "%s", mapFilename);
 
 	this->citySeed = citySeed;
 	this->wildSeed = wildSeed;
@@ -68,10 +68,10 @@ void LocationDefinition::DungeonDefinition::init(uint32_t dungeonSeed, int width
 }
 
 void LocationDefinition::MainQuestDungeonDefinition::init(MainQuestDungeonDefinition::Type type,
-	const char *levelFilename)
+	const char *mapFilename)
 {
 	this->type = type;
-	std::snprintf(this->levelFilename, std::size(this->levelFilename), "%s", levelFilename);
+	std::snprintf(this->mapFilename, std::size(this->mapFilename), "%s", mapFilename);
 }
 
 void LocationDefinition::init(LocationDefinition::Type type, const std::string &name,
@@ -146,7 +146,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		}
 	}();
 
-	const std::string levelFilename = [coastal, premade, &exeData, templateID, locationType]()
+	const std::string mapFilename = [coastal, premade, &exeData, templateID, locationType]()
 	{
 		if (premade)
 		{
@@ -226,7 +226,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const bool palaceIsMainQuestDungeon =
 		(provinceID == LocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
 
-	this->city.init(type, typeDisplayName.c_str(), levelFilename.c_str(), citySeed, wildSeed,
+	this->city.init(type, typeDisplayName.c_str(), mapFilename.c_str(), citySeed, wildSeed,
 		provinceSeed, rulerSeed, distantSkySeed, climateType, reservedBlocks, blockStartPosition.x,
 		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade,
 		rulerIsMale, palaceIsMainQuestDungeon);
@@ -319,7 +319,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 	this->init(LocationDefinition::Type::MainQuestDungeon, std::move(name),
 		localPointX, localPointY, latitude);
 
-	const std::string levelFilename = [type, &optLocalDungeonID, provinceID, &cityData,
+	const std::string mapFilename = [type, &optLocalDungeonID, provinceID, &cityData,
 		&provinceData, &exeData]()
 	{
 		if (type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
@@ -339,7 +339,7 @@ void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocal
 		}
 	}();
 
-	this->mainQuest.init(type, levelFilename.c_str());
+	this->mainQuest.init(type, mapFilename.c_str());
 }
 
 const std::string &LocationDefinition::getName() const

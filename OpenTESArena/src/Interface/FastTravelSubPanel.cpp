@@ -447,7 +447,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		// to the game world panel.
 		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
 			travelLocationDef.getMainQuestDungeonDefinition();
-		const std::string mifName = mainQuestDungeonDef.levelFilename;
+		const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 		MIFFile mif;
 		if (!mif.init(mifName.c_str()))

@@ -801,7 +801,7 @@ void ExteriorLevelData::reviseWildernessCity(const LocationDefinition &locationD
 
 	// Get city generation info -- the .MIF filename to load for the city skeleton.
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const std::string mifName = cityDef.levelFilename;
+	const std::string mifName = cityDef.mapFilename;
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
 	{

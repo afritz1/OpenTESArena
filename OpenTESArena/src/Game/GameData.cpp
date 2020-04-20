@@ -402,7 +402,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	}
 
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const std::string mifName = cityDef.levelFilename;
+	const std::string mifName = cityDef.mapFilename;
 
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
