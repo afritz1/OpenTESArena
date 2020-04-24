@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 
@@ -23,6 +25,7 @@
 #include "../Interface/TextAlignment.h"
 #include "../Interface/TextBox.h"
 #include "../Math/Random.h"
+#include "../Math/RandomUtils.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
@@ -65,19 +68,6 @@ namespace
 	// Small hack for main menu testing.
 	enum class SpecialCaseType { None, StartDungeon };
 
-	bool IsFinalDungeonLocation(const LocationDefinition &locationDef)
-	{
-		if (locationDef.getType() == LocationDefinition::Type::City)
-		{
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			return cityDef.palaceIsMainQuestDungeon;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
 	void GetMainQuestLocationFromIndex(int testIndex, const ExeData &exeData,
 		int *outLocationID, int *outProvinceID, SpecialCaseType *outSpecialCaseType)
 	{
@@ -103,6 +93,70 @@ namespace
 			*outLocationID = LocationUtils::dungeonToLocationID(testIndex % 2);
 			*outSpecialCaseType = SpecialCaseType::None;
 		}
+	}
+
+	std::vector<int> MakeShuffledLocationIndices(const ProvinceDefinition &provinceDef)
+	{
+		std::vector<int> indices(provinceDef.getLocationCount());
+		std::iota(indices.begin(), indices.end(), 0);
+		RandomUtils::shuffle(indices.data(), static_cast<int>(indices.size()));
+		return indices;
+	}
+
+	const LocationDefinition *GetRandomCityLocationDefinitionIfType(const ProvinceDefinition &provinceDef,
+		LocationDefinition::CityDefinition::Type cityType)
+	{
+		// Iterate over locations in the province in a random order.
+		const std::vector<int> randomLocationIndices = MakeShuffledLocationIndices(provinceDef);
+
+		for (const int locationIndex : randomLocationIndices)
+		{
+			const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+			if (curLocationDef.getType() == LocationDefinition::Type::City)
+			{
+				const auto &curCityDef = curLocationDef.getCityDefinition();
+				if (curCityDef.type == cityType)
+				{
+					return &curLocationDef;
+				}
+			}
+		}
+
+		return nullptr;
+	}
+
+	int GetRandomCityLocationIndex(const ProvinceDefinition &provinceDef)
+	{
+		// Iterate over locations in the province in a random order.
+		const std::vector<int> randomLocationIndices = MakeShuffledLocationIndices(provinceDef);
+
+		for (const int locationIndex : randomLocationIndices)
+		{
+			const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+			if (curLocationDef.getType() == LocationDefinition::Type::City)
+			{
+				return locationIndex;
+			}
+		}
+
+		return -1;
+	}
+
+	const LocationDefinition *GetRandomDungeonLocationDefinition(const ProvinceDefinition &provinceDef)
+	{
+		// Iterate over locations in the province in a random order.
+		const std::vector<int> randomLocationIndices = MakeShuffledLocationIndices(provinceDef);
+
+		for (const int locationIndex : randomLocationIndices)
+		{
+			const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
+			if (curLocationDef.getType() == LocationDefinition::Type::Dungeon)
+			{
+				return &curLocationDef;
+			}
+		}
+
+		return nullptr;
 	}
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
@@ -274,11 +328,31 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				if (mifName == ImperialMIF)
 				{
 					// Load city into game data.
-					const int localCityID = 0;
-					const int provinceID = LocationUtils::CENTER_PROVINCE_ID;
+					const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
 					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+					const LocationDefinition &locationDef = [&mifName, &provinceDef]()
+					{
+						int locationIndex = -1;
+						for (int i = 0; i < provinceDef.getLocationCount(); i++)
+						{
+							const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
+							if (curLocationDef.getType() == LocationDefinition::Type::City)
+							{
+								const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
+								if ((cityDef.type == LocationDefinition::CityDefinition::Type::CityState) &&
+									cityDef.premade && cityDef.palaceIsMainQuestDungeon)
+								{
+									locationIndex = i;
+									break;
+								}
+							}
+						}
+
+						DebugAssertMsg(locationIndex != -1, "Couldn't find location for \"" + mifName + "\".");
+						return provinceDef.getLocationDef(locationIndex);
+					}();
+
 					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount, miscAssets,
 						game.getTextureManager(), renderer))
 					{
@@ -287,42 +361,46 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				}
 				else
 				{
-					// Pick a random location based on the .MIF name, excluding the
-					// center province.
-					const int localCityID = [&mifName, &random]()
+					// Pick a random location based on the .MIF name, excluding the center province.
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+					{
+						const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						return worldMapDef.getProvinceDef(provinceIndex);
+					}();
+
+					const LocationDefinition::CityDefinition::Type targetCityType = [&mifName]()
 					{
 						if (mifName == RandomCity)
 						{
-							return random.next(8);
+							return LocationDefinition::CityDefinition::Type::CityState;
 						}
 						else if (mifName == RandomTown)
 						{
-							return 8 + random.next(8);
+							return LocationDefinition::CityDefinition::Type::Town;
 						}
 						else if (mifName == RandomVillage)
 						{
-							return 16 + random.next(16);
+							return LocationDefinition::CityDefinition::Type::Village;
 						}
 						else
 						{
-							throw DebugException("Bad .MIF name \"" + mifName + "\".");
+							DebugUnhandledReturnMsg(LocationDefinition::CityDefinition::Type, mifName);
 						}
 					}();
 
-					const int provinceID = random.next(8);
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-					const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+					const LocationDefinition *locationDefPtr = GetRandomCityLocationDefinitionIfType(provinceDef, targetCityType);
+					DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find city for \"" + mifName + "\".");
 
-					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
 					const WeatherType filteredWeatherType =
 						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 					// Load city into game data. Location data is loaded, too.
-					if (!gameData->loadCity(locationDef, provinceDef, filteredWeatherType, starCount,
+					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
 						miscAssets, game.getTextureManager(), renderer))
 					{
-						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
 					}
 				}
 			}
@@ -382,8 +460,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 					else
 					{
-						locationIndex = random.next(32);
-						provinceIndex = random.next(8);
+						// Any province besides center province.
+						// @temp: mildly disorganized
+						provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						locationIndex = GetRandomCityLocationIndex(worldMapDef.getProvinceDef(provinceIndex));
 					}
 
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
@@ -400,32 +480,31 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				else
 				{
 					// Pick a random dungeon based on the dungeon type.
-					const int provinceID = random.next(8);
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+					{
+						const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						return worldMapDef.getProvinceDef(provinceIndex);
+					}();
+
 					const bool isArtifactDungeon = false;
 					DebugAssert(optInteriorType.has_value());
 					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
 
 					if (mifName == RandomNamedDungeon)
 					{
-						const int provinceIndex = provinceID;
+						const LocationDefinition *locationDefPtr = GetRandomDungeonLocationDefinition(provinceDef);
+						DebugAssertMsg(locationDefPtr != nullptr,
+							"Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
-						const int localDungeonID = 2 + random.next(14);
-						const int locationIndex = LocationUtils::dungeonToLocationID(localDungeonID);
-
-						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-
-						if (!gameData->loadNamedDungeon(locationDef, provinceDef, isArtifactDungeon,
+						if (!gameData->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
 							interiorType, miscAssets, game.getTextureManager(), renderer))
 						{
-							DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
+							DebugCrash("Couldn't load named dungeon \"" + locationDefPtr->getName() + "\".");
 						}
 
 						// Set random named dungeon name and visibility for testing.
-						WorldMapInstance &worldMapInst = gameData->getWorldMapInstance();
-						ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
-						LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+						LocationInstance &locationInst = gameData->getLocationInstance();
 						locationInst.setNameOverride("Test Dungeon");
 
 						if (!locationInst.isVisible())
@@ -438,10 +517,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int wildBlockX = random.next(RMDFile::WIDTH);
 						const int wildBlockY = random.next(RMDFile::DEPTH);
 
-						const int localCityID = random.next(32);
-						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-						const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+						const int locationIndex = GetRandomCityLocationIndex(provinceDef);
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 						if (!gameData->loadWildernessDungeon(locationDef, provinceDef, wildBlockX,
 							wildBlockY, interiorType, miscAssets.getCityDataFile(), miscAssets,
@@ -459,11 +536,15 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else if (worldType == WorldType::Wilderness)
 			{
 				// Pick a random location and province.
-				const int localCityID = random.next(32);
-				const int provinceID = random.next(8);
 				const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-				const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+				const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+				{
+					const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+					return worldMapDef.getProvinceDef(provinceIndex);
+				}();
+
+				const int locationIndex = GetRandomCityLocationIndex(provinceDef);
+				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 				const WeatherType filteredWeatherType =
