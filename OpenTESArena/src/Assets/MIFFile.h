@@ -63,7 +63,7 @@ private:
 	WEInt width;
 	SNInt depth;
 	int startingLevelIndex;
-	std::array<Double2, 4> startPoints; // Entrance locations for the level (not always full).
+	std::array<OriginalInt2, 4> startPoints; // Entrance locations for the level (not always full).
 	std::vector<MIFFile::Level> levels;
 	std::string name;
 	// Should a vector of levels be exposed, or does the caller want a nicer format?
@@ -83,9 +83,8 @@ public:
 	// Gets the name of the .MIF file.
 	const std::string &getName() const;
 
-	// Starting points for the player. The .MIF values require a division by 128 in order
-	// to become "voxel units" (including the decimal value).
-	const std::array<Double2, 4> &getStartPoints() const;
+	// Starting points for the player in special 'centimeter-like' units.
+	const std::array<OriginalInt2, 4> &getStartPoints() const;
 
 	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
 	// to be in a nicer format before handing it over to the rest of the program).

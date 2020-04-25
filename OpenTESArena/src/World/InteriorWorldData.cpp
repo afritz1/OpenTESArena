@@ -1,5 +1,6 @@
 #include "InteriorWorldData.h"
 #include "WorldType.h"
+#include "../Assets/MIFUtils.h"
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
@@ -29,10 +30,11 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	}
 
 	// Convert start points from the old coordinate system to the new one.
-	for (const Double2 &point : mif.getStartPoints())
+	for (const OriginalInt2 &point : mif.getStartPoints())
 	{
+		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
 		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-			point, mif.getDepth(), mif.getWidth()));
+			startPointReal, mif.getDepth(), mif.getWidth()));
 	}
 
 	worldData.levelIndex = mif.getStartingLevelIndex();

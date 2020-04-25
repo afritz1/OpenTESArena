@@ -78,13 +78,7 @@ bool MIFFile::init(const char *filename)
 
 		const uint16_t mifX = mifHeader.startX[i];
 		const uint16_t mifY = mifHeader.startY[i];
-		
-		// Convert the coordinates from .MIF format to voxel format. The remainder
-		// of the division is used for positioning within the voxel.
-		const double x = static_cast<double>(mifX) / MIFUtils::ARENA_UNITS;
-		const double y = static_cast<double>(mifY) / MIFUtils::ARENA_UNITS;
-
-		this->startPoints[i] = Double2(x, y);
+		this->startPoints[i] = OriginalInt2(mifX, mifY);
 	}
 
 	// Start of the level data (at each "LEVL"). Some .MIF files have multiple levels,
@@ -137,7 +131,7 @@ const std::string &MIFFile::getName() const
 	return this->name;
 }
 
-const std::array<Double2, 4> &MIFFile::getStartPoints() const
+const std::array<OriginalInt2, 4> &MIFFile::getStartPoints() const
 {
 	return this->startPoints;
 }

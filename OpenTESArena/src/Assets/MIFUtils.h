@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <string>
-#include <string_view>
+
+#include "../Math/Vector2.h"
+#include "../World/VoxelUtils.h"
 
 // Various functions for working with .MIF files.
 
@@ -22,6 +24,10 @@ namespace MIFUtils
 
 	// Returns whether the texture ID points to a chasm texture.
 	bool isChasm(int textureID);
+
+	// Converts a .MIF start point from "centimeter-like" units to real voxel units, where the
+	// fractional value is the position inside the voxel.
+	Double2 convertStartPointToReal(const OriginalInt2 &startPoint);
 
 	// Generates the filename for a main quest .MIF file given the XY province coordinates 
 	// and the province ID.

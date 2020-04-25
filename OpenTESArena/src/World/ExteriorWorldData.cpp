@@ -7,6 +7,7 @@
 #include "WeatherType.h"
 #include "VoxelUtils.h"
 #include "WorldType.h"
+#include "../Assets/MIFUtils.h"
 #include "../Assets/MiscAssets.h"
 
 #include "components/debug/Debug.h"
@@ -162,10 +163,11 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 	ExteriorWorldData worldData(std::move(levelData), isCity);
 
 	// Convert start points from the old coordinate system to the new one.
-	for (const Double2 &point : mif.getStartPoints())
+	for (const OriginalInt2 &point : mif.getStartPoints())
 	{
+		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
 		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-			point, mif.getDepth(), mif.getWidth()));
+			startPointReal, mif.getDepth(), mif.getWidth()));
 	}
 
 	worldData.mifName = mif.getName();

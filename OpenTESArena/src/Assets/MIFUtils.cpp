@@ -22,6 +22,13 @@ bool MIFUtils::isChasm(int textureID)
 		(textureID == MIFUtils::LAVA_CHASM);
 }
 
+Double2 MIFUtils::convertStartPointToReal(const OriginalInt2 &startPoint)
+{
+	return Double2(
+		static_cast<double>(startPoint.x) / MIFUtils::ARENA_UNITS,
+		static_cast<double>(startPoint.y) / MIFUtils::ARENA_UNITS);
+}
+
 std::string MIFUtils::makeMainQuestDungeonMifName(int dungeonX, int dungeonY, int provinceID)
 {
 	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
