@@ -3,6 +3,7 @@
 #include <numeric>
 #include <sstream>
 
+#include "MIFUtils.h"
 #include "MiscAssets.h"
 #include "../Entities/CharacterClassCategoryName.h"
 #include "../Items/ArmorMaterialType.h"
@@ -819,25 +820,25 @@ bool MiscAssets::initQuestionTxt()
 
 bool MiscAssets::initCityBlockMifs()
 {
-	const int codeCount = MIFFile::getCityBlockCodeCount();
-	const int variationsCount = MIFFile::getCityBlockVariationsCount();
-	const int rotationCount = MIFFile::getCityBlockRotationCount();
+	const int codeCount = MIFUtils::getCityBlockCodeCount();
+	const int variationsCount = MIFUtils::getCityBlockVariationsCount();
+	const int rotationCount = MIFUtils::getCityBlockRotationCount();
 
 	bool success = true;
 
 	// Iterate over all city block codes, variations, and rotations.
 	for (int i = 0; i < codeCount; i++)
 	{
-		const std::string &code = MIFFile::getCityBlockCode(i);
-		const int variations = MIFFile::getCityBlockVariations(i);
+		const std::string &code = MIFUtils::getCityBlockCode(i);
+		const int variations = MIFUtils::getCityBlockVariations(i);
 
 		// Variation IDs are 1-based.
 		for (int variation = 1; variation <= variations; variation++)
 		{
 			for (int k = 0; k < rotationCount; k++)
 			{
-				const std::string &rotation = MIFFile::getCityBlockRotation(k);
-				std::string mifName = MIFFile::makeCityBlockMifName(code, variation, rotation);
+				const std::string &rotation = MIFUtils::getCityBlockRotation(k);
+				std::string mifName = MIFUtils::makeCityBlockMifName(code.c_str(), variation, rotation.c_str());
 
 				// No duplicate .MIFs.
 				DebugAssert(this->cityBlockMifs.find(mifName) == this->cityBlockMifs.end());

@@ -12,6 +12,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
+#include "../Assets/MIFUtils.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
@@ -218,7 +219,7 @@ const std::string &LevelData::getName() const
 
 double LevelData::getCeilingHeight() const
 {
-	return static_cast<double>(this->inf.getCeiling().height) / MIFFile::ARENA_UNITS;
+	return static_cast<double>(this->inf.getCeiling().height) / MIFUtils::ARENA_UNITS;
 }
 
 std::vector<LevelData::FlatDef> &LevelData::getFlats()
@@ -452,18 +453,11 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 				return voxel & 0x00FF;
 			};
 
-			auto isChasm = [](int id)
-			{
-				return (id == MIFFile::DRY_CHASM) ||
-					(id == MIFFile::LAVA_CHASM) ||
-					(id == MIFFile::WET_CHASM);
-			};
-
 			const uint16_t florVoxel = getFlorVoxel(x, z);
 			const int floorTextureID = getFloorTextureID(florVoxel);
 
 			// See if the floor voxel is either solid or a chasm.
-			if (!isChasm(floorTextureID))
+			if (!MIFUtils::isChasm(floorTextureID))
 			{
 				// Get the voxel data index associated with the floor value, or add it
 				// if it doesn't exist yet.
@@ -481,25 +475,25 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 
 				const std::array<bool, 4> adjacentFaces
 				{
-					!isChasm(getFloorTextureID(northVoxel)), // North.
-					!isChasm(getFloorTextureID(eastVoxel)), // East.
-					!isChasm(getFloorTextureID(southVoxel)), // South.
-					!isChasm(getFloorTextureID(westVoxel)) // West.
+					!MIFUtils::isChasm(getFloorTextureID(northVoxel)), // North.
+					!MIFUtils::isChasm(getFloorTextureID(eastVoxel)), // East.
+					!MIFUtils::isChasm(getFloorTextureID(southVoxel)), // South.
+					!MIFUtils::isChasm(getFloorTextureID(westVoxel)) // West.
 				};
 
-				if (floorTextureID == MIFFile::DRY_CHASM)
+				if (floorTextureID == MIFUtils::DRY_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
 						florVoxel, makeDryChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
-				else if (floorTextureID == MIFFile::LAVA_CHASM)
+				else if (floorTextureID == MIFUtils::LAVA_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
 						florVoxel, makeLavaChasmVoxelDef, adjacentFaces);
 					this->setVoxel(x, 0, z, dataIndex);
 				}
-				else if (floorTextureID == MIFFile::WET_CHASM)
+				else if (floorTextureID == MIFUtils::WET_CHASM)
 				{
 					const int dataIndex = getChasmDataIndex(
 						florVoxel, makeWetChasmVoxelDef, adjacentFaces);
@@ -722,14 +716,9 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 						std::to_string(static_cast<int>(worldType)) + "\".");
 				}
 
-				const double yOffset =
-					static_cast<double>(baseOffset) / MIFFile::ARENA_UNITS;
-				const double ySize =
-					static_cast<double>(baseSize) / MIFFile::ARENA_UNITS;
-
-				const double normalizedScale =
-					static_cast<double>(inf.getCeiling().height) /
-					MIFFile::ARENA_UNITS;
+				const double yOffset = static_cast<double>(baseOffset) / MIFUtils::ARENA_UNITS;
+				const double ySize = static_cast<double>(baseSize) / MIFUtils::ARENA_UNITS;
+				const double normalizedScale = static_cast<double>(inf.getCeiling().height) / MIFUtils::ARENA_UNITS;
 				const double yOffsetNormalized = yOffset / normalizedScale;
 				const double ySizeNormalized = ySize / normalizedScale;
 
@@ -776,7 +765,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					const int fullOffset = (worldType == WorldType::Interior) ?
 						(baseOffset * 8) : ((baseOffset * 32) - 8);
 
-					return static_cast<double>(fullOffset) / MIFFile::ARENA_UNITS;
+					return static_cast<double>(fullOffset) / MIFUtils::ARENA_UNITS;
 				}();
 
 				const bool collider = (map1Voxel & 0x0100) != 0;

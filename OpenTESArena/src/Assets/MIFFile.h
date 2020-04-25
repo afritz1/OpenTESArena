@@ -71,33 +71,6 @@ private:
 public:
 	bool init(const char *filename);
 
-	// Identifiers for various chasms in Arena's voxel data.
-	static const uint8_t DRY_CHASM;
-	static const uint8_t WET_CHASM;
-	static const uint8_t LAVA_CHASM;
-
-	// This value is used for transforming .MIF coordinates to voxel coordinates. For example, 
-	// if the values in the .MIF files are centimeters, then dividing by this value converts 
-	// them to voxel coordinates (including decimal values; i.e., X=1.5 means the middle of the 
-	// voxel at X coordinate 1).
-	static constexpr double ARENA_UNITS = 128.0;
-
-	// Generates the filename for a main quest .MIF file given the XY province coordinates 
-	// and the province ID.
-	static std::string mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID);
-
-	// City block generation data functions.
-	static int getCityBlockCodeCount();
-	static int getCityBlockVariationsCount();
-	static int getCityBlockRotationCount();
-	static const std::string &getCityBlockCode(int index);
-	static int getCityBlockVariations(int index);
-	static const std::string &getCityBlockRotation(int index);
-
-	// Makes a city block .MIF filename for city generation.
-	static std::string makeCityBlockMifName(const std::string &code, int variation,
-		const std::string &rotation);
-
 	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
 	// and the height depends on MAP2 data in each level (if any -- default otherwise).
 	WEInt getWidth() const;

@@ -5,7 +5,7 @@
 #include "EntityType.h"
 #include "GenderName.h"
 #include "Player.h"
-#include "../Assets/MIFFile.h"
+#include "../Assets/MIFUtils.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
@@ -20,7 +20,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-const double Player::HEIGHT = 60.0 / MIFFile::ARENA_UNITS;
+const double Player::HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
 const double Player::DEFAULT_WALK_SPEED = 2.0;
 const double Player::DEFAULT_RUN_SPEED = 8.0;
 const double Player::STEPPING_HEIGHT = 0.25;

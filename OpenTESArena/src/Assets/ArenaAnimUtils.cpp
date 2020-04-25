@@ -5,6 +5,7 @@
 #include "DFAFile.h"
 #include "IMGFile.h"
 #include "INFFile.h"
+#include "MIFUtils.h"
 #include "MiscAssets.h"
 #include "../Entities/EntityType.h"
 #include "../Items/ArmorMaterialType.h"
@@ -315,7 +316,7 @@ void ArenaAnimUtils::makeStaticEntityAnimStates(int flatIndex, StaticAnimConditi
 
 	auto makeKeyframeDimension = [dimensionModifier](int value)
 	{
-		return (static_cast<double>(value) * dimensionModifier) / MIFFile::ARENA_UNITS;
+		return (static_cast<double>(value) * dimensionModifier) / MIFUtils::ARENA_UNITS;
 	};
 
 	// All static entity anims should have an idle state (unless they are not shown).
@@ -398,7 +399,7 @@ void ArenaAnimUtils::makeRulerAnimStates(bool rulerIsMale, const INFFile &inf,
 
 	auto makeKeyframeDimension = [](int value, double modifier)
 	{
-		return (static_cast<double>(value) * modifier) / MIFFile::ARENA_UNITS;
+		return (static_cast<double>(value) * modifier) / MIFUtils::ARENA_UNITS;
 	};
 
 	EntityAnimationData::State idleState = makeAnimState(
@@ -452,7 +453,7 @@ void ArenaAnimUtils::makeStreetlightAnimStates(const INFFile &inf, const ExeData
 
 	auto makeKeyframeDimension = [](int value, double modifier)
 	{
-		return (static_cast<double>(value) * modifier) / MIFFile::ARENA_UNITS;
+		return (static_cast<double>(value) * modifier) / MIFUtils::ARENA_UNITS;
 	};
 
 	// Idle state animation.
@@ -546,8 +547,8 @@ void ArenaAnimUtils::makeDynamicEntityAnimStates(int flatIndex, const INFFile &i
 
 		int baseWidth, baseHeight;
 		getBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
-		*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-		*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
+		*outWidth = static_cast<double>(baseWidth) / MIFUtils::ARENA_UNITS;
+		*outHeight = static_cast<double>(baseHeight) / MIFUtils::ARENA_UNITS;
 	};
 
 	// Lambda for converting human dimensions to the in-engine values.
@@ -556,8 +557,8 @@ void ArenaAnimUtils::makeDynamicEntityAnimStates(int flatIndex, const INFFile &i
 		const uint16_t humanScale = 256;
 		int baseWidth, baseHeight;
 		getBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
-		*outWidth = static_cast<double>(baseWidth) / MIFFile::ARENA_UNITS;
-		*outHeight = static_cast<double>(baseHeight) / MIFFile::ARENA_UNITS;
+		*outWidth = static_cast<double>(baseWidth) / MIFUtils::ARENA_UNITS;
+		*outHeight = static_cast<double>(baseHeight) / MIFUtils::ARENA_UNITS;
 	};
 
 	// Write animation states for idle, look, and walk for the given anim direction.
@@ -960,8 +961,8 @@ void ArenaAnimUtils::makeDynamicEntityAnimStates(int flatIndex, const INFFile &i
 			deathState.setTextureName(std::string(animName));
 
 			// Human corpse is not affected by human scaling values.
-			const double width = static_cast<double>(img.getWidth()) / MIFFile::ARENA_UNITS;
-			const double height = static_cast<double>(img.getHeight()) / MIFFile::ARENA_UNITS;
+			const double width = static_cast<double>(img.getWidth()) / MIFUtils::ARENA_UNITS;
+			const double height = static_cast<double>(img.getHeight()) / MIFUtils::ARENA_UNITS;
 			const int textureID = 0;
 
 			EntityAnimationData::Keyframe keyframe(width, height, textureID);
@@ -1002,7 +1003,7 @@ void ArenaAnimUtils::makeCitizenAnimStates(bool isMale, ClimateType climateType,
 {
 	auto makeKeyframeDimension = [](int value)
 	{
-		return static_cast<double>(value) / MIFFile::ARENA_UNITS;
+		return static_cast<double>(value) / MIFUtils::ARENA_UNITS;
 	};
 
 	// Index into citizen animation filenames, depends on the climate and gender.

@@ -3,7 +3,7 @@
 
 #include "EntityManager.h"
 #include "EntityType.h"
-#include "../Assets/MIFFile.h"
+#include "../Assets/MIFUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
@@ -647,7 +647,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 	const double entityPosX = entityPos.x;
 	const double entityPosZ = entityPos.y;
 
-	const double flatYOffset = static_cast<double>(-entityDef.getInfData().yOffset) / MIFFile::ARENA_UNITS;
+	const double flatYOffset = static_cast<double>(-entityDef.getInfData().yOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()

@@ -6,7 +6,7 @@
 #include "VoxelDataType.h"
 #include "VoxelFacing.h"
 #include "../Assets/INFFile.h"
-#include "../Assets/MIFFile.h"
+#include "../Assets/MIFUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -127,7 +127,7 @@ bool VoxelDefinition::WallData::menuHasDisplayName(MenuType menuType)
 }
 
 const double VoxelDefinition::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
-	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFFile::ARENA_UNITS;
+	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFUtils::ARENA_UNITS;
 
 bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 {

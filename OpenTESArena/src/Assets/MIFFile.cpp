@@ -4,6 +4,7 @@
 
 #include "Compression.h"
 #include "MIFFile.h"
+#include "MIFUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -43,22 +44,12 @@ namespace
 		{ Tag_TARG, MIFFile::Level::loadTARG },
 		{ Tag_TRIG, MIFFile::Level::loadTRIG }
 	};
-
-	// City block generation data, used by city generation. The order of data is tightly coupled
-	// with the original generation algorithm.
-	const std::array<std::string, 7> CityBlockCodes = { "EQ", "MG", "NB", "TP", "TV", "TS", "BS" };
-	const std::array<int, 7> CityBlockVariations = { 13, 11, 10, 12, 15, 11, 20 };
-	const std::array<std::string, 4> CityBlockRotations = { "A", "B", "C", "D" };
 }
 
 MIFFile::Level::Level()
 {
 	this->numf = 0;
 }
-
-const uint8_t MIFFile::DRY_CHASM = 0xC;
-const uint8_t MIFFile::WET_CHASM = 0xD;
-const uint8_t MIFFile::LAVA_CHASM = 0xE;
 
 bool MIFFile::init(const char *filename)
 {
@@ -90,8 +81,8 @@ bool MIFFile::init(const char *filename)
 		
 		// Convert the coordinates from .MIF format to voxel format. The remainder
 		// of the division is used for positioning within the voxel.
-		const double x = static_cast<double>(mifX) / MIFFile::ARENA_UNITS;
-		const double y = static_cast<double>(mifY) / MIFFile::ARENA_UNITS;
+		const double x = static_cast<double>(mifX) / MIFUtils::ARENA_UNITS;
+		const double y = static_cast<double>(mifY) / MIFUtils::ARENA_UNITS;
 
 		this->startPoints[i] = Double2(x, y);
 	}
@@ -119,52 +110,6 @@ bool MIFFile::init(const char *filename)
 	this->startingLevelIndex = mifHeader.startingLevelIndex;
 	this->name = filename;
 	return true;
-}
-
-std::string MIFFile::mainQuestDungeonFilename(int dungeonX, int dungeonY, int provinceID)
-{
-	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
-	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
-	const std::string mifName = std::to_string(mifID) + ".MIF";
-	return mifName;
-}
-
-int MIFFile::getCityBlockCodeCount()
-{
-	return static_cast<int>(CityBlockCodes.size());
-}
-
-int MIFFile::getCityBlockVariationsCount()
-{
-	return static_cast<int>(CityBlockVariations.size());
-}
-
-int MIFFile::getCityBlockRotationCount()
-{
-	return static_cast<int>(CityBlockRotations.size());
-}
-
-const std::string &MIFFile::getCityBlockCode(int index)
-{
-	DebugAssertIndex(CityBlockCodes, index);
-	return CityBlockCodes[index];
-}
-
-int MIFFile::getCityBlockVariations(int index)
-{
-	DebugAssertIndex(CityBlockVariations, index);
-	return CityBlockVariations[index];
-}
-
-const std::string &MIFFile::getCityBlockRotation(int index)
-{
-	DebugAssertIndex(CityBlockRotations, index);
-	return CityBlockRotations[index];
-}
-
-std::string MIFFile::makeCityBlockMifName(const std::string &code, int variation, const std::string &rotation)
-{
-	return code + "BD" + std::to_string(variation) + rotation + ".MIF";
 }
 
 WEInt MIFFile::getWidth() const

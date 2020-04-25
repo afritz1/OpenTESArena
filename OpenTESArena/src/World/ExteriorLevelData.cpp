@@ -4,6 +4,7 @@
 #include "ExteriorLevelData.h"
 #include "WorldType.h"
 #include "../Assets/COLFile.h"
+#include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 #include "../Media/PaletteFile.h"
@@ -118,13 +119,13 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, EWInt gridD
 		if (block != BlockType::Reserved)
 		{
 			const int blockIndex = static_cast<int>(block) - 2;
-			const std::string &blockCode = MIFFile::getCityBlockCode(blockIndex);
-			const std::string &rotation = MIFFile::getCityBlockRotation(
-				random.next() % MIFFile::getCityBlockRotationCount());
-			const int variationCount = MIFFile::getCityBlockVariations(blockIndex);
+			const std::string &blockCode = MIFUtils::getCityBlockCode(blockIndex);
+			const std::string &rotation = MIFUtils::getCityBlockRotation(
+				random.next() % MIFUtils::getCityBlockRotationCount());
+			const int variationCount = MIFUtils::getCityBlockVariations(blockIndex);
 			const int variation = std::max(random.next() % variationCount, 1);
-			const std::string blockMifName = MIFFile::makeCityBlockMifName(
-				blockCode, variation, rotation);
+			const std::string blockMifName = MIFUtils::makeCityBlockMifName(
+				blockCode.c_str(), variation, rotation.c_str());
 
 			// Load the block's .MIF data into the level.
 			const auto &cityBlockMifs = miscAssets.getCityBlockMifs();
