@@ -834,9 +834,9 @@ void ExteriorLevelData::reviseWildernessCity(const LocationDefinition &locationD
 	}
 
 	// Transform city voxels based on the wilderness rules.
-	for (int x = 0; x < mif.getWidth(); x++)
+	for (WEInt x = 0; x < mif.getWidth(); x++)
 	{
-		for (int z = 0; z < mif.getDepth(); z++)
+		for (SNInt z = 0; z < mif.getDepth(); z++)
 		{
 			const int index = DebugMakeIndex(cityFlor, z + (x * mif.getDepth()));
 			uint16_t &map1Voxel = cityMap1[index];
@@ -878,7 +878,7 @@ void ExteriorLevelData::reviseWildernessCity(const LocationDefinition &locationD
 	}
 
 	// Write city buffers into the wilderness.
-	for (int z = 0; z < mif.getDepth(); z++)
+	for (SNInt z = 0; z < mif.getDepth(); z++)
 	{
 		const int srcIndex = DebugMakeIndex(cityFlor, z * mif.getWidth());
 		const int dstIndex = xOffset + ((z + zOffset) * flor.getWidth());

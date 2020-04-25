@@ -8,6 +8,7 @@
 
 #include "ArenaTypes.h"
 #include "../Math/Vector2.h"
+#include "../World/VoxelUtils.h"
 
 // A MIF file contains map information. It defines the dimensions of a particular area 
 // and which voxels have which IDs, as well as some other data. It is normally paired with 
@@ -59,7 +60,8 @@ public:
 		static int loadTRIG(MIFFile::Level &level, const uint8_t *tagStart);
 	};
 private:
-	int width, depth;
+	WEInt width;
+	SNInt depth;
 	int startingLevelIndex;
 	std::array<Double2, 4> startPoints; // Entrance locations for the level (not always full).
 	std::vector<MIFFile::Level> levels;
@@ -98,9 +100,9 @@ public:
 
 	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
 	// and the height depends on MAP2 data in each level (if any -- default otherwise).
-	int getWidth() const;
+	WEInt getWidth() const;
 	int getHeight(int levelIndex) const;
-	int getDepth() const;
+	SNInt getDepth() const;
 
 	// Gets the starting level when the player enters the area.
 	int getStartingLevelIndex() const;

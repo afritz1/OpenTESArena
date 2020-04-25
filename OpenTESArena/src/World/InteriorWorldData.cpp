@@ -103,8 +103,8 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	const std::string infName = String::toUppercase(mif.getLevels().front().info);
 
 	InteriorWorldData worldData;
-	const int gridWidth = mif.getDepth() * depthChunks;
-	const int gridDepth = mif.getWidth() * widthChunks;
+	const NSInt gridWidth = mif.getDepth() * depthChunks;
+	const EWInt gridDepth = mif.getWidth() * widthChunks;
 
 	// Generate each level, deciding which dungeon blocks to use.
 	for (int i = 0; i < levelCount; i++)

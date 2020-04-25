@@ -167,7 +167,7 @@ std::string MIFFile::makeCityBlockMifName(const std::string &code, int variation
 	return code + "BD" + std::to_string(variation) + rotation + ".MIF";
 }
 
-int MIFFile::getWidth() const
+WEInt MIFFile::getWidth() const
 {
 	return this->width;
 }
@@ -177,7 +177,7 @@ int MIFFile::getHeight(int levelIndex) const
 	return this->levels.at(levelIndex).getHeight();
 }
 
-int MIFFile::getDepth() const
+SNInt MIFFile::getDepth() const
 {
 	return this->depth;
 }
