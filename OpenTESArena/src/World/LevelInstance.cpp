@@ -5,6 +5,7 @@
 void LevelInstance::init()
 {
 	this->changedVoxels.clear();
+	this->voxelInsts.clear();
 }
 
 Int3 LevelInstance::makeVoxelCoord(WEInt x, int y, SNInt z)
@@ -45,10 +46,21 @@ int LevelInstance::getChangedVoxelCount() const
 	return static_cast<int>(this->changedVoxels.size());
 }
 
-const LevelInstance::ChangedVoxel &LevelInstance::getChangedVoxelAt(int index) const
+const LevelInstance::ChangedVoxel &LevelInstance::getChangedVoxel(int index) const
 {
 	DebugAssertIndex(this->changedVoxels, index);
 	return this->changedVoxels[index];
+}
+
+int LevelInstance::getVoxelInstanceCount() const
+{
+	return static_cast<int>(this->voxelInsts.size());
+}
+
+VoxelInstance &LevelInstance::getVoxelInstance(int index)
+{
+	DebugAssertIndex(this->voxelInsts, index);
+	return this->voxelInsts[index];
 }
 
 LevelDefinition::VoxelID LevelInstance::getVoxel(WEInt x, int y, SNInt z,
@@ -71,4 +83,19 @@ void LevelInstance::setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::Vo
 		const Int3 voxelCoord = LevelInstance::makeVoxelCoord(x, y, z);
 		this->changedVoxels.push_back(std::make_pair(voxelCoord, voxelID));
 	}
+}
+
+void LevelInstance::update(double dt)
+{
+	// @todo: reverse iterate over voxel instances, removing ones that are finished doing
+	// their animation, etc.. See LevelData::updateFadingVoxels() for reference.
+	// @todo: when updating adjacent chasms, add new voxel definitions to the level definition
+	// if necessary. It's okay to mutate the level def because new chasm permutations aren't
+	// really "instance data" -- they belong in the level def in the first place.
+	/*for (VoxelInstance &voxelInst : this->voxelInsts)
+	{
+		voxelInst.update(dt);
+	}*/
+
+	DebugNotImplemented();
 }
