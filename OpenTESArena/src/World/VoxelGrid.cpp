@@ -44,16 +44,6 @@ bool VoxelGrid::coordIsValid(NSInt x, int y, EWInt z) const
 		(z >= 0) && (z < this->depth);
 }
 
-uint16_t *VoxelGrid::getVoxels()
-{
-	return this->voxels.data();
-}
-
-const uint16_t *VoxelGrid::getVoxels() const
-{
-	return this->voxels.data();
-}
-
 uint16_t VoxelGrid::getVoxel(NSInt x, int y, EWInt z) const
 {
 	const int index = this->getIndex(x, y, z);

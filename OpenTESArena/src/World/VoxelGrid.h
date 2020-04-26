@@ -40,10 +40,6 @@ public:
 	// Returns whether the given coordinate lies within the voxel grid.
 	bool coordIsValid(NSInt x, int y, EWInt z) const;
 
-	// Gets a pointer to the voxel grid data.
-	uint16_t *getVoxels();
-	const uint16_t *getVoxels() const;
-
 	// Convenience method for getting a voxel's ID.
 	uint16_t getVoxel(NSInt x, int y, EWInt z) const;
 
