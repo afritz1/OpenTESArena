@@ -10,6 +10,9 @@ using ChunkInt2 = Int2; // +X east, +Y south, [-inf, inf] (like a C array, origi
 using ChunkVoxelInt2 = Int2; // Same directions as chunk, [0, CHUNK_DIM-1].
 using AbsoluteChunkVoxelInt2 = Int2; // Chunk voxel multiplied by chunk coordinates, [-inf, inf].
 
+using OriginalDouble2 = Double2; // +X west, +Y south.
+using NewDouble2 = Double2; // +X north, +Y east.
+
 struct ChunkCoord
 {
 	ChunkInt2 chunk;
