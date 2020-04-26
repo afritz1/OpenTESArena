@@ -45,7 +45,7 @@ constexpr int Chunk::getDepth() const
 	return Chunk::DEPTH;
 }
 
-VoxelID Chunk::get(int x, int y, int z) const
+Chunk::VoxelID Chunk::get(int x, int y, int z) const
 {
 	return this->voxels.get(x, y, z);
 }
@@ -68,7 +68,7 @@ void Chunk::set(int x, int y, int z, VoxelID value)
 	this->voxels.set(x, y, z, value);
 }
 
-VoxelID Chunk::addVoxelDef(VoxelDefinition &&voxelDef)
+Chunk::VoxelID Chunk::addVoxelDef(VoxelDefinition &&voxelDef)
 {
 	// Find a place to add the voxel data.
 	const auto iter = std::find(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), false);

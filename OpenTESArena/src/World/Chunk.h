@@ -3,20 +3,21 @@
 
 #include <array>
 #include <cstdint>
+#include <limits>
 
 #include "VoxelDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
-// There should be fewer than 256 unique voxel types per chunk. If we need more, then the data
-// can be redesigned to be something like 9 bits per voxel (and the ID type would be 16-bit).
-using VoxelID = uint8_t;
-
 // A chunk is a 3D set of voxels for each part of the world, for both interiors and exteriors.
 class Chunk
 {
+public:
+	// There should be fewer than 256 unique voxel types per chunk. If more are needed, then the data
+	// can be redesigned to be something like 9 bits per voxel (and the ID type would be 16-bit).
+	using VoxelID = uint8_t;
 private:
-	static constexpr int MAX_VOXEL_DEFS = 256;
+	static constexpr int MAX_VOXEL_DEFS = std::numeric_limits<VoxelID>::max() + 1;
 
 	// Indices into voxel definitions. Size depends on whether it's an interior or exterior.
 	Buffer3D<VoxelID> voxels;
@@ -45,7 +46,7 @@ public:
 	VoxelID get(int x, int y, int z) const;
 
 	// Gets the voxel definition associated with a voxel ID.
-	const VoxelDefinition &getVoxelDef(VoxelID id) const;
+	const VoxelDefinition &getVoxelDef(Chunk::VoxelID id) const;
 
 	// Gets the number of active voxel definitions.
 	int debug_getVoxelDefCount() const;
