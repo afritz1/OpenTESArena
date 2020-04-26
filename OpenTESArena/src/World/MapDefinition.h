@@ -1,12 +1,12 @@
 #ifndef MAP_DEFINITION_H
 #define MAP_DEFINITION_H
 
-#include <cstdint>
+#include <vector>
 
+#include "LevelDefinition.h"
 #include "VoxelUtils.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer3D.h"
 
 // Modern replacement for .MIF files and .RMD files. Helps create a buffer between how the 
 // game world is defined and how it's represented in-engine, so that it doesn't care about
@@ -17,28 +17,9 @@ class RMDFile;
 
 class MapDefinition
 {
-public:
-	// 2 bytes per voxel because the map might be bigger than a chunk.
-	using VoxelID = uint16_t;
-
-	// Don't store things like chasm permutations. Unbaked voxels only.
-	class Level
-	{
-	private:
-		Buffer3D<VoxelID> voxels;
-		// @todo: entity lists
-		// @todo: locks
-		// @todo: triggers
-	public:
-		int getHeight() const;
-		VoxelID getVoxel(WEInt x, int y, SNInt z) const;
-		void setVoxel(WEInt x, int y, SNInt z, VoxelID voxel);
-
-		void init(WEInt width, int height, SNInt depth);
-	};
 private:
-	Buffer<Level> levels;
-	std::vector<OriginalInt2> startPoints;
+	Buffer<LevelDefinition> levels;
+	std::vector<OriginalDouble2> startPoints;
 	WEInt width;
 	SNInt depth;
 	int startLevelIndex;
@@ -58,7 +39,7 @@ public:
 	SNInt getDepth() const;
 	int getStartLevelIndex() const;
 	int getLevelCount() const;
-	const Level &getLevel(int index) const;
+	const LevelDefinition &getLevel(int index) const;
 };
 
 #endif
