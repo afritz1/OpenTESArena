@@ -12,6 +12,9 @@ VoxelGrid::VoxelGrid(NSInt width, int height, EWInt depth)
 	this->width = width;
 	this->height = height;
 	this->depth = depth;
+
+	// Add empty (air) voxel definition by default.
+	this->addVoxelDef(VoxelDefinition());
 }
 
 int VoxelGrid::getIndex(NSInt x, int y, EWInt z) const

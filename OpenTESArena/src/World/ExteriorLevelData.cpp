@@ -946,9 +946,6 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.name);
 
-	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
-
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	const auto &exeData = miscAssets.getExeData();
 	const INFFile &inf = levelData.getInfFile();
@@ -1034,9 +1031,6 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	const std::string levelName = "WILD"; // Arbitrary
 	ExteriorLevelData levelData(tempFlor.getWidth(), levelHeight, tempFlor.getHeight(),
 		infName, levelName);
-
-	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	const auto &exeData = miscAssets.getExeData();

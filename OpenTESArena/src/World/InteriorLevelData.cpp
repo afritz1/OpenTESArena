@@ -35,9 +35,6 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, i
 	levelData.skyColor = levelData.isOutdoorDungeon() ?
 		Color::Gray.toARGB() : Color::Black.toARGB();
 
-	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
-
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
@@ -167,9 +164,6 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Interior sky color (always black for dungeons).
 	// @todo: use actual color from palette.
 	levelData.skyColor = Color::Black.toARGB();
-
-	// Empty voxel data (for air).
-	levelData.getVoxelGrid().addVoxelDef(VoxelDefinition());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
