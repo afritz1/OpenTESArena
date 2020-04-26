@@ -9,6 +9,8 @@
 
 #include "components/utilities/Buffer3D.h"
 
+// A single level of a map with voxels, entities, etc..
+
 class LevelDefinition
 {
 public:
