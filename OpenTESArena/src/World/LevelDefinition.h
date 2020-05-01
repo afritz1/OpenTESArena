@@ -46,7 +46,7 @@ public:
 	// Gets the voxel definition associated with an ID. Note that the voxel definitions list in
 	// a level definition is read-only -- any new ones added in-game (like new chasm permutations)
 	// must go in the level instance.
-	const VoxelDefinition &getVoxelDef(uint16_t id) const;
+	const VoxelDefinition &getVoxelDef(VoxelID id) const;
 
 	VoxelID getVoxel(WEInt x, int y, SNInt z) const;
 	void setVoxel(WEInt x, int y, SNInt z, VoxelID voxel);

@@ -52,7 +52,8 @@ const LevelInstance::ChangedVoxel &LevelInstance::getChangedVoxel(int index) con
 	return this->changedVoxels[index];
 }
 
-const VoxelDefinition &LevelInstance::getVoxelDef(uint16_t id, const LevelDefinition &levelDef) const
+const VoxelDefinition &LevelInstance::getVoxelDef(LevelDefinition::VoxelID id,
+	const LevelDefinition &levelDef) const
 {
 	const int baseVoxelDefCount = levelDef.getVoxelDefCount();
 	const bool useBaseVoxelDefs = id < baseVoxelDefCount;
@@ -62,7 +63,7 @@ const VoxelDefinition &LevelInstance::getVoxelDef(uint16_t id, const LevelDefini
 	}
 	else
 	{
-		const int index = id - baseVoxelDefCount;
+		const int index = static_cast<int>(id) - baseVoxelDefCount;
 		DebugAssertIndex(this->voxelDefAdditions, index);
 		return this->voxelDefAdditions[index];
 	}

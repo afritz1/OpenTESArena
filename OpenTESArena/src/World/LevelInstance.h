@@ -30,7 +30,7 @@ public:
 
 	// Gets the voxel definition associated with an ID. The ID can be pointing to either a voxel
 	// definition in the level definition or a new voxel definition in this level instance.
-	const VoxelDefinition &getVoxelDef(uint16_t id, const LevelDefinition &levelDef) const;
+	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelID id, const LevelDefinition &levelDef) const;
 
 	int getVoxelInstanceCount() const;
 	VoxelInstance &getVoxelInstance(int index);
