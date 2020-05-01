@@ -40,6 +40,14 @@ public:
 	int getHeight() const;
 	SNInt getDepth() const;
 
+	// Gets the number of voxel definitions for the level.
+	int getVoxelDefCount() const;
+
+	// Gets the voxel definition associated with an ID. Note that the voxel definitions list in
+	// a level definition is read-only -- any new ones added in-game (like new chasm permutations)
+	// must go in the level instance.
+	const VoxelDefinition &getVoxelDef(uint16_t id) const;
+
 	VoxelID getVoxel(WEInt x, int y, SNInt z) const;
 	void setVoxel(WEInt x, int y, SNInt z, VoxelID voxel);
 };

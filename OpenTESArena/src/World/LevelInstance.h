@@ -15,6 +15,7 @@ public:
 	using ChangedVoxel = std::pair<Int3, LevelDefinition::VoxelID>;
 private:
 	std::vector<ChangedVoxel> changedVoxels;
+	std::vector<VoxelDefinition> voxelDefAdditions; // Voxel defs generated after the level definition's.
 	std::vector<VoxelInstance> voxelInsts;
 
 	static Int3 makeVoxelCoord(WEInt x, int y, SNInt z);
@@ -27,6 +28,10 @@ public:
 	int getChangedVoxelCount() const;
 	const ChangedVoxel &getChangedVoxel(int index) const;
 
+	// Gets the voxel definition associated with an ID. The ID can be pointing to either a voxel
+	// definition in the level definition or a new voxel definition in this level instance.
+	const VoxelDefinition &getVoxelDef(uint16_t id, const LevelDefinition &levelDef) const;
+
 	int getVoxelInstanceCount() const;
 	VoxelInstance &getVoxelInstance(int index);
 
@@ -35,6 +40,9 @@ public:
 	LevelDefinition::VoxelID getVoxel(WEInt x, int y, SNInt z, const LevelDefinition &levelDef) const;
 
 	void setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::VoxelID voxelID);
+
+	// Adds a voxel definition and returns its assigned ID.
+	uint16_t addVoxelDef(const VoxelDefinition &voxelDef);
 
 	void update(double dt);
 };

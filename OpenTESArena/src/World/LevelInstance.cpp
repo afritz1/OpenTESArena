@@ -52,6 +52,22 @@ const LevelInstance::ChangedVoxel &LevelInstance::getChangedVoxel(int index) con
 	return this->changedVoxels[index];
 }
 
+const VoxelDefinition &LevelInstance::getVoxelDef(uint16_t id, const LevelDefinition &levelDef) const
+{
+	const int baseVoxelDefCount = levelDef.getVoxelDefCount();
+	const bool useBaseVoxelDefs = id < baseVoxelDefCount;
+	if (useBaseVoxelDefs)
+	{
+		return levelDef.getVoxelDef(id);
+	}
+	else
+	{
+		const int index = id - baseVoxelDefCount;
+		DebugAssertIndex(this->voxelDefAdditions, index);
+		return this->voxelDefAdditions[index];
+	}
+}
+
 int LevelInstance::getVoxelInstanceCount() const
 {
 	return static_cast<int>(this->voxelInsts.size());
