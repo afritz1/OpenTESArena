@@ -102,6 +102,12 @@ void LevelInstance::setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::Vo
 	}
 }
 
+LevelDefinition::VoxelID LevelInstance::addVoxelDef(const VoxelDefinition &voxelDef)
+{
+	this->voxelDefAdditions.push_back(voxelDef);
+	return static_cast<LevelDefinition::VoxelID>(this->voxelDefAdditions.size() - 1);
+}
+
 void LevelInstance::update(double dt)
 {
 	// @todo: reverse iterate over voxel instances, removing ones that are finished doing

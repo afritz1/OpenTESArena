@@ -42,7 +42,7 @@ public:
 	void setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::VoxelID voxelID);
 
 	// Adds a voxel definition and returns its assigned ID.
-	uint16_t addVoxelDef(const VoxelDefinition &voxelDef);
+	LevelDefinition::VoxelID addVoxelDef(const VoxelDefinition &voxelDef);
 
 	void update(double dt);
 };
