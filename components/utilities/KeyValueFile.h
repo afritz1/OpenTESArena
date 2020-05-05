@@ -3,7 +3,7 @@
 
 #include <string>
 #include <string_view>
-#include <unordered_map>
+#include <vector>
 
 // A key-value map reads in a key-value pair file that uses the "key = value" syntax.
 // Pairs are associated with a section and can be listed in the file in any order.
@@ -12,13 +12,26 @@
 class KeyValueFile
 {
 public:
-	typedef std::unordered_map<std::string, std::string> SectionMap;
-private:
-	// Each section has a map of key-value pairs.
-	std::unordered_map<std::string, SectionMap> sectionMaps;
+	class Section
+	{
+	private:
+		std::vector<std::pair<std::string, std::string>> pairs;
 
-	// Use this function to access the section maps since it does error checking.
-	bool tryGetValue(const std::string &section, const std::string &key, std::string_view &value) const;
+		bool tryGetValue(const std::string &key, std::string_view &value) const;
+	public:
+		int getPairCount() const;
+		const std::pair<std::string, std::string> &getPair(int index) const;
+
+		bool tryGetBoolean(const std::string &key, bool &value) const;
+		bool tryGetInteger(const std::string &key, int &value) const;
+		bool tryGetDouble(const std::string &key, double &value) const;
+		bool tryGetString(const std::string &key, std::string_view &value) const;
+
+		void add(std::string &&key, std::string &&value);
+		void clear();
+	};
+private:
+	std::vector<std::pair<std::string, Section>> sections;
 public:
 	// These are public so other code can use them (i.e., for options writing).
 	static const char COMMENT;
@@ -28,14 +41,10 @@ public:
 
 	bool init(const char *filename);
 
-	// Typed getter methods for convenience.
-	bool tryGetBoolean(const std::string &section, const std::string &key, bool &value) const;
-	bool tryGetInteger(const std::string &section, const std::string &key, int &value) const;
-	bool tryGetDouble(const std::string &section, const std::string &key, double &value) const;
-	bool tryGetString(const std::string &section, const std::string &key, std::string_view &value) const;
-
-	// Gets a reference to all section maps. Intended for iteration.
-	const std::unordered_map<std::string, SectionMap> &getAll() const;
+	int getSectionCount() const;
+	const std::string &getSectionName(int index) const;
+	const Section &getSection(int index) const;
+	const Section *getSectionByName(const std::string &name) const;
 };
 
 #endif

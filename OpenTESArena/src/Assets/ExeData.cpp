@@ -737,18 +737,21 @@ const std::string ExeData::CD_VERSION_EXE_FILENAME = "ACD.EXE";
 const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.txt";
 const char ExeData::PAIR_SEPARATOR = ',';
 
-int ExeData::get(const std::string &section, const std::string &key,
+int ExeData::get(const std::string &sectionName, const std::string &key,
 	const KeyValueFile &keyValueFile)
 {
+	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	DebugAssert(section != nullptr);
+
 	std::string_view valueStr;
-	if (!keyValueFile.tryGetString(section, key, valueStr))
+	if (!section->tryGetString(key, valueStr))
 	{
-		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section + "\").");
+		DebugCrash("Couldn't get \"" + key + "\" (section \"" + sectionName + "\").");
 	}
 
 	// Make sure the value only has an offset and isn't an offset + length pair.
 	DebugAssertMsg(valueStr.find(ExeData::PAIR_SEPARATOR) == std::string_view::npos,
-		"\"" + key + "\" (section \"" + section + "\") should only have an offset.");
+		"\"" + key + "\" (section \"" + sectionName + "\") should only have an offset.");
 
 	int offset;
 
@@ -758,20 +761,23 @@ int ExeData::get(const std::string &section, const std::string &key,
 	return offset;
 }
 
-std::pair<int, int> ExeData::getPair(const std::string &section, const std::string &key,
+std::pair<int, int> ExeData::getPair(const std::string &sectionName, const std::string &key,
 	const KeyValueFile &keyValueFile)
 {
+	const KeyValueFile::Section *section = keyValueFile.getSectionByName(sectionName);
+	DebugAssert(section != nullptr);
+
 	std::string_view valueStr;
-	if (!keyValueFile.tryGetString(section, key, valueStr))
+	if (!section->tryGetString(key, valueStr))
 	{
-		DebugCrash("Couldn't get \"" + key + "\" (section \"" + section + "\").");
+		DebugCrash("Couldn't get \"" + key + "\" (section \"" + sectionName + "\").");
 	}
 
 	// Make sure the value has a comma-separated offset + length pair.
 	std::array<std::string_view, 2> tokens;
 	if (!StringView::splitExpected(valueStr, ExeData::PAIR_SEPARATOR, tokens))
 	{
-		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section + "\").");
+		DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + sectionName + "\").");
 	}
 
 	const std::string_view &offsetStr = tokens[0];

@@ -521,11 +521,11 @@ private:
 	static const char PAIR_SEPARATOR;
 
 	// Gets the offset value from the given section and key.
-	static int get(const std::string &section, const std::string &key,
+	static int get(const std::string &sectionName, const std::string &key,
 		const KeyValueFile &keyValueFile);
 
 	// Gets the offset + length value from the given section and key.
-	static std::pair<int, int> getPair(const std::string &section, const std::string &key,
+	static std::pair<int, int> getPair(const std::string &sectionName, const std::string &key,
 		const KeyValueFile &keyValueFile);
 
 	static int8_t readInt8(const char *data);
