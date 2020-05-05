@@ -7,6 +7,16 @@
 #include "StringView.h"
 #include "../debug/Debug.h"
 
+void KeyValueFile::Section::init(std::string &&name)
+{
+	this->name = std::move(name);
+}
+
+const std::string &KeyValueFile::Section::getName() const
+{
+	return this->name;
+}
+
 int KeyValueFile::Section::getPairCount() const
 {
 	return static_cast<int>(this->pairs.size());
@@ -217,16 +227,18 @@ bool KeyValueFile::init(const char *filename)
 				sectionName = StringView::trimFront(StringView::trimBack(sectionName));
 
 				const auto sectionIter = std::find_if(this->sections.begin(), this->sections.end(),
-					[&sectionName](const auto &pair)
+					[&sectionName](const Section &section)
 				{
-					return pair.first == sectionName;
+					return section.getName() == sectionName;
 				});
 
 				// If the section is new, add it to the section maps.
 				if (sectionIter == this->sections.end())
 				{
-					this->sections.push_back(std::make_pair(std::string(sectionName), Section()));
-					activeSection = &this->sections.back().second;
+					Section section;
+					section.init(std::string(sectionName));
+					this->sections.push_back(std::move(section));
+					activeSection = &this->sections.back();
 				}
 				else
 				{
@@ -288,11 +300,9 @@ bool KeyValueFile::init(const char *filename)
 
 	// Sort for binary search.
 	std::sort(this->sections.begin(), this->sections.end(),
-		[](const auto &pairA, const auto &pairB)
+		[](const Section &sectionA, const Section &sectionB)
 	{
-		const std::string &strA = pairA.first;
-		const std::string &strB = pairB.first;
-		return strA < strB;
+		return sectionA.getName() < sectionB.getName();
 	});
 
 	return true;
@@ -303,28 +313,19 @@ int KeyValueFile::getSectionCount() const
 	return static_cast<int>(this->sections.size());
 }
 
-const std::string &KeyValueFile::getSectionName(int index) const
-{
-	DebugAssertIndex(this->sections, index);
-	return this->sections[index].first;
-}
-
 const KeyValueFile::Section &KeyValueFile::getSection(int index) const
 {
 	DebugAssertIndex(this->sections, index);
-	return this->sections[index].second;
+	return this->sections[index];
 }
 
 const KeyValueFile::Section *KeyValueFile::getSectionByName(const std::string &name) const
 {
-	const std::pair<std::string, Section> searchPair(name, Section());
-	const auto iter = std::lower_bound(this->sections.begin(), this->sections.end(), searchPair,
-		[](const auto &pairA, const auto &pairB)
+	const auto iter = std::lower_bound(this->sections.begin(), this->sections.end(), name,
+		[](const Section &section, const std::string &str)
 	{
-		const std::string_view strA = pairA.first;
-		const std::string_view strB = pairB.first;
-		return strA < strB;
+		return section.getName() < str;
 	});
 
-	return (iter != this->sections.end()) ? &iter->second : nullptr;
+	return (iter != this->sections.end()) ? &(*iter) : nullptr;
 }

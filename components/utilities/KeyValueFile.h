@@ -15,10 +15,14 @@ public:
 	class Section
 	{
 	private:
+		std::string name;
 		std::vector<std::pair<std::string, std::string>> pairs;
 
 		bool tryGetValue(const std::string &key, std::string_view &value) const;
 	public:
+		void init(std::string &&name);
+
+		const std::string &getName() const;
 		int getPairCount() const;
 		const std::pair<std::string, std::string> &getPair(int index) const;
 
@@ -31,7 +35,7 @@ public:
 		void clear();
 	};
 private:
-	std::vector<std::pair<std::string, Section>> sections;
+	std::vector<Section> sections;
 public:
 	// These are public so other code can use them (i.e., for options writing).
 	static const char COMMENT;
@@ -42,7 +46,6 @@ public:
 	bool init(const char *filename);
 
 	int getSectionCount() const;
-	const std::string &getSectionName(int index) const;
 	const Section &getSection(int index) const;
 	const Section *getSectionByName(const std::string &name) const;
 };

@@ -120,8 +120,8 @@ void Options::load(const char *filename,
 
 	for (int sectionIndex = 0; sectionIndex < keyValueFile.getSectionCount(); sectionIndex++)
 	{
-		const std::string &sectionName = keyValueFile.getSectionName(sectionIndex);
 		const KeyValueFile::Section &section = keyValueFile.getSection(sectionIndex);
+		const std::string &sectionName = section.getName();
 
 		// Get the list of key-type pairs to pull from.
 		const auto &keyList = [&filename, &sectionName]()
