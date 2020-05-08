@@ -26,6 +26,12 @@
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
+namespace
+{
+	// Size of scratch buffer in bytes, reset each frame.
+	constexpr int SCRATCH_BUFFER_SIZE = 65536;
+}
+
 Game::Game()
 {
 	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
@@ -116,6 +122,7 @@ Game::Game()
 	}();
 
 	this->renderer.setWindowIcon(icon);
+	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
 
 	// Initialize panel and music to default.
 	this->panel = Panel::defaultPanel(*this);
@@ -188,6 +195,11 @@ TextureManager &Game::getTextureManager()
 MiscAssets &Game::getMiscAssets()
 {
 	return this->miscAssets;
+}
+
+ScratchAllocator &Game::getScratchAllocator()
+{
+	return this->scratchAllocator;
 }
 
 Profiler &Game::getProfiler()
@@ -481,6 +493,9 @@ void Game::loop()
 		constexpr double timeUnitsReal = static_cast<double>(timeUnits);
 		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
 		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
+
+		// Reset scratch allocator for use with this frame.
+		this->scratchAllocator.clear();
 
 		// Update the input manager's state.
 		this->inputManager.update();

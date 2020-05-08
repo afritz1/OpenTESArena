@@ -16,6 +16,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
+#include "components/utilities/Allocator.h"
 #include "components/utilities/Profiler.h"
 
 // This class holds the current game data, manages the primary game loop, and 
@@ -48,6 +49,7 @@ private:
 	Renderer renderer;
 	TextureManager textureManager;
 	MiscAssets miscAssets;
+	ScratchAllocator scratchAllocator;
 	Profiler profiler;
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
@@ -113,6 +115,9 @@ public:
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets();
+
+	// Gets the scratch buffer that is reset each frame.
+	ScratchAllocator &getScratchAllocator();
 
 	// Gets the profiler instance for measuring precise time spans.
 	Profiler &getProfiler();
