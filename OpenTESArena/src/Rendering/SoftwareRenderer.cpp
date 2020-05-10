@@ -7556,9 +7556,11 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 					{
 						// Reflective texel (i.e. puddle).
 						// @todo: properly handle reflections (don't know how yet).
-						colorR = 0.0;
-						colorG = 0.0;
-						colorB = 0.0;
+						// @temp: just show sky color for now.
+						const Double3 &skyColor = shadingInfo.skyColors.back();
+						colorR = skyColor.x;
+						colorG = skyColor.y;
+						colorB = skyColor.z;
 					}
 					else
 					{
