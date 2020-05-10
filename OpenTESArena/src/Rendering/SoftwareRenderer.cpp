@@ -513,7 +513,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		const Quaternion sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
 		//const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
-		const Quaternion dir = sunRotation * (this->timeRotation * Quaternion(baseDir, 0.0)).normalized();
+		const Quaternion dir = sunRotation * (this->timeRotation * Quaternion(baseDir, 0.0));
 		return Double3(dir.x, dir.y, dir.z).normalized();
 	}();
 	
@@ -1617,7 +1617,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			std::cos(xAngleRadians)).normalized();
 
 		// Rotate the direction based on latitude and time of day.
-		const Quaternion dir = latitudeRotation * (timeRotation * Quaternion(direction, 0.0)).normalized();
+		const Quaternion dir = latitudeRotation * (timeRotation * Quaternion(direction, 0.0));
 		newXAngleRadians = std::atan2(dir.x, dir.z);
 		newYAngleRadians = std::asin(dir.y);
 	};
@@ -1653,7 +1653,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			// The moon's position in the sky is modified by its current phase.
 			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
 			const Quaternion moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
-			const Quaternion dir = (moonRotation * Quaternion(baseDir, 0.0)).normalized();
+			const Quaternion dir = (moonRotation * Quaternion(baseDir, 0.0));
 			return Double3(dir.x, dir.y, dir.z).normalized();
 		}();
 

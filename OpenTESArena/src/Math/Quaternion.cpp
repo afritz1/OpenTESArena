@@ -53,7 +53,7 @@ Quaternion Quaternion::operator *(const Quaternion &q) const
 	Double3 right(q.x, q.y, q.z);
 	Double3 axis = (left * q.w) + (right * this->w) + left.cross(right);
 	double magnitude = (this->w * q.w) - left.dot(right);
-	return Quaternion(axis, magnitude);
+	return Quaternion(axis, magnitude).normalized();
 }
 
 std::string Quaternion::toString() const
