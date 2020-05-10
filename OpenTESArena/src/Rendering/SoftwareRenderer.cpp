@@ -466,7 +466,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 
 	// Get the real index (not the integer index) of the color for the current time as a
 	// reference point so each sky color can be interpolated between two samples via 'percent'.
-	const double realIndex = static_cast<double>(skyPalette.size()) * daytimePercent;
+	const double realIndex = MathUtils::getRealIndex(static_cast<int>(skyPalette.size()), daytimePercent);
 	const double percent = realIndex - std::floor(realIndex);
 
 	// Lambda for keeping the given index within the palette range.
@@ -2435,8 +2435,8 @@ void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &tex
 		return;
 	}
 
-	const double groupRealIndex = static_cast<double>(groupSize) * chasmAnimPercent;
-	const int animIndex = std::clamp(static_cast<int>(groupRealIndex), 0, groupSize - 1);
+	const double groupRealIndex = MathUtils::getRealIndex(groupSize, chasmAnimPercent);
+	const int animIndex = static_cast<int>(groupRealIndex);
 	*outTexture = &textureGroup[animIndex];
 }
 
@@ -2679,7 +2679,7 @@ Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const S
 	// color to interpolate with the next one.
 	const auto &skyColors = shadingInfo.skyColors;
 	const int skyColorCount = static_cast<int>(skyColors.size());
-	const double realIndex = gradientPercent * static_cast<double>(skyColorCount);
+	const double realIndex = MathUtils::getRealIndex(skyColorCount, gradientPercent);
 	const double percent = realIndex - std::floor(realIndex);
 	const int index = static_cast<int>(realIndex);
 	const int nextIndex = std::clamp(index + 1, 0, skyColorCount - 1);

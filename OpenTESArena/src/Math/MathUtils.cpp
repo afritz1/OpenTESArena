@@ -16,6 +16,15 @@ double MathUtils::almostEqual(double a, double b)
 	return MathUtils::almostZero(a - b);
 }
 
+double MathUtils::getRealIndex(int bufferSize, double percent)
+{
+	const double bufferSizeReal = static_cast<double>(bufferSize);
+
+	// Keep the real index in the same array bounds (i.e. if bufferSize is 5, the max is 4.999...).
+	const double maxRealIndex = std::max(0.0, bufferSizeReal - Constants::Epsilon);
+	return std::clamp(bufferSizeReal * percent, 0.0, maxRealIndex);
+}
+
 double MathUtils::fullAtan2(double y, double x)
 {
 	const double angle = std::atan2(y, x);
