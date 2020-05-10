@@ -2,7 +2,7 @@
 
 #include "HeapView.h"
 
-#include "components/debug/Debug.h"
+#include "../debug/Debug.h"
 
 HeapView::HeapView()
 {
