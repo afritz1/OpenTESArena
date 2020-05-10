@@ -468,31 +468,14 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	// reference point so each sky color can be interpolated between two samples via 'percent'.
 	const double realIndex = MathUtils::getRealIndex(static_cast<int>(skyPalette.size()), daytimePercent);
 	const double percent = realIndex - std::floor(realIndex);
-
-	// Lambda for keeping the given index within the palette range.
-	auto wrapIndex = [&skyPalette](int index)
-	{
-		const int paletteCount = static_cast<int>(skyPalette.size());
-
-		while (index >= paletteCount)
-		{
-			index -= paletteCount;
-		}
-
-		while (index < 0)
-		{
-			index += paletteCount;
-		}
-
-		return index;
-	};
+	const int paletteCount = static_cast<int>(skyPalette.size());
 
 	// Calculate sky colors based on the time of day.
 	for (int i = 0; i < static_cast<int>(this->skyColors.size()); i++)
 	{
 		const int indexDiff = slideDirection * i;
-		const int index = wrapIndex(static_cast<int>(realIndex) + indexDiff);
-		const int nextIndex = wrapIndex(index + slideDirection);
+		const int index = MathUtils::getWrappedIndex(paletteCount, static_cast<int>(realIndex) + indexDiff);
+		const int nextIndex = MathUtils::getWrappedIndex(paletteCount, index + slideDirection);
 		const Double3 &color = skyPalette.at(index);
 		const Double3 &nextColor = skyPalette.at(nextIndex);
 

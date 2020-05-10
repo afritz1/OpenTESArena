@@ -25,6 +25,21 @@ double MathUtils::getRealIndex(int bufferSize, double percent)
 	return std::clamp(bufferSizeReal * percent, 0.0, maxRealIndex);
 }
 
+int MathUtils::getWrappedIndex(int bufferSize, int index)
+{
+	while (index >= bufferSize)
+	{
+		index -= bufferSize;
+	}
+
+	while (index < 0)
+	{
+		index += bufferSize;
+	}
+
+	return index;
+}
+
 double MathUtils::fullAtan2(double y, double x)
 {
 	const double angle = std::atan2(y, x);

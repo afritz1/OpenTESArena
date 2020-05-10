@@ -15,6 +15,10 @@ namespace MathUtils
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
 
+	// Gets the wrapped index within the buffer's range. I.e., if the buffer size is 5
+	// and the index is 5, it will return 0.
+	int getWrappedIndex(int bufferSize, int index);
+
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
 	double fullAtan2(double y, double x);
 
