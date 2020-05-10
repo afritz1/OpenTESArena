@@ -466,9 +466,9 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 
 	// Get the real index (not the integer index) of the color for the current time as a
 	// reference point so each sky color can be interpolated between two samples via 'percent'.
-	const double realIndex = MathUtils::getRealIndex(static_cast<int>(skyPalette.size()), daytimePercent);
-	const double percent = realIndex - std::floor(realIndex);
 	const int paletteCount = static_cast<int>(skyPalette.size());
+	const double realIndex = MathUtils::getRealIndex(paletteCount, daytimePercent);
+	const double percent = realIndex - std::floor(realIndex);
 
 	// Calculate sky colors based on the time of day.
 	for (int i = 0; i < static_cast<int>(this->skyColors.size()); i++)
