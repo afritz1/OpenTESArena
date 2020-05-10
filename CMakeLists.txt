@@ -24,7 +24,7 @@ IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     ENDIF ()
 
     # Optimizations.
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -msse4a -mavx -Ofast -march=native -ffp-contract=fast -flto=full")
 ENDIF ()
 
 # We want RelWithDebInfo to actually include debug stuff (define _DEBUG
