@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../Math/Matrix4.h"
+#include "../Math/Quaternion.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 
@@ -38,11 +39,11 @@ namespace RendererUtils
 	int getLowerBoundedPixel(double projected, int frameDim);
 	int getUpperBoundedPixel(double projected, int frameDim);
 
-	// Creates a rotation matrix for drawing latitude-correct distant space objects.
-	Matrix4d getLatitudeRotation(double latitude);
+	// Creates a rotation quaternion for drawing latitude-correct distant space objects.
+	Quaternion getLatitudeRotation(double latitude);
 
-	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
-	Matrix4d getTimeOfDayRotation(double daytimePercent);
+	// Creates a rotation quaternion for drawing distant space objects relative to the time of day.
+	Quaternion getTimeOfDayRotation(double daytimePercent);
 }
 
 #endif

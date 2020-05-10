@@ -134,12 +134,12 @@ int RendererUtils::getUpperBoundedPixel(double projected, int frameDim)
 	return std::clamp(static_cast<int>(std::floor(projected + 0.50)), 0, frameDim);
 }
 
-Matrix4d RendererUtils::getLatitudeRotation(double latitude)
+Quaternion RendererUtils::getLatitudeRotation(double latitude)
 {
 	return Matrix4d::zRotation(latitude * (Constants::Pi / 8.0));
 }
 
-Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
+Quaternion RendererUtils::getTimeOfDayRotation(double daytimePercent)
 {
 	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }

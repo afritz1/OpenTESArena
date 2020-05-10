@@ -510,9 +510,10 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
 		const double sunLatitude = -(latitude + (13.0 / 100.0));
-		const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
+		const Quaternion sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
-		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
+		//const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
+		const Quaternion dir = sunRotation * (this->timeRotation * Quaternion(baseDir, 0.0)).normalized();
 		return Double3(dir.x, dir.y, dir.z).normalized();
 	}();
 	
@@ -1603,8 +1604,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 
 	// Objects in space have their position modified by latitude and time of day.
 	// My quaternions are broken or something, so use matrix multiplication instead.
-	const Matrix4d &timeRotation = shadingInfo.timeRotation;
-	const Matrix4d &latitudeRotation = shadingInfo.latitudeRotation;
+	const Quaternion &timeRotation = shadingInfo.timeRotation;
+	const Quaternion &latitudeRotation = shadingInfo.latitudeRotation;
 
 	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](double xAngleRadians,
 		double yAngleRadians, double &newXAngleRadians, double &newYAngleRadians)
@@ -1616,7 +1617,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			std::cos(xAngleRadians)).normalized();
 
 		// Rotate the direction based on latitude and time of day.
-		const Double4 dir = latitudeRotation * (timeRotation * Double4(direction, 0.0));
+		const Quaternion dir = latitudeRotation * (timeRotation * Quaternion(direction, 0.0)).normalized();
 		newXAngleRadians = std::atan2(dir.x, dir.z);
 		newYAngleRadians = std::asin(dir.y);
 	};
@@ -1651,8 +1652,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 
 			// The moon's position in the sky is modified by its current phase.
 			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
-			const Matrix4d moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
-			const Double4 dir = moonRotation * Double4(baseDir, 0.0);
+			const Quaternion moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
+			const Quaternion dir = (moonRotation * Quaternion(baseDir, 0.0)).normalized();
 			return Double3(dir.x, dir.y, dir.z).normalized();
 		}();
 

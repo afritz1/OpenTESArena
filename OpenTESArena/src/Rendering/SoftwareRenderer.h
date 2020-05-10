@@ -16,6 +16,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
+#include "../Math/Quaternion.h"
 #include "../World/DistantSky.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
@@ -204,7 +205,7 @@ private:
 		static constexpr double STAR_VIS_THRESHOLD = 64.0 / 255.0;
 
 		// Rotation matrices for distant space objects.
-		Matrix4d timeRotation, latitudeRotation;
+		Quaternion timeRotation, latitudeRotation;
 
 		// Sky colors for the horizon and zenith to interpolate between. Index 0 is the
 		// horizon color. For interiors, every color in the array is the same.
