@@ -386,6 +386,15 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	// could theoretically be between -infinity and infinity, but it would result in far too much
 	// skewing.
 	this->yShear = SoftwareRenderer::getYShear(this->yAngleRadians, this->zoom);
+
+	this->horizonProjY = [this]()
+	{
+		// Project a point directly in front of the player in the XZ plane.
+		const Double3 horizonPoint = this->eye + Double3(this->direction.x, 0.0, this->direction.z);
+		Double4 horizonProjPoint = this->transform * Double4(horizonPoint, 1.0);
+		horizonProjPoint = horizonProjPoint / horizonProjPoint.w;
+		return (0.50 + this->yShear) - (horizonProjPoint.y * 0.50);
+	}();
 }
 
 double SoftwareRenderer::Camera::getXZAngleRadians() const
@@ -7415,7 +7424,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 }
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
-	const Double2 &eye, const NewInt2 &eyeVoxelXZ, const ShadingInfo &shadingInfo,
+	const Double2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 	int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 	const FrameView &frame)
@@ -7540,12 +7549,11 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 
 				if (texel.a > 0.0)
 				{
-					// Special case (for true color): if texel alpha is between 0 and 1,
-					// the previously rendered pixel is diminished by some amount.
 					double colorR, colorG, colorB;
 					if (texel.a < 1.0)
 					{
-						// Diminish the previous color in the frame buffer.
+						// Special case (for true color): if texel alpha is between 0 and 1,
+						// the previously rendered pixel is diminished by some amount.
 						const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[index]);
 						const double visPercent = std::clamp(1.0 - texel.a, 0.0, 1.0);
 						colorR = prevColor.x * visPercent;
@@ -7555,12 +7563,28 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 					else if (texel.reflection != 0)
 					{
 						// Reflective texel (i.e. puddle).
-						// @todo: properly handle reflections (don't know how yet).
-						// @temp: just show sky color for now.
-						const Double3 &skyColor = shadingInfo.skyColors.back();
-						colorR = skyColor.x;
-						colorG = skyColor.y;
-						colorB = skyColor.z;
+						// Copy-paste the previously-drawn pixel from the Y pixel coordinate mirrored
+						// around the horizon. If it is outside the screen, use the sky color instead.
+						const int horizonY = static_cast<int>(horizonProjY * frame.heightReal);
+						const int reflectedY = horizonY + (horizonY - y);
+						const bool insideScreen = (reflectedY >= 0) && (reflectedY < frame.height);
+						if (insideScreen)
+						{
+							// Read from mirrored position in frame buffer.
+							const int reflectedIndex = x + (reflectedY * frame.width);
+							const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[reflectedIndex]);
+							colorR = prevColor.x;
+							colorG = prevColor.y;
+							colorB = prevColor.z;
+						}
+						else
+						{
+							// Use sky color instead.
+							const Double3 &skyColor = shadingInfo.skyColors.back();
+							colorR = skyColor.x;
+							colorG = skyColor.y;
+							colorB = skyColor.z;
+						}
 					}
 					else
 					{
@@ -8023,8 +8047,9 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		const Double2 eye2D(camera.eye.x, camera.eye.z);
 		const NewInt2 eyeVoxel2D(camera.eyeVoxel.x, camera.eyeVoxel.z);
 
-		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D, shadingInfo,
-			chunkDistance, texture, visLights, visLightLists, gridWidth, gridDepth, frame);
+		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D,
+			camera.horizonProjY, shadingInfo, chunkDistance, texture, visLights, visLightLists,
+			gridWidth, gridDepth, frame);
 	}
 }
 

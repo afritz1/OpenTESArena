@@ -134,6 +134,7 @@ private:
 		double zoom, aspect;
 		double yAngleRadians; // Angle of the camera above or below the horizon.
 		double yShear; // Projected Y-coordinate translation.
+		double horizonProjY; // Projected Y coordinate of horizon.
 
 		Camera(const Double3 &eye, const Double3 &direction, double fovY, double aspect,
 			double projectionModifier);
@@ -914,7 +915,7 @@ private:
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
-		const Double2 &eye, const NewInt2 &eyeVoxelXZ, const ShadingInfo &shadingInfo,
+		const Double2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 		int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 		const FrameView &frame);
