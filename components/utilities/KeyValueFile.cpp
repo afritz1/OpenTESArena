@@ -266,9 +266,9 @@ bool KeyValueFile::init(const char *filename)
 				return false;
 			}
 
-			// Trim trailing whitespace from the key and leading whitespace from the value.
-			const std::string_view &key = StringView::trimBack(tokens[0]);
-			const std::string_view &value = StringView::trimFront(tokens[1]);
+			// Trim whitespace from the key and leading whitespace from the value.
+			const std::string_view key = StringView::trimFront(StringView::trimBack(tokens[0]));
+			const std::string_view value = StringView::trimFront(tokens[1]);
 
 			if (key.size() == 0)
 			{
