@@ -1579,6 +1579,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 
 			const bool isStreetlight = newEntityDef.getInfData().streetLight;
+			const bool isPuddle = newEntityDef.getInfData().puddle;
 			this->entityManager.addEntityDef(std::move(newEntityDef));
 
 			// Initialize each instance of the flat def.
@@ -1624,7 +1625,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				}
 			}
 
-			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache](
+			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache, isPuddle](
 				const EntityAnimationData::State &animState, int angleID)
 			{
 				// Check whether the animation direction ID is for a flipped animation.
@@ -1640,12 +1641,14 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 				// Entities can be partially transparent. Some palette indices determine whether
 				// there should be any "alpha blending" (in the original game, it implements alpha
-				// using light level diminishing with 13 different levels in an .LGT file).
-				auto addFlatTexture = [&renderer, &palette, isFlipped](const uint8_t *texels, int width,
-					int height, int flatIndex, EntityAnimationData::StateType stateType, int angleID)
+				// using light level diminishing with 13 different levels in an .LGT file). Others
+				// can be reflective puddles, and that cannot be determined from texels alone.
+				auto addFlatTexture = [&renderer, &palette, isPuddle, isFlipped](const uint8_t *texels,
+					int width, int height, int flatIndex, EntityAnimationData::StateType stateType,
+					int angleID)
 				{
-					renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, texels,
-						width, height, palette);
+					renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, isPuddle,
+						texels, width, height, palette);
 				};
 
 				if (isCFA)

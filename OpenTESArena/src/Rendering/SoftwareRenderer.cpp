@@ -37,6 +37,8 @@ namespace
 	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
 	constexpr uint8_t PALETTE_INDEX_RED_DST2 = 159;
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
+	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
+	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
 }
 
 SoftwareRenderer::VoxelTexel::VoxelTexel()
@@ -73,21 +75,31 @@ SoftwareRenderer::FlatTexel::FlatTexel()
 }
 
 SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
-	uint8_t texel, const Palette &palette)
+	uint8_t texel, bool reflective, const Palette &palette)
 {
 	// Palette indices 1-13 are used for light level diminishing in the original game.
 	// These texels do not have any color and are purely for manipulating the previously
 	// rendered color in the frame buffer.
 	FlatTexel flatTexel;
 
-	if ((texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) &&
-		(texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST))
+	if ((texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST))
 	{
 		flatTexel.r = 0.0;
 		flatTexel.g = 0.0;
 		flatTexel.b = 0.0;
 		flatTexel.a = static_cast<double>(texel) /
 			static_cast<double>(PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+		flatTexel.reflection = 0;
+	}
+	else if (reflective && ((texel == PALETTE_INDEX_PUDDLE_EVEN_ROW) ||
+		(texel == PALETTE_INDEX_PUDDLE_ODD_ROW)))
+	{
+		// Puddle texel. The shader needs to know which reflection type it is.
+		flatTexel.r = 0.0;
+		flatTexel.g = 0.0;
+		flatTexel.b = 0.0;
+		flatTexel.a = 1.0;
+		flatTexel.reflection = texel;
 	}
 	else
 	{
@@ -102,6 +114,7 @@ SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
 		flatTexel.g = dstTexel.y;
 		flatTexel.b = dstTexel.z;
 		flatTexel.a = dstTexel.w;
+		flatTexel.reflection = 0;
 	}
 
 	return flatTexel;
@@ -238,7 +251,7 @@ const SoftwareRenderer::FlatTextureGroup::TextureList *SoftwareRenderer::FlatTex
 }
 
 void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateType stateType,
-	int angleID, bool flipped, const uint8_t *srcTexels, int width, int height,
+	int angleID, bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
 	const Palette &palette)
 {
 	DebugAssert(width > 0);
@@ -272,9 +285,9 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 	if (!flipped)
 	{
 		std::transform(srcTexels, srcTexels + texelCount, flatTexture.texels.begin(),
-			[&palette](const uint8_t srcTexel)
+			[reflective, &palette](const uint8_t srcTexel)
 		{
-			return FlatTexel::makeFrom8Bit(srcTexel, palette);
+			return FlatTexel::makeFrom8Bit(srcTexel, reflective, palette);
 		});
 	}
 	else
@@ -286,7 +299,7 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 				const int srcIndex = x + (y * width);
 				const int dstIndex = ((width - 1) - x) + (y * width);
 				const uint8_t srcTexel = srcTexels[srcIndex];
-				flatTexture.texels[dstIndex] = FlatTexel::makeFrom8Bit(srcTexel, palette);
+				flatTexture.texels[dstIndex] = FlatTexel::makeFrom8Bit(srcTexel, reflective, palette);
 			}
 		}
 	}
@@ -1106,7 +1119,7 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const P
 }
 
 void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-	int angleID, bool flipped, const uint8_t *srcTexels, int width, int height,
+	int angleID, bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
 	const Palette &palette)
 {
 	// If the flat mapping doesn't exist, add a new one.
@@ -1118,7 +1131,7 @@ void SoftwareRenderer::addFlatTexture(int flatIndex, EntityAnimationData::StateT
 	}
 
 	FlatTextureGroup &flatTextureGroup = iter->second;
-	flatTextureGroup.addTexture(stateType, angleID, flipped, srcTexels, width, height, palette);
+	flatTextureGroup.addTexture(stateType, angleID, flipped, reflective, srcTexels, width, height, palette);
 }
 
 void SoftwareRenderer::updateLight(int id, const Double3 *point,
@@ -7538,6 +7551,14 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 						colorR = prevColor.x * visPercent;
 						colorG = prevColor.y * visPercent;
 						colorB = prevColor.z * visPercent;
+					}
+					else if (texel.reflection != 0)
+					{
+						// Reflective texel (i.e. puddle).
+						// @todo: properly handle reflections (don't know how yet).
+						colorR = 0.0;
+						colorG = 0.0;
+						colorB = 0.0;
 					}
 					else
 					{

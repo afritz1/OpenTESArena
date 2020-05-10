@@ -53,10 +53,11 @@ private:
 	struct FlatTexel
 	{
 		double r, g, b, a;
+		uint8_t reflection; // Puddle texels have two reflection states.
 
 		FlatTexel();
 
-		static FlatTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+		static FlatTexel makeFrom8Bit(uint8_t texel, bool reflective, const Palette &palette);
 	};
 
 	// For distant sky objects (mountains, clouds, etc.). Although most distant objects
@@ -281,7 +282,8 @@ private:
 
 		// Adds a texture to the given state type mapping (adding if missing) and angle group.
 		void addTexture(EntityAnimationData::StateType stateType, int angleID, bool flipped,
-			const uint8_t *srcTexels, int width, int height, const Palette &palette);
+			bool reflective, const uint8_t *srcTexels, int width, int height,
+			const Palette &palette);
 	};
 
 	// Each chasm texture group contains one animation's worth of textures.
@@ -1016,7 +1018,8 @@ public:
 	// group. 8-bit colors with a palette is required here since some palette indices have
 	// special behavior for transparency.
 	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
-		bool flipped, const uint8_t *srcTexels, int width, int height, const Palette &palette);
+		bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
+		const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

@@ -612,12 +612,12 @@ void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &
 }
 
 void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-	int angleID, bool flipped, const uint8_t *srcTexels, int width, int height,
+	int angleID, bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
 	const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.addFlatTexture(flatIndex, stateType, angleID, flipped,
-		srcTexels, width, height, palette);
+		reflective, srcTexels, width, height, palette);
 }
 
 void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
