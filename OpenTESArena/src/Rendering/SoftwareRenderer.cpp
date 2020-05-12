@@ -1637,7 +1637,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				if (type == DistantSky::MoonObject::Type::First)
 				{
 					bonusLatitude = -15.0 / 100.0;
-					return Double3(0.0, -57536.0, 0.0).normalized();
+					//return Double3(0.0, -57536.0, 0.0).normalized();
+					return Double3::UnitY;  // what .normalized() would give us above.
+					                        // (Optimizer may be able to figure that out)
 				}
 				else if (type == DistantSky::MoonObject::Type::Second)
 				{
