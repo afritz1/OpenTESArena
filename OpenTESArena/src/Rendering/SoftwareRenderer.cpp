@@ -2539,7 +2539,6 @@ double SoftwareRenderer::getSkyGradientPercent(double projectedY, double project
 
 Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const ShadingInfo &shadingInfo)
 {
-	return Double3::Zero;
 	// Determine which sky color index the percent falls into, and how much of that
 	// color to interpolate with the next one.
 	const auto &skyColors = shadingInfo.skyColors;
