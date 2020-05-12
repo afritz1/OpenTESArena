@@ -3,7 +3,6 @@
 #include "MusicFile.h"
 #include "MusicName.h"
 #include "../World/ClimateType.h"
-#include "../World/LocationType.h"
 #include "../World/WeatherType.h"
 
 namespace
@@ -65,19 +64,19 @@ namespace
 	};
 
 	// Mappings of location types to non-desert jingles.
-	const std::unordered_map<LocationType, MusicName> LocationJingles =
+	const std::unordered_map<LocationDefinition::CityDefinition::Type, MusicName> LocationJingles =
 	{
-		{ LocationType::CityState, MusicName::CityEnter },
-		{ LocationType::Town, MusicName::TownEnter },
-		{ LocationType::Village, MusicName::VillageEnter }
+		{ LocationDefinition::CityDefinition::Type::CityState, MusicName::CityEnter },
+		{ LocationDefinition::CityDefinition::Type::Town, MusicName::TownEnter },
+		{ LocationDefinition::CityDefinition::Type::Village, MusicName::VillageEnter }
 	};
 
 	// Mappings of location types to desert jingles.
-	const std::unordered_map<LocationType, MusicName> DesertLocationJingles =
+	const std::unordered_map<LocationDefinition::CityDefinition::Type, MusicName> DesertLocationJingles =
 	{
-		{ LocationType::CityState, MusicName::ArabCityEnter },
-		{ LocationType::Town, MusicName::ArabTownEnter },
-		{ LocationType::Village, MusicName::ArabVillageEnter }
+		{ LocationDefinition::CityDefinition::Type::CityState, MusicName::ArabCityEnter },
+		{ LocationDefinition::CityDefinition::Type::Town, MusicName::ArabTownEnter },
+		{ LocationDefinition::CityDefinition::Type::Village, MusicName::ArabVillageEnter }
 	};
 }
 
@@ -93,13 +92,14 @@ MusicName MusicFile::fromWeather(WeatherType weatherType)
 	return musicName;
 }
 
-MusicName MusicFile::jingleFromLocationAndClimate(LocationType locationType, ClimateType climateType)
+MusicName MusicFile::jingleFromCityTypeAndClimate(LocationDefinition::CityDefinition::Type cityType,
+	ClimateType climateType)
 {
-	const MusicName musicName = [locationType, climateType]()
+	const MusicName musicName = [cityType, climateType]()
 	{
 		const bool isDesert = climateType == ClimateType::Desert;
 		const auto &jingleMap = isDesert ? DesertLocationJingles : LocationJingles;
-		return jingleMap.at(locationType);
+		return jingleMap.at(cityType);
 	}();
 
 	return musicName;
