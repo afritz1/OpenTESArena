@@ -2,6 +2,7 @@
 #define GAME_H
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -160,8 +161,8 @@ public:
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
 
-	// Sets the music to the given music name.
-	void setMusic(MusicName name);
+	// Sets the music to the given music name, with an optional jingle to play first.
+	void setMusic(MusicName musicName, const std::optional<MusicName> &jingleMusicName = std::nullopt);
 
 	// Sets the current game data object. A game session is active if the game data
 	// is not null.

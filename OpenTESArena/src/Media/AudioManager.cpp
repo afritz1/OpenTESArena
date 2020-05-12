@@ -43,10 +43,11 @@ class OpenALStream;
 class AudioManagerImpl
 {
 private:
-	static const ALint UNSUPPORTED_EXTENSION;
+	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
 
 	ALint mResampler;
-	bool mIs3D;
+	bool mIs3D;	
+	std::string mNextSong;
 
 	// Use this when resetting sound sources back to their default resampling. This uses
 	// whatever setting is the default within OpenAL.
@@ -87,7 +88,9 @@ public:
 	void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
 		bool is3D, const std::string &midiConfig);
 
-	void playMusic(const std::string &filename);
+	bool hasNextMusic() const;
+
+	void playMusic(const std::string &filename, bool loop);
 	void playSound(const std::string &filename, const std::optional<Double3> &position);
 
 	void stopMusic();
@@ -99,8 +102,9 @@ public:
 	void set3D(bool is3D);
 	void setListenerPosition(const Double3 &position);
 	void setListenerOrientation(const Double3 &direction);
+	void setNextMusic(std::string &&filename);
 
-	void update(const AudioManager::ListenerData *listenerData);
+	void update(double dt, const AudioManager::ListenerData *listenerData);
 };
 
 AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
@@ -116,8 +120,6 @@ const Double3 &AudioManager::ListenerData::getDirection() const
 	return this->direction;
 }
 
-const ALint AudioManagerImpl::UNSUPPORTED_EXTENSION = -1;
-
 class OpenALStream
 {
 private:
@@ -129,7 +131,7 @@ private:
 	std::thread mThread;
 
 	/* Playback source and buffer queue. */
-	static const int sBufferFrames = 16384;
+	static constexpr int sBufferFrames = 16384;
 	ALuint mSource;
 	std::array<ALuint, 4> mBuffers;
 	ALuint mBufferIdx;
@@ -369,8 +371,10 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
-	: mMusicVolume(1.0f), mSfxVolume(1.0f), mHasResamplerExtension(false)
 {
+	mMusicVolume = 1.0f;
+	mSfxVolume = 1.0f;
+	mHasResamplerExtension = false;
 }
 
 AudioManagerImpl::~AudioManagerImpl()
@@ -527,7 +531,12 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	this->setListenerOrientation(Double3::UnitX);
 }
 
-void AudioManagerImpl::playMusic(const std::string &filename)
+bool AudioManagerImpl::hasNextMusic() const
+{
+	return !this->mNextSong.empty();
+}
+
+void AudioManagerImpl::playMusic(const std::string &filename, bool loop)
 {
 	stopMusic();
 
@@ -751,7 +760,12 @@ void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
 	alListenerfv(AL_ORIENTATION, orientation.data());
 }
 
-void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
+void AudioManagerImpl::setNextMusic(std::string &&filename)
+{
+	mNextSong = std::move(filename);
+}
+
+void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *listenerData)
 {
 	// Update listener values if there is a listener currently active.
 	if (listenerData != nullptr)
@@ -781,6 +795,27 @@ void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
 
 			mFreeSources.push_front(source);
 			mUsedSources.erase(mUsedSources.begin() + i);
+		}
+	}
+
+	// Check if another music is staged and should start when the current one is done.
+	if (this->hasNextMusic())
+	{
+		// @todo: if currently-playing music has reached its end, then play next music.
+		// - Can't query the active music source to see if it's done playing because looping is always false and
+		//   the looping is handled manually by the buffer-filling loop.
+		// - Maybe try AL_BUFFERS_PROCESSED?
+
+		// @todo: add a small buffer of time at the end of the previous song (using dt given to update())
+		// so it changes a bit more naturally.
+
+		const bool canChangeToNextMusic = false;
+		if (canChangeToNextMusic)
+		{
+			// Assume that the next music always loops.
+			const bool loop = true;
+			this->playMusic(mNextSong, loop);
+			mNextSong.clear();
 		}
 	}
 }
@@ -819,9 +854,9 @@ bool AudioManager::hasResamplerExtension() const
 	return pImpl->mHasResamplerExtension;
 }
 
-void AudioManager::playMusic(const std::string &filename)
+void AudioManager::playMusic(const std::string &filename, bool loop)
 {
-	pImpl->playMusic(filename);
+	pImpl->playMusic(filename, loop);
 }
 
 void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
@@ -859,7 +894,12 @@ void AudioManager::set3D(bool is3D)
 	pImpl->set3D(is3D);
 }
 
-void AudioManager::update(const ListenerData *listenerData)
+void AudioManager::setNextMusic(std::string &&filename)
 {
-	pImpl->update(listenerData);
+	pImpl->setNextMusic(std::move(filename));
+}
+
+void AudioManager::update(double dt, const ListenerData *listenerData)
+{
+	pImpl->update(dt, listenerData);
 }

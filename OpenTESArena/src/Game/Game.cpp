@@ -235,10 +235,25 @@ void Game::popSubPanel()
 	this->requestedSubPanelPop = true;
 }
 
-void Game::setMusic(MusicName name)
+void Game::setMusic(MusicName musicName, const std::optional<MusicName> &jingleMusicName)
 {
-	const std::string &filename = MusicFile::fromName(name);
-	this->audioManager.playMusic(filename);
+	if (jingleMusicName.has_value())
+	{
+		// Play jingle first and set the main music as the next music.
+		const std::string &jingleFilename = MusicFile::fromName(*jingleMusicName);
+		const bool loop = false;
+		this->audioManager.playMusic(jingleFilename, loop);
+
+		std::string nextFilename = MusicFile::fromName(musicName);
+		this->audioManager.setNextMusic(std::move(nextFilename));
+	}
+	else
+	{
+		// Play main music immediately.
+		const std::string &filename = MusicFile::fromName(musicName);
+		const bool loop = true;
+		this->audioManager.playMusic(filename, loop);
+	}
 }
 
 void Game::setGameData(std::unique_ptr<GameData> gameData)
@@ -511,11 +526,11 @@ void Game::loop()
 				return AudioManager::ListenerData(position, direction);
 			}();
 
-			this->audioManager.update(&listenerData);
+			this->audioManager.update(dt, &listenerData);
 		}
 		else
 		{
-			this->audioManager.update(nullptr);
+			this->audioManager.update(dt, nullptr);
 		}
 
 		// Update FPS counter.
