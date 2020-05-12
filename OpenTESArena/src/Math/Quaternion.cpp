@@ -4,11 +4,8 @@
 #include "Quaternion.h"
 
 Quaternion::Quaternion(double x, double y, double z, double w)
+	: x(x), y(y), z(z), w(w)
 {
-	this->x = x;
-	this->y = y;
-	this->z = z;
-	this->w = w;
 }
 
 Quaternion::Quaternion(const Double3 &v, double w)
