@@ -12,6 +12,7 @@
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
+#include "../Media/MusicFile.h"
 #include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
@@ -386,8 +387,9 @@ void FastTravelSubPanel::switchToNextPanel()
 	if (travelLocationDef.getType() == LocationDefinition::Type::City)
 	{
 		// Get weather type from game data.
+		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
 		const WeatherType weatherType = [this, &game, &gameData, &miscAssets,
-			&travelProvinceDef, &travelLocationDef]()
+			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
 			const Int2 globalPoint = LocationUtils::getGlobalPoint(
@@ -395,7 +397,6 @@ void FastTravelSubPanel::switchToNextPanel()
 
 			const auto &cityData = miscAssets.getCityDataFile();
 			const int globalQuarter = LocationUtils::getGlobalQuarter(globalPoint, cityData);
-			const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
 
 			const auto &weathersArray = gameData.getWeathersArray();
 			DebugAssertIndex(weathersArray, globalQuarter);
@@ -415,7 +416,9 @@ void FastTravelSubPanel::switchToNextPanel()
 		// Choose time-based music and enter the game world.
 		const MusicName musicName = gameData.nightMusicIsActive() ?
 			MusicName::Night : MusicUtils::getExteriorMusicName(weatherType);
-		game.setMusic(musicName);
+		const MusicName jingleMusicName = MusicFile::jingleFromCityTypeAndClimate(cityDef.type, cityDef.climateType);
+
+		game.setMusic(musicName, jingleMusicName);
 		game.setPanel<GameWorldPanel>(game);
 
 		// Push a text sub-panel for the city arrival pop-up.
