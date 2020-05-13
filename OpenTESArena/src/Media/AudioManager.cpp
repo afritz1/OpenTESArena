@@ -43,10 +43,11 @@ class OpenALStream;
 class AudioManagerImpl
 {
 private:
-	static const ALint UNSUPPORTED_EXTENSION;
+	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
 
 	ALint mResampler;
-	bool mIs3D;
+	bool mIs3D;	
+	std::string mNextSong;
 
 	// Use this when resetting sound sources back to their default resampling. This uses
 	// whatever setting is the default within OpenAL.
@@ -87,7 +88,9 @@ public:
 	void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
 		bool is3D, const std::string &midiConfig);
 
-	void playMusic(const std::string &filename);
+	bool hasNextMusic() const;
+
+	void playMusic(const std::string &filename, bool loop);
 	void playSound(const std::string &filename, const std::optional<Double3> &position);
 
 	void stopMusic();
@@ -99,8 +102,9 @@ public:
 	void set3D(bool is3D);
 	void setListenerPosition(const Double3 &position);
 	void setListenerOrientation(const Double3 &direction);
+	void setNextMusic(std::string &&filename);
 
-	void update(const AudioManager::ListenerData *listenerData);
+	void update(double dt, const AudioManager::ListenerData *listenerData);
 };
 
 AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
@@ -116,20 +120,19 @@ const Double3 &AudioManager::ListenerData::getDirection() const
 	return this->direction;
 }
 
-const ALint AudioManagerImpl::UNSUPPORTED_EXTENSION = -1;
-
 class OpenALStream
 {
 private:
 	AudioManagerImpl *mManager;
 	MidiSong *mSong;
+	bool mLoop;
 
 	/* Background thread and control. */
 	std::atomic<bool> mQuit;
 	std::thread mThread;
 
 	/* Playback source and buffer queue. */
-	static const int sBufferFrames = 16384;
+	static constexpr int sBufferFrames = 16384;
 	ALuint mSource;
 	std::array<ALuint, 4> mBuffers;
 	ALuint mBufferIdx;
@@ -139,6 +142,11 @@ private:
 	ALuint mSampleRate;
 	ALuint mFrameSize;
 
+	bool threadIsValid() const
+	{
+		return mThread.get_id() != std::thread::id();
+	}
+
 	/* Read samples from the song and fill the given OpenAL buffer ID (buffer
 	 * vector is for temporary storage). Returns true if the buffer was filled.
 	 */
@@ -147,16 +155,37 @@ private:
 		size_t totalSize = 0;
 		while (totalSize < buffer.size())
 		{
-			size_t toget = (buffer.size() - totalSize) / mFrameSize;
-			size_t got = mSong->read(buffer.data() + totalSize, toget);
-			if (got < toget)
+			const size_t framesToGet = (buffer.size() - totalSize) / mFrameSize;
+			const size_t framesReceived = mSong->read(buffer.data() + totalSize, framesToGet);
+
+			bool shouldBreak = false;
+			if (framesReceived < framesToGet)
 			{
-				/* End of song, rewind to loop. */
-				if (!mSong->seek(0))
-					break;
+				if (mLoop)
+				{
+					/* End of song, rewind to loop. */
+					const size_t beginOffset = 0;
+					const bool success = mSong->seek(beginOffset);
+					if (!success)
+					{
+						break;
+					}
+				}
+				else
+				{
+					/* Don't receive more song data. */
+					shouldBreak = true;
+				}
 			}
-			totalSize += got*mFrameSize;
+
+			totalSize += framesReceived * mFrameSize;
+
+			if (shouldBreak)
+			{
+				break;
+			}
 		}
+
 		if (totalSize == 0)
 			return false;
 
@@ -256,16 +285,19 @@ private:
 
 public:
 	OpenALStream(AudioManagerImpl *manager, MidiSong *song)
-		: mManager(manager), mSong(song), mQuit(false), mSource(0)
-		, mBufferIdx(0), mSampleRate(0)
+		: mBuffers{ 0 }, mQuit(false)
 	{
-		// Using std::array::fill() for mBuffers since VS2013 doesn't support mBuffers{0}.
-		mBuffers.fill(0);
+		mManager = manager;
+		mSong = song;
+		mSource = 0;
+		mBufferIdx = 0;
+		mSampleRate = 0;
+		mLoop = false;
 	}
 
 	~OpenALStream()
 	{
-		if (mThread.get_id() != std::thread::id())
+		if (threadIsValid())
 		{
 			/* Tell the thread to quit and wait for it to stop. */
 			mQuit.store(true);
@@ -284,12 +316,17 @@ public:
 		alDeleteBuffers(static_cast<ALsizei>(mBuffers.size()), mBuffers.data());
 	}
 
+	bool isPlaying() const
+	{
+		return threadIsValid() && !mQuit.load();
+	}
+
 	void play()
 	{
 		/* If the source is already playing (thread exists and isn't stopped),
 		 * don't do anything.
 		 */
-		if (mThread.get_id() != std::thread::id())
+		if (threadIsValid())
 		{
 			if (!mQuit.load())
 				return;
@@ -308,7 +345,7 @@ public:
 
 	void stop()
 	{
-		if (mThread.get_id() != std::thread::id())
+		if (threadIsValid())
 		{
 			mQuit.store(true);
 			mThread.join();
@@ -325,7 +362,7 @@ public:
 		alSourcef(mSource, AL_GAIN, volume);
 	}
 
-	bool init(ALuint source, float volume)
+	bool init(ALuint source, float volume, bool loop)
 	{
 		DebugAssert(mSource == 0);
 
@@ -362,6 +399,7 @@ public:
 		mSampleRate = srate;
 
 		mSource = source;
+		mLoop = loop;
 		return true;
 	}
 };
@@ -369,8 +407,10 @@ public:
 // Audio Manager Impl
 
 AudioManagerImpl::AudioManagerImpl()
-	: mMusicVolume(1.0f), mSfxVolume(1.0f), mHasResamplerExtension(false)
 {
+	mMusicVolume = 1.0f;
+	mSfxVolume = 1.0f;
+	mHasResamplerExtension = false;
 }
 
 AudioManagerImpl::~AudioManagerImpl()
@@ -527,7 +567,12 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	this->setListenerOrientation(Double3::UnitX);
 }
 
-void AudioManagerImpl::playMusic(const std::string &filename)
+bool AudioManagerImpl::hasNextMusic() const
+{
+	return !this->mNextSong.empty();
+}
+
+void AudioManagerImpl::playMusic(const std::string &filename, bool loop)
 {
 	stopMusic();
 
@@ -542,7 +587,7 @@ void AudioManagerImpl::playMusic(const std::string &filename)
 		}
 
 		mSongStream = std::make_unique<OpenALStream>(this, mCurrentSong.get());
-		if (mSongStream->init(mFreeSources.front(), mMusicVolume))
+		if (mSongStream->init(mFreeSources.front(), mMusicVolume, loop))
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
@@ -751,7 +796,12 @@ void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
 	alListenerfv(AL_ORIENTATION, orientation.data());
 }
 
-void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
+void AudioManagerImpl::setNextMusic(std::string &&filename)
+{
+	mNextSong = std::move(filename);
+}
+
+void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *listenerData)
 {
 	// Update listener values if there is a listener currently active.
 	if (listenerData != nullptr)
@@ -781,6 +831,20 @@ void AudioManagerImpl::update(const AudioManager::ListenerData *listenerData)
 
 			mFreeSources.push_front(source);
 			mUsedSources.erase(mUsedSources.begin() + i);
+		}
+	}
+
+	// Check if another music is staged and should start when the current one is done.
+	if (this->hasNextMusic())
+	{
+		DebugAssert(mSongStream != nullptr);
+		const bool canChangeToNextMusic = !mSongStream->isPlaying();
+		if (canChangeToNextMusic)
+		{
+			// Assume that the next music always loops.
+			const bool loop = true;
+			this->playMusic(mNextSong, loop);
+			mNextSong.clear();
 		}
 	}
 }
@@ -819,9 +883,9 @@ bool AudioManager::hasResamplerExtension() const
 	return pImpl->mHasResamplerExtension;
 }
 
-void AudioManager::playMusic(const std::string &filename)
+void AudioManager::playMusic(const std::string &filename, bool loop)
 {
-	pImpl->playMusic(filename);
+	pImpl->playMusic(filename, loop);
 }
 
 void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
@@ -859,7 +923,12 @@ void AudioManager::set3D(bool is3D)
 	pImpl->set3D(is3D);
 }
 
-void AudioManager::update(const ListenerData *listenerData)
+void AudioManager::setNextMusic(std::string &&filename)
 {
-	pImpl->update(listenerData);
+	pImpl->setNextMusic(std::move(filename));
+}
+
+void AudioManager::update(double dt, const ListenerData *listenerData)
+{
+	pImpl->update(dt, listenerData);
 }

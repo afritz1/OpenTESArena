@@ -590,12 +590,31 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				}
 			}();
 
+			const std::optional<MusicName> jingleMusicName = [worldType, &gameData, musicName]()
+				-> std::optional<MusicName>
+			{
+				const LocationDefinition &locationDef = gameData->getLocationDefinition();
+				const bool isCity = (worldType == WorldType::City) &&
+					(locationDef.getType() == LocationDefinition::Type::City);
+
+				if (isCity)
+				{
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					const ClimateType climateType = cityDef.climateType;
+					return MusicFile::jingleFromCityTypeAndClimate(cityDef.type, climateType);
+				}
+				else
+				{
+					return std::nullopt;
+				}
+			}();
+
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
 
 			// Initialize game world panel.
 			game.setPanel<GameWorldPanel>(game);
-			game.setMusic(musicName);
+			game.setMusic(musicName, jingleMusicName);
 		};
 		return Button<Game&, int, int, const std::string&,
 			const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType>(function);

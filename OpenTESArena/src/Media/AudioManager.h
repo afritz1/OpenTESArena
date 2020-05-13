@@ -45,8 +45,8 @@ public:
 	// Returns whether the implementation supports resampling options.
 	bool hasResamplerExtension() const;
 
-	// Plays a music file. All music should loop until changed.
-	void playMusic(const std::string &filename);
+	// Plays a music file.
+	void playMusic(const std::string &filename, bool loop);
 
 	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
 	// is played globally.
@@ -74,9 +74,12 @@ public:
 	// The 2D option is provided for parity with the original engine.
 	void set3D(bool is3D);
 
+	// Sets the next music to play after the current one is finished.
+	void setNextMusic(std::string &&filename);
+
 	// Updates any state not handled by a background thread, such as resetting
 	// the sources of finished sounds, and updating listener values (if any).
-	void update(const ListenerData *listenerData);
+	void update(double dt, const ListenerData *listenerData);
 };
 
 #endif
