@@ -837,18 +837,8 @@ void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *liste
 	// Check if another music is staged and should start when the current one is done.
 	if (this->hasNextMusic())
 	{
-		// @todo: if currently-playing music has reached its end, then play next music.
-		// - Can't query the active music source to see if it's done playing because looping is always false and
-		//   the looping is handled manually by the buffer-filling loop.
-		// - Maybe try AL_BUFFERS_PROCESSED?
-
 		DebugAssert(mSongStream != nullptr);
-		const bool currentMusicIsDone = !mSongStream->isPlaying();
-
-		// @todo: add a small buffer of time at the end of the previous song (using dt given to update())
-		// so it changes a bit more naturally.
-		const bool canChangeToNextMusic = currentMusicIsDone;
-
+		const bool canChangeToNextMusic = !mSongStream->isPlaying();
 		if (canChangeToNextMusic)
 		{
 			// Assume that the next music always loops.
