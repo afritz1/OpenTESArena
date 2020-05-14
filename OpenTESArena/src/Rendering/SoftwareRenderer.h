@@ -435,12 +435,11 @@ private:
 		struct SkyGradient
 		{
 			int threadsDone;
-			std::vector<Double3> *rowCache;
+			Buffer<Double3> *rowCache;
 			double projectedYTop, projectedYBottom; // Projected Y range of sky gradient.
 			std::atomic<bool> shouldDrawStars; // True if the sky is dark enough.
 
-			void init(double projectedYTop, double projectedYBottom,
-				std::vector<Double3> &rowCache);
+			void init(double projectedYTop, double projectedYBottom, Buffer<Double3> &rowCache);
 		};
 
 		struct DistantSky
@@ -465,7 +464,7 @@ private:
 			const VoxelGrid *voxelGrid;
 			const std::vector<VoxelTexture> *voxelTextures;
 			const ChasmTextureGroups *chasmTextureGroups;
-			std::vector<OcclusionData> *occlusion;
+			Buffer<OcclusionData> *occlusion;
 			double ceilingHeight;
 			int chunkDistance;
 			bool doneLightVisTesting; // True when render threads can start rendering voxels.
@@ -476,7 +475,7 @@ private:
 				const std::vector<VisibleLight> &visLights,
 				const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 				const std::vector<VoxelTexture> &voxelTextures,
-				const ChasmTextureGroups &chasmTextureGroups, std::vector<OcclusionData> &occlusion);
+				const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion);
 		};
 
 		struct Flats
@@ -535,8 +534,8 @@ private:
 	// Max angle of distant clouds above the horizon, in degrees.
 	static const double DISTANT_CLOUDS_MAX_ANGLE;
 
-	std::vector<double> depthBuffer; // 2D buffer, mostly consists of depth in the XZ plane.
-	std::vector<OcclusionData> occlusion; // Min and max Y for each column.
+	Buffer2D<double> depthBuffer;
+	Buffer<OcclusionData> occlusion; // 1D buffer, min and max Y for each pixel column.
 	std::vector<const Entity*> potentiallyVisibleFlats; // Updated every frame.
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
@@ -548,8 +547,8 @@ private:
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
-	std::vector<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
-	std::vector<std::thread> renderThreads; // Threads used for rendering the world.
+	Buffer<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
+	Buffer<std::thread> renderThreads; // Threads used for rendering the world.
 	RenderThreadData threadData; // Managed by main thread, used by render threads.
 	double fogDistance; // Distance at which fog is maximum.
 	int width, height; // Dimensions of frame buffer.
@@ -790,7 +789,7 @@ private:
 	// Draws a column of pixels for a star. This is its own pixel-rendering method because of
 	// the unique method of shading required for stars.
 	static void drawStarPixels(int x, const DrawRange &drawRange, double u, double vStart,
-		double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
+		double vEnd, const SkyTexture &texture, const Buffer<Double3> &skyGradientRowCache,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Helper functions for drawing the initial voxel column.
@@ -898,7 +897,7 @@ private:
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
 	static void drawSkyGradient(int startY, int endY, double gradientProjYTop,
-		double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
+		double gradientProjYBottom, Buffer<Double3> &skyGradientRowCache,
 		std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
 
@@ -906,7 +905,7 @@ private:
 	// are determined from current threading settings.
 	static void drawDistantSky(int startX, int endX, bool parallaxSky,
 		const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-		const std::vector<Double3> &skyGradientRowCache, bool shouldDrawStars,
+		const Buffer<Double3> &skyGradientRowCache, bool shouldDrawStars,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
@@ -916,7 +915,7 @@ private:
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
-		std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame);
+		Buffer<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,

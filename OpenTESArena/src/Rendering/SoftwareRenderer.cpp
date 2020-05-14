@@ -850,7 +850,7 @@ void SoftwareRenderer::VisibleLightList::sortByNearest(const Double3 &point,
 }
 
 void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
-	double projectedYBottom, std::vector<Double3> &rowCache)
+	double projectedYBottom, Buffer<Double3> &rowCache)
 {
 	this->threadsDone = 0;
 	this->rowCache = &rowCache;
@@ -876,7 +876,7 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double 
 	const std::vector<VisibleLight> &visLights,
 	const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &voxelTextures,
-	const ChasmTextureGroups &chasmTextureGroups, std::vector<OcclusionData> &occlusion)
+	const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion)
 {
 	this->threadsDone = 0;
 	this->chunkDistance = chunkDistance;
@@ -1056,16 +1056,17 @@ Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
 
 void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 {
-	// Initialize 2D frame buffer.
-	const int pixelCount = width * height;
-	this->depthBuffer = std::vector<double>(pixelCount,
-		std::numeric_limits<double>::infinity());
+	// Initialize frame buffer.
+	this->depthBuffer.init(width, height);
+	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
 	// Initialize occlusion columns.
-	this->occlusion = std::vector<OcclusionData>(width, OcclusionData(0, height));
+	this->occlusion.init(width);
+	this->occlusion.fill(OcclusionData(0, height));
 
 	// Initialize sky gradient cache.
-	this->skyGradientRowCache = std::vector<Double3>(height, Double3::Zero);
+	this->skyGradientRowCache.init(height);
+	this->skyGradientRowCache.fill(Double3::Zero);
 
 	// Initialize texture vectors to default sizes.
 	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
@@ -1259,16 +1260,14 @@ void SoftwareRenderer::clearDistantSky()
 
 void SoftwareRenderer::resize(int width, int height)
 {
-	const int pixelCount = width * height;
-	this->depthBuffer.resize(pixelCount);
-	std::fill(this->depthBuffer.begin(), this->depthBuffer.end(), 
-		std::numeric_limits<double>::infinity());
+	this->depthBuffer.init(width, height);
+	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
-	this->occlusion.resize(width);
-	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, height));
+	this->occlusion.init(width);
+	this->occlusion.fill(OcclusionData(0, height));
 
-	this->skyGradientRowCache.resize(height);
-	std::fill(this->skyGradientRowCache.begin(), this->skyGradientRowCache.end(), Double3::Zero);
+	this->skyGradientRowCache.init(height);
+	this->skyGradientRowCache.fill(Double3::Zero);
 
 	this->width = width;
 	this->height = height;
@@ -1281,15 +1280,15 @@ void SoftwareRenderer::resize(int width, int height)
 void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 {
 	// If there are existing threads, reset them.
-	if (this->renderThreads.size() > 0)
+	if (this->renderThreads.getCount() > 0)
 	{
 		this->resetRenderThreads();
 	}
 
 	// If more or fewer threads are requested, re-allocate the render thread list.
-	if (this->renderThreads.size() != threadCount)
+	if (this->renderThreads.getCount() != threadCount)
 	{
-		this->renderThreads.resize(threadCount);
+		this->renderThreads.init(threadCount);
 	}
 
 	// Block width and height are the approximate number of columns and rows per thread,
@@ -1299,9 +1298,8 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 
 	// Start thread loop for each render thread. Rounding is involved so the start and stop
 	// coordinates are correct for all resolutions.
-	for (size_t i = 0; i < this->renderThreads.size(); i++)
+	for (int i = 0; i < this->renderThreads.getCount(); i++)
 	{
-		const int threadIndex = static_cast<int>(i);
 		const int startX = static_cast<int>(std::round(static_cast<double>(i) * blockWidth));
 		const int endX = static_cast<int>(std::round(static_cast<double>(i + 1) * blockWidth));
 		const int startY = static_cast<int>(std::round(static_cast<double>(i) * blockHeight));
@@ -1313,8 +1311,8 @@ void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
 		DebugAssert(startY >= 0);
 		DebugAssert(endY <= height);
 
-		this->renderThreads[i] = std::thread(SoftwareRenderer::renderThreadLoop,
-			std::ref(this->threadData), threadIndex, startX, endX, startY, endY);
+		this->renderThreads.set(i, std::thread(SoftwareRenderer::renderThreadLoop,
+			std::ref(this->threadData), i, startX, endX, startY, endY));
 	}
 }
 
@@ -1327,8 +1325,9 @@ void SoftwareRenderer::resetRenderThreads()
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
-	for (auto &thread : this->renderThreads)
+	for (int i = 0; i < this->renderThreads.getCount(); i++)
 	{
+		std::thread &thread = this->renderThreads.get(i);
 		if (thread.joinable())
 		{
 			thread.join();
@@ -4648,7 +4647,7 @@ void SoftwareRenderer::drawMoonPixels(int x, const DrawRange &drawRange, double 
 }
 
 void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double u, double vStart,
-	double vEnd, const SkyTexture &texture, const std::vector<Double3> &skyGradientRowCache,
+	double vEnd, const SkyTexture &texture, const Buffer<Double3> &skyGradientRowCache,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Draw range values.
@@ -4682,7 +4681,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 		if (texel.a != 0.0)
 		{
 			// Get gradient color from sky gradient row cache.
-			const Double3 &gradientColor = skyGradientRowCache[y];
+			const Double3 &gradientColor = skyGradientRowCache.get(y);
 
 			// If the gradient color behind the star is dark enough, then draw. Interpolate with a
 			// range of intensities so stars don't immediately blink on/off when the gradient is a
@@ -7656,7 +7655,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 }
 
 void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProjYTop,
-	double gradientProjYBottom, std::vector<Double3> &skyGradientRowCache,
+	double gradientProjYBottom, Buffer<Double3> &skyGradientRowCache,
 	std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	// Lambda for drawing one row of colors and depth in the frame buffer.
@@ -7694,7 +7693,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 			gradientPercent, shadingInfo);
 
 		// Cache row color for star rendering.
-		skyGradientRowCache.at(y) = color;
+		skyGradientRowCache.set(y, color);
 
 		// Update star visibility.
 		const double maxComp = std::max(std::max(color.x, color.y), color.z);
@@ -7711,7 +7710,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 
 void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky, 
 	const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-	const std::vector<Double3> &skyGradientRowCache, bool shouldDrawStars,
+	const Buffer<Double3> &skyGradientRowCache, bool shouldDrawStars,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	enum class DistantRenderType { General, Moon, Star };
@@ -7838,7 +7837,7 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
-	std::vector<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
+	Buffer<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	const Double2 forwardZoomed(camera.forwardZoomedX, camera.forwardZoomedZ);
 	const Double2 rightAspected(camera.rightAspectedX, camera.rightAspectedZ);
@@ -7861,7 +7860,7 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 		// Cast the 2D ray and fill in the column's pixels with color.
 		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, chunkDistance, ceilingHeight,
 			openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, voxelTextures,
-			chasmTextureGroups, occlusion.at(x), frame);
+			chasmTextureGroups, occlusion.get(x), frame);
 	}
 }
 
@@ -8040,17 +8039,15 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// values together.
 	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude, ambient,
 		this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior, playerHasLight);
-	const FrameView frame(colorBuffer, this->depthBuffer.data(), this->width, this->height);
+	const FrameView frame(colorBuffer, this->depthBuffer.get(), this->width, this->height);
 
 	// Projected Y range of the sky gradient.
 	double gradientProjYTop, gradientProjYBottom;
 	SoftwareRenderer::getSkyGradientProjectedYRange(camera, gradientProjYTop, gradientProjYBottom);
 
 	// Set all the render-thread-specific shared data for this frame.
-	this->threadData.init(static_cast<int>(this->renderThreads.size()),
-		camera, shadingInfo, frame);
-	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom,
-		this->skyGradientRowCache);
+	this->threadData.init(this->renderThreads.getCount(), camera, shadingInfo, frame);
+	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom, this->skyGradientRowCache);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
 	this->threadData.voxels.init(chunkDistance, ceilingHeight, openDoors, fadingVoxels,
 		this->visibleLights, this->visLightLists, voxelGrid, this->voxelTextures,
@@ -8068,7 +8065,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Reset occlusion. Don't need to reset sky gradient row cache because it is written to before
 	// it is read.
-	std::fill(this->occlusion.begin(), this->occlusion.end(), OcclusionData(0, this->height));
+	this->occlusion.fill(OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.
 	this->updateVisibleDistantObjects(parallaxSky, shadingInfo, camera, frame);
