@@ -136,10 +136,10 @@ int RendererUtils::getUpperBoundedPixel(double projected, int frameDim)
 
 Quaternion RendererUtils::getLatitudeRotation(double latitude)
 {
-	return Matrix4d::zRotation(latitude * (Constants::Pi / 8.0));
+	return Quaternion::fromAxisAngle(Double3::UnitZ, latitude * (Constants::Pi / 8.0));
 }
 
 Quaternion RendererUtils::getTimeOfDayRotation(double daytimePercent)
 {
-	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
+	return Quaternion::fromAxisAngle(Double3::UnitX, daytimePercent * Constants::TwoPi);
 }
