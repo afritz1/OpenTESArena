@@ -5,6 +5,7 @@
 #include <limits>
 #include <smmintrin.h>
 
+#include "RendererUtils.h"
 #include "SoftwareRenderer.h"
 #include "Surface.h"
 #include "../Entities/EntityAnimationData.h"
@@ -385,7 +386,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	// for "acceptable skewing" at a vertical FOV of 90.0. If the camera is not clamped, this
 	// could theoretically be between -infinity and infinity, but it would result in far too much
 	// skewing.
-	this->yShear = SoftwareRenderer::getYShear(this->yAngleRadians, this->zoom);
+	this->yShear = RendererUtils::getYShear(this->yAngleRadians, this->zoom);
 
 	this->horizonProjY = [this]()
 	{
@@ -477,8 +478,8 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	double daytimePercent, double latitude, double ambient, double fogDistance,
 	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
-	this->timeRotation = SoftwareRenderer::getTimeOfDayRotation(daytimePercent);
-	this->latitudeRotation = SoftwareRenderer::getLatitudeRotation(latitude);
+	this->timeRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
+	this->latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
 
 	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
 	// and forwards in the PM (horizon is earliest in the palette).
@@ -509,7 +510,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
 		const double sunLatitude = -(latitude + (13.0 / 100.0));
-		const Matrix4d sunRotation = SoftwareRenderer::getLatitudeRotation(sunLatitude);
+		const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
 		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
 		return Double3(dir.x, dir.y, dir.z).normalized();
@@ -1043,7 +1044,7 @@ Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
 	// Subtract y-shear from the Y percent because Y coordinates on-screen are reversed.
 	const double yAngleRadians = cameraDirection.getYAngleRadians();
 	const double zoom = MathUtils::verticalFovToZoom(fovY);
-	const double yShear = SoftwareRenderer::getYShear(yAngleRadians, zoom);
+	const double yShear = RendererUtils::getYShear(yAngleRadians, zoom);
 	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
 
 	// Combine the various components to get the final vector
@@ -1078,7 +1079,7 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 	this->fogDistance = 0.0;
 
 	// Initialize render threads.
-	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(renderThreadsMode);
+	const int threadCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
 	this->initRenderThreads(width, height, threadCount);
 }
 
@@ -1087,7 +1088,7 @@ void SoftwareRenderer::setRenderThreadsMode(int mode)
 	this->renderThreadsMode = mode;
 
 	// Re-initialize render threads.
-	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(renderThreadsMode);
+	const int threadCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
 	this->initRenderThreads(this->width, this->height, threadCount);
 }
 
@@ -1180,7 +1181,7 @@ void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmTyp
 	DebugAssert(width == ChasmTexture::WIDTH);
 	DebugAssert(height == ChasmTexture::HEIGHT);
 
-	const int chasmID = SoftwareRenderer::getChasmIdFromType(chasmType);
+	const int chasmID = RendererUtils::getChasmIdFromType(chasmType);
 
 	auto iter = this->chasmTextureGroups.find(chasmID);
 	if (iter == this->chasmTextureGroups.end())
@@ -1273,7 +1274,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->height = height;
 
 	// Restart render threads with new dimensions.
-	const int threadCount = SoftwareRenderer::getRenderThreadsFromMode(this->renderThreadsMode);
+	const int threadCount = RendererUtils::getRenderThreadsFromMode(this->renderThreadsMode);
 	this->initRenderThreads(width, height, threadCount);
 }
 
@@ -1383,7 +1384,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 
 			const Double3 objPointBottom = camera.eye + objDirBottom;
 
-			const double yProjEnd = SoftwareRenderer::getProjectedY(
+			const double yProjEnd = RendererUtils::getProjectedY(
 				objPointBottom, camera.transform, camera.yShear);
 			const double yProjStart = yProjEnd - (objHeight * camera.zoom);
 
@@ -1393,10 +1394,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			const double yProjScreenStart = (yProjStart + yProjBias) * frame.heightReal;
 			const double yProjScreenEnd = (yProjEnd + yProjBias) * frame.heightReal;
 
-			const int yStart = SoftwareRenderer::getLowerBoundedPixel(
-				yProjScreenStart, frame.height);
-			const int yEnd = SoftwareRenderer::getUpperBoundedPixel(
-				yProjScreenEnd, frame.height);
+			const int yStart = RendererUtils::getLowerBoundedPixel(yProjScreenStart, frame.height);
+			const int yEnd = RendererUtils::getUpperBoundedPixel(yProjScreenEnd, frame.height);
 
 			return DrawRange(yProjScreenStart, yProjScreenEnd, yStart, yEnd);
 		}();
@@ -1494,9 +1493,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				const double xProjEnd = 0.50 + ((objProjPointRight.x / objProjPointRight.w) * 0.50);
 
 				// Get the start and end X pixel coordinates.
-				const int xDrawStart = SoftwareRenderer::getLowerBoundedPixel(
+				const int xDrawStart = RendererUtils::getLowerBoundedPixel(
 					xProjStart * frame.widthReal, frame.width);
-				const int xDrawEnd = SoftwareRenderer::getUpperBoundedPixel(
+				const int xDrawEnd = RendererUtils::getUpperBoundedPixel(
 					xProjEnd * frame.widthReal, frame.width);
 
 				this->visDistantObjs.objs.push_back(VisDistantObject(
@@ -1536,9 +1535,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			if (onScreen)
 			{
 				// Get the start and end X pixel coordinates.
-				const int xDrawStart = SoftwareRenderer::getLowerBoundedPixel(
+				const int xDrawStart = RendererUtils::getLowerBoundedPixel(
 					xProjStart * frame.widthReal, frame.width);
-				const int xDrawEnd = SoftwareRenderer::getUpperBoundedPixel(
+				const int xDrawEnd = RendererUtils::getUpperBoundedPixel(
 					xProjEnd * frame.widthReal, frame.width);
 
 				this->visDistantObjs.objs.push_back(VisDistantObject(
@@ -1653,7 +1652,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 
 			// The moon's position in the sky is modified by its current phase.
 			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
-			const Matrix4d moonRotation = SoftwareRenderer::getLatitudeRotation(phaseModifier);
+			const Matrix4d moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
 			const Double4 dir = moonRotation * Double4(baseDir, 0.0);
 			return Double3(dir.x, dir.y, dir.z).normalized();
 		}();
@@ -2082,44 +2081,6 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	}
 }
 
-int SoftwareRenderer::getRenderThreadsFromMode(int mode)
-{
-	if (mode == 0)
-	{
-		// Very low.
-		return 1;
-	}
-	else if (mode == 1)
-	{
-		// Low.
-		return std::max(Platform::getThreadCount() / 4, 1);
-	}
-	else if (mode == 2)
-	{
-		// Medium.
-		return std::max(Platform::getThreadCount() / 2, 1);
-	}
-	else if (mode == 3)
-	{
-		// High.
-		return std::max((3 * Platform::getThreadCount()) / 4, 1);
-	}
-	else if (mode == 4)
-	{
-		// Very high.
-		return std::max(Platform::getThreadCount() - 1, 1);
-	}
-	else if (mode == 5)
-	{
-		// Max.
-		return Platform::getThreadCount();
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(mode));
-	}
-}
-
 VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
 	const Double2 &eye, const Ray &ray)
 {
@@ -2389,40 +2350,11 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	}
 }
 
-int SoftwareRenderer::getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType)
-{
-	switch (chasmType)
-	{
-	case VoxelDefinition::ChasmData::Type::Dry:
-		return 0;
-	case VoxelDefinition::ChasmData::Type::Wet:
-		return 1;
-	case VoxelDefinition::ChasmData::Type::Lava:
-		return 2;
-	default:
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(chasmType)));
-	}
-}
-
-bool SoftwareRenderer::isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType)
-{
-	switch (chasmType)
-	{
-	case VoxelDefinition::ChasmData::Type::Dry:
-	case VoxelDefinition::ChasmData::Type::Wet:
-		return false;
-	case VoxelDefinition::ChasmData::Type::Lava:
-		return true;
-	default:
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
-	}
-}
-
 void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
 	VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
 	const ChasmTexture **outTexture)
 {
-	const int chasmID = SoftwareRenderer::getChasmIdFromType(chasmType);
+	const int chasmID = RendererUtils::getChasmIdFromType(chasmType);
 	const auto groupIter = textureGroups.find(chasmID);
 	if (groupIter == textureGroups.end())
 	{
@@ -2494,76 +2426,15 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	return visLightLists.get(visLightListX, visLightListY);
 }
 
-double SoftwareRenderer::getDoorPercentOpen(int voxelX, int voxelZ,
-	const std::vector<LevelData::DoorState> &openDoors)
-{
-	const Int2 voxel(voxelX, voxelZ);
-	const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-		[&voxel](const LevelData::DoorState &openDoor)
-	{
-		return openDoor.getVoxel() == voxel;
-	});
-
-	return (iter != openDoors.end()) ? iter->getPercentOpen() : 0.0;
-}
-
-double SoftwareRenderer::getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
-	const std::vector<LevelData::FadeState> &fadingVoxels)
-{
-	const Int3 voxel(voxelX, voxelY, voxelZ);
-
-	// find_if was terribly slow in MSVC due to iterators, so using for loop instead.
-	for (const LevelData::FadeState &fadeState : fadingVoxels)
-	{
-		if (fadeState.getVoxel() == voxel)
-		{
-			return std::clamp(1.0 - fadeState.getPercentDone(), 0.0, 1.0);
-		}
-	}
-
-	return 1.0;
-}
-
-double SoftwareRenderer::getYShear(double angleRadians, double zoom)
-{
-	return std::tan(angleRadians) * zoom;
-}
-
-double SoftwareRenderer::getProjectedY(const Double3 &point, 
-	const Matrix4d &transform, double yShear)
-{	
-	// Just do 3D projection for the Y and W coordinates instead of a whole
-	// matrix * vector4 multiplication to keep from doing some unnecessary work.
-	double projectedY, projectedW;
-	transform.ywMultiply(point, projectedY, projectedW);
-
-	// Convert the projected Y to normalized coordinates.
-	projectedY /= projectedW;
-
-	// Calculate the Y position relative to the center row of the screen, and offset it by 
-	// the Y-shear. Multiply by 0.5 for the correct aspect ratio.
-	return (0.50 + yShear) - (projectedY * 0.50);
-}
-
-int SoftwareRenderer::getLowerBoundedPixel(double projected, int frameDim)
-{
-	return std::clamp(static_cast<int>(std::ceil(projected - 0.50)), 0, frameDim);
-}
-
-int SoftwareRenderer::getUpperBoundedPixel(double projected, int frameDim)
-{
-	return std::clamp(static_cast<int>(std::floor(projected + 0.50)), 0, frameDim);
-}
-
 SoftwareRenderer::DrawRange SoftwareRenderer::makeDrawRange(const Double3 &startPoint,
 	const Double3 &endPoint, const Camera &camera, const FrameView &frame)
 {
-	const double yProjStart = SoftwareRenderer::getProjectedY(
+	const double yProjStart = RendererUtils::getProjectedY(
 		startPoint, camera.transform, camera.yShear) * frame.heightReal;
-	const double yProjEnd = SoftwareRenderer::getProjectedY(
+	const double yProjEnd = RendererUtils::getProjectedY(
 		endPoint, camera.transform, camera.yShear) * frame.heightReal;
-	const int yStart = SoftwareRenderer::getLowerBoundedPixel(yProjStart, frame.height);
-	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(yProjEnd, frame.height);
+	const int yStart = RendererUtils::getLowerBoundedPixel(yProjStart, frame.height);
+	const int yEnd = RendererUtils::getUpperBoundedPixel(yProjEnd, frame.height);
 
 	return DrawRange(yProjStart, yProjEnd, yStart, yEnd);
 }
@@ -2572,17 +2443,17 @@ std::array<SoftwareRenderer::DrawRange, 2> SoftwareRenderer::makeDrawRangeTwoPar
 	const Double3 &startPoint, const Double3 &midPoint, const Double3 &endPoint,
 	const Camera &camera, const FrameView &frame)
 {
-	const double startYProjStart = SoftwareRenderer::getProjectedY(
+	const double startYProjStart = RendererUtils::getProjectedY(
 		startPoint, camera.transform, camera.yShear) * frame.heightReal;
-	const double startYProjEnd = SoftwareRenderer::getProjectedY(
+	const double startYProjEnd = RendererUtils::getProjectedY(
 		midPoint, camera.transform, camera.yShear) * frame.heightReal;
-	const double endYProjEnd = SoftwareRenderer::getProjectedY(
+	const double endYProjEnd = RendererUtils::getProjectedY(
 		endPoint, camera.transform, camera.yShear) * frame.heightReal;
 
-	const int startYStart = SoftwareRenderer::getLowerBoundedPixel(startYProjStart, frame.height);
-	const int startYEnd = SoftwareRenderer::getUpperBoundedPixel(startYProjEnd, frame.height);
+	const int startYStart = RendererUtils::getLowerBoundedPixel(startYProjStart, frame.height);
+	const int startYEnd = RendererUtils::getUpperBoundedPixel(startYProjEnd, frame.height);
 	const int endYStart = startYEnd;
-	const int endYEnd = SoftwareRenderer::getUpperBoundedPixel(endYProjEnd, frame.height);
+	const int endYEnd = RendererUtils::getUpperBoundedPixel(endYProjEnd, frame.height);
 
 	return std::array<DrawRange, 2>
 	{
@@ -2595,21 +2466,21 @@ std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreeP
 	const Double3 &startPoint, const Double3 &midPoint1, const Double3 &midPoint2,
 	const Double3 &endPoint, const Camera &camera, const FrameView &frame)
 {
-	const double startYProjStart = SoftwareRenderer::getProjectedY(
+	const double startYProjStart = RendererUtils::getProjectedY(
 		startPoint, camera.transform, camera.yShear) * frame.heightReal;
-	const double startYProjEnd = SoftwareRenderer::getProjectedY(
+	const double startYProjEnd = RendererUtils::getProjectedY(
 		midPoint1, camera.transform, camera.yShear) * frame.heightReal;
-	const double mid1YProjEnd = SoftwareRenderer::getProjectedY(
+	const double mid1YProjEnd = RendererUtils::getProjectedY(
 		midPoint2, camera.transform, camera.yShear) * frame.heightReal;
-	const double mid2YProjEnd = SoftwareRenderer::getProjectedY(
+	const double mid2YProjEnd = RendererUtils::getProjectedY(
 		endPoint, camera.transform, camera.yShear) * frame.heightReal;
 
-	const int startYStart = SoftwareRenderer::getLowerBoundedPixel(startYProjStart, frame.height);
-	const int startYEnd = SoftwareRenderer::getUpperBoundedPixel(startYProjEnd, frame.height);
+	const int startYStart = RendererUtils::getLowerBoundedPixel(startYProjStart, frame.height);
+	const int startYEnd = RendererUtils::getUpperBoundedPixel(startYProjEnd, frame.height);
 	const int mid1YStart = startYEnd;
-	const int mid1YEnd = SoftwareRenderer::getUpperBoundedPixel(mid1YProjEnd, frame.height);
+	const int mid1YEnd = RendererUtils::getUpperBoundedPixel(mid1YProjEnd, frame.height);
 	const int mid2YStart = mid1YEnd;
-	const int mid2YEnd = SoftwareRenderer::getUpperBoundedPixel(mid2YProjEnd, frame.height);
+	const int mid2YEnd = RendererUtils::getUpperBoundedPixel(mid2YProjEnd, frame.height);
 
 	return std::array<DrawRange, 3>
 	{
@@ -2617,16 +2488,6 @@ std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreeP
 		DrawRange(startYProjEnd, mid1YProjEnd, mid1YStart, mid1YEnd),
 		DrawRange(mid1YProjEnd, mid2YProjEnd, mid2YStart, mid2YEnd)
 	};
-}
-
-Matrix4d SoftwareRenderer::getLatitudeRotation(double latitude)
-{
-	return Matrix4d::zRotation(latitude * (Constants::Pi / 8.0));
-}
-
-Matrix4d SoftwareRenderer::getTimeOfDayRotation(double daytimePercent)
-{
-	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }
 
 void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, double &projectedYTop,
@@ -2656,15 +2517,13 @@ void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, doubl
 			return camera.eye + gradientTopDir;
 		}();
 
-		return SoftwareRenderer::getProjectedY(
-			gradientTopPoint, camera.transform, camera.yShear);
+		return RendererUtils::getProjectedY(gradientTopPoint, camera.transform, camera.yShear);
 	}();
 
 	projectedYBottom = [&camera, &forward]()
 	{
 		const Double3 gradientBottomPoint = camera.eye + forward;
-		return SoftwareRenderer::getProjectedY(
-			gradientBottomPoint, camera.transform, camera.yShear);
+		return RendererUtils::getProjectedY(gradientBottomPoint, camera.transform, camera.yShear);
 	}();
 }
 
@@ -4912,7 +4771,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
 			nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		// Ceiling.
@@ -4954,7 +4813,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -4986,7 +4845,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5004,7 +4863,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Floor.
@@ -5027,7 +4886,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5071,7 +4930,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -5152,7 +5011,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 		// Chasm floor (drawn before far wall for occlusion buffer).
 		const Double3 floorNormal = Double3::UnitY;
 		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			farZ, nearZ, floorNormal, RendererUtils::isChasmEmissive(chasmData.type),
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
@@ -5188,15 +5047,14 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, farNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
@@ -5329,7 +5187,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		// Floor.
@@ -5357,7 +5215,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -5388,7 +5246,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5406,7 +5264,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Floor.
@@ -5429,7 +5287,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5473,7 +5331,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -5525,8 +5383,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
@@ -5660,7 +5517,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		// Ceiling.
@@ -5684,7 +5541,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		// Ceiling.
@@ -5720,7 +5577,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5738,7 +5595,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Floor.
@@ -5761,7 +5618,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -5805,7 +5662,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -5886,7 +5743,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 		// Chasm floor (drawn before far wall for occlusion buffer).
 		const Double3 floorNormal = Double3::UnitY;
 		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			farZ, nearZ, floorNormal, RendererUtils::isChasmEmissive(chasmData.type),
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
@@ -5922,15 +5779,14 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, farNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(voxelX, voxelZ,
@@ -6140,7 +5996,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(nearPoint, visLights, visLightList);
@@ -6171,7 +6027,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -6203,7 +6059,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -6228,7 +6084,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
@@ -6279,7 +6135,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -6390,7 +6246,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 				LightContributionCap>(nearPoint, visLights, visLightList);
 
 			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-				Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, nearNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 
@@ -6400,7 +6256,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 		// Chasm floor (drawn before far wall for occlusion buffer).
 		const Double3 floorNormal = Double3::UnitY;
 		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			farZ, nearZ, floorNormal, RendererUtils::isChasmEmissive(chasmData.type),
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
@@ -6436,15 +6292,14 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 
 			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, farNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
@@ -6582,7 +6437,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 			nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(nearPoint, visLights, visLightList);
@@ -6617,7 +6472,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -6648,7 +6503,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -6673,7 +6528,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
@@ -6724,7 +6579,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -6795,8 +6650,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
@@ -6934,7 +6788,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 			farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		// Ceiling.
@@ -6965,7 +6819,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
-		const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxelX, voxelY, voxelZ, fadingVoxels);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -7000,7 +6854,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Ceiling.
@@ -7025,7 +6879,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 
 			// Wall.
@@ -7076,7 +6930,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
-			const double fadePercent = SoftwareRenderer::getFadingVoxelPercent(
+			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxelX, voxelY, voxelZ, fadingVoxels);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
@@ -7187,7 +7041,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 				LightContributionCap>(nearPoint, visLights, visLightList);
 
 			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
-				Constants::JustBelowOne, nearNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, nearNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 
@@ -7197,7 +7051,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 		// Chasm floor (drawn before far wall for occlusion buffer).
 		const Double3 floorNormal = Double3::UnitY;
 		SoftwareRenderer::drawPerspectiveChasmPixels(x, drawRanges.at(1), farPoint, nearPoint,
-			farZ, nearZ, floorNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+			farZ, nearZ, floorNormal, RendererUtils::isChasmEmissive(chasmData.type),
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
@@ -7233,15 +7087,14 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 
 			const Double3 farNormal = -VoxelDefinition::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
-				Constants::JustBelowOne, farNormal, SoftwareRenderer::isChasmEmissive(chasmData.type),
+				Constants::JustBelowOne, farNormal, RendererUtils::isChasmEmissive(chasmData.type),
 				textures.at(chasmData.id), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
 	else if (voxelDef.dataType == VoxelDataType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = SoftwareRenderer::getDoorPercentOpen(
-			voxelX, voxelZ, openDoors);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, openDoors);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(voxelX, voxelZ,
@@ -7481,10 +7334,10 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	const double projectedYEnd = flat.endY * frame.heightReal;
 
 	// Clamp the coordinates for where the flat starts and stops on the screen.
-	const int xStart = SoftwareRenderer::getLowerBoundedPixel(projectedXStart, frame.width);
-	const int xEnd = SoftwareRenderer::getUpperBoundedPixel(projectedXEnd, frame.width);
-	const int yStart = SoftwareRenderer::getLowerBoundedPixel(projectedYStart, frame.height);
-	const int yEnd = SoftwareRenderer::getUpperBoundedPixel(projectedYEnd, frame.height);
+	const int xStart = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
+	const int xEnd = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);
+	const int yStart = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
+	const int yEnd = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
 
 	// Shading on the texture.
 	const Double3 shading(

@@ -555,9 +555,6 @@ private:
 	int width, height; // Dimensions of frame buffer.
 	int renderThreadsMode; // Determines number of threads to use for rendering.
 
-	// Gets the number of render threads to use based on the given mode.
-	static int getRenderThreadsFromMode(int mode);
-
 	// Initializes render threads that run in the background for the duration of the renderer's
 	// lifetime. This can also be used to reset threads after a screen resize.
 	void initRenderThreads(int width, int height, int threadCount);
@@ -590,12 +587,6 @@ private:
 	static VoxelFacing getChasmFarFacing(int voxelX, int voxelZ,
 		VoxelFacing nearFacing, const Camera &camera, const Ray &ray);
 
-	// Converts the given chasm type to its chasm ID.
-	static int getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType);
-
-	// Returns whether the chasm type is emissive and ignores ambient shading.
-	static bool isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType);
-
 	// Tries to convert the chasm animation percent to the associated texture within the chasm
 	// texture group for the given chasm type.
 	static void getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
@@ -612,27 +603,6 @@ private:
 		NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth,
 		int chunkDistance);
 
-	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
-	static double getDoorPercentOpen(int voxelX, int voxelZ,
-		const std::vector<LevelData::DoorState> &openDoors);
-
-	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
-	static double getFadingVoxelPercent(int voxelX, int voxelY, int voxelZ,
-		const std::vector<LevelData::FadeState> &fadingVoxels);
-
-	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
-	// and the zoom of the camera (dependent on vertical field of view).
-	static double getYShear(double angleRadians, double zoom);
-
-	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
-	static double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
-
-	// Gets the pixel coordinate with the nearest available pixel center based on the projected
-	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
-	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.
-	static int getLowerBoundedPixel(double projected, int frameDim);
-	static int getUpperBoundedPixel(double projected, int frameDim);
-
 	// Generates a vertical draw range on-screen from two vertices in world space.
 	static DrawRange makeDrawRange(const Double3 &startPoint, const Double3 &endPoint,
 		const Camera &camera, const FrameView &frame);
@@ -648,12 +618,6 @@ private:
 	static std::array<DrawRange, 3> makeDrawRangeThreePart(const Double3 &startPoint,
 		const Double3 &midPoint1, const Double3 &midPoint2, const Double3 &endPoint,
 		const Camera &camera, const FrameView &frame);
-
-	// Creates a rotation matrix for drawing latitude-correct distant space objects.
-	static Matrix4d getLatitudeRotation(double latitude);
-
-	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
-	static Matrix4d getTimeOfDayRotation(double daytimePercent);
 
 	// Fills in the two reference parameters with the projected top and bottom Y percent of the sky
 	// gradient.
