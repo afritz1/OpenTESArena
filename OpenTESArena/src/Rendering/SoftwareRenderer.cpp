@@ -7472,13 +7472,14 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	}
 }
 
-void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
+template <bool NonNegativeDirX, bool NonNegativeDirZ>
+void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
 {
 	// Initially based on Lode Vandevenne's algorithm, this method of 2.5D ray casting is more 
@@ -7492,38 +7493,20 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
 
+	constexpr int stepX = NonNegativeDirX ? 1 : -1;
+	constexpr int stepZ = NonNegativeDirZ ? 1 : -1;
+
 	const double dirXSquared = ray.dirX * ray.dirX;
 	const double dirZSquared = ray.dirZ * ray.dirZ;
-
 	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
 	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
 
-	const bool nonNegativeDirX = ray.dirX >= 0.0;
-	const bool nonNegativeDirZ = ray.dirZ >= 0.0;
-
-	int stepX, stepZ;
-	double sideDistX, sideDistZ;
-	if (nonNegativeDirX)
-	{
-		stepX = 1;
-		sideDistX = (camera.eyeVoxelReal.x + 1.0 - camera.eye.x) * deltaDistX;
-	}
-	else
-	{
-		stepX = -1;
-		sideDistX = (camera.eye.x - camera.eyeVoxelReal.x) * deltaDistX;
-	}
-
-	if (nonNegativeDirZ)
-	{
-		stepZ = 1;
-		sideDistZ = (camera.eyeVoxelReal.z + 1.0 - camera.eye.z) * deltaDistZ;
-	}
-	else
-	{
-		stepZ = -1;
-		sideDistZ = (camera.eye.z - camera.eyeVoxelReal.z) * deltaDistZ;
-	}
+	double sideDistX = NonNegativeDirX ?
+		((camera.eyeVoxelReal.x + 1.0 - camera.eye.x) * deltaDistX) :
+		((camera.eye.x - camera.eyeVoxelReal.x) * deltaDistX);
+	double sideDistZ = NonNegativeDirZ ?
+		((camera.eyeVoxelReal.z + 1.0 - camera.eye.z) * deltaDistZ) :
+		((camera.eye.z - camera.eyeVoxelReal.z) * deltaDistZ);
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
@@ -7532,11 +7515,11 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	VoxelFacing facing;
 
 	// Verify that the initial voxel coordinate is within the world bounds.
-	bool voxelIsValid = 
-		(camera.eyeVoxel.x >= 0) && 
-		(camera.eyeVoxel.y >= 0) && 
+	bool voxelIsValid =
+		(camera.eyeVoxel.x >= 0) &&
+		(camera.eyeVoxel.y >= 0) &&
 		(camera.eyeVoxel.z >= 0) &&
-		(camera.eyeVoxel.x < voxelGrid.getWidth()) && 
+		(camera.eyeVoxel.x < voxelGrid.getWidth()) &&
 		(camera.eyeVoxel.y < voxelGrid.getHeight()) &&
 		(camera.eyeVoxel.z < voxelGrid.getDepth());
 
@@ -7546,14 +7529,12 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		if (sideDistX < sideDistZ)
 		{
 			zDistance = sideDistX;
-			facing = nonNegativeDirX ? VoxelFacing::NegativeX : 
-				VoxelFacing::PositiveX;
+			facing = NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 		}
 		else
 		{
 			zDistance = sideDistZ;
-			facing = nonNegativeDirZ ? VoxelFacing::NegativeZ : 
-				VoxelFacing::PositiveZ;
+			facing = NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 		}
 
 		// The initial near point is directly in front of the player in the near Z 
@@ -7570,7 +7551,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
-			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE, 
+			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE,
 			zDistance, shadingInfo, chunkDistance, ceilingHeight, openDoors, fadingVoxels,
 			visLights, visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
@@ -7579,43 +7560,39 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	// the Y cell coordinate is constant.
 	Int3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
 
+	// Helper values for Z distance calculation per step.
+	constexpr double halfOneMinusStepXReal = static_cast<double>((1 - stepX) / 2);
+	constexpr double halfOneMinusStepZReal = static_cast<double>((1 - stepZ) / 2);
+
 	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
 	// distance for the current edge point.
-	auto doDDAStep = [&camera, &ray, &voxelGrid, &sideDistX, &sideDistZ, &cell,
-		&facing, &voxelIsValid, &zDistance, deltaDistX, deltaDistZ, stepX, stepZ,
-		nonNegativeDirX, nonNegativeDirZ]()
+	// @optimization: constexpr values in a lambda capture (stepX, zDistance values) are not baked in!!
+	// - Only way to get the values baked in is 1) make template doDDAStep() method, or 2) no lambda.
+	auto doDDAStep = [&camera, &ray, &voxelGrid, stepX, stepZ, deltaDistX, deltaDistZ,
+		&sideDistX, &sideDistZ, &cell, &facing, &voxelIsValid, &zDistance,
+		halfOneMinusStepXReal, halfOneMinusStepZReal]()
 	{
 		if (sideDistX < sideDistZ)
 		{
 			sideDistX += deltaDistX;
 			cell.x += stepX;
-			facing = nonNegativeDirX ? VoxelFacing::NegativeX : 
-				VoxelFacing::PositiveX;
+			facing = NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
 		}
 		else
 		{
 			sideDistZ += deltaDistZ;
 			cell.z += stepZ;
-			facing = nonNegativeDirZ ? VoxelFacing::NegativeZ : 
-				VoxelFacing::PositiveZ;
+			facing = NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
 		}
 
-		const bool onXAxis = (facing == VoxelFacing::PositiveX) || 
-			(facing == VoxelFacing::NegativeX);
+		const bool onXAxis = (facing == VoxelFacing::PositiveX) || (facing == VoxelFacing::NegativeX);
 
 		// Update the Z distance depending on which axis was stepped with.
-		if (onXAxis)
-		{
-			zDistance = (static_cast<double>(cell.x) - 
-				camera.eye.x + static_cast<double>((1 - stepX) / 2)) / ray.dirX;
-		}
-		else
-		{
-			zDistance = (static_cast<double>(cell.z) -
-				camera.eye.z + static_cast<double>((1 - stepZ) / 2)) / ray.dirZ;
-		}
+		zDistance = onXAxis ?
+			(((static_cast<double>(cell.x) - camera.eye.x) + halfOneMinusStepXReal) / ray.dirX) :
+			(((static_cast<double>(cell.z) - camera.eye.z) + halfOneMinusStepZReal) / ray.dirZ);
 	};
 
 	// Step forward in the grid once to leave the initial voxel and update the Z distance.
@@ -7624,7 +7601,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	// Step through the voxel grid while the current coordinate is valid, the 
 	// distance stepped is less than the distance at which fog is maximum, and
 	// the column is not completely occluded.
-	while (voxelIsValid && (zDistance < shadingInfo.fogDistance) && 
+	while (voxelIsValid && (zDistance < shadingInfo.fogDistance) &&
 		(occlusion.yMin != occlusion.yMax))
 	{
 		// Store the cell coordinates, axis, and Z distance for wall rendering. The
@@ -7649,8 +7626,54 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
 			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance,
-			ceilingHeight,  openDoors, fadingVoxels, visLights, visLightLists, voxelGrid,
+			ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists, voxelGrid,
 			textures, chasmTextureGroups, occlusion, frame);
+	}
+}
+
+void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
+	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const BufferView<const VisibleLight> &visLights,
+	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
+	OcclusionData &occlusion, const FrameView &frame)
+{
+	// Certain values like the step delta are constant relative to the ray direction, allowing
+	// for some compile-time constants and better code generation.
+	const bool nonNegativeDirX = ray.dirX >= 0.0;
+	const bool nonNegativeDirZ = ray.dirZ >= 0.0;
+
+	if (nonNegativeDirX)
+	{
+		if (nonNegativeDirZ)
+		{
+			SoftwareRenderer::rayCast2DInternal<true, true>(x, camera, ray, shadingInfo,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		}
+		else
+		{
+			SoftwareRenderer::rayCast2DInternal<true, false>(x, camera, ray, shadingInfo,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		}
+	}
+	else
+	{
+		if (nonNegativeDirZ)
+		{
+			SoftwareRenderer::rayCast2DInternal<false, true>(x, camera, ray, shadingInfo,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		}
+		else
+		{
+			SoftwareRenderer::rayCast2DInternal<false, false>(x, camera, ray, shadingInfo,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+		}
 	}
 }
 

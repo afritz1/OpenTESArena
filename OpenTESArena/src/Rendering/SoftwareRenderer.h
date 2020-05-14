@@ -885,6 +885,18 @@ private:
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
+	template <bool NonNegativeDirX, bool NonNegativeDirZ>
+	static void rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
+		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
+		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		OcclusionData &occlusion, const FrameView &frame);
+
+	// Helper method for internal ray casting function that takes template parameters for better
+	// code generation.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
