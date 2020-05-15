@@ -7578,6 +7578,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 			cell.x += stepX;
 			facing = NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
+			zDistance = (((static_cast<double>(cell.x) - camera.eye.x) + halfOneMinusStepXReal) / ray.dirX);
 		}
 		else
 		{
@@ -7585,14 +7586,8 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 			cell.z += stepZ;
 			facing = NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
+			zDistance = (((static_cast<double>(cell.z) - camera.eye.z) + halfOneMinusStepZReal) / ray.dirZ);
 		}
-
-		const bool onXAxis = (facing == VoxelFacing::PositiveX) || (facing == VoxelFacing::NegativeX);
-
-		// Update the Z distance depending on which axis was stepped with.
-		zDistance = onXAxis ?
-			(((static_cast<double>(cell.x) - camera.eye.x) + halfOneMinusStepXReal) / ray.dirX) :
-			(((static_cast<double>(cell.z) - camera.eye.z) + halfOneMinusStepZReal) / ray.dirZ);
 	};
 
 	// Step forward in the grid once to leave the initial voxel and update the Z distance.
