@@ -942,6 +942,7 @@ namespace Physics
 
 	// Internal ray casting loop for stepping through individual voxels and checking
 	// ray intersections with voxel data and entities.
+	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
 	void rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &cameraForward, double ceilingHeight, const VoxelGrid &voxelGrid,
 		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const EntityManager &entityManager,
@@ -971,16 +972,12 @@ namespace Physics
 		// voxel side lengths.
 		const Double3 rayStartRelativeFloor = rayStartVoxelReal * axisLen;
 
-		const bool nonNegativeDirX = rayDirection.x >= 0.0;
-		const bool nonNegativeDirY = rayDirection.y >= 0.0;
-		const bool nonNegativeDirZ = rayDirection.z >= 0.0;
-
 		// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 		// This is affected by non-uniform grid properties like tall voxels.
 		const Double3 deltaDist(
-			(nonNegativeDirX ? axisLen.x : -axisLen.x) / rayDirection.x,
-			(nonNegativeDirY ? axisLen.y : -axisLen.y) / rayDirection.y,
-			(nonNegativeDirZ ? axisLen.z : -axisLen.z) / rayDirection.z);
+			(NonNegativeDirX ? axisLen.x : -axisLen.x) / rayDirection.x,
+			(NonNegativeDirY ? axisLen.y : -axisLen.y) / rayDirection.y,
+			(NonNegativeDirZ ? axisLen.z : -axisLen.z) / rayDirection.z);
 
 		DebugAssert(deltaDist.x >= 0.0);
 		DebugAssert(deltaDist.y >= 0.0);
@@ -988,59 +985,40 @@ namespace Physics
 
 		// Step is the voxel delta per step (always +/- 1). The initial delta distances are percentages
 		// of the delta distances, dependent on the ray start position inside the voxel.
-		Int3 step;
-		Double3 initialDeltaDistPercents;
-		if (nonNegativeDirX)
-		{
-			step.x = 1;
-			initialDeltaDistPercents.x = 1.0 - ((rayStart.x - rayStartRelativeFloor.x) / axisLen.x);
-		}
-		else
-		{
-			step.x = -1;
-			initialDeltaDistPercents.x = (rayStart.x - rayStartRelativeFloor.x) / axisLen.x;
-		}
+		constexpr int stepX = NonNegativeDirX ? 1 : -1;
+		constexpr int stepY = NonNegativeDirY ? 1 : -1;
+		constexpr int stepZ = NonNegativeDirZ ? 1 : -1;
 
-		if (nonNegativeDirY)
-		{
-			step.y = 1;
-			initialDeltaDistPercents.y = 1.0 - ((rayStart.y - rayStartRelativeFloor.y) / axisLen.y);
-		}
-		else
-		{
-			step.y = -1;
-			initialDeltaDistPercents.y = (rayStart.y - rayStartRelativeFloor.y) / axisLen.y;
-		}
+		const double initialDeltaDistPercentX = NonNegativeDirX ?
+			(1.0 - ((rayStart.x - rayStartRelativeFloor.x) / axisLen.x)) :
+			((rayStart.x - rayStartRelativeFloor.x) / axisLen.x);
+		const double initialDeltaDistPercentY = NonNegativeDirY ?
+			(1.0 - ((rayStart.y - rayStartRelativeFloor.y) / axisLen.y)) :
+			((rayStart.y - rayStartRelativeFloor.y) / axisLen.y);
+		const double initialDeltaDistPercentZ = NonNegativeDirZ ?
+			(1.0 - ((rayStart.z - rayStartRelativeFloor.z) / axisLen.z)) :
+			((rayStart.z - rayStartRelativeFloor.z) / axisLen.z);
 
-		if (nonNegativeDirZ)
-		{
-			step.z = 1;
-			initialDeltaDistPercents.z = 1.0 - ((rayStart.z - rayStartRelativeFloor.z) / axisLen.z);
-		}
-		else
-		{
-			step.z = -1;
-			initialDeltaDistPercents.z = (rayStart.z - rayStartRelativeFloor.z) / axisLen.z;
-		}
-
-		DebugAssert(initialDeltaDistPercents.x >= 0.0);
-		DebugAssert(initialDeltaDistPercents.x <= 1.0);
-		DebugAssert(initialDeltaDistPercents.y >= 0.0);
-		DebugAssert(initialDeltaDistPercents.y <= 1.0);
-		DebugAssert(initialDeltaDistPercents.z >= 0.0);
-		DebugAssert(initialDeltaDistPercents.z <= 1.0);
+		DebugAssert(initialDeltaDistPercentX >= 0.0);
+		DebugAssert(initialDeltaDistPercentX <= 1.0);
+		DebugAssert(initialDeltaDistPercentY >= 0.0);
+		DebugAssert(initialDeltaDistPercentY <= 1.0);
+		DebugAssert(initialDeltaDistPercentZ >= 0.0);
+		DebugAssert(initialDeltaDistPercentZ <= 1.0);
 
 		// Initial delta distance is a fraction of delta distance based on the ray's position in
 		// the initial voxel.
-		Double3 initialDeltaDist = deltaDist * initialDeltaDistPercents;
+		const double initialDeltaDistX = deltaDist.x * initialDeltaDistPercentX;
+		const double initialDeltaDistY = deltaDist.y * initialDeltaDistPercentY;
+		const double initialDeltaDistZ = deltaDist.z * initialDeltaDistPercentZ;
 
 		// The visible voxel facings for each axis depending on ray direction. The facing is opposite
 		// to the direction (i.e. negative Y face if stepping upward).
-		const std::array<VoxelFacing, 3> visibleWallFacings =
+		constexpr std::array<VoxelFacing, 3> visibleWallFacings =
 		{
-			nonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX,
-			nonNegativeDirY ? VoxelFacing::NegativeY : VoxelFacing::PositiveY,
-			nonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ,
+			NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX,
+			NonNegativeDirY ? VoxelFacing::NegativeY : VoxelFacing::PositiveY,
+			NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ,
 		};
 
 		// The ray distance and intersected face of the voxel.
@@ -1058,19 +1036,19 @@ namespace Physics
 		{
 			// See how far away the initial wall is, and which voxel face was hit. This is basically
 			// "find min element index in array".
-			if ((initialDeltaDist.x < initialDeltaDist.y) && (initialDeltaDist.x < initialDeltaDist.z))
+			if ((initialDeltaDistX < initialDeltaDistY) && (initialDeltaDistX < initialDeltaDistZ))
 			{
-				rayDistance = initialDeltaDist.x;
+				rayDistance = initialDeltaDistX;
 				facing = visibleWallFacings[0];
 			}
-			else if (initialDeltaDist.y < initialDeltaDist.z)
+			else if (initialDeltaDistY < initialDeltaDistZ)
 			{
-				rayDistance = initialDeltaDist.y;
+				rayDistance = initialDeltaDistY;
 				facing = visibleWallFacings[1];
 			}
 			else
 			{
-				rayDistance = initialDeltaDist.z;
+				rayDistance = initialDeltaDistZ;
 				facing = visibleWallFacings[2];
 			}
 
@@ -1095,39 +1073,47 @@ namespace Physics
 
 		// Delta distance sums in each component, starting at the initial wall hit. The lowest
 		// component is the candidate for the next DDA loop.
-		Double3 deltaDistSum = initialDeltaDist;
+		double deltaDistSumX = initialDeltaDistX;
+		double deltaDistSumY = initialDeltaDistY;
+		double deltaDistSumZ = initialDeltaDistZ;
+
+		// Helper values for ray distance calculation.
+		constexpr double halfOneMinusStepXReal = static_cast<double>((1 - stepX) / 2);
+		constexpr double halfOneMinusStepYReal = static_cast<double>((1 - stepY) / 2);
+		constexpr double halfOneMinusStepZReal = static_cast<double>((1 - stepZ) / 2);
 
 		// Lambda for stepping to the next voxel coordinate in the grid and updating the ray distance.
-		auto doDDAStep = [&rayStart, &rayDirection, &voxelGrid, &deltaDist, nonNegativeDirX,
-			nonNegativeDirY, nonNegativeDirZ, &step, &initialDeltaDist, &visibleWallFacings,
-			&rayDistance, &facing, &voxelIsValid, &currentVoxel, &deltaDistSum]()
+		auto doDDAStep = [&rayStart, &rayDirection, &voxelGrid, &deltaDist, stepX, stepY, stepZ,
+			initialDeltaDistX, initialDeltaDistY, initialDeltaDistZ, &visibleWallFacings,
+			&rayDistance, &facing, &voxelIsValid, &currentVoxel, &deltaDistSumX, &deltaDistSumY,
+			&deltaDistSumZ, halfOneMinusStepXReal, halfOneMinusStepYReal, halfOneMinusStepZReal]()
 		{
-			if ((deltaDistSum.x < deltaDistSum.y) && (deltaDistSum.x < deltaDistSum.z))
+			if ((deltaDistSumX < deltaDistSumY) && (deltaDistSumX < deltaDistSumZ))
 			{
-				deltaDistSum.x += deltaDist.x;
-				currentVoxel.x += step.x;
+				deltaDistSumX += deltaDist.x;
+				currentVoxel.x += stepX;
 				facing = visibleWallFacings[0];
 				voxelIsValid &= (currentVoxel.x >= 0) && (currentVoxel.x < voxelGrid.getWidth());
-				rayDistance = (static_cast<double>(currentVoxel.x) -
-					rayStart.x + static_cast<double>((1 - step.x) / 2)) / rayDirection.x;
+				rayDistance = ((static_cast<double>(currentVoxel.x) - rayStart.x) +
+					halfOneMinusStepXReal) / rayDirection.x;
 			}
-			else if (deltaDistSum.y < deltaDistSum.z)
+			else if (deltaDistSumY < deltaDistSumZ)
 			{
-				deltaDistSum.y += deltaDist.y;
-				currentVoxel.y += step.y;
+				deltaDistSumY += deltaDist.y;
+				currentVoxel.y += stepY;
 				facing = visibleWallFacings[1];
 				voxelIsValid &= (currentVoxel.y >= 0) && (currentVoxel.y < voxelGrid.getHeight());
-				rayDistance = (static_cast<double>(currentVoxel.y) -
-					rayStart.y + static_cast<double>((1 - step.y) / 2)) / rayDirection.y;
+				rayDistance = ((static_cast<double>(currentVoxel.y) - rayStart.y) +
+					halfOneMinusStepYReal) / rayDirection.y;
 			}
 			else
 			{
-				deltaDistSum.z += deltaDist.z;
-				currentVoxel.z += step.z;
+				deltaDistSumZ += deltaDist.z;
+				currentVoxel.z += stepZ;
 				facing = visibleWallFacings[2];
 				voxelIsValid &= (currentVoxel.z >= 0) && (currentVoxel.z < voxelGrid.getDepth());
-				rayDistance = (static_cast<double>(currentVoxel.z) -
-					rayStart.z + static_cast<double>((1 - step.z) / 2)) / rayDirection.z;
+				rayDistance = ((static_cast<double>(currentVoxel.z) - rayStart.z) +
+					halfOneMinusStepZReal) / rayDirection.z;
 			}
 		};
 
@@ -1249,9 +1235,71 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			rayStart, rayDirection, chunkDistance, ceilingHeight, voxelGrid, entityManager);
 	}
 
-	// Ray cast through the voxel grid, populating the output hit data.
-	Physics::rayCastInternal(rayStart, rayDirection, cameraForward, ceilingHeight, voxelGrid,
-		voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+	// Ray cast through the voxel grid, populating the output hit data. Use the ray direction
+	// booleans for better code generation (at the expense of having a pile of if/else branches
+	// here).
+	const bool nonNegativeDirX = rayDirection.x >= 0.0;
+	const bool nonNegativeDirY = rayDirection.y >= 0.0;
+	const bool nonNegativeDirZ = rayDirection.z >= 0.0;
+
+	if (nonNegativeDirX)
+	{
+		if (nonNegativeDirY)
+		{
+			if (nonNegativeDirZ)
+			{
+				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+			else
+			{
+				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+		}
+		else
+		{
+			if (nonNegativeDirZ)
+			{
+				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+			else
+			{
+				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+		}
+	}
+	else
+	{
+		if (nonNegativeDirY)
+		{
+			if (nonNegativeDirZ)
+			{
+				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+			else
+			{
+				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+		}
+		else
+		{
+			if (nonNegativeDirZ)
+			{
+				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+			else
+			{
+				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward,
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+			}
+		}
+	}
 
 	// Return whether the ray hit something.
 	return hit.getT() < Hit::MAX_T;
