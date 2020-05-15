@@ -7495,18 +7495,26 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 	constexpr int stepX = NonNegativeDirX ? 1 : -1;
 	constexpr int stepZ = NonNegativeDirZ ? 1 : -1;
+	constexpr double axisLenX = 1.0;
+	constexpr double axisLenZ = 1.0;
 
-	const double dirXSquared = ray.dirX * ray.dirX;
-	const double dirZSquared = ray.dirZ * ray.dirZ;
-	const double deltaDistX = std::sqrt(1.0 + (dirZSquared / dirXSquared));
-	const double deltaDistZ = std::sqrt(1.0 + (dirXSquared / dirZSquared));
+	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
+	const double deltaDistX = (NonNegativeDirX ? axisLenX : -axisLenX) / ray.dirX;
+	const double deltaDistZ = (NonNegativeDirZ ? axisLenZ : -axisLenZ) / ray.dirZ;
 
-	double sideDistX = NonNegativeDirX ?
-		((camera.eyeVoxelReal.x + 1.0 - camera.eye.x) * deltaDistX) :
-		((camera.eye.x - camera.eyeVoxelReal.x) * deltaDistX);
-	double sideDistZ = NonNegativeDirZ ?
-		((camera.eyeVoxelReal.z + 1.0 - camera.eye.z) * deltaDistZ) :
-		((camera.eye.z - camera.eyeVoxelReal.z) * deltaDistZ);
+	// The initial delta distances are percentages of the delta distances, dependent on the ray
+	// start position inside the voxel.
+	const double initialDeltaDistPercentX = NonNegativeDirX ?
+		(1.0 - ((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX)) :
+		((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX);
+	const double initialDeltaDistPercentZ = NonNegativeDirZ ?
+		(1.0 - ((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ)) :
+		((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ);
+
+	// Initial delta distance is a fraction of delta distance based on the ray's position in
+	// the initial voxel.
+	const double initialDeltaDistX = deltaDistX * initialDeltaDistPercentX;
+	const double initialDeltaDistZ = deltaDistZ * initialDeltaDistPercentZ;
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
@@ -7526,14 +7534,14 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	if (voxelIsValid)
 	{
 		// Decide how far the wall is, and which voxel face was hit.
-		if (sideDistX < sideDistZ)
+		if (initialDeltaDistX < initialDeltaDistZ)
 		{
-			zDistance = sideDistX;
+			zDistance = initialDeltaDistX;
 			facing = NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 		}
 		else
 		{
-			zDistance = sideDistZ;
+			zDistance = initialDeltaDistZ;
 			facing = NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 		}
 
@@ -7559,6 +7567,11 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
 	// the Y cell coordinate is constant.
 	Int3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
+	
+	// Delta distance sums in each component, starting at the initial wall hit. The lowest
+	// component is the candidate for the next DDA loop.
+	double deltaDistSumX = initialDeltaDistX;
+	double deltaDistSumZ = initialDeltaDistZ;
 
 	// Helper values for Z distance calculation per step.
 	constexpr double halfOneMinusStepXReal = static_cast<double>((1 - stepX) / 2);
@@ -7569,12 +7582,12 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// @optimization: constexpr values in a lambda capture (stepX, zDistance values) are not baked in!!
 	// - Only way to get the values baked in is 1) make template doDDAStep() method, or 2) no lambda.
 	auto doDDAStep = [&camera, &ray, &voxelGrid, stepX, stepZ, deltaDistX, deltaDistZ,
-		&sideDistX, &sideDistZ, &cell, &facing, &voxelIsValid, &zDistance,
+		&zDistance, &facing, &voxelIsValid, &cell, &deltaDistSumX, &deltaDistSumZ,
 		halfOneMinusStepXReal, halfOneMinusStepZReal]()
 	{
-		if (sideDistX < sideDistZ)
+		if (deltaDistSumX < deltaDistSumZ)
 		{
-			sideDistX += deltaDistX;
+			deltaDistSumX += deltaDistX;
 			cell.x += stepX;
 			facing = NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < voxelGrid.getWidth());
@@ -7582,7 +7595,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 		}
 		else
 		{
-			sideDistZ += deltaDistZ;
+			deltaDistSumZ += deltaDistZ;
 			cell.z += stepZ;
 			facing = NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < voxelGrid.getDepth());
