@@ -6,6 +6,7 @@
 #include <limits>
 
 #include "VoxelDefinition.h"
+#include "VoxelUtils.h"
 
 #include "components/utilities/Buffer3D.h"
 
@@ -27,20 +28,27 @@ private:
 	std::array<VoxelDefinition, MAX_VOXEL_DEFS> voxelDefs;
 	std::array<bool, MAX_VOXEL_DEFS> activeVoxelDefs;
 
-	// Chunk coordinates.
-	int x, y;
-protected:
-	Chunk(int x, int y, int height);
+	// Chunk coordinates in the world.
+	ChunkInt2 coord;
 public:
 	// Public for some classes that want non-instance dimensions.
 	static constexpr int WIDTH = 64;
 	static constexpr int DEPTH = WIDTH;
 
-	int getX() const;
-	int getY() const;
+	// Interior chunks are always three voxels high (ground, main floor, ceiling). Exteriors
+	// are higher to support taller buildings.
+	static constexpr int INTERIOR_HEIGHT = 3;
+	static constexpr int EXTERIOR_HEIGHT = 6;
+	static constexpr int WILDERNESS_HEIGHT = EXTERIOR_HEIGHT;
+
+	void init(const ChunkInt2 &coord, int height);
+
 	constexpr int getWidth() const;
 	int getHeight() const;
 	constexpr int getDepth() const;
+
+	// Gets the chunk's XY coordinate in the world.
+	const ChunkInt2 &getCoord() const;
 
 	// Gets the voxel ID at the given coordinate.
 	VoxelID get(int x, int y, int z) const;
@@ -51,6 +59,9 @@ public:
 	// Gets the number of active voxel definitions.
 	int debug_getVoxelDefCount() const;
 
+	// Sets the chunk's XY coordinate in the world.
+	void setCoord(const ChunkInt2 &coord);
+
 	// Sets the voxel at the given coordinate.
 	void set(int x, int y, int z, VoxelID id);
 
@@ -59,20 +70,9 @@ public:
 
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
 	void removeVoxelDef(VoxelID id);
-};
 
-// Interior chunks are always three voxels high (ground, main floor, ceiling).
-class InteriorChunk final : public Chunk
-{
-public:
-	InteriorChunk(int x, int y) : Chunk(x, y, 3) { }
-};
-
-// Exteriors are higher to allow for tall buildings.
-class ExteriorChunk final : public Chunk
-{
-public:
-	ExteriorChunk(int x, int y) : Chunk(x, y, 6) { }
+	// Clears all chunk state.
+	void clear();
 };
 
 #endif

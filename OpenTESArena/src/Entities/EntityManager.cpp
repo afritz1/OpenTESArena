@@ -838,6 +838,16 @@ void EntityManager::clear()
 	this->nextID = 0;
 }
 
+void EntityManager::clearChunk(const ChunkInt2 &coord)
+{
+	const EWInt x = coord.x;
+	const SNInt y = coord.y;
+	auto &staticGroup = this->staticGroups.get(x, y);
+	auto &dynamicGroup = this->dynamicGroups.get(x, y);
+	staticGroup.clear();
+	dynamicGroup.clear();
+}
+
 void EntityManager::tick(Game &game, double dt)
 {
 	// Only want to tick entities near the player, so get the chunks near the player.

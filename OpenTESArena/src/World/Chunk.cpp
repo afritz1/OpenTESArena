@@ -4,7 +4,7 @@
 
 #include "components/debug/Debug.h"
 
-Chunk::Chunk(int x, int y, int height)
+void Chunk::init(const ChunkInt2 &coord, int height)
 {
 	// Set all voxels to air and unused.
 	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
@@ -16,18 +16,12 @@ Chunk::Chunk(int x, int y, int height)
 	// Let the first voxel data (air) be usable immediately. All default voxel IDs can safely point to it.
 	this->activeVoxelDefs.front() = true;
 
-	this->x = x;
-	this->y = y;
+	this->coord = coord;
 }
 
-int Chunk::getX() const
+const ChunkInt2 &Chunk::getCoord() const
 {
-	return this->x;
-}
-
-int Chunk::getY() const
-{
-	return this->y;
+	return this->coord;
 }
 
 constexpr int Chunk::getWidth() const
@@ -63,6 +57,11 @@ int Chunk::debug_getVoxelDefCount() const
 		std::count(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), true));
 }
 
+void Chunk::setCoord(const ChunkInt2 &coord)
+{
+	this->coord = coord;
+}
+
 void Chunk::set(int x, int y, int z, VoxelID value)
 {
 	this->voxels.set(x, y, z, value);
@@ -87,4 +86,12 @@ void Chunk::removeVoxelDef(VoxelID id)
 	DebugAssert(id < this->voxelDefs.size());
 	this->voxelDefs[id] = VoxelDefinition();
 	this->activeVoxelDefs[id] = false;
+}
+
+void Chunk::clear()
+{
+	this->voxels.clear();
+	this->voxelDefs.fill(VoxelDefinition());
+	this->activeVoxelDefs.fill(false);
+	this->coord = ChunkInt2();
 }

@@ -157,6 +157,9 @@ public:
 	// Deletes all entities and data in the manager.
 	void clear();
 
+	// Deletes all entities in the given chunk.
+	void clearChunk(const ChunkInt2 &coord);
+
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);
 };
