@@ -3578,9 +3578,13 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 
 			// Shading from light.
 			constexpr double shadingMax = 1.0;
-			colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
-			colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
-			colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
+			const double combinedEmission = colorEmission + lightContributionPercent;
+			const double lightR = shading.x + combinedEmission;
+			const double lightG = shading.y + combinedEmission;
+			const double lightB = shading.z + combinedEmission;
+			colorR *= (lightR < shadingMax) ? lightR : shadingMax;
+			colorG *= (lightG < shadingMax) ? lightG : shadingMax;
+			colorB *= (lightB < shadingMax) ? lightB : shadingMax;
 
 			if constexpr (Fading)
 			{
@@ -3716,9 +3720,13 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 
 			// Shading from light.
 			constexpr double shadingMax = 1.0;
-			colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
-			colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
-			colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
+			const double combinedEmission = colorEmission + lightContributionPercent;
+			const double lightR = shading.x + combinedEmission;
+			const double lightG = shading.y + combinedEmission;
+			const double lightB = shading.z + combinedEmission;
+			colorR *= (lightR < shadingMax) ? lightR : shadingMax;
+			colorG *= (lightG < shadingMax) ? lightG : shadingMax;
+			colorB *= (lightB < shadingMax) ? lightB : shadingMax;
 
 			if constexpr (Fading)
 			{
@@ -3833,9 +3841,13 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 			{
 				// Shading from light.
 				constexpr double shadingMax = 1.0;
-				colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
-				colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
-				colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
+				const double combinedEmission = colorEmission + lightContributionPercent;
+				const double lightR = shading.x + combinedEmission;
+				const double lightG = shading.y + combinedEmission;
+				const double lightB = shading.z + combinedEmission;
+				colorR *= (lightR < shadingMax) ? lightR : shadingMax;
+				colorG *= (lightG < shadingMax) ? lightG : shadingMax;
+				colorB *= (lightB < shadingMax) ? lightB : shadingMax;
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;
@@ -3926,9 +3938,13 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 				// Voxel texture.
 				// Shading from light.
 				constexpr double shadingMax = 1.0;
-				colorR *= std::min(shading.x + colorEmission + lightContributionPercent, shadingMax);
-				colorG *= std::min(shading.y + colorEmission + lightContributionPercent, shadingMax);
-				colorB *= std::min(shading.z + colorEmission + lightContributionPercent, shadingMax);
+				const double combinedEmission = colorEmission + lightContributionPercent;
+				const double lightR = shading.x + combinedEmission;
+				const double lightG = shading.y + combinedEmission;
+				const double lightB = shading.z + combinedEmission;
+				colorR *= (lightR < shadingMax) ? lightR : shadingMax;
+				colorG *= (lightG < shadingMax) ? lightG : shadingMax;
+				colorB *= (lightB < shadingMax) ? lightB : shadingMax;
 
 				// Linearly interpolate with fog.
 				colorR += (fogColor.x - colorR) * fogPercent;
