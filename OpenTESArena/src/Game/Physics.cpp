@@ -7,11 +7,11 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
+#include "../World/ChunkUtils.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -78,7 +78,7 @@ namespace Physics
 			cameraVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 		ChunkInt2 minChunk, maxChunk;
-		VoxelUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
+		ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
 		// Gather up entities in nearby chunks.
 		const int totalNearbyEntities = [&entityManager, &minChunk, &maxChunk]()

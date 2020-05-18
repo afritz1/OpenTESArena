@@ -8,8 +8,8 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
+#include "../World/ChunkUtils.h"
 #include "../World/VoxelDataType.h"
-#include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -857,7 +857,7 @@ void EntityManager::tick(Game &game, double dt)
 
 	const int chunkDistance = 1; // @todo: get from Options
 	ChunkInt2 minChunk, maxChunk;
-	VoxelUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
+	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
 
 	auto tickNearbyEntityGroups = [&game, dt, &minChunk, &maxChunk](auto &entityGroups)
 	{

@@ -16,6 +16,7 @@
 #include "../Media/Color.h"
 #include "../Media/Palette.h"
 #include "../Utilities/Platform.h"
+#include "../World/ChunkUtils.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGrid.h"
@@ -1726,12 +1727,12 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 
 	// Get the min and max chunk coordinates to loop over.
 	ChunkInt2 minChunk, maxChunk;
-	VoxelUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
+	ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Number of potentially visible chunks along each axis (i.e. 3x3).
 	EWInt potentiallyVisChunkCountX;
 	SNInt potentiallyVisChunkCountY;
-	VoxelUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
+	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
 		&potentiallyVisChunkCountX, &potentiallyVisChunkCountY);
 
 	auto getChunkPotentiallyVisFlatCount = [&entityManager](EWInt chunkX, SNInt chunkY)
@@ -1968,7 +1969,7 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z), voxelGrid.getWidth(), voxelGrid.getDepth());
 
 	ChunkInt2 minChunk, maxChunk;
-	VoxelUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
+	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Get the top-leftmost voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
@@ -1977,11 +1978,11 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 	EWInt potentiallyVisChunkCountX;
 	SNInt potentiallyVisChunkCountY;
-	VoxelUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
+	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
 		&potentiallyVisChunkCountX, &potentiallyVisChunkCountY);
 
-	const int visLightListVoxelCountX = potentiallyVisChunkCountX * VoxelUtils::CHUNK_DIM;
-	const int visLightListVoxelCountY = potentiallyVisChunkCountY * VoxelUtils::CHUNK_DIM;
+	const int visLightListVoxelCountX = potentiallyVisChunkCountX * ChunkUtils::CHUNK_DIM;
+	const int visLightListVoxelCountY = potentiallyVisChunkCountY * ChunkUtils::CHUNK_DIM;
 
 	if (!this->visLightLists.isValid() ||
 		(this->visLightLists.getWidth() != visLightListVoxelCountX) ||
@@ -2397,7 +2398,7 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 		NewInt2(cameraVoxelX, cameraVoxelZ), gridWidth, gridDepth);
 
 	ChunkInt2 minChunk, maxChunk;
-	VoxelUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
+	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Get the top-leftmost voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
