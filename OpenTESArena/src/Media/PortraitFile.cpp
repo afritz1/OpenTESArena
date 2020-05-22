@@ -1,31 +1,28 @@
+#include <array>
+#include <cstdio>
+
 #include "PortraitFile.h"
 #include "TextureFile.h"
 #include "TextureName.h"
 
+#include "components/dos/DOSUtils.h"
+
 std::string PortraitFile::getHeads(bool male, int raceID, bool trimmed)
 {
-	std::string filename("FACES");
+	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	std::snprintf(filename.data(), filename.size(), "FACES%s%d%d.CIF",
+		male ? "" : "F", trimmed ? 0 : 1, raceID);
 
-	// Append characters to the filename based on the arguments.
-	filename += male ? "" : "F";
-	filename += trimmed ? "0" : "1";
-	filename += std::to_string(raceID);
-	filename += ".CIF";
-
-	return filename;
+	return std::string(filename.data());
 }
 
 std::string PortraitFile::getBody(bool male, int raceID)
 {
-	std::string filename;
+	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	std::snprintf(filename.data(), filename.size(), "%s0%d.IMG",
+		male ? "CHARBK" : "CHRBKF", raceID);
 
-	// Append characters to the filename based on the arguments.
-	filename += male ? "CHARBK" : "CHRBKF";
-	filename += "0";
-	filename += std::to_string(raceID);
-	filename += ".IMG";
-
-	return filename;
+	return std::string(filename.data());
 }
 
 const std::string &PortraitFile::getShirt(bool male, bool magic)
