@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "EntityType.h"
-#include "GenderName.h"
 #include "Player.h"
 #include "../Assets/MIFUtils.h"
 #include "../Game/Game.h"
@@ -28,11 +27,11 @@ const double Player::JUMP_VELOCITY = 3.0;
 const double Player::GRAVITY = 9.81;
 const double Player::FRICTION = 4.0;
 
-Player::Player(const std::string &displayName, GenderName gender, int raceID,
+Player::Player(const std::string &displayName, bool male, int raceID,
 	const CharacterClass &charClass, int portraitID, const Double3 &position,
 	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
 	double maxRunSpeed, int weaponID, const ExeData &exeData)
-	: displayName(displayName), gender(gender), raceID(raceID), charClass(charClass),
+	: displayName(displayName), male(male), raceID(raceID), charClass(charClass),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
@@ -57,9 +56,9 @@ int Player::getPortraitID() const
 	return this->portraitID;
 }
 
-GenderName Player::getGenderName() const
+bool Player::isMale() const
 {
-	return this->gender;
+	return this->male;
 }
 
 int Player::getRaceID() const
@@ -76,7 +75,7 @@ Player Player::makeRandom(const std::vector<CharacterClass> &charClasses, const 
 {
 	Random random;
 	const std::string name("Player");
-	const GenderName gender = (random.next(2) == 0) ? GenderName::Male : GenderName::Female;
+	const bool isMale = random.next(2) == 0;
 	const int raceID = random.next(8);
 	const CharacterClass &charClass = charClasses.at(
 		random.next(static_cast<int>(charClasses.size())));
@@ -95,7 +94,7 @@ Player Player::makeRandom(const std::vector<CharacterClass> &charClasses, const 
 		return weapons.at(random.next(static_cast<int>(weapons.size())));
 	}();
 
-	return Player(name, gender, raceID, charClass, portraitID, position, direction, velocity,
+	return Player(name, isMale, raceID, charClass, portraitID, position, direction, velocity,
 		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 }
 

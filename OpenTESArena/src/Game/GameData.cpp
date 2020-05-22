@@ -14,7 +14,6 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
 #include "../Entities/EntityManager.h"
-#include "../Entities/GenderName.h"
 #include "../Entities/Player.h"
 #include "../Interface/TextAlignment.h"
 #include "../Interface/TextBox.h"

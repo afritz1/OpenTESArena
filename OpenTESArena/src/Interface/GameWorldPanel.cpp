@@ -2814,7 +2814,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 		// Draw player portrait.
 		const auto &headsFilename = PortraitFile::getHeads(
-			player.getGenderName(), player.getRaceID(), true);
+			player.isMale(), player.getRaceID(), true);
 		const auto &portrait = textureManager.getTextures(
 			headsFilename, renderer).at(player.getPortraitID());
 		const auto &status = textureManager.getTextures(

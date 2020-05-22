@@ -109,7 +109,7 @@ CharacterPanel::CharacterPanel(Game &game)
 	// Get pixel offsets for each head.
 	const auto &player = this->getGame().getGameData().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceID(), false);
+		player.isMale(), player.getRaceID(), false);
 
 	CIFFile cifFile;
 	if (!cifFile.init(headsFilename.c_str()))
@@ -180,17 +180,17 @@ void CharacterPanel::render(Renderer &renderer)
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceID(), false);
+		player.isMale(), player.getRaceID(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
-		player.getGenderName(), player.getRaceID());
+		player.isMale(), player.getRaceID());
 	const std::string &shirtFilename = PortraitFile::getShirt(
-		player.getGenderName(), player.getCharacterClass().canCastMagic());
-	const std::string &pantsFilename = PortraitFile::getPants(player.getGenderName());
+		player.isMale(), player.getCharacterClass().canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(player.isMale());
 
 	// Get pixel offsets for each clothes texture.
-	const Int2 &shirtOffset = PortraitFile::getShirtOffset(
-		player.getGenderName(), player.getCharacterClass().canCastMagic());
-	const Int2 &pantsOffset = PortraitFile::getPantsOffset(player.getGenderName());
+	const Int2 shirtOffset = PortraitFile::getShirtOffset(
+		player.isMale(), player.getCharacterClass().canCastMagic());
+	const Int2 pantsOffset = PortraitFile::getPantsOffset(player.isMale());
 
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());

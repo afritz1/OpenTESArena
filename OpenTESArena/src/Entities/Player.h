@@ -9,8 +9,6 @@ class ExeData;
 class Game;
 class WorldData;
 
-enum class GenderName;
-
 class Player
 {
 private:
@@ -24,7 +22,7 @@ private:
 	static const double FRICTION;
 
 	std::string displayName;
-	GenderName gender;
+	bool male;
 	int raceID;
 	CharacterClass charClass;
 	int portraitID;
@@ -43,7 +41,7 @@ private:
 	// Updates the player's position and velocity based on interactions with the world.
 	void updatePhysics(const WorldData &worldData, bool collision, double dt);
 public:
-	Player(const std::string &displayName, GenderName gender, int raceID,
+	Player(const std::string &displayName, bool male, int raceID,
 		const CharacterClass &charClass, int portraitID, const Double3 &position,
 		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
 		double maxRunSpeed, int weaponID, const ExeData &exeData);
@@ -59,7 +57,7 @@ public:
 	const std::string &getDisplayName() const;
 	std::string getFirstName() const;
 	int getPortraitID() const;
-	GenderName getGenderName() const;
+	bool isMale() const;
 	int getRaceID() const;
 	const CharacterClass &getCharacterClass() const;
 

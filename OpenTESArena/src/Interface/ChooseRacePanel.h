@@ -11,8 +11,6 @@
 
 class Renderer;
 
-enum class GenderName;
-
 class ChooseRacePanel : public Panel
 {
 private:
@@ -20,9 +18,9 @@ private:
 	static const int NO_ID;
 
 	Button<Game&, const CharacterClass&, const std::string&> backToGenderButton;
-	Button<Game&, const CharacterClass&, const std::string&, GenderName, int> acceptButton;
+	Button<Game&, const CharacterClass&, const std::string&, bool, int> acceptButton;
 	CharacterClass charClass;
-	GenderName gender;
+	bool male;
 	std::string name;
 
 	// Gets the initial parchment pop-up.
@@ -35,7 +33,7 @@ private:
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
 	ChooseRacePanel(Game &game, const CharacterClass &charClass, 
-		const std::string &name, GenderName gender);
+		const std::string &name, bool male);
 	virtual ~ChooseRacePanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;

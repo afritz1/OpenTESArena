@@ -19,8 +19,6 @@
 class Renderer;
 class TextBox;
 
-enum class GenderName;
-
 class ChooseAttributesPanel : public Panel
 {
 private:
@@ -29,14 +27,14 @@ private:
 	Button<ChooseAttributesPanel&, bool> portraitButton;
 	std::vector<Int2> headOffsets;
 	CharacterClass charClass;
-	GenderName gender;
+	bool male;
 	int raceID;
 	std::string name;
 	int portraitID;
 	bool canChangePortrait;
 public:
 	ChooseAttributesPanel(Game &game, const CharacterClass &charClass, 
-		const std::string &name, GenderName gender, int raceID);
+		const std::string &name, bool male, int raceID);
 	virtual ~ChooseAttributesPanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;

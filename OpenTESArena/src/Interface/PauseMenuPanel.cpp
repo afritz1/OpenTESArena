@@ -400,7 +400,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	// Draw player portrait.
 	const auto &player = this->getGame().getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
-		player.getGenderName(), player.getRaceID(), true);
+		player.isMale(), player.getRaceID(), true);
 	const auto &portrait = textureManager.getTextures(
 		headsFilename, renderer).at(player.getPortraitID());
 	const auto &status = textureManager.getTextures(

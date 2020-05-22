@@ -1,57 +1,13 @@
-#include <unordered_map>
-
 #include "PortraitFile.h"
 #include "TextureFile.h"
 #include "TextureName.h"
-#include "../Entities/GenderName.h"
 
-namespace std
-{
-	// Hash specializations for std::pair.
-	template <>
-	struct hash<std::pair<GenderName, int>>
-	{
-		size_t operator()(const std::pair<GenderName, int> &x) const
-		{
-			return std::hash<GenderName>()(x.first) ^ std::hash<int>()(x.second);
-		}
-	};
-
-	template <>
-	struct hash<std::pair<GenderName, bool>>
-	{
-		size_t operator()(const std::pair<GenderName, bool> &x) const
-		{
-			return std::hash<GenderName>()(x.first) ^ std::hash<bool>()(x.second);
-		}
-	};
-}
-
-namespace
-{
-	// Pixel offsets for shirt textures in the equipment screen.
-	const std::unordered_map<std::pair<GenderName, bool>, Int2> ShirtOffsets =
-	{
-		{ { GenderName::Female, false }, Int2(220, 35) },
-		{ { GenderName::Female, true }, Int2(220, 33) },
-		{ { GenderName::Male, false }, Int2(186, 12) },
-		{ { GenderName::Male, true }, Int2(215, 35) }
-	};
-
-	// Pixel offsets for pants textures in the equipment screen.
-	const std::unordered_map<GenderName, Int2> PantsOffsets =
-	{
-		{ GenderName::Female, Int2(212, 74) },
-		{ GenderName::Male, Int2(229, 82) }
-	};
-}
-
-std::string PortraitFile::getHeads(GenderName gender, int raceID, bool trimmed)
+std::string PortraitFile::getHeads(bool male, int raceID, bool trimmed)
 {
 	std::string filename("FACES");
 
 	// Append characters to the filename based on the arguments.
-	filename += (gender == GenderName::Female) ? "F" : "";
+	filename += male ? "" : "F";
 	filename += trimmed ? "0" : "1";
 	filename += std::to_string(raceID);
 	filename += ".CIF";
@@ -59,12 +15,12 @@ std::string PortraitFile::getHeads(GenderName gender, int raceID, bool trimmed)
 	return filename;
 }
 
-std::string PortraitFile::getBody(GenderName gender, int raceID)
+std::string PortraitFile::getBody(bool male, int raceID)
 {
 	std::string filename;
 
 	// Append characters to the filename based on the arguments.
-	filename += (gender == GenderName::Female) ? "CHRBKF" : "CHARBK";
+	filename += male ? "CHARBK" : "CHRBKF";
 	filename += "0";
 	filename += std::to_string(raceID);
 	filename += ".IMG";
@@ -72,17 +28,17 @@ std::string PortraitFile::getBody(GenderName gender, int raceID)
 	return filename;
 }
 
-const std::string &PortraitFile::getShirt(GenderName gender, bool magic)
+const std::string &PortraitFile::getShirt(bool male, bool magic)
 {
-	const TextureName textureName = [gender, magic]()
+	const TextureName textureName = [male, magic]()
 	{
-		if (gender == GenderName::Female)
+		if (male)
 		{
-			return magic ? TextureName::FemaleMagicShirt : TextureName::FemaleNonMagicShirt;
+			return magic ? TextureName::MaleMagicShirt : TextureName::MaleNonMagicShirt;
 		}
 		else
 		{
-			return magic ? TextureName::MaleMagicShirt : TextureName::MaleNonMagicShirt;
+			return magic ? TextureName::FemaleMagicShirt : TextureName::FemaleNonMagicShirt;
 		}
 	}();
 
@@ -90,30 +46,33 @@ const std::string &PortraitFile::getShirt(GenderName gender, bool magic)
 	return filename;
 }
 
-const std::string &PortraitFile::getPants(GenderName gender)
+const std::string &PortraitFile::getPants(bool male)
 {
-	const TextureName textureName = (gender == GenderName::Female) ?
-		TextureName::FemalePants : TextureName::MalePants;
+	const TextureName textureName = male ? TextureName::MalePants : TextureName::FemalePants;
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }
 
-const std::string &PortraitFile::getEquipment(GenderName gender)
+const std::string &PortraitFile::getEquipment(bool male)
 {
-	const TextureName textureName = (gender == GenderName::Female) ?
-		TextureName::FemaleEquipment : TextureName::MaleEquipment;
+	const TextureName textureName = male ? TextureName::MaleEquipment : TextureName::FemaleEquipment;
 	const std::string &filename = TextureFile::fromName(textureName);
 	return filename;
 }
 
-const Int2 &PortraitFile::getShirtOffset(GenderName gender, bool magic)
+Int2 PortraitFile::getShirtOffset(bool male, bool magic)
 {
-	const Int2 &offset = ShirtOffsets.at(std::make_pair(gender, magic));
-	return offset;
+	if (male)
+	{
+		return magic ? Int2(215, 35) : Int2(186, 12);
+	}
+	else
+	{
+		return magic ? Int2(220, 33) : Int2(220, 35);
+	}
 }
 
-const Int2 &PortraitFile::getPantsOffset(GenderName gender)
+Int2 PortraitFile::getPantsOffset(bool male)
 {
-	const Int2 &offset = PantsOffsets.at(gender);
-	return offset;
+	return male ? Int2(229, 82) : Int2(212, 74);
 }

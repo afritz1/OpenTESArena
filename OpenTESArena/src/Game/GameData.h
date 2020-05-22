@@ -39,7 +39,6 @@ class TextBox;
 class Texture;
 class TextureManager;
 
-enum class GenderName;
 enum class WeatherType;
 enum class WorldType;
 

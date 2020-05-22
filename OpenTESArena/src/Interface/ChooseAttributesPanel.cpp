@@ -45,10 +45,9 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
-	const CharacterClass &charClass, const std::string &name, 
-	GenderName gender, int raceID)
-	: Panel(game), charClass(charClass), gender(gender), name(name)
+ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &charClass,
+	const std::string &name, bool male, int raceID)
+	: Panel(game), charClass(charClass), male(male), name(name)
 {
 	this->nameTextBox = [&game, &name]()
 	{
@@ -98,22 +97,22 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
-	this->backToRaceButton = [&charClass, &name, gender]()
+	this->backToRaceButton = [&charClass, &name, male]()
 	{
-		auto function = [charClass, name, gender](Game &game)
+		auto function = [charClass, name, male](Game &game)
 		{
-			game.setPanel<ChooseRacePanel>(game, charClass, name, gender);
+			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
 		};
 		return Button<Game&>(function);
 	}();
 
-	this->doneButton = [this, &charClass, &name, gender, raceID]()
+	this->doneButton = [this, &charClass, &name, male, raceID]()
 	{
 		const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		const int width = 21;
 		const int height = 12;
 
-		auto function = [this, charClass, name, gender, raceID](Game &game)
+		auto function = [this, charClass, name, male, raceID](Game &game)
 		{
 			// Generate the race selection message box.
 			auto &textureManager = game.getTextureManager();
@@ -188,7 +187,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 					width, height, textureManager, renderer);
 			}();
 
-			messageBoxSave.function = [this, charClass, name, gender, raceID](Game &game)
+			messageBoxSave.function = [this, charClass, name, male, raceID](Game &game)
 			{
 				// Confirming the chosen stats will bring up a text sub-panel, and
 				// the next time the done button is clicked, it starts the game.
@@ -225,11 +224,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 
 				// The done button is replaced after the player confirms their stats,
 				// and it then leads to the main quest opening cinematic.
-				auto newDoneFunction = [this, charClass, name, gender, raceID](Game &game)
+				auto newDoneFunction = [this, charClass, name, male, raceID](Game &game)
 				{
 					game.popSubPanel();
 
-					auto gameDataFunction = [this, charClass, name, gender, raceID](Game &game)
+					auto gameDataFunction = [this, charClass, name, male, raceID](Game &game)
 					{
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
@@ -241,13 +240,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 							fullGameWindow,
 							options.getGraphics_RenderThreadsMode());
 
-						std::unique_ptr<GameData> gameData = [this, &name, gender, raceID,
+						std::unique_ptr<GameData> gameData = [this, &name, male, raceID,
 							&charClass, &miscAssets]()
 						{
 							const auto &exeData = miscAssets.getExeData();
 
 							// Initialize player data (independent of the world).
-							Player player = [this, &name, gender, raceID, &charClass, &exeData]()
+							Player player = [this, &name, male, raceID, &charClass, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
 								const Double3 direction = Double3::UnitX;
@@ -258,7 +257,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 								const int weaponID = allowedWeapons.at(
 									random.next(static_cast<int>(allowedWeapons.size())));
 
-								return Player(name, gender, raceID, charClass, this->portraitID,
+								return Player(name, male, raceID, charClass, this->portraitID,
 									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
 									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 							}();
@@ -523,7 +522,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game,
 	}();
 
 	// Get pixel offsets for each head.
-	const std::string &headsFilename = PortraitFile::getHeads(gender, raceID, false);
+	const std::string &headsFilename = PortraitFile::getHeads(male, raceID, false);
 	CIFFile cifFile;
 	if (!cifFile.init(headsFilename.c_str()))
 	{
@@ -649,17 +648,17 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(
-		this->gender, this->raceID, false);
+		this->male, this->raceID, false);
 	const std::string &bodyFilename = PortraitFile::getBody(
-		this->gender, this->raceID);
+		this->male, this->raceID);
 	const std::string &shirtFilename = PortraitFile::getShirt(
-		this->gender, this->charClass.canCastMagic());
-	const std::string &pantsFilename = PortraitFile::getPants(this->gender);
+		this->male, this->charClass.canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(this->male);
 
 	// Get pixel offsets for each clothes texture.
-	const Int2 &shirtOffset = PortraitFile::getShirtOffset(
-		this->gender, this->charClass.canCastMagic());
-	const Int2 &pantsOffset = PortraitFile::getPantsOffset(this->gender);
+	const Int2 shirtOffset = PortraitFile::getShirtOffset(
+		this->male, this->charClass.canCastMagic());
+	const Int2 pantsOffset = PortraitFile::getPantsOffset(this->male);
 
 	// Draw the current portrait and clothes.
 	const Int2 &headOffset = this->headOffsets.at(this->portraitID);

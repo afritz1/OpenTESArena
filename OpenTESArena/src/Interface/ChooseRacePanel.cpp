@@ -12,7 +12,6 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
-#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
@@ -33,8 +32,8 @@
 const int ChooseRacePanel::NO_ID = -1;
 
 ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
-	const std::string &name, GenderName gender)
-	: Panel(game), charClass(charClass), name(name), gender(gender)
+	const std::string &name, bool male)
+	: Panel(game), charClass(charClass), name(name), male(male)
 {
 	this->backToGenderButton = []()
 	{
@@ -49,7 +48,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 	this->acceptButton = []()
 	{
 		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name, GenderName gender, int raceID)
+			const std::string &name, bool male, int raceID)
 		{
 			// Generate the race selection message box.
 			auto &textureManager = game.getTextureManager();
@@ -129,7 +128,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					textureManager, renderer);
 			}();
 
-			messageBoxYes.function = [&charClass, &name, gender, raceID](Game &game)
+			messageBoxYes.function = [&charClass, &name, male, raceID](Game &game)
 			{
 				game.popSubPanel();
 
@@ -137,10 +136,10 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 				// Generate all of the parchments leading up to the attributes panel,
 				// and link them together so they appear after each other.
-				auto toAttributes = [&charClass, &name, gender, raceID](Game &game)
+				auto toAttributes = [&charClass, &name, male, raceID](Game &game)
 				{
 					game.popSubPanel();
-					game.setPanel<ChooseAttributesPanel>(game, charClass, name, gender, raceID);
+					game.setPanel<ChooseAttributesPanel>(game, charClass, name, male, raceID);
 				};
 
 				auto toFourthSubPanel = [textColor, toAttributes](Game &game)
@@ -294,11 +293,11 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 				};
 
 				std::unique_ptr<Panel> firstSubPanel = [&game, &charClass,
-					&name, gender, raceID, &textColor, toSecondSubPanel]()
+					&name, male, raceID, &textColor, toSecondSubPanel]()
 				{
 					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 
-					const std::string text = [&game, &charClass, &name, gender, raceID]()
+					const std::string text = [&game, &charClass, &name, male, raceID]()
 					{
 						const auto &exeData = game.getMiscAssets().getExeData();
 						std::string segment = exeData.charCreation.confirmedRace1;
@@ -325,7 +324,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						segment.replace(index, 2, pluralRaceName);
 
 						// If player is female, replace "his" with "her".
-						if (gender == GenderName::Female)
+						if (!male)
 						{
 							index = segment.rfind("his");
 							segment.replace(index, 3, "her");
@@ -415,8 +414,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 			game.pushSubPanel(std::move(messageBox));
 		};
-		return Button<Game&, const CharacterClass&,
-			const std::string&, GenderName, int>(function);
+		return Button<Game&, const CharacterClass&, const std::string&, bool, int>(function);
 	}();
 
 	// @todo: maybe allocate std::unique_ptr<std::function> for unravelling the map?
@@ -546,7 +544,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 		{
 			// Choose the selected province.
 			this->acceptButton.click(this->getGame(), this->charClass,
-				this->name, this->gender, maskID);
+				this->name, this->male, maskID);
 		}
 	}
 }

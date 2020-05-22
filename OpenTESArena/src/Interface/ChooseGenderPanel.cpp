@@ -9,7 +9,6 @@
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
-#include "../Entities/GenderName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -97,7 +96,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
-			game.setPanel<ChooseRacePanel>(game, charClass, name, GenderName::Male);
+			const bool male = true;
+			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
 		};
 		return Button<Game&, const CharacterClass&, 
 			const std::string&>(center, 175, 35, function);
@@ -109,7 +109,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 		auto function = [](Game &game, const CharacterClass &charClass,
 			const std::string &name)
 		{
-			game.setPanel<ChooseRacePanel>(game, charClass, name, GenderName::Female);
+			const bool male = false;
+			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
 		};
 		return Button<Game&, const CharacterClass&, 
 			const std::string&>(center, 175, 35, function);
