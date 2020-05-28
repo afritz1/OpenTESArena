@@ -12,6 +12,7 @@
 #include "TextEntry.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
+#include "../Game/CharacterCreationState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -27,8 +28,6 @@
 #include "../Rendering/Surface.h"
 
 #include "components/utilities/String.h"
-
-const int ChooseNamePanel::MAX_NAME_LENGTH = 25;
 
 ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 	: Panel(game), charClass(charClass)
@@ -133,7 +132,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 		};
 		
 		const bool textChanged = TextEntry::updateText(this->name, e,
-			backspacePressed, charIsAllowed, ChooseNamePanel::MAX_NAME_LENGTH);
+			backspacePressed, charIsAllowed, CharacterCreationState::MAX_NAME_LENGTH);
 
 		if (textChanged)
 		{

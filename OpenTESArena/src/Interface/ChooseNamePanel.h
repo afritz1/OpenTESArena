@@ -23,8 +23,6 @@ class TextBox;
 class ChooseNamePanel : public Panel
 {
 private:
-	static const int MAX_NAME_LENGTH;
-
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	Button<Game&> backToClassButton;

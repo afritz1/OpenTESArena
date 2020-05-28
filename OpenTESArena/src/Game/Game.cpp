@@ -135,6 +135,7 @@ Game::Game()
 	// enters the game world, and the "next panel" is a temporary used by the game
 	// to avoid corruption between panel events which change the panel.
 	this->gameData = nullptr;
+	this->charCreationState = nullptr;
 	this->nextPanel = nullptr;
 	this->nextSubPanel = nullptr;
 
@@ -171,10 +172,19 @@ bool Game::gameDataIsActive() const
 
 GameData &Game::getGameData() const
 {
-	// The caller should not request the game data when there is no active session.
 	DebugAssert(this->gameDataIsActive());
-
 	return *this->gameData.get();
+}
+
+bool Game::characterCreationIsActive() const
+{
+	return this->charCreationState.get() != nullptr;
+}
+
+CharacterCreationState &Game::getCharacterCreationState() const
+{
+	DebugAssert(this->characterCreationIsActive());
+	return *this->charCreationState.get();
 }
 
 Options &Game::getOptions()
@@ -259,6 +269,11 @@ void Game::setMusic(MusicName musicName, const std::optional<MusicName> &jingleM
 void Game::setGameData(std::unique_ptr<GameData> gameData)
 {
 	this->gameData = std::move(gameData);
+}
+
+void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
+{
+	this->charCreationState = std::move(charCreationState);
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)

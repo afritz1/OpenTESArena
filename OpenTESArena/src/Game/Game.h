@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "CharacterCreationState.h"
 #include "GameData.h"
 #include "InputManager.h"
 #include "Options.h"
@@ -45,6 +46,7 @@ private:
 	InputManager inputManager;
 	FontManager fontManager;
 	std::unique_ptr<GameData> gameData;
+	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	Renderer renderer;
@@ -104,6 +106,12 @@ public:
 	// The game data holds the "session" data for the game. If no session is active, 
 	// do not call this method. Verify beforehand by calling Game::gameDataIsActive().
 	GameData &getGameData() const;
+
+	// Returns whether a new character is currently being created.
+	bool characterCreationIsActive() const;
+
+	// Gets the character creation state. Character creation must be active.
+	CharacterCreationState &getCharacterCreationState() const;
 
 	// Gets the options object for various settings (resolution, volume, sensitivity).
 	Options &getOptions();
@@ -167,6 +175,10 @@ public:
 	// Sets the current game data object. A game session is active if the game data
 	// is not null.
 	void setGameData(std::unique_ptr<GameData> gameData);
+
+	// Sets the current character creation state. Character creation is active if the state
+	// is not null.
+	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
 
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();
