@@ -23,7 +23,7 @@ public:
 		Swimming,
 		Weather
 	};
-private:
+
 	struct CinematicMusicDefinition
 	{
 		enum class Type
@@ -43,10 +43,10 @@ private:
 	{
 		enum class Type
 		{
+			Equipment,
 			House,
 			MagesGuild,
 			Palace,
-			Shop,
 			Tavern,
 			Temple
 		};
@@ -70,7 +70,7 @@ private:
 
 		void init(WeatherType type);
 	};
-
+private:
 	std::string filename;
 	Type type;
 

@@ -1,0 +1,68 @@
+# Each line represents a music definition for a particular type. Certain types
+# of music require arguments. The name of each key doesn't matter; they just
+# need to be unique within each section.
+
+[CharacterCreation]
+1=SHEET.XMI
+
+# Cinematic musics
+# - Type: Intro, DreamGood, DreamBad, Ending
+[Cinematic]
+1=EVLINTRO.XMI,Intro
+2=VISION.XMI,DreamGood
+3=VISION.XMI,DreamBad
+4=EVLINTRO.XMI,Ending
+
+[Dungeon]
+1=DUNGEON1.XFM
+2=DUNGEON2.XMI
+3=DUNGEON3.XMI
+4=DUNGEON4.XMI
+5=DUNGEON5.XMI
+
+# Interior musics
+# - Type: Equipment, House, MagesGuild, Palace, Tavern, Temple
+[Interior]
+1=EQUIPMNT.XMI,Equipment
+2=MAGIC_2.XMI,MagesGuild
+3=PALACE.XMI,Palace
+4=SNEAKING.XMI,House
+5=SQUARE.XMI,Tavern
+6=TAVERN.XMI,Tavern
+7=TEMPLE.XMI,Temple
+
+# Jingle musics
+# - City type: CityState, Town, Village
+# - Climate type: Temperate, Desert, Mountain
+[Jingle]
+1=ARABCITY.XMI,CityState,Desert
+2=ARABTOWN.XMI,Town,Desert
+3=ARAB_VLG.XMI,Village,Desert
+4=CITY.XMI,CityState,Temperate
+5=TOWN.XMI,Town,Temperate
+6=VILLAGE.XMI,Village,Temperate
+7=CITY.XMI,CityState,Mountain
+8=TOWN.XMI,Town,Mountain
+9=VILLAGE.XMI,Village,Mountain
+
+[MainMenu]
+1=PERCNTRO.XMI
+
+[Night]
+1=NIGHT.XMI
+
+[Swimming]
+1=SWIMMING.XMI
+
+# Weather musics
+# - Weather type: Clear, Overcast, Rain, Snow, SnowOvercast, Rain2, Overcast2,
+#   SnowOvercast2
+[Weather]
+1=SUNNYDAY.XFM,Clear
+2=OVERCAST.XMI,Overcast
+3=OVERCAST.XMI,Overcast2
+4=RAINING.XMI,Rain
+5=RAINING.XMI,Rain2
+6=SNOWING.XMI,Snow
+7=SNOWING.XMI,SnowOvercast
+8=OVERSNOW.XFM,SnowOvercast2
