@@ -12,8 +12,6 @@
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicFile.h"
-#include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -414,11 +412,46 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		// Choose time-based music and enter the game world.
-		const MusicName musicName = gameData.nightMusicIsActive() ?
-			MusicName::Night : MusicUtils::getExteriorMusicName(weatherType);
-		const MusicName jingleMusicName = MusicFile::jingleFromCityTypeAndClimate(cityDef.type, cityDef.climateType);
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicDefinition *musicDef = [&game, &gameData, weatherType, &musicLibrary]()
+		{
+			if (!gameData.nightMusicIsActive())
+			{
+				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+					game.getRandom(), [weatherType](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					return weatherMusicDef.type == weatherType;
+				});
+			}
+			else
+			{
+				return musicLibrary.getRandomMusicDefinition(
+					MusicDefinition::Type::Night, game.getRandom());
+			}
+		}();
 
-		game.setMusic(musicName, jingleMusicName);
+		const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
+			MusicDefinition::Type::Jingle, game.getRandom(), [&cityDef](const MusicDefinition &def)
+		{
+			DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+			const auto &jingleMusicDef = def.getJingleMusicDefinition();
+			return (jingleMusicDef.cityType == cityDef.type) &&
+				(jingleMusicDef.climateType == cityDef.climateType);
+		});
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing exterior music.");
+		}
+
+		if (jingleMusicDef == nullptr)
+		{
+			DebugLogWarning("Missing jingle music.");
+		}
+
+		game.setMusic(musicDef, jingleMusicDef);
 		game.setPanel<GameWorldPanel>(game);
 
 		// Push a text sub-panel for the city arrival pop-up.
@@ -440,8 +473,16 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		// Choose random dungeon music and enter game world.
-		const MusicName musicName = MusicUtils::getDungeonMusicName(random);
-		game.setMusic(musicName);
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+			MusicDefinition::Type::Dungeon, game.getRandom());
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing dungeon music.");
+		}
+
+		game.setMusic(musicDef);
 		game.setPanel<GameWorldPanel>(game);
 	}
 	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
@@ -473,8 +514,16 @@ void FastTravelSubPanel::switchToNextPanel()
 		else
 		{
 			// Choose random dungeon music and enter game world.
-			const MusicName musicName = MusicUtils::getDungeonMusicName(random);
-			game.setMusic(musicName);
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+				MusicDefinition::Type::Dungeon, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing dungeon music.");
+			}
+
+			game.setMusic(musicDef);
 			game.setPanel<GameWorldPanel>(game);
 		}
 	}

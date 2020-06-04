@@ -1,34 +1,11 @@
 #include <array>
 
-#include "MusicFile.h"
-#include "MusicName.h"
 #include "MusicUtils.h"
-#include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 
-MusicName MusicUtils::getExteriorMusicName(WeatherType weatherType)
-{
-	return MusicFile::fromWeather(weatherType);
-}
-
-MusicName MusicUtils::getDungeonMusicName(Random &random)
-{
-	const std::array<MusicName, 5> DungeonMusics =
-	{
-		MusicName::Dungeon1,
-		MusicName::Dungeon2,
-		MusicName::Dungeon3,
-		MusicName::Dungeon4,
-		MusicName::Dungeon5
-	};
-
-	const int index = random.next(static_cast<int>(DungeonMusics.size()));
-	DebugAssertIndex(DungeonMusics, index);
-	return DungeonMusics[index];
-}
-
-MusicName MusicUtils::getInteriorMusicName(const std::string &mifName, Random &random)
+bool MusicUtils::tryGetInteriorMusicType(const std::string_view &mifName,
+	MusicDefinition::InteriorMusicDefinition::Type *outType)
 {
 	// Check against all of the non-dungeon interiors first.
 	const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
@@ -43,39 +20,33 @@ MusicName MusicUtils::getInteriorMusicName(const std::string &mifName, Random &r
 
 	if (isEquipmentStore)
 	{
-		return MusicName::Equipment;
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::Equipment;
 	}
 	else if (isHouse)
 	{
-		return MusicName::Sneaking;
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::House;
 	}
 	else if (isMagesGuild)
 	{
-		return MusicName::Magic;
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::MagesGuild;
 	}
 	else if (isPalace)
 	{
-		return MusicName::Palace;
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::Palace;
 	}
 	else if (isTavern)
 	{
-		const std::array<MusicName, 2> TavernMusics =
-		{
-			MusicName::Square,
-			MusicName::Tavern
-		};
-
-		const int index = random.next(static_cast<int>(TavernMusics.size()));
-		DebugAssertIndex(TavernMusics, index);
-		return TavernMusics[index];
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::Tavern;
 	}
 	else if (isTemple)
 	{
-		return MusicName::Temple;
+		*outType = MusicDefinition::InteriorMusicDefinition::Type::Temple;
 	}
 	else
 	{
-		// Dungeon.
-		return MusicUtils::getDungeonMusicName(random);
+		// Not a special interior -- it's a dungeon.
+		return false;
 	}
+
+	return true;
 }

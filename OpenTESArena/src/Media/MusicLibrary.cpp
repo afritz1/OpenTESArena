@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <numeric>
 #include <sstream>
 
 #include "MusicLibrary.h"
 #include "../Math/Random.h"
+#include "../Math/RandomUtils.h"
 #include "../World/ClimateType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/WeatherType.h"
@@ -378,12 +380,12 @@ const MusicDefinition *MusicLibrary::getMusicDefinition(MusicDefinition::Type ty
 	}
 }
 
-const MusicDefinition *MusicLibrary::getFirstMusicDefinition(MusicDefinition::Type type)
+const MusicDefinition *MusicLibrary::getFirstMusicDefinition(MusicDefinition::Type type) const
 {
 	return (this->getMusicDefinitionCount(type) > 0) ? this->getMusicDefinition(type, 0) : nullptr;
 }
 
-const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::Type type, Random &random)
+const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::Type type, Random &random) const
 {
 	const int count = this->getMusicDefinitionCount(type);
 	if (count > 0)
@@ -395,4 +397,23 @@ const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::T
 	{
 		return nullptr;
 	}
+}
+
+const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicDefinition::Type type,
+	Random &random, const std::function<bool(const MusicDefinition&)> &predicate) const
+{
+	std::vector<int> musicDefIndices(this->getMusicDefinitionCount(type));
+	std::iota(musicDefIndices.begin(), musicDefIndices.end(), 0);
+	RandomUtils::shuffle(musicDefIndices.data(), static_cast<int>(musicDefIndices.size()), random);
+
+	for (const int index : musicDefIndices)
+	{
+		const MusicDefinition &musicDef = *this->getMusicDefinition(type, index);
+		if (predicate(musicDef))
+		{
+			return &musicDef;
+		}
+	}
+
+	return nullptr;
 }

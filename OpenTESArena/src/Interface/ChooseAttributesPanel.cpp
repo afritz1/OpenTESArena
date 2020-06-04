@@ -25,8 +25,6 @@
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicFile.h"
-#include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -391,9 +389,32 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 								}
 
 								// Set music based on weather and time.
-								const MusicName musicName = gameData.nightMusicIsActive() ?
-									MusicName::Night : MusicFile::fromWeather(weatherType);
-								game.setMusic(musicName);
+								const MusicDefinition *musicDef = [&game, &gameData, weatherType]()
+								{
+									const MusicLibrary &musicLibrary = game.getMusicLibrary();
+									if (!gameData.nightMusicIsActive())
+									{
+										return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+											game.getRandom(), [weatherType](const MusicDefinition &def)
+										{
+											DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+											const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+											return weatherMusicDef.type == weatherType;
+										});
+									}
+									else
+									{
+										return musicLibrary.getRandomMusicDefinition(
+											MusicDefinition::Type::Night, game.getRandom());
+									}
+								}();
+
+								if (musicDef == nullptr)
+								{
+									DebugLogWarning("Missing exterior music.");
+								}
+
+								game.setMusic(musicDef);
 							};
 
 							// Set the *LEVELUP voxel enter event.
@@ -405,9 +426,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 							game.setPanel(std::move(gameWorldPanel));
 
 							// Choose random dungeon music.
-							Random random;
-							const MusicName musicName = MusicUtils::getDungeonMusicName(random);
-							game.setMusic(musicName);
+							const MusicLibrary &musicLibrary = game.getMusicLibrary();
+							const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+								MusicDefinition::Type::Dungeon, game.getRandom());
+
+							if (musicDef == nullptr)
+							{
+								DebugLogWarning("Missing dungeon music.");
+							}
+
+							game.setMusic(musicDef);
 						};
 
 						game.setPanel<TextCinematicPanel>(
@@ -416,7 +444,23 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 							cinematicText,
 							0.171,
 							gameFunction);
-						game.setMusic(MusicName::Vision);
+
+						// Play dream music.
+						const MusicLibrary &musicLibrary = game.getMusicLibrary();
+						const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+							MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
+							const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
+							return cinematicMusicDef.type == MusicDefinition::CinematicMusicDefinition::Type::DreamGood;
+						});
+
+						if (musicDef == nullptr)
+						{
+							DebugLogWarning("Missing vision music.");
+						}
+
+						game.setMusic(musicDef);
 					};
 
 					const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);

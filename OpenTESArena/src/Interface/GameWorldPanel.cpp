@@ -35,7 +35,6 @@
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -2027,11 +2026,33 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		const auto &clock = gameData.getClock();
 		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 			gameData.getWeatherType(), cityDef.climateType);
-		const MusicName musicName = !gameData.nightMusicIsActive() ?
-			MusicUtils::getExteriorMusicName(filteredWeatherType) :
-			MusicName::Night;
 
-		game.setMusic(musicName);
+		const MusicDefinition *musicDef = [&game, &gameData, filteredWeatherType]()
+		{
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			if (!gameData.nightMusicIsActive())
+			{
+				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+					game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+					return weatherMusicDef.type == filteredWeatherType;
+				});
+			}
+			else
+			{
+				return musicLibrary.getRandomMusicDefinition(
+					MusicDefinition::Type::Night, game.getRandom());
+			}
+		}();
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing exterior music.");
+		}
+
+		game.setMusic(musicDef);
 	}
 	else
 	{
@@ -2126,9 +2147,33 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						miscAssets, game.getTextureManager(), game.getRenderer());
 
 					// Change to interior music.
-					Random random;
-					const MusicName musicName = MusicUtils::getInteriorMusicName(mifName, random);
-					game.setMusic(musicName);
+					const MusicLibrary &musicLibrary = game.getMusicLibrary();
+					const MusicDefinition *musicDef = nullptr;
+					MusicDefinition::InteriorMusicDefinition::Type interiorMusicType;
+					if (MusicUtils::tryGetInteriorMusicType(mifName, &interiorMusicType))
+					{
+						// Non-dungeon interior.
+						musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+							game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+							const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+							return interiorMusicDef.type == interiorMusicType;
+						});
+					}
+					else
+					{
+						// Dungeon.
+						musicDef = musicLibrary.getRandomMusicDefinition(
+							MusicDefinition::Type::Dungeon, game.getRandom());
+					}
+
+					if (musicDef == nullptr)
+					{
+						DebugLogWarning("Missing interior music.");
+					}
+
+					game.setMusic(musicDef);
 				}
 				else
 				{
@@ -2202,17 +2247,37 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				}
 
 				// Reset the current music (even if it's the same one).
-				const MusicName musicName = [&game, &gameData, &locationDef]()
+				const MusicDefinition *musicDef = [&game, &gameData, &locationDef]()
 				{
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					const ClimateType climateType = cityDef.climateType;
 					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
-					return !gameData.nightMusicIsActive() ?
-						MusicUtils::getExteriorMusicName(filteredWeatherType) : MusicName::Night;
+
+					const MusicLibrary &musicLibrary = game.getMusicLibrary();
+					if (!gameData.nightMusicIsActive())
+					{
+						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+							game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+							return weatherMusicDef.type == filteredWeatherType;
+						});
+					}
+					else
+					{
+						return musicLibrary.getRandomMusicDefinition(
+							MusicDefinition::Type::Night, game.getRandom());
+					}
 				}();
 
-				game.setMusic(musicName);
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing exterior music.");
+				}
+
+				game.setMusic(musicDef);
 			}
 		}
 	}
@@ -2699,6 +2764,8 @@ void GameWorldPanel::tick(double dt)
 			(oldClockTime < nightMusicStartTime) &&
 			(newClockTime >= nightMusicStartTime);
 
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+
 		if (changeToDayMusic)
 		{
 			const LocationDefinition &locationDef = gameData.getLocationDefinition();
@@ -2706,12 +2773,33 @@ void GameWorldPanel::tick(double dt)
 			const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 				gameData.getWeatherType(), cityDef.climateType);
 
-			const MusicName musicName = MusicUtils::getExteriorMusicName(filteredWeatherType);
-			game.setMusic(musicName);
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Weather, game.getRandom(),
+				[filteredWeatherType](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+				return weatherMusicDef.type == filteredWeatherType;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing weather music.");
+			}
+
+			game.setMusic(musicDef);
 		}
 		else if (changeToNightMusic)
 		{
-			game.setMusic(MusicName::Night);
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+				MusicDefinition::Type::Night, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing night music.");
+			}
+
+			game.setMusic(musicDef);
 		}
 	}
 

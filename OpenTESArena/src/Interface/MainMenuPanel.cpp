@@ -29,8 +29,6 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicFile.h"
-#include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -253,7 +251,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			auto changeToCharCreation = [](Game &game)
 			{
 				game.setPanel<ChooseClassCreationPanel>(game);
-				game.setMusic(MusicName::Sheet);
+
+				const MusicLibrary &musicLibrary = game.getMusicLibrary();
+				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+					MusicDefinition::Type::CharacterCreation, game.getRandom());
+
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing character creation music.");
+				}
+
+				game.setMusic(musicDef);
 			};
 
 			auto changeToNewGameStory = [changeToCharCreation](Game &game)
@@ -291,7 +299,22 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				1.0 / 24.0,
 				changeToNewGameStory);
-			game.setMusic(MusicName::EvilIntro);
+
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
+				const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
+				return cinematicMusicDef.type == MusicDefinition::CinematicMusicDefinition::Type::Intro;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing intro music.");
+			}
+
+			game.setMusic(musicDef);
 		};
 		return Button<Game&>(center, width, height, function);
 	}();
@@ -569,7 +592,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			clock = Clock(5, 45, 0);
 
 			// Get the music that should be active on start.
-			const MusicName musicName = [&mifName, worldType, &gameData, &random, &clock]()
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = [&game, &mifName, worldType, &gameData, &musicLibrary]()
 			{
 				const bool isExterior = (worldType == WorldType::City) ||
 					(worldType == WorldType::Wilderness);
@@ -578,20 +602,50 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// on the current location's .MIF name (if any).
 				if (isExterior)
 				{
-					// Make sure to get updated weather type from game data and not
-					// local variable so it gets the filtered weather type.
+					// Make sure to get updated weather type from game data and not local variable
+					// so it gets the filtered weather type.
 					const WeatherType weatherType = gameData->getWeatherType();
-					return gameData->nightMusicIsActive() ?
-						MusicName::Night : MusicUtils::getExteriorMusicName(weatherType);
+					if (!gameData->nightMusicIsActive())
+					{
+						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+							game.getRandom(), [weatherType](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+							return weatherMusicDef.type == weatherType;
+						});
+					}
+					else
+					{
+						return musicLibrary.getRandomMusicDefinition(
+							MusicDefinition::Type::Night, game.getRandom());
+					}
 				}
 				else
 				{
-					return MusicUtils::getInteriorMusicName(mifName, random);
+					MusicDefinition::InteriorMusicDefinition::Type interiorMusicType;
+					if (MusicUtils::tryGetInteriorMusicType(mifName, &interiorMusicType))
+					{
+						// Non-dungeon interior.
+						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+							game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+						{
+							DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+							const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+							return interiorMusicDef.type == interiorMusicType;
+						});
+					}
+					else
+					{
+						// Dungeon.
+						return musicLibrary.getRandomMusicDefinition(
+							MusicDefinition::Type::Dungeon, game.getRandom());
+					}
 				}
 			}();
 
-			const std::optional<MusicName> jingleMusicName = [worldType, &gameData, musicName]()
-				-> std::optional<MusicName>
+			const MusicDefinition *jingleMusicDef = [&game, worldType, &gameData, &musicLibrary]()
+				-> const MusicDefinition*
 			{
 				const LocationDefinition &locationDef = gameData->getLocationDefinition();
 				const bool isCity = (worldType == WorldType::City) &&
@@ -600,21 +654,32 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				if (isCity)
 				{
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-					const ClimateType climateType = cityDef.climateType;
-					return MusicFile::jingleFromCityTypeAndClimate(cityDef.type, climateType);
+					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+						game.getRandom(), [&cityDef](const MusicDefinition &def)
+					{
+						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+						const auto &jingleMusicDef = def.getJingleMusicDefinition();
+						return (jingleMusicDef.cityType == cityDef.type) &&
+							(jingleMusicDef.climateType == cityDef.climateType);
+					});
 				}
 				else
 				{
-					return std::nullopt;
+					return nullptr;
 				}
 			}();
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing start music.");
+			}
 
 			// Set the game data before constructing the game world panel.
 			game.setGameData(std::move(gameData));
 
 			// Initialize game world panel.
 			game.setPanel<GameWorldPanel>(game);
-			game.setMusic(musicName, jingleMusicName);
+			game.setMusic(musicDef, jingleMusicDef);
 		};
 		return Button<Game&, int, int, const std::string&,
 			const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType>(function);

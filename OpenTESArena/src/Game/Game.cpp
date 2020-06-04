@@ -14,8 +14,6 @@
 #include "../Assets/CityDataFile.h"
 #include "../Interface/Panel.h"
 #include "../Media/FontManager.h"
-#include "../Media/MusicFile.h"
-#include "../Media/MusicName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
@@ -61,6 +59,13 @@ Game::Game()
 	this->audioManager.init(this->options.getAudio_MusicVolume(),
 		this->options.getAudio_SoundVolume(), this->options.getAudio_SoundChannels(),
 		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
+
+	// Initialize music library from file.
+	const std::string musicLibraryPath = this->basePath + "data/music/MusicDefinitions.txt";
+	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init music library at \"" + musicLibraryPath + "\".");
+	}
 
 	// Initialize the SDL renderer and window with the given settings.
 	this->renderer.init(this->options.getGraphics_ScreenWidth(),
@@ -122,11 +127,21 @@ Game::Game()
 	}();
 
 	this->renderer.setWindowIcon(icon);
+
+	this->random.init();
 	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
 
 	// Initialize panel and music to default.
 	this->panel = Panel::defaultPanel(*this);
-	this->setMusic(MusicName::PercIntro);
+	
+	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
+		MusicDefinition::Type::MainMenu, this->random);
+	if (mainMenuMusicDef == nullptr)
+	{
+		DebugLogWarning("Missing main menu music.");
+	}
+
+	this->setMusic(mainMenuMusicDef);
 
 	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
@@ -153,6 +168,11 @@ Panel *Game::getActivePanel() const
 AudioManager &Game::getAudioManager()
 {
 	return this->audioManager;
+}
+
+const MusicLibrary &Game::getMusicLibrary() const
+{
+	return this->musicLibrary;
 }
 
 InputManager &Game::getInputManager()
@@ -207,6 +227,11 @@ MiscAssets &Game::getMiscAssets()
 	return this->miscAssets;
 }
 
+Random &Game::getRandom()
+{
+	return this->random;
+}
+
 ScratchAllocator &Game::getScratchAllocator()
 {
 	return this->scratchAllocator;
@@ -245,24 +270,30 @@ void Game::popSubPanel()
 	this->requestedSubPanelPop = true;
 }
 
-void Game::setMusic(MusicName musicName, const std::optional<MusicName> &jingleMusicName)
+void Game::setMusic(const MusicDefinition *musicDef, const MusicDefinition *jingleMusicDef)
 {
-	if (jingleMusicName.has_value())
+	if (jingleMusicDef != nullptr)
 	{
 		// Play jingle first and set the main music as the next music.
-		const std::string &jingleFilename = MusicFile::fromName(*jingleMusicName);
+		const std::string &jingleFilename = jingleMusicDef->getFilename();
 		const bool loop = false;
 		this->audioManager.playMusic(jingleFilename, loop);
 
-		std::string nextFilename = MusicFile::fromName(musicName);
+		DebugAssert(musicDef != nullptr);
+		std::string nextFilename = musicDef->getFilename();
 		this->audioManager.setNextMusic(std::move(nextFilename));
+	}
+	else if (musicDef != nullptr)
+	{
+		// Play main music immediately.
+		const std::string &filename = musicDef->getFilename();
+		const bool loop = true;
+		this->audioManager.playMusic(filename, loop);
 	}
 	else
 	{
-		// Play main music immediately.
-		const std::string &filename = MusicFile::fromName(musicName);
-		const bool loop = true;
-		this->audioManager.playMusic(filename, loop);
+		// No music to play.
+		this->audioManager.stopMusic();
 	}
 }
 

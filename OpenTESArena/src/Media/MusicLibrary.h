@@ -1,6 +1,7 @@
 #ifndef MUSIC_LIBRARY_H
 #define MUSIC_LIBRARY_H
 
+#include <functional>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -25,8 +26,10 @@ public:
 
 	int getMusicDefinitionCount(MusicDefinition::Type type) const;
 	const MusicDefinition *getMusicDefinition(MusicDefinition::Type type, int index) const;
-	const MusicDefinition *getFirstMusicDefinition(MusicDefinition::Type type);
-	const MusicDefinition *getRandomMusicDefinition(MusicDefinition::Type type, Random &random);
+	const MusicDefinition *getFirstMusicDefinition(MusicDefinition::Type type) const;
+	const MusicDefinition *getRandomMusicDefinition(MusicDefinition::Type type, Random &random) const;
+	const MusicDefinition *getRandomMusicDefinitionIf(MusicDefinition::Type type, Random &random,
+		const std::function<bool(const MusicDefinition&)> &predicate) const;
 };
 
 #endif

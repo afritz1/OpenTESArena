@@ -9,7 +9,6 @@
 #include "../Game/GameData.h"
 #include "../Math/Random.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -66,9 +65,16 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		auto function = [](Game &game)
 		{
 			// Choose random dungeon music and enter game world.
-			Random random;
-			const MusicName musicName = MusicUtils::getDungeonMusicName(random);
-			game.setMusic(musicName);
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+				MusicDefinition::Type::Dungeon, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing dungeon music.");
+			}
+
+			game.setMusic(musicDef);
 			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(x, y, width, height, function);

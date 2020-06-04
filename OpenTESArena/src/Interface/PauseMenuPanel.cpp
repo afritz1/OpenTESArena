@@ -23,7 +23,6 @@
 #include "../Media/Color.h"
 #include "../Media/FontManager.h"
 #include "../Media/FontName.h"
-#include "../Media/MusicName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
@@ -135,7 +134,17 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		{
 			game.setGameData(nullptr);
 			game.setPanel<MainMenuPanel>(game);
-			game.setMusic(MusicName::PercIntro);
+
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+				MusicDefinition::Type::MainMenu, game.getRandom());
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing main menu music.");
+			}
+
+			game.setMusic(musicDef);
 		};
 		return Button<Game&>(x, y, 65, 29, function);
 	}();

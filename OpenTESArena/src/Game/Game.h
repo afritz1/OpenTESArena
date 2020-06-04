@@ -15,6 +15,7 @@
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/FontManager.h"
+#include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
@@ -33,8 +34,6 @@
 
 class Surface;
 
-enum class MusicName;
-
 class Game
 {
 private:
@@ -43,6 +42,7 @@ private:
 	std::vector<std::unique_ptr<Panel>> subPanels;
 
 	AudioManager audioManager;
+	MusicLibrary musicLibrary;
 	InputManager inputManager;
 	FontManager fontManager;
 	std::unique_ptr<GameData> gameData;
@@ -52,6 +52,7 @@ private:
 	Renderer renderer;
 	TextureManager textureManager;
 	MiscAssets miscAssets;
+	Random random; // Convenience random for ease of use.
 	ScratchAllocator scratchAllocator;
 	Profiler profiler;
 	FPSCounter fpsCounter;
@@ -92,6 +93,9 @@ public:
 	// Gets the audio manager for changing the current music and sound.
 	AudioManager &getAudioManager();
 
+	// Gets the music library with all the music definitions.
+	const MusicLibrary &getMusicLibrary() const;
+
 	// Gets the input manager for obtaining input state. This should be read-only for
 	// all classes except the Game class.
 	InputManager &getInputManager();
@@ -124,6 +128,9 @@ public:
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets();
+
+	// Gets the global RNG initialized at program start.
+	Random &getRandom();
 
 	// Gets the scratch buffer that is reset each frame.
 	ScratchAllocator &getScratchAllocator();
@@ -169,8 +176,9 @@ public:
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
 
-	// Sets the music to the given music name, with an optional jingle to play first.
-	void setMusic(MusicName musicName, const std::optional<MusicName> &jingleMusicName = std::nullopt);
+	// Sets the music to the given music name, with an optional jingle to play first. If no
+	// music definition is given, the current music is stopped.
+	void setMusic(const MusicDefinition *musicDef, const MusicDefinition *jingleMusicDef = nullptr);
 
 	// Sets the current game data object. A game session is active if the game data
 	// is not null.
