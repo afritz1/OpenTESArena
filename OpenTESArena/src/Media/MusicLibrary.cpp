@@ -12,7 +12,7 @@
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/StringView.h"
 
-#define MAKE_MUSIC_DEFINITION_PAIR(name) { #name, MusicDefinition::Type::##name }
+#define MAKE_MUSIC_DEFINITION_PAIR(name) { #name, MusicDefinition::Type::name }
 
 namespace
 {
