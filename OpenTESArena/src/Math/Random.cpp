@@ -5,13 +5,25 @@
 
 Random::Random(int seed)
 {
+	this->init(seed);
+}
+
+Random::Random()
+{
+	this->init();
+}
+
+void Random::init(int seed)
+{
 	this->generator = std::default_random_engine(seed);
 	this->integerDistribution = std::uniform_int_distribution<int>(0, std::numeric_limits<int>::max());
 	this->realDistribution = std::uniform_real_distribution<double>(0.0, 1.0);
 }
 
-Random::Random()
-	: Random(static_cast<int>(time(nullptr))) { }
+void Random::init()
+{
+	this->init(static_cast<int>(std::time(nullptr)));
+}
 
 int Random::next()
 {

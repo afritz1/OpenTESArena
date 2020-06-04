@@ -17,6 +17,12 @@ public:
 	// Initialized with the current time.
 	Random();
 
+	// Initialized with the given seed.
+	void init(int seed);
+
+	// Initialized with the current time.
+	void init();
+
 	// Includes 0 to ~2.14 billion.
 	int next();
 
