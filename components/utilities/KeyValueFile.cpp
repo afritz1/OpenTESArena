@@ -151,6 +151,12 @@ const char KeyValueFile::SECTION_BACK = ']';
 
 bool KeyValueFile::init(const char *filename)
 {
+	if (!File::exists(filename))
+	{
+		DebugLogError("Could not find \"" + std::string(filename) + "\".");
+		return false;
+	}
+
 	const std::string text = File::readAllText(filename);
 	std::istringstream iss(text);
 
