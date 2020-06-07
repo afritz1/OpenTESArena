@@ -63,7 +63,7 @@ namespace String
 	template <size_t T>
 	bool splitExpected(const std::string &str, std::array<std::string, T> &dst)
 	{
-		return String::splitExpected(str, ' ', dst);
+		return String::splitExpected(str, String::SPACE, dst);
 	}
 
 	// Removes all whitespace from a string.
