@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 #include <stdexcept>
 
@@ -58,15 +59,12 @@ bool KeyValueFile::Section::tryGetBoolean(const std::string &key, bool &value) c
 	}
 	else
 	{
-		// Convert to lowercase for easier comparison.
-		const std::string lowerStr = String::toLowercase(std::string(str));
-
-		if (lowerStr == "true")
+		if (StringView::caseInsensitiveEquals(str, "true"))
 		{
 			value = true;
 			return true;
 		}
-		else if (lowerStr == "false")
+		else if (StringView::caseInsensitiveEquals(str, "false"))
 		{
 			value = false;
 			return true;
@@ -144,11 +142,6 @@ void KeyValueFile::Section::clear()
 	this->pairs.clear();
 }
 
-const char KeyValueFile::COMMENT = '#';
-const char KeyValueFile::PAIR_SEPARATOR = '=';
-const char KeyValueFile::SECTION_FRONT = '[';
-const char KeyValueFile::SECTION_BACK = ']';
-
 bool KeyValueFile::init(const char *filename)
 {
 	if (!File::exists(filename))
@@ -173,16 +166,13 @@ bool KeyValueFile::init(const char *filename)
 			std::string_view str = line;
 
 			// Skip empty strings.
-			if ((str.size() == 0) || ((str.size() == 1) && (str.front() == '\r')))
+			if ((str.size() == 0) || ((str.size() == 1) && std::isspace(str.front())))
 			{
 				return std::string_view();
 			}
 
-			// Remove carriage return at the end (if any).
-			if (str.back() == '\r')
-			{
-				str.remove_suffix(1);
-			}
+			str = StringView::trimFront(str);
+			str = StringView::trimBack(str);
 
 			// Extract left-most comment (if any).
 			const size_t commentIndex = str.find(KeyValueFile::COMMENT);
@@ -195,11 +185,12 @@ bool KeyValueFile::init(const char *filename)
 			{
 				// Comment is somewhere in the line, so only work with the left substring.
 				str = str.substr(0, commentIndex);
+
+				// Trim any whitespace between the end of the value and the beginning of the comment.
+				str = StringView::trimBack(str);
 			}
 
-			// Trim leading and trailing whitespace (i.e., in case the key has whitespace
-			// before it, or a comment had whitespace before it).
-			return StringView::trimFront(StringView::trimBack(str));
+			return str;
 		}();
 
 		if (filteredLine.empty())

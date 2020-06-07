@@ -38,10 +38,10 @@ private:
 	std::vector<Section> sections;
 public:
 	// These are public so other code can use them (i.e., for options writing).
-	static const char COMMENT;
-	static const char PAIR_SEPARATOR;
-	static const char SECTION_FRONT;
-	static const char SECTION_BACK;
+	static constexpr char COMMENT = '#';
+	static constexpr char PAIR_SEPARATOR = '=';
+	static constexpr char SECTION_FRONT = '[';
+	static constexpr char SECTION_BACK = ']';
 
 	bool init(const char *filename);
 
