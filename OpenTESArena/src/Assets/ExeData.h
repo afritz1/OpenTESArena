@@ -141,6 +141,9 @@ public:
 		std::array<int8_t, 24> creatureDiseaseChances; // Negative values have special meaning.
 		std::array<std::array<uint8_t, 8>, 24> creatureAttributes; // 255 == 100.
 
+		// Display name of the final boss when selecting them.
+		std::string finalBossName;
+
 		// Creature animations (i.e., their .CFA filenames). These are ordered the same
 		// as creature names, and there is an extra entry at the end for the final boss.
 		// Replace '@' with a number from 1 to 6 indicating which .CFA file to fetch for

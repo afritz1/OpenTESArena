@@ -1489,7 +1489,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
-				newEntityDef.initCreature(exeData.entities, creatureIndex, isFinalBoss, flatIndex);
+				newEntityDef.initCreature(creatureIndex, isFinalBoss, flatIndex, exeData);
 			}
 			else if (isHumanEnemy)
 			{

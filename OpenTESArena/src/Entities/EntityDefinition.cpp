@@ -25,9 +25,10 @@ EntityDefinition::CreatureData::CreatureData()
 	std::fill(std::begin(this->attributes), std::end(this->attributes), 0);
 }
 
-void EntityDefinition::CreatureData::init(const ExeData::Entities &entities,
-	int creatureIndex, bool isFinalBoss)
+void EntityDefinition::CreatureData::init(int creatureIndex, bool isFinalBoss,
+	const ExeData &exeData)
 {
+	const auto &entities = exeData.entities;
 	if (!isFinalBoss)
 	{
 		std::snprintf(std::begin(this->name), std::size(this->name),
@@ -35,7 +36,8 @@ void EntityDefinition::CreatureData::init(const ExeData::Entities &entities,
 	}
 	else
 	{
-		std::snprintf(std::begin(this->name), std::size(this->name), "%s", "TODO");
+		std::snprintf(std::begin(this->name), std::size(this->name), "%s",
+			entities.finalBossName.c_str());
 	}
 
 	this->level = entities.creatureLevels[creatureIndex];
@@ -100,10 +102,10 @@ EntityDefinition::EntityDefinition()
 	this->isOtherInited = false;
 }
 
-void EntityDefinition::initCreature(const ExeData::Entities &entities, int creatureIndex,
-	bool isFinalBoss, int flatIndex)
+void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int flatIndex,
+	const ExeData &exeData)
 {
-	this->creatureData.init(entities, creatureIndex, isFinalBoss);
+	this->creatureData.init(creatureIndex, isFinalBoss, exeData);
 	this->infData.flatIndex = flatIndex;
 	this->infData.yOffset = this->creatureData.yOffset;
 	this->infData.collider = true;

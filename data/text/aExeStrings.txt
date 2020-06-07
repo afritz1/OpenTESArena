@@ -79,6 +79,7 @@ CreatureBlood=0x438FF
 CreatureDiseaseChances=0x3E4E2
 CreatureAttributes=0x3608B
 CreatureAnimationFilenames=0x3E4FB
+FinalBossName=0x36D03
 RaceAttributes=0x35FC3
 GuardAttributes=0x36043
 MaleCitizenAnimationFilenames=0x4186A

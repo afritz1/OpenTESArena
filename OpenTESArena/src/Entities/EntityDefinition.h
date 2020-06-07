@@ -32,7 +32,7 @@ public:
 
 		CreatureData();
 
-		void init(const ExeData::Entities &entities, int creatureIndex, bool isFinalBoss);
+		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
 	};
 
 	struct InfData
@@ -70,7 +70,7 @@ private:
 public:
 	EntityDefinition();
 
-	void initCreature(const ExeData::Entities &entities, int creatureIndex, bool isFinalBoss, int flatIndex);
+	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData);
 
 	void initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider, bool largeScale,
 		bool dark, bool transparent, bool ceiling, bool mediumScale,

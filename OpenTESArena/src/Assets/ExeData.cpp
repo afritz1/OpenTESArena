@@ -336,6 +336,7 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	const int creatureDiseaseChancesOffset = ExeData::get(section, "CreatureDiseaseChances");
 	const int creatureAttributesOffset = ExeData::get(section, "CreatureAttributes");
 	const int creatureAnimFilenamesOffset = ExeData::get(section, "CreatureAnimationFilenames");
+	const int finalBossNameOffset = ExeData::get(section, "FinalBossName");
 	const int raceAttributesOffset = ExeData::get(section, "RaceAttributes");
 	const int guardAttributesOffset = ExeData::get(section, "GuardAttributes");
 	const int maleCitizenAnimFilenamesOffset = ExeData::get(section, "MaleCitizenAnimationFilenames");
@@ -364,6 +365,7 @@ void ExeData::Entities::init(const char *data, const KeyValueFile &keyValueFile)
 	initInt8Array(this->creatureDiseaseChances, data + creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
 	initStringArray(this->creatureAnimationFilenames, data + creatureAnimFilenamesOffset);
+	this->finalBossName = ExeData::readString(data + finalBossNameOffset);
 	init2DInt8Array(this->raceAttributes, data + raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
 	initStringArray(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
