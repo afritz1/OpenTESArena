@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include "String.h"
+
 namespace StringView
 {
 	// Returns a substring of a string view. Intended for use with strings, since
@@ -63,7 +65,7 @@ namespace StringView
 	template <size_t T>
 	bool splitExpected(const std::string_view &str, std::array<std::string_view, T> &dst)
 	{
-		return StringView::splitExpected(str, ' ', dst);
+		return StringView::splitExpected(str, String::SPACE, dst);
 	}
 
 	// Removes leading whitespace from a string view.

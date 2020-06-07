@@ -35,17 +35,14 @@ std::vector<std::string_view> StringView::split(const std::string_view &str, cha
 
 std::vector<std::string_view> StringView::split(const std::string_view &str)
 {
-	return StringView::split(str, ' ');
+	return StringView::split(str, String::SPACE);
 }
 
 std::string_view StringView::trimFront(const std::string_view &str)
 {
-	const char space = ' ';
-	const char tab = '\t';
-
 	std::string_view trimmed(str);
 
-	while ((trimmed.front() == space) || (trimmed.front() == tab))
+	while ((trimmed.front() == String::SPACE) || (trimmed.front() == String::TAB))
 	{
 		trimmed.remove_prefix(1);
 	}
@@ -55,12 +52,9 @@ std::string_view StringView::trimFront(const std::string_view &str)
 
 std::string_view StringView::trimBack(const std::string_view &str)
 {
-	const char space = ' ';
-	const char tab = '\t';
-
 	std::string_view trimmed(str);
 
-	while ((trimmed.back() == space) || (trimmed.back() == tab))
+	while ((trimmed.back() == String::SPACE) || (trimmed.back() == String::TAB))
 	{
 		trimmed.remove_suffix(1);
 	}
@@ -70,7 +64,7 @@ std::string_view StringView::trimBack(const std::string_view &str)
 
 std::string_view StringView::getExtension(const std::string_view &str)
 {
-	const size_t dotPos = str.rfind('.');
+	const size_t dotPos = str.rfind(String::FILE_EXTENSION_SEPARATOR);
 	const bool hasDot = (dotPos < str.size()) && (dotPos != std::string_view::npos);
 	return hasDot ? std::string_view(
 		str.data() + dotPos + 1, str.size() - dotPos - 1) : std::string_view();

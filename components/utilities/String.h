@@ -12,6 +12,12 @@
 
 namespace String
 {
+	static constexpr char SPACE = ' ';
+	static constexpr char CARRIAGE_RETURN = '\r';
+	static constexpr char NEWLINE = '\n';
+	static constexpr char TAB = '\t';
+	static constexpr char FILE_EXTENSION_SEPARATOR = '.';
+
 	// Performs a case-insensitive ASCII string comparison.
 	bool caseInsensitiveEquals(const std::string &a, const std::string &b);
 

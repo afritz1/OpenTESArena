@@ -47,19 +47,16 @@ std::vector<std::string> String::split(const std::string &str, char separator)
 
 std::vector<std::string> String::split(const std::string &str)
 {
-	return String::split(str, ' ');
+	return String::split(str, String::SPACE);
 }
 
 std::string String::trim(const std::string &str)
 {
-	const char space = ' ';
-	const char tab = '\t';
-
 	std::string trimmed;
 
 	for (const char c : str)
 	{
-		if ((c != space) && (c != tab))
+		if ((c != String::SPACE) && (c != String::TAB))
 		{
 			trimmed.push_back(c);
 		}
@@ -70,12 +67,9 @@ std::string String::trim(const std::string &str)
 
 std::string String::trimFront(const std::string &str)
 {
-	const char space = ' ';
-	const char tab = '\t';
-
 	std::string trimmed(str);
 	
-	while ((trimmed.front() == space) || (trimmed.front() == tab))
+	while ((trimmed.front() == String::SPACE) || (trimmed.front() == String::TAB))
 	{
 		trimmed.erase(trimmed.begin());
 	}
@@ -85,7 +79,7 @@ std::string String::trimFront(const std::string &str)
 
 void String::trimFrontInPlace(std::string &str)
 {
-	while ((str.size() > 0) && (str.front() == ' '))
+	while ((str.size() > 0) && (str.front() == String::SPACE))
 	{
 		str.erase(str.begin());
 	}
@@ -93,12 +87,9 @@ void String::trimFrontInPlace(std::string &str)
 
 std::string String::trimBack(const std::string &str)
 {
-	const char space = ' ';
-	const char tab = '\t';
-
 	std::string trimmed(str);
 
-	while ((trimmed.back() == space) || (trimmed.back() == tab))
+	while ((trimmed.back() == String::SPACE) || (trimmed.back() == String::TAB))
 	{
 		trimmed.pop_back();
 	}
@@ -108,7 +99,7 @@ std::string String::trimBack(const std::string &str)
 
 void String::trimBackInPlace(std::string &str)
 {
-	while ((str.size() > 0) && (str.back() == ' '))
+	while ((str.size() > 0) && (str.back() == String::SPACE))
 	{
 		str.pop_back();
 	}
@@ -116,14 +107,11 @@ void String::trimBackInPlace(std::string &str)
 
 std::string String::trimLines(const std::string &str)
 {
-	const char carriageReturn = '\r';
-	const char newLine = '\n';
-
 	std::string trimmed;
 
 	for (const char c : str)
 	{
-		if ((c != carriageReturn) && (c != newLine))
+		if ((c != String::CARRIAGE_RETURN) && (c != String::NEWLINE))
 		{
 			trimmed.push_back(c);
 		}
@@ -139,9 +127,7 @@ std::string String::trimExtra(const std::string &str)
 
 	auto isWhitespace = [](char c)
 	{
-		const char space = ' ';
-		const char tab = '\t';
-		return (c == space) || (c == tab);
+		return (c == String::SPACE) || (c == String::TAB);
 	};
 
 	for (const char c : str)
@@ -165,7 +151,7 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 
 	for (int i = 0; i < newStr.size(); i++, currentLineLength++)
 	{
-		if (newStr[i] == ' ')
+		if (newStr[i] == String::SPACE)
 		{
 			mostRecentSpace = i;
 		}
@@ -175,11 +161,11 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 		{
 			if (mostRecentSpace == NO_SPACE)
 			{
-				newStr.insert(newStr.begin() + i + 1, '\n');
+				newStr.insert(newStr.begin() + i + 1, String::NEWLINE);
 			}
 			else
 			{
-				newStr[mostRecentSpace] = '\n';
+				newStr[mostRecentSpace] = String::NEWLINE;
 				mostRecentSpace = NO_SPACE;
 			}
 			
@@ -192,7 +178,7 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 
 std::string String::getExtension(const std::string &str)
 {
-	const size_t dotPos = str.rfind('.');
+	const size_t dotPos = str.rfind(String::FILE_EXTENSION_SEPARATOR);
 	const bool hasDot = (dotPos < str.length()) && (dotPos != std::string::npos);
 	return hasDot ? std::string(str.begin() + dotPos + 1, str.end()) : std::string();
 }
