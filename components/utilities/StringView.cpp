@@ -2,6 +2,24 @@
 
 #include "StringView.h"
 
+bool StringView::caseInsensitiveEquals(const std::string_view &a, const std::string_view &b)
+{
+	if (a.size() != b.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < a.size(); i++)
+	{
+		if (std::tolower(a[i]) != std::tolower(b[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 std::string_view StringView::substr(const std::string_view &str, size_t offset, size_t count)
 {
 	return str.substr(offset, count);
