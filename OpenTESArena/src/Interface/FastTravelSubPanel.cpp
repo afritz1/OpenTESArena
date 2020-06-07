@@ -360,8 +360,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 
 	// Update game clock.
-	Random random;
-	this->tickTravelTime(random);
+	this->tickTravelTime(game.getRandom());
 
 	// Update weathers.
 	gameData.updateWeather(exeData);

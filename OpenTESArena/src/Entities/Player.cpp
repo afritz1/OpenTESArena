@@ -71,9 +71,9 @@ const CharacterClass &Player::getCharacterClass() const
 	return this->charClass;
 }
 
-Player Player::makeRandom(const std::vector<CharacterClass> &charClasses, const ExeData &exeData)
+Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
+	const ExeData &exeData, Random &random)
 {
-	Random random;
 	const std::string name("Player");
 	const bool isMale = random.next(2) == 0;
 	const int raceID = random.next(8);

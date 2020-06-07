@@ -7,6 +7,7 @@
 
 class ExeData;
 class Game;
+class Random;
 class WorldData;
 
 class Player
@@ -63,7 +64,7 @@ public:
 
 	// Generates a random player for testing.
 	static Player makeRandom(const std::vector<CharacterClass> &charClasses,
-		const ExeData &exeData);
+		const ExeData &exeData, Random &random);
 
 	// Gets the direction the player is facing.
 	const Double3 &getDirection() const;

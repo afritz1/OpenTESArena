@@ -336,12 +336,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Create a player with random data for testing.
 			const auto &miscAssets = game.getMiscAssets();
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
-				miscAssets.getClassDefinitions(), miscAssets.getExeData()), miscAssets);
+				miscAssets.getClassDefinitions(), miscAssets.getExeData(), game.getRandom()), miscAssets);
 
 			const int starCount = DistantSky::getStarCountFromDensity(
 				options.getMisc_StarDensity());
-
-			Random random;
 
 			// Load the selected level based on world type (writing into active game data).
 			if (worldType == WorldType::City)
@@ -386,9 +384,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Pick a random location based on the .MIF name, excluding the center province.
 					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 					{
-						const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
 						return worldMapDef.getProvinceDef(provinceIndex);
 					}();
 
@@ -485,7 +483,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					{
 						// Any province besides center province.
 						// @temp: mildly disorganized
-						provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
 						locationIndex = GetRandomCityLocationIndex(worldMapDef.getProvinceDef(provinceIndex));
 					}
 
@@ -504,9 +502,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Pick a random dungeon based on the dungeon type.
 					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 					{
-						const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
 						return worldMapDef.getProvinceDef(provinceIndex);
 					}();
 
@@ -537,6 +535,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 					else if (mifName == RandomWildDungeon)
 					{
+						Random &random = game.getRandom();
 						const int wildBlockX = random.next(RMDFile::WIDTH);
 						const int wildBlockY = random.next(RMDFile::DEPTH);
 
@@ -560,9 +559,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				// Pick a random location and province.
 				const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-				const ProvinceDefinition &provinceDef = [&random, &worldMapDef]()
+				const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 				{
-					const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
+					const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
 					return worldMapDef.getProvinceDef(provinceIndex);
 				}();
 

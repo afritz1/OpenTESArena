@@ -239,21 +239,20 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 							options.getGraphics_RenderThreadsMode());
 
 						std::unique_ptr<GameData> gameData = [this, &name, male, raceID,
-							&charClass, &miscAssets]()
+							&charClass, &game, &miscAssets]()
 						{
 							const auto &exeData = miscAssets.getExeData();
 
 							// Initialize player data (independent of the world).
-							Player player = [this, &name, male, raceID, &charClass, &exeData]()
+							Player player = [this, &name, male, raceID, &charClass, &game, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
 								const Double3 direction = Double3::UnitX;
 								const Double3 velocity = Double3::Zero;
 
-								Random random;
 								const auto &allowedWeapons = charClass.getAllowedWeapons();
 								const int weaponID = allowedWeapons.at(
-									random.next(static_cast<int>(allowedWeapons.size())));
+									game.getRandom().next(static_cast<int>(allowedWeapons.size())));
 
 								return Player(name, male, raceID, charClass, this->portraitID,
 									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
@@ -348,8 +347,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 								auto &player = gameData.getPlayer();
 								player.setVelocityToZero();
 
-								Random random;
-								const int localCityID = random.next(32);
+								const int localCityID = game.getRandom().next(32);
 								const int provinceID = gameData.getPlayer().getRaceID();
 
 								const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
@@ -359,9 +357,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 								// Random weather for now.
 								// - @todo: make it depend on the location (no need to prevent
 								//   deserts from having snow since the climates are still hardcoded).
-								const WeatherType weatherType = [&random]()
+								const WeatherType weatherType = [&game]()
 								{
-									const std::array<WeatherType, 8> Weathers =
+									constexpr std::array<WeatherType, 8> Weathers =
 									{
 										WeatherType::Clear,
 										WeatherType::Overcast,
@@ -373,8 +371,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 										WeatherType::SnowOvercast2
 									};
 
-									return Weathers.at(random.next(
-										static_cast<int>(Weathers.size())));
+									const int index = game.getRandom().next(static_cast<int>(Weathers.size()));
+									DebugAssertIndex(Weathers, index);
+									return Weathers[index];
 								}();
 
 								const int starCount = DistantSky::getStarCountFromDensity(
