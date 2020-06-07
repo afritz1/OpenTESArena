@@ -108,7 +108,7 @@ namespace String
 	template <typename T>
 	std::string toHexString(T value)
 	{
-		static_assert(std::is_integral<T>::value);
+		static_assert(std::is_integral_v<T>);
 
 		std::stringstream ss;
 		ss << std::hex << value;
@@ -119,7 +119,7 @@ namespace String
 	template <typename T>
 	std::string fixedPrecision(T value, int precision)
 	{
-		static_assert(std::is_floating_point<T>::value);
+		static_assert(std::is_floating_point_v<T>);
 
 		std::stringstream ss;
 		ss << std::fixed << std::setprecision(precision) << value;

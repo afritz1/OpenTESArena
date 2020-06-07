@@ -75,7 +75,7 @@ public:
 
 	// Bounds-checking.
 #define DebugValidIndex(container, index) \
-	(std::is_integral<decltype(index)>::value && (index >= 0) && (index < std::size(container)))
+	(std::is_integral_v<decltype(index)> && (index >= 0) && (index < std::size(container)))
 #define DebugAssertIndex(container, index) \
 	do { if (!DebugValidIndex(container, index)) DebugCrash("Index '" + std::to_string(index) + "' out of bounds."); } while (false)
 #define DebugMakeIndex(container, index) \
