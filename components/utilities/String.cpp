@@ -53,10 +53,9 @@ std::vector<std::string> String::split(const std::string &str)
 std::string String::trim(const std::string &str)
 {
 	std::string trimmed;
-
 	for (const char c : str)
 	{
-		if ((c != String::SPACE) && (c != String::TAB))
+		if (!std::isspace(c))
 		{
 			trimmed.push_back(c);
 		}
@@ -67,9 +66,8 @@ std::string String::trim(const std::string &str)
 
 std::string String::trimFront(const std::string &str)
 {
-	std::string trimmed(str);
-	
-	while ((trimmed.front() == String::SPACE) || (trimmed.front() == String::TAB))
+	std::string trimmed(str);	
+	while ((trimmed.size() > 0) && std::isspace(trimmed.front()))
 	{
 		trimmed.erase(trimmed.begin());
 	}
@@ -79,7 +77,7 @@ std::string String::trimFront(const std::string &str)
 
 void String::trimFrontInPlace(std::string &str)
 {
-	while ((str.size() > 0) && (str.front() == String::SPACE))
+	while ((str.size() > 0) && std::isspace(str.front()))
 	{
 		str.erase(str.begin());
 	}
@@ -88,8 +86,7 @@ void String::trimFrontInPlace(std::string &str)
 std::string String::trimBack(const std::string &str)
 {
 	std::string trimmed(str);
-
-	while ((trimmed.back() == String::SPACE) || (trimmed.back() == String::TAB))
+	while ((trimmed.size() > 0) && std::isspace(trimmed.back()))
 	{
 		trimmed.pop_back();
 	}
@@ -99,7 +96,7 @@ std::string String::trimBack(const std::string &str)
 
 void String::trimBackInPlace(std::string &str)
 {
-	while ((str.size() > 0) && (str.back() == String::SPACE))
+	while ((str.size() > 0) && std::isspace(str.back()))
 	{
 		str.pop_back();
 	}
@@ -108,7 +105,6 @@ void String::trimBackInPlace(std::string &str)
 std::string String::trimLines(const std::string &str)
 {
 	std::string trimmed;
-
 	for (const char c : str)
 	{
 		if ((c != String::CARRIAGE_RETURN) && (c != String::NEWLINE))
@@ -125,14 +121,9 @@ std::string String::trimExtra(const std::string &str)
 	std::string trimmed;
 	char prev = -1;
 
-	auto isWhitespace = [](char c)
-	{
-		return (c == String::SPACE) || (c == String::TAB);
-	};
-
 	for (const char c : str)
 	{
-		if (!isWhitespace(c) || !isWhitespace(prev))
+		if (!std::isspace(c) || !std::isspace(prev))
 		{
 			trimmed += c;
 			prev = c;
@@ -144,7 +135,7 @@ std::string String::trimExtra(const std::string &str)
 
 std::string String::distributeNewlines(const std::string &str, int charLimit)
 {
-	const int NO_SPACE = -1;
+	constexpr int NO_SPACE = -1;
 	std::string newStr = str;
 	int mostRecentSpace = NO_SPACE;
 	int currentLineLength = 0;
@@ -202,7 +193,6 @@ std::string String::addTrailingSlashIfMissing(const std::string &str)
 std::string String::replace(const std::string &str, char a, char b)
 {
 	std::string newStr(str);
-
 	for (char &c : newStr)
 	{
 		if (c == a)
@@ -232,7 +222,6 @@ std::string String::replace(const std::string &str, const std::string &a,
 std::string String::toUppercase(const std::string &str)
 {
 	std::string newStr(str);
-
 	for (char &c : newStr)
 	{
 		c = std::toupper(c);
@@ -244,7 +233,6 @@ std::string String::toUppercase(const std::string &str)
 std::string String::toLowercase(const std::string &str)
 {
 	std::string newStr(str);
-
 	for (char &c : newStr)
 	{
 		c = std::tolower(c);

@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "StringView.h"
 
 std::string_view StringView::substr(const std::string_view &str, size_t offset, size_t count)
@@ -41,8 +43,7 @@ std::vector<std::string_view> StringView::split(const std::string_view &str)
 std::string_view StringView::trimFront(const std::string_view &str)
 {
 	std::string_view trimmed(str);
-
-	while ((trimmed.front() == String::SPACE) || (trimmed.front() == String::TAB))
+	while ((trimmed.size() > 0) && std::isspace(trimmed.front()))
 	{
 		trimmed.remove_prefix(1);
 	}
@@ -53,8 +54,7 @@ std::string_view StringView::trimFront(const std::string_view &str)
 std::string_view StringView::trimBack(const std::string_view &str)
 {
 	std::string_view trimmed(str);
-
-	while ((trimmed.back() == String::SPACE) || (trimmed.back() == String::TAB))
+	while ((trimmed.size() > 0) && std::isspace(trimmed.back()))
 	{
 		trimmed.remove_suffix(1);
 	}
