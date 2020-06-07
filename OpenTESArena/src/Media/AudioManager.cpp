@@ -25,17 +25,6 @@
 
 #include "components/debug/Debug.h"
 
-namespace
-{
-	// These sounds in Arena should only be played one at a time, otherwise they would
-	// sound a bit obnoxious. This functionality is added to OpenTESArena because the
-	// original game can only play one sound at a time, so it doesn't have this problem.
-	const std::unordered_set<std::string> SingleInstanceSounds =
-	{
-		"DRUMS.VOC"
-	};
-}
-
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
 class OpenALStream;
@@ -48,6 +37,11 @@ private:
 	ALint mResampler;
 	bool mIs3D;	
 	std::string mNextSong;
+
+	// Sounds which are allowed only one active instance at a time, otherwise they would
+	// sound a bit obnoxious. This functionality is added here because the original game
+	// can only play one sound at a time, so it doesn't have this problem.
+	std::vector<std::string> mSingleInstanceSounds;
 
 	// Use this when resetting sound sources back to their default resampling. This uses
 	// whatever setting is the default within OpenAL.
@@ -100,6 +94,8 @@ public:
 	void setSoundVolume(double percent);
 	void setResamplingOption(int value);
 	void set3D(bool is3D);
+	void addSingleInstanceSound(std::string &&filename);
+	void clearSingleInstanceSounds();
 	void setListenerPosition(const Double3 &position);
 	void setListenerOrientation(const Double3 &direction);
 	void setNextMusic(std::string &&filename);
@@ -561,6 +557,7 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 		mFreeSources.push_back(source);
 	}
 
+	this->clearSingleInstanceSounds();
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
 	this->setListenerPosition(Double3::Zero);
@@ -603,11 +600,11 @@ void AudioManagerImpl::playMusic(const std::string &filename, bool loop)
 void AudioManagerImpl::playSound(const std::string &filename,
 	const std::optional<Double3> &position)
 {
-	// Certain sounds (like DRUMS.VOC) should only have one live instance at a time.
-	// This is purely an arbitrary rule to avoid having long sounds overlap each other
-	// which would ultimately be very annoying and/or distracting for the player.
-	const bool isSingleInstance =
-		SingleInstanceSounds.find(filename) != SingleInstanceSounds.end();
+	// Certain sounds should only have one live instance at a time. This is purely an arbitrary
+	// rule to avoid having long sounds overlap each other which would be very annoying and/or
+	// distracting for the player.
+	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(),
+		mSingleInstanceSounds.end(), filename) != mSingleInstanceSounds.end();
 	const bool allowedToPlay = !isSingleInstance ||
 		(isSingleInstance && !this->soundIsPlaying(filename));
 
@@ -768,6 +765,16 @@ void AudioManagerImpl::set3D(bool is3D)
 	mIs3D = is3D;
 }
 
+void AudioManagerImpl::addSingleInstanceSound(std::string &&filename)
+{
+	mSingleInstanceSounds.emplace_back(std::move(filename));
+}
+
+void AudioManagerImpl::clearSingleInstanceSounds()
+{
+	mSingleInstanceSounds.clear();
+}
+
 void AudioManagerImpl::setListenerPosition(const Double3 &position)
 {
 	const ALfloat posX = static_cast<ALfloat>(position.x);
@@ -921,6 +928,16 @@ void AudioManager::setResamplingOption(int resamplingOption)
 void AudioManager::set3D(bool is3D)
 {
 	pImpl->set3D(is3D);
+}
+
+void AudioManager::addSingleInstanceSound(std::string &&filename)
+{
+	pImpl->addSingleInstanceSound(std::move(filename));
+}
+
+void AudioManager::clearSingleInstanceSounds()
+{
+	pImpl->clearSingleInstanceSounds();
 }
 
 void AudioManager::setNextMusic(std::string &&filename)

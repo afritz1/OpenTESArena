@@ -1,0 +1,2 @@
+# This file lists all the sounds that are only allowed one instance at a time.
+DRUMS.VOC

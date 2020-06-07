@@ -22,6 +22,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/File.h"
 #include "components/utilities/String.h"
+#include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
 
 namespace
@@ -61,7 +62,7 @@ Game::Game()
 		this->options.getAudio_SoundResampling(), this->options.getAudio_Is3DAudio(), midiPath);
 
 	// Initialize music library from file.
-	const std::string musicLibraryPath = this->basePath + "data/music/MusicDefinitions.txt";
+	const std::string musicLibraryPath = this->basePath + "data/audio/MusicDefinitions.txt";
 	if (!this->musicLibrary.init(musicLibraryPath.c_str()))
 	{
 		DebugLogError("Couldn't init music library at \"" + musicLibraryPath + "\".");
@@ -125,6 +126,22 @@ Game::Game()
 
 		return surface;
 	}();
+
+	// Load single-instance sounds file for the audio manager.
+	TextLinesFile singleInstanceSoundsFile;
+	const std::string singleInstanceSoundsPath = this->basePath + "data/audio/SingleInstanceSounds.txt";
+	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
+	{
+		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+		{
+			const std::string &soundFilename = singleInstanceSoundsFile.getLine(i);
+			this->audioManager.addSingleInstanceSound(std::string(soundFilename));
+		}
+	}
+	else
+	{
+		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
+	}
 
 	this->renderer.setWindowIcon(icon);
 

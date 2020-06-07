@@ -74,6 +74,11 @@ public:
 	// The 2D option is provided for parity with the original engine.
 	void set3D(bool is3D);
 
+	// Adds a sound filename to the single-instance sounds list. These sounds can only have one
+	// live instance at a time.
+	void addSingleInstanceSound(std::string &&filename);
+	void clearSingleInstanceSounds();
+
 	// Sets the next music to play after the current one is finished.
 	void setNextMusic(std::string &&filename);
 
