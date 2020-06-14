@@ -2509,7 +2509,7 @@ void GameWorldPanel::drawCompass(const Double2 &direction,
 		TextureFile::fromName(TextureName::CompassSlider), renderer);
 
 	// Angle between 0 and 2 pi.
-	const double angle = std::atan2(direction.y, direction.x);
+	const double angle = std::atan2(-direction.y, -direction.x);
 
 	// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a
 	// small "pop-in" when turning from N to NE, because N is drawn in two places,
