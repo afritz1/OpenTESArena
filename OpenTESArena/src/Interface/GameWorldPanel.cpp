@@ -1428,10 +1428,10 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 				const Double2 mouseDirection = Double2(dxx, -dyy).normalized();
 
 				// Calculate the direction the mouse moved in (let's use cardinal directions
-				// for convenience. Up means north (positive Y), right means east (positive X).
-				// This could be refined in the future).
+				// for convenience. This is actually a little weird now because +X is south
+				// and +Y is west).
 				CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(
-					Double2(mouseDirection.y, mouseDirection.x));
+					Double2(-mouseDirection.y, -mouseDirection.x));
 
 				// Set the weapon animation state.
 				if (cardinalDirection == CardinalDirectionName::North)
