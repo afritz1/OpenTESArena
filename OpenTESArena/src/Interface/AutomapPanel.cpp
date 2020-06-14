@@ -522,7 +522,7 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 }
 
 Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-	NSInt gridWidth, EWInt gridDepth)
+	SNInt gridWidth, WEInt gridDepth)
 {
 	if (!isWild)
 	{
@@ -541,11 +541,11 @@ Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
 	}
 }
 
-NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
+NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
 {
-	const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel, gridWidth, gridDepth);
+	const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel);
 	const OriginalInt2 relativeOrigin = ExteriorLevelData::getCenteredWildOrigin(originalVoxel);
-	const NewInt2 newRelativeOrigin = VoxelUtils::originalVoxelToNewVoxel(relativeOrigin, gridWidth, gridDepth);
+	const NewInt2 newRelativeOrigin = VoxelUtils::originalVoxelToNewVoxel(relativeOrigin);
 
 	// Offset by two chunks to use the bottom-left corner instead of top-right.
 	const int offsetDist = RMDFile::WIDTH * 2;

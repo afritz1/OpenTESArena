@@ -849,8 +849,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			const OriginalInt2 displayedCoords = [&worldData, &player, &voxelGrid]()
 			{
 				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-					NewInt2(player.getVoxelPosition().x, player.getVoxelPosition().z),
-					voxelGrid.getWidth(), voxelGrid.getDepth());
+					NewInt2(player.getVoxelPosition().x, player.getVoxelPosition().z));
 
 				// The displayed coordinates in the wilderness behave differently in the original
 				// game due to how the 128x128 grid shifts to keep the player roughly centered.
@@ -862,7 +861,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 				{
 					const int halfWidth = RMDFile::WIDTH / 2;
 					const int halfDepth = RMDFile::DEPTH / 2;
-					return Int2(
+					return OriginalInt2(
 						halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
 						halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
 				}
@@ -2091,9 +2090,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 			if (isTransitionToInterior)
 			{
-				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-					voxel, voxelGrid.getWidth(), voxelGrid.getDepth());
-
+				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel);
 				const OriginalInt2 doorVoxel = [isCity, &originalVoxel]()
 				{
 					if (isCity)
@@ -2244,8 +2241,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						}
 					}();
 
-					const OriginalInt2 originalGateVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-						gatePos, voxelGrid.getWidth(), voxelGrid.getDepth());
+					const OriginalInt2 originalGateVoxel = VoxelUtils::newVoxelToOriginalVoxel(gatePos);
 
 					const bool ignoreGatePos = false;
 					if (!gameData.loadWilderness(locationDef, provinceDef, originalGateVoxel,
@@ -2622,8 +2618,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			const NewInt2 playerVoxel(
 				static_cast<int>(position.x),
 				static_cast<int>(position.z));
-			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-				playerVoxel, voxelGrid.getWidth(), voxelGrid.getDepth());
+			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxel);
 			const Int2 chunkCoord(
 				originalVoxel.x / RMDFile::WIDTH,
 				originalVoxel.y / RMDFile::DEPTH);

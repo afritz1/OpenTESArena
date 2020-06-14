@@ -740,8 +740,7 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 		const NewInt2 entityVoxelXZ(
 			static_cast<int>(entityPosXZ.x),
 			static_cast<int>(entityPosXZ.y));
-		const OriginalInt2 originalVoxelXZ = VoxelUtils::newVoxelToOriginalVoxel(
-			entityVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+		const OriginalInt2 originalVoxelXZ = VoxelUtils::newVoxelToOriginalVoxel(entityVoxelXZ);
 
 		constexpr int CHUNK_DIM = 64;
 		const EWInt newChunkX = originalVoxelXZ.x / CHUNK_DIM;

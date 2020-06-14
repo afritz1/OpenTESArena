@@ -48,25 +48,25 @@ public:
 	{
 	private:
 		int flatIndex; // Index in .INF file flats and flat textures.
-		std::vector<Int2> positions;
+		std::vector<NewInt2> positions;
 	public:
 		FlatDef(int flatIndex);
 
 		int getFlatIndex() const;
-		const std::vector<Int2> &getPositions() const;
+		const std::vector<NewInt2> &getPositions() const;
 
-		void addPosition(const Int2 &position);
+		void addPosition(const NewInt2 &position);
 	};
 
 	class Lock
 	{
 	private:
-		Int2 position;
+		NewInt2 position;
 		int lockLevel;
 	public:
-		Lock(const Int2 &position, int lockLevel);
+		Lock(const NewInt2 &position, int lockLevel);
 
-		const Int2 &getPosition() const;
+		const NewInt2 &getPosition() const;
 		int getLockLevel() const;
 	};
 
@@ -92,16 +92,16 @@ public:
 	private:
 		static constexpr double DEFAULT_SPEED = 1.30; // @todo: currently arbitrary value.
 
-		Int2 voxel;
+		NewInt2 voxel;
 		double percentOpen;
 		Direction direction;
 	public:
-		DoorState(const Int2 &voxel, double percentOpen, DoorState::Direction direction);
+		DoorState(const NewInt2 &voxel, double percentOpen, DoorState::Direction direction);
 
 		// Defaults to opening state (as if the player had just activated it).
-		DoorState(const Int2 &voxel);
+		DoorState(const NewInt2 &voxel);
 
-		const Int2 &getVoxel() const;
+		const NewInt2 &getVoxel() const;
 		double getPercentOpen() const;
 
 		// Returns whether the door's current direction is closing. This is used to make
@@ -144,24 +144,24 @@ private:
 	EntityManager entityManager;
 	INFFile inf;
 	std::vector<FlatDef> flatsLists;
-	std::unordered_map<Int2, Lock> locks;
+	std::unordered_map<NewInt2, Lock> locks;
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
 	std::string name;
 
-	void addFlatInstance(int flatIndex, const Int2 &flatPosition);
+	void addFlatInstance(int flatIndex, const NewInt2 &flatPosition);
 protected:
 	// Used by derived LevelData load methods.
-	LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
+	LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
-	void setVoxel(int x, int y, int z, uint16_t id);
-	void readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth);
+	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
+	void readFLOR(const uint16_t *flor, const INFFile &inf, SNInt gridWidth, WEInt gridDepth);
 	void readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-		int gridWidth, int gridDepth, const ExeData &exeData);
-	void readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth);
-	void readCeiling(const INFFile &inf, int width, int depth);
-	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth);
+		SNInt gridWidth, WEInt gridDepth, const ExeData &exeData);
+	void readMAP2(const uint16_t *map2, const INFFile &inf, SNInt gridWidth, WEInt gridDepth);
+	void readCeiling(const INFFile &inf);
+	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks);
 
 	// Gets voxel IDs surrounding the given voxel. If one of the IDs would point to a voxel
 	// outside the grid, it is air.
@@ -195,7 +195,7 @@ public:
 	const VoxelGrid &getVoxelGrid() const;
 
 	// Returns a pointer to some lock if the given voxel has a lock, or null if it doesn't.
-	const Lock *getLock(const Int2 &voxel) const;
+	const Lock *getLock(const NewInt2 &voxel) const;
 
 	// Returns whether a level is considered an outdoor dungeon. Only true for some interiors.
 	virtual bool isOutdoorDungeon() const = 0;

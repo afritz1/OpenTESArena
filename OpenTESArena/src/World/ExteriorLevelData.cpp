@@ -27,7 +27,7 @@ ExteriorLevelData::~ExteriorLevelData()
 
 }
 
-void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, EWInt gridDepth,
+void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
 	const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 	std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2)
@@ -176,7 +176,7 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, EWInt gridD
 
 void ExteriorLevelData::generateBuildingNames(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-	NSInt gridWidth, EWInt gridDepth, const MiscAssets &miscAssets)
+	SNInt gridWidth, WEInt gridDepth, const MiscAssets &miscAssets)
 {
 	const auto &exeData = miscAssets.getExeData();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
@@ -235,7 +235,7 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 			index = str.find("%ef");
 			if (index != std::string::npos)
 			{
-				ArenaRandom nameRandom((((gridWidth - 1) - x) << 16) + ((gridDepth - 1) - z));
+				ArenaRandom nameRandom((x << 16) + z);
 				const bool isMale = true;
 				const std::string maleFirstName = [&provinceDef, &miscAssets, isMale, &nameRandom]()
 				{
@@ -252,7 +252,7 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 			index = str.find("%n");
 			if (index != std::string::npos)
 			{
-				ArenaRandom nameRandom((((gridDepth - 1) - z) << 16) + ((gridWidth - 1) - x));
+				ArenaRandom nameRandom((z << 16) + x);
 				const bool isMale = true;
 				const std::string maleName = miscAssets.generateNpcName(
 					provinceDef.getRaceID(), isMale, nameRandom);
@@ -476,7 +476,7 @@ void ExteriorLevelData::generateWildChunkBuildingNames(const ExeData &exeData)
 					{
 						// Temple.
 						const int model = random.next() % 3;
-						const std::array<int, 3> ModelVars = { 5, 9, 10 };
+						constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
 						const int vars = ModelVars.at(model);
 						const int n = random.next() % vars;
 						return createTempleName(model, n);
@@ -509,22 +509,21 @@ void ExteriorLevelData::generateWildChunkBuildingNames(const ExeData &exeData)
 	}
 }
 
-void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth)
+void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
-	auto getMap1Voxel = [&map1, gridWidth, gridDepth](int x, int z)
+	auto getMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		// Read voxel data in reverse order.
-		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
+		const int index = (z * 2) + ((x * 2) * gridDepth);
 		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map1.data()) + index);
 		return voxel;
 	};
 
-	auto setMap1Voxel = [&map1, gridWidth, gridDepth](int x, int z, uint16_t voxel)
+	auto setMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z, uint16_t voxel)
 	{
-		// Set voxel data in reverse order.
-		const int index = ((gridDepth - 1) - z) + (((gridWidth - 1) - x) * gridDepth);
-		map1.at(index) = voxel;
+		const int index = z + (x * gridDepth);
+		DebugAssertIndex(map1, index);
+		map1[index] = voxel;
 	};
 
 	struct SearchResult
@@ -533,7 +532,7 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 
 		Side side;
 
-		// Distance from the associated origin dimension, where (0, 0) is at the bottom left.
+		// Distance from the associated origin dimension, where (0, 0) is at the top right.
 		int offset;
 
 		SearchResult(Side side, int offset)
@@ -547,18 +546,18 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 	// the other palace graphic and the gates.
 	const SearchResult result = [gridWidth, gridDepth, &getMap1Voxel]()
 	{
-		auto isPalaceBlock = [&getMap1Voxel](int x, int z)
+		auto isPalaceBlock = [&getMap1Voxel](SNInt x, WEInt z)
 		{
 			const uint16_t voxel = getMap1Voxel(x, z);
 			const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
 			return mostSigNibble == 0x9;
 		};
 
-		// North (top edge) and south (bottom edge), search left to right.
-		for (int z = 1; z < (gridDepth - 1); z++)
+		// North (top edge) and south (bottom edge), search right to left.
+		for (WEInt z = 1; z < (gridDepth - 1); z++)
 		{
-			const int northX = gridWidth - 1;
-			const int southX = 0;
+			const SNInt northX = 0;
+			const SNInt southX = gridWidth - 1;
 			if (isPalaceBlock(northX, z))
 			{
 				return SearchResult(SearchResult::Side::North, z);
@@ -569,11 +568,11 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 			}
 		}
 
-		// East (right edge) and west (left edge), search bottom to top.
-		for (int x = 1; x < (gridWidth - 1); x++)
+		// East (right edge) and west (left edge), search top to bottom.
+		for (SNInt x = 1; x < (gridWidth - 1); x++)
 		{
-			const int eastZ = gridDepth - 1;
-			const int westZ = 0;
+			const WEInt eastZ = 0;
+			const WEInt westZ = gridDepth - 1;
 			if (isPalaceBlock(x, eastZ))
 			{
 				return SearchResult(SearchResult::Side::East, x);
@@ -593,14 +592,14 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 	if (result.side != SearchResult::Side::None)
 	{
 		// The direction to step from a palace voxel to the other palace voxel.
-		const Int2 northSouthPalaceStep(0, 1);
-		const Int2 eastWestPalaceStep(1, 0);
+		const NewInt2 northSouthPalaceStep(0, -1);
+		const NewInt2 eastWestPalaceStep(-1, 0);
 
 		// Gets the distance in voxels from a palace voxel to its gate, or -1 if no gate exists.
 		const int NO_GATE = -1;
-		auto getGateDistance = [&getMap1Voxel, NO_GATE](const Int2 &palaceVoxel, const Int2 &dir)
+		auto getGateDistance = [&getMap1Voxel, NO_GATE](const NewInt2 &palaceVoxel, const NewInt2 &dir)
 		{
-			auto isGateBlock = [&getMap1Voxel](int x, int z)
+			auto isGateBlock = [&getMap1Voxel](SNInt x, WEInt z)
 			{
 				const uint16_t voxel = getMap1Voxel(x, z);
 				const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
@@ -612,7 +611,7 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 			const int MAX_GATE_DIST = 8;
 
 			int i = 0;
-			Int2 position = palaceVoxel;
+			NewInt2 position = palaceVoxel;
 			while ((i < MAX_GATE_DIST) && !isGateBlock(position.x, position.y))
 			{
 				position = position + dir;
@@ -623,14 +622,14 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 		};
 
 		// Set the positions of the two palace voxels and the two gate voxels.
-		Int2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
+		NewInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
 		uint16_t firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
 		int gateDist;
 		if (result.side == SearchResult::Side::North)
 		{
-			firstPalaceVoxel = Int2(gridWidth - 1, result.offset);
+			firstPalaceVoxel = NewInt2(gridWidth - 1, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const Int2 gateDir = Int2(-1, 0);
+			const NewInt2 gateDir(-1, 0);
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -640,9 +639,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 		}
 		else if (result.side == SearchResult::Side::South)
 		{
-			firstPalaceVoxel = Int2(0, result.offset);
+			firstPalaceVoxel = NewInt2(0, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const Int2 gateDir = Int2(1, 0);
+			const NewInt2 gateDir(1, 0);
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -652,9 +651,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 		}
 		else if (result.side == SearchResult::Side::East)
 		{
-			firstPalaceVoxel = Int2(result.offset, gridDepth - 1);
+			firstPalaceVoxel = NewInt2(result.offset, gridDepth - 1);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const Int2 gateDir = Int2(0, -1);
+			const NewInt2 gateDir(0, -1);
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
@@ -664,9 +663,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, int gr
 		}
 		else if (result.side == SearchResult::Side::West)
 		{
-			firstPalaceVoxel = Int2(result.offset, 0);
+			firstPalaceVoxel = NewInt2(result.offset, 0);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const Int2 gateDir = Int2(0, 1);
+			const NewInt2 gateDir(0, 1);
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;

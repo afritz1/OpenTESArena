@@ -33,8 +33,7 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	for (const OriginalInt2 &point : mif.getStartPoints())
 	{
 		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
-		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-			startPointReal, mif.getDepth(), mif.getWidth()));
+		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPointReal));
 	}
 
 	worldData.levelIndex = mif.getStartingLevelIndex();
@@ -105,8 +104,8 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	const std::string infName = String::toUppercase(mif.getLevels().front().info);
 
 	InteriorWorldData worldData;
-	const NSInt gridWidth = mif.getDepth() * depthChunks;
-	const EWInt gridDepth = mif.getWidth() * widthChunks;
+	const SNInt gridWidth = mif.getDepth() * depthChunks;
+	const WEInt gridDepth = mif.getWidth() * widthChunks;
 
 	// Generate each level, deciding which dungeon blocks to use.
 	for (int i = 0; i < levelCount; i++)
@@ -127,11 +126,10 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	const double chunkDimReal = 32.0;
 	const double firstTransitionChunkX = static_cast<double>(transitions.front() % 10);
 	const double firstTransitionChunkZ = static_cast<double>(transitions.front() / 10);
-	const Double2 startPoint(
+	const OriginalDouble2 startPoint(
 		10.50 + (firstTransitionChunkX * chunkDimReal),
 		10.50 + (firstTransitionChunkZ * chunkDimReal));
-	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-		startPoint, gridWidth, gridDepth));
+	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;
 	worldData.interiorType = interiorType;

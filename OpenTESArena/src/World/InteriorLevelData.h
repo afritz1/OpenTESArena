@@ -9,8 +9,8 @@ private:
 	// All interiors have the same grid height.
 	static const int GRID_HEIGHT;
 
-	std::unordered_map<Int2, LevelData::TextTrigger> textTriggers;
-	std::unordered_map<Int2, std::string> soundTriggers;
+	std::unordered_map<NewInt2, LevelData::TextTrigger> textTriggers;
+	std::unordered_map<NewInt2, std::string> soundTriggers;
 
 	// Exteriors have dynamic sky palettes, so sky color can only be stored by interiors (for the
 	// purposes of background fill, fog, etc.).
@@ -18,24 +18,23 @@ private:
 
 	bool outdoorDungeon;
 
-	InteriorLevelData(int gridWidth, int gridDepth, const std::string &infName,
+	InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
-	void readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers, const INFFile &inf,
-		int width, int depth);
+	void readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers, const INFFile &inf);
 public:
 	InteriorLevelData(InteriorLevelData&&) = default;
 	virtual ~InteriorLevelData();
 
 	// Interior level. The .INF is obtained from the level's info member.
-	static InteriorLevelData loadInterior(const MIFFile::Level &level, int gridWidth,
-		int gridDepth, const ExeData &exeData);
+	static InteriorLevelData loadInterior(const MIFFile::Level &level, SNInt gridWidth,
+		WEInt gridDepth, const ExeData &exeData);
 
 	// Dungeon level. Each chunk is determined by an "inner seed" which depends on the
 	// dungeon level count being calculated beforehand.
 	static InteriorLevelData loadDungeon(ArenaRandom &random,
 		const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-		int widthChunks, int depthChunks, const std::string &infName, int gridWidth, int gridDepth,
+		int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 		const ExeData &exeData);
 
 	// Returns a pointer to some trigger text if the given voxel has a text trigger, or

@@ -9,7 +9,7 @@
 
 const int InteriorLevelData::GRID_HEIGHT = 3;
 
-InteriorLevelData::InteriorLevelData(int gridWidth, int gridDepth, const std::string &infName,
+InteriorLevelData::InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
 	: LevelData(gridWidth, InteriorLevelData::GRID_HEIGHT, gridDepth, infName, name) { }
 
@@ -18,8 +18,8 @@ InteriorLevelData::~InteriorLevelData()
 
 }
 
-InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, int gridWidth,
-	int gridDepth, const ExeData &exeData)
+InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, SNInt gridWidth,
+	WEInt gridDepth, const ExeData &exeData)
 {
 	// .INF filename associated with the interior level.
 	const std::string infName = String::toUppercase(level.info);
@@ -47,14 +47,14 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, i
 	// leave it empty (for some "outdoor dungeons").
 	if (hasCeiling)
 	{
-		levelData.readCeiling(inf, gridWidth, gridDepth);
+		levelData.readCeiling(inf);
 	}
 
 	// Assign locks.
-	levelData.readLocks(level.lock, gridWidth, gridDepth);
+	levelData.readLocks(level.lock);
 
 	// Assign text and sound triggers.
-	levelData.readTriggers(level.trig, inf, gridWidth, gridDepth);
+	levelData.readTriggers(level.trig, inf);
 
 	return levelData;
 }
@@ -168,11 +168,11 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
-	levelData.readCeiling(inf, gridWidth, gridDepth);
+	levelData.readCeiling(inf);
 
 	// Load locks and triggers (if any).
-	levelData.readLocks(tempLocks, gridWidth, gridDepth);
-	levelData.readTriggers(tempTriggers, inf, gridWidth, gridDepth);
+	levelData.readLocks(tempLocks);
+	levelData.readTriggers(tempTriggers, inf);
 
 	return levelData;
 }
@@ -195,13 +195,12 @@ bool InteriorLevelData::isOutdoorDungeon() const
 }
 
 void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers,
-	const INFFile &inf, int width, int depth)
+	const INFFile &inf)
 {
 	for (const auto &trigger : triggers)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(
-			OriginalInt2(trigger.x, trigger.y), width, depth);
+		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(trigger.x, trigger.y));
 
 		// There can be a text trigger and sound trigger in the same voxel.
 		const bool isTextTrigger = trigger.textIndex != -1;

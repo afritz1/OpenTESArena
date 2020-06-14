@@ -29,7 +29,7 @@ private:
 
 	// Writes city building data into the output buffers. The buffers should already be
 	// initialized with the city skeleton.
-	static void generateCity(uint32_t citySeed, int cityDim, EWInt gridDepth,
+	static void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
 		const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 		std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2);
@@ -38,14 +38,14 @@ private:
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	void generateBuildingNames(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-		NSInt gridWidth, EWInt gridDepth, const MiscAssets &miscAssets);
+		SNInt gridWidth, WEInt gridDepth, const MiscAssets &miscAssets);
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	void generateWildChunkBuildingNames(const ExeData &exeData);
 
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.
-	static void revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth);
+	static void revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,

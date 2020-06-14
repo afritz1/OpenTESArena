@@ -39,10 +39,10 @@ private:
 
 	// Calculates screen offset of automap for rendering.
 	static Double2 makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-		NSInt gridWidth, EWInt gridDepth);
+		SNInt gridWidth, WEInt gridDepth);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
-	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth);
+	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
 
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);

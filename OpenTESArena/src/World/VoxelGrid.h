@@ -23,25 +23,25 @@ public:
 private:
 	std::vector<uint16_t> voxels;
 	std::vector<VoxelDefinition> voxelDefs;
-	NSInt width; // Width is north/south.
+	SNInt width;
 	int height;
-	EWInt depth; // Depth is east/west.
+	WEInt depth;
 
 	// Converts XYZ coordinate to index.
-	int getIndex(NSInt x, int y, EWInt z) const;
+	int getIndex(SNInt x, int y, WEInt z) const;
 public:
-	VoxelGrid(NSInt width, int height, EWInt depth);
+	VoxelGrid(SNInt width, int height, WEInt depth);
 
 	// Gets the dimensions of the voxel grid.
-	NSInt getWidth() const;
+	SNInt getWidth() const;
 	int getHeight() const;
-	EWInt getDepth() const;
+	WEInt getDepth() const;
 
 	// Returns whether the given coordinate lies within the voxel grid.
-	bool coordIsValid(NSInt x, int y, EWInt z) const;
+	bool coordIsValid(SNInt x, int y, WEInt z) const;
 
 	// Convenience method for getting a voxel's ID.
-	uint16_t getVoxel(NSInt x, int y, EWInt z) const;
+	uint16_t getVoxel(SNInt x, int y, WEInt z) const;
 
 	// Gets the voxel definitions associated with an ID.
 	VoxelDefinition &getVoxelDef(uint16_t id);
@@ -54,7 +54,7 @@ public:
 	uint16_t addVoxelDef(const VoxelDefinition &voxelDef);
 
 	// Convenience method for setting a voxel's ID.
-	void setVoxel(NSInt x, int y, EWInt z, uint16_t id);
+	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
 };
 
 #endif
