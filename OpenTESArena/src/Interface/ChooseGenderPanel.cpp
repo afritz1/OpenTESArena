@@ -23,9 +23,8 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
 
-ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass,
-	const std::string &name)
-	: Panel(game), charClass(charClass), name(name)
+ChooseGenderPanel::ChooseGenderPanel(Game &game)
+	: Panel(game)
 {
 	this->parchment = Texture::generate(Texture::PatternType::Parchment, 180, 40,
 		game.getTextureManager(), game.getRenderer());
@@ -83,37 +82,42 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game, const CharacterClass &charClass
 
 	this->backToNameButton = []()
 	{
-		auto function = [](Game &game, const CharacterClass &charClass)
+		auto function = [](Game &game)
 		{
-			game.setPanel<ChooseNamePanel>(game, charClass);
+			game.setPanel<ChooseNamePanel>(game);
 		};
-		return Button<Game&, const CharacterClass&>(function);
+
+		return Button<Game&>(function);
 	}();
 
 	this->maleButton = []()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
-		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name)
+		auto function = [](Game &game)
 		{
 			const bool male = true;
-			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setGender(male);
+
+			game.setPanel<ChooseRacePanel>(game);
 		};
-		return Button<Game&, const CharacterClass&, 
-			const std::string&>(center, 175, 35, function);
+
+		return Button<Game&>(center, 175, 35, function);
 	}();
 
 	this->femaleButton = []()
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
-		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name)
+		auto function = [](Game &game)
 		{
 			const bool male = false;
-			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setGender(male);
+
+			game.setPanel<ChooseRacePanel>(game);
 		};
-		return Button<Game&, const CharacterClass&, 
-			const std::string&>(center, 175, 35, function);
+
+		return Button<Game&>(center, 175, 35, function);
 	}();
 }
 
@@ -135,7 +139,7 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed)
 	{
-		this->backToNameButton.click(this->getGame(), this->charClass);
+		this->backToNameButton.click(this->getGame());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -148,11 +152,11 @@ void ChooseGenderPanel::handleEvent(const SDL_Event &e)
 
 		if (this->maleButton.contains(mouseOriginalPoint))
 		{
-			this->maleButton.click(this->getGame(), this->charClass, this->name);
+			this->maleButton.click(this->getGame());
 		}
 		else if (this->femaleButton.contains(mouseOriginalPoint))
 		{
-			this->femaleButton.click(this->getGame(), this->charClass, this->name);
+			this->femaleButton.click(this->getGame());
 		}
 	}
 }

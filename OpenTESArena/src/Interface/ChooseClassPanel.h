@@ -33,9 +33,9 @@ private:
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClass> charClasses;
 
-	std::string getClassArmors(const CharacterClass &characterClass) const;
-	std::string getClassShields(const CharacterClass &characterClass) const;
-	std::string getClassWeapons(const CharacterClass &characterClass) const;
+	std::string getClassArmors(const CharacterClass &charClass) const;
+	std::string getClassShields(const CharacterClass &charClass) const;
+	std::string getClassWeapons(const CharacterClass &charClass) const;
 
 	// Gets the rectangle for the class list's area.
 	static Rect getClassListRect(const ExeData &exeData);

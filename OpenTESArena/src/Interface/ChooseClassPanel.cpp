@@ -149,8 +149,12 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	{
 		auto function = [](Game &game, const CharacterClass &charClass)
 		{
-			game.setPanel<ChooseNamePanel>(game, charClass);
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setClassIndex(charClass.getClassIndex());
+
+			game.setPanel<ChooseNamePanel>(game);
 		};
+
 		return Button<Game&, const CharacterClass&>(function);
 	}();
 
@@ -203,7 +207,9 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			const int index = this->classesListBox->getClickedIndex(originalPoint);
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
-				this->acceptButton.click(game, this->charClasses.at(index));
+				DebugAssertIndex(this->charClasses, index);
+				const CharacterClass &charClass = this->charClasses[index];
+				this->acceptButton.click(game, charClass);
 			}
 		}
 		else if (mouseWheelUp)
@@ -229,12 +235,12 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
-std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClass) const
+std::string ChooseClassPanel::getClassArmors(const CharacterClass &charClass) const
 {
-	const int armorCount = static_cast<int>(characterClass.getAllowedArmors().size());
+	const int armorCount = static_cast<int>(charClass.getAllowedArmors().size());
 
 	// Sort as they are listed in the CharacterClassParser.
-	auto allowedArmors = characterClass.getAllowedArmors();
+	auto allowedArmors = charClass.getAllowedArmors();
 	std::sort(allowedArmors.begin(), allowedArmors.end());
 
 	std::string armorString;
@@ -276,12 +282,12 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &characterClas
 	return armorString;
 }
 
-std::string ChooseClassPanel::getClassShields(const CharacterClass &characterClass) const
+std::string ChooseClassPanel::getClassShields(const CharacterClass &charClass) const
 {
-	const int shieldCount = static_cast<int>(characterClass.getAllowedShields().size());
+	const int shieldCount = static_cast<int>(charClass.getAllowedShields().size());
 
 	// Sort as they are listed in the CharacterClassParser.
-	auto allowedShields = characterClass.getAllowedShields();
+	auto allowedShields = charClass.getAllowedShields();
 	std::sort(allowedShields.begin(), allowedShields.end());
 
 	std::string shieldsString;
@@ -324,16 +330,16 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &characterCla
 	return shieldsString;
 }
 
-std::string ChooseClassPanel::getClassWeapons(const CharacterClass &characterClass) const
+std::string ChooseClassPanel::getClassWeapons(const CharacterClass &charClass) const
 {
-	const int weaponCount = static_cast<int>(characterClass.getAllowedWeapons().size());
+	const int weaponCount = static_cast<int>(charClass.getAllowedWeapons().size());
 
 	// Get weapon names from the executable.
 	const auto &exeData = this->getGame().getMiscAssets().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
 	// Sort as they are listed in the CharacterClassParser.
-	std::vector<int> allowedWeapons = characterClass.getAllowedWeapons();
+	std::vector<int> allowedWeapons = charClass.getAllowedWeapons();
 	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
 		[&weaponStrings](int a, int b)
 	{

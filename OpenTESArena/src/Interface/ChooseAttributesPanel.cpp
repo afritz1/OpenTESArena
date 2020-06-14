@@ -43,17 +43,20 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &charClass,
-	const std::string &name, bool male, int raceID)
-	: Panel(game), charClass(charClass), male(male), name(name)
+ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
+	: Panel(game)
 {
-	this->nameTextBox = [&game, &name]()
+	auto &charCreationState = game.getCharacterCreationState();
+
+	this->nameTextBox = [&game, &charCreationState]()
 	{
 		const int x = 10;
 		const int y = 8;
 
+		const std::string_view name = charCreationState.getName();
+
 		const RichTextString richText(
-			name,
+			std::string(name),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
@@ -62,13 +65,16 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
-	this->raceTextBox = [&game, raceID]()
+	this->raceTextBox = [&game, &charCreationState]()
 	{
 		const int x = 10;
 		const int y = 17;
 
 		const auto &exeData = game.getMiscAssets().getExeData();
-		const std::string &text = exeData.races.singularNames.at(raceID);
+		const auto &singularNames = exeData.races.singularNames;
+		const int raceIndex = charCreationState.getRaceIndex();
+		DebugAssertIndex(singularNames, raceIndex);
+		const std::string &text = singularNames[raceIndex];
 
 		const RichTextString richText(
 			text,
@@ -80,13 +86,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
-	this->classTextBox = [&game, &charClass]()
+	this->classTextBox = [&game, &charCreationState]()
 	{
 		const int x = 10;
 		const int y = 26;
 
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &classDefs = miscAssets.getClassDefinitions();
+		const int classIndex = charCreationState.getClassIndex();
+		DebugAssertIndex(classDefs, classIndex);
+		const std::string &className = classDefs[classIndex].getName();
+
 		const RichTextString richText(
-			charClass.getName(),
+			className,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
@@ -95,29 +107,30 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
 	}();
 
-	this->backToRaceButton = [&charClass, &name, male]()
+	this->backToRaceButton = []()
 	{
-		auto function = [charClass, name, male](Game &game)
+		auto function = [](Game &game)
 		{
-			game.setPanel<ChooseRacePanel>(game, charClass, name, male);
+			game.setPanel<ChooseRacePanel>(game);
 		};
+
 		return Button<Game&>(function);
 	}();
 
-	this->doneButton = [this, &charClass, &name, male, raceID]()
+	this->doneButton = [this]()
 	{
 		const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
 		const int width = 21;
 		const int height = 12;
 
-		auto function = [this, charClass, name, male, raceID](Game &game)
+		auto function = [this](Game &game)
 		{
 			// Generate the race selection message box.
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
 
 			MessageBoxSubPanel::Title messageBoxTitle;
-			messageBoxTitle.textBox = [&game, raceID, &renderer]()
+			messageBoxTitle.textBox = [&game, &renderer]()
 			{
 				const auto &exeData = game.getMiscAssets().getExeData();
 				const std::string &text = exeData.charCreation.chooseAttributes;
@@ -185,7 +198,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 					width, height, textureManager, renderer);
 			}();
 
-			messageBoxSave.function = [this, charClass, name, male, raceID](Game &game)
+			messageBoxSave.function = [this](Game &game)
 			{
 				// Confirming the chosen stats will bring up a text sub-panel, and
 				// the next time the done button is clicked, it starts the game.
@@ -222,11 +235,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 
 				// The done button is replaced after the player confirms their stats,
 				// and it then leads to the main quest opening cinematic.
-				auto newDoneFunction = [this, charClass, name, male, raceID](Game &game)
+				auto newDoneFunction = [this](Game &game)
 				{
 					game.popSubPanel();
 
-					auto gameDataFunction = [this, charClass, name, male, raceID](Game &game)
+					auto gameDataFunction = [this](Game &game)
 					{
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
@@ -238,23 +251,34 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 							fullGameWindow,
 							options.getGraphics_RenderThreadsMode());
 
-						std::unique_ptr<GameData> gameData = [this, &name, male, raceID,
-							&charClass, &game, &miscAssets]()
+						std::unique_ptr<GameData> gameData = [this, &game, &miscAssets]()
 						{
 							const auto &exeData = miscAssets.getExeData();
 
 							// Initialize player data (independent of the world).
-							Player player = [this, &name, male, raceID, &charClass, &game, &exeData]()
+							Player player = [this, &game, &miscAssets, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
 								const Double3 direction = Double3::UnitX;
 								const Double3 velocity = Double3::Zero;
 
+								const auto &charCreationState = game.getCharacterCreationState();
+								const std::string_view name = charCreationState.getName();
+								const bool male = charCreationState.isMale();
+								const int raceIndex = charCreationState.getRaceIndex();
+
+								const auto &classDefs = miscAssets.getClassDefinitions();
+								const int classIndex = charCreationState.getClassIndex();
+								DebugAssertIndex(classDefs, classIndex);
+								const auto &charClass = classDefs[classIndex];
+
+								const int portraitIndex = charCreationState.getPortraitIndex();
+
 								const auto &allowedWeapons = charClass.getAllowedWeapons();
 								const int weaponID = allowedWeapons.at(
 									game.getRandom().next(static_cast<int>(allowedWeapons.size())));
 
-								return Player(name, male, raceID, charClass, this->portraitID,
+								return Player(std::string(name), male, raceIndex, charClass, portraitIndex,
 									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
 									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 							}();
@@ -437,6 +461,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 							game.setMusic(musicDef);
 						};
 
+						game.setCharacterCreationState(nullptr);
 						game.setPanel<TextCinematicPanel>(
 							game,
 							TextureFile::fromName(TextureSequenceName::Silmane),
@@ -547,25 +572,24 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 		const int height = 42;
 		auto function = [](ChooseAttributesPanel &panel, bool increment)
 		{
-			const int minID = 0;
+			const int minID = 0; // @todo: de-hardcode so it relies on portraits list
 			const int maxID = 9;
 
-			if (increment)
-			{
-				panel.portraitID = (panel.portraitID == maxID) ?
-					minID : (panel.portraitID + 1);
-			}
-			else
-			{
-				panel.portraitID = (panel.portraitID == minID) ?
-					maxID : (panel.portraitID - 1);
-			}
+			auto &charCreationState = panel.getGame().getCharacterCreationState();
+			const int oldPortraitIndex = charCreationState.getPortraitIndex();			
+			const int newPortraitIndex = increment ?
+				((oldPortraitIndex == maxID) ? minID : (oldPortraitIndex + 1)) :
+				((oldPortraitIndex == minID) ? maxID : (oldPortraitIndex - 1));
+
+			charCreationState.setPortraitIndex(newPortraitIndex);
 		};
+
 		return Button<ChooseAttributesPanel&, bool>(center, width, height, function);
 	}();
 
 	// Get pixel offsets for each head.
-	const std::string &headsFilename = PortraitFile::getHeads(male, raceID, false);
+	const std::string headsFilename = PortraitFile::getHeads(
+		charCreationState.isMale(), charCreationState.getRaceIndex(), false);
 	CIFFile cifFile;
 	if (!cifFile.init(headsFilename.c_str()))
 	{
@@ -577,8 +601,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
 	}
 
-	this->raceID = raceID;
-	this->portraitID = 0;
+	charCreationState.setPortraitIndex(0);
 	this->canChangePortrait = false;
 
 	// Push the initial text pop-up onto the sub-panel stack.
@@ -594,7 +617,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game, const CharacterClass &c
 			const auto &exeData = game.getMiscAssets().getExeData();
 			std::string segment = exeData.charCreation.distributeClassPoints;
 			segment = String::replace(segment, '\r', '\n');
-
 			return segment;
 		}();
 
@@ -686,27 +708,37 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
+	auto &game = this->getGame();
+	auto &textureManager = game.getTextureManager();
 	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
 
+	const auto &charCreationState = game.getCharacterCreationState();
+	const bool male = charCreationState.isMale();
+	const int raceIndex = charCreationState.getRaceIndex();
+	const int portraitIndex = charCreationState.getPortraitIndex();
+	const CharacterClass &charClass = [&game, &charCreationState]() -> const CharacterClass&
+	{
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &classDefs = miscAssets.getClassDefinitions();
+		const int classIndex = charCreationState.getClassIndex();
+		DebugAssertIndex(classDefs, classIndex);
+		return classDefs[classIndex];
+	}();
+
 	// Get the filenames for the portrait and clothes.
-	const std::string &headsFilename = PortraitFile::getHeads(
-		this->male, this->raceID, false);
-	const std::string &bodyFilename = PortraitFile::getBody(
-		this->male, this->raceID);
-	const std::string &shirtFilename = PortraitFile::getShirt(
-		this->male, this->charClass.canCastMagic());
-	const std::string &pantsFilename = PortraitFile::getPants(this->male);
+	const std::string &headsFilename = PortraitFile::getHeads(male, raceIndex, false);
+	const std::string &bodyFilename = PortraitFile::getBody(male, raceIndex);
+	const std::string &shirtFilename = PortraitFile::getShirt(male, charClass.canCastMagic());
+	const std::string &pantsFilename = PortraitFile::getPants(male);
 
 	// Get pixel offsets for each clothes texture.
-	const Int2 shirtOffset = PortraitFile::getShirtOffset(
-		this->male, this->charClass.canCastMagic());
-	const Int2 pantsOffset = PortraitFile::getPantsOffset(this->male);
+	const Int2 shirtOffset = PortraitFile::getShirtOffset(male, charClass.canCastMagic());
+	const Int2 pantsOffset = PortraitFile::getPantsOffset(male);
 
 	// Draw the current portrait and clothes.
-	const Int2 &headOffset = this->headOffsets.at(this->portraitID);
+	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
 	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(this->portraitID);
+		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(portraitIndex);
 	const auto &body = textureManager.getTexture(bodyFilename, renderer);
 	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
 	const auto &pants = textureManager.getTexture(pantsFilename, renderer);

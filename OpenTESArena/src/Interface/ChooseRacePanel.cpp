@@ -31,25 +31,27 @@
 
 const int ChooseRacePanel::NO_ID = -1;
 
-ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
-	const std::string &name, bool male)
-	: Panel(game), charClass(charClass), name(name), male(male)
+ChooseRacePanel::ChooseRacePanel(Game &game)
+	: Panel(game)
 {
 	this->backToGenderButton = []()
 	{
-		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name)
+		auto function = [](Game &game)
 		{
-			game.setPanel<ChooseGenderPanel>(game, charClass, name);
+			game.setPanel<ChooseGenderPanel>(game);
 		};
-		return Button<Game&, const CharacterClass&, const std::string&>(function);
+
+		return Button<Game&>(function);
 	}();
 
 	this->acceptButton = []()
 	{
-		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name, bool male, int raceID)
+		auto function = [](Game &game, int raceIndex)
 		{
+			// Set character creation race index.
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setRaceIndex(raceIndex);
+
 			// Generate the race selection message box.
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
@@ -57,15 +59,22 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 			const Color textColor(52, 24, 8);
 
 			MessageBoxSubPanel::Title messageBoxTitle;
-			messageBoxTitle.textBox = [&game, raceID, &renderer, &textColor]()
+			messageBoxTitle.textBox = [&game, &renderer, &textColor]()
 			{
 				const auto &exeData = game.getMiscAssets().getExeData();
 				std::string text = exeData.charCreation.confirmRace;
 				text = String::replace(text, '\r', '\n');
 
-				const std::string &provinceName =
-					exeData.locations.charCreationProvinceNames.at(raceID);
-				const std::string &pluralRaceName = exeData.races.pluralNames.at(raceID);
+				const auto &charCreationState = game.getCharacterCreationState();
+				const int raceIndex = charCreationState.getRaceIndex();
+
+				const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
+				DebugAssertIndex(charCreationProvinceNames, raceIndex);
+				const std::string &provinceName = charCreationProvinceNames[raceIndex];
+
+				const auto &pluralRaceNames = exeData.races.pluralNames;
+				DebugAssertIndex(pluralRaceNames, raceIndex);
+				const std::string &pluralRaceName = pluralRaceNames[raceIndex];
 
 				// Replace first %s with province name.
 				size_t index = text.find("%s");
@@ -128,7 +137,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					textureManager, renderer);
 			}();
 
-			messageBoxYes.function = [&charClass, &name, male, raceID](Game &game)
+			messageBoxYes.function = [](Game &game)
 			{
 				game.popSubPanel();
 
@@ -136,10 +145,10 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 				// Generate all of the parchments leading up to the attributes panel,
 				// and link them together so they appear after each other.
-				auto toAttributes = [&charClass, &name, male, raceID](Game &game)
+				auto toAttributes = [](Game &game)
 				{
 					game.popSubPanel();
-					game.setPanel<ChooseAttributesPanel>(game, charClass, name, male, raceID);
+					game.setPanel<ChooseAttributesPanel>(game);
 				};
 
 				auto toFourthSubPanel = [textColor, toAttributes](Game &game)
@@ -183,24 +192,32 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					game.pushSubPanel(std::move(fourthSubPanel));
 				};
 
-				auto toThirdSubPanel = [&charClass, textColor, toFourthSubPanel](Game &game)
+				auto toThirdSubPanel = [textColor, toFourthSubPanel](Game &game)
 				{
 					game.popSubPanel();
 
 					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 
-					const std::string text = [&game, &charClass]()
+					const std::string text = [&game]()
 					{
-						const auto &exeData = game.getMiscAssets().getExeData();
+						const auto &miscAssets = game.getMiscAssets();
+						const auto &exeData = miscAssets.getExeData();
 						std::string segment = exeData.charCreation.confirmedRace3;
 						segment = String::replace(segment, '\r', '\n');
 
-						const std::string &preferredAttributes =
-							exeData.charClasses.preferredAttributes.at(charClass.getClassIndex());
+						const auto &charCreationState = game.getCharacterCreationState();
+						const auto &classDefs = miscAssets.getClassDefinitions();
+						const int classIndex = charCreationState.getClassIndex();
+						DebugAssertIndex(classDefs, classIndex);
+						const auto &charClass = classDefs[classIndex];
+
+						const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
+						DebugAssertIndex(preferredAttributes, classIndex);
+						const std::string &preferredAttributesStr = preferredAttributes[classIndex];
 
 						// Replace first %s with desired class attributes.
 						size_t index = segment.find("%s");
-						segment.replace(index, 2, preferredAttributes);
+						segment.replace(index, 2, preferredAttributesStr);
 
 						// Replace second %s with class name.
 						index = segment.find("%s");
@@ -235,26 +252,30 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					game.pushSubPanel(std::move(thirdSubPanel));
 				};
 
-				auto toSecondSubPanel = [raceID, textColor, toThirdSubPanel](Game &game)
+				auto toSecondSubPanel = [textColor, toThirdSubPanel](Game &game)
 				{
 					game.popSubPanel();
 
 					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 
-					const std::string text = [&game, raceID]()
+					const std::string text = [&game]()
 					{
 						const auto &exeData = game.getMiscAssets().getExeData();
 						std::string segment = exeData.charCreation.confirmedRace2;
 						segment = String::replace(segment, '\r', '\n');
 
+						const auto &charCreationState = game.getCharacterCreationState();
+						const int raceIndex = charCreationState.getRaceIndex();
+
 						// Get race description from TEMPLATE.DAT.
-						const std::array<int, 8> raceTemplateIDs =
+						const auto &templateDat = game.getMiscAssets().getTemplateDat();
+						constexpr std::array<int, 8> raceTemplateIDs =
 						{
 							1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
 						};
 
-						const auto &templateDat = game.getMiscAssets().getTemplateDat();
-						const auto &entry = templateDat.getEntry(raceTemplateIDs.at(raceID));
+						DebugAssertIndex(raceTemplateIDs, raceIndex);
+						const auto &entry = templateDat.getEntry(raceTemplateIDs[raceIndex]);
 						std::string raceDescription = entry.values.front();
 
 						// Re-distribute newlines at 40 character limit.
@@ -292,20 +313,32 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					game.pushSubPanel(std::move(secondSubPanel));
 				};
 
-				std::unique_ptr<Panel> firstSubPanel = [&game, &charClass,
-					&name, male, raceID, &textColor, toSecondSubPanel]()
+				std::unique_ptr<Panel> firstSubPanel = [&game, &textColor, toSecondSubPanel]()
 				{
 					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 
-					const std::string text = [&game, &charClass, &name, male, raceID]()
+					const std::string text = [&game]()
 					{
-						const auto &exeData = game.getMiscAssets().getExeData();
+						const auto &miscAssets = game.getMiscAssets();
+						const auto &exeData = miscAssets.getExeData();
 						std::string segment = exeData.charCreation.confirmedRace1;
 						segment = String::replace(segment, '\r', '\n');
 
-						const std::string &provinceName =
-							exeData.locations.charCreationProvinceNames.at(raceID);
-						const std::string &pluralRaceName = exeData.races.pluralNames.at(raceID);
+						const auto &charCreationState = game.getCharacterCreationState();
+						const int raceIndex = charCreationState.getRaceIndex();
+
+						const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;						
+						DebugAssertIndex(charCreationProvinceNames, raceIndex);
+						const std::string &provinceName = charCreationProvinceNames[raceIndex];
+
+						const auto &pluralRaceNames = exeData.races.pluralNames;
+						DebugAssertIndex(pluralRaceNames, raceIndex);
+						const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+
+						const auto &classDefs = miscAssets.getClassDefinitions();
+						const int classIndex = charCreationState.getClassIndex();
+						DebugAssertIndex(classDefs, classIndex);
+						const CharacterClass &charClass = classDefs[classIndex];
 
 						// Replace first %s with player class.
 						size_t index = segment.find("%s");
@@ -313,7 +346,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 						// Replace second %s with player name.
 						index = segment.find("%s");
-						segment.replace(index, 2, name);
+						segment.replace(index, 2, charCreationState.getName());
 
 						// Replace third %s with province name.
 						index = segment.find("%s");
@@ -324,7 +357,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 						segment.replace(index, 2, pluralRaceName);
 
 						// If player is female, replace "his" with "her".
-						if (!male)
+						if (!charCreationState.isMale())
 						{
 							index = segment.rfind("his");
 							segment.replace(index, 3, "her");
@@ -388,14 +421,12 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 					textureManager, renderer);
 			}();
 
-			messageBoxNo.function = [&charClass, &name](Game &game)
+			messageBoxNo.function = [](Game &game)
 			{
 				game.popSubPanel();
 
 				// Push the initial text sub-panel.
-				std::unique_ptr<Panel> textSubPanel =
-					ChooseRacePanel::getInitialSubPanel(game, charClass, name);
-
+				std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
 				game.pushSubPanel(std::move(textSubPanel));
 			};
 
@@ -414,34 +445,39 @@ ChooseRacePanel::ChooseRacePanel(Game &game, const CharacterClass &charClass,
 
 			game.pushSubPanel(std::move(messageBox));
 		};
-		return Button<Game&, const CharacterClass&, const std::string&, bool, int>(function);
+
+		return Button<Game&, int>(function);
 	}();
 
 	// @todo: maybe allocate std::unique_ptr<std::function> for unravelling the map?
 	// When done, set to null and push initial parchment sub-panel?
 
 	// Push the initial text sub-panel.
-	std::unique_ptr<Panel> textSubPanel =
-		ChooseRacePanel::getInitialSubPanel(game, charClass, name);
-
+	std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game,
-	const CharacterClass &charClass, const std::string &name)
+std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
 	const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
 	const Color color(48, 12, 12);
 
-	const std::string text = [&game, &charClass, &name]()
+	const std::string text = [&game]()
 	{
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &exeData = miscAssets.getExeData();
 		std::string segment = exeData.charCreation.chooseRace;
 		segment = String::replace(segment, '\r', '\n');
 
+		const auto &charCreationState = game.getCharacterCreationState();
+		const auto &classDefs = miscAssets.getClassDefinitions();
+		const int classIndex = charCreationState.getClassIndex();
+		DebugAssertIndex(classDefs, classIndex);
+		const CharacterClass &charClass = classDefs[classIndex];
+
 		// Replace first "%s" with player name.
 		size_t index = segment.find("%s");
-		segment.replace(index, 2, name);
+		segment.replace(index, 2, charCreationState.getName());
 
 		// Replace second "%s" with character class.
 		index = segment.find("%s");
@@ -522,7 +558,8 @@ Panel::CursorData ChooseRacePanel::getCurrentCursor() const
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
@@ -530,21 +567,19 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 	// Interact with the map screen.
 	if (escapePressed)
 	{
-		this->backToGenderButton.click(this->getGame(), this->charClass, this->name);
+		this->backToGenderButton.click(game);
 	}
 	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map, checking if the mouse is over a province mask.
 		const int maskID = this->getProvinceMaskID(originalPoint);
 		if (maskID != ChooseRacePanel::NO_ID)
 		{
 			// Choose the selected province.
-			this->acceptButton.click(this->getGame(), this->charClass,
-				this->name, this->male, maskID);
+			this->acceptButton.click(game, maskID);
 		}
 	}
 }

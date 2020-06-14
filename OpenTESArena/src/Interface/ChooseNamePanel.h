@@ -26,11 +26,10 @@ private:
 	Texture parchment;
 	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
 	Button<Game&> backToClassButton;
-	Button<Game&, const CharacterClass&, const std::string&> acceptButton;
-	CharacterClass charClass;
+	Button<Game&, const std::string&> acceptButton;
 	std::string name;
 public:
-	ChooseNamePanel(Game &game, const CharacterClass &charClass);
+	ChooseNamePanel(Game &game);
 	virtual ~ChooseNamePanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;

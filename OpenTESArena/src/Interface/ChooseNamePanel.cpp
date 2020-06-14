@@ -29,18 +29,25 @@
 
 #include "components/utilities/String.h"
 
-ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
-	: Panel(game), charClass(charClass)
+ChooseNamePanel::ChooseNamePanel(Game &game)
+	: Panel(game)
 {
 	this->parchment = Texture::generate(Texture::PatternType::Parchment, 300, 60,
 		game.getTextureManager(), game.getRenderer());
 
-	this->titleTextBox = [&game, &charClass]()
+	this->titleTextBox = [&game]()
 	{
 		const int x = 26;
 		const int y = 82;
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &charCreationState = game.getCharacterCreationState();
+		const auto &classDefs = miscAssets.getClassDefinitions();
+		const int classIndex = charCreationState.getClassIndex();
+		DebugAssertIndex(classDefs, classIndex);
+		const CharacterClass &charClass = classDefs[classIndex];
+
+		const auto &exeData = miscAssets.getExeData();
 		std::string text = exeData.charCreation.chooseName;
 		text = String::replace(text, "%s", charClass.getName());
 
@@ -74,20 +81,29 @@ ChooseNamePanel::ChooseNamePanel(Game &game, const CharacterClass &charClass)
 		auto function = [](Game &game)
 		{
 			SDL_StopTextInput();
+
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setName(nullptr);
+
 			game.setPanel<ChooseClassPanel>(game);
 		};
+
 		return Button<Game&>(function);
 	}();
 
 	this->acceptButton = []()
 	{
-		auto function = [](Game &game, const CharacterClass &charClass,
-			const std::string &name)
+		auto function = [](Game &game, const std::string &name)
 		{
 			SDL_StopTextInput();
-			game.setPanel<ChooseGenderPanel>(game, charClass, name);
+
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setName(name.c_str());
+
+			game.setPanel<ChooseGenderPanel>(game);
 		};
-		return Button<Game&, const CharacterClass&, const std::string&>(function);
+
+		return Button<Game&, const std::string&>(function);
 	}();
 
 	// Activate SDL text input (handled in handleEvent()).
@@ -107,7 +123,8 @@ Panel::CursorData ChooseNamePanel::getCurrentCursor() const
 
 void ChooseNamePanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
 		inputManager.keyPressed(e, SDLK_KP_ENTER);
@@ -121,7 +138,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	else if (enterPressed && (this->name.size() > 0))
 	{
 		// Accept the given name.
-		this->acceptButton.click(this->getGame(), this->charClass, this->name);
+		this->acceptButton.click(this->getGame(), this->name);
 	}
 	else
 	{

@@ -90,6 +90,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		auto function = [](Game &game)
 		{
+			game.setCharacterCreationState(nullptr);
 			game.setPanel<MainMenuPanel>(game);
 
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -103,6 +104,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 			game.setMusic(musicDef);
 		};
+
 		return Button<Game&>(function);
 	}();
 

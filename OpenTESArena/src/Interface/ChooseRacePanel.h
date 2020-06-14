@@ -17,23 +17,18 @@ private:
 	// The mask ID for no selected province.
 	static const int NO_ID;
 
-	Button<Game&, const CharacterClass&, const std::string&> backToGenderButton;
-	Button<Game&, const CharacterClass&, const std::string&, bool, int> acceptButton;
-	CharacterClass charClass;
-	bool male;
-	std::string name;
+	Button<Game&> backToGenderButton;
+	Button<Game&, int> acceptButton;
 
 	// Gets the initial parchment pop-up.
-	static std::unique_ptr<Panel> getInitialSubPanel(Game &game,
-		const CharacterClass &charClass, const std::string &name);
+	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 
 	// Gets the mask ID associated with some pixel location, or "no ID" if none found.
 	int getProvinceMaskID(const Int2 &position) const;
 
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
-	ChooseRacePanel(Game &game, const CharacterClass &charClass, 
-		const std::string &name, bool male);
+	ChooseRacePanel(Game &game);
 	virtual ~ChooseRacePanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;

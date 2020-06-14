@@ -250,6 +250,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Link together the opening scroll, intro cinematic, and character creation.
 			auto changeToCharCreation = [](Game &game)
 			{
+				game.setCharacterCreationState(std::make_unique<CharacterCreationState>());
 				game.setPanel<ChooseClassCreationPanel>(game);
 
 				const MusicLibrary &musicLibrary = game.getMusicLibrary();

@@ -26,15 +26,9 @@ private:
 	Button<Game&> backToRaceButton, doneButton;
 	Button<ChooseAttributesPanel&, bool> portraitButton;
 	std::vector<Int2> headOffsets;
-	CharacterClass charClass;
-	bool male;
-	int raceID;
-	std::string name;
-	int portraitID;
 	bool canChangePortrait;
 public:
-	ChooseAttributesPanel(Game &game, const CharacterClass &charClass, 
-		const std::string &name, bool male, int raceID);
+	ChooseAttributesPanel(Game &game);
 	virtual ~ChooseAttributesPanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;
