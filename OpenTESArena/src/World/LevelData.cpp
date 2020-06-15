@@ -1059,10 +1059,10 @@ void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uin
 			this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z) : 0;
 	};
 
-	const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
-	const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
-	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
-	const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+	const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+	const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+	const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 
 	if (outNorthID != nullptr)
 	{
@@ -1288,10 +1288,10 @@ void LevelData::updateFadingVoxels(double dt)
 
 		if (isFloorVoxel)
 		{
-			const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
-			const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
-			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
-			const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+			const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+			const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+			const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 			this->tryUpdateChasmVoxel(northVoxel);
 			this->tryUpdateChasmVoxel(southVoxel);
 			this->tryUpdateChasmVoxel(eastVoxel);
