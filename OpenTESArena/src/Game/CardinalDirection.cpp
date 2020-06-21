@@ -19,15 +19,15 @@ const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDi
 	{ CardinalDirectionName::NorthWest, "Northwest" }
 };
 
-CardinalDirectionName CardinalDirection::getDirectionName(const Double2 &direction)
+CardinalDirectionName CardinalDirection::getDirectionName(const NewDouble2 &direction)
 {
 	// The caller should normalize their vector. A "direction" is implied to be normalized.
 	DebugAssert(direction.isNormalized());
 
-	const Double2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
-	const Double2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
-	const Double2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
-	const Double2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
+	const NewDouble2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
+	const NewDouble2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
+	const NewDouble2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
+	const NewDouble2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
 
 	// The spherical interpolations should already be normalized if their parent vectors
 	// are normalized.
