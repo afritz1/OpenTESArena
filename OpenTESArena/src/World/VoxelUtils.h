@@ -27,6 +27,11 @@ using WEInt = int; // + west, - east
 
 namespace VoxelUtils
 {
+	const NewInt2 North(-1, 0);
+	const NewInt2 South(1, 0);
+	const NewInt2 East(0, -1);
+	const NewInt2 West(0, 1);
+
 	// Transformation methods for converting voxel coordinates between the original game's format
 	// (+X west, +Z south) and the new format (+X south, +Z west). This is a bi-directional
 	// conversion (i.e., it works both ways).
