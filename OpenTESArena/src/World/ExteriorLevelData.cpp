@@ -906,9 +906,9 @@ OriginalInt2 ExteriorLevelData::getRelativeWildOrigin(const Int2 &voxel)
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
-Int2 ExteriorLevelData::getCenteredWildOrigin(const Int2 &voxel)
+NewInt2 ExteriorLevelData::getCenteredWildOrigin(const NewInt2 &voxel)
 {
-	return Int2(
+	return NewInt2(
 		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }

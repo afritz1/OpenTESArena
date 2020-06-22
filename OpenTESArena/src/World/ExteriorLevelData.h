@@ -68,7 +68,7 @@ public:
 	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
 	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.
 	// Given coordinates are expected to be in original coordinate system.
-	static Int2 getCenteredWildOrigin(const Int2 &voxel);
+	static NewInt2 getCenteredWildOrigin(const NewInt2 &voxel);
 
 	// Exterior level with a pre-defined .INF file. If premade, this loads the premade city. Otherwise,
 	// this loads the skeleton of the level (city walls, etc.), and fills in the rest by generating

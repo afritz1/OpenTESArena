@@ -9,6 +9,9 @@
 #include "../Rendering/Texture.h"
 #include "../World/VoxelUtils.h"
 
+// @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel
+// coordinate in world space for attaching a note to. Store the note in GameData or something.
+
 // @todo: will need to redesign the map rendering code once the voxel grid is gone since it does an
 // offset from the wilderness origin if in the wilderness.
 
@@ -36,8 +39,8 @@ private:
 	Button<Game&> backToGameButton;
 	Texture mapTexture;
 
-	// Displayed XZ coordinate offset, stored as a real so scroll position can be sub-pixel.
-	NewDouble2 automapOffset;
+	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
+	Double2 automapOffset;
 
 	// Gets the display color for a pixel on the automap, given its associated floor and wall
 	// voxel data definitions. The color depends on a couple factors, like whether the voxel is

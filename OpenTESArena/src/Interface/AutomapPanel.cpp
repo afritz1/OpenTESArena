@@ -37,6 +37,9 @@
 
 namespace
 {
+	// How fast the automap moves when scrolling.
+	constexpr double AutomapScrollSpeed = 100.0;
+
 	// Size of each automap pixel in the automap texture.
 	constexpr int AutomapPixelSize = 3;
 
@@ -520,31 +523,38 @@ Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionN
 	return surface;
 }
 
-NewDouble2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
+Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
 	SNInt gridWidth, WEInt gridDepth)
 {
-	if (!isWild)
+	const NewDouble2 worldOffset = [&playerVoxel, isWild, gridWidth, gridDepth]()
 	{
-		// City or interior.
-		return NewDouble2(
-			static_cast<double>(playerVoxel.x) + 0.50,
-			static_cast<double>((gridDepth - 1) - playerVoxel.y) + 0.50);
-	}
-	else
-	{
-		// Wilderness.
-		const NewInt2 relativeOrigin = AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
-		return NewDouble2(
-			static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
-			static_cast<double>((gridDepth - 1) - playerVoxel.y - relativeOrigin.y) + 0.50);
-	}
+		if (!isWild)
+		{
+			// Cities/interiors, offset from (0, 0) of the level.
+			return NewDouble2(
+				static_cast<double>(playerVoxel.x) + 0.50,
+				static_cast<double>((gridDepth - 1) - playerVoxel.y) + 0.50);
+		}
+		else
+		{
+			// Wilderness, offset from the relative 2x2 wild origin, dependent on player position.
+			const NewInt2 relativeOrigin =
+				AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
+
+			// The returned value should be within [32, 95] because that's where the player loops
+			// between in the original coordinates.
+			return NewDouble2(
+				static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
+				static_cast<double>(((RMDFile::WIDTH * 2) - 1) - (playerVoxel.y - relativeOrigin.y)) + 0.50);
+		}
+	}();
+
+	return Double2(-worldOffset.y, -worldOffset.x);
 }
 
 NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
 {
-	const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel);
-	const OriginalInt2 relativeOrigin = ExteriorLevelData::getCenteredWildOrigin(originalVoxel);
-	return VoxelUtils::originalVoxelToNewVoxel(relativeOrigin);
+	return ExteriorLevelData::getCenteredWildOrigin(voxel);
 }
 
 Panel::CursorData AutomapPanel::getCurrentCursor() const
@@ -583,6 +593,8 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 			this->backToGameButton.click(this->getGame());
 		}
 	}
+
+	// @todo: text events if in text mode
 }
 
 void AutomapPanel::handleMouse(double dt)
@@ -597,25 +609,25 @@ void AutomapPanel::handleMouse(double dt)
 	// Check if the LMB is held on one of the compass directions.
 	if (leftClick)
 	{
-		constexpr double scrollSpeed = 100.0;
-		const double actualSpeed = scrollSpeed * dt;
+		const double scrollSpeed = AutomapScrollSpeed * dt;
 
-		// Modify the automap offset based on input.
-		if (UpRegion.contains(mouseOriginalPoint))
+		// Modify the automap offset based on input. The directions are reversed because
+		// to go right means to push the map left.
+		if (RightRegion.contains(mouseOriginalPoint))
 		{
-			this->automapOffset = this->automapOffset - (Double2::UnitX * actualSpeed);
-		}
-		else if (DownRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset + (Double2::UnitX * actualSpeed);
-		}
-		else if (RightRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset - (Double2::UnitY * actualSpeed);
+			this->automapOffset = this->automapOffset - (Double2::UnitX * scrollSpeed);
 		}
 		else if (LeftRegion.contains(mouseOriginalPoint))
 		{
-			this->automapOffset = this->automapOffset + (Double2::UnitY * actualSpeed);
+			this->automapOffset = this->automapOffset + (Double2::UnitX * scrollSpeed);
+		}
+		else if (UpRegion.contains(mouseOriginalPoint))
+		{
+			this->automapOffset = this->automapOffset + (Double2::UnitY * scrollSpeed);
+		}
+		else if (DownRegion.contains(mouseOriginalPoint))
+		{
+			this->automapOffset = this->automapOffset - (Double2::UnitY * scrollSpeed);
 		}
 	}
 }
@@ -664,10 +676,11 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Draw automap.
 	constexpr double pixelSizeReal = static_cast<double>(AutomapPixelSize);
-	const int offsetX = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
-	const int offsetY = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
-	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
-	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) - offsetY;
+	const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
+	const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
+	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) + offsetX;
+	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY;
+	printf("map: (%d, %d)\n", mapX, mapY);
 	renderer.drawOriginal(this->mapTexture, mapX, mapY);
 
 	// Reset renderer clipping to normal.
