@@ -781,19 +781,19 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelFacing::PositiveX;
+						return VoxelFacing::NegativeX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelFacing::NegativeZ;
+						return VoxelFacing::PositiveZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelFacing::NegativeX;
+						return VoxelFacing::PositiveX;
 					}
 					else
 					{
-						return VoxelFacing::PositiveZ;
+						return VoxelFacing::NegativeZ;
 					}
 				}();
 
