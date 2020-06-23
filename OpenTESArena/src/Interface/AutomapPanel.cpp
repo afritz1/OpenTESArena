@@ -680,7 +680,6 @@ void AutomapPanel::render(Renderer &renderer)
 	const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
 	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) + offsetX;
 	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY;
-	printf("map: (%d, %d)\n", mapX, mapY);
 	renderer.drawOriginal(this->mapTexture, mapX, mapY);
 
 	// Reset renderer clipping to normal.
