@@ -2027,9 +2027,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 			gameData.getWeatherType(), cityDef.climateType);
 
-		const MusicDefinition *musicDef = [&game, &gameData, filteredWeatherType]()
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicDefinition *musicDef = [&game, &gameData, filteredWeatherType, &musicLibrary]()
 		{
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
 			if (!gameData.nightMusicIsActive())
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -2052,7 +2052,26 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			DebugLogWarning("Missing exterior music.");
 		}
 
-		game.setMusic(musicDef);
+		// Only play jingle if the exterior is inside the city.
+		const MusicDefinition *jingleMusicDef = nullptr;
+		if (worldData.getBaseWorldType() == WorldType::City)
+		{
+			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+				game.getRandom(), [&cityDef](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+				const auto &jingleMusicDef = def.getJingleMusicDefinition();
+				return (jingleMusicDef.cityType == cityDef.type) &&
+					(jingleMusicDef.climateType == cityDef.climateType);
+			});
+
+			if (jingleMusicDef == nullptr)
+			{
+				DebugLogWarning("Missing jingle music.");
+			}
+		}
+
+		game.setMusic(musicDef, jingleMusicDef);
 	}
 	else
 	{
@@ -2247,14 +2266,14 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				}
 
 				// Reset the current music (even if it's the same one).
-				const MusicDefinition *musicDef = [&game, &gameData, &locationDef]()
+				const MusicLibrary &musicLibrary = game.getMusicLibrary();
+				const MusicDefinition *musicDef = [&game, &gameData, &locationDef, &musicLibrary]()
 				{
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					const ClimateType climateType = cityDef.climateType;
 					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
 						gameData.getWeatherType(), climateType);
 
-					const MusicLibrary &musicLibrary = game.getMusicLibrary();
 					if (!gameData.nightMusicIsActive())
 					{
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -2277,7 +2296,26 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					DebugLogWarning("Missing exterior music.");
 				}
 
-				game.setMusic(musicDef);
+				// Only play jingle when going wilderness to city.
+				const MusicDefinition *jingleMusicDef = nullptr;
+				if (!isCity)
+				{
+					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+						game.getRandom(), [&cityDef](const MusicDefinition &def)
+					{
+						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+						const auto &jingleMusicDef = def.getJingleMusicDefinition();
+						return (jingleMusicDef.cityType == cityDef.type) &&
+							(jingleMusicDef.climateType == cityDef.climateType);
+					});
+
+					if (jingleMusicDef == nullptr)
+					{
+						DebugLogWarning("Missing jingle music.");
+					}
+				}
+
+				game.setMusic(musicDef, jingleMusicDef);
 			}
 		}
 	}
