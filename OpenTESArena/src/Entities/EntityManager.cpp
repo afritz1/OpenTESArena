@@ -572,7 +572,7 @@ EntityDefinition *EntityManager::addEntityDef(EntityDefinition &&def)
 	return &this->entityDefs.back();
 }
 
-void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 &eye2D,
+void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
 	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
@@ -596,8 +596,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const Double2 
 		{
 			// Dynamic entities are angle-dependent.
 			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
-			const Double2 &entityDir = dynamicEntity.getDirection();
-			const Double2 diffDir = (eye2D - entity.getPosition()).normalized();
+			const NewDouble2 &entityDir = dynamicEntity.getDirection();
+			const NewDouble2 diffDir = (eye2D - entity.getPosition()).normalized();
 
 			const double entityAngle = MathUtils::fullAtan2(entityDir.y, entityDir.x);
 			const double diffAngle = MathUtils::fullAtan2(diffDir.y, diffDir.x);

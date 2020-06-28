@@ -27,7 +27,7 @@ int Entity::getDataIndex() const
 	return this->dataIndex;
 }
 
-const Double2 &Entity::getPosition() const
+const NewDouble2 &Entity::getPosition() const
 {
 	return this->position;
 }
@@ -47,7 +47,7 @@ void Entity::setID(int id)
 	this->id = id;
 }
 
-void Entity::setPosition(const Double2 &position, EntityManager &entityManager,
+void Entity::setPosition(const NewDouble2 &position, EntityManager &entityManager,
 	const VoxelGrid &voxelGrid)
 {
 	this->position = position;

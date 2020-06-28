@@ -20,9 +20,9 @@ class WorldData;
 class DynamicEntity final : public Entity
 {
 private:
-	Double2 direction;
-	Double2 velocity;
-	std::optional<Double2> destination;
+	NewDouble2 direction;
+	NewDouble2 velocity;
+	std::optional<NewDouble2> destination;
 	double secondsTillCreatureSound;
 	DynamicEntityType derivedType;
 
@@ -54,24 +54,24 @@ public:
 
 	EntityType getEntityType() const override;
 	DynamicEntityType getDerivedType() const;
-	const Double2 &getDirection() const;
-	const Double2 &getVelocity() const;
-	const Double2 *getDestination() const;
+	const NewDouble2 &getDirection() const;
+	const NewDouble2 &getVelocity() const;
+	const NewDouble2 *getDestination() const;
 
 	void setDerivedType(DynamicEntityType derivedType);
-	void setDirection(const Double2 &direction);
+	void setDirection(const NewDouble2 &direction);
 
 	// Turns the camera around the global up vector by the given degrees.
 	void rotate(double degrees);
 
 	// Faces the entity toward the given point.
-	void lookAt(const Double2 &point);
+	void lookAt(const NewDouble2 &point);
 
 	// Sets the entity's pathfinding destination and they will attempt to move towards
 	// it each frame depending on their AI. If the given point is null, their destination
 	// is reset.
-	void setDestination(const Double2 *point, double minDistance);
-	void setDestination(const Double2 *point);
+	void setDestination(const NewDouble2 *point, double minDistance);
+	void setDestination(const NewDouble2 *point);
 
 	virtual void reset() override;
 	virtual void tick(Game &game, double dt) override;

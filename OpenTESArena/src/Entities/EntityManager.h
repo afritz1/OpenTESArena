@@ -141,8 +141,8 @@ public:
 	EntityDefinition *addEntityDef(EntityDefinition &&def);
 
 	// Gets the data necessary for rendering and ray cast selection.
-	void getEntityVisibilityData(const Entity &entity, const Double2 &eye2D, double ceilingHeight,
-		const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
+	void getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
+		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
 
 	// Gets the entity's 3D bounding box. This is view-dependent!
 	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,

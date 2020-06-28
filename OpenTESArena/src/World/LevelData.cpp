@@ -19,6 +19,7 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
+#include "../Game/CardinalDirection.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -1594,7 +1595,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					{
 						DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
 						dynamicEntity->setDerivedType(DynamicEntityType::NPC);
-						dynamicEntity->setDirection(Double2::UnitX);
+						dynamicEntity->setDirection(CardinalDirection::North);
 						return dynamicEntity;
 					}
 					else
