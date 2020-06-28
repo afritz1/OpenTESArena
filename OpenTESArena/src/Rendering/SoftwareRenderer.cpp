@@ -2101,14 +2101,14 @@ VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
 		topLeftCorner.x,
 		bottomRightCorner.y);
 
-	const Double2 upLeft = (topLeftCorner - eye).normalized();
-	const Double2 upRight = (topRightCorner - eye).normalized();
-	const Double2 downLeft = (bottomLeftCorner - eye).normalized();
-	const Double2 downRight = (bottomRightCorner - eye).normalized();
-	const double upLeftAngle = MathUtils::fullAtan2(upLeft.x, upLeft.y);
-	const double upRightAngle = MathUtils::fullAtan2(upRight.x, upRight.y);
-	const double downLeftAngle = MathUtils::fullAtan2(downLeft.x, downLeft.y);
-	const double downRightAngle = MathUtils::fullAtan2(downRight.x, downRight.y);
+	const NewDouble2 upLeft = (topLeftCorner - eye).normalized();
+	const NewDouble2 upRight = (topRightCorner - eye).normalized();
+	const NewDouble2 downLeft = (bottomLeftCorner - eye).normalized();
+	const NewDouble2 downRight = (bottomRightCorner - eye).normalized();
+	const double upLeftAngle = MathUtils::fullAtan2(upLeft);
+	const double upRightAngle = MathUtils::fullAtan2(upRight);
+	const double downLeftAngle = MathUtils::fullAtan2(downLeft);
+	const double downRightAngle = MathUtils::fullAtan2(downRight);
 
 	// Find which range the ray's angle lies within.
 	if ((angle < upRightAngle) || (angle > downRightAngle))
@@ -2151,14 +2151,14 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 		topLeftCorner.x,
 		bottomRightCorner.y);
 
-	const Double2 upLeft = (topLeftCorner - eye2D).normalized();
-	const Double2 upRight = (topRightCorner - eye2D).normalized();
-	const Double2 downLeft = (bottomLeftCorner - eye2D).normalized();
-	const Double2 downRight = (bottomRightCorner - eye2D).normalized();
-	const double upLeftAngle = MathUtils::fullAtan2(upLeft.x, upLeft.y);
-	const double upRightAngle = MathUtils::fullAtan2(upRight.x, upRight.y);
-	const double downLeftAngle = MathUtils::fullAtan2(downLeft.x, downLeft.y);
-	const double downRightAngle = MathUtils::fullAtan2(downRight.x, downRight.y);
+	const NewDouble2 upLeft = (topLeftCorner - eye2D).normalized();
+	const NewDouble2 upRight = (topRightCorner - eye2D).normalized();
+	const NewDouble2 downLeft = (bottomLeftCorner - eye2D).normalized();
+	const NewDouble2 downRight = (bottomRightCorner - eye2D).normalized();
+	const double upLeftAngle = MathUtils::fullAtan2(upLeft);
+	const double upRightAngle = MathUtils::fullAtan2(upRight);
+	const double downLeftAngle = MathUtils::fullAtan2(downLeft);
+	const double downRightAngle = MathUtils::fullAtan2(downRight);
 
 	// Find which side it starts on, then do some checks against line angles.
 	// When the ray origin is at a diagonal to the voxel, ignore the corner

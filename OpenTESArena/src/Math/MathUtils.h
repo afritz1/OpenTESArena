@@ -3,6 +3,10 @@
 
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
+#include "../World/VoxelUtils.h"
+
+using Radians = double;
+using Degrees = double;
 
 namespace MathUtils
 {
@@ -20,7 +24,8 @@ namespace MathUtils
 	int getWrappedIndex(int bufferSize, int index);
 
 	// A variant of atan2() with a range of [0, 2pi] instead of [-pi, pi].
-	double fullAtan2(double y, double x);
+	Radians fullAtan2(double y, double x);
+	Radians fullAtan2(const NewDouble2 &v);
 
 	// Converts vertical field of view to camera zoom (where 90 degrees = 1.0 zoom).
 	double verticalFovToZoom(double fovY);
