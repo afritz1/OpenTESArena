@@ -24,6 +24,10 @@ using NSInt = int; // + north, - south
 using SNInt = int; // + south, - north
 using EWInt = int; // + east, - west
 using WEInt = int; // + west, - east
+using NSDouble = double; // + north, - south
+using SNDouble = double; // + south, - north
+using EWDouble = double; // + east, - west
+using WEDouble = double; // + west, - east
 
 namespace VoxelUtils
 {
