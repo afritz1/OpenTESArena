@@ -10,6 +10,7 @@
 #include "Surface.h"
 #include "../Entities/EntityAnimationData.h"
 #include "../Entities/EntityType.h"
+#include "../Game/CardinalDirection.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
@@ -310,7 +311,7 @@ void SoftwareRenderer::FlatTextureGroup::addTexture(EntityAnimationData::StateTy
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
-	double fovY, double aspect, double projectionModifier)
+	Degrees fovY, double aspect, double projectionModifier)
 	: eye(eye), direction(direction)
 {
 	// Variations of eye position for certain voxel calculations.
@@ -361,10 +362,10 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->rightAspectedZ = this->rightZ * this->aspect;
 
 	// Left and right 2D vectors of the view frustum (at left and right edges of the screen).
-	const Double2 frustumLeft = Double2(
+	const NewDouble2 frustumLeft = NewDouble2(
 		this->forwardZoomedX - this->rightAspectedX,
 		this->forwardZoomedZ - this->rightAspectedZ).normalized();
-	const Double2 frustumRight = Double2(
+	const NewDouble2 frustumRight = NewDouble2(
 		this->forwardZoomedX + this->rightAspectedX,
 		this->forwardZoomedZ + this->rightAspectedZ).normalized();
 	this->frustumLeftX = frustumLeft.x;
@@ -399,9 +400,9 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	}();
 }
 
-double SoftwareRenderer::Camera::getXZAngleRadians() const
+Radians SoftwareRenderer::Camera::getXZAngleRadians() const
 {
-	return MathUtils::fullAtan2(this->forwardX, this->forwardZ);
+	return MathUtils::fullAtan2(-this->forwardX, -this->forwardZ);
 }
 
 int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
@@ -409,7 +410,7 @@ int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
 	return static_cast<int>(this->eye.y / ceilingHeight);
 }
 
-SoftwareRenderer::Ray::Ray(double dirX, double dirZ)
+SoftwareRenderer::Ray::Ray(SNDouble dirX, WEDouble dirZ)
 {
 	this->dirX = dirX;
 	this->dirZ = dirZ;
@@ -506,7 +507,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 		this->skyColors[i] = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
 	}
 
-	// The sun rises in the west (-Z) and sets in the east (+Z).
+	// The sun rises in the west and sets in the east.
 	this->sunDirection = [this, latitude]()
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
@@ -1043,7 +1044,7 @@ Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
 	const double rightPercent = ((xPercent * 2.0) - 1.0) * aspect;
 
 	// Subtract y-shear from the Y percent because Y coordinates on-screen are reversed.
-	const double yAngleRadians = cameraDirection.getYAngleRadians();
+	const Radians yAngleRadians = cameraDirection.getYAngleRadians();
 	const double zoom = MathUtils::verticalFovToZoom(fovY);
 	const double yShear = RendererUtils::getYShear(yAngleRadians, zoom);
 	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
@@ -1346,14 +1347,14 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	this->visDistantObjs.clear();
 
 	// Directions forward and along the edges of the 2D frustum.
-	const Double2 forward(camera.forwardX, camera.forwardZ);
-	const Double2 frustumLeft(camera.frustumLeftX, camera.frustumLeftZ);
-	const Double2 frustumRight(camera.frustumRightX, camera.frustumRightZ);
+	const NewDouble2 forward(camera.forwardX, camera.forwardZ);
+	const NewDouble2 frustumLeft(camera.frustumLeftX, camera.frustumLeftZ);
+	const NewDouble2 frustumRight(camera.frustumRightX, camera.frustumRightZ);
 
 	// Directions perpendicular to frustum vectors, for determining what points
 	// are inside the frustum. Both directions point towards the inside.
-	const Double2 frustumLeftPerp = frustumLeft.rightPerp();
-	const Double2 frustumRightPerp = frustumRight.leftPerp();
+	const NewDouble2 frustumLeftPerp = frustumLeft.rightPerp();
+	const NewDouble2 frustumRightPerp = frustumRight.leftPerp();
 
 	// Determines the vertical offset of the rendered object's origin on-screen. Most
 	// objects have their origin at the bottom, but the sun has its origin at the top so
@@ -1405,22 +1406,21 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 		if (parallaxSky)
 		{
 			// Get X angles for left and right edges based on object half width.
-			const double xDeltaRadians = objHalfWidth * DistantSky::IDENTITY_ANGLE_RADIANS;
-			const double xAngleRadiansLeft = xAngleRadians + xDeltaRadians;
-			const double xAngleRadiansRight = xAngleRadians - xDeltaRadians;
+			const Radians xDeltaRadians = objHalfWidth * DistantSky::IDENTITY_ANGLE_RADIANS;
+			const Radians xAngleRadiansLeft = xAngleRadians + xDeltaRadians;
+			const Radians xAngleRadiansRight = xAngleRadians - xDeltaRadians;
 			
 			// Camera's horizontal field of view.
-			const double cameraHFov = MathUtils::verticalFovToHorizontalFov(
-				camera.fovY, camera.aspect);
-			const double halfCameraHFovRadians = (cameraHFov * 0.50) * Constants::DegToRad;
+			const Degrees cameraHFov = MathUtils::verticalFovToHorizontalFov(camera.fovY, camera.aspect);
+			const Radians halfCameraHFovRadians = (cameraHFov * 0.50) * Constants::DegToRad;
 
 			// Angles of the camera's forward vector and frustum edges.
-			const double cameraAngleRadians = camera.getXZAngleRadians();
-			const double cameraAngleLeft = cameraAngleRadians + halfCameraHFovRadians;
-			const double cameraAngleRight = cameraAngleRadians - halfCameraHFovRadians;
+			const Radians cameraAngleRadians = camera.getXZAngleRadians();
+			const Radians cameraAngleLeft = cameraAngleRadians + halfCameraHFovRadians;
+			const Radians cameraAngleRight = cameraAngleRadians - halfCameraHFovRadians;
 
 			// Distant object visible angle range and texture coordinates, set by onScreen.
-			double xVisAngleLeft, xVisAngleRight;
+			Radians xVisAngleLeft, xVisAngleRight;
 			double uStart, uEnd;
 
 			// Determine if the object is at least partially on-screen. The angle range of the
@@ -1442,19 +1442,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				{
 					// Camera special case.
 					// @todo: cut into two parts?
-					xVisAngleLeft = std::min(
-						xAngleRadiansLeft, (cameraAngleLeft - Constants::TwoPi));
-					xVisAngleRight = std::max(
-						xAngleRadiansRight, (cameraAngleRight - Constants::TwoPi));
+					xVisAngleLeft = std::min(xAngleRadiansLeft, cameraAngleLeft - Constants::TwoPi);
+					xVisAngleRight = std::max(xAngleRadiansRight, cameraAngleRight - Constants::TwoPi);
 				}
 				else
 				{
 					// Object special case.
 					// @todo: cut into two parts?
-					xVisAngleLeft = std::min(
-						(xAngleRadiansLeft - Constants::TwoPi), cameraAngleLeft);
-					xVisAngleRight = std::max(
-						(xAngleRadiansRight - Constants::TwoPi), cameraAngleRight);
+					xVisAngleLeft = std::min(xAngleRadiansLeft - Constants::TwoPi, cameraAngleLeft);
+					xVisAngleRight = std::max(xAngleRadiansRight - Constants::TwoPi, cameraAngleRight);
 				}
 
 				uStart = 1.0 - ((xVisAngleLeft - xAngleRadiansRight) /
@@ -1462,20 +1458,18 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 				uEnd = Constants::JustBelowOne - ((xAngleRadiansRight - xVisAngleRight) /
 					(xAngleRadiansRight - xAngleRadiansLeft));
 
-				return (xAngleRadiansLeft >= cameraAngleRight) &&
-					(xAngleRadiansRight <= cameraAngleLeft);
+				return (xAngleRadiansLeft >= cameraAngleRight) && (xAngleRadiansRight <= cameraAngleLeft);
 			}();
 
 			if (onScreen)
 			{
 				// Data for parallax texture sampling.
-				VisDistantObject::ParallaxData parallax(
-					xVisAngleLeft, xVisAngleRight, uStart, uEnd);
+				VisDistantObject::ParallaxData parallax(xVisAngleLeft, xVisAngleRight, uStart, uEnd);
 
-				const Double2 objDirLeft2D(
+				const NewDouble2 objDirLeft2D(
 					std::sin(xAngleRadiansLeft),
 					std::cos(xAngleRadiansLeft));
-				const Double2 objDirRight2D(
+				const NewDouble2 objDirRight2D(
 					std::sin(xAngleRadiansRight),
 					std::cos(xAngleRadiansRight));
 
@@ -1528,7 +1522,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			const double xProjStart = xProjCenter - objProjHalfWidth;
 			const double xProjEnd = xProjCenter + objProjHalfWidth;
 
-			const Double2 objDir2D(objDir.x, objDir.z);
+			const NewDouble2 objDir2D(objDir.x, objDir.z);
 			const bool onScreen = (objDir2D.dot(forward) > 0.0) &&
 				(xProjStart <= 1.0) && (xProjEnd >= 0.0);
 
@@ -1555,8 +1549,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	for (const auto &land : this->distantObjects.lands)
 	{
 		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
-		const double xAngleRadians = land.obj.getAngleRadians();
-		const double yAngleRadians = 0.0;
+		const Radians xAngleRadians = land.obj.getAngleRadians();
+		const Radians yAngleRadians = 0.0;
 		const bool emissive = false;
 		const Orientation orientation = Orientation::Bottom;
 
@@ -1570,8 +1564,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	{
 		const SkyTexture &texture = this->skyTextures.at(
 			animLand.textureIndex + animLand.obj.getIndex());
-		const double xAngleRadians = animLand.obj.getAngleRadians();
-		const double yAngleRadians = 0.0;
+		const Radians xAngleRadians = animLand.obj.getAngleRadians();
+		const Radians yAngleRadians = 0.0;
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Bottom;
 
@@ -1584,13 +1578,12 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	for (const auto &air : this->distantObjects.airs)
 	{
 		const SkyTexture &texture = skyTextures.at(air.textureIndex);
-		const double xAngleRadians = air.obj.getAngleRadians();
-		const double yAngleRadians = [&air]()
+		const Radians xAngleRadians = air.obj.getAngleRadians();
+		const Radians yAngleRadians = [&air]()
 		{
 			// 0 is at horizon, 1 is at top of distant cloud height limit.
 			const double gradientPercent = air.obj.getHeight();
-			return gradientPercent *
-				(SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
+			return gradientPercent * (SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
 		}();
 
 		const bool emissive = false;
@@ -1607,8 +1600,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	const Matrix4d &timeRotation = shadingInfo.timeRotation;
 	const Matrix4d &latitudeRotation = shadingInfo.latitudeRotation;
 
-	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](double xAngleRadians,
-		double yAngleRadians, double &newXAngleRadians, double &newYAngleRadians)
+	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](Radians xAngleRadians,
+		Radians yAngleRadians, Radians &newXAngleRadians, Radians &newYAngleRadians)
 	{
 		// Direction towards the space object.
 		const Double3 direction = Double3(
@@ -1657,13 +1650,13 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			return Double3(dir.x, dir.y, dir.z).normalized();
 		}();
 
-		const double xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
-		const double yAngleRadians = direction.getYAngleRadians();
+		const Radians xAngleRadians = MathUtils::fullAtan2(-direction.x, -direction.z);
+		const Radians yAngleRadians = direction.getYAngleRadians();
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Top;
 
 		// Modify angle based on latitude and time of day.
-		double newXAngleRadians, newYAngleRadians;
+		Radians newXAngleRadians, newYAngleRadians;
 		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
 
 		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
@@ -1680,18 +1673,17 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 		// The sun direction is already corrected for latitude and time of day since the same
 		// variable is reused with shading.
 		const Double3 &sunDirection = shadingInfo.sunDirection;
-		const double sunXAngleRadians = MathUtils::fullAtan2(sunDirection.x, sunDirection.z);
+		const Radians sunXAngleRadians = MathUtils::fullAtan2(-sunDirection.x, -sunDirection.z);
 
 		// When the sun is directly above or below, it might cause the X angle to be undefined.
 		// We want to filter this out before we try projecting it on-screen.
 		if (std::isfinite(sunXAngleRadians))
 		{
-			const double sunYAngleRadians = sunDirection.getYAngleRadians();
+			const Radians sunYAngleRadians = sunDirection.getYAngleRadians();
 			const bool sunEmissive = true;
 			const Orientation sunOrientation = Orientation::Top;
 
-			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians,
-				sunEmissive, sunOrientation);
+			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians, sunEmissive, sunOrientation);
 		}
 	}
 
@@ -1703,13 +1695,13 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 		const SkyTexture &texture = skyTextures.at(star.textureIndex);
 
 		const Double3 &direction = star.obj.getDirection();
-		const double xAngleRadians = MathUtils::fullAtan2(direction.x, direction.z);
-		const double yAngleRadians = direction.getYAngleRadians();
+		const Radians xAngleRadians = MathUtils::fullAtan2(-direction.x, -direction.z);
+		const Radians yAngleRadians = direction.getYAngleRadians();
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Bottom;
 
 		// Modify angle based on latitude and time of day.
-		double newXAngleRadians, newYAngleRadians;
+		Radians newXAngleRadians, newYAngleRadians;
 		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
 
 		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
@@ -1719,7 +1711,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 }
 
 void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
-	NSInt gridWidth, EWInt gridDepth, int chunkDistance, const EntityManager &entityManager,
+	SNInt gridWidth, WEInt gridDepth, int chunkDistance, const EntityManager &entityManager,
 	std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount)
 {
 	const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
@@ -1776,8 +1768,8 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 		&chunkPotentiallyVisFlatCounts](EWInt chunkX, SNInt chunkY, int insertIndex)
 	{
 		const Entity **entitiesPtr = outPotentiallyVisFlats->data() + insertIndex;
-		const int visChunkX = chunkX - minChunk.x;
-		const int visChunkY = chunkY - minChunk.y;
+		const EWInt visChunkX = chunkX - minChunk.x;
+		const SNInt visChunkY = chunkY - minChunk.y;
 		const int count = chunkPotentiallyVisFlatCounts.get(visChunkX, visChunkY);
 		const int writtenCount = entityManager.getTotalEntitiesInChunk(
 			ChunkInt2(chunkX, chunkY), entitiesPtr, count);
@@ -1820,8 +1812,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
-	const Double2 eye2D(camera.eye.x, camera.eye.z);
-	const Double2 cameraDir(camera.forwardX, camera.forwardZ);
+	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	if (shadingInfo.playerHasLight)
 	{
@@ -1886,14 +1878,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const double flatHeight = visData.keyframe.getHeight();
 		const double flatHalfWidth = flatWidth * 0.50;
 
-		const Double2 flatPosition2D(
+		const NewDouble2 flatPosition2D(
 			visData.flatPosition.x,
 			visData.flatPosition.z);
 
 		// Check if the flat is somewhere in front of the camera.
-		const Double2 flatEyeDiff = flatPosition2D - eye2D;
+		const NewDouble2 flatEyeDiff = flatPosition2D - eye2D;
 		const double flatEyeDiffLen = flatEyeDiff.length();
-		const Double2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
+		const NewDouble2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
 		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
 
 		// Check if the flat is within the fog distance. Treat the flat as a cylinder and
@@ -2010,11 +2002,11 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 		// Bounding box around the light's reach in the XZ plane.
 		const NewInt2 visLightMin(
-			static_cast<NSInt>(std::floor(visLight.position.x - visLight.radius)),
-			static_cast<EWInt>(std::floor(visLight.position.z - visLight.radius)));
+			static_cast<SNInt>(std::floor(visLight.position.x - visLight.radius)),
+			static_cast<WEInt>(std::floor(visLight.position.z - visLight.radius)));
 		const NewInt2 visLightMax(
-			static_cast<NSInt>(std::ceil(visLight.position.x + visLight.radius)),
-			static_cast<EWInt>(std::ceil(visLight.position.z + visLight.radius)));
+			static_cast<SNInt>(std::ceil(visLight.position.x + visLight.radius)),
+			static_cast<WEInt>(std::ceil(visLight.position.z + visLight.radius)));
 
 		// Since these are in a different coordinate system, can't rely on min < max.
 		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA =
@@ -2081,98 +2073,77 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	}
 }
 
-VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(int voxelX, int voxelZ,
-	const Double2 &eye, const Ray &ray)
+VoxelFacing SoftwareRenderer::getInitialChasmFarFacing(SNInt voxelX, WEInt voxelZ,
+	const NewDouble2 &eye, const Ray &ray)
 {
 	// Angle of the ray from the camera eye.
-	const double angle = MathUtils::fullAtan2(ray.dirX, ray.dirZ);
+	const Radians angle = MathUtils::fullAtan2(-ray.dirX, -ray.dirZ);
 
 	// Corners in world space.
-	const Double2 bottomLeftCorner(
-		static_cast<double>(voxelX),
-		static_cast<double>(voxelZ));
-	const Double2 topLeftCorner(
-		bottomLeftCorner.x + 1.0,
-		bottomLeftCorner.y);
-	const Double2 bottomRightCorner(
-		bottomLeftCorner.x,
-		bottomLeftCorner.y + 1.0);
-	const Double2 topRightCorner(
-		topLeftCorner.x,
-		bottomRightCorner.y);
+	NewDouble2 topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner;
+	RendererUtils::getVoxelCorners2D(voxelX, voxelZ, &topLeftCorner, &topRightCorner,
+		&bottomLeftCorner, &bottomRightCorner);
 
 	const NewDouble2 upLeft = (topLeftCorner - eye).normalized();
 	const NewDouble2 upRight = (topRightCorner - eye).normalized();
 	const NewDouble2 downLeft = (bottomLeftCorner - eye).normalized();
 	const NewDouble2 downRight = (bottomRightCorner - eye).normalized();
-	const double upLeftAngle = MathUtils::fullAtan2(upLeft);
-	const double upRightAngle = MathUtils::fullAtan2(upRight);
-	const double downLeftAngle = MathUtils::fullAtan2(downLeft);
-	const double downRightAngle = MathUtils::fullAtan2(downRight);
+	const Radians upLeftAngle = MathUtils::fullAtan2(upLeft);
+	const Radians upRightAngle = MathUtils::fullAtan2(upRight);
+	const Radians downLeftAngle = MathUtils::fullAtan2(downLeft);
+	const Radians downRightAngle = MathUtils::fullAtan2(downRight);
 
 	// Find which range the ray's angle lies within.
 	if ((angle < upRightAngle) || (angle > downRightAngle))
 	{
-		return VoxelFacing::PositiveZ;
+		return VoxelFacing::NegativeZ;
 	}
 	else if (angle < upLeftAngle)
 	{
-		return VoxelFacing::PositiveX;
+		return VoxelFacing::NegativeX;
 	}
 	else if (angle < downLeftAngle)
 	{
-		return VoxelFacing::NegativeZ;
+		return VoxelFacing::PositiveZ;
 	}
 	else
 	{
-		return VoxelFacing::NegativeX;
+		return VoxelFacing::PositiveX;
 	}
 }
 
-VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ, 
+VoxelFacing SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ, 
 	VoxelFacing nearFacing, const Camera &camera, const Ray &ray)
 {
-	const Double2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
 	
 	// Angle of the ray from the camera eye.
-	const double angle = MathUtils::fullAtan2(ray.dirX, ray.dirZ);
-
+	const Radians angle = MathUtils::fullAtan2(-ray.dirX, -ray.dirZ);
+	
 	// Corners in world space.
-	const Double2 bottomLeftCorner(
-		static_cast<double>(voxelX),
-		static_cast<double>(voxelZ));
-	const Double2 topLeftCorner(
-		bottomLeftCorner.x + 1.0,
-		bottomLeftCorner.y);
-	const Double2 bottomRightCorner(
-		bottomLeftCorner.x,
-		bottomLeftCorner.y + 1.0);
-	const Double2 topRightCorner(
-		topLeftCorner.x,
-		bottomRightCorner.y);
+	NewDouble2 topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner;
+	RendererUtils::getVoxelCorners2D(voxelX, voxelZ, &topLeftCorner, &topRightCorner,
+		&bottomLeftCorner, &bottomRightCorner);
 
 	const NewDouble2 upLeft = (topLeftCorner - eye2D).normalized();
 	const NewDouble2 upRight = (topRightCorner - eye2D).normalized();
 	const NewDouble2 downLeft = (bottomLeftCorner - eye2D).normalized();
 	const NewDouble2 downRight = (bottomRightCorner - eye2D).normalized();
-	const double upLeftAngle = MathUtils::fullAtan2(upLeft);
-	const double upRightAngle = MathUtils::fullAtan2(upRight);
-	const double downLeftAngle = MathUtils::fullAtan2(downLeft);
-	const double downRightAngle = MathUtils::fullAtan2(downRight);
+	const Radians upLeftAngle = MathUtils::fullAtan2(upLeft);
+	const Radians upRightAngle = MathUtils::fullAtan2(upRight);
+	const Radians downLeftAngle = MathUtils::fullAtan2(downLeft);
+	const Radians downRightAngle = MathUtils::fullAtan2(downRight);
 
-	// Find which side it starts on, then do some checks against line angles.
-	// When the ray origin is at a diagonal to the voxel, ignore the corner
-	// closest to that origin.
+	// Find which side it starts on then do some checks against line angles. When the
+	// ray origin's voxel is at a diagonal to the voxel, ignore the corner and two
+	// sides closest to that origin.
 	if (nearFacing == VoxelFacing::PositiveX)
 	{
-		// Starts on (1.0, z).
-		const bool onRight = camera.eyeVoxel.z > voxelZ;
-		const bool onLeft = camera.eyeVoxel.z < voxelZ;
-		
-		if (onRight)
+		// Starts somewhere on (1.0, z).
+		if (camera.eyeVoxel.z > voxelZ)
 		{
-			// Ignore top-right corner.
-			if (angle < downLeftAngle)
+			// Ignore bottom-left corner.
+			if (angle < upRightAngle)
 			{
 				return VoxelFacing::NegativeZ;
 			}
@@ -2181,10 +2152,10 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 				return VoxelFacing::NegativeX;
 			}
 		}
-		else if (onLeft)
+		else if (camera.eyeVoxel.z < voxelZ)
 		{
-			// Ignore top-left corner.
-			if ((angle > downLeftAngle) && (angle < downRightAngle))
+			// Ignore bottom-right corner.
+			if (angle < upLeftAngle)
 			{
 				return VoxelFacing::NegativeX;
 			}
@@ -2195,11 +2166,11 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 		}
 		else
 		{
-			if (angle > downRightAngle)
+			if ((angle > upLeftAngle) && (angle < downLeftAngle))
 			{
 				return VoxelFacing::PositiveZ;
 			}
-			else if (angle > downLeftAngle)
+			else if ((angle > upRightAngle) && (angle < upLeftAngle))
 			{
 				return VoxelFacing::NegativeX;
 			}
@@ -2211,14 +2182,11 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	}
 	else if (nearFacing == VoxelFacing::NegativeX)
 	{
-		// Starts on (0.0, z).
-		const bool onRight = camera.eyeVoxel.z > voxelZ;
-		const bool onLeft = camera.eyeVoxel.z < voxelZ;
-
-		if (onRight)
+		// Starts somewhere on (0.0, z).
+		if (camera.eyeVoxel.z > voxelZ)
 		{
-			// Ignore bottom-right corner.
-			if (angle < upLeftAngle)
+			// Ignore top-left corner.
+			if ((angle < downRightAngle) && (angle > downLeftAngle))
 			{
 				return VoxelFacing::PositiveX;
 			}
@@ -2227,10 +2195,10 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 				return VoxelFacing::NegativeZ;
 			}
 		}
-		else if (onLeft)
+		else if (camera.eyeVoxel.z < voxelZ)
 		{
-			// Ignore bottom-left corner.
-			if (angle < upRightAngle)
+			// Ignore top-right corner.
+			if (angle < downLeftAngle)
 			{
 				return VoxelFacing::PositiveZ;
 			}
@@ -2241,11 +2209,11 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 		}
 		else
 		{
-			if (angle < upRightAngle)
+			if ((angle < downLeftAngle) && (angle > upLeftAngle))
 			{
 				return VoxelFacing::PositiveZ;
 			}
-			else if (angle < upLeftAngle)
+			else if ((angle < downRightAngle) && (angle > downLeftAngle))
 			{
 				return VoxelFacing::PositiveX;
 			}
@@ -2257,26 +2225,23 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 	}				
 	else if (nearFacing == VoxelFacing::PositiveZ)
 	{
-		// Starts on (x, 1.0).
-		const bool onTop = camera.eyeVoxel.x > voxelX;
-		const bool onBottom = camera.eyeVoxel.x < voxelX;
-
-		if (onTop)
+		// Starts somewhere on (x, 1.0).
+		if (camera.eyeVoxel.x > voxelX)
 		{
-			// Ignore top-right corner.
-			if (angle < downLeftAngle)
-			{
-				return VoxelFacing::NegativeZ;
-			}
-			else
+			// Ignore bottom-left corner.
+			if ((angle > upRightAngle) && (angle < upLeftAngle))
 			{
 				return VoxelFacing::NegativeX;
 			}
+			else
+			{
+				return VoxelFacing::NegativeZ;
+			}
 		}
-		else if (onBottom)
+		else if (camera.eyeVoxel.x < voxelX)
 		{
-			// Ignore bottom-right corner.
-			if (angle < upLeftAngle)
+			// Ignore top-left corner.
+			if ((angle < downRightAngle) && (angle > downLeftAngle))
 			{
 				return VoxelFacing::PositiveX;
 			}
@@ -2287,31 +2252,27 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 		}
 		else
 		{
-			if (angle < upLeftAngle)
+			if ((angle < downRightAngle) && (angle > downLeftAngle))
 			{
 				return VoxelFacing::PositiveX;
 			}
-			else if (angle < downLeftAngle)
+			else if ((angle < upLeftAngle) && (angle > upRightAngle))
 			{
-				return VoxelFacing::NegativeZ;
+				return VoxelFacing::NegativeX;
 			}
 			else
 			{
-				return VoxelFacing::NegativeX;
+				return VoxelFacing::NegativeZ;
 			}
 		}
 	}
 	else
 	{
-		// Starts on (x, 0.0). This one splits the origin, so it needs some 
-		// special cases.
-		const bool onTop = camera.eyeVoxel.x > voxelX;
-		const bool onBottom = camera.eyeVoxel.x < voxelX;
-
-		if (onTop)
+		// Starts somewhere on (x, 0.0).
+		if (camera.eyeVoxel.x > voxelX)
 		{
-			// Ignore top-left corner.
-			if ((angle > downLeftAngle) && (angle < downRightAngle))
+			// Ignore bottom-right corner.
+			if (angle < upLeftAngle)
 			{
 				return VoxelFacing::NegativeX;
 			}
@@ -2320,10 +2281,10 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 				return VoxelFacing::PositiveZ;
 			}
 		}
-		else if (onBottom)
+		else if (camera.eyeVoxel.x < voxelX)
 		{
-			// Ignore bottom-left corner.
-			if ((angle > upRightAngle) && (angle < upLeftAngle))
+			// Ignore top-right corner.
+			if (angle > downLeftAngle)
 			{
 				return VoxelFacing::PositiveX;
 			}
@@ -2334,13 +2295,13 @@ VoxelFacing SoftwareRenderer::getChasmFarFacing(int voxelX, int voxelZ,
 		}
 		else
 		{
-			if ((angle < upRightAngle) || (angle > downRightAngle))
-			{
-				return VoxelFacing::PositiveZ;
-			}
-			else if (angle > downLeftAngle)
+			if (angle < upLeftAngle)
 			{
 				return VoxelFacing::NegativeX;
+			}
+			else if (angle < downLeftAngle)
+			{
+				return VoxelFacing::PositiveZ;
 			}
 			else
 			{
@@ -2384,8 +2345,8 @@ const SoftwareRenderer::VisibleLight &SoftwareRenderer::getVisibleLightByID(
 }
 
 const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
-	const BufferView2D<const VisibleLightList> &visLightLists, NSInt voxelX, EWInt voxelZ,
-	NSInt cameraVoxelX, EWInt cameraVoxelZ, NSInt gridWidth, EWInt gridDepth, int chunkDistance)
+	const BufferView2D<const VisibleLightList> &visLightLists, SNInt voxelX, WEInt voxelZ,
+	SNInt cameraVoxelX, WEInt cameraVoxelZ, SNInt gridWidth, WEInt gridDepth, int chunkDistance)
 {
 	// Convert new voxel grid coordinates to potentially-visible light list space
 	// (chunk space but its origin depends on the camera).
@@ -2552,21 +2513,14 @@ Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const S
 	return color.lerp(nextColor, percent);
 }
 
-bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, RayHit &hit)
+bool SoftwareRenderer::findDiag1Intersection(SNInt voxelX, WEInt voxelZ,
+	const NewDouble2 &nearPoint, const NewDouble2 &farPoint, RayHit &hit)
 {
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
-	const Double2 diagStart(
-		static_cast<double>(voxelX),
-		static_cast<double>(voxelZ));
-	const Double2 diagMiddle(
-		static_cast<double>(voxelX) + 0.50,
-		static_cast<double>(voxelZ) + 0.50);
-	const Double2 diagEnd(
-		static_cast<double>(voxelX) + Constants::JustBelowOne,
-		static_cast<double>(voxelZ) + Constants::JustBelowOne);
+	NewDouble2 diagStart, diagMiddle, diagEnd;
+	RendererUtils::getDiag1Points2D(voxelX, voxelZ, &diagStart, &diagMiddle, &diagEnd);
 
-	// Normals for the left and right faces of the wall, facing up-left and down-right
+	// Normals for the left and right faces of the wall, facing down-right and up-left
 	// respectively (magic number is sqrt(2) / 2).
 	const Double3 leftNormal(0.7071068, 0.0, -0.7071068);
 	const Double3 rightNormal(-0.7071068, 0.0, 0.7071068);
@@ -2575,7 +2529,7 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 	// of the diagonal line, or if the near point lies on the diagonal line. No need
 	// to normalize the (localPoint - diagMiddle) vector because it's just checking
 	// if it's greater than zero.
-	const Double2 leftNormal2D(leftNormal.x, leftNormal.z);
+	const NewDouble2 leftNormal2D(leftNormal.x, leftNormal.z);
 	const bool nearOnLeft = leftNormal2D.dot(nearPoint - diagMiddle) >= 0.0;
 	const bool farOnLeft = leftNormal2D.dot(farPoint - diagMiddle) >= 0.0;
 	const bool intersectionOccurred = (nearOnLeft && !farOnLeft) || (!nearOnLeft && farOnLeft);
@@ -2584,16 +2538,16 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 	if (intersectionOccurred)
 	{
 		// Change in X and change in Z of the incoming ray across the voxel.
-		const double dx = farPoint.x - nearPoint.x;
-		const double dz = farPoint.y - nearPoint.y;
+		const SNDouble dx = farPoint.x - nearPoint.x;
+		const WEDouble dz = farPoint.y - nearPoint.y;
 
 		// The hit coordinate is a 0->1 value representing where the diagonal was hit.
 		const double hitCoordinate = [&nearPoint, &diagStart, dx, dz]()
 		{
 			// Special cases: when the slope is horizontal or vertical. This method treats
 			// the X axis as the vertical axis and the Z axis as the horizontal axis.
-			const double isHorizontal = std::abs(dx) < Constants::Epsilon;
-			const double isVertical = std::abs(dz) < Constants::Epsilon;
+			const bool isHorizontal = std::abs(dx) < Constants::Epsilon;
+			const bool isVertical = std::abs(dz) < Constants::Epsilon;
 
 			if (isHorizontal)
 			{
@@ -2608,7 +2562,7 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 			else
 			{
 				// Slope of the diagonal line (trivial, x = z).
-				const double diagSlope = 1.0;
+				constexpr double diagSlope = 1.0;
 
 				// Vertical axis intercept of the diagonal line.
 				const double diagXIntercept = diagStart.x - diagStart.y;
@@ -2620,16 +2574,13 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 				const double rayXIntercept = nearPoint.x - (raySlope * nearPoint.y);
 
 				// General line intersection calculation.
-				return ((rayXIntercept - diagXIntercept) / 
-					(diagSlope - raySlope)) - diagStart.y;
+				return ((rayXIntercept - diagXIntercept) / (diagSlope - raySlope)) - diagStart.y;
 			}
 		}();
 
 		// Set the hit data.
 		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
-		hit.point = Double2(
-			static_cast<double>(voxelX) + hit.u,
-			static_cast<double>(voxelZ) + hit.u);
+		hit.point = diagStart + ((diagEnd - diagStart) * hit.u);
 		hit.innerZ = (hit.point - nearPoint).length();
 		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
@@ -2642,24 +2593,17 @@ bool SoftwareRenderer::findDiag1Intersection(int voxelX, int voxelZ, const Doubl
 	}
 }
 
-bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Double2 &nearPoint,
-	const Double2 &farPoint, RayHit &hit)
+bool SoftwareRenderer::findDiag2Intersection(SNInt voxelX, WEInt voxelZ,
+	const NewDouble2 &nearPoint, const NewDouble2 &farPoint, RayHit &hit)
 {
 	// Mostly a copy of findDiag1Intersection(), though with a couple different values
 	// for the diagonal (end points, slope, etc.).
 
 	// Start, middle, and end points of the diagonal line segment relative to the grid.
-	const Double2 diagStart(
-		static_cast<double>(voxelX) + Constants::JustBelowOne,
-		static_cast<double>(voxelZ));
-	const Double2 diagMiddle(
-		static_cast<double>(voxelX) + 0.50,
-		static_cast<double>(voxelZ) + 0.50);
-	const Double2 diagEnd(
-		static_cast<double>(voxelX),
-		static_cast<double>(voxelZ) + Constants::JustBelowOne);
+	NewDouble2 diagStart, diagMiddle, diagEnd;
+	RendererUtils::getDiag2Points2D(voxelX, voxelZ, &diagStart, &diagMiddle, &diagEnd);
 
-	// Normals for the left and right faces of the wall, facing up-right and down-left
+	// Normals for the left and right faces of the wall, facing down-left and up-right
 	// respectively (magic number is sqrt(2) / 2).
 	const Double3 leftNormal(0.7071068, 0.0, 0.7071068);
 	const Double3 rightNormal(-0.7071068, 0.0, -0.7071068);
@@ -2677,16 +2621,16 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 	if (intersectionOccurred)
 	{
 		// Change in X and change in Z of the incoming ray across the voxel.
-		const double dx = farPoint.x - nearPoint.x;
-		const double dz = farPoint.y - nearPoint.y;
+		const SNDouble dx = farPoint.x - nearPoint.x;
+		const WEDouble dz = farPoint.y - nearPoint.y;
 
 		// The hit coordinate is a 0->1 value representing where the diagonal was hit.
 		const double hitCoordinate = [&nearPoint, &diagStart, dx, dz]()
 		{
 			// Special cases: when the slope is horizontal or vertical. This method treats
 			// the X axis as the vertical axis and the Z axis as the horizontal axis.
-			const double isHorizontal = std::abs(dx) < Constants::Epsilon;
-			const double isVertical = std::abs(dz) < Constants::Epsilon;
+			const bool isHorizontal = std::abs(dx) < Constants::Epsilon;
+			const bool isVertical = std::abs(dz) < Constants::Epsilon;
 
 			if (isHorizontal)
 			{
@@ -2713,16 +2657,13 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 				const double rayXIntercept = nearPoint.x - (raySlope * nearPoint.y);
 
 				// General line intersection calculation.
-				return ((rayXIntercept - diagXIntercept) /
-					(diagSlope - raySlope)) - diagStart.y;
+				return ((rayXIntercept - diagXIntercept) / (diagSlope - raySlope)) - diagStart.y;
 			}
 		}();
 
 		// Set the hit data.
 		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
-		hit.point = Double2(
-			static_cast<double>(voxelX) + (Constants::JustBelowOne - hit.u),
-			static_cast<double>(voxelZ) + hit.u);
+		hit.point = diagStart + ((diagEnd - diagStart) * hit.u);
 		hit.innerZ = (hit.point - nearPoint).length();
 		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
@@ -2735,13 +2676,13 @@ bool SoftwareRenderer::findDiag2Intersection(int voxelX, int voxelZ, const Doubl
 	}
 }
 
-bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ, 
-	VoxelFacing edgeFacing, bool flipped, const Double2 &nearPoint, const Double2 &farPoint,
+bool SoftwareRenderer::findInitialEdgeIntersection(SNInt voxelX, WEInt voxelZ, 
+	VoxelFacing edgeFacing, bool flipped, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// Reuse the chasm facing code to find which face is intersected.
 	const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-		voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+		voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
 
 	// If the edge facing and far facing match, there's an intersection.
 	if (edgeFacing == farFacing)
@@ -2785,8 +2726,8 @@ bool SoftwareRenderer::findInitialEdgeIntersection(int voxelX, int voxelZ,
 	}
 }
 
-bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing edgeFacing,
-	bool flipped, VoxelFacing nearFacing, const Double2 &nearPoint, const Double2 &farPoint,
+bool SoftwareRenderer::findEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing edgeFacing,
+	bool flipped, VoxelFacing nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearU, const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// If the edge facing and near facing match, the intersection is trivial.
@@ -2849,67 +2790,67 @@ bool SoftwareRenderer::findEdgeIntersection(int voxelX, int voxelZ, VoxelFacing 
 	}
 }
 
-bool SoftwareRenderer::findInitialSwingingDoorIntersection(int voxelX, int voxelZ,
-	double percentOpen, const Double2 &nearPoint, const Double2 &farPoint, bool xAxis,
+bool SoftwareRenderer::findInitialSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ,
+	double percentOpen, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, bool xAxis,
 	const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// Decide which corner the door's hinge will be in, and create the line segment
 	// that will be rotated based on percent open.
-	Double2 interpStart;
-	const Double2 pivot = [voxelX, voxelZ, xAxis, &interpStart]()
+	NewDouble2 interpStart;
+	const NewDouble2 pivot = [voxelX, voxelZ, xAxis, &interpStart]()
 	{
-		const Int2 corner = [voxelX, voxelZ, xAxis, &interpStart]()
+		const NewInt2 corner = [voxelX, voxelZ, xAxis, &interpStart]()
 		{
 			if (xAxis)
 			{
-				interpStart = -Double2::UnitX;
-				return Int2(voxelX + 1, voxelZ + 1);
+				interpStart = CardinalDirection::South;
+				return NewInt2(voxelX, voxelZ);
 			}
 			else
 			{
-				interpStart = -Double2::UnitY;
-				return Int2(voxelX, voxelZ + 1);
+				interpStart = CardinalDirection::West;
+				return NewInt2(voxelX + 1, voxelZ);
 			}
 		}();
 
-		const Double2 cornerReal(
-			static_cast<double>(corner.x),
-			static_cast<double>(corner.y));
+		const NewDouble2 cornerReal(
+			static_cast<SNDouble>(corner.x),
+			static_cast<WEDouble>(corner.y));
 
 		// Bias the pivot towards the voxel center slightly to avoid Z-fighting with
 		// adjacent walls.
-		const Double2 voxelCenter(
-			static_cast<double>(voxelX) + 0.50,
-			static_cast<double>(voxelZ) + 0.50);
-		const Double2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
+		const NewDouble2 voxelCenter(
+			static_cast<SNDouble>(voxelX) + 0.50,
+			static_cast<WEDouble>(voxelZ) + 0.50);
+		const NewDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
 		return cornerReal + bias;
 	}();
 
 	// Use the left perpendicular vector of the door's closed position as the 
 	// fully open position.
-	const Double2 interpEnd = interpStart.leftPerp();
+	const NewDouble2 interpEnd = interpStart.leftPerp();
 
 	// Actual position of the door in its rotation, represented as a vector.
-	const Double2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
+	const NewDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
 
 	// Use back-face culling with swinging doors so it's not obstructing the player's
 	// view as much when it's opening.
-	const Double2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
 	const bool isFrontFace = (eye2D - pivot).normalized().dot(doorVec.leftPerp()) > 0.0;
 
 	if (isFrontFace)
 	{
 		// Vector cross product in 2D, returns a scalar.
-		auto cross = [](const Double2 &a, const Double2 &b)
+		auto cross = [](const NewDouble2 &a, const NewDouble2 &b)
 		{
 			return (a.x * b.y) - (b.x * a.y);
 		};
 
 		// Solve line segment intersection between the incoming ray and the door.
-		const Double2 p1 = pivot;
-		const Double2 v1 = doorVec;
-		const Double2 p2 = nearPoint;
-		const Double2 v2 = farPoint - nearPoint;
+		const NewDouble2 p1 = pivot;
+		const NewDouble2 v1 = doorVec;
+		const NewDouble2 p2 = nearPoint;
+		const NewDouble2 v2 = farPoint - nearPoint;
 
 		// Percent from p1 to (p1 + v1).
 		const double t = cross(p2 - p1, v2) / cross(v1, v2);
@@ -2923,7 +2864,7 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(int voxelX, int voxel
 			hit.u = t;
 			hit.normal = [&v1]()
 			{
-				const Double2 norm2D = v1.rightPerp();
+				const NewDouble2 norm2D = v1.rightPerp();
 				return Double3(norm2D.x, 0.0, norm2D.y);
 			}();
 
@@ -2942,16 +2883,16 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(int voxelX, int voxel
 	}
 }
 
-bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
-	VoxelDefinition::DoorData::Type doorType, double percentOpen, const Double2 &nearPoint,
-	const Double2 &farPoint, const Camera &camera, const Ray &ray,
+bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
+	VoxelDefinition::DoorData::Type doorType, double percentOpen, const NewDouble2 &nearPoint,
+	const NewDouble2 &farPoint, const Camera &camera, const Ray &ray,
 	const VoxelGrid &voxelGrid, RayHit &hit)
 {
 	// Determine which axis the door should open/close for (either X or Z).
 	const bool xAxis = [voxelX, voxelZ, &voxelGrid]()
 	{
 		// Check adjacent voxels on the X axis for air.
-		auto voxelIsAir = [&voxelGrid](int x, int z)
+		auto voxelIsAir = [&voxelGrid](SNInt x, WEInt z)
 		{
 			const bool insideGrid = (x >= 0) && (x < voxelGrid.getWidth()) &&
 				(z >= 0) && (z < voxelGrid.getDepth());
@@ -2989,9 +2930,8 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 		// Treat the door like a wall. Reuse the chasm facing code to find which face is
 		// intersected.
 		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
-		const VoxelFacing doorFacing = xAxis ?
-			VoxelFacing::PositiveX : VoxelFacing::PositiveZ;
+			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
+		const VoxelFacing doorFacing = xAxis ? VoxelFacing::PositiveX : VoxelFacing::PositiveZ;
 
 		if (doorFacing == farFacing)
 		{
@@ -3032,8 +2972,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 				if (visibleAmount > farU)
 				{
 					hit.innerZ = (farPoint - nearPoint).length();
-					hit.u = std::clamp(
-						farU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
+					hit.u = std::clamp(farU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 					hit.point = farPoint;
 					hit.normal = -VoxelDefinition::getNormal(farFacing);
 					return true;
@@ -3144,74 +3083,74 @@ bool SoftwareRenderer::findInitialDoorIntersection(int voxelX, int voxelZ,
 	}
 }
 
-bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
-	double percentOpen, VoxelFacing nearFacing, const Double2 &nearPoint,
-	const Double2 &farPoint, double nearU, RayHit &hit)
+bool SoftwareRenderer::findSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ,
+	double percentOpen, VoxelFacing nearFacing, const NewDouble2 &nearPoint,
+	const NewDouble2 &farPoint, double nearU, RayHit &hit)
 {
 	// Decide which corner the door's hinge will be in, and create the line segment
 	// that will be rotated based on percent open.
-	Double2 interpStart;
-	const Double2 pivot = [voxelX, voxelZ, nearFacing, &interpStart]()
+	NewDouble2 interpStart;
+	const NewDouble2 pivot = [voxelX, voxelZ, nearFacing, &interpStart]()
 	{
-		const Int2 corner = [voxelX, voxelZ, nearFacing, &interpStart]()
+		const NewInt2 corner = [voxelX, voxelZ, nearFacing, &interpStart]()
 		{
 			if (nearFacing == VoxelFacing::PositiveX)
 			{
-				interpStart = -Double2::UnitX;
-				return Int2(voxelX + 1, voxelZ + 1);
+				interpStart = CardinalDirection::North;
+				return NewInt2(voxelX + 1, voxelZ + 1);
 			}
 			else if (nearFacing == VoxelFacing::NegativeX)
 			{
-				interpStart = Double2::UnitX;
-				return Int2(voxelX, voxelZ);
+				interpStart = CardinalDirection::South;
+				return NewInt2(voxelX, voxelZ);
 			}
 			else if (nearFacing == VoxelFacing::PositiveZ)
 			{
-				interpStart = -Double2::UnitY;
-				return Int2(voxelX, voxelZ + 1);
+				interpStart = CardinalDirection::East;
+				return NewInt2(voxelX, voxelZ + 1);
 			}
 			else if (nearFacing == VoxelFacing::NegativeZ)
 			{
-				interpStart = Double2::UnitY;
-				return Int2(voxelX + 1, voxelZ);
+				interpStart = CardinalDirection::West;
+				return NewInt2(voxelX + 1, voxelZ);
 			}
 			else
 			{
-				DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(nearFacing)));
+				DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(nearFacing)));
 			}
 		}();
 
-		const Double2 cornerReal(
-			static_cast<double>(corner.x),
-			static_cast<double>(corner.y));
+		const NewDouble2 cornerReal(
+			static_cast<SNDouble>(corner.x),
+			static_cast<WEDouble>(corner.y));
 
 		// Bias the pivot towards the voxel center slightly to avoid Z-fighting with
 		// adjacent walls.
-		const Double2 voxelCenter(
-			static_cast<double>(voxelX) + 0.50,
-			static_cast<double>(voxelZ) + 0.50);
-		const Double2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
+		const NewDouble2 voxelCenter(
+			static_cast<SNDouble>(voxelX) + 0.50,
+			static_cast<WEDouble>(voxelZ) + 0.50);
+		const NewDouble2 bias = (voxelCenter - cornerReal) * Constants::Epsilon;
 		return cornerReal + bias;
 	}();
 
 	// Use the left perpendicular vector of the door's closed position as the 
 	// fully open position.
-	const Double2 interpEnd = interpStart.leftPerp();
+	const NewDouble2 interpEnd = interpStart.leftPerp();
 
 	// Actual position of the door in its rotation, represented as a vector.
-	const Double2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
+	const NewDouble2 doorVec = interpStart.lerp(interpEnd, 1.0 - percentOpen).normalized();
 
 	// Vector cross product in 2D, returns a scalar.
-	auto cross = [](const Double2 &a, const Double2 &b)
+	auto cross = [](const NewDouble2 &a, const NewDouble2 &b)
 	{
 		return (a.x * b.y) - (b.x * a.y);
 	};
 
 	// Solve line segment intersection between the incoming ray and the door.
-	const Double2 p1 = pivot;
-	const Double2 v1 = doorVec;
-	const Double2 p2 = nearPoint;
-	const Double2 v2 = farPoint - nearPoint;
+	const NewDouble2 p1 = pivot;
+	const NewDouble2 v1 = doorVec;
+	const NewDouble2 p2 = nearPoint;
+	const NewDouble2 v2 = farPoint - nearPoint;
 
 	// Percent from p1 to (p1 + v1).
 	const double t = cross(p2 - p1, v2) / cross(v1, v2);
@@ -3225,7 +3164,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 		hit.u = t;
 		hit.normal = [&v1]()
 		{
-			const Double2 norm2D = v1.rightPerp();
+			const NewDouble2 norm2D = v1.rightPerp();
 			return Double3(norm2D.x, 0.0, norm2D.y);
 		}();
 
@@ -3238,9 +3177,9 @@ bool SoftwareRenderer::findSwingingDoorIntersection(int voxelX, int voxelZ,
 	}
 }
 
-bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ, 
+bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ, 
 	VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing nearFacing,
-	const Double2 &nearPoint, const Double2 &farPoint, double nearU, RayHit &hit)
+	const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit)
 {
 	// Check trivial case first: whether the door is closed.
 	const bool isClosed = percentOpen == 0.0;
@@ -3268,8 +3207,7 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 		if (visibleAmount > nearU)
 		{
 			hit.innerZ = 0.0;
-			hit.u = std::clamp(
-				nearU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
+			hit.u = std::clamp(nearU + (1.0 - visibleAmount), 0.0, Constants::JustBelowOne);
 			hit.point = nearPoint;
 			hit.normal = VoxelDefinition::getNormal(nearFacing);
 			return true;
@@ -3364,24 +3302,24 @@ bool SoftwareRenderer::findDoorIntersection(int voxelX, int voxelZ,
 }
 
 void SoftwareRenderer::getLightVisibilityData(const EntityManager::EntityVisibilityData &visData,
-	int lightIntensity, const Double2 &eye2D, const Double2 &cameraDir, double fovX,
+	int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
 	double viewDistance, LightVisibilityData *outVisData)
 {
 	// Put the light position at the center of the entity.
 	// @todo: maybe base it on the first frame so there's no jitter if the entity height is variable?
 	const double entityHalfHeight = visData.keyframe.getHeight() * 0.50;
 	const Double3 lightPosition = visData.flatPosition + (Double3::UnitY * entityHalfHeight);
-	const Double2 lightPosition2D(lightPosition.x, lightPosition.z);
+	const NewDouble2 lightPosition2D(lightPosition.x, lightPosition.z);
 
 	// Point at max view distance away from current camera view.
-	const Double2 cameraMaxPoint = eye2D + (cameraDir * viewDistance);
+	const NewDouble2 cameraMaxPoint = eye2D + (cameraDir * viewDistance);
 
 	// Distance from max view point to left or right far frustum corner.
 	const double frustumHalfWidth = viewDistance * std::tan((fovX * 0.50) * Constants::DegToRad);
 
-	const Double2 cameraFrustumP0 = eye2D;
-	const Double2 cameraFrustumP1 = cameraMaxPoint + (cameraDir.rightPerp() * frustumHalfWidth);
-	const Double2 cameraFrustumP2 = cameraMaxPoint + (cameraDir.leftPerp() * frustumHalfWidth);
+	const NewDouble2 cameraFrustumP0 = eye2D;
+	const NewDouble2 cameraFrustumP1 = cameraMaxPoint + (cameraDir.rightPerp() * frustumHalfWidth);
+	const NewDouble2 cameraFrustumP2 = cameraMaxPoint + (cameraDir.leftPerp() * frustumHalfWidth);
 
 	const double lightRadius = static_cast<double>(lightIntensity);
 	const bool intersectsFrustum = MathUtils::triangleCircleIntersection(
@@ -3391,7 +3329,7 @@ void SoftwareRenderer::getLightVisibilityData(const EntityManager::EntityVisibil
 }
 
 template <bool CappedSum>
-double SoftwareRenderer::getLightContributionAtPoint(const Double2 &point,
+double SoftwareRenderer::getLightContributionAtPoint(const NewDouble2 &point,
 	const BufferView<const VisibleLight> &visLights, const VisibleLightList &visLightList)
 {
 	double lightContributionPercent = 0.0;
@@ -3638,7 +3576,7 @@ void SoftwareRenderer::drawPixels(int x, const DrawRange &drawRange, double dept
 
 template <bool Fading>
 void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawRange,
-	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const NewDouble2 &startPoint, const NewDouble2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
 	const BufferView<const VisibleLight> &visLights, const VisibleLightList &visLightList,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
@@ -3666,9 +3604,9 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 	// Values for perspective-correct interpolation.
 	const double depthStartRecip = 1.0 / depthStart;
 	const double depthEndRecip = 1.0 / depthEnd;
-	const Double2 startPointDiv = startPoint * depthStartRecip;
-	const Double2 endPointDiv = endPoint * depthEndRecip;
-	const Double2 pointDivDiff = endPointDiv - startPointDiv;
+	const NewDouble2 startPointDiv = startPoint * depthStartRecip;
+	const NewDouble2 endPointDiv = endPoint * depthEndRecip;
+	const NewDouble2 pointDivDiff = endPointDiv - startPointDiv;
 
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
@@ -3696,8 +3634,8 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 			const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 			// Interpolate between start and end points.
-			const double currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
-			const double currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
+			const SNDouble currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
+			const WEDouble currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
 			// Texture coordinates.
 			const double u = std::clamp(
@@ -3714,7 +3652,7 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 				texture, u, v, &colorR, &colorG, &colorB, &colorEmission, nullptr);
 
 			// Light contribution.
-			const Double2 currentPoint(currentPointX, currentPointY);
+			const NewDouble2 currentPoint(currentPointX, currentPointY);
 			const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(currentPoint, visLights, visLightList);
 
@@ -3742,7 +3680,7 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 			colorB += (fogColor.z - colorB) * fogPercent;
 
 			// Clamp maximum (don't worry about negative values).
-			const double high = 1.0;
+			constexpr double high = 1.0;
 			colorR = (colorR > high) ? high : colorR;
 			colorG = (colorG > high) ? high : colorG;
 			colorB = (colorB > high) ? high : colorB;
@@ -3760,7 +3698,7 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 }
 
 void SoftwareRenderer::drawPerspectivePixels(int x, const DrawRange &drawRange,
-	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const NewDouble2 &startPoint, const NewDouble2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const VoxelTexture &texture, double fadePercent,
 	const BufferView<const VisibleLight> &visLights, const VisibleLightList &visLightList,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
@@ -3855,7 +3793,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 				colorB += (fogColor.z - colorB) * fogPercent;
 				
 				// Clamp maximum (don't worry about negative values).
-				const double high = 1.0;
+				constexpr double high = 1.0;
 				colorR = (colorR > high) ? high : colorR;
 				colorG = (colorG > high) ? high : colorG;
 				colorB = (colorB > high) ? high : colorB;
@@ -3952,7 +3890,7 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 				colorB += (fogColor.z - colorB) * fogPercent;
 
 				// Clamp maximum (don't worry about negative values).
-				const double high = 1.0;
+				constexpr double high = 1.0;
 				colorR = (colorR > high) ? high : colorR;
 				colorG = (colorG > high) ? high : colorG;
 				colorB = (colorB > high) ? high : colorB;
@@ -4050,7 +3988,7 @@ void SoftwareRenderer::drawChasmPixels(int x, const DrawRange &drawRange, double
 
 template <bool AmbientShading, bool TrueDepth>
 void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &drawRange,
-	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const NewDouble2 &startPoint, const NewDouble2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, const ChasmTexture &texture, const ShadingInfo &shadingInfo,
 	OcclusionData &occlusion, const FrameView &frame)
 {
@@ -4078,9 +4016,9 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 	// Values for perspective-correct interpolation.
 	const double depthStartRecip = 1.0 / depthStart;
 	const double depthEndRecip = 1.0 / depthEnd;
-	const Double2 startPointDiv = startPoint * depthStartRecip;
-	const Double2 endPointDiv = endPoint * depthEndRecip;
-	const Double2 pointDivDiff = endPointDiv - startPointDiv;
+	const NewDouble2 startPointDiv = startPoint * depthStartRecip;
+	const NewDouble2 endPointDiv = endPoint * depthEndRecip;
+	const NewDouble2 pointDivDiff = endPointDiv - startPointDiv;
 
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
@@ -4108,8 +4046,8 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 			const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
 			// Interpolate between start and end points.
-			const double currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
-			const double currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
+			const SNDouble currentPointX = (startPointDiv.x + (pointDivDiff.x * yPercent)) * depth;
+			const WEDouble currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
 			// Texture coordinates.
 			const double u = std::clamp(
@@ -4153,7 +4091,7 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 }
 
 void SoftwareRenderer::drawPerspectiveChasmPixels(int x, const DrawRange &drawRange,
-	const Double2 &startPoint, const Double2 &endPoint, double depthStart, double depthEnd,
+	const NewDouble2 &startPoint, const NewDouble2 &endPoint, double depthStart, double depthEnd,
 	const Double3 &normal, bool emissive, const ChasmTexture &texture,
 	const ShadingInfo &shadingInfo, OcclusionData &occlusion, const FrameView &frame)
 {

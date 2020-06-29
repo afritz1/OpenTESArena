@@ -28,10 +28,10 @@ namespace MathUtils
 	Radians fullAtan2(const NewDouble2 &v);
 
 	// Converts vertical field of view to camera zoom (where 90 degrees = 1.0 zoom).
-	double verticalFovToZoom(double fovY);
+	double verticalFovToZoom(Degrees fovY);
 
 	// Converts vertical field of view to horizontal field of view.
-	double verticalFovToHorizontalFov(double fovY, double aspectRatio);
+	Degrees verticalFovToHorizontalFov(Degrees fovY, double aspectRatio);
 
 	// Returns whether the given point lies in the half space divided at the given divider point.
 	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);

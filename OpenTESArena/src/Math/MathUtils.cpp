@@ -52,12 +52,12 @@ Radians MathUtils::fullAtan2(const NewDouble2 &v)
 	return MathUtils::fullAtan2(-v.x, -v.y);
 }
 
-double MathUtils::verticalFovToZoom(double fovY)
+double MathUtils::verticalFovToZoom(Degrees fovY)
 {
 	return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
 }
 
-double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
+Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 {
 	DebugAssert(fovY > 0.0);
 	DebugAssert(fovY < 180.0);
