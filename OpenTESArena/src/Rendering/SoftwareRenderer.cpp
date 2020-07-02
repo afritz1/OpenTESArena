@@ -4683,9 +4683,9 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ,
-	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
-	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint,
+	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
@@ -4936,7 +4936,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 
 		// Find which far face on the chasm was intersected.
 		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
@@ -5108,9 +5108,9 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, int voxelX, int voxelY, 
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
-	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
-	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint,
+	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
@@ -5437,9 +5437,9 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, int voxelX, int voxelY, int 
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
-	const Camera &camera, const Ray &ray, VoxelFacing facing, const Double2 &nearPoint,
-	const Double2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
+void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	const Camera &camera, const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint,
+	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
 	const BufferView<const VisibleLight> &visLights,
@@ -5668,7 +5668,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 
 		// Find which far face on the chasm was intersected.
 		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, Double2(camera.eye.x, camera.eye.z), ray);
+			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
@@ -5840,8 +5840,8 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, int voxelX, int voxelY, int 
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -5915,8 +5915,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, int voxelX, int voxelZ, con
 	}
 }
 
-void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -6353,8 +6353,8 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, int voxelX, int voxelY, int vox
 	}
 }
 
-void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -6704,8 +6704,8 @@ void SoftwareRenderer::drawVoxelAbove(int x, int voxelX, int voxelY, int voxelZ,
 	}
 }
 
-void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint, double nearZ,
+void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -7148,8 +7148,8 @@ void SoftwareRenderer::drawVoxelBelow(int x, int voxelX, int voxelY, int voxelZ,
 	}
 }
 
-void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Camera &camera,
-	const Ray &ray, VoxelFacing facing, const Double2 &nearPoint, const Double2 &farPoint,
+void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
+	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -7231,7 +7231,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, int voxelX, int voxelZ, const Came
 }
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
-	const Double2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
+	const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 	int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 	const FrameView &frame)
@@ -7314,12 +7314,13 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
 
 		// Get the true XZ distance for the depth.
-		const Double2 topPointXZ(topPoint.x, topPoint.z);
+		const NewDouble2 topPointXZ(topPoint.x, topPoint.z);
 		const double depth = (topPointXZ - eye).length();
 
 		// XZ coordinates that this vertical slice of the flat occupies.
-		const NSInt voxelX = static_cast<int>(topPointXZ.x);
-		const EWInt voxelZ = static_cast<int>(topPointXZ.y);
+		// @todo: should this be floor() + int() instead?
+		const SNInt voxelX = static_cast<int>(topPointXZ.x);
+		const WEInt voxelZ = static_cast<int>(topPointXZ.y);
 
 		// Light contribution per column.
 		const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
@@ -7448,32 +7449,32 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
 
-	constexpr int stepX = NonNegativeDirX ? 1 : -1;
-	constexpr int stepZ = NonNegativeDirZ ? 1 : -1;
-	constexpr double axisLenX = 1.0;
-	constexpr double axisLenZ = 1.0;
+	constexpr SNInt stepX = NonNegativeDirX ? 1 : -1;
+	constexpr WEInt stepZ = NonNegativeDirZ ? 1 : -1;
+	constexpr SNDouble axisLenX = 1.0;
+	constexpr WEDouble axisLenZ = 1.0;
 
 	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
-	const double deltaDistX = (NonNegativeDirX ? axisLenX : -axisLenX) / ray.dirX;
-	const double deltaDistZ = (NonNegativeDirZ ? axisLenZ : -axisLenZ) / ray.dirZ;
+	const SNDouble deltaDistX = (NonNegativeDirX ? axisLenX : -axisLenX) / ray.dirX;
+	const WEDouble deltaDistZ = (NonNegativeDirZ ? axisLenZ : -axisLenZ) / ray.dirZ;
 
 	// The initial delta distances are percentages of the delta distances, dependent on the ray
 	// start position inside the voxel.
-	const double initialDeltaDistPercentX = NonNegativeDirX ?
+	const SNDouble initialDeltaDistPercentX = NonNegativeDirX ?
 		(1.0 - ((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX)) :
 		((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX);
-	const double initialDeltaDistPercentZ = NonNegativeDirZ ?
+	const WEDouble initialDeltaDistPercentZ = NonNegativeDirZ ?
 		(1.0 - ((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ)) :
 		((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ);
 
 	// Initial delta distance is a fraction of delta distance based on the ray's position in
 	// the initial voxel.
-	const double initialDeltaDistX = deltaDistX * initialDeltaDistPercentX;
-	const double initialDeltaDistZ = deltaDistZ * initialDeltaDistPercentZ;
+	const SNDouble initialDeltaDistX = deltaDistX * initialDeltaDistPercentX;
+	const WEDouble initialDeltaDistZ = deltaDistZ * initialDeltaDistPercentZ;
 
-	const int gridWidth = voxelGrid.getWidth();
+	const SNInt gridWidth = voxelGrid.getWidth();
 	const int gridHeight = voxelGrid.getHeight();
-	const int gridDepth = voxelGrid.getDepth();
+	const WEInt gridDepth = voxelGrid.getDepth();
 
 	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
 	// voxel face. The first Z distance is a special case, so it's brought outside the 
@@ -7506,13 +7507,13 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 		// The initial near point is directly in front of the player in the near Z 
 		// camera plane.
-		const Double2 initialNearPoint(
+		const NewDouble2 initialNearPoint(
 			camera.eye.x + (ray.dirX * SoftwareRenderer::NEAR_PLANE),
 			camera.eye.z + (ray.dirZ * SoftwareRenderer::NEAR_PLANE));
 
 		// The initial far point is the wall hit. This is used with the player's position 
 		// for drawing the initial floor and ceiling.
-		const Double2 initialFarPoint(
+		const NewDouble2 initialFarPoint(
 			camera.eye.x + (ray.dirX * zDistance),
 			camera.eye.z + (ray.dirZ * zDistance));
 
@@ -7529,12 +7530,12 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	
 	// Delta distance sums in each component, starting at the initial wall hit. The lowest
 	// component is the candidate for the next DDA loop.
-	double deltaDistSumX = initialDeltaDistX;
-	double deltaDistSumZ = initialDeltaDistZ;
+	SNDouble deltaDistSumX = initialDeltaDistX;
+	WEDouble deltaDistSumZ = initialDeltaDistZ;
 
 	// Helper values for Z distance calculation per step.
-	constexpr double halfOneMinusStepXReal = static_cast<double>((1 - stepX) / 2);
-	constexpr double halfOneMinusStepZReal = static_cast<double>((1 - stepZ) / 2);
+	constexpr SNDouble halfOneMinusStepXReal = static_cast<double>((1 - stepX) / 2);
+	constexpr WEDouble halfOneMinusStepZReal = static_cast<double>((1 - stepZ) / 2);
 
 	// Lambda for stepping to the next XZ coordinate in the grid and updating the Z
 	// distance for the current edge point.
@@ -7573,8 +7574,8 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	{
 		// Store the cell coordinates, axis, and Z distance for wall rendering. The
 		// loop needs to do another DDA step to calculate the far point.
-		const int savedCellX = cell.x;
-		const int savedCellZ = cell.z;
+		const SNInt savedCellX = cell.x;
+		const WEInt savedCellZ = cell.z;
 		const VoxelFacing savedFacing = facing;
 		const double wallDistance = zDistance;
 
@@ -7583,10 +7584,10 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 		// Near and far points in the XZ plane. The near point is where the wall is, and 
 		// the far point is used with the near point for drawing the floor and ceiling.
-		const Double2 nearPoint(
+		const NewDouble2 nearPoint(
 			camera.eye.x + (ray.dirX * wallDistance),
 			camera.eye.z + (ray.dirZ * wallDistance));
-		const Double2 farPoint(
+		const NewDouble2 farPoint(
 			camera.eye.x + (ray.dirX * zDistance),
 			camera.eye.z + (ray.dirZ * zDistance));
 
@@ -7829,8 +7830,8 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 	Buffer<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	const Double2 forwardZoomed(camera.forwardZoomedX, camera.forwardZoomedZ);
-	const Double2 rightAspected(camera.rightAspectedX, camera.rightAspectedZ);
+	const NewDouble2 forwardZoomed(camera.forwardZoomedX, camera.forwardZoomedZ);
+	const NewDouble2 rightAspected(camera.rightAspectedX, camera.rightAspectedZ);
 
 	// Draw pixel columns with spacing determined by the number of render threads.
 	for (int x = startX; x < frame.width; x += stride)
@@ -7839,12 +7840,12 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 		const double xPercent = (static_cast<double>(x) + 0.50) / frame.widthReal;
 
 		// "Right" component of the ray direction, based on current screen X.
-		const Double2 rightComp = rightAspected * ((2.0 * xPercent) - 1.0);
+		const NewDouble2 rightComp = rightAspected * ((2.0 * xPercent) - 1.0);
 
 		// Calculate the ray direction through the pixel.
 		// - If un-normalized, it uses the Z distance, but the insides of voxels
 		//   don't look right then.
-		const Double2 direction = (forwardZoomed + rightComp).normalized();
+		const NewDouble2 direction = (forwardZoomed + rightComp).normalized();
 		const Ray ray(direction.x, direction.y);
 
 		// Cast the 2D ray and fill in the column's pixels with color.
@@ -7858,7 +7859,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
 	const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
+	const BufferView2D<const VisibleLightList> &visLightLists, SNInt gridWidth, WEInt gridDepth,
 	const FrameView &frame)
 {
 	// Iterate through all flats, rendering those visible within the given X range of 
@@ -7886,7 +7887,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		}
 
 		const FlatTexture &texture = (*textureList)[flat.textureID];
-		const Double2 eye2D(camera.eye.x, camera.eye.z);
+		const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
 		const NewInt2 eyeVoxel2D(camera.eyeVoxel.x, camera.eyeVoxel.z);
 
 		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D,
