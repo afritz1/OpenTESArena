@@ -599,15 +599,14 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 			const NewDouble2 &entityDir = dynamicEntity.getDirection();
 			const NewDouble2 diffDir = (eye2D - entity.getPosition()).normalized();
 
-			const double entityAngle = MathUtils::fullAtan2(entityDir);
-			const double diffAngle = MathUtils::fullAtan2(diffDir);
+			const Radians entityAngle = MathUtils::fullAtan2(entityDir);
+			const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 
 			// Use the difference of the two vectors as the angle vector.
-			const NewDouble2 resultDir = entityDir - diffDir;
-			const double resultAngle = Constants::Pi + MathUtils::fullAtan2(resultDir);
+			const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
 			// Angle bias so the final direction is centered within its angle range.
-			const double angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
+			const Radians angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
 
 			return std::fmod(resultAngle + angleBias, Constants::TwoPi);
 		}
