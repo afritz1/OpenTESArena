@@ -1376,7 +1376,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
 
 		// Dry chasm (just a single color).
-		const uint8_t dryChasmColor = 112;
+		constexpr uint8_t dryChasmColor = 112; // Matches the original game.
 		chasmBuffer.fill(dryChasmColor);
 		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
 			chasmWidth, chasmHeight, palette);
