@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 
 #include "components/utilities/Buffer.h"
@@ -30,12 +31,12 @@ public:
 	{
 	private:
 		int entryIndex; // Texture entry in distant sky.
-		double angleRadians;
+		Radians angle;
 	public:
-		LandObject(int entryIndex, double angleRadians);
+		LandObject(int entryIndex, Radians angle);
 
 		int getTextureEntryIndex() const;
-		double getAngleRadians() const;
+		Radians getAngle() const;
 	};
 
 	// An object with an animation that sits on the horizon.
@@ -45,15 +46,16 @@ public:
 		static constexpr double DEFAULT_FRAME_TIME = 1.0 / 18.0;
 
 		int setEntryIndex; // Texture set entry in distant sky.
-		double angleRadians, targetFrameTime, currentFrameTime;
+		Radians angle;
+		double targetFrameTime, currentFrameTime;
 		int index;
 	public:
 		// All textures are stored in one texture set in the distant sky.
-		AnimatedLandObject(int setEntryIndex, double angleRadians, double frameTime);
-		AnimatedLandObject(int setEntryIndex, double angleRadians);
+		AnimatedLandObject(int setEntryIndex, Radians angle, double frameTime);
+		AnimatedLandObject(int setEntryIndex, Radians angle);
 
 		int getTextureSetEntryIndex() const;
-		double getAngleRadians() const;
+		Radians getAngle() const;
 		double getFrameTime() const;
 		int getIndex() const;
 
@@ -67,12 +69,13 @@ public:
 	{
 	private:
 		int entryIndex; // Texture entry in distant sky.
-		double angleRadians, height; // 0 height == horizon, 1 height == top of sky gradient.
+		Radians angle;
+		double height; // 0 height == horizon, 1 height == top of sky gradient.
 	public:
-		AirObject(int entryIndex, double angleRadians, double height);
+		AirObject(int entryIndex, Radians angle, double height);
 
 		int getTextureEntryIndex() const;
-		double getAngleRadians() const;
+		Radians getAngle() const;
 		double getHeight() const;
 	};
 
@@ -175,7 +178,7 @@ public:
 	// The size of textures in world space is based on 320px being 1 unit, and a 320px
 	// wide texture spans a screen's worth of horizontal FOV in the original game.
 	static const double IDENTITY_DIM;
-	static const double IDENTITY_ANGLE_RADIANS;
+	static const Radians IDENTITY_ANGLE;
 
 	void init(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		WeatherType weatherType, int currentDay, int starCount, const ExeData &exeData,

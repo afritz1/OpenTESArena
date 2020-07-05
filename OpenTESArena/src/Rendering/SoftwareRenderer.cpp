@@ -511,11 +511,11 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	this->sunDirection = [this, latitude]()
 	{
 		// The sun gets a bonus to latitude. Arena angle units are 0->100.
-		const double sunLatitude = -(latitude + (13.0 / 100.0));
+		const double sunLatitude = latitude + (13.0 / 100.0);
 		const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
 		const Double3 baseDir = -Double3::UnitY;
 		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
-		return Double3(dir.x, dir.y, dir.z).normalized();
+		return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negated for +X south/+Z west.
 	}();
 	
 	this->sunColor = [this, isExterior]()
@@ -1406,7 +1406,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 		if (parallaxSky)
 		{
 			// Get X angles for left and right edges based on object half width.
-			const Radians xDeltaRadians = objHalfWidth * DistantSky::IDENTITY_ANGLE_RADIANS;
+			const Radians xDeltaRadians = objHalfWidth * DistantSky::IDENTITY_ANGLE;
 			const Radians xAngleRadiansLeft = xAngleRadians + xDeltaRadians;
 			const Radians xAngleRadiansRight = xAngleRadians - xDeltaRadians;
 			
@@ -1501,9 +1501,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 		{
 			// Classic rendering. Render the object based on its midpoint.
 			const Double3 objDir(
-				std::sin(xAngleRadians),
+				-std::sin(xAngleRadians), // Negative for +X south/+Z west.
 				0.0,
-				std::cos(xAngleRadians));
+				-std::cos(xAngleRadians));
 
 			// Create a point arbitrarily far away for the object's center in world space.
 			const Double3 objPoint = camera.eye + objDir;
@@ -1549,7 +1549,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	for (const auto &land : this->distantObjects.lands)
 	{
 		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
-		const Radians xAngleRadians = land.obj.getAngleRadians();
+		const Radians xAngleRadians = land.obj.getAngle();
 		const Radians yAngleRadians = 0.0;
 		const bool emissive = false;
 		const Orientation orientation = Orientation::Bottom;
@@ -1564,7 +1564,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	{
 		const SkyTexture &texture = this->skyTextures.at(
 			animLand.textureIndex + animLand.obj.getIndex());
-		const Radians xAngleRadians = animLand.obj.getAngleRadians();
+		const Radians xAngleRadians = animLand.obj.getAngle();
 		const Radians yAngleRadians = 0.0;
 		const bool emissive = true;
 		const Orientation orientation = Orientation::Bottom;
@@ -1578,7 +1578,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	for (const auto &air : this->distantObjects.airs)
 	{
 		const SkyTexture &texture = skyTextures.at(air.textureIndex);
-		const Radians xAngleRadians = air.obj.getAngleRadians();
+		const Radians xAngleRadians = air.obj.getAngle();
 		const Radians yAngleRadians = [&air]()
 		{
 			// 0 is at horizon, 1 is at top of distant cloud height limit.
@@ -1605,12 +1605,14 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 	{
 		// Direction towards the space object.
 		const Double3 direction = Double3(
-			std::sin(xAngleRadians),
+			-std::sin(xAngleRadians), // Negative for +X south/+Z west.
 			std::tan(yAngleRadians),
-			std::cos(xAngleRadians)).normalized();
+			-std::cos(xAngleRadians)).normalized();
 
 		// Rotate the direction based on latitude and time of day.
 		const Double4 dir = latitudeRotation * (timeRotation * Double4(direction, 0.0));
+
+		// Don't negate for +X south/+Z west, they are negated when added to the draw list.
 		newXAngleRadians = std::atan2(dir.x, dir.z);
 		newYAngleRadians = std::asin(dir.y);
 	};
@@ -1629,12 +1631,12 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			{
 				if (type == DistantSky::MoonObject::Type::First)
 				{
-					bonusLatitude = -15.0 / 100.0;
+					bonusLatitude = 15.0 / 100.0;
 					return Double3(0.0, -57536.0, 0.0).normalized();
 				}
 				else if (type == DistantSky::MoonObject::Type::Second)
 				{
-					bonusLatitude = -30.0 / 100.0;
+					bonusLatitude = 30.0 / 100.0;
 					return Double3(-3000.0, -53536.0, 0.0).normalized();
 				}
 				else
@@ -1647,7 +1649,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(bool parallaxSky,
 			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
 			const Matrix4d moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
 			const Double4 dir = moonRotation * Double4(baseDir, 0.0);
-			return Double3(dir.x, dir.y, dir.z).normalized();
+			return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negative for +X south/+Z west.
 		}();
 
 		const Radians xAngleRadians = MathUtils::fullAtan2(-direction.x, -direction.z);
