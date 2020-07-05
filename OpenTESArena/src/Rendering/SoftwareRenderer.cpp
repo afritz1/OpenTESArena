@@ -2582,7 +2582,7 @@ bool SoftwareRenderer::findDiag1Intersection(SNInt voxelX, WEInt voxelZ,
 
 		// Set the hit data.
 		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
-		hit.point = diagStart + ((diagEnd - diagStart) * hit.u);
+		hit.point = diagStart + ((diagEnd - diagStart) * hitCoordinate);
 		hit.innerZ = (hit.point - nearPoint).length();
 		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
@@ -2664,8 +2664,8 @@ bool SoftwareRenderer::findDiag2Intersection(SNInt voxelX, WEInt voxelZ,
 		}();
 
 		// Set the hit data.
-		hit.u = std::clamp(hitCoordinate, 0.0, Constants::JustBelowOne);
-		hit.point = diagStart + ((diagEnd - diagStart) * hit.u);
+		hit.u = std::clamp(Constants::JustBelowOne - hitCoordinate, 0.0, Constants::JustBelowOne);
+		hit.point = diagStart + ((diagEnd - diagStart) * hitCoordinate);
 		hit.innerZ = (hit.point - nearPoint).length();
 		hit.normal = nearOnLeft ? leftNormal : rightNormal;
 
@@ -3640,12 +3640,8 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 			const WEDouble currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
 			// Texture coordinates.
-			const double u = std::clamp(
-				Constants::JustBelowOne - (currentPointX - std::floor(currentPointX)),
-				0.0, Constants::JustBelowOne);
-			const double v = std::clamp(
-				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY)),
-				0.0, Constants::JustBelowOne);
+			const double u = std::clamp(currentPointX - std::floor(currentPointX), 0.0, Constants::JustBelowOne);
+			const double v = std::clamp(currentPointY - std::floor(currentPointY), 0.0, Constants::JustBelowOne);
 
 			// Texture color. Alpha is ignored in this loop, so transparent texels will appear black.
 			constexpr bool TextureTransparency = false;
@@ -4052,12 +4048,8 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 			const WEDouble currentPointY = (startPointDiv.y + (pointDivDiff.y * yPercent)) * depth;
 
 			// Texture coordinates.
-			const double u = std::clamp(
-				Constants::JustBelowOne - (currentPointX - std::floor(currentPointX)),
-				0.0, Constants::JustBelowOne);
-			const double v = std::clamp(
-				Constants::JustBelowOne - (currentPointY - std::floor(currentPointY)),
-				0.0, Constants::JustBelowOne);
+			const double u = std::clamp(currentPointX - std::floor(currentPointX), 0.0, Constants::JustBelowOne);
+			const double v = std::clamp(currentPointY - std::floor(currentPointY), 0.0, Constants::JustBelowOne);
 
 			// Chasm texture color.
 			const double screenXPercent = static_cast<double>(x) / frame.widthReal;
