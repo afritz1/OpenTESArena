@@ -1694,14 +1694,14 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							// Get interior name from the clicked voxel.
 							const std::string menuName = [&game, &voxel, isCity, menuType, &exterior]()
 							{
-								const Int2 voxelXZ(voxel.x, voxel.z);
+								const NewInt2 voxelXZ(voxel.x, voxel.z);
 
 								if (isCity)
 								{
 									// City interior name.
 									const auto &menuNames = exterior.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<Int2, std::string> &pair)
+										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
 									{
 										return pair.first == voxelXZ;
 									});
@@ -1747,7 +1747,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 									const auto &menuNames = exterior.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<Int2, std::string> &pair)
+										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
 									{
 										return pair.first == voxelXZ;
 									});
@@ -1865,7 +1865,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	renderer.setNightLightsActive(active);
 }
 
-void GameWorldPanel::handleTriggers(const Int2 &voxel)
+void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 {
 	auto &game = this->getGame();
 	auto &worldData = game.getGameData().getWorldData();
@@ -2317,7 +2317,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	}
 }
 
-void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel)
+void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const NewInt2 &transitionVoxel)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -2347,9 +2347,9 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 	// Get the voxel definition associated with the voxel.
 	const auto &voxelDef = [&transitionVoxel, &voxelGrid]()
 	{
-		const int x = transitionVoxel.x;
+		const SNInt x = transitionVoxel.x;
 		const int y = 1;
-		const int z = transitionVoxel.y;
+		const WEInt z = transitionVoxel.y;
 		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
 		return voxelGrid.getVoxelDef(voxelID);
 	}();
@@ -2364,8 +2364,8 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 		// level up/down voxel.
 		auto dirToNewVoxel = [&playerVoxel, &transitionVoxel]()
 		{
-			const int diffX = transitionVoxel.x - playerVoxel.x;
-			const int diffZ = transitionVoxel.y - playerVoxel.y;
+			const SNInt diffX = transitionVoxel.x - playerVoxel.x;
+			const WEInt diffZ = transitionVoxel.y - playerVoxel.y;
 
 			// @todo: this probably isn't robust enough. Maybe also check the player's angle
 			// of velocity with angles to the voxel's corners to get the "arrival vector"
@@ -2401,9 +2401,9 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 
 		// Player destination after going through a level up/down voxel.
 		auto &player = gameData.getPlayer();
-		const Double2 destinationXZ(
-			(static_cast<double>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
-			(static_cast<double>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
+		const NewDouble2 destinationXZ(
+			(static_cast<SNDouble>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
+			(static_cast<WEDouble>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
 
 		// Lambda for transitioning the player to the given level.
 		auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
@@ -2440,9 +2440,9 @@ void GameWorldPanel::handleLevelTransition(const Int2 &playerVoxel, const Int2 &
 			// Move player to center of previous voxel in case they change their mind
 			// about fast traveling. Don't change their direction.
 			player.teleport(Double3(
-				static_cast<double>(playerVoxel.x) + 0.50,
+				static_cast<SNDouble>(playerVoxel.x) + 0.50,
 				player.getPosition().y,
-				static_cast<double>(playerVoxel.y) + 0.50));
+				static_cast<WEDouble>(playerVoxel.y) + 0.50));
 			player.setVelocityToZero();
 
 			game.setPanel<WorldMapPanel>(game, nullptr);
@@ -2501,10 +2501,10 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		gameInterface.getHeight() - tooltip.getHeight());
 }
 
-void GameWorldPanel::drawCompass(const Double2 &direction,
+void GameWorldPanel::drawCompass(const NewDouble2 &direction,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	// Draw compass slider based on player direction. +X is north, +Z is east.
+	// Draw compass slider based on player direction.
 	const auto &compassSlider = textureManager.getTexture(
 		TextureFile::fromName(TextureName::CompassSlider), renderer);
 
@@ -2858,8 +2858,8 @@ void GameWorldPanel::tick(double dt)
 	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
 		(newPlayerVoxel.z != oldPlayerVoxel.z))
 	{
-		const Int2 oldPlayerVoxelXZ(oldPlayerVoxel.x, oldPlayerVoxel.z);
-		const Int2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
+		const NewInt2 oldPlayerVoxelXZ(oldPlayerVoxel.x, oldPlayerVoxel.z);
+		const NewInt2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
 
 		// Don't handle triggers and level transitions if outside the voxel grid.
 		const bool inVoxelGrid = [&worldData, &newPlayerVoxelXZ]()

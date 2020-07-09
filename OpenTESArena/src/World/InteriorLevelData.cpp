@@ -1,5 +1,4 @@
 #include "InteriorLevelData.h"
-#include "VoxelUtils.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
@@ -61,7 +60,7 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 
 InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-	int widthChunks, int depthChunks, const std::string &infName, int gridWidth, int gridDepth,
+	int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 	const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
@@ -137,7 +136,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	std::fill(tempMap1.begin(), tempMap1.begin() + gridDepth, perimeterVoxel);
 	std::fill(tempMap1.rbegin(), tempMap1.rbegin() + gridDepth, perimeterVoxel);
 
-	for (int z = 1; z < (gridWidth - 1); z++)
+	for (SNInt z = 1; z < (gridWidth - 1); z++)
 	{
 		tempMap1.at(z * gridDepth) = perimeterVoxel;
 		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
@@ -148,15 +147,15 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Put transition blocks, unless null. Unpack the level up/down block indices
 	// into X and Z chunk offsets.
 	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const int levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
-	const int levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
+	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
+	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
 	tempMap1.at(levelUpX + (levelUpZ * gridDepth)) = (levelUpVoxelByte << 8) | levelUpVoxelByte;
 
 	if (levelDownBlock != nullptr)
 	{
 		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const int levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
-		const int levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
+		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
+		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
 		tempMap1.at(levelDownX + (levelDownZ * gridDepth)) =
 			(levelDownVoxelByte << 8) | levelDownVoxelByte;
 	}
@@ -177,13 +176,13 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	return levelData;
 }
 
-LevelData::TextTrigger *InteriorLevelData::getTextTrigger(const Int2 &voxel)
+LevelData::TextTrigger *InteriorLevelData::getTextTrigger(const NewInt2 &voxel)
 {
 	const auto textIter = this->textTriggers.find(voxel);
 	return (textIter != this->textTriggers.end()) ? &textIter->second : nullptr;
 }
 
-const std::string *InteriorLevelData::getSoundTrigger(const Int2 &voxel) const
+const std::string *InteriorLevelData::getSoundTrigger(const NewInt2 &voxel) const
 {
 	const auto soundIter = this->soundTriggers.find(voxel);
 	return (soundIter != this->soundTriggers.end()) ? &soundIter->second : nullptr;

@@ -18,7 +18,7 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
-ExteriorLevelData::ExteriorLevelData(int gridWidth, int gridHeight, int gridDepth,
+ExteriorLevelData::ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth,
 	const std::string &infName, const std::string &name)
 	: LevelData(gridWidth, gridHeight, gridDepth, infName, name) { }
 
@@ -28,8 +28,8 @@ ExteriorLevelData::~ExteriorLevelData()
 }
 
 void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
-	const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
-	const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
+	const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
+	ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 	std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2)
 {
 	// Decide which city blocks to load.
@@ -111,8 +111,8 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 	}
 
 	// Build the city, loading data for each block. Load blocks right to left, top to bottom.
-	int xDim = 0;
-	int yDim = 0;
+	WEInt xDim = 0;
+	SNInt yDim = 0;
 
 	for (const BlockType block : plan)
 	{
@@ -139,11 +139,11 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 			const auto &blockLevel = blockMif.getLevels().front();
 
 			// Offset of the block in the voxel grid.
-			const int xOffset = startPosition.x + (xDim * 20);
-			const int zOffset = startPosition.y + (yDim * 20);
+			const WEInt xOffset = startPosition.x + (xDim * 20);
+			const SNInt zOffset = startPosition.y + (yDim * 20);
 
 			// Copy block data to temp buffers.
-			for (int z = 0; z < blockMif.getDepth(); z++)
+			for (SNInt z = 0; z < blockMif.getDepth(); z++)
 			{
 				const int srcIndex = z * blockMif.getWidth();
 				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
@@ -213,7 +213,7 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 		};
 
 		auto createEquipmentName = [&provinceDef, &random, gridWidth, gridDepth, &miscAssets,
-			&exeData, &cityDef](int m, int n, int x, int z)
+			&exeData, &cityDef](int m, int n, SNInt x, WEInt z)
 		{
 			const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
 			const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
@@ -292,7 +292,7 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 
 		// The lambda called for each main-floor voxel in the area.
 		auto tryGenerateBlockName = [this, isCity, menuType, &random, &seen, &hashInSeen,
-			&createTavernName, &createEquipmentName, &createTempleName](int x, int z)
+			&createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 		{
 			// See if the current voxel is a *MENU block and matches the target menu type.
 			const bool matchesTargetType = [this, isCity, x, z, menuType]()
@@ -352,15 +352,15 @@ void ExteriorLevelData::generateBuildingNames(const LocationDefinition &location
 					name = createTempleName(model, n);
 				}
 
-				this->menuNames.push_back(std::make_pair(Int2(x, z), std::move(name)));
+				this->menuNames.push_back(std::make_pair(NewInt2(x, z), std::move(name)));
 				seen.push_back(hash);
 			}
 		};
 
 		// Start at the top-right corner of the map, running right to left and top to bottom.
-		for (int x = gridWidth - 1; x >= 0; x--)
+		for (SNInt x = 0; x < gridWidth; x++)
 		{
-			for (int z = gridDepth - 1; z >= 0; z--)
+			for (WEInt z = 0; z < gridDepth; z++)
 			{
 				tryGenerateBlockName(x, z);
 			}
@@ -437,15 +437,15 @@ void ExteriorLevelData::generateWildChunkBuildingNames(const ExeData &exeData)
 
 		// The lambda called for each main-floor voxel in the area.
 		auto tryGenerateBlockName = [this, wildX, wildY, wildChunkSeed, menuType, &createTavernName,
-			&createTempleName](int x, int z)
+			&createTempleName](SNInt x, WEInt z)
 		{
 			ArenaRandom random(wildChunkSeed);
 
 			// Make sure the coordinate math is done in the new coordinate system.
-			const Int2 relativeOrigin(
+			const OriginalInt2 relativeOrigin(
 				((RMDFile::DEPTH - 1) - wildX) * RMDFile::DEPTH,
 				((RMDFile::WIDTH - 1) - wildY) * RMDFile::WIDTH);
-			const Int2 dstPoint(
+			const NewInt2 dstPoint(
 				relativeOrigin.y + (RMDFile::WIDTH - 1 - x),
 				relativeOrigin.x + (RMDFile::DEPTH - 1 - z));
 
@@ -488,9 +488,9 @@ void ExteriorLevelData::generateWildChunkBuildingNames(const ExeData &exeData)
 		};
 
 		// Iterate blocks in the chunk in any order. They are order-independent in the wild.
-		for (int x = 0; x < RMDFile::DEPTH; x++)
+		for (SNInt x = 0; x < RMDFile::DEPTH; x++)
 		{
-			for (int z = 0; z < RMDFile::WIDTH; z++)
+			for (WEInt z = 0; z < RMDFile::WIDTH; z++)
 			{
 				tryGenerateBlockName(x, z);
 			}
@@ -592,8 +592,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 	if (result.side != SearchResult::Side::None)
 	{
 		// The direction to step from a palace voxel to the other palace voxel.
-		const NewInt2 northSouthPalaceStep(0, -1);
-		const NewInt2 eastWestPalaceStep(-1, 0);
+		const NewInt2 northSouthPalaceStep = VoxelUtils::West;
+		const NewInt2 eastWestPalaceStep = VoxelUtils::South;
 
 		// Gets the distance in voxels from a palace voxel to its gate, or -1 if no gate exists.
 		const int NO_GATE = -1;
@@ -627,9 +627,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 		int gateDist;
 		if (result.side == SearchResult::Side::North)
 		{
-			firstPalaceVoxel = NewInt2(gridWidth - 1, result.offset);
+			firstPalaceVoxel = NewInt2(0, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const NewInt2 gateDir(-1, 0);
+			const NewInt2 gateDir = VoxelUtils::South;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -639,9 +639,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 		}
 		else if (result.side == SearchResult::Side::South)
 		{
-			firstPalaceVoxel = NewInt2(0, result.offset);
+			firstPalaceVoxel = NewInt2(gridWidth - 1, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
-			const NewInt2 gateDir(1, 0);
+			const NewInt2 gateDir = VoxelUtils::North;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
@@ -651,9 +651,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 		}
 		else if (result.side == SearchResult::Side::East)
 		{
-			firstPalaceVoxel = NewInt2(result.offset, gridDepth - 1);
+			firstPalaceVoxel = NewInt2(result.offset, 0);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const NewInt2 gateDir(0, -1);
+			const NewInt2 gateDir = VoxelUtils::West;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
@@ -663,9 +663,9 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 		}
 		else if (result.side == SearchResult::Side::West)
 		{
-			firstPalaceVoxel = NewInt2(result.offset, 0);
+			firstPalaceVoxel = NewInt2(result.offset, gridDepth - 1);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
-			const NewInt2 gateDir(0, 1);
+			const NewInt2 gateDir = VoxelUtils::East;
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
@@ -779,12 +779,12 @@ void ExteriorLevelData::reviseWildernessCity(const LocationDefinition &locationD
 	const int placeholderDepth = RMDFile::DEPTH * 2;
 
 	// @todo: change to only care about 128x128 floors -- these should both be removed.
-	const int xOffset = RMDFile::WIDTH * 31;
-	const int zOffset = RMDFile::DEPTH * 31;
+	const WEInt xOffset = RMDFile::WIDTH * 31;
+	const SNInt zOffset = RMDFile::DEPTH * 31;
 
-	for (int x = 0; x < placeholderWidth; x++)
+	for (WEInt x = 0; x < placeholderWidth; x++)
 	{
-		const int startIndex = zOffset + ((x + xOffset) * flor.getWidth());
+		const int startIndex = zOffset + ((x + xOffset) * flor.getHeight());
 
 		auto clearRow = [placeholderDepth, startIndex](Buffer2D<uint16_t> &dst)
 		{
@@ -915,7 +915,7 @@ NewInt2 ExteriorLevelData::getCenteredWildOrigin(const NewInt2 &voxel)
 
 ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
-	int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+	int currentDay, int starCount, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
@@ -1049,7 +1049,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	return levelData;
 }
 
-const std::vector<std::pair<Int2, std::string>> &ExteriorLevelData::getMenuNames() const
+const std::vector<std::pair<NewInt2, std::string>> &ExteriorLevelData::getMenuNames() const
 {
 	return this->menuNames;
 }

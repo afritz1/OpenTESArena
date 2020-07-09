@@ -2,6 +2,7 @@
 #define INTERIOR_LEVEL_DATA_H
 
 #include "LevelData.h"
+#include "VoxelUtils.h"
 
 class InteriorLevelData : public LevelData
 {
@@ -40,11 +41,11 @@ public:
 	// Returns a pointer to some trigger text if the given voxel has a text trigger, or
 	// null if it doesn't. Also returns a pointer to one-shot text triggers that have 
 	// been activated previously (use another function to check activation).
-	LevelData::TextTrigger *getTextTrigger(const Int2 &voxel);
+	LevelData::TextTrigger *getTextTrigger(const NewInt2 &voxel);
 
 	// Returns a pointer to a sound filename if the given voxel has a sound trigger, or
 	// null if it doesn't.
-	const std::string *getSoundTrigger(const Int2 &voxel) const;
+	const std::string *getSoundTrigger(const NewInt2 &voxel) const;
 
 	// Some interiors are considered "outdoor dungeons", which have a different sky color
 	// and day/night behavior.

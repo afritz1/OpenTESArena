@@ -22,16 +22,16 @@ private:
 	DistantSky distantSky;
 
 	// Mappings of voxel coordinates to *MENU display names.
-	std::vector<std::pair<Int2, std::string>> menuNames;
+	std::vector<std::pair<NewInt2, std::string>> menuNames;
 
-	ExteriorLevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
+	ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
 	// Writes city building data into the output buffers. The buffers should already be
 	// initialized with the city skeleton.
 	static void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
-		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
-		const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
+		const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
+		ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 		std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2);
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
@@ -75,7 +75,7 @@ public:
 	// the required chunks.
 	static ExteriorLevelData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
-		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+		int currentDay, int starCount, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
@@ -86,7 +86,7 @@ public:
 		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
-	const std::vector<std::pair<Int2, std::string>> &getMenuNames() const;
+	const std::vector<std::pair<NewInt2, std::string>> &getMenuNames() const;
 
 	// Exteriors are never outdoor dungeons (always false).
 	virtual bool isOutdoorDungeon() const override;
