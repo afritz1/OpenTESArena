@@ -633,8 +633,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
-			firstPalaceVoxelID = 0xA5B5;
-			secondPalaceVoxelID = 0xA5B4;
+			firstPalaceVoxelID = 0xA5B4;
+			secondPalaceVoxelID = 0xA5B5;
 			gateVoxelID = 0xA1B3;
 		}
 		else if (result.side == SearchResult::Side::South)
@@ -645,8 +645,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + northSouthPalaceStep;
-			firstPalaceVoxelID = 0xA534;
-			secondPalaceVoxelID = 0xA535;
+			firstPalaceVoxelID = 0xA535;
+			secondPalaceVoxelID = 0xA534;
 			gateVoxelID = 0xA133;
 		}
 		else if (result.side == SearchResult::Side::East)
@@ -657,8 +657,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
-			firstPalaceVoxelID = 0xA574;
-			secondPalaceVoxelID = 0xA575;
+			firstPalaceVoxelID = 0xA575;
+			secondPalaceVoxelID = 0xA574;
 			gateVoxelID = 0xA173;
 		}
 		else if (result.side == SearchResult::Side::West)
@@ -669,8 +669,8 @@ void ExteriorLevelData::revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt 
 			gateDist = getGateDistance(firstPalaceVoxel, gateDir);
 			firstGateVoxel = firstPalaceVoxel + (gateDir * gateDist);
 			secondGateVoxel = firstGateVoxel + eastWestPalaceStep;
-			firstPalaceVoxelID = 0xA5F5;
-			secondPalaceVoxelID = 0xA5F4;
+			firstPalaceVoxelID = 0xA5F4;
+			secondPalaceVoxelID = 0xA5F5;
 			gateVoxelID = 0xA1F3;
 		}
 
