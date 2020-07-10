@@ -2213,7 +2213,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
 					const NewInt2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
-					const Int2 transitionDir = [&voxelHit]()
+					const NewInt2 transitionDir = [&voxelHit]()
 					{
 						// Assuming this is a wall voxel.
 						DebugAssert(voxelHit.facing.has_value());
@@ -2221,32 +2221,30 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 						if (facing == VoxelFacing::PositiveX)
 						{
-							return Int2(-1, 0);
+							return VoxelUtils::North;
 						}
 						else if (facing == VoxelFacing::NegativeX)
 						{
-							return Int2(1, 0);
+							return VoxelUtils::South;
 						}
 						else if (facing == VoxelFacing::PositiveZ)
 						{
-							return Int2(0, -1);
+							return VoxelUtils::East;
 						}
 						else if (facing == VoxelFacing::NegativeZ)
 						{
-							return Int2(0, 1);
+							return VoxelUtils::West;
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int2, std::to_string(static_cast<int>(facing)));
+							DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
-					const OriginalInt2 originalGateVoxel = VoxelUtils::newVoxelToOriginalVoxel(gatePos);
-
 					const bool ignoreGatePos = false;
-					if (!gameData.loadWilderness(locationDef, provinceDef, originalGateVoxel,
-						transitionDir, ignoreGatePos, gameData.getWeatherType(), starCount,
-						miscAssets, textureManager, renderer))
+					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
+						ignoreGatePos, gameData.getWeatherType(), starCount, miscAssets,
+						textureManager, renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}

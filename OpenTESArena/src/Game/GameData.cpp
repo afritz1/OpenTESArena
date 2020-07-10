@@ -442,7 +442,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 }
 
 bool GameData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
+	const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
 	int starCount, const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
@@ -470,27 +470,25 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
-	const Double2 startPoint = [&gatePos, &transitionDir, debug_ignoreGatePos, &voxelGrid]()
+	const NewDouble2 startPoint = [&gatePos, &transitionDir, debug_ignoreGatePos, &voxelGrid]()
 	{
 		if (debug_ignoreGatePos)
 		{
 			// Just use center of the wilderness for testing.
-			return Double2(
-				static_cast<double>(voxelGrid.getWidth() / 2) - 0.50,
-				static_cast<double>(voxelGrid.getDepth() / 2) - 0.50);
+			return NewDouble2(
+				static_cast<SNDouble>(voxelGrid.getWidth() / 2) - 0.50,
+				static_cast<WEDouble>(voxelGrid.getDepth() / 2) - 0.50);
 		}
 		else
 		{
-			// Set player starting position based on which gate they passed through. Start from
-			// top-right corner of wilderness city since gatePos is assumed to be in original
-			// coordinates (so size of city doesn't matter). Note that the original game only
-			// handles the transition one way -- i.e., going from wilderness to city always uses
-			// the city's default gate instead.
-			const int cityStartX = (RMDFile::WIDTH * 33) - 1;
-			const int cityStartY = (RMDFile::DEPTH * 33) - 1;
-			return Double2(
-				cityStartX - gatePos.y + transitionDir.x + 0.50,
-				cityStartY - gatePos.x + transitionDir.y + 0.50);
+			// Set player starting position based on which gate they passed through. Note that the
+			// original game only handles the transition one way -- going from wilderness to city
+			// always uses the city's default gate instead.
+			const SNInt cityStartX = RMDFile::WIDTH * 31;
+			const WEInt cityStartY = RMDFile::DEPTH * 31;
+			return NewDouble2(
+				static_cast<SNDouble>(cityStartX + gatePos.x + transitionDir.x) + 0.50,
+				static_cast<WEDouble>(cityStartY + gatePos.y + transitionDir.y) + 0.50);
 		}
 	}();
 

@@ -161,7 +161,7 @@ public:
 
 	// Reads in data from wilderness and writes it to the game data.
 	bool loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		const Int2 &gatePos, const Int2 &transitionDir, bool debug_ignoreGatePos,
+		const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos,
 		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
 		TextureManager &textureManager, Renderer &renderer);
 
