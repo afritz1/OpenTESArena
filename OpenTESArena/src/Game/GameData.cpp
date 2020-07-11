@@ -321,7 +321,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const Pro
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x + 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
@@ -371,7 +371,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	// Set player starting position and velocity.
 	const Double2 &startPoint = this->worldData->getStartPoints().front();
 	this->player.teleport(Double3(
-		startPoint.x - 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
+		startPoint.x + 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
