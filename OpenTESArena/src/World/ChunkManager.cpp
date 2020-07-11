@@ -16,11 +16,11 @@ void ChunkManager::init(int chunkDistance)
 	DebugAssertMsg(this->activeChunks.empty(), "Expected no active chunks.");
 	this->origin = ChunkInt2();
 
-	EWInt chunkCountX;
-	SNInt chunkCountY;
-	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance, &chunkCountX, &chunkCountY);
+	SNInt chunkCountX;
+	WEInt chunkCountZ;
+	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance, &chunkCountX, &chunkCountZ);
 
-	const int totalChunkCount = chunkCountX * chunkCountY;
+	const int totalChunkCount = chunkCountX * chunkCountZ;
 	this->chunkPool = std::vector<std::unique_ptr<Chunk>>(totalChunkCount);
 }
 
@@ -74,6 +74,8 @@ void ChunkManager::setOriginChunk(const ChunkInt2 &coord)
 
 	// @todo: should this method do all the chunk freeing stuff behind the scenes as well, or
 	// just set the origin chunk?
+
+	// @todo: don't even need an origin, get rid of this method.
 }
 
 bool ChunkManager::tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType, Game &game)

@@ -1717,31 +1717,31 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 	std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount)
 {
 	const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
-		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z), gridWidth, gridDepth);
+		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z));
 
 	// Get the min and max chunk coordinates to loop over.
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Number of potentially visible chunks along each axis (i.e. 3x3).
-	EWInt potentiallyVisChunkCountX;
-	SNInt potentiallyVisChunkCountY;
+	SNInt potentiallyVisChunkCountX;
+	WEInt potentiallyVisChunkCountZ;
 	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
-		&potentiallyVisChunkCountX, &potentiallyVisChunkCountY);
+		&potentiallyVisChunkCountX, &potentiallyVisChunkCountZ);
 
-	auto getChunkPotentiallyVisFlatCount = [&entityManager](EWInt chunkX, SNInt chunkY)
+	auto getChunkPotentiallyVisFlatCount = [&entityManager](SNInt chunkX, WEInt chunkZ)
 	{
-		return entityManager.getTotalCountInChunk(ChunkInt2(chunkX, chunkY));
+		return entityManager.getTotalCountInChunk(ChunkInt2(chunkX, chunkZ));
 	};
 
 	auto getTotalPotentiallyVisFlatCount = [](const BufferView2D<const int> &chunkPotentiallyVisFlatCounts)
 	{
 		int count = 0;
-		for (SNInt y = 0; y < chunkPotentiallyVisFlatCounts.getHeight(); y++)
+		for (WEInt z = 0; z < chunkPotentiallyVisFlatCounts.getHeight(); z++)
 		{
-			for (EWInt x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
+			for (SNInt x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
 			{
-				count += chunkPotentiallyVisFlatCounts.get(x, y);
+				count += chunkPotentiallyVisFlatCounts.get(x, z);
 			}
 		}
 
@@ -1749,15 +1749,15 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 	};
 
 	// Get potentially visible flat counts for each chunk.
-	Buffer2D<int> chunkPotentiallyVisFlatCounts(potentiallyVisChunkCountX, potentiallyVisChunkCountY);
-	for (SNInt y = 0; y < chunkPotentiallyVisFlatCounts.getHeight(); y++)
+	Buffer2D<int> chunkPotentiallyVisFlatCounts(potentiallyVisChunkCountX, potentiallyVisChunkCountZ);
+	for (WEInt z = 0; z < chunkPotentiallyVisFlatCounts.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
+		for (SNInt x = 0; x < chunkPotentiallyVisFlatCounts.getWidth(); x++)
 		{
-			const EWInt chunkX = minChunk.x + x;
-			const SNInt chunkY = minChunk.y + y;
-			const int count = getChunkPotentiallyVisFlatCount(chunkX, chunkY);
-			chunkPotentiallyVisFlatCounts.set(x, y, count);
+			const SNInt chunkX = minChunk.x + x;
+			const WEInt chunkZ = minChunk.y + z;
+			const int count = getChunkPotentiallyVisFlatCount(chunkX, chunkZ);
+			chunkPotentiallyVisFlatCounts.set(x, z, count);
 		}
 	}
 
@@ -1767,28 +1767,28 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 		chunkPotentiallyVisFlatCounts.getHeight()));
 
 	auto addPotentiallyVisFlatsInChunk = [&entityManager, outPotentiallyVisFlats, &minChunk,
-		&chunkPotentiallyVisFlatCounts](EWInt chunkX, SNInt chunkY, int insertIndex)
+		&chunkPotentiallyVisFlatCounts](SNInt chunkX, WEInt chunkZ, int insertIndex)
 	{
 		const Entity **entitiesPtr = outPotentiallyVisFlats->data() + insertIndex;
-		const EWInt visChunkX = chunkX - minChunk.x;
-		const SNInt visChunkY = chunkY - minChunk.y;
-		const int count = chunkPotentiallyVisFlatCounts.get(visChunkX, visChunkY);
+		const SNInt visChunkX = chunkX - minChunk.x;
+		const WEInt visChunkZ = chunkZ - minChunk.y;
+		const int count = chunkPotentiallyVisFlatCounts.get(visChunkX, visChunkZ);
 		const int writtenCount = entityManager.getTotalEntitiesInChunk(
-			ChunkInt2(chunkX, chunkY), entitiesPtr, count);
+			ChunkInt2(chunkX, chunkZ), entitiesPtr, count);
 		DebugAssert(writtenCount <= count);
 	};
 
 	outPotentiallyVisFlats->resize(potentiallyVisFlatCount);
 
 	int potentiallyVisFlatInsertIndex = 0;
-	for (SNInt y = 0; y < potentiallyVisChunkCountY; y++)
+	for (WEInt z = 0; z < potentiallyVisChunkCountZ; z++)
 	{
-		for (EWInt x = 0; x < potentiallyVisChunkCountX; x++)
+		for (SNInt x = 0; x < potentiallyVisChunkCountX; x++)
 		{
-			const int chunkPotentiallyVisFlatCount = chunkPotentiallyVisFlatCounts.get(x, y);
-			const EWInt chunkX = minChunk.x + x;
-			const SNInt chunkY = minChunk.y + y;
-			addPotentiallyVisFlatsInChunk(chunkX, chunkY, potentiallyVisFlatInsertIndex);
+			const int chunkPotentiallyVisFlatCount = chunkPotentiallyVisFlatCounts.get(x, z);
+			const SNInt chunkX = minChunk.x + x;
+			const WEInt chunkZ = minChunk.y + z;
+			addPotentiallyVisFlatsInChunk(chunkX, chunkZ, potentiallyVisFlatInsertIndex);
 			potentiallyVisFlatInsertIndex += chunkPotentiallyVisFlatCount;
 		}
 	}
@@ -1960,37 +1960,37 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 {
 	// Visible light lists are relative to the potentially visible chunks.
 	const ChunkCoord cameraChunkCoord = VoxelUtils::newVoxelToChunkVoxel(
-		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z), voxelGrid.getWidth(), voxelGrid.getDepth());
+		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z));
 
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
 
-	// Get the top-leftmost voxel in the potentially visible chunks so we can do some
+	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
 	const AbsoluteChunkVoxelInt2 minAbsoluteChunkVoxel =
 		VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(minChunk, ChunkVoxelInt2(0, 0));
 
-	EWInt potentiallyVisChunkCountX;
-	SNInt potentiallyVisChunkCountY;
+	SNInt potentiallyVisChunkCountX;
+	WEInt potentiallyVisChunkCountZ;
 	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
-		&potentiallyVisChunkCountX, &potentiallyVisChunkCountY);
+		&potentiallyVisChunkCountX, &potentiallyVisChunkCountZ);
 
-	const int visLightListVoxelCountX = potentiallyVisChunkCountX * ChunkUtils::CHUNK_DIM;
-	const int visLightListVoxelCountY = potentiallyVisChunkCountY * ChunkUtils::CHUNK_DIM;
+	const SNInt visLightListVoxelCountX = potentiallyVisChunkCountX * ChunkUtils::CHUNK_DIM;
+	const WEInt visLightListVoxelCountZ = potentiallyVisChunkCountZ * ChunkUtils::CHUNK_DIM;
 
 	if (!this->visLightLists.isValid() ||
 		(this->visLightLists.getWidth() != visLightListVoxelCountX) ||
-		(this->visLightLists.getHeight() != visLightListVoxelCountY))
+		(this->visLightLists.getHeight() != visLightListVoxelCountZ))
 	{
-		this->visLightLists.init(visLightListVoxelCountX, visLightListVoxelCountY);
+		this->visLightLists.init(visLightListVoxelCountX, visLightListVoxelCountZ);
 	}
 
 	// Clear all potentially visible light lists.
-	for (SNInt y = 0; y < this->visLightLists.getHeight(); y++)
+	for (WEInt z = 0; z < this->visLightLists.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->visLightLists.getWidth(); x++)
+		for (SNInt x = 0; x < this->visLightLists.getWidth(); x++)
 		{
-			VisibleLightList &visLightList = this->visLightLists.get(x, y);
+			VisibleLightList &visLightList = this->visLightLists.get(x, z);
 			visLightList.clear();
 		}
 	}
@@ -2011,10 +2011,8 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 			static_cast<WEInt>(std::ceil(visLight.position.z + visLight.radius)));
 
 		// Since these are in a different coordinate system, can't rely on min < max.
-		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA =
-			VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMin, voxelGrid.getWidth(), voxelGrid.getDepth());
-		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelB =
-			VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMax, voxelGrid.getWidth(), voxelGrid.getDepth());
+		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA = VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMin);
+		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelB = VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMax);
 
 		// Get chunk voxel coordinates relative to potentially visible chunks.
 		const AbsoluteChunkVoxelInt2 relativeChunkVoxelA = visLightAbsoluteChunkVoxelA - minAbsoluteChunkVoxel;
@@ -2025,16 +2023,16 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 			((relativeChunkVoxelB.x - relativeChunkVoxelA.x) > 0) ? 1 : -1,
 			((relativeChunkVoxelB.y - relativeChunkVoxelA.y) > 0) ? 1 : -1);
 
-		for (SNInt y = relativeChunkVoxelA.y; y != relativeChunkVoxelB.y; y += relativeChunkVoxelDeltaStep.y)
+		for (WEInt z = relativeChunkVoxelA.y; z != relativeChunkVoxelB.y; z += relativeChunkVoxelDeltaStep.y)
 		{
-			for (EWInt x = relativeChunkVoxelA.x; x != relativeChunkVoxelB.x; x += relativeChunkVoxelDeltaStep.x)
+			for (SNInt x = relativeChunkVoxelA.x; x != relativeChunkVoxelB.x; x += relativeChunkVoxelDeltaStep.x)
 			{
 				const bool coordIsValid = (x >= 0) && (x < visLightListVoxelCountX) &&
-					(y >= 0) && (y < visLightListVoxelCountY);
+					(z >= 0) && (z < visLightListVoxelCountZ);
 
 				if (coordIsValid)
 				{
-					VisibleLightList &visLightList = this->visLightLists.get(x, y);
+					VisibleLightList &visLightList = this->visLightLists.get(x, z);
 					if (!visLightList.isFull())
 					{
 						visLightList.add(visLightID);
@@ -2048,26 +2046,24 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	const BufferView<const VisibleLight> visLightsView(this->visibleLights.data(),
 		static_cast<int>(this->visibleLights.size()));
 
-	for (SNInt y = 0; y < this->visLightLists.getHeight(); y++)
+	for (WEInt z = 0; z < this->visLightLists.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->visLightLists.getWidth(); x++)
+		for (SNInt x = 0; x < this->visLightLists.getWidth(); x++)
 		{
-			VisibleLightList &visLightList = this->visLightLists.get(x, y);
+			VisibleLightList &visLightList = this->visLightLists.get(x, z);
 			if (visLightList.count >= 2)
 			{
 				// Convert potentially visible chunk voxel to absolute, then absolute to new voxel.
 				const AbsoluteChunkVoxelInt2 absoluteChunkVoxel(
-					x + minAbsoluteChunkVoxel.x,
-					y + minAbsoluteChunkVoxel.y);
+					x + minAbsoluteChunkVoxel.x, z + minAbsoluteChunkVoxel.y);
 				const ChunkCoord chunkCoord = VoxelUtils::absoluteChunkVoxelToChunkVoxel(absoluteChunkVoxel);
-				const NewInt2 newVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkCoord.chunk, chunkCoord.voxel,
-					voxelGrid.getWidth(), voxelGrid.getDepth());
+				const NewInt2 newVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkCoord.chunk, chunkCoord.voxel);
 
 				// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
 				const Double3 voxelColumnPoint(
-					static_cast<double>(newVoxel.x) + 0.50,
+					static_cast<SNDouble>(newVoxel.x) + 0.50,
 					ceilingHeight * 1.50,
-					static_cast<double>(newVoxel.y) + 0.50);
+					static_cast<WEDouble>(newVoxel.y) + 0.50);
 
 				visLightList.sortByNearest(voxelColumnPoint, visLightsView);
 			}
@@ -2353,12 +2349,10 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	// Convert new voxel grid coordinates to potentially-visible light list space
 	// (chunk space but its origin depends on the camera).
 	const NewInt2 newVoxel(voxelX, voxelZ);
-	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel =
-		VoxelUtils::newVoxelToAbsoluteChunkVoxel(newVoxel, gridWidth, gridDepth);
+	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel = VoxelUtils::newVoxelToAbsoluteChunkVoxel(newVoxel);
 
 	// Visible light lists are relative to the potentially visible chunks.
-	const ChunkCoord cameraChunkCoord = VoxelUtils::newVoxelToChunkVoxel(
-		NewInt2(cameraVoxelX, cameraVoxelZ), gridWidth, gridDepth);
+	const ChunkCoord cameraChunkCoord = VoxelUtils::newVoxelToChunkVoxel(NewInt2(cameraVoxelX, cameraVoxelZ));
 
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);

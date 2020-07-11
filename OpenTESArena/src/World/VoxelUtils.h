@@ -6,7 +6,7 @@
 // Aliases for various coordinate systems. All of these are from a top-down perspective, like a 2D array.
 using OriginalInt2 = Int2; // +X west, +Y south (original game, origin at top right).
 using NewInt2 = Int2; // +X south, +Y west (DEPRECATE THIS EVENTUALLY IN FAVOR OF CHUNKS).
-using ChunkInt2 = Int2; // +X east, +Y south, [-inf, inf] (like a C array, origin at top left).
+using ChunkInt2 = Int2; // +X south, +Y west, [-inf, inf].
 using ChunkVoxelInt2 = Int2; // Same directions as chunk, [0, CHUNK_DIM-1].
 using AbsoluteChunkVoxelInt2 = Int2; // Chunk voxel multiplied by chunk coordinates, [-inf, inf].
 
@@ -20,13 +20,13 @@ struct ChunkCoord
 };
 
 // These are here out of desperation after many months of confusing myself.
-using NSInt = int; // + north, - south
+//using NSInt = int; // + north, - south
 using SNInt = int; // + south, - north
-using EWInt = int; // + east, - west
+//using EWInt = int; // + east, - west
 using WEInt = int; // + west, - east
-using NSDouble = double; // + north, - south
+//using NSDouble = double; // + north, - south
 using SNDouble = double; // + south, - north
-using EWDouble = double; // + east, - west
+//using EWDouble = double; // + east, - west
 using WEDouble = double; // + west, - east
 
 namespace VoxelUtils
@@ -44,22 +44,20 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Converts a voxel from chunk space to new voxel grid space.
-	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel,
-		SNInt gridWidth, WEInt gridDepth);
+	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel);
 
 	// Converts a voxel from chunk space to absolute chunk voxel space.
 	AbsoluteChunkVoxelInt2 chunkVoxelToAbsoluteChunkVoxel(const ChunkInt2 &chunk,
 		const ChunkVoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
-	ChunkCoord newVoxelToChunkVoxel(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
+	ChunkCoord newVoxelToChunkVoxel(const NewInt2 &voxel);
 
 	// Gets the chunk that a new voxel would be in.
-	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
+	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel);
 
 	// Converts a voxel from new voxel space to absolute chunk voxel space.
-	AbsoluteChunkVoxelInt2 newVoxelToAbsoluteChunkVoxel(const NewInt2 &voxel,
-		SNInt gridWidth, WEInt gridDepth);
+	AbsoluteChunkVoxelInt2 newVoxelToAbsoluteChunkVoxel(const NewInt2 &voxel);
 
 	// Converts a voxel from absolute chunk voxel space to chunk voxel space.
 	ChunkCoord absoluteChunkVoxelToChunkVoxel(const AbsoluteChunkVoxelInt2 &voxel);

@@ -68,14 +68,13 @@ namespace Physics
 		const Double3 &cameraDirection, int chunkDistance, double ceilingHeight,
 		const VoxelGrid &voxelGrid, const EntityManager &entityManager)
 	{
-		const Double2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
-		const Double2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
+		const NewDouble2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
+		const NewDouble2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
 
 		const NewInt2 cameraVoxelXZ(
-			static_cast<int>(std::floor(cameraPosXZ.x)),
-			static_cast<int>(std::floor(cameraPosXZ.y)));
-		const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
-			cameraVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+			static_cast<SNInt>(std::floor(cameraPosXZ.x)),
+			static_cast<WEInt>(std::floor(cameraPosXZ.y)));
+		const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(cameraVoxelXZ);
 
 		ChunkInt2 minChunk, maxChunk;
 		ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
@@ -84,11 +83,11 @@ namespace Physics
 		const int totalNearbyEntities = [&entityManager, &minChunk, &maxChunk]()
 		{
 			int count = 0;
-			for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+			for (WEInt z = minChunk.y; z <= maxChunk.y; z++)
 			{
-				for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+				for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 				{
-					count += entityManager.getTotalCountInChunk(ChunkInt2(x, y));
+					count += entityManager.getTotalCountInChunk(ChunkInt2(x, z));
 				}
 			}
 
@@ -97,21 +96,21 @@ namespace Physics
 
 		std::vector<const Entity*> entities(totalNearbyEntities, nullptr);
 		int entityInsertIndex = 0;
-		auto addEntitiesFromChunk = [&entityManager, &entities, &entityInsertIndex](EWInt chunkX, SNInt chunkY)
+		auto addEntitiesFromChunk = [&entityManager, &entities, &entityInsertIndex](SNInt chunkX, WEInt chunkZ)
 		{
 			const Entity **entitiesPtr = entities.data() + entityInsertIndex;
 			const int size = static_cast<int>(entities.size()) - entityInsertIndex;
 			const int writtenCount = entityManager.getTotalEntitiesInChunk(
-				ChunkInt2(chunkX, chunkY), entitiesPtr, size);
+				ChunkInt2(chunkX, chunkZ), entitiesPtr, size);
 			DebugAssert(writtenCount <= size);
 			entityInsertIndex += writtenCount;
 		};
 
-		for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+		for (WEInt z = minChunk.y; z <= maxChunk.y; z++)
 		{
-			for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+			for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 			{
-				addEntitiesFromChunk(x, y);
+				addEntitiesFromChunk(x, z);
 			}
 		}
 
@@ -127,7 +126,7 @@ namespace Physics
 			const Entity &entity = *entityPtr;
 
 			// Skip any entities that are behind the camera.
-			Double2 entityPosEyeDiff = entity.getPosition() - cameraPosXZ;
+			NewDouble2 entityPosEyeDiff = entity.getPosition() - cameraPosXZ;
 			if (cameraDirXZ.dot(entityPosEyeDiff) < 0.0)
 			{
 				continue;
@@ -142,18 +141,18 @@ namespace Physics
 
 			// Only iterate over voxels the entity could be in (at least partially).
 			// This loop should always hit at least 1 voxel.
-			const int startX = static_cast<int>(std::floor(minPoint.x));
-			const int endX = static_cast<int>(std::floor(maxPoint.x));
+			const SNInt startX = static_cast<SNInt>(std::floor(minPoint.x));
+			const SNInt endX = static_cast<SNInt>(std::floor(maxPoint.x));
 			const int startY = static_cast<int>(std::floor(minPoint.y / ceilingHeight));
 			const int endY = static_cast<int>(std::floor(maxPoint.y / ceilingHeight));
-			const int startZ = static_cast<int>(std::floor(minPoint.z));
-			const int endZ = static_cast<int>(std::floor(maxPoint.z));
+			const WEInt startZ = static_cast<WEInt>(std::floor(minPoint.z));
+			const WEInt endZ = static_cast<WEInt>(std::floor(maxPoint.z));
 
-			for (int z = startZ; z <= endZ; z++)
+			for (WEInt z = startZ; z <= endZ; z++)
 			{
 				for (int y = startY; y <= endY; y++)
 				{
-					for (int x = startX; x <= endX; x++)
+					for (SNInt x = startX; x <= endX; x++)
 					{
 						const Int3 voxel(x, y, z);
 

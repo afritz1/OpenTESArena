@@ -15,8 +15,9 @@
 
 namespace
 {
-	constexpr int DEFAULT_CHUNK_X = 0;
-	constexpr int DEFAULT_CHUNK_Y = 0;
+	constexpr int FIRST_ENTITY_ID = 0;
+	constexpr SNInt DEFAULT_CHUNK_X = 0;
+	constexpr WEInt DEFAULT_CHUNK_Z = 0;
 }
 
 EntityManager::EntityVisibilityData::EntityVisibilityData() :
@@ -249,11 +250,11 @@ void EntityManager::EntityGroup<T>::clear()
 
 const int EntityManager::NO_ID = -1;
 
-void EntityManager::init(EWInt chunkCountX, SNInt chunkCountY)
+void EntityManager::init(SNInt chunkCountX, WEInt chunkCountZ)
 {
-	this->staticGroups.init(chunkCountX, chunkCountY);
-	this->dynamicGroups.init(chunkCountX, chunkCountY);
-	this->nextID = 0;
+	this->staticGroups.init(chunkCountX, chunkCountZ);
+	this->dynamicGroups.init(chunkCountX, chunkCountZ);
+	this->nextID = FIRST_ENTITY_ID;
 }
 
 int EntityManager::nextFreeID()
@@ -276,15 +277,15 @@ int EntityManager::nextFreeID()
 
 bool EntityManager::isValidChunk(const ChunkInt2 &chunk) const
 {
-	const EWInt chunkCountX = this->staticGroups.getWidth();
-	const SNInt chunkCountY = this->staticGroups.getHeight();
-	return (chunk.x >= 0) && (chunk.x < chunkCountX) && (chunk.y >= 0) && (chunk.y < chunkCountY);
+	const SNInt chunkCountX = this->staticGroups.getWidth();
+	const WEInt chunkCountZ = this->staticGroups.getHeight();
+	return (chunk.x >= 0) && (chunk.x < chunkCountX) && (chunk.y >= 0) && (chunk.y < chunkCountZ);
 }
 
 StaticEntity *EntityManager::makeStaticEntity()
 {
 	const int id = this->nextFreeID();
-	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Y);
+	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	StaticEntity *entity = staticGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
@@ -293,7 +294,7 @@ StaticEntity *EntityManager::makeStaticEntity()
 DynamicEntity *EntityManager::makeDynamicEntity()
 {
 	const int id = this->nextFreeID();
-	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Y);
+	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	DynamicEntity *entity = dynamicGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
@@ -306,11 +307,11 @@ Entity *EntityManager::get(int id)
 
 	// Find which entity group the given entity ID is in. This is a slow look-up because there is
 	// no hint where the entity is at.
-	for (SNInt y = 0; y < this->staticGroups.getHeight(); y++)
+	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->staticGroups.getWidth(); x++)
+		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
 		{
-			auto &staticGroup = this->staticGroups.get(x, y);
+			auto &staticGroup = this->staticGroups.get(x, z);
 			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -318,7 +319,7 @@ Entity *EntityManager::get(int id)
 				return staticGroup.getEntityAtIndex(*entityIndex);
 			}
 
-			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			auto &dynamicGroup = this->dynamicGroups.get(x, z);
 			entityIndex = dynamicGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -339,11 +340,11 @@ const Entity *EntityManager::get(int id) const
 
 	// Find which entity group the given entity ID is in. This is a slow look-up because there is
 	// no hint where the entity is at.
-	for (SNInt y = 0; y < this->staticGroups.getHeight(); y++)
+	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->staticGroups.getWidth(); x++)
+		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
 		{
-			const auto &staticGroup = this->staticGroups.get(x, y);
+			const auto &staticGroup = this->staticGroups.get(x, z);
 			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -351,7 +352,7 @@ const Entity *EntityManager::get(int id) const
 				return staticGroup.getEntityAtIndex(*entityIndex);
 			}
 
-			const auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			const auto &dynamicGroup = this->dynamicGroups.get(x, z);
 			entityIndex = dynamicGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -370,11 +371,11 @@ int EntityManager::getCount(EntityType entityType) const
 	auto getCountFromGroups = [](const auto &entityGroups)
 	{
 		int count = 0;
-		for (SNInt y = 0; y < entityGroups.getHeight(); y++)
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
 		{
-			for (EWInt x = 0; x < entityGroups.getWidth(); x++)
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
 			{
-				const auto &entityGroup = entityGroups.get(x, y);
+				const auto &entityGroup = entityGroups.get(x, z);
 				count += entityGroup.getCount();
 			}
 		}
@@ -421,16 +422,16 @@ int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int 
 	auto getEntitiesFromGroups = [](auto &entityGroups, Entity **outEntities, int outSize)
 	{
 		int writeIndex = 0;
-		for (SNInt y = 0; y < entityGroups.getHeight(); y++)
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
 		{
-			for (EWInt x = 0; x < entityGroups.getWidth(); x++)
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
 			{
 				if (writeIndex == outSize)
 				{
 					break;
 				}
 
-				auto &entityGroup = entityGroups.get(x, y);
+				auto &entityGroup = entityGroups.get(x, z);
 				writeIndex += entityGroup.getEntities(outEntities + writeIndex, outSize - writeIndex);
 			}
 		}
@@ -458,16 +459,16 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 	auto getEntitiesFromGroups = [](const auto &entityGroups, const Entity **outEntities, int outSize)
 	{
 		int writeIndex = 0;
-		for (SNInt y = 0; y < entityGroups.getHeight(); y++)
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
 		{
-			for (EWInt x = 0; x < entityGroups.getWidth(); x++)
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
 			{
 				if (writeIndex == outSize)
 				{
 					break;
 				}
 
-				const auto &entityGroup = entityGroups.get(x, y);
+				const auto &entityGroup = entityGroups.get(x, z);
 				writeIndex += entityGroup.getEntities(outEntities + writeIndex, outSize - writeIndex);
 			}
 		}
@@ -538,9 +539,9 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 
 	// Fill the output buffer with as many entities as will fit.
 	int writeIndex = 0;
-	for (SNInt y = 0; y < this->staticGroups.getHeight(); y++)
+	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->staticGroups.getWidth(); x++)
+		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
 		{
 			if (writeIndex == outSize)
 			{
@@ -548,7 +549,7 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 			}
 
 			writeIndex += this->getTotalEntitiesInChunk(
-				ChunkInt2(x, y), outEntities + writeIndex, outSize - writeIndex);
+				ChunkInt2(x, z), outEntities + writeIndex, outSize - writeIndex);
 		}
 	}
 
@@ -579,7 +580,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
 	const EntityAnimationData &entityAnimData = entityDef.getAnimationData();
 
-	// Get active state
+	// Get active state.
 	const EntityAnimationData::Instance &animInstance = entity.getAnimation();
 	const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
 	const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
@@ -602,7 +603,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 			const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 			const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 
-			// Use the difference of the two vectors as the angle vector.
+			// Use the difference of the two angles to get the relative angle.
 			const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
 			// Angle bias so the final direction is centered within its angle range.
@@ -642,9 +643,9 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const double flatHeight = outVisData.keyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
-	const Double2 &entityPos = entity.getPosition();
-	const double entityPosX = entityPos.x;
-	const double entityPosZ = entityPos.y;
+	const NewDouble2 &entityPos = entity.getPosition();
+	const SNDouble entityPosX = entityPos.x;
+	const WEDouble entityPosZ = entityPos.y;
 
 	const double flatYOffset = static_cast<double>(-entityDef.getInfData().yOffset) / MIFUtils::ARENA_UNITS;
 
@@ -652,8 +653,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
 	{
 		const NewInt2 entityVoxelPos(
-			static_cast<int>(entityPos.x),
-			static_cast<int>(entityPos.y));
+			static_cast<SNInt>(entityPos.x),
+			static_cast<WEInt>(entityPos.y));
 		const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -701,23 +702,23 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 	}
 
 	// Find which chunk they were in.
-	EWInt oldChunkX = -1;
-	SNInt oldChunkY = -1;
+	SNInt oldChunkX = -1;
+	WEInt oldChunkZ = -1;
 
-	auto tryGetEntityGroupInfo = [entity, &oldChunkX, &oldChunkY](auto &entityGroups, auto **groupPtr)
+	auto tryGetEntityGroupInfo = [entity, &oldChunkX, &oldChunkZ](auto &entityGroups, auto **groupPtr)
 	{
 		// Find which entity group the given entity ID is in. This is a slow look-up because there is
 		// no hint where the entity is at.
-		for (SNInt y = 0; y < entityGroups.getHeight(); y++)
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
 		{
-			for (EWInt x = 0; x < entityGroups.getWidth(); x++)
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
 			{
-				auto &entityGroup = entityGroups.get(x, y);
+				auto &entityGroup = entityGroups.get(x, z);
 				const std::optional<int> entityIndex = entityGroup.getEntityIndex(entity->getID());
 				if (entityIndex.has_value())
 				{
 					oldChunkX = x;
-					oldChunkY = y;
+					oldChunkZ = z;
 					*groupPtr = &entityGroup;
 					return true;
 				}
@@ -727,7 +728,7 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 		return false;
 	};
 
-	auto trySwapEntityGroup = [&voxelGrid, &oldChunkX, &oldChunkY](Entity *entity,
+	auto trySwapEntityGroup = [&oldChunkX, &oldChunkZ](Entity *entity,
 		auto &oldGroup, auto &entityGroups)
 	{
 		auto swapEntityGroup = [](Entity *entity, auto &oldGroup, auto &newGroup)
@@ -735,20 +736,16 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 			newGroup.acquireEntity(entity->getID(), oldGroup);
 		};
 
-		const Double2 &entityPosXZ = entity->getPosition();
-		const NewInt2 entityVoxelXZ(
-			static_cast<int>(entityPosXZ.x),
-			static_cast<int>(entityPosXZ.y));
-		const OriginalInt2 originalVoxelXZ = VoxelUtils::newVoxelToOriginalVoxel(entityVoxelXZ);
+		const NewDouble2 &entityPos = entity->getPosition();
+		const NewInt2 entityVoxel(
+			static_cast<SNInt>(entityPos.x),
+			static_cast<WEInt>(entityPos.y));
+		const ChunkInt2 newChunk = VoxelUtils::newVoxelToChunk(entityVoxel);
 
-		constexpr int CHUNK_DIM = 64;
-		const EWInt newChunkX = originalVoxelXZ.x / CHUNK_DIM;
-		const SNInt newChunkY = originalVoxelXZ.y / CHUNK_DIM;
-
-		const bool groupHasChanged = (newChunkX != oldChunkX) || (newChunkY != oldChunkY);
+		const bool groupHasChanged = (newChunk.x != oldChunkX) || (newChunk.y != oldChunkZ);
 		if (groupHasChanged)
 		{
-			auto &newGroup = entityGroups.get(newChunkX, newChunkY);
+			auto &newGroup = entityGroups.get(newChunk.x, newChunk.y);
 			swapEntityGroup(entity, oldGroup, newGroup);
 		}
 	};
@@ -783,11 +780,11 @@ void EntityManager::remove(int id)
 
 	// Find which entity group the given entity ID is in. This is a slow look-up because there is
 	// no hint where the entity is at.
-	for (SNInt y = 0; y < this->staticGroups.getHeight(); y++)
+	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->staticGroups.getWidth(); x++)
+		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
 		{
-			auto &staticGroup = this->staticGroups.get(x, y);
+			auto &staticGroup = this->staticGroups.get(x, z);
 			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -799,7 +796,7 @@ void EntityManager::remove(int id)
 				return;
 			}
 
-			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			auto &dynamicGroup = this->dynamicGroups.get(x, z);
 			entityIndex = dynamicGroup.getEntityIndex(id);
 			if (entityIndex.has_value())
 			{
@@ -819,29 +816,26 @@ void EntityManager::remove(int id)
 
 void EntityManager::clear()
 {
-	for (SNInt y = 0; y < this->staticGroups.getHeight(); y++)
+	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
 	{
-		for (EWInt x = 0; x < this->staticGroups.getWidth(); x++)
+		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
 		{
-			auto &staticGroup = this->staticGroups.get(x, y);
-			auto &dynamicGroup = this->dynamicGroups.get(x, y);
+			auto &staticGroup = this->staticGroups.get(x, z);
+			auto &dynamicGroup = this->dynamicGroups.get(x, z);
 			staticGroup.clear();
 			dynamicGroup.clear();
 		}
 	}
 
 	this->entityDefs.clear();
-
 	this->freeIDs.clear();
-	this->nextID = 0;
+	this->nextID = FIRST_ENTITY_ID;
 }
 
 void EntityManager::clearChunk(const ChunkInt2 &coord)
 {
-	const EWInt x = coord.x;
-	const SNInt y = coord.y;
-	auto &staticGroup = this->staticGroups.get(x, y);
-	auto &dynamicGroup = this->dynamicGroups.get(x, y);
+	auto &staticGroup = this->staticGroups.get(coord.x, coord.y);
+	auto &dynamicGroup = this->dynamicGroups.get(coord.x, coord.y);
 	staticGroup.clear();
 	dynamicGroup.clear();
 }
@@ -852,33 +846,34 @@ void EntityManager::tick(Game &game, double dt)
 	const ChunkInt2 playerChunk = [&game]()
 	{
 		auto &gameData = game.getGameData();
-		const auto &worldData = gameData.getWorldData();
-		const auto &levelData = worldData.getActiveLevel();
-		const auto &voxelGrid = levelData.getVoxelGrid();
 		const Double3 &playerPosition = gameData.getPlayer().getPosition();
 		const NewInt2 playerVoxelXZ(
-			static_cast<int>(std::floor(playerPosition.x)),
-			static_cast<int>(std::floor(playerPosition.z)));
-		return VoxelUtils::newVoxelToChunk(
-			playerVoxelXZ, voxelGrid.getWidth(), voxelGrid.getDepth());
+			static_cast<SNInt>(std::floor(playerPosition.x)),
+			static_cast<WEInt>(std::floor(playerPosition.z)));
+		return VoxelUtils::newVoxelToChunk(playerVoxelXZ);
 	}();
 
-	const int chunkDistance = 1; // @todo: get from Options
+	const int chunkDistance = [&game]()
+	{
+		const auto &options = game.getOptions();
+		return options.getMisc_ChunkDistance();
+	}();
+
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
 
 	auto tickNearbyEntityGroups = [&game, dt, &minChunk, &maxChunk](auto &entityGroups)
 	{
-		for (SNInt y = minChunk.y; y <= maxChunk.y; y++)
+		for (WEInt z = minChunk.y; z <= maxChunk.y; z++)
 		{
-			for (EWInt x = minChunk.x; x <= maxChunk.x; x++)
+			for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 			{
 				const bool coordIsValid = (x >= 0) && (x < entityGroups.getWidth()) &&
-					(y >= 0) && (y < entityGroups.getHeight());
+					(z >= 0) && (z < entityGroups.getHeight());
 
 				if (coordIsValid)
 				{
-					auto &entityGroup = entityGroups.get(x, y);
+					auto &entityGroup = entityGroups.get(x, z);
 					const int entityCount = entityGroup.getCount();
 
 					for (int i = 0; i < entityCount; i++)

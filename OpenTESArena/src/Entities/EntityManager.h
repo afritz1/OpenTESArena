@@ -104,8 +104,8 @@ public:
 	// The default ID assigned to entities that have no ID.
 	static const int NO_ID;
 
-	// Requires the chunks per X and Y side in the voxel grid for allocating entity groups.
-	void init(EWInt chunkCountX, SNInt chunkCountY);
+	// Requires the chunks per X and Z side in the voxel grid for allocating entity groups.
+	void init(SNInt chunkCountX, WEInt chunkCountZ);
 
 	// Factory functions. These assign the entity an available ID.
 	StaticEntity *makeStaticEntity();
