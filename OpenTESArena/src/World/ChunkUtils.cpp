@@ -8,31 +8,31 @@ int ChunkUtils::getNextHigherChunkMultiple(int coord)
 	return (remainder == 0) ? coord : (coord + ChunkUtils::CHUNK_DIM - remainder);
 }
 
-void ChunkUtils::getChunkCounts(NSInt gridWidth, EWInt gridDepth, EWInt *outChunkCountX,
-	SNInt *outChunkCountY)
+void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChunkCountX,
+	WEInt *outChunkCountZ)
 {
 	auto chunksForDimension = [](int dim)
 	{
 		return ChunkUtils::getNextHigherChunkMultiple(dim) / CHUNK_DIM;
 	};
 
-	*outChunkCountX = chunksForDimension(gridDepth);
-	*outChunkCountY = chunksForDimension(gridWidth);
+	*outChunkCountX = chunksForDimension(gridWidth);
+	*outChunkCountZ = chunksForDimension(gridDepth);
 }
 
-void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, EWInt *outChunkCountX,
-	SNInt *outChunkCountY)
+void ChunkUtils::getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX,
+	WEInt *outChunkCountZ)
 {
 	DebugAssert(chunkDistance >= 1);
 	const int count = 1 + (chunkDistance * 2);
 	*outChunkCountX = count;
-	*outChunkCountY = count;
+	*outChunkCountZ = count;
 }
 
-void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDist, ChunkInt2 *outMinChunk,
-	ChunkInt2 *outMaxChunk)
+void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance,
+	ChunkInt2 *outMinChunk, ChunkInt2 *outMaxChunk)
 {
-	DebugAssert(chunkDist >= 1);
-	*outMinChunk = ChunkInt2(chunk.x - chunkDist, chunk.y - chunkDist);
-	*outMaxChunk = ChunkInt2(chunk.x + chunkDist, chunk.y + chunkDist);
+	DebugAssert(chunkDistance >= 1);
+	*outMinChunk = ChunkInt2(chunk.x - chunkDistance, chunk.y - chunkDistance);
+	*outMaxChunk = ChunkInt2(chunk.x + chunkDistance, chunk.y + chunkDistance);
 }

@@ -19,6 +19,7 @@
 #include "../Entities/CharacterClass.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
+#include "../Game/CardinalDirection.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -48,23 +49,23 @@ int LevelData::FlatDef::getFlatIndex() const
 	return this->flatIndex;
 }
 
-const std::vector<Int2> &LevelData::FlatDef::getPositions() const
+const std::vector<NewInt2> &LevelData::FlatDef::getPositions() const
 {
 	return this->positions;
 }
 
-void LevelData::FlatDef::addPosition(const Int2 &position)
+void LevelData::FlatDef::addPosition(const NewInt2 &position)
 {
 	this->positions.push_back(position);
 }
 
-LevelData::Lock::Lock(const Int2 &position, int lockLevel)
+LevelData::Lock::Lock(const NewInt2 &position, int lockLevel)
 	: position(position)
 {
 	this->lockLevel = lockLevel;
 }
 
-const Int2 &LevelData::Lock::getPosition() const
+const NewInt2 &LevelData::Lock::getPosition() const
 {
 	return this->position;
 }
@@ -101,7 +102,7 @@ void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 	this->previouslyDisplayed = previouslyDisplayed;
 }
 
-LevelData::DoorState::DoorState(const Int2 &voxel, double percentOpen,
+LevelData::DoorState::DoorState(const NewInt2 &voxel, double percentOpen,
 	DoorState::Direction direction)
 	: voxel(voxel)
 {
@@ -109,10 +110,10 @@ LevelData::DoorState::DoorState(const Int2 &voxel, double percentOpen,
 	this->direction = direction;
 }
 
-LevelData::DoorState::DoorState(const Int2 &voxel)
+LevelData::DoorState::DoorState(const NewInt2 &voxel)
 	: DoorState(voxel, 0.0, DoorState::Direction::Opening) { }
 
-const Int2 &LevelData::DoorState::getVoxel() const
+const NewInt2 &LevelData::DoorState::getVoxel() const
 {
 	return this->voxel;
 }
@@ -193,7 +194,7 @@ void LevelData::FadeState::update(double dt)
 	this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
 }
 
-LevelData::LevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
+LevelData::LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
 {
@@ -277,13 +278,13 @@ const VoxelGrid &LevelData::getVoxelGrid() const
 	return this->voxelGrid;
 }
 
-const LevelData::Lock *LevelData::getLock(const Int2 &voxel) const
+const LevelData::Lock *LevelData::getLock(const NewInt2 &voxel) const
 {
 	const auto lockIter = this->locks.find(voxel);
 	return (lockIter != this->locks.end()) ? &lockIter->second : nullptr;
 }
 
-void LevelData::addFlatInstance(int flatIndex, const Int2 &flatPosition)
+void LevelData::addFlatInstance(int flatIndex, const NewInt2 &flatPosition)
 {
 	// Add position to instance list if the flat def has already been created.
 	const auto iter = std::find_if(this->flatsLists.begin(), this->flatsLists.end(),
@@ -305,18 +306,17 @@ void LevelData::addFlatInstance(int flatIndex, const Int2 &flatPosition)
 	}
 }
 
-void LevelData::setVoxel(int x, int y, int z, uint16_t id)
+void LevelData::setVoxel(SNInt x, int y, WEInt z, uint16_t id)
 {
 	this->voxelGrid.setVoxel(x, y, z, id);
 }
 
-void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, SNInt gridWidth, WEInt gridDepth)
 {
 	// Lambda for obtaining a two-byte FLOR voxel.
-	auto getFlorVoxel = [flor, gridWidth, gridDepth](int x, int z)
+	auto getFlorVoxel = [flor, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		// Read voxel data in reverse order.
-		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
+		const int index = (z * 2) + ((x * 2) * gridDepth);
 		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(flor) + index);
 		return voxel;
 	};
@@ -439,9 +439,9 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 	};
 
 	// Write the voxel IDs into the voxel grid.
-	for (int x = 0; x < gridWidth; x++)
+	for (SNInt x = 0; x < gridWidth; x++)
 	{
-		for (int z = 0; z < gridDepth; z++)
+		for (WEInt z = 0; z < gridDepth; z++)
 		{
 			auto getFloorTextureID = [](uint16_t voxel)
 			{
@@ -468,10 +468,10 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 			{
 				// The voxel is a chasm. See which of its four faces are adjacent to
 				// a solid floor voxel.
-				const uint16_t northVoxel = getFlorVoxel(std::min(x + 1, gridWidth - 1), z);
-				const uint16_t eastVoxel = getFlorVoxel(x, std::min(z + 1, gridDepth - 1));
-				const uint16_t southVoxel = getFlorVoxel(std::max(x - 1, 0), z);
-				const uint16_t westVoxel = getFlorVoxel(x, std::max(z - 1, 0));
+				const uint16_t northVoxel = getFlorVoxel(std::max(x - 1, 0), z);
+				const uint16_t eastVoxel = getFlorVoxel(x, std::max(z - 1, 0));
+				const uint16_t southVoxel = getFlorVoxel(std::min(x + 1, gridWidth - 1), z);
+				const uint16_t westVoxel = getFlorVoxel(x, std::min(z + 1, gridDepth - 1));
 
 				const std::array<bool, 4> adjacentFaces
 				{
@@ -505,20 +505,19 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, int gridWidth
 			const int flatIndex = getFlatIndex(florVoxel);
 			if (flatIndex > 0)
 			{
-				this->addFlatInstance(flatIndex - 1, Int2(x, z));
+				this->addFlatInstance(flatIndex - 1, NewInt2(x, z));
 			}
 		}
 	}
 }
 
 void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-	int gridWidth, int gridDepth, const ExeData &exeData)
+	SNInt gridWidth, WEInt gridDepth, const ExeData &exeData)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
-	auto getMap1Voxel = [map1, gridWidth, gridDepth](int x, int z)
+	auto getMap1Voxel = [map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		// Read voxel data in reverse order.
-		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
+		const int index = (z * 2) + ((x * 2) * gridDepth);
 		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map1) + index);
 		return voxel;
 	};
@@ -621,7 +620,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 
 	// Lambda for obtaining the voxel data index of a raised platform.
 	auto getRaisedDataIndex = [this, &inf, worldType, &exeData, &findWallMapping](
-		uint16_t map1Voxel, uint8_t mostSigByte, int x, int z)
+		uint16_t map1Voxel, uint8_t mostSigByte, SNInt x, WEInt z)
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
@@ -783,19 +782,19 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelFacing::PositiveX;
+						return VoxelFacing::NegativeX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelFacing::NegativeZ;
+						return VoxelFacing::PositiveZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelFacing::NegativeX;
+						return VoxelFacing::PositiveX;
 					}
 					else
 					{
-						return VoxelFacing::PositiveZ;
+						return VoxelFacing::NegativeZ;
 					}
 				}();
 
@@ -849,9 +848,9 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	};
 
 	// Write the voxel IDs into the voxel grid.
-	for (int x = 0; x < gridWidth; x++)
+	for (SNInt x = 0; x < gridWidth; x++)
 	{
-		for (int z = 0; z < gridDepth; z++)
+		for (WEInt z = 0; z < gridDepth; z++)
 		{
 			const uint16_t map1Voxel = getMap1Voxel(x, z);
 
@@ -889,7 +888,7 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 				{
 					// The lower byte determines the index of a FLAT for an object.
 					const uint8_t flatIndex = map1Voxel & 0x00FF;
-					this->addFlatInstance(flatIndex, Int2(x, z));
+					this->addFlatInstance(flatIndex, NewInt2(x, z));
 				}
 				else if (mostSigNibble == 0x9)
 				{
@@ -935,13 +934,12 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	}
 }
 
-void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth, int gridDepth)
+void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, SNInt gridWidth, WEInt gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP2 voxel.
-	auto getMap2Voxel = [map2, gridWidth, gridDepth](int x, int z)
+	auto getMap2Voxel = [map2, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		// Read voxel data in reverse order.
-		const int index = (((gridDepth - 1) - z) * 2) + ((((gridWidth - 1) - x) * 2) * gridDepth);
+		const int index = (z * 2) + ((x * 2) * gridDepth);
 		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map2) + index);
 		return voxel;
 	};
@@ -994,9 +992,9 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 	};
 
 	// Write the voxel IDs into the voxel grid.
-	for (int x = 0; x < gridWidth; x++)
+	for (SNInt x = 0; x < gridWidth; x++)
 	{
-		for (int z = 0; z < gridDepth; z++)
+		for (WEInt z = 0; z < gridDepth; z++)
 		{
 			const uint16_t map2Voxel = getMap2Voxel(x, z);
 
@@ -1016,7 +1014,7 @@ void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, int gridWidth
 	}
 }
 
-void LevelData::readCeiling(const INFFile &inf, int width, int depth)
+void LevelData::readCeiling(const INFFile &inf)
 {
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
 
@@ -1032,23 +1030,23 @@ void LevelData::readCeiling(const INFFile &inf, int width, int depth)
 	const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeCeiling(ceilingIndex));
 
 	// Set all the ceiling voxels.
-	for (int x = 0; x < width; x++)
+	const SNInt gridWidth = this->voxelGrid.getWidth();
+	const WEInt gridDepth = this->voxelGrid.getDepth();
+	for (SNInt x = 0; x < gridWidth; x++)
 	{
-		for (int z = 0; z < depth; z++)
+		for (WEInt z = 0; z < gridDepth; z++)
 		{
 			this->setVoxel(x, 2, z, index);
 		}
 	}
 }
 
-void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks, int width, int depth)
+void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks)
 {
 	for (const auto &lock : locks)
 	{
-		const NewInt2 lockPosition = VoxelUtils::originalVoxelToNewVoxel(
-			OriginalInt2(lock.x, lock.y), width, depth);
-		this->locks.insert(std::make_pair(
-			lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
+		const NewInt2 lockPosition = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(lock.x, lock.y));
+		this->locks.insert(std::make_pair(lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
 	}
 }
 
@@ -1062,10 +1060,10 @@ void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uin
 			this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z) : 0;
 	};
 
-	const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
-	const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
-	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
-	const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+	const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+	const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+	const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 
 	if (outNorthID != nullptr)
 	{
@@ -1291,10 +1289,10 @@ void LevelData::updateFadingVoxels(double dt)
 
 		if (isFloorVoxel)
 		{
-			const Int3 northVoxel(voxel.x + 1, voxel.y, voxel.z);
-			const Int3 southVoxel(voxel.x - 1, voxel.y, voxel.z);
-			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z + 1);
-			const Int3 westVoxel(voxel.x, voxel.y, voxel.z - 1);
+			const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+			const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+			const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 			this->tryUpdateChasmVoxel(northVoxel);
 			this->tryUpdateChasmVoxel(southVoxel);
 			this->tryUpdateChasmVoxel(eastVoxel);
@@ -1378,7 +1376,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
 
 		// Dry chasm (just a single color).
-		const uint8_t dryChasmColor = 112;
+		constexpr uint8_t dryChasmColor = 112; // Matches the original game.
 		chasmBuffer.fill(dryChasmColor);
 		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
 			chasmWidth, chasmHeight, palette);
@@ -1597,7 +1595,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					{
 						DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
 						dynamicEntity->setDerivedType(DynamicEntityType::NPC);
-						dynamicEntity->setDirection(Double2::UnitX);
+						dynamicEntity->setDirection(CardinalDirection::North);
 						return dynamicEntity;
 					}
 					else

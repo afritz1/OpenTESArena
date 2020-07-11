@@ -166,8 +166,7 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 	for (const OriginalInt2 &point : mif.getStartPoints())
 	{
 		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
-		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(
-			startPointReal, mif.getDepth(), mif.getWidth()));
+		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPointReal));
 	}
 
 	worldData.mifName = mif.getName();

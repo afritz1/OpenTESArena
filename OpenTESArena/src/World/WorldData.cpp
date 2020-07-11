@@ -15,7 +15,7 @@ const std::string &WorldData::getMifName() const
 	return this->mifName;
 }
 
-const std::vector<Double2> &WorldData::getStartPoints() const
+const std::vector<NewDouble2> &WorldData::getStartPoints() const
 {
 	return this->startPoints;
 }

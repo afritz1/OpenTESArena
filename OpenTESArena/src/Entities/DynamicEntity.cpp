@@ -38,17 +38,17 @@ DynamicEntityType DynamicEntity::getDerivedType() const
 	return this->derivedType;
 }
 
-const Double2 &DynamicEntity::getDirection() const
+const NewDouble2 &DynamicEntity::getDirection() const
 {
 	return this->direction;
 }
 
-const Double2 &DynamicEntity::getVelocity() const
+const NewDouble2 &DynamicEntity::getVelocity() const
 {
 	return this->velocity;
 }
 
-const Double2 *DynamicEntity::getDestination() const
+const NewDouble2 *DynamicEntity::getDestination() const
 {
 	return this->destination.has_value() ? &this->destination.value() : nullptr;
 }
@@ -58,9 +58,10 @@ void DynamicEntity::setDerivedType(DynamicEntityType derivedType)
 	this->derivedType = derivedType;
 }
 
-void DynamicEntity::setDirection(const Double2 &direction)
+void DynamicEntity::setDirection(const NewDouble2 &direction)
 {
 	DebugAssert(std::isfinite(direction.lengthSquared()));
+	this->direction = direction;
 }
 
 double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
@@ -113,7 +114,7 @@ void DynamicEntity::yaw(double radians)
 		Quaternion(forward, 0.0);
 
 	// Convert back to 2D.
-	this->direction = Double2(q.x, q.z).normalized();
+	this->direction = NewDouble2(q.x, q.z).normalized();
 }
 
 void DynamicEntity::rotate(double degrees)
@@ -128,9 +129,9 @@ void DynamicEntity::rotate(double degrees)
 	this->yaw(-lookRightRads);
 }
 
-void DynamicEntity::lookAt(const Double2 &point)
+void DynamicEntity::lookAt(const NewDouble2 &point)
 {
-	const Double2 newDirection = (point - this->position).normalized();
+	const NewDouble2 newDirection = (point - this->position).normalized();
 
 	// Only accept the change if it's valid.
 	if (std::isfinite(newDirection.lengthSquared()))
@@ -139,7 +140,7 @@ void DynamicEntity::lookAt(const Double2 &point)
 	}
 }
 
-void DynamicEntity::setDestination(const Double2 *point, double minDistance)
+void DynamicEntity::setDestination(const NewDouble2 *point, double minDistance)
 {
 	if (point != nullptr)
 	{
@@ -151,7 +152,7 @@ void DynamicEntity::setDestination(const Double2 *point, double minDistance)
 	}
 }
 
-void DynamicEntity::setDestination(const Double2 *point)
+void DynamicEntity::setDestination(const NewDouble2 *point)
 {
 	constexpr double minDistance = Constants::Epsilon;
 	this->setDestination(point, minDistance);

@@ -139,19 +139,19 @@ bool VoxelDefinition::ChasmData::faceIsVisible(VoxelFacing facing) const
 {
 	if (facing == VoxelFacing::PositiveX)
 	{
-		return this->north;
+		return this->south;
 	}
 	else if (facing == VoxelFacing::PositiveZ)
 	{
-		return this->east;
+		return this->west;
 	}
 	else if (facing == VoxelFacing::NegativeX)
 	{
-		return this->south;
+		return this->north;
 	}
 	else
 	{
-		return this->west;
+		return this->east;
 	}
 }
 

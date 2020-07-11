@@ -1,5 +1,4 @@
 #include "InteriorLevelData.h"
-#include "VoxelUtils.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
@@ -9,7 +8,7 @@
 
 const int InteriorLevelData::GRID_HEIGHT = 3;
 
-InteriorLevelData::InteriorLevelData(int gridWidth, int gridDepth, const std::string &infName,
+InteriorLevelData::InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
 	: LevelData(gridWidth, InteriorLevelData::GRID_HEIGHT, gridDepth, infName, name) { }
 
@@ -18,8 +17,8 @@ InteriorLevelData::~InteriorLevelData()
 
 }
 
-InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, int gridWidth,
-	int gridDepth, const ExeData &exeData)
+InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, SNInt gridWidth,
+	WEInt gridDepth, const ExeData &exeData)
 {
 	// .INF filename associated with the interior level.
 	const std::string infName = String::toUppercase(level.info);
@@ -47,21 +46,21 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, i
 	// leave it empty (for some "outdoor dungeons").
 	if (hasCeiling)
 	{
-		levelData.readCeiling(inf, gridWidth, gridDepth);
+		levelData.readCeiling(inf);
 	}
 
 	// Assign locks.
-	levelData.readLocks(level.lock, gridWidth, gridDepth);
+	levelData.readLocks(level.lock);
 
 	// Assign text and sound triggers.
-	levelData.readTriggers(level.trig, inf, gridWidth, gridDepth);
+	levelData.readTriggers(level.trig, inf);
 
 	return levelData;
 }
 
 InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-	int widthChunks, int depthChunks, const std::string &infName, int gridWidth, int gridDepth,
+	int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 	const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
@@ -137,7 +136,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	std::fill(tempMap1.begin(), tempMap1.begin() + gridDepth, perimeterVoxel);
 	std::fill(tempMap1.rbegin(), tempMap1.rbegin() + gridDepth, perimeterVoxel);
 
-	for (int z = 1; z < (gridWidth - 1); z++)
+	for (SNInt z = 1; z < (gridWidth - 1); z++)
 	{
 		tempMap1.at(z * gridDepth) = perimeterVoxel;
 		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
@@ -148,15 +147,15 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Put transition blocks, unless null. Unpack the level up/down block indices
 	// into X and Z chunk offsets.
 	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const int levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
-	const int levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
+	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
+	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
 	tempMap1.at(levelUpX + (levelUpZ * gridDepth)) = (levelUpVoxelByte << 8) | levelUpVoxelByte;
 
 	if (levelDownBlock != nullptr)
 	{
 		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const int levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
-		const int levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
+		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
+		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
 		tempMap1.at(levelDownX + (levelDownZ * gridDepth)) =
 			(levelDownVoxelByte << 8) | levelDownVoxelByte;
 	}
@@ -168,22 +167,22 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
 	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
-	levelData.readCeiling(inf, gridWidth, gridDepth);
+	levelData.readCeiling(inf);
 
 	// Load locks and triggers (if any).
-	levelData.readLocks(tempLocks, gridWidth, gridDepth);
-	levelData.readTriggers(tempTriggers, inf, gridWidth, gridDepth);
+	levelData.readLocks(tempLocks);
+	levelData.readTriggers(tempTriggers, inf);
 
 	return levelData;
 }
 
-LevelData::TextTrigger *InteriorLevelData::getTextTrigger(const Int2 &voxel)
+LevelData::TextTrigger *InteriorLevelData::getTextTrigger(const NewInt2 &voxel)
 {
 	const auto textIter = this->textTriggers.find(voxel);
 	return (textIter != this->textTriggers.end()) ? &textIter->second : nullptr;
 }
 
-const std::string *InteriorLevelData::getSoundTrigger(const Int2 &voxel) const
+const std::string *InteriorLevelData::getSoundTrigger(const NewInt2 &voxel) const
 {
 	const auto soundIter = this->soundTriggers.find(voxel);
 	return (soundIter != this->soundTriggers.end()) ? &soundIter->second : nullptr;
@@ -195,13 +194,12 @@ bool InteriorLevelData::isOutdoorDungeon() const
 }
 
 void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers,
-	const INFFile &inf, int width, int depth)
+	const INFFile &inf)
 {
 	for (const auto &trigger : triggers)
 	{
 		// Transform the voxel coordinates from the Arena layout to the new layout.
-		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(
-			OriginalInt2(trigger.x, trigger.y), width, depth);
+		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(trigger.x, trigger.y));
 
 		// There can be a text trigger and sound trigger in the same voxel.
 		const bool isTextTrigger = trigger.textIndex != -1;

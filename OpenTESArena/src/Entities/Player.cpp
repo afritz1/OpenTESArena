@@ -5,6 +5,7 @@
 #include "EntityType.h"
 #include "Player.h"
 #include "../Assets/MIFUtils.h"
+#include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
@@ -81,7 +82,7 @@ Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
 		random.next(static_cast<int>(charClasses.size())));
 	const int portraitID = random.next(10);
 	const Double3 position = Double3::Zero;
-	const Double3 direction = Double3::UnitX;
+	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	const Double3 velocity = Double3::Zero;
 	const int weaponID = [&random, &charClass]()
 	{

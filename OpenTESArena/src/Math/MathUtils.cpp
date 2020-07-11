@@ -40,18 +40,24 @@ int MathUtils::getWrappedIndex(int bufferSize, int index)
 	return index;
 }
 
-double MathUtils::fullAtan2(double y, double x)
+Radians MathUtils::fullAtan2(double y, double x)
 {
-	const double angle = std::atan2(y, x);
+	const Radians angle = std::atan2(y, x);
 	return (angle >= 0.0) ? angle : (Constants::TwoPi + angle);
 }
 
-double MathUtils::verticalFovToZoom(double fovY)
+Radians MathUtils::fullAtan2(const NewDouble2 &v)
+{
+	// Flip +X south/+Y west to +X east/+Y north.
+	return MathUtils::fullAtan2(-v.x, -v.y);
+}
+
+double MathUtils::verticalFovToZoom(Degrees fovY)
 {
 	return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
 }
 
-double MathUtils::verticalFovToHorizontalFov(double fovY, double aspectRatio)
+Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 {
 	DebugAssert(fovY > 0.0);
 	DebugAssert(fovY < 180.0);

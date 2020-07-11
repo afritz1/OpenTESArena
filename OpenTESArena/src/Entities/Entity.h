@@ -3,6 +3,7 @@
 
 #include "EntityAnimationData.h"
 #include "../Math/Vector2.h"
+#include "../World/VoxelUtils.h"
 
 // Entities are any objects in the world that aren't part of the voxel grid. Every entity
 // has a world position and a unique referencing ID.
@@ -20,7 +21,7 @@ private:
 	int id;
 	int dataIndex; // EntityDefinition index in entity manager.
 protected:
-	Double2 position;
+	NewDouble2 position;
 public:
 	Entity();
 	virtual ~Entity() = default;
@@ -35,7 +36,7 @@ public:
 	int getDataIndex() const;
 
 	// Gets the XZ position of the entity.
-	const Double2 &getPosition() const;
+	const NewDouble2 &getPosition() const;
 
 	// Gets the entity's animation instance.
 	EntityAnimationData::Instance &getAnimation();
@@ -48,7 +49,7 @@ public:
 	void setID(int id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
-	void setPosition(const Double2 &position, EntityManager &entityManager,
+	void setPosition(const NewDouble2 &position, EntityManager &entityManager,
 		const VoxelGrid &voxelGrid);
 
 	// Clears all entity data so it can be used for another entity of the same type.

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "VoxelUtils.h"
 #include "../Math/Vector2.h"
 
 // Base class for instances of world data (exteriors and interiors).
@@ -16,7 +17,7 @@ enum class WorldType;
 class WorldData
 {
 protected:
-	std::vector<Double2> startPoints;
+	std::vector<NewDouble2> startPoints;
 	std::string mifName;
 
 	WorldData();
@@ -26,7 +27,7 @@ public:
 	virtual const std::string &getMifName() const = 0;
 
 	// Gets the start points within each level.
-	const std::vector<Double2> &getStartPoints() const;
+	const std::vector<NewDouble2> &getStartPoints() const;
 	
 	// Gets the root type of the world (unaffected by the active level).
 	virtual WorldType getBaseWorldType() const = 0;

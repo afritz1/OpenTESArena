@@ -37,6 +37,12 @@
 
 namespace
 {
+	// How fast the automap moves when scrolling.
+	constexpr double AutomapScrollSpeed = 100.0;
+
+	// Size of each automap pixel in the automap texture.
+	constexpr int AutomapPixelSize = 3;
+
 	// Click areas for compass directions.
 	const Rect UpRegion(264, 23, 14, 14);
 	const Rect DownRegion(264, 60, 14, 14);
@@ -64,8 +70,7 @@ namespace
 	const Color AutomapWildDoor(255, 0, 0);
 
 	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
-	// These are offsets from the top-left corner of the 3x3 map pixel that the player 
-	// is in.
+	// These are offsets from the top-left corner of the map pixel that the player is in.
 	const std::unordered_map<CardinalDirectionName, std::vector<Int2>> AutomapPlayerArrowPatterns =
 	{
 		{ CardinalDirectionName::North, { Int2(1, 0), Int2(0, 1), Int2(2, 1) } },
@@ -111,7 +116,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 	}();
 
 	// Player's XZ voxel coordinate.
-	const Int2 playerVoxel(
+	const NewInt2 playerVoxel(
 		static_cast<int>(std::floor(playerPosition.x)),
 		static_cast<int>(std::floor(playerPosition.y)));
 
@@ -123,8 +128,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 	this->mapTexture = [&game, &playerDirection, &voxelGrid, &playerVoxel, isWild]()
 	{
-		const CardinalDirectionName playerDir =
-			CardinalDirection::getDirectionName(playerDirection);
+		const CardinalDirectionName playerDir = CardinalDirection::getDirectionName(playerDirection);
 
 		auto &renderer = game.getRenderer();
 		Surface surface = AutomapPanel::makeAutomap(playerVoxel, playerDir, isWild, voxelGrid);
@@ -384,55 +388,54 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 	}
 }
 
-Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName playerDir,
+Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
 	bool isWild, const VoxelGrid &voxelGrid)
 {
-	// Create scratch surface triple the size of the voxel area to display. For the purposes of
-	// the automap, the bottom left corner is (0, 0), left to right is the Z axis, and up and down
-	// is the X axis, because north is +X in-game. It is scaled by 3 so that all directions of the
-	// player's arrow are representable.
-	constexpr int squareWidth = 3;
-	constexpr int squareHeight = squareWidth;
-	constexpr int maxSurfaceSize = 128 * 3;
+	// Create scratch surface triple the size of the voxel area to display so that all directions
+	// of the player's arrow are representable in the same texture. This may change in the future
+	// for memory optimization.
+	const int maxSurfaceSize = (RMDFile::WIDTH * 2) * AutomapPixelSize;
 	Surface surface = Surface::createWithFormat(
-		std::min(voxelGrid.getDepth() * squareWidth, maxSurfaceSize),
-		std::min(voxelGrid.getWidth() * squareHeight, maxSurfaceSize),
+		std::min(voxelGrid.getDepth() * AutomapPixelSize, maxSurfaceSize),
+		std::min(voxelGrid.getWidth() * AutomapPixelSize, maxSurfaceSize),
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	// Fill with transparent color first (used by floor voxels).
 	surface.fill(AutomapFloor.toARGB());
 
-	// Lambda for filling in a square in the map surface.
-	auto drawSquare = [squareWidth, squareHeight, &surface](int x, int z, const Color &color)
+	// Lambda for filling in a square in the map surface. It is provided an XY pixel which is
+	// expanded into a square.
+	auto drawSquare = [&surface](int x, int y, const Color &color)
 	{
 		const int surfaceWidth = surface.getWidth();
-		const int surfaceHeight = surface.getHeight();
-
-		// Convert world XZ coordinates to automap XY coordinates.
-		const int xOffset = z * squareWidth;
-		const int yOffset = surfaceHeight - squareHeight - (x * squareHeight);
-
+		const int xOffset = x * AutomapPixelSize;
+		const int yOffset = y * AutomapPixelSize;
 		const uint32_t colorARGB = color.toARGB();
-
 		uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
-		for (int h = 0; h < squareHeight; h++)
+
+		for (int h = 0; h < AutomapPixelSize; h++)
 		{
-			for (int w = 0; w < squareWidth; w++)
+			const int yCoord = yOffset + h;
+			for (int w = 0; w < AutomapPixelSize; w++)
 			{
-				const int index = (xOffset + w) + ((yOffset + h) * surfaceWidth);
+				const int xCoord = xOffset + w;
+				const int index = xCoord + (yCoord * surfaceWidth);
 				pixels[index] = colorARGB;
 			}
 		}
 	};
 
-	auto getVoxelDef = [&voxelGrid](int x, int y, int z) -> const VoxelDefinition&
+	auto getVoxelDef = [&voxelGrid](SNInt x, int y, WEInt z) -> const VoxelDefinition&
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
 		return voxelGrid.getVoxelDef(voxelID);
 	};
 
 	// Calculate voxel grid loop values based on whether it's the wilderness.
-	int startX, startZ, loopWidth, loopDepth;
+	SNInt startX;
+	WEInt startZ;
+	SNInt loopWidth;
+	WEInt loopDepth;
 	if (!isWild)
 	{
 		startX = 0;
@@ -443,7 +446,7 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 	else
 	{
 		// Get relative wild origin in new coordinate system (bottom left corner).
-		const Int2 wildOrigin = AutomapPanel::makeRelativeWildOrigin(
+		const NewInt2 wildOrigin = AutomapPanel::makeRelativeWildOrigin(
 			playerVoxel, voxelGrid.getWidth(), voxelGrid.getDepth());
 
 		startX = wildOrigin.x;
@@ -454,16 +457,13 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 		loopDepth = offsetDist;
 	}
 
-	// For each voxel, start at the lowest Y and walk upwards. The color depends 
-	// on a couple factors, like whether the voxel is a wall, a door, water, etc.,
-	// and some context-sensitive cases like whether a dry chasm has a wall
-	// over it.
-	for (int x = 0; x < loopWidth; x++)
+	// For each voxel, start at the lowest Y and walk upwards.
+	for (SNInt x = 0; x < loopWidth; x++)
 	{
-		for (int z = 0; z < loopDepth; z++)
+		for (WEInt z = 0; z < loopDepth; z++)
 		{
-			const int voxelX = startX + x;
-			const int voxelZ = startZ + z;
+			const SNInt voxelX = startX + x;
+			const WEInt voxelZ = startZ + z;
 
 			const VoxelDefinition &floorDef = getVoxelDef(voxelX, 0, voxelZ);
 			const VoxelDefinition &wallDef = getVoxelDef(voxelX, 1, voxelZ);
@@ -473,32 +473,36 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 				AutomapPanel::getPixelColor(floorDef, wallDef) :
 				AutomapPanel::getWildPixelColor(floorDef, wallDef);
 
-			// Draw the automap pixel.
-			drawSquare(x, z, color);
+			// Convert world XZ coordinates to automap XY coordinates.
+			const int automapX = (loopDepth - 1) - z;
+			const int automapY = x;
+
+			// Fill in the automap square.
+			drawSquare(automapX, automapY, color);
 		}
 	}
 
 	// Lambda for drawing the player's arrow in the automap. It's drawn differently 
 	// depending on their direction.
-	auto drawPlayer = [&surface](int x, int z, CardinalDirectionName cardinalDirection)
+	auto drawPlayer = [&surface](SNInt x, WEInt z, CardinalDirectionName cardinalDirection)
 	{
-		const int surfaceX = z * 3;
-		const int surfaceY = surface.getHeight() - 3 - (x * 3);
+		const int surfaceX = surface.getWidth() - AutomapPixelSize - (z * AutomapPixelSize);
+		const int surfaceY = x * AutomapPixelSize;
 
 		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
 
-		// Draw the player's arrow within the 3x3 map pixel.
+		// Draw the player's arrow within the map pixel.
 		const std::vector<Int2> &offsets = AutomapPlayerArrowPatterns.at(cardinalDirection);
 		for (const auto &offset : offsets)
 		{
-			const int index = (surfaceX + offset.x) +
-				((surfaceY + offset.y) * surface.getWidth());
+			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * surface.getWidth());
 			pixels[index] = AutomapPlayer.toARGB();
 		}
 	};
 
 	// Calculate player voxel in automap. Depends on the relative origin if in the wilderness.
-	int playerX, playerZ;
+	SNInt playerX;
+	WEInt playerZ;
 	if (!isWild)
 	{
 		playerX = playerVoxel.x;
@@ -510,10 +514,8 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 		playerZ = playerVoxel.y - startZ;
 	}
 
-	// Draw player last. Verify that the player is within the bounds of the map 
-	// before drawing.
-	if ((playerX >= 0) && (playerX < loopWidth) &&
-		(playerZ >= 0) && (playerZ < loopDepth))
+	// Draw player last. Verify that the player is within the bounds of the map before drawing.
+	if ((playerX >= 0) && (playerX < loopWidth) && (playerZ >= 0) && (playerZ < loopDepth))
 	{
 		drawPlayer(playerX, playerZ, playerDir);
 	}
@@ -522,39 +524,37 @@ Surface AutomapPanel::makeAutomap(const Int2 &playerVoxel, CardinalDirectionName
 }
 
 Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-	NSInt gridWidth, EWInt gridDepth)
+	SNInt gridWidth, WEInt gridDepth)
 {
-	if (!isWild)
+	const NewDouble2 worldOffset = [&playerVoxel, isWild, gridWidth, gridDepth]()
 	{
-		// City or interior.
-		return Double2(
-			static_cast<double>(playerVoxel.x) + 0.50,
-			static_cast<double>(playerVoxel.y) + 0.50);
-	}
-	else
-	{
-		// Wilderness.
-		const NewInt2 relativeOrigin = AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
-		return Double2(
-			static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
-			static_cast<double>(playerVoxel.y - relativeOrigin.y) + 0.50);
-	}
+		if (!isWild)
+		{
+			// Cities/interiors, offset from (0, 0) of the level.
+			return NewDouble2(
+				static_cast<double>(playerVoxel.x) + 0.50,
+				static_cast<double>((gridDepth - 1) - playerVoxel.y) + 0.50);
+		}
+		else
+		{
+			// Wilderness, offset from the relative 2x2 wild origin, dependent on player position.
+			const NewInt2 relativeOrigin =
+				AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
+
+			// The returned value should be within [32, 95] because that's where the player loops
+			// between in the original coordinates.
+			return NewDouble2(
+				static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
+				static_cast<double>(((RMDFile::WIDTH * 2) - 1) - (playerVoxel.y - relativeOrigin.y)) + 0.50);
+		}
+	}();
+
+	return Double2(-worldOffset.y, -worldOffset.x);
 }
 
-NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, NSInt gridWidth, EWInt gridDepth)
+NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
 {
-	const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel, gridWidth, gridDepth);
-	const OriginalInt2 relativeOrigin = ExteriorLevelData::getCenteredWildOrigin(originalVoxel);
-	const NewInt2 newRelativeOrigin = VoxelUtils::originalVoxelToNewVoxel(relativeOrigin, gridWidth, gridDepth);
-
-	// Offset by two chunks to use the bottom-left corner instead of top-right.
-	const int offsetDist = RMDFile::WIDTH * 2;
-	DebugAssert(gridWidth >= offsetDist);
-	DebugAssert(gridDepth >= offsetDist);
-
-	return NewInt2(
-		std::clamp(newRelativeOrigin.x - offsetDist + 1, 0, gridWidth - offsetDist),
-		std::clamp(newRelativeOrigin.y - offsetDist + 1, 0, gridDepth - offsetDist));
+	return ExteriorLevelData::getCenteredWildOrigin(voxel);
 }
 
 Panel::CursorData AutomapPanel::getCurrentCursor() const
@@ -593,6 +593,8 @@ void AutomapPanel::handleEvent(const SDL_Event &e)
 			this->backToGameButton.click(this->getGame());
 		}
 	}
+
+	// @todo: text events if in text mode
 }
 
 void AutomapPanel::handleMouse(double dt)
@@ -607,25 +609,25 @@ void AutomapPanel::handleMouse(double dt)
 	// Check if the LMB is held on one of the compass directions.
 	if (leftClick)
 	{
-		const double scrollSpeed = 100.0;
+		const double scrollSpeed = AutomapScrollSpeed * dt;
 
-		// Modify the automap offset based on input. Use the custom coordinate system
-		// with +X as north and +Z as east (aliased as Y).
-		if (UpRegion.contains(mouseOriginalPoint))
+		// Modify the automap offset based on input. The directions are reversed because
+		// to go right means to push the map left.
+		if (RightRegion.contains(mouseOriginalPoint))
 		{
-			this->automapOffset = this->automapOffset + (Double2::UnitX * (scrollSpeed * dt));
-		}
-		else if (DownRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset - (Double2::UnitX * (scrollSpeed * dt));
-		}
-		else if (RightRegion.contains(mouseOriginalPoint))
-		{
-			this->automapOffset = this->automapOffset + (Double2::UnitY * (scrollSpeed * dt));
+			this->automapOffset = this->automapOffset - (Double2::UnitX * scrollSpeed);
 		}
 		else if (LeftRegion.contains(mouseOriginalPoint))
 		{
-			this->automapOffset = this->automapOffset - (Double2::UnitY * (scrollSpeed * dt));
+			this->automapOffset = this->automapOffset + (Double2::UnitX * scrollSpeed);
+		}
+		else if (UpRegion.contains(mouseOriginalPoint))
+		{
+			this->automapOffset = this->automapOffset + (Double2::UnitY * scrollSpeed);
+		}
+		else if (DownRegion.contains(mouseOriginalPoint))
+		{
+			this->automapOffset = this->automapOffset - (Double2::UnitY * scrollSpeed);
 		}
 	}
 }
@@ -672,13 +674,12 @@ void AutomapPanel::render(Renderer &renderer)
 	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);
 	renderer.setClipRect(&nativeDrawingArea.getRect());
 
-	// Draw automap. Remember that +X is north and +Z is east (aliased as Y), and that
-	// the map texture is scaled by 3 (for the 3x3 player pixel).
-	const int offsetX = static_cast<int>(std::floor(this->automapOffset.y * 3.0));
-	const int offsetY = static_cast<int>(std::floor(this->automapOffset.x * 3.0));
-	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) - offsetX;
-	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY -
-		this->mapTexture.getHeight();
+	// Draw automap.
+	constexpr double pixelSizeReal = static_cast<double>(AutomapPixelSize);
+	const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
+	const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
+	const int mapX = (DrawingArea.getLeft() + (DrawingArea.getWidth() / 2)) + offsetX;
+	const int mapY = (DrawingArea.getTop() + (DrawingArea.getHeight() / 2)) + offsetY;
 	renderer.drawOriginal(this->mapTexture, mapX, mapY);
 
 	// Reset renderer clipping to normal.

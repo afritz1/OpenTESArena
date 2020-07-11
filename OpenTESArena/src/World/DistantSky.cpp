@@ -50,10 +50,10 @@ namespace
 	};
 }
 
-DistantSky::LandObject::LandObject(int entryIndex, double angleRadians)
+DistantSky::LandObject::LandObject(int entryIndex, Radians angle)
 {
 	this->entryIndex = entryIndex;
-	this->angleRadians = angleRadians;
+	this->angle = angle;
 }
 
 int DistantSky::LandObject::getTextureEntryIndex() const
@@ -61,35 +61,34 @@ int DistantSky::LandObject::getTextureEntryIndex() const
 	return this->entryIndex;
 }
 
-double DistantSky::LandObject::getAngleRadians() const
+double DistantSky::LandObject::getAngle() const
 {
-	return this->angleRadians;
+	return this->angle;
 }
 
-DistantSky::AnimatedLandObject::AnimatedLandObject(int setEntryIndex,
-	double angleRadians, double frameTime)
+DistantSky::AnimatedLandObject::AnimatedLandObject(int setEntryIndex, Radians angle, double frameTime)
 {
 	// Frame time must be positive.
 	DebugAssert(frameTime > 0.0);
 
 	this->setEntryIndex = setEntryIndex;
-	this->angleRadians = angleRadians;
+	this->angle = angle;
 	this->targetFrameTime = frameTime;
 	this->currentFrameTime = 0.0;
 	this->index = 0;
 }
 
-DistantSky::AnimatedLandObject::AnimatedLandObject(int textureSetIndex, double angleRadians)
-	: AnimatedLandObject(textureSetIndex, angleRadians, AnimatedLandObject::DEFAULT_FRAME_TIME) { }
+DistantSky::AnimatedLandObject::AnimatedLandObject(int textureSetIndex, Radians angle)
+	: AnimatedLandObject(textureSetIndex, angle, AnimatedLandObject::DEFAULT_FRAME_TIME) { }
 
 int DistantSky::AnimatedLandObject::getTextureSetEntryIndex() const
 {
 	return this->setEntryIndex;
 }
 
-double DistantSky::AnimatedLandObject::getAngleRadians() const
+double DistantSky::AnimatedLandObject::getAngle() const
 {
-	return this->angleRadians;
+	return this->angle;
 }
 
 double DistantSky::AnimatedLandObject::getFrameTime() const
@@ -132,10 +131,10 @@ void DistantSky::AnimatedLandObject::update(double dt, const DistantSky &distant
 	}
 }
 
-DistantSky::AirObject::AirObject(int entryIndex, double angleRadians, double height)
+DistantSky::AirObject::AirObject(int entryIndex, Radians angle, double height)
 {
 	this->entryIndex = entryIndex;
-	this->angleRadians = angleRadians;
+	this->angle = angle;
 	this->height = height;
 }
 
@@ -144,9 +143,9 @@ int DistantSky::AirObject::getTextureEntryIndex() const
 	return this->entryIndex;
 }
 
-double DistantSky::AirObject::getAngleRadians() const
+Radians DistantSky::AirObject::getAngle() const
 {
-	return this->angleRadians;
+	return this->angle;
 }
 
 double DistantSky::AirObject::getHeight() const
@@ -232,7 +231,7 @@ DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename,
 
 const int DistantSky::UNIQUE_ANGLES = 512;
 const double DistantSky::IDENTITY_DIM = 320.0;
-const double DistantSky::IDENTITY_ANGLE_RADIANS = 90.0 * Constants::DegToRad;
+const Radians DistantSky::IDENTITY_ANGLE = 90.0 * Constants::DegToRad;
 
 std::optional<int> DistantSky::getTextureEntryIndex(const std::string_view &filename) const
 {
@@ -302,13 +301,13 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 	const int count = (random.next() % 4) + 2;
 
 	// Converts an Arena angle to an actual angle in radians.
-	auto arenaAngleToRadians = [](int angle)
+	auto arenaAngleToRadians = [](int arenaAngle)
 	{
 		// Arena angles: 0 = south, 128 = west, 256 = north, 384 = east.
 		// Change from clockwise to counter-clockwise and move 0 to east.
-		const double arenaRadians = Constants::TwoPi *
-			(static_cast<double>(angle) / static_cast<double>(DistantSky::UNIQUE_ANGLES));
-		const double flippedArenaRadians = Constants::TwoPi - arenaRadians;
+		const Radians arenaRadians = Constants::TwoPi *
+			(static_cast<double>(arenaAngle) / static_cast<double>(DistantSky::UNIQUE_ANGLES));
+		const Radians flippedArenaRadians = Constants::TwoPi - arenaRadians;
 		return flippedArenaRadians - Constants::HalfPi;
 	};
 
@@ -363,7 +362,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 
 			// Convert from Arena units to radians.
 			const int arenaAngle = random.next() % DistantSky::UNIQUE_ANGLES;
-			const double angleRadians = arenaAngleToRadians(arenaAngle);
+			const Radians angle = arenaAngleToRadians(arenaAngle);
 
 			// The object is either land or a cloud, currently determined by 'randomHeight' as
 			// a shortcut. Land objects have no height. I'm doing it this way because LandObject
@@ -373,13 +372,13 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			if (isLand)
 			{
 				fixEntryIndexIfMissing();
-				this->landObjects.push_back(LandObject(*entryIndex, angleRadians));
+				this->landObjects.push_back(LandObject(*entryIndex, angle));
 			}
 			else
 			{
 				fixEntryIndexIfMissing();
 				const double height = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				this->airObjects.push_back(AirObject(*entryIndex, angleRadians, height));
+				this->airObjects.push_back(AirObject(*entryIndex, angle, height));
 			}
 		}
 	};
@@ -415,7 +414,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		const int dist = LocationUtils::getMapDistance(locationGlobalPos, animLandGlobalPos);
 
 		// Position of the animated land on the horizon.
-		const double angle = std::atan2(
+		const Radians angle = std::atan2(
 			static_cast<double>(locationGlobalPos.y - animLandGlobalPos.y),
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
@@ -653,8 +652,8 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 
 						// Convert percentages to radians. Positive X is counter-clockwise, positive
 						// Y is up.
-						const double dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
-						const double dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE_RADIANS;
+						const Radians dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE;
+						const Radians dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE;
 
 						// Apply rotations to base direction.
 						const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);

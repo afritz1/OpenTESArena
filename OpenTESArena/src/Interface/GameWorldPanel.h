@@ -10,6 +10,7 @@
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
 #include "../World/VoxelDefinition.h"
+#include "../World/VoxelUtils.h"
 
 // When the GameWorldPanel is active, the game world is ticking.
 
@@ -60,7 +61,7 @@ private:
 
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
-	void handleTriggers(const Int2 &voxel);
+	void handleTriggers(const NewInt2 &voxel);
 
 	// Handles updating of doors that are not closed.
 	void handleDoors(double dt, const Double2 &playerPos);
@@ -71,13 +72,13 @@ private:
 
 	// Checks the given voxel to see if it's a transition voxel (i.e., level up/down),
 	// and changes the current level if it is.
-	void handleLevelTransition(const Int2 &playerVoxel, const Int2 &transitionVoxel);
+	void handleLevelTransition(const NewInt2 &playerVoxel, const NewInt2 &transitionVoxel);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
 
 	// Draws the compass for some given player direction in the XZ plane.
-	void drawCompass(const Double2 &direction, TextureManager &textureManager,
+	void drawCompass(const NewDouble2 &direction, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Draws some debug profiler text.

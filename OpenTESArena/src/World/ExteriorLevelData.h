@@ -22,30 +22,30 @@ private:
 	DistantSky distantSky;
 
 	// Mappings of voxel coordinates to *MENU display names.
-	std::vector<std::pair<Int2, std::string>> menuNames;
+	std::vector<std::pair<NewInt2, std::string>> menuNames;
 
-	ExteriorLevelData(int gridWidth, int gridHeight, int gridDepth, const std::string &infName,
+	ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
 	// Writes city building data into the output buffers. The buffers should already be
 	// initialized with the city skeleton.
-	static void generateCity(uint32_t citySeed, int cityDim, EWInt gridDepth,
-		const std::vector<uint8_t> &reservedBlocks, const Int2 &startPosition, ArenaRandom &random,
-		const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
+	static void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
+		const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
+		ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
 		std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2);
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	void generateBuildingNames(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-		NSInt gridWidth, EWInt gridDepth, const MiscAssets &miscAssets);
+		SNInt gridWidth, WEInt gridDepth, const MiscAssets &miscAssets);
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	void generateWildChunkBuildingNames(const ExeData &exeData);
 
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.
-	static void revisePalaceGraphics(std::vector<uint16_t> &map1, int gridWidth, int gridDepth);
+	static void revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,
@@ -68,14 +68,14 @@ public:
 	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
 	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.
 	// Given coordinates are expected to be in original coordinate system.
-	static Int2 getCenteredWildOrigin(const Int2 &voxel);
+	static NewInt2 getCenteredWildOrigin(const NewInt2 &voxel);
 
 	// Exterior level with a pre-defined .INF file. If premade, this loads the premade city. Otherwise,
 	// this loads the skeleton of the level (city walls, etc.), and fills in the rest by generating
 	// the required chunks.
 	static ExteriorLevelData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
-		int currentDay, int starCount, const std::string &infName, int gridWidth, int gridDepth,
+		int currentDay, int starCount, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 		const MiscAssets &miscAssets, TextureManager &textureManager);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
@@ -86,7 +86,7 @@ public:
 		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
-	const std::vector<std::pair<Int2, std::string>> &getMenuNames() const;
+	const std::vector<std::pair<NewInt2, std::string>> &getMenuNames() const;
 
 	// Exteriors are never outdoor dungeons (always false).
 	virtual bool isOutdoorDungeon() const override;
