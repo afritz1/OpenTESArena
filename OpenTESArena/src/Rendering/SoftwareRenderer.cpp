@@ -1967,8 +1967,7 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
-	const AbsoluteChunkVoxelInt2 minAbsoluteChunkVoxel =
-		VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(minChunk, ChunkVoxelInt2(0, 0));
+	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, ChunkVoxelInt2(0, 0));
 
 	SNInt potentiallyVisChunkCountX;
 	WEInt potentiallyVisChunkCountZ;
@@ -2011,12 +2010,12 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 			static_cast<WEInt>(std::ceil(visLight.position.z + visLight.radius)));
 
 		// Since these are in a different coordinate system, can't rely on min < max.
-		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelA = VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMin);
-		const AbsoluteChunkVoxelInt2 visLightAbsoluteChunkVoxelB = VoxelUtils::newVoxelToAbsoluteChunkVoxel(visLightMax);
+		const NewInt2 visLightAbsoluteChunkVoxelA = visLightMin;
+		const NewInt2 visLightAbsoluteChunkVoxelB = visLightMax;
 
 		// Get chunk voxel coordinates relative to potentially visible chunks.
-		const AbsoluteChunkVoxelInt2 relativeChunkVoxelA = visLightAbsoluteChunkVoxelA - minAbsoluteChunkVoxel;
-		const AbsoluteChunkVoxelInt2 relativeChunkVoxelB = visLightAbsoluteChunkVoxelB - minAbsoluteChunkVoxel;
+		const NewInt2 relativeChunkVoxelA = visLightAbsoluteChunkVoxelA - minAbsoluteChunkVoxel;
+		const NewInt2 relativeChunkVoxelB = visLightAbsoluteChunkVoxelB - minAbsoluteChunkVoxel;
 
 		// Have to rely on delta between A and B instead of min/max due to coordinate system transform.
 		const Int2 relativeChunkVoxelDeltaStep(
@@ -2053,17 +2052,13 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 			VisibleLightList &visLightList = this->visLightLists.get(x, z);
 			if (visLightList.count >= 2)
 			{
-				// Convert potentially visible chunk voxel to absolute, then absolute to new voxel.
-				const AbsoluteChunkVoxelInt2 absoluteChunkVoxel(
-					x + minAbsoluteChunkVoxel.x, z + minAbsoluteChunkVoxel.y);
-				const ChunkCoord chunkCoord = VoxelUtils::absoluteChunkVoxelToChunkVoxel(absoluteChunkVoxel);
-				const NewInt2 newVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkCoord.chunk, chunkCoord.voxel);
+				const NewInt2 voxel(x + minAbsoluteChunkVoxel.x, z + minAbsoluteChunkVoxel.y);
 
 				// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
 				const Double3 voxelColumnPoint(
-					static_cast<SNDouble>(newVoxel.x) + 0.50,
+					static_cast<SNDouble>(voxel.x) + 0.50,
 					ceilingHeight * 1.50,
-					static_cast<WEDouble>(newVoxel.y) + 0.50);
+					static_cast<WEDouble>(voxel.y) + 0.50);
 
 				visLightList.sortByNearest(voxelColumnPoint, visLightsView);
 			}
@@ -2349,7 +2344,6 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	// Convert new voxel grid coordinates to potentially-visible light list space
 	// (chunk space but its origin depends on the camera).
 	const NewInt2 newVoxel(voxelX, voxelZ);
-	const AbsoluteChunkVoxelInt2 absoluteChunkVoxel = VoxelUtils::newVoxelToAbsoluteChunkVoxel(newVoxel);
 
 	// Visible light lists are relative to the potentially visible chunks.
 	const ChunkCoord cameraChunkCoord = VoxelUtils::newVoxelToChunkVoxel(NewInt2(cameraVoxelX, cameraVoxelZ));
@@ -2357,13 +2351,12 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
 
-	// Get the top-leftmost voxel in the potentially visible chunks so we can do some
+	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
-	const AbsoluteChunkVoxelInt2 minAbsoluteChunkVoxel =
-		VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(minChunk, ChunkVoxelInt2(0, 0));
+	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, ChunkVoxelInt2(0, 0));
 
-	const int visLightListX = absoluteChunkVoxel.x - minAbsoluteChunkVoxel.x;
-	const int visLightListY = absoluteChunkVoxel.y - minAbsoluteChunkVoxel.y;
+	const int visLightListX = newVoxel.x - minAbsoluteChunkVoxel.x;
+	const int visLightListY = newVoxel.y - minAbsoluteChunkVoxel.y;
 
 	// @todo: temp hack to avoid crash from bad coordinate math. Not sure how to fix it
 	// because sometimes the XY is too low or too high, so it doesn't feel like a simple

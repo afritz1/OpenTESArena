@@ -23,14 +23,6 @@ NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxe
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
 }
 
-AbsoluteChunkVoxelInt2 VoxelUtils::chunkVoxelToAbsoluteChunkVoxel(const ChunkInt2 &chunk,
-	const ChunkVoxelInt2 &voxel)
-{
-	return AbsoluteChunkVoxelInt2(
-		(chunk.x * ChunkUtils::CHUNK_DIM) + voxel.x,
-		(chunk.y * ChunkUtils::CHUNK_DIM) + voxel.y);
-}
-
 ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel)
 {
 	// @todo: need to handle voxel outside grid.
@@ -46,17 +38,4 @@ ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
 {
 	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel);
 	return chunkCoord.chunk;
-}
-
-AbsoluteChunkVoxelInt2 VoxelUtils::newVoxelToAbsoluteChunkVoxel(const NewInt2 &voxel)
-{
-	return voxel;
-}
-
-ChunkCoord VoxelUtils::absoluteChunkVoxelToChunkVoxel(const AbsoluteChunkVoxelInt2 &voxel)
-{
-	ChunkCoord chunkCoord;
-	chunkCoord.chunk = ChunkInt2(voxel.x / ChunkUtils::CHUNK_DIM, voxel.y / ChunkUtils::CHUNK_DIM);
-	chunkCoord.voxel = ChunkVoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
-	return chunkCoord;
 }
