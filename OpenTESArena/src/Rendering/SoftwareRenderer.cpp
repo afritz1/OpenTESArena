@@ -1967,7 +1967,7 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 
 	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
-	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, ChunkVoxelInt2(0, 0));
+	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, VoxelInt2(0, 0));
 
 	SNInt potentiallyVisChunkCountX;
 	WEInt potentiallyVisChunkCountZ;
@@ -2353,7 +2353,7 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 
 	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
-	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, ChunkVoxelInt2(0, 0));
+	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, VoxelInt2(0, 0));
 
 	const int visLightListX = newVoxel.x - minAbsoluteChunkVoxel.x;
 	const int visLightListY = newVoxel.y - minAbsoluteChunkVoxel.y;

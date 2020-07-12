@@ -3,19 +3,20 @@
 
 #include "../Math/Vector2.h"
 
-// Aliases for various coordinate systems. All of these are from a top-down perspective, like a 2D array.
+// Aliases for various coordinate systems. All of these are from a top-down perspective.
 using OriginalInt2 = Int2; // +X west, +Y south (original game, origin at top right).
-using NewInt2 = Int2; // +X south, +Y west (DEPRECATE THIS EVENTUALLY IN FAVOR OF CHUNKS).
+using NewInt2 = Int2; // +X south, +Y west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt2).
 using ChunkInt2 = Int2; // +X south, +Y west, [-inf, inf].
-using ChunkVoxelInt2 = Int2; // Same directions as chunk, [0, CHUNK_DIM-1].
+using VoxelInt2 = Int2; // +X south, +Y west, used with chunk voxels, [0, CHUNK_DIM-1].
 
 using OriginalDouble2 = Double2; // +X west, +Y south.
-using NewDouble2 = Double2; // +X south, +Y west.
+using NewDouble2 = Double2; // +X south, +Y west (DEPRECATE IN FAVOR OF VoxelDouble2).
+using VoxelDouble2 = Double2; // +X south, +Y west, in the space of chunk voxels.
 
 struct ChunkCoord
 {
 	ChunkInt2 chunk;
-	ChunkVoxelInt2 voxel;
+	VoxelInt2 voxel;
 };
 
 // These are here out of desperation after many months of confusing myself.
@@ -43,7 +44,7 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Converts a voxel from chunk space to new voxel grid space.
-	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel);
+	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
 	ChunkCoord newVoxelToChunkVoxel(const NewInt2 &voxel);

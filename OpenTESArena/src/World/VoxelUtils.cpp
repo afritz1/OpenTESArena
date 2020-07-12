@@ -18,7 +18,7 @@ Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)
 	return Double2(voxel.y, voxel.x);
 }
 
-NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const ChunkVoxelInt2 &voxel)
+NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
 }
@@ -30,7 +30,7 @@ ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel)
 
 	ChunkCoord chunkCoord;
 	chunkCoord.chunk = ChunkInt2(voxel.x / ChunkUtils::CHUNK_DIM, voxel.y / ChunkUtils::CHUNK_DIM);
-	chunkCoord.voxel = ChunkVoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
+	chunkCoord.voxel = VoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
 	return chunkCoord;
 }
 
