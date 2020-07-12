@@ -51,6 +51,9 @@ namespace VoxelUtils
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel);
+
+	// Wraps a voxel coordinate so it stays within the chunk range.
+	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);
 }
 
 #endif

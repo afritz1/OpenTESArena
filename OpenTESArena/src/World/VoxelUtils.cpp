@@ -39,3 +39,9 @@ ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
 	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel);
 	return chunkCoord.chunk;
 }
+
+VoxelInt2 VoxelUtils::wrapVoxelCoord(const VoxelInt2 &voxel)
+{
+	// @todo: handle negative numbers
+	return VoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
+}
