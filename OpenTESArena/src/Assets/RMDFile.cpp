@@ -8,11 +8,6 @@
 #include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
-const int RMDFile::BYTES_PER_FLOOR = 8192;
-const int RMDFile::WIDTH = 64;
-const int RMDFile::DEPTH = RMDFile::WIDTH;
-const int RMDFile::ELEMENTS_PER_FLOOR = RMDFile::BYTES_PER_FLOOR / 2;
-
 bool RMDFile::init(const char *filename)
 {
 	Buffer<std::byte> src;

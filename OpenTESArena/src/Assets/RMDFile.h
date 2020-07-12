@@ -4,27 +4,25 @@
 #include <cstdint>
 #include <vector>
 
+#include "../World/VoxelUtils.h"
+
 class RMDFile
 {
 public:
 	using VoxelID = uint16_t;
 private:
-	// Bytes per floor, always 8192.
-	static const int BYTES_PER_FLOOR;
+	static constexpr int BYTES_PER_FLOOR = 8192;
 
 	// Using vectors because arrays caused stack overflow warnings.
 	std::vector<uint16_t> flor, map1, map2;
 public:
 	bool init(const char *filename);
 
-	// Constant .RMD dimensions, always 64x64.
-	static const int WIDTH;
-	static const int DEPTH;
+	static constexpr WEInt WIDTH = 64;
+	static constexpr SNInt DEPTH = WIDTH;
+	static constexpr int ELEMENTS_PER_FLOOR = BYTES_PER_FLOOR / sizeof(VoxelID);
 
-	// A function of bytes per floor.
-	static const int ELEMENTS_PER_FLOOR;
-
-	// Get voxel data for each floor. Each should be 8192 bytes.
+	// Get voxel data for each floor.
 	const std::vector<VoxelID> &getFLOR() const;
 	const std::vector<VoxelID> &getMAP1() const;
 	const std::vector<VoxelID> &getMAP2() const;
