@@ -90,7 +90,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 				const int dstIndex = dX + ((z + dZ) * gridDepth);
 
 				auto writeRow = [chunkDim, srcIndex, dstIndex](
-					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+					const std::vector<MIFFile::VoxelID> &src, std::vector<uint16_t> &dst)
 				{
 					const auto srcBegin = src.begin() + srcIndex;
 					const auto srcEnd = srcBegin + chunkDim;

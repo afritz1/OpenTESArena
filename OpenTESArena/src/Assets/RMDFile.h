@@ -6,6 +6,8 @@
 
 class RMDFile
 {
+public:
+	using VoxelID = uint16_t;
 private:
 	// Bytes per floor, always 8192.
 	static const int BYTES_PER_FLOOR;
@@ -23,9 +25,9 @@ public:
 	static const int ELEMENTS_PER_FLOOR;
 
 	// Get voxel data for each floor. Each should be 8192 bytes.
-	const std::vector<uint16_t> &getFLOR() const;
-	const std::vector<uint16_t> &getMAP1() const;
-	const std::vector<uint16_t> &getMAP2() const;
+	const std::vector<VoxelID> &getFLOR() const;
+	const std::vector<VoxelID> &getMAP1() const;
+	const std::vector<VoxelID> &getMAP2() const;
 };
 
 #endif

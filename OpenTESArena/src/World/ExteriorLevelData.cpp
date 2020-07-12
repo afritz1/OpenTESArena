@@ -149,7 +149,7 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 				const int dstIndex = xOffset + ((z + zOffset) * gridDepth);
 
 				auto writeRow = [&blockMif, srcIndex, dstIndex](
-					const std::vector<uint16_t> &src, std::vector<uint16_t> &dst)
+					const std::vector<MIFFile::VoxelID> &src, std::vector<uint16_t> &dst)
 				{
 					const auto srcBegin = src.begin() + srcIndex;
 					const auto srcEnd = srcBegin + blockMif.getWidth();
@@ -996,7 +996,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 			const int srcIndex = z * RMDFile::DEPTH;
 			const int dstIndex = xOffset + ((z + zOffset) * tempFlor.getWidth());
 
-			auto writeRow = [srcIndex, dstIndex](const std::vector<uint16_t> &src,
+			auto writeRow = [srcIndex, dstIndex](const std::vector<RMDFile::VoxelID> &src,
 				Buffer2D<uint16_t> &dst)
 			{
 				const auto srcBegin = src.begin() + srcIndex;

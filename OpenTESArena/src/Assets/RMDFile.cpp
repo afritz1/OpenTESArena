@@ -25,9 +25,9 @@ bool RMDFile::init(const char *filename)
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
 	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
-	this->flor = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
-	this->map1 = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
-	this->map2 = std::vector<uint16_t>(RMDFile::ELEMENTS_PER_FLOOR);
+	this->flor = std::vector<VoxelID>(RMDFile::ELEMENTS_PER_FLOOR);
+	this->map1 = std::vector<VoxelID>(RMDFile::ELEMENTS_PER_FLOOR);
+	this->map2 = std::vector<VoxelID>(RMDFile::ELEMENTS_PER_FLOOR);
 
 	// The first word is the uncompressed length. Some .RMD files (#001 - #004) have 0 for 
 	// this value. They are used for storing uncompressed quarters of cities when in the 
@@ -76,17 +76,17 @@ bool RMDFile::init(const char *filename)
 	return true;
 }
 
-const std::vector<uint16_t> &RMDFile::getFLOR() const
+const std::vector<RMDFile::VoxelID> &RMDFile::getFLOR() const
 {
 	return this->flor;
 }
 
-const std::vector<uint16_t> &RMDFile::getMAP1() const
+const std::vector<RMDFile::VoxelID> &RMDFile::getMAP1() const
 {
 	return this->map1;
 }
 
-const std::vector<uint16_t> &RMDFile::getMAP2() const
+const std::vector<RMDFile::VoxelID> &RMDFile::getMAP2() const
 {
 	return this->map2;
 }

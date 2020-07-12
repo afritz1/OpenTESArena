@@ -19,6 +19,8 @@
 class MIFFile
 {
 public:
+	using VoxelID = uint16_t;
+
 	struct Level
 	{
 		std::string name, info; // Name of level and associated INF filename.
@@ -26,7 +28,7 @@ public:
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
 		// - @todo: maybe store MAP2 data with each voxel's extended height?
-		std::vector<uint16_t> flor, map1, map2;
+		std::vector<VoxelID> flor, map1, map2;
 		std::vector<uint8_t> flat, inns, loot, stor;
 		std::vector<ArenaTypes::MIFTarget> targ;
 		std::vector<ArenaTypes::MIFLock> lock;
