@@ -984,31 +984,30 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	tempMap2.fill(0);
 
 	auto writeRMD = [&miscAssets, &tempFlor, &tempMap1, &tempMap2](
-		uint8_t rmdID, int xOffset, int zOffset)
+		uint8_t rmdID, WEInt xOffset, SNInt zOffset)
 	{
 		const std::vector<RMDFile> &rmdFiles = miscAssets.getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, rmdID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
 
 		// Copy .RMD voxel data to temp buffers.
-		for (int z = 0; z < RMDFile::DEPTH; z++)
+		const BufferView2D<const RMDFile::VoxelID> rmdFLOR = rmd.getFLOR();
+		const BufferView2D<const RMDFile::VoxelID> rmdMAP1 = rmd.getMAP1();
+		const BufferView2D<const RMDFile::VoxelID> rmdMAP2 = rmd.getMAP2();
+
+		for (SNInt z = 0; z < RMDFile::DEPTH; z++)
 		{
-			const int srcIndex = z * RMDFile::DEPTH;
-			const int dstIndex = xOffset + ((z + zOffset) * tempFlor.getWidth());
-
-			auto writeRow = [srcIndex, dstIndex](const std::vector<RMDFile::VoxelID> &src,
-				Buffer2D<uint16_t> &dst)
+			for (WEInt x = 0; x < RMDFile::WIDTH; x++)
 			{
-				const auto srcBegin = src.begin() + srcIndex;
-				const auto srcEnd = srcBegin + RMDFile::DEPTH;
-				const auto dstBegin = dst.get() + dstIndex;
-				DebugAssert((dstBegin + std::distance(srcBegin, srcEnd)) <= dst.end());
-				std::copy(srcBegin, srcEnd, dstBegin);
-			};
-
-			writeRow(rmd.getFLOR(), tempFlor);
-			writeRow(rmd.getMAP1(), tempMap1);
-			writeRow(rmd.getMAP2(), tempMap2);
+				const RMDFile::VoxelID srcFlorVoxel = rmdFLOR.get(x, z);
+				const RMDFile::VoxelID srcMap1Voxel = rmdMAP1.get(x, z);
+				const RMDFile::VoxelID srcMap2Voxel = rmdMAP2.get(x, z);
+				const WEInt dstX = xOffset + x;
+				const SNInt dstZ = zOffset + z;
+				tempFlor.set(dstX, dstZ, srcFlorVoxel);
+				tempMap1.set(dstX, dstZ, srcMap1Voxel);
+				tempMap2.set(dstX, dstZ, srcMap2Voxel);
+			}
 		}
 	};
 
