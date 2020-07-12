@@ -689,12 +689,12 @@ void ExteriorLevelData::revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gri
 	}
 }
 
-Buffer2D<uint8_t> ExteriorLevelData::generateWildernessIndices(uint32_t wildSeed,
-	const ExeData::Wilderness &wildData)
+Buffer2D<ExteriorLevelData::WildBlockID> ExteriorLevelData::generateWildernessIndices(
+	uint32_t wildSeed, const ExeData::Wilderness &wildData)
 {
-	const int wildWidth = 64;
-	const int wildHeight = 64;
-	Buffer2D<uint8_t> indices(wildWidth, wildHeight);
+	constexpr int wildWidth = 64;
+	constexpr int wildHeight = 64;
+	Buffer2D<WildBlockID> indices(wildWidth, wildHeight);
 	ArenaRandom random(wildSeed);
 
 	// Generate a random wilderness .MIF index for each wilderness chunk.
@@ -1005,7 +1005,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const auto &wildData = miscAssets.getExeData().wild;
-	const Buffer2D<uint8_t> wildIndices =
+	const Buffer2D<WildBlockID> wildIndices =
 		ExteriorLevelData::generateWildernessIndices(cityDef.wildSeed, wildData);
 
 	// Temp buffers for voxel data.

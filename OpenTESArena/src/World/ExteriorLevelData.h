@@ -19,6 +19,8 @@ class ProvinceDefinition;
 class ExteriorLevelData : public LevelData
 {
 private:
+	using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
+
 	DistantSky distantSky;
 
 	// Mappings of voxel coordinates to *MENU display names.
@@ -48,7 +50,7 @@ private:
 	static void revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
-	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,
+	static Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed,
 		const ExeData::Wilderness &wildData);
 
 	// Changes the default filler city skeleton to the one intended for the city.
