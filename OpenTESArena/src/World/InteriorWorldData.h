@@ -27,7 +27,7 @@ public:
 
 	static InteriorWorldData loadInterior(VoxelDefinition::WallData::MenuType interiorType,
 		const MIFFile &mif, const ExeData &exeData);
-	static InteriorWorldData loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
+	static InteriorWorldData loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
 		bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
 		const ExeData &exeData);
 

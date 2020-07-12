@@ -4,6 +4,8 @@
 #include "LevelData.h"
 #include "VoxelUtils.h"
 
+#include "components/utilities/BufferView.h"
+
 class InteriorLevelData : public LevelData
 {
 private:
@@ -22,7 +24,7 @@ private:
 	InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
-	void readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers, const INFFile &inf);
+	void readTriggers(const BufferView<const ArenaTypes::MIFTrigger> &triggers, const INFFile &inf);
 public:
 	InteriorLevelData(InteriorLevelData&&) = default;
 	virtual ~InteriorLevelData();

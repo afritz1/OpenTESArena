@@ -43,7 +43,7 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	return worldData;
 }
 
-InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks, int depthChunks,
+InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
 	bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
 	const ExeData &exeData)
 {
@@ -76,8 +76,8 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	// Determine transition blocks (*LEVELUP, *LEVELDOWN).
 	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
 	{
-		const int tY = random.next() % depthChunks;
-		const int tX = random.next() % widthChunks;
+		const SNInt tY = random.next() % depthChunks;
+		const WEInt tX = random.next() % widthChunks;
 		return (10 * tY) + tX;
 	};
 
@@ -101,7 +101,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 	}
 
 	// .INF filename is the same for each level (RD1.INF).
-	const std::string infName = String::toUppercase(mif.getLevels().front().info);
+	const std::string infName = String::toUppercase(mif.getLevels().front().getInfo());
 
 	InteriorWorldData worldData;
 	const SNInt gridWidth = mif.getDepth() * depthChunks;
@@ -123,12 +123,13 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, int widthChunks,
 
 	// The start point depends on where the level up voxel is on the first level.
 	// Convert it from the old coordinate system to the new one.
-	const double chunkDimReal = 32.0;
-	const double firstTransitionChunkX = static_cast<double>(transitions.front() % 10);
-	const double firstTransitionChunkZ = static_cast<double>(transitions.front() / 10);
+	constexpr WEDouble chunkWidthReal = 32.0;
+	constexpr SNDouble chunkDepthReal = chunkWidthReal;
+	const WEDouble firstTransitionChunkX = static_cast<WEDouble>(transitions.front() % 10);
+	const SNDouble firstTransitionChunkZ = static_cast<SNDouble>(transitions.front() / 10);
 	const OriginalDouble2 startPoint(
-		10.50 + (firstTransitionChunkX * chunkDimReal),
-		10.50 + (firstTransitionChunkZ * chunkDimReal));
+		10.50 + (firstTransitionChunkX * chunkWidthReal),
+		10.50 + (firstTransitionChunkZ * chunkDepthReal));
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;

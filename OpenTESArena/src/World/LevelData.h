@@ -16,6 +16,9 @@
 #include "../Entities/EntityManager.h"
 #include "../Math/Vector2.h"
 
+#include "components/utilities/BufferView.h"
+#include "components/utilities/BufferView2D.h"
+
 // Base class for each active "space" in the game. Exteriors only have one level, but
 // interiors can have several.
 
@@ -156,12 +159,12 @@ protected:
 		const std::string &name);
 
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
-	void readFLOR(const uint16_t *flor, const INFFile &inf, SNInt gridWidth, WEInt gridDepth);
-	void readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-		SNInt gridWidth, WEInt gridDepth, const ExeData &exeData);
-	void readMAP2(const uint16_t *map2, const INFFile &inf, SNInt gridWidth, WEInt gridDepth);
+	void readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const INFFile &inf);
+	void readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const INFFile &inf,
+		WorldType worldType, const ExeData &exeData);
+	void readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const INFFile &inf);
 	void readCeiling(const INFFile &inf);
-	void readLocks(const std::vector<ArenaTypes::MIFLock> &locks);
+	void readLocks(const BufferView<const ArenaTypes::MIFLock> &locks);
 
 	// Gets voxel IDs surrounding the given voxel. If one of the IDs would point to a voxel
 	// outside the grid, it is air.

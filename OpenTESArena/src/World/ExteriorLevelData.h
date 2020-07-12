@@ -31,8 +31,8 @@ private:
 	// initialized with the city skeleton.
 	static void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 		const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
-		ArenaRandom &random, const MiscAssets &miscAssets, std::vector<uint16_t> &dstFlor,
-		std::vector<uint16_t> &dstMap1, std::vector<uint16_t> &dstMap2);
+		ArenaRandom &random, const MiscAssets &miscAssets, Buffer2D<uint16_t> &dstFlor,
+		Buffer2D<uint16_t> &dstMap1, Buffer2D<uint16_t> &dstMap2);
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
@@ -45,7 +45,7 @@ private:
 
 	// This algorithm runs over the perimeter of a city map and changes palace graphics and
 	// their gates to the actual ones used in-game.
-	static void revisePalaceGraphics(std::vector<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
+	static void revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	static Buffer2D<uint8_t> generateWildernessIndices(uint32_t wildSeed,

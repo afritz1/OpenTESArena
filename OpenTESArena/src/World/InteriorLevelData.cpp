@@ -21,10 +21,10 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 	WEInt gridDepth, const ExeData &exeData)
 {
 	// .INF filename associated with the interior level.
-	const std::string infName = String::toUppercase(level.info);
+	const std::string infName = String::toUppercase(level.getInfo());
 
 	// Interior level.
-	InteriorLevelData levelData(gridWidth, gridDepth, infName, level.name);
+	InteriorLevelData levelData(gridWidth, gridDepth, infName, level.getName());
 
 	const INFFile &inf = levelData.getInfFile();
 	levelData.outdoorDungeon = inf.getCeiling().outdoorDungeon;
@@ -35,8 +35,8 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 		Color::Gray.toARGB() : Color::Black.toARGB();
 
 	// Load FLOR and MAP1 voxels.
-	levelData.readFLOR(level.flor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(level.map1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
+	levelData.readFLOR(level.getFLOR(), inf);
+	levelData.readMAP1(level.getMAP1(), inf, WorldType::Interior, exeData);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -50,10 +50,10 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 	}
 
 	// Assign locks.
-	levelData.readLocks(level.lock);
+	levelData.readLocks(level.getLOCK());
 
 	// Assign text and sound triggers.
-	levelData.readTriggers(level.trig, inf);
+	levelData.readTriggers(level.getTRIG(), inf);
 
 	return levelData;
 }
@@ -64,61 +64,68 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
-	std::vector<uint16_t> tempFlor(gridWidth * gridDepth, 0);
-	std::vector<uint16_t> tempMap1(gridWidth * gridDepth, 0);
+	Buffer2D<uint16_t> tempFlor(gridDepth, gridWidth);
+	Buffer2D<uint16_t> tempMap1(gridDepth, gridWidth);
+	tempFlor.fill(0);
+	tempMap1.fill(0);
+
 	std::vector<ArenaTypes::MIFLock> tempLocks;
 	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
 
-	const int chunkDim = 32;
+	constexpr WEInt chunkWidth = 32;
+	constexpr SNInt chunkDepth = chunkWidth;
 	const int tileSet = random.next() % 4;
 
-	for (int row = 0; row < depthChunks; row++)
+	for (SNInt row = 0; row < depthChunks; row++)
 	{
-		const int dZ = row * chunkDim;
-		for (int column = 0; column < widthChunks; column++)
+		const SNInt zOffset = row * chunkDepth;
+		for (WEInt column = 0; column < widthChunks; column++)
 		{
-			const int dX = column * chunkDim;
+			const WEInt xOffset = column * chunkWidth;
 
 			// Get the selected level from the .MIF file.
 			const int blockIndex = (tileSet * 8) + (random.next() % 8);
 			const auto &blockLevel = levels.at(blockIndex);
+			const BufferView2D<const MIFFile::VoxelID> &blockFLOR = blockLevel.getFLOR();
+			const BufferView2D<const MIFFile::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 
 			// Copy block data to temp buffers.
-			for (int z = 0; z < chunkDim; z++)
+			for (SNInt z = 0; z < chunkDepth; z++)
 			{
-				const int srcIndex = z * chunkDim;
-				const int dstIndex = dX + ((z + dZ) * gridDepth);
-
-				auto writeRow = [chunkDim, srcIndex, dstIndex](
-					const std::vector<MIFFile::VoxelID> &src, std::vector<uint16_t> &dst)
+				for (WEInt x = 0; x < chunkWidth; x++)
 				{
-					const auto srcBegin = src.begin() + srcIndex;
-					const auto srcEnd = srcBegin + chunkDim;
-					const auto dstBegin = dst.begin() + dstIndex;
-					std::copy(srcBegin, srcEnd, dstBegin);
-				};
-
-				writeRow(blockLevel.flor, tempFlor);
-				writeRow(blockLevel.map1, tempMap1);
+					const MIFFile::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
+					const MIFFile::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+					const WEInt dstX = xOffset + x;
+					const SNInt dstZ = zOffset + z;
+					tempFlor.set(dstX, dstZ, srcFlorVoxel);
+					tempMap1.set(dstX, dstZ, srcMap1Voxel);
+				}
 			}
 
 			// Assign locks to the current block.
-			for (const auto &lock : blockLevel.lock)
+			const BufferView<const ArenaTypes::MIFLock> &blockLOCK = blockLevel.getLOCK();
+			for (int i = 0; i < blockLOCK.getCount(); i++)
 			{
+				const auto &lock = blockLOCK.get(i);
+
 				ArenaTypes::MIFLock tempLock;
-				tempLock.x = lock.x + dX;
-				tempLock.y = lock.y + dZ;
+				tempLock.x = xOffset + lock.x;
+				tempLock.y = zOffset + lock.y;
 				tempLock.lockLevel = lock.lockLevel;
 
 				tempLocks.push_back(std::move(tempLock));
 			}
 
 			// Assign text/sound triggers to the current block.
-			for (const auto &trigger : blockLevel.trig)
+			const BufferView<const ArenaTypes::MIFTrigger> &blockTRIG = blockLevel.getTRIG();
+			for (int i = 0; i < blockTRIG.getCount(); i++)
 			{
+				const auto &trigger = blockTRIG.get(i);
+
 				ArenaTypes::MIFTrigger tempTrigger;
-				tempTrigger.x = trigger.x + dX;
-				tempTrigger.y = trigger.y + dZ;
+				tempTrigger.x = xOffset + trigger.x;
+				tempTrigger.y = zOffset + trigger.y;
 				tempTrigger.textIndex = trigger.textIndex;
 				tempTrigger.soundIndex = trigger.soundIndex;
 
@@ -132,14 +139,17 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	levelData.outdoorDungeon = false;
 
 	// Draw perimeter blocks. First top and bottom, then right and left.
-	const uint16_t perimeterVoxel = 0x7800;
-	std::fill(tempMap1.begin(), tempMap1.begin() + gridDepth, perimeterVoxel);
-	std::fill(tempMap1.rbegin(), tempMap1.rbegin() + gridDepth, perimeterVoxel);
-
-	for (SNInt z = 1; z < (gridWidth - 1); z++)
+	constexpr MIFFile::VoxelID perimeterVoxel = 0x7800;
+	for (WEInt x = 0; x < tempMap1.getWidth(); x++)
 	{
-		tempMap1.at(z * gridDepth) = perimeterVoxel;
-		tempMap1.at((z * gridDepth) + (gridDepth - 1)) = perimeterVoxel;
+		tempMap1.set(x, 0, perimeterVoxel);
+		tempMap1.set(x, tempMap1.getHeight() - 1, perimeterVoxel);
+	}
+
+	for (SNInt z = 1; z < (tempMap1.getHeight() - 1); z++)
+	{
+		tempMap1.set(0, z, perimeterVoxel);
+		tempMap1.set(tempMap1.getWidth() - 1, z, perimeterVoxel);
 	}
 
 	const INFFile &inf = levelData.getInfFile();
@@ -147,31 +157,40 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Put transition blocks, unless null. Unpack the level up/down block indices
 	// into X and Z chunk offsets.
 	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkDim);
-	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDim);
-	tempMap1.at(levelUpX + (levelUpZ * gridDepth)) = (levelUpVoxelByte << 8) | levelUpVoxelByte;
+	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkWidth);
+	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDepth);
+	tempMap1.set(levelUpX, levelUpZ, (levelUpVoxelByte << 8) | levelUpVoxelByte);
 
 	if (levelDownBlock != nullptr)
 	{
 		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkDim);
-		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDim);
-		tempMap1.at(levelDownX + (levelDownZ * gridDepth)) =
-			(levelDownVoxelByte << 8) | levelDownVoxelByte;
+		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkWidth);
+		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDepth);
+		tempMap1.set(levelDownX, levelDownZ, (levelDownVoxelByte << 8) | levelDownVoxelByte);
 	}
 
 	// Interior sky color (always black for dungeons).
 	// @todo: use actual color from palette.
 	levelData.skyColor = Color::Black.toARGB();
 
+	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
+		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	const BufferView2D<const MIFFile::VoxelID> tempMap1View(
+		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
-	levelData.readFLOR(tempFlor.data(), inf, gridWidth, gridDepth);
-	levelData.readMAP1(tempMap1.data(), inf, WorldType::Interior, gridWidth, gridDepth, exeData);
+	levelData.readFLOR(tempFlorView, inf);
+	levelData.readMAP1(tempMap1View, inf, WorldType::Interior, exeData);
 	levelData.readCeiling(inf);
 
+	const BufferView<const ArenaTypes::MIFLock> tempLocksView(
+		tempLocks.data(), static_cast<int>(tempLocks.size()));
+	const BufferView<const ArenaTypes::MIFTrigger> tempTriggersView(
+		tempTriggers.data(), static_cast<int>(tempTriggers.size()));
+
 	// Load locks and triggers (if any).
-	levelData.readLocks(tempLocks);
-	levelData.readTriggers(tempTriggers, inf);
+	levelData.readLocks(tempLocksView);
+	levelData.readTriggers(tempTriggersView, inf);
 
 	return levelData;
 }
@@ -193,11 +212,13 @@ bool InteriorLevelData::isOutdoorDungeon() const
 	return this->outdoorDungeon;
 }
 
-void InteriorLevelData::readTriggers(const std::vector<ArenaTypes::MIFTrigger> &triggers,
+void InteriorLevelData::readTriggers(const BufferView<const ArenaTypes::MIFTrigger> &triggers,
 	const INFFile &inf)
 {
-	for (const auto &trigger : triggers)
+	for (int i = 0; i < triggers.getCount(); i++)
 	{
+		const auto &trigger = triggers.get(i);
+
 		// Transform the voxel coordinates from the Arena layout to the new layout.
 		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(trigger.x, trigger.y));
 

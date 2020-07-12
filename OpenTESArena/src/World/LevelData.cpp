@@ -311,13 +311,15 @@ void LevelData::setVoxel(SNInt x, int y, WEInt z, uint16_t id)
 	this->voxelGrid.setVoxel(x, y, z, id);
 }
 
-void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, SNInt gridWidth, WEInt gridDepth)
+void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const INFFile &inf)
 {
+	const SNInt gridWidth = flor.getHeight();
+	const WEInt gridDepth = flor.getWidth();
+
 	// Lambda for obtaining a two-byte FLOR voxel.
-	auto getFlorVoxel = [flor, gridWidth, gridDepth](SNInt x, WEInt z)
+	auto getFlorVoxel = [&flor, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		const int index = (z * 2) + ((x * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(flor) + index);
+		const uint16_t voxel = flor.get(z, x);
 		return voxel;
 	};
 
@@ -511,14 +513,16 @@ void LevelData::readFLOR(const uint16_t *flor, const INFFile &inf, SNInt gridWid
 	}
 }
 
-void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType worldType,
-	SNInt gridWidth, WEInt gridDepth, const ExeData &exeData)
+void LevelData::readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const INFFile &inf,
+	WorldType worldType, const ExeData &exeData)
 {
+	const SNInt gridWidth = map1.getHeight();
+	const WEInt gridDepth = map1.getWidth();
+
 	// Lambda for obtaining a two-byte MAP1 voxel.
-	auto getMap1Voxel = [map1, gridWidth, gridDepth](SNInt x, WEInt z)
+	auto getMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		const int index = (z * 2) + ((x * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map1) + index);
+		const uint16_t voxel = map1.get(z, x);
 		return voxel;
 	};
 
@@ -934,13 +938,15 @@ void LevelData::readMAP1(const uint16_t *map1, const INFFile &inf, WorldType wor
 	}
 }
 
-void LevelData::readMAP2(const uint16_t *map2, const INFFile &inf, SNInt gridWidth, WEInt gridDepth)
+void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const INFFile &inf)
 {
+	const SNInt gridWidth = map2.getHeight();
+	const WEInt gridDepth = map2.getWidth();
+
 	// Lambda for obtaining a two-byte MAP2 voxel.
-	auto getMap2Voxel = [map2, gridWidth, gridDepth](SNInt x, WEInt z)
+	auto getMap2Voxel = [&map2, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		const int index = (z * 2) + ((x * 2) * gridDepth);
-		const uint16_t voxel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(map2) + index);
+		const uint16_t voxel = map2.get(z, x);
 		return voxel;
 	};
 
@@ -1041,10 +1047,11 @@ void LevelData::readCeiling(const INFFile &inf)
 	}
 }
 
-void LevelData::readLocks(const std::vector<ArenaTypes::MIFLock> &locks)
+void LevelData::readLocks(const BufferView<const ArenaTypes::MIFLock> &locks)
 {
-	for (const auto &lock : locks)
+	for (int i = 0; i < locks.getCount(); i++)
 	{
+		const auto &lock = locks.get(i);
 		const NewInt2 lockPosition = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(lock.x, lock.y));
 		this->locks.insert(std::make_pair(lockPosition, LevelData::Lock(lockPosition, lock.lockLevel)));
 	}
