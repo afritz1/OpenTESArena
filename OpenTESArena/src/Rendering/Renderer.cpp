@@ -182,9 +182,9 @@ int Renderer::getViewHeight() const
 
 SDL_Rect Renderer::getLetterboxDimensions() const
 {
-	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
-	const double nativeAspect = static_cast<double>(nativeSurface->w) /
-		static_cast<double>(nativeSurface->h);
+	const Int2 windowDims = this->getWindowDimensions();
+	const double nativeAspect = static_cast<double>(windowDims.x) /
+		static_cast<double>(windowDims.y);
 	const double letterboxAspect = this->getLetterboxAspect();
 
 	// Compare the two aspects to decide what the letterbox dimensions are.
@@ -194,31 +194,31 @@ SDL_Rect Renderer::getLetterboxDimensions() const
 		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = 0;
-		rect.w = nativeSurface->w;
-		rect.h = nativeSurface->h;
+		rect.w = windowDims.x;
+		rect.h = windowDims.y;
 		return rect;
 	}
 	else if (nativeAspect > letterboxAspect)
 	{
 		// Native window is wider = empty left and right.
-		int subWidth = static_cast<int>(std::ceil(
-			static_cast<double>(nativeSurface->h) * letterboxAspect));
+		const int subWidth = static_cast<int>(std::ceil(
+			static_cast<double>(windowDims.y) * letterboxAspect));
 		SDL_Rect rect;
-		rect.x = (nativeSurface->w - subWidth) / 2;
+		rect.x = (windowDims.x - subWidth) / 2;
 		rect.y = 0;
 		rect.w = subWidth;
-		rect.h = nativeSurface->h;
+		rect.h = windowDims.y;
 		return rect;
 	}
 	else
 	{
 		// Native window is taller = empty top and bottom.
-		int subHeight = static_cast<int>(std::ceil(
-			static_cast<double>(nativeSurface->w) / letterboxAspect));
+		const int subHeight = static_cast<int>(std::ceil(
+			static_cast<double>(windowDims.x) / letterboxAspect));
 		SDL_Rect rect;
 		rect.x = 0;
-		rect.y = (nativeSurface->h - subHeight) / 2;
-		rect.w = nativeSurface->w;
+		rect.y = (windowDims.y - subHeight) / 2;
+		rect.w = windowDims.x;
 		rect.h = subHeight;
 		return rect;
 	}
@@ -470,10 +470,10 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 
 void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)
 {
-	// The window's dimensions are resized automatically. The renderer's are not.
-	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(this->window);
-	DebugAssertMsg(nativeSurface->w == width, "Mismatched resize widths.");
-	DebugAssertMsg(nativeSurface->h == height, "Mismatched resize heights.");
+	// The window's dimensions are resized automatically by SDL. The renderer's are not.
+	const Int2 windowDims = this->getWindowDimensions();
+	DebugAssertMsg(windowDims.x == width, "Mismatched resize widths.");
+	DebugAssertMsg(windowDims.y == height, "Mismatched resize heights.");
 
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
