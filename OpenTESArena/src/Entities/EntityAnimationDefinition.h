@@ -3,6 +3,7 @@
 
 #include <array>
 #include <vector>
+#include <string>
 
 #include "EntityAnimationUtils.h"
 
@@ -63,14 +64,16 @@ public:
 	};
 private:
 	std::vector<StateList> stateLists;
-	// @todo: should have a name so it can be found in a database. I.e. "Rat".
+	std::string name; // Rat, goblin, etc..
 public:
 	int getStateListCount() const;
 	const StateList &getStateList(int index) const;
 	bool tryGetStateListIndex(const char *name, int *outStateIndex) const;
+	const std::string &getName() const;
 
 	void addStateList(StateList &&stateList);
 	void removeStateList(const char *name);
+	void setName(const std::string &name);
 	void clear();
 };
 

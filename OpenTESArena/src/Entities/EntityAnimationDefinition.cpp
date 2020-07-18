@@ -116,6 +116,11 @@ bool EntityAnimationDefinition::tryGetStateListIndex(const char *name, int *outS
 	return false;
 }
 
+const std::string &EntityAnimationDefinition::getName() const
+{
+	return this->name;
+}
+
 void EntityAnimationDefinition::addStateList(StateList &&stateList)
 {
 	this->stateLists.push_back(std::move(stateList));
@@ -130,7 +135,13 @@ void EntityAnimationDefinition::removeStateList(const char *name)
 	}
 }
 
+void EntityAnimationDefinition::setName(const std::string &name)
+{
+	this->name = name;
+}
+
 void EntityAnimationDefinition::clear()
 {
 	this->stateLists.clear();
+	this->name.clear();
 }
