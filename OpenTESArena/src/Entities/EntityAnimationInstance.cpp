@@ -97,6 +97,7 @@ void EntityAnimationInstance::clearStateLists()
 void EntityAnimationInstance::setStateListIndex(int index)
 {
 	this->stateListIndex = index;
+	this->resetTime();
 }
 
 void EntityAnimationInstance::resetTime()
