@@ -2,7 +2,7 @@
 #define IMAGE_H
 
 #include <cstdint>
-#include <optional>
+#include <memory>
 
 #include "Color.h"
 #include "Palette.h"
@@ -15,7 +15,7 @@ class Image
 {
 private:
 	Buffer2D<uint8_t> pixels;
-	std::optional<Palette> palette;
+	std::unique_ptr<Palette> palette;
 public:
 	void init(int width, int height, const Palette *palette);
 
