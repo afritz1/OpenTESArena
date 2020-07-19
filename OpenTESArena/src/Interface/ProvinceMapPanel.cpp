@@ -813,7 +813,7 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 
 				auto getColorFromIndex = [this, highlightType, &surface](int paletteIndex)
 				{
-					const auto &palette = this->provinceMapPalette.get();
+					const auto &palette = this->provinceMapPalette;
 					DebugAssertIndex(palette, paletteIndex);
 					const Color &color = palette[paletteIndex];
 					return surface.mapRGBA(color.r, color.g, color.b, color.a);

@@ -18,7 +18,6 @@
 class Color;
 class DistantSky;
 class EntityManager;
-class Palette;
 class Rect;
 class Surface;
 class VoxelGrid;

@@ -4,6 +4,7 @@
 
 #include "PaletteFile.h"
 #include "PaletteName.h"
+#include "PaletteUtils.h"
 #include "TextureManager.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
@@ -90,7 +91,7 @@ Surface TextureManager::make32BitFromPaletted(int width, int height,
 	std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
 		[&palette](uint8_t pixel)
 	{
-		return palette.get()[pixel].toARGB();
+		return palette[pixel].toARGB();
 	});
 
 	return surface;
@@ -124,8 +125,7 @@ Buffer2D<uint8_t> TextureManager::make8BitSurface(const std::string_view &filena
 		const Palette *imgPalette = img.getPalette();
 		if (imgPalette != nullptr && outPalette != nullptr)
 		{
-			std::copy(imgPalette->get().begin(), imgPalette->get().end(),
-				outPalette->get().begin());
+			std::copy(imgPalette->begin(), imgPalette->end(), outPalette->begin());
 		}
 	}
 	else
@@ -325,7 +325,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 	}
 
 	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = Palette::isBuiltIn(paletteName);
+	const bool useBuiltInPalette = PaletteUtils::isBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
 	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
@@ -358,14 +358,14 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 
 		const Palette &colPalette = colFile.getPalette();
 
-		DebugAssert(colPalette.get().size() == 256);
+		DebugAssert(colPalette.size() == PALETTE_SIZE);
 		surface = Surface::createWithFormat(16, 16, Renderer::DEFAULT_BPP,
 			Renderer::DEFAULT_PIXELFORMAT);
 		
 		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
-		for (size_t i = 0; i < colPalette.get().size(); i++)
+		for (size_t i = 0; i < colPalette.size(); i++)
 		{
-			pixels[i] = colPalette.get()[i].toARGB();
+			pixels[i] = colPalette[i].toARGB();
 		}
 	}
 	else if (isIMG || isMNU)
@@ -391,7 +391,7 @@ const Surface &TextureManager::getSurface(const std::string &filename,
 		std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
 			[&palette](uint8_t srcPixel)
 		{
-			return palette.get()[srcPixel].toARGB();
+			return palette[srcPixel].toARGB();
 		});
 	}
 	else
@@ -423,7 +423,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 		return textureIter->second;
 	}
 	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = Palette::isBuiltIn(paletteName);
+	const bool useBuiltInPalette = PaletteUtils::isBuiltIn(paletteName);
 
 	// See if the palette hasn't already been loaded.
 	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
@@ -469,7 +469,7 @@ const Texture &TextureManager::getTexture(const std::string &filename,
 			std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
 				[&palette](uint8_t srcPixel)
 			{
-				return palette.get()[srcPixel].toARGB();
+				return palette[srcPixel].toARGB();
 			});
 
 			return surface;
@@ -515,7 +515,7 @@ const std::vector<Surface> &TextureManager::getSurfaces(
 	}
 
 	// Do not use a built-in palette for surface sets.
-	DebugAssertMsg(!Palette::isBuiltIn(paletteName),
+	DebugAssertMsg(!PaletteUtils::isBuiltIn(paletteName),
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.
@@ -668,7 +668,7 @@ const std::vector<Texture> &TextureManager::getTextures(
 	}
 
 	// Do not use a built-in palette for texture sets.
-	DebugAssertMsg(!Palette::isBuiltIn(paletteName),
+	DebugAssertMsg(!PaletteUtils::isBuiltIn(paletteName),
 		"Image sets (i.e., .SET files) do not have built-in palettes.");
 
 	// See if the palette hasn't already been loaded.

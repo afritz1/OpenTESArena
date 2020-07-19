@@ -17,6 +17,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
+#include "../Media/Palette.h"
 #include "../World/DistantSky.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
@@ -29,7 +30,6 @@
 // This class runs the CPU-based 3D rendering for the application.
 
 class Entity;
-class Palette;
 class VoxelGrid;
 
 class SoftwareRenderer

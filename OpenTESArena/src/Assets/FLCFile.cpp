@@ -228,13 +228,13 @@ bool FLCFile::readPalette(const uint8_t *chunkData, Palette *dst)
 	// the first color to be transparent. Skip count and color count should both be ignored
 	// (one byte each).
 	const uint8_t *colorData = chunkData + 4;
-	for (size_t i = 0; i < dst->get().size(); i++)
+	for (size_t i = 0; i < dst->size(); i++)
 	{
 		const uint8_t *ptr = colorData + (i * 3);
 		const uint8_t r = *(ptr + 0);
 		const uint8_t g = *(ptr + 1);
 		const uint8_t b = *(ptr + 2);
-		dst->get()[i] = Color(r, g, b, 255);
+		(*dst)[i] = Color(r, g, b, 255);
 	}
 
 	return true;

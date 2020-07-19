@@ -202,10 +202,10 @@ Palette IMGFile::readPalette(const uint8_t *paletteData)
 	uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t g = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
 	uint8_t b = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;
-	palette.get()[0] = Color(r, g, b, 0);
+	palette[0] = Color(r, g, b, 0);
 
 	// Remaining are solid, so give them 255 alpha.
-	std::generate(palette.get().begin() + 1, palette.get().end(),
+	std::generate(palette.begin() + 1, palette.end(),
 		[&paletteData]()
 	{
 		uint8_t r = std::min<uint8_t>(*(paletteData++), 63) * 255 / 63;

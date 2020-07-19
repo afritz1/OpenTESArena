@@ -1152,9 +1152,9 @@ Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, con
 			{
 				const int oldIndex = dest + j;
 				const int newIndex = src + j;
-				DebugAssertIndex(palette.get(), oldIndex);
-				DebugAssertIndex(newPalette.get(), newIndex);
-				newPalette.get()[newIndex] = palette.get()[oldIndex];
+				DebugAssertIndex(palette, oldIndex);
+				DebugAssertIndex(newPalette, newIndex);
+				newPalette[newIndex] = palette[oldIndex];
 			}
 		}
 	}
@@ -1172,9 +1172,9 @@ Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, con
 		{
 			const int oldIndex = raceOffset + i;
 			const int newIndex = skinColors[i];
-			DebugAssertIndex(palette.get(), oldIndex);
-			DebugAssertIndex(newPalette.get(), newIndex);
-			newPalette.get()[newIndex] = palette.get()[oldIndex];
+			DebugAssertIndex(palette, oldIndex);
+			DebugAssertIndex(newPalette, newIndex);
+			newPalette[newIndex] = palette[oldIndex];
 		}
 	}
 

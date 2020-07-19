@@ -59,7 +59,7 @@ SoftwareRenderer::VoxelTexel SoftwareRenderer::VoxelTexel::makeFrom8Bit(
 	// Convert ARGB color from integer to double-precision format. This does waste
 	// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
 	// for Arena's textures (eight textures is a megabyte).
-	const uint32_t srcARGB = palette.get()[texel].toARGB();
+	const uint32_t srcARGB = palette[texel].toARGB();
 	const Double4 srcTexel = Double4::fromARGB(srcARGB);
 	VoxelTexel voxelTexel;
 	voxelTexel.r = srcTexel.x;
@@ -111,7 +111,7 @@ SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
 		const int paletteIndex = (texel == PALETTE_INDEX_RED_SRC1) ? PALETTE_INDEX_RED_DST1 :
 			((texel == PALETTE_INDEX_RED_SRC2) ? PALETTE_INDEX_RED_DST2 : texel);
 
-		const uint32_t srcARGB = palette.get()[paletteIndex].toARGB();
+		const uint32_t srcARGB = palette[paletteIndex].toARGB();
 		const Double4 dstTexel = Double4::fromARGB(srcARGB);
 		flatTexel.r = dstTexel.x;
 		flatTexel.g = dstTexel.y;
@@ -147,7 +147,7 @@ SoftwareRenderer::SkyTexel SoftwareRenderer::SkyTexel::makeFrom8Bit(
 	else
 	{
 		// Color the texel normally.
-		const uint32_t srcARGB = palette.get()[texel].toARGB();
+		const uint32_t srcARGB = palette[texel].toARGB();
 		const Double4 dstTexel = Double4::fromARGB(srcARGB);
 		skyTexel.r = dstTexel.x;
 		skyTexel.g = dstTexel.y;
@@ -168,7 +168,7 @@ SoftwareRenderer::ChasmTexel::ChasmTexel()
 SoftwareRenderer::ChasmTexel SoftwareRenderer::ChasmTexel::makeFrom8Bit(
 	uint8_t texel, const Palette &palette)
 {
-	const uint32_t srcARGB = palette.get()[texel].toARGB();
+	const uint32_t srcARGB = palette[texel].toARGB();
 	const Double4 srcTexel = Double4::fromARGB(srcARGB);
 	ChasmTexel chasmTexel;
 	chasmTexel.r = srcTexel.x;

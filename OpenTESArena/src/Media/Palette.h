@@ -2,22 +2,10 @@
 #define PALETTE_H
 
 #include <array>
-#include <string>
 
 #include "Color.h"
 
-class Palette
-{
-private:
-	std::array<Color, 256> colors;
-public:
-	Palette();
-
-	// Returns whether the given palette name is "built-in" or not.
-	static bool isBuiltIn(const std::string &filename);
-
-	std::array<Color, 256> &get();
-	const std::array<Color, 256> &get() const;
-};
+constexpr int PALETTE_SIZE = 256;
+using Palette = std::array<Color, PALETTE_SIZE>;
 
 #endif

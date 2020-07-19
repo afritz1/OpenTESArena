@@ -637,7 +637,8 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 				{
 					const uint32_t color = [&palette, &subStar]()
 					{
-						const Color &paletteColor = palette.get().at(subStar.color);
+						DebugAssertIndex(palette, subStar.color);
+						const Color &paletteColor = palette[subStar.color];
 						return paletteColor.toARGB();
 					}();
 
