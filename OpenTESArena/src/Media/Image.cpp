@@ -2,12 +2,12 @@
 
 #include "components/debug/Debug.h"
 
-void Image::init(int width, int height, const Palette *palette)
+void Image::init(int width, int height, const PaletteID *paletteID)
 {
 	DebugAssertMsg(width > 0, "Width must be positive.");
 	DebugAssertMsg(height > 0, "Height must be positive.");
 	this->pixels.init(width, height);
-	this->palette = (palette != nullptr) ? std::make_unique<Palette>(*palette) : nullptr;
+	this->paletteID = (paletteID != nullptr) ? std::make_optional(*paletteID) : std::nullopt;
 }
 
 int Image::getWidth() const
@@ -30,14 +30,14 @@ const uint8_t *Image::getPixels() const
 	return this->pixels.get();
 }
 
-Palette *Image::getPalette()
+PaletteID *Image::getPaletteID()
 {
-	return this->palette.get();
+	return this->paletteID.has_value() ? &(*this->paletteID) : nullptr;
 }
 
-const Palette *Image::getPalette() const
+const PaletteID *Image::getPaletteID() const
 {
-	return this->palette.get();
+	return this->paletteID.has_value() ? &(*this->paletteID) : nullptr;
 }
 
 uint8_t Image::getPixel(int x, int y) const

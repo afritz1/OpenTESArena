@@ -2,10 +2,11 @@
 #define IMAGE_H
 
 #include <cstdint>
-#include <memory>
+#include <optional>
 
 #include "Color.h"
 #include "Palette.h"
+#include "TextureUtils.h"
 
 #include "components/utilities/Buffer2D.h"
 
@@ -15,16 +16,16 @@ class Image
 {
 private:
 	Buffer2D<uint8_t> pixels;
-	std::unique_ptr<Palette> palette;
+	std::optional<PaletteID> paletteID;
 public:
-	void init(int width, int height, const Palette *palette);
+	void init(int width, int height, const PaletteID *paletteID);
 
 	int getWidth() const;
 	int getHeight() const;
 	uint8_t *getPixels();
 	const uint8_t *getPixels() const;
-	Palette *getPalette();
-	const Palette *getPalette() const;
+	PaletteID *getPaletteID();
+	const PaletteID *getPaletteID() const;
 
 	uint8_t getPixel(int x, int y) const;
 	void setPixel(int x, int y, uint8_t color);
