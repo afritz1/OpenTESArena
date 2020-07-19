@@ -21,816 +21,578 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
-#include "components/vfs/manager.hpp"
 
-TextureManager::~TextureManager()
+namespace
 {
-	
+	// Texture filename extensions.
+	constexpr const char *EXTENSION_CEL = "CEL";
+	constexpr const char *EXTENSION_CFA = "CFA";
+	constexpr const char *EXTENSION_CIF = "CIF";
+	constexpr const char *EXTENSION_COL = "COL";
+	constexpr const char *EXTENSION_DFA = "DFA";
+	constexpr const char *EXTENSION_FLC = "FLC";
+	constexpr const char *EXTENSION_IMG = "IMG";
+	constexpr const char *EXTENSION_MNU = "MNU";
+	constexpr const char *EXTENSION_RCI = "RCI";
+	constexpr const char *EXTENSION_SET = "SET";
 }
 
-void TextureManager::loadCOLPalette(const std::string &colName)
+bool TextureManager::isValidFilename(const char *filename)
 {
-	COLFile colFile;
-	if (!colFile.init(colName.c_str()))
-	{
-		DebugCrash("Could not init .COL file \"" + colName + "\".");
-	}
-
-	this->palettes.emplace(std::make_pair(colName, colFile.getPalette()));
+	return filename != nullptr;
 }
 
-void TextureManager::loadIMGPalette(const std::string &imgName)
+bool TextureManager::matchesExtension(const char *filename, const char *extension)
 {
-	Palette palette;
-	if (!IMGFile::extractPalette(imgName.c_str(), palette))
-	{
-		DebugCrash("Could not extract palette from \"" + imgName + "\".");
-	}
-
-	this->palettes.emplace(std::make_pair(imgName, palette));
+	return StringView::caseInsensitiveEquals(StringView::getExtension(filename), extension);
 }
 
-void TextureManager::loadPalette(const std::string &paletteName)
+std::string TextureManager::makeTextureMappingName(const char *filename, const PaletteID *paletteID)
 {
-	// Don't load the same palette more than once.
-	DebugAssert(this->palettes.find(paletteName) == this->palettes.end());
-
-	// Get file extension of the palette name.
-	const std::string_view extension = StringView::getExtension(paletteName);
-	const bool isCOL = extension == "COL";
-	const bool isIMG = extension == "IMG";
-	const bool isMNU = extension == "MNU";
-
-	if (isCOL)
-	{
-		this->loadCOLPalette(paletteName);
-	}
-	else if (isIMG || isMNU)
-	{
-		this->loadIMGPalette(paletteName);
-	}
-	else
-	{
-		DebugCrash("Unrecognized palette \"" + paletteName + "\".");
-	}
-
-	// Make sure everything above works as intended.
-	DebugAssert(this->palettes.find(paletteName) != this->palettes.end());
+	const std::string textureName(filename);
+	return (paletteID != nullptr) ? (textureName + std::to_string(*paletteID)) : textureName;
 }
 
-Surface TextureManager::make32BitFromPaletted(int width, int height,
-	const uint8_t *srcPixels, const Palette &palette)
+Surface TextureManager::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
+	const Palette &palette)
 {
-	Surface surface = Surface::createWithFormat(width, height,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
-
-	// Generate a 32-bit color from each palette index in the source image and
-	// write them to the destination image.
+	Surface surface = Surface::createWithFormat(width, height, Renderer::DEFAULT_BPP,
+		Renderer::DEFAULT_PIXELFORMAT);
+	uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
 	const int pixelCount = width * height;
-	std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
-		[&palette](uint8_t pixel)
+
+	for (int i = 0; i < pixelCount; i++)
 	{
-		return palette[pixel].toARGB();
-	});
+		const uint8_t srcPixel = pixels[i];
+		const Color dstColor = palette[srcPixel];
+		dstPixels[i] = dstColor.toARGB();
+	}
 
 	return surface;
 }
 
-Buffer2D<uint8_t> TextureManager::make8BitSurface(const std::string_view &filename,
-	Palette *outPalette)
+Texture TextureManager::makeTextureFrom8Bit(int width, int height, const uint8_t *pixels,
+	const Palette &palette, Renderer &renderer)
 {
-	// Check what kind of file extension the filename has.
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isIMG = extension == "IMG";
-	const bool isMNU = extension == "MNU";
-
-	Buffer2D<uint8_t> buffer;
-
-	if (isIMG || isMNU)
+	Texture texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (texture.get() == nullptr)
 	{
-		IMGFile img;
-		if (!img.init(filename.data()))
-		{
-			DebugCrash("Could not init .IMG file \"" + std::string(filename) + "\".");
-		}
-
-		buffer.init(img.getWidth(), img.getHeight());
-
-		const uint8_t *srcPixels = img.getPixels();
-		const int pixelCount = img.getWidth() * img.getHeight();
-		std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-
-		// Optionally write out the contained palette (if any).
-		const Palette *imgPalette = img.getPalette();
-		if (imgPalette != nullptr && outPalette != nullptr)
-		{
-			std::copy(imgPalette->begin(), imgPalette->end(), outPalette->begin());
-		}
-	}
-	else
-	{
-		DebugCrash("Unrecognized surface format \"" + std::string(filename) + "\".");
+		DebugLogError("Couldn't create texture (dims: " +
+			std::to_string(width) + "x" + std::to_string(height) + ").");
+		return texture;
 	}
 
-	return buffer;
+	uint32_t *dstPixels;
+	int pitch;
+	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&dstPixels), &pitch) != 0)
+	{
+		DebugLogError("Couldn't lock SDL texture (dims: " +
+			std::to_string(width) + "x" + std::to_string(height) + ").");
+		return texture;
+	}
+
+	const int pixelCount = width * height;
+	for (int i = 0; i < pixelCount; i++)
+	{
+		const uint8_t srcPixel = pixels[i];
+		const Color dstColor = palette[srcPixel];
+		dstPixels[i] = dstColor.toARGB();
+	}
+
+	SDL_UnlockTexture(texture.get());
+
+	// Set alpha transparency on.
+	if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) != 0)
+	{
+		DebugLogError("Couldn't set SDL texture alpha blending.");
+	}
+
+	return texture;
 }
 
-Buffer2D<uint8_t> TextureManager::make8BitSurface(const std::string_view &filename)
+bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes)
 {
-	return TextureManager::make8BitSurface(filename, nullptr);
-}
-
-Buffer<Buffer2D<uint8_t>> TextureManager::make8BitSurfaces(const std::string_view &filename,
-	Buffer<Palette> *outPalettes)
-{
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isCFA = extension == "CFA";
-	const bool isCIF = extension == "CIF";
-	const bool isCEL = extension == "CEL";
-	const bool isDFA = extension == "DFA";
-	const bool isFLC = extension == "FLC";
-	const bool isRCI = extension == "RCI";
-	const bool isSET = extension == "SET";
-
-	Buffer<Buffer2D<uint8_t>> buffers;
-
-	if (isCFA)
+	if (TextureManager::matchesExtension(filename, EXTENSION_COL))
 	{
-		CFAFile cfa;
-		if (!cfa.init(filename.data()))
+		COLFile col;
+		if (!col.init(filename))
 		{
-			DebugCrash("Could not init .CFA file \"" + std::string(filename) + "\".");
+			DebugLogWarning("Couldn't init .COL file \"" + std::string(filename) + "\".");
+			return false;
 		}
 
-		buffers.init(cfa.getImageCount());
-
-		// Create a surface for each image in the .CFA.
-		for (int i = 0; i < cfa.getImageCount(); i++)
-		{
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(cfa.getWidth(), cfa.getHeight());
-
-			const uint8_t *srcPixels = cfa.getPixels(i);
-			const int pixelCount = cfa.getWidth() * cfa.getHeight();
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-		}
+		outPalettes->init(1);
+		outPalettes->set(0, col.getPalette());
 	}
-	else if (isCIF)
-	{
-		CIFFile cif;
-		if (!cif.init(filename.data()))
-		{
-			DebugCrash("Could not init .CIF file \"" + std::string(filename) + "\".");
-		}
-
-		buffers.init(cif.getImageCount());
-
-		// Create a surface for each image in the .CIF.
-		for (int i = 0; i < cif.getImageCount(); i++)
-		{
-			const int cifWidth = cif.getWidth(i);
-			const int cifHeight = cif.getHeight(i);
-
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(cifWidth, cifHeight);
-
-			const uint8_t *srcPixels = cif.getPixels(i);
-			const int pixelCount = cifWidth * cifHeight;
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-		}
-	}
-	else if (isDFA)
-	{
-		DFAFile dfa;
-		if (!dfa.init(filename.data()))
-		{
-			DebugCrash("Could not init .DFA file \"" + std::string(filename) + "\".");
-		}
-
-		buffers.init(dfa.getImageCount());
-
-		// Create a surface for each image in the .DFA.
-		for (int i = 0; i < dfa.getImageCount(); i++)
-		{
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(dfa.getWidth(), dfa.getHeight());
-
-			const uint8_t *srcPixels = dfa.getPixels(i);
-			const int pixelCount = dfa.getWidth() * dfa.getHeight();
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-		}
-	}
-	else if (isFLC || isCEL)
+	else if (TextureManager::matchesExtension(filename, EXTENSION_CEL) ||
+		TextureManager::matchesExtension(filename, EXTENSION_FLC))
 	{
 		FLCFile flc;
-		if (!flc.init(filename.data()))
+		if (!flc.init(filename))
 		{
-			DebugCrash("Could not init .FLC file \"" + std::string(filename) + "\".");
+			DebugLogWarning("Couldn't init .FLC/.CEL file \"" + std::string(filename) + "\".");
+			return false;
 		}
 
-		buffers.init(flc.getFrameCount());
-
-		// Optionally prepare the output palette buffer.
-		if (outPalettes != nullptr)
-		{
-			outPalettes->init(flc.getFrameCount());
-		}
-
-		// Create a surface for each frame in the .FLC.
+		outPalettes->init(flc.getFrameCount());
 		for (int i = 0; i < flc.getFrameCount(); i++)
 		{
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(flc.getWidth(), flc.getHeight());
-
-			const uint8_t *srcPixels = flc.getPixels(i);
-			const int pixelCount = flc.getWidth() * flc.getHeight();
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-
-			// Optionally write out the frame's palette.
-			if (outPalettes != nullptr)
-			{
-				const Palette &framePalette = flc.getFramePalette(i);
-				outPalettes->set(i, framePalette);
-			}
+			outPalettes->set(i, flc.getFramePalette(i));
 		}
 	}
-	else if (isRCI)
+	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, EXTENSION_MNU))
 	{
-		RCIFile rci;
-		if (!rci.init(filename.data()))
+		Palette palette;
+		if (!IMGFile::extractPalette(filename, palette))
 		{
-			DebugCrash("Could not init .RCI file \"" + std::string(filename) + "\".");
+			DebugLogWarning("Couldn't extract .IMG palette from \"" + std::string(filename) + "\".");
+			return false;
 		}
 
-		buffers.init(rci.getImageCount());
-
-		// Create a surface for each image in the .RCI.
-		for (int i = 0; i < rci.getImageCount(); i++)
-		{
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(RCIFile::WIDTH, RCIFile::HEIGHT);
-
-			const uint8_t *srcPixels = rci.getPixels(i);
-			const int pixelCount = RCIFile::WIDTH * RCIFile::HEIGHT;
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-		}
-	}
-	else if (isSET)
-	{
-		SETFile set;
-		if (!set.init(filename.data()))
-		{
-			DebugCrash("Could not init .SET file \"" + std::string(filename) + "\".");
-		}
-
-		buffers.init(set.getImageCount());
-
-		// Create a surface for each image in the .SET.
-		for (int i = 0; i < set.getImageCount(); i++)
-		{
-			Buffer2D<uint8_t> &buffer = buffers.get(i);
-			buffer.init(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
-
-			const uint8_t *srcPixels = set.getPixels(i);
-			const int pixelCount = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
-			std::copy(srcPixels, srcPixels + pixelCount, buffer.get());
-		}
+		outPalettes->init(1);
+		outPalettes->set(0, palette);
 	}
 	else
 	{
-		DebugCrash("Unrecognized surface list \"" + std::string(filename) + "\".");
+		DebugLogWarning("Unrecognized palette file \"" + std::string(filename) + "\".");
+		return false;
 	}
 
-	return buffers;
+	return true;
 }
 
-Buffer<Buffer2D<uint8_t>> TextureManager::make8BitSurfaces(const std::string_view &filename)
+bool TextureManager::tryLoadImages(const char *filename, const PaletteID *paletteID,
+	Buffer<Image> *outImages)
 {
-	return TextureManager::make8BitSurfaces(filename, nullptr);
-}
-
-const Surface &TextureManager::getSurface(const std::string &filename,
-	const std::string &paletteName)
-{
-	// Use this name when interfacing with the surfaces map.
-	const std::string fullName = filename + paletteName;
-
-	// See if the image file has already been loaded with the palette.
-	auto surfaceIter = this->surfaces.find(fullName);
-	if (surfaceIter != this->surfaces.end())
+	auto makeImage = [paletteID](int width, int height, const uint8_t *srcPixels)
 	{
-		// The requested surface exists.
-		return surfaceIter->second;
-	}
+		Image image;
+		image.init(width, height, paletteID);
 
-	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = PaletteUtils::isBuiltIn(paletteName);
+		const int pixelCount = width * height;
+		std::copy(srcPixels, srcPixels + pixelCount, image.getPixels());
 
-	// See if the palette hasn't already been loaded.
-	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
-	const bool imagePaletteIsLoaded = this->palettes.find(filename) != this->palettes.end();
-	if ((!useBuiltInPalette && !paletteIsLoaded) ||
-		(useBuiltInPalette && !imagePaletteIsLoaded))
+		return image;
+	};
+
+	if (TextureManager::matchesExtension(filename, EXTENSION_CFA))
 	{
-		// Use the image's filename if using the built-in palette. Otherwise, use the given
-		// palette name.
-		this->loadPalette(useBuiltInPalette ? filename : paletteName);
-	}
-
-	// The image hasn't been loaded with the palette yet, so make a new entry.
-	// Check what kind of file extension the filename has.
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isCOL = extension == "COL";
-	const bool isIMG = extension == "IMG";
-	const bool isMNU = extension == "MNU";
-
-	Surface surface;
-
-	if (isCOL)
-	{
-		// A palette was requested as the primary image. Convert it to a surface.
-		COLFile colFile;
-		if (!colFile.init(filename.c_str()))
+		CFAFile cfa;
+		if (!cfa.init(filename))
 		{
-			DebugCrash("Could not init .COL file \"" + filename + "\".");
+			DebugLogWarning("Couldn't init .CFA file \"" + std::string(filename) + "\".");
+			return false;
 		}
 
-		const Palette &colPalette = colFile.getPalette();
-
-		DebugAssert(colPalette.size() == PALETTE_SIZE);
-		surface = Surface::createWithFormat(16, 16, Renderer::DEFAULT_BPP,
-			Renderer::DEFAULT_PIXELFORMAT);
-		
-		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
-		for (size_t i = 0; i < colPalette.size(); i++)
+		outImages->init(cfa.getImageCount());
+		for (int i = 0; i < cfa.getImageCount(); i++)
 		{
-			pixels[i] = colPalette[i].toARGB();
+			Image image = makeImage(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
+			outImages->set(i, std::move(image));
 		}
 	}
-	else if (isIMG || isMNU)
+	else if (TextureManager::matchesExtension(filename, EXTENSION_CIF))
+	{
+		CIFFile cif;
+		if (!cif.init(filename))
+		{
+			DebugLogWarning("Couldn't init .CIF file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(cif.getImageCount());
+		for (int i = 0; i < cif.getImageCount(); i++)
+		{
+			Image image = makeImage(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
+			outImages->set(i, std::move(image));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_DFA))
+	{
+		DFAFile dfa;
+		if (!dfa.init(filename))
+		{
+			DebugLogWarning("Couldn't init .DFA file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(dfa.getImageCount());
+		for (int i = 0; i < dfa.getImageCount(); i++)
+		{
+			Image image = makeImage(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
+			outImages->set(i, std::move(image));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_FLC) ||
+		TextureManager::matchesExtension(filename, EXTENSION_CEL))
+	{
+		FLCFile flc;
+		if (!flc.init(filename))
+		{
+			DebugLogWarning("Couldn't init .FLC/.CEL file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(flc.getFrameCount());
+		for (int i = 0; i < flc.getFrameCount(); i++)
+		{
+			Image image = makeImage(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
+			outImages->set(i, std::move(image));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, EXTENSION_MNU))
 	{
 		IMGFile img;
-		if (!img.init(filename.c_str()))
+		if (!img.init(filename))
 		{
-			DebugCrash("Could not init .IMG file \"" + filename + "\".");
+			DebugLogWarning("Couldn't init .IMG/.MNU file \"" + std::string(filename) + "\".");
+			return false;
 		}
 
-		// Decide if the .IMG will use its own palette or not.
-		const Palette &palette = useBuiltInPalette ?
-			*img.getPalette() : this->palettes.at(paletteName);
-		
-		// Create a surface from the .IMG.
-		surface = Surface::createWithFormat(img.getWidth(), img.getHeight(),
-			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-
-		// Generate 32-bit colors from each palette index in the .IMG pixels and
-		// write them to the destination image.
-		const uint8_t *srcPixels = img.getPixels();
-		uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
-		std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
-			[&palette](uint8_t srcPixel)
+		Image image = makeImage(img.getWidth(), img.getHeight(), img.getPixels());
+		outImages->init(1);
+		outImages->set(0, std::move(image));
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_RCI))
+	{
+		RCIFile rci;
+		if (!rci.init(filename))
 		{
-			return palette[srcPixel].toARGB();
-		});
+			DebugLogWarning("Couldn't init .RCI file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(rci.getImageCount());
+		for (int i = 0; i < rci.getImageCount(); i++)
+		{
+			Image image = makeImage(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
+			outImages->set(i, std::move(image));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_SET))
+	{
+		SETFile set;
+		if (!set.init(filename))
+		{
+			DebugLogWarning("Couldn't init .SET file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(set.getImageCount());
+		for (int i = 0; i < set.getImageCount(); i++)
+		{
+			Image image = makeImage(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
+			outImages->set(i, std::move(image));
+		}
 	}
 	else
 	{
-		DebugCrash("Unrecognized surface format \"" + filename + "\".");
+		DebugLogWarning("Unrecognized image file \"" + std::string(filename) + "\".");
+		return false;
 	}
 
-	// Add the new surface and return it.
-	auto iter = this->surfaces.emplace(std::make_pair(fullName, std::move(surface))).first;
-	return iter->second;
+	return true;
 }
 
-const Surface &TextureManager::getSurface(const std::string &filename)
+bool TextureManager::tryLoadSurfaces(const char *filename, const Palette &palette,
+	Buffer<Surface> *outSurfaces)
 {
-	return this->getSurface(filename, this->activePalette);
+	// Reuse image loading code for convenience.
+	// @todo: presumably could put some 32-bit-only loading here, like .BMP, but the palette
+	// would need to be nullable then.
+	Buffer<Image> images;
+	if (!TextureManager::tryLoadImages(filename, nullptr, &images))
+	{
+		return false;
+	}
+
+	outSurfaces->init(images.getCount());
+	for (int i = 0; i < images.getCount(); i++)
+	{
+		const Image &image = images.get(i);
+		Surface surface = TextureManager::makeSurfaceFrom8Bit(
+			image.getWidth(), image.getHeight(), image.getPixels(), palette);
+		outSurfaces->set(i, std::move(surface));
+	}
+
+	return true;
 }
 
-const Texture &TextureManager::getTexture(const std::string &filename,
-	const std::string &paletteName, Renderer &renderer)
+bool TextureManager::tryLoadTextures(const char *filename, const Palette &palette,
+	Renderer &renderer, Buffer<Texture> *outTextures)
 {
-	// Use this name when interfacing with the textures map.
-	const std::string fullName = filename + paletteName;
-
-	// See if the image file has already been loaded with the palette.
-	auto textureIter = this->textures.find(fullName);
-	if (textureIter != this->textures.end())
+	// Reuse image loading code for convenience.
+	// @todo: presumably could put some 32-bit-only loading here, like .BMP, but the palette
+	// would need to be nullable then.
+	Buffer<Image> images;
+	if (!TextureManager::tryLoadImages(filename, nullptr, &images))
 	{
-		// The requested texture exists.
-		return textureIter->second;
-	}
-	// Attempt to use the image's built-in palette if requested.
-	const bool useBuiltInPalette = PaletteUtils::isBuiltIn(paletteName);
-
-	// See if the palette hasn't already been loaded.
-	const bool paletteIsLoaded = this->palettes.find(paletteName) != this->palettes.end();
-	const bool imagePaletteIsLoaded = this->palettes.find(filename) != this->palettes.end();
-	if ((!useBuiltInPalette && !paletteIsLoaded) || 
-		(useBuiltInPalette && !imagePaletteIsLoaded))
-	{
-		// Use the filename (i.e., TAMRIEL.IMG) if using the built-in palette.
-		// Otherwise, use the given palette name (i.e., PAL.COL).
-		this->loadPalette(useBuiltInPalette ? filename : paletteName);
+		return false;
 	}
 
-	// The image hasn't been loaded with the palette yet, so make a new entry.
-	// Check what kind of file extension the filename has.
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isIMG = extension == "IMG";
-	const bool isMNU = extension == "MNU";
-
-	Texture texture;
-
-	if (isIMG || isMNU)
+	outTextures->init(images.getCount());
+	for (int i = 0; i < images.getCount(); i++)
 	{
-		Surface surface = [this, &filename, &paletteName, useBuiltInPalette]()
+		const Image &image = images.get(i);
+		Texture texture = TextureManager::makeTextureFrom8Bit(
+			image.getWidth(), image.getHeight(), image.getPixels(), palette, renderer);
+		outTextures->set(i, std::move(texture));
+	}
+
+	return true;
+}
+
+bool TextureManager::tryGetPaletteIDs(const char *filename, IdGroup<PaletteID> *outIDs)
+{
+	if (!TextureManager::isValidFilename(filename))
+	{
+		DebugLogWarning("Invalid palette filename \"" + std::string(filename) + "\".");
+		return false;
+	}
+
+	std::string paletteName(filename);
+	auto iter = this->paletteIDs.find(paletteName);
+	if (iter == this->paletteIDs.end())
+	{
+		// Load palette(s) from file.
+		Buffer<Palette> palettes;
+		if (TextureManager::tryLoadPalettes(filename, &palettes))
 		{
-			IMGFile img;
-			if (!img.init(filename.c_str()))
+			const PaletteID id = static_cast<PaletteID>(this->palettes.size());
+			IdGroup<PaletteID> ids(id, 1);
+
+			for (int i = 0; i < palettes.getCount(); i++)
 			{
-				DebugCrash("Could not init .IMG file \"" + filename + "\".");
+				this->palettes.push_back(std::move(palettes.get(i)));
 			}
 
-			// Decide if the .IMG will use its own palette or not.
-			const Palette &palette = useBuiltInPalette ?
-				*img.getPalette() : this->palettes.at(paletteName);
+			iter = this->paletteIDs.emplace(
+				std::make_pair(std::move(paletteName), std::move(ids))).first;
+		}
+		else
+		{
+			DebugLogWarning("Couldn't load palette file \"" + paletteName + "\".");
+			return false;
+		}
+	}
 
-			// Create a surface from the .IMG.
-			Surface surface = Surface::createWithFormat(img.getWidth(), img.getHeight(),
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	*outIDs = iter->second;
+	return true;
+}
 
-			// Generate 32-bit colors from each palette index in the .IMG pixels and
-			// write them to the destination image.
-			const uint8_t *srcPixels = img.getPixels();
-			uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
-			std::transform(srcPixels, srcPixels + (img.getWidth() * img.getHeight()), dstPixels,
-				[&palette](uint8_t srcPixel)
+bool TextureManager::tryGetImageIDs(const char *filename, const PaletteID *paletteID,
+	IdGroup<ImageID> *outIDs)
+{
+	if (!TextureManager::isValidFilename(filename))
+	{
+		DebugLogWarning("Invalid image filename \"" + std::string(filename) + "\".");
+		return false;
+	}
+
+	std::string mappingName = TextureManager::makeTextureMappingName(filename, paletteID);
+	auto iter = this->imageIDs.find(mappingName);
+	if (iter == this->imageIDs.end())
+	{
+		// Load image(s) from file.
+		Buffer<Image> images;
+		if (TextureManager::tryLoadImages(filename, paletteID, &images))
+		{
+			const ImageID startID = static_cast<ImageID>(this->images.size());
+			IdGroup<ImageID> ids(startID, images.getCount());
+
+			for (int i = 0; i < images.getCount(); i++)
 			{
-				return palette[srcPixel].toARGB();
-			});
+				this->images.push_back(std::move(images.get(i)));
+			}
 
-			return surface;
-		}();
+			iter = this->imageIDs.emplace(
+				std::make_pair(std::move(mappingName), std::move(ids))).first;
+		}
+		else
+		{
+			DebugLogWarning("Couldn't load image file \"" + std::string(filename) + "\".");
+			return false;
+		}
+	}
 
-		// Create a texture from the surface.
-		texture = renderer.createTextureFromSurface(surface);
+	*outIDs = iter->second;
+	return true;
+}
 
-		// Set alpha transparency on.
-		SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND);
+bool TextureManager::tryGetImageIDs(const char *filename, IdGroup<ImageID> *outIDs)
+{
+	const PaletteID *paletteID = nullptr;
+	return this->tryGetImageIDs(filename, paletteID, outIDs);
+}
+
+bool TextureManager::tryGetSurfaceIDs(const char *filename, PaletteID paletteID,
+	IdGroup<SurfaceID> *outIDs)
+{
+	if (!TextureManager::isValidFilename(filename))
+	{
+		DebugLogWarning("Invalid surface filename \"" + std::string(filename) + "\".");
+		return false;
+	}
+
+	std::string mappingName = TextureManager::makeTextureMappingName(filename, &paletteID);
+	auto iter = this->surfaceIDs.find(mappingName);
+	if (iter == this->surfaceIDs.end())
+	{
+		const Palette &palette = this->getPalette(paletteID);
+
+		// Load surface(s) from file.
+		Buffer<Surface> surfaces;
+		if (TextureManager::tryLoadSurfaces(filename, palette, &surfaces))
+		{
+			const SurfaceID startID = static_cast<SurfaceID>(this->surfaces.size());
+			IdGroup<SurfaceID> ids(startID, surfaces.getCount());
+
+			for (int i = 0; i < surfaces.getCount(); i++)
+			{
+				this->surfaces.push_back(std::move(surfaces.get(i)));
+			}
+
+			iter = this->surfaceIDs.emplace(
+				std::make_pair(std::move(mappingName), std::move(ids))).first;
+		}
+		else
+		{
+			DebugLogWarning("Couldn't load surface file \"" + std::string(filename) + "\".");
+			return false;
+		}
+	}
+
+	*outIDs = iter->second;
+	return true;
+}
+
+bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
+	Renderer &renderer, IdGroup<TextureID> *outIDs)
+{
+	if (!TextureManager::isValidFilename(filename))
+	{
+		DebugLogWarning("Invalid texture filename \"" + std::string(filename) + "\".");
+		return false;
+	}
+
+	std::string mappingName = TextureManager::makeTextureMappingName(filename, &paletteID);
+	auto iter = this->textureIDs.find(mappingName);
+	if (iter == this->textureIDs.end())
+	{
+		const Palette &palette = this->getPalette(paletteID);
+
+		// Load texture(s) from file.
+		Buffer<Texture> textures;
+		if (TextureManager::tryLoadTextures(filename, palette, renderer, &textures))
+		{
+			const TextureID startID = static_cast<TextureID>(this->textures.size());
+			IdGroup<TextureID> ids(startID, textures.getCount());
+
+			for (int i = 0; i < textures.getCount(); i++)
+			{
+				this->textures.push_back(std::move(textures.get(i)));
+			}
+
+			iter = this->textureIDs.emplace(
+				std::make_pair(std::move(mappingName), std::move(ids))).first;
+		}
+		else
+		{
+			DebugLogWarning("Couldn't load texture file \"" + std::string(filename) + "\".");
+			return false;
+		}
+	}
+
+	*outIDs = iter->second;
+	return true;
+}
+
+bool TextureManager::tryGetPaletteID(const char *filename, PaletteID *outID)
+{
+	IdGroup<PaletteID> ids;
+	if (this->tryGetPaletteIDs(filename, &ids))
+	{
+		*outID = ids.startID;
+		return true;
 	}
 	else
 	{
-		DebugCrash("Unrecognized texture format \"" + filename + "\".");
+		return false;
 	}
-
-	// Add the new texture and return it.
-	auto iter = this->textures.emplace(std::make_pair(fullName, std::move(texture))).first;
-	DebugAssert(texture.get() == nullptr);
-	return iter->second;
 }
 
-const Texture &TextureManager::getTexture(const std::string &filename, Renderer &renderer)
+bool TextureManager::tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID)
 {
-	return this->getTexture(filename, this->activePalette, renderer);
-}
-
-const std::vector<Surface> &TextureManager::getSurfaces(
-	const std::string &filename, const std::string &paletteName)
-{
-	// This method deals with animations and movies, so it will check filenames 
-	// for ".CFA", ".CIF", ".DFA", ".FLC", ".SET", etc..
-
-	// Use this name when interfacing with the surface sets map.
-	const std::string fullName = filename + paletteName;
-
-	// See if the file has already been loaded with the palette.
-	auto setIter = this->surfaceSets.find(fullName);
-	if (setIter != this->surfaceSets.end())
+	IdGroup<ImageID> ids;
+	if (this->tryGetImageIDs(filename, paletteID, &ids))
 	{
-		// The requested texture set exists.
-		return setIter->second;
-	}
-
-	// Do not use a built-in palette for surface sets.
-	DebugAssertMsg(!PaletteUtils::isBuiltIn(paletteName),
-		"Image sets (i.e., .SET files) do not have built-in palettes.");
-
-	// See if the palette hasn't already been loaded.
-	if (this->palettes.find(paletteName) == this->palettes.end())
-	{
-		this->loadPalette(paletteName);
-	}
-
-	// The file hasn't been loaded with the palette yet, so make a new entry.
-	const auto iter = this->surfaceSets.emplace(
-		std::make_pair(fullName, std::vector<Surface>())).first;
-
-	std::vector<Surface> &surfaceSet = iter->second;
-	const Palette &palette = this->palettes.at(paletteName);
-
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isCFA = extension == "CFA";
-	const bool isCIF = extension == "CIF";
-	const bool isCEL = extension == "CEL";
-	const bool isDFA = extension == "DFA";
-	const bool isFLC = extension == "FLC";
-	const bool isRCI = extension == "RCI";
-	const bool isSET = extension == "SET";
-
-	if (isCFA)
-	{
-		CFAFile cfaFile;
-		if (!cfaFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .CFA file \"" + filename + "\".");
-		}
-
-		// Create a surface for each image in the .CFA.
-		for (int i = 0; i < cfaFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				cfaFile.getWidth(), cfaFile.getHeight(), cfaFile.getPixels(i), palette);
-			surfaceSet.push_back(std::move(surface));
-		}
-	}
-	else if (isCIF)
-	{
-		CIFFile cifFile;
-		if (!cifFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .CIF file \"" + filename + "\".");
-		}
-
-		// Create a surface for each image in the .CIF.
-		for (int i = 0; i < cifFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				cifFile.getWidth(i), cifFile.getHeight(i), cifFile.getPixels(i), palette);
-			surfaceSet.push_back(std::move(surface));
-		}
-	}
-	else if (isDFA)
-	{
-		DFAFile dfaFile;
-		if (!dfaFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .DFA file \"" + filename + "\".");
-		}
-
-		// Create a surface for each image in the .DFA.
-		for (int i = 0; i < dfaFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				dfaFile.getWidth(), dfaFile.getHeight(), dfaFile.getPixels(i), palette);
-			surfaceSet.push_back(std::move(surface));
-		}
-	}
-	else if (isFLC || isCEL)
-	{
-		FLCFile flcFile;
-		if (!flcFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .FLC/.CEL file \"" + filename + "\".");
-		}
-
-		// Create a surface for each frame in the .FLC.
-		for (int i = 0; i < flcFile.getFrameCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				flcFile.getWidth(), flcFile.getHeight(), flcFile.getPixels(i),
-				flcFile.getFramePalette(i));
-			surfaceSet.push_back(std::move(surface));
-		}
-	}
-	else if (isRCI)
-	{
-		RCIFile rciFile;
-		if (!rciFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .RCI file \"" + filename + "\".");
-		}
-
-		// Create a surface for each image in the .RCI.
-		for (int i = 0; i < rciFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				RCIFile::WIDTH, RCIFile::HEIGHT, rciFile.getPixels(i), palette);
-			surfaceSet.push_back(std::move(surface));
-		}
-	}
-	else if (isSET)
-	{
-		SETFile setFile;
-		if (!setFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .SET file \"" + filename + "\".");
-		}
-
-		// Create a surface for each image in the .SET.
-		for (int i = 0; i < setFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, setFile.getPixels(i), palette);
-			surfaceSet.push_back(std::move(surface));
-		}
+		*outID = ids.startID;
+		return true;
 	}
 	else
 	{
-		DebugCrash("Unrecognized surface list \"" + filename + "\".");
+		return false;
 	}
-
-	return surfaceSet;
 }
 
-const std::vector<Surface> &TextureManager::getSurfaces(const std::string &filename)
+bool TextureManager::tryGetImageID(const char *filename, ImageID *outID)
 {
-	return this->getSurfaces(filename, this->activePalette);
+	const PaletteID *paletteID = nullptr;
+	return this->tryGetImageID(filename, paletteID, outID);
 }
 
-const std::vector<Texture> &TextureManager::getTextures(
-	const std::string &filename, const std::string &paletteName, Renderer &renderer)
+bool TextureManager::tryGetSurfaceID(const char *filename, PaletteID paletteID, SurfaceID *outID)
 {
-	// This method deals with animations and movies, so it will check filenames 
-	// for ".CFA", ".CIF", ".DFA", ".FLC", ".SET", etc..
-
-	// Use this name when interfacing with the texture sets map.
-	const std::string fullName = filename + paletteName;
-
-	// See if the file has already been loaded with the palette.
-	auto setIter = this->textureSets.find(fullName);
-	if (setIter != this->textureSets.end())
+	IdGroup<SurfaceID> ids;
+	if (this->tryGetSurfaceIDs(filename, paletteID, &ids))
 	{
-		// The requested texture set exists.
-		return setIter->second;
-	}
-
-	// Do not use a built-in palette for texture sets.
-	DebugAssertMsg(!PaletteUtils::isBuiltIn(paletteName),
-		"Image sets (i.e., .SET files) do not have built-in palettes.");
-
-	// See if the palette hasn't already been loaded.
-	if (this->palettes.find(paletteName) == this->palettes.end())
-	{
-		this->loadPalette(paletteName);
-	}
-
-	// The file hasn't been loaded with the palette yet, so make a new entry.
-	const auto iter = this->textureSets.emplace(
-		std::make_pair(fullName, std::vector<Texture>())).first;
-
-	std::vector<Texture> &textureSet = iter->second;
-	const Palette &palette = this->palettes.at(paletteName);
-
-	const std::string_view extension = StringView::getExtension(filename);
-	const bool isCFA = extension == "CFA";
-	const bool isCIF = extension == "CIF";
-	const bool isCEL = extension == "CEL";
-	const bool isDFA = extension == "DFA";
-	const bool isFLC = extension == "FLC";
-	const bool isRCI = extension == "RCI";
-	const bool isSET = extension == "SET";
-
-	if (isCFA)
-	{
-		CFAFile cfaFile;
-		if (!cfaFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .CFA file \"" + filename + "\".");
-		}
-
-		// Create a texture for each image in the .CFA.
-		for (int i = 0; i < cfaFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				cfaFile.getWidth(), cfaFile.getHeight(), cfaFile.getPixels(i), palette);
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
-	}
-	else if (isCIF)
-	{
-		CIFFile cifFile;
-		if (!cifFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .CIF file \"" + filename + "\".");
-		}
-
-		// Create a texture for each image in the .CIF.
-		for (int i = 0; i < cifFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				cifFile.getWidth(i), cifFile.getHeight(i), cifFile.getPixels(i), palette);
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
-	}
-	else if (isDFA)
-	{
-		DFAFile dfaFile;
-		if (!dfaFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .DFA file \"" + filename + "\".");
-		}
-
-		// Create a texture for each image in the .DFA.
-		for (int i = 0; i < dfaFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				dfaFile.getWidth(), dfaFile.getHeight(), dfaFile.getPixels(i), palette);
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
-	}
-	else if (isFLC || isCEL)
-	{
-		FLCFile flcFile;
-		if (!flcFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .FLC/.CEL file \"" + filename + "\".");
-		}
-
-		// Create a texture for each frame in the .FLC.
-		for (int i = 0; i < flcFile.getFrameCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				flcFile.getWidth(), flcFile.getHeight(), flcFile.getPixels(i),
-				flcFile.getFramePalette(i));
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
-	}
-	else if (isRCI)
-	{
-		RCIFile rciFile;
-		if (!rciFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .RCI file \"" + filename + "\".");
-		}
-
-		// Create a texture for each image in the .RCI.
-		for (int i = 0; i < rciFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				RCIFile::WIDTH, RCIFile::HEIGHT, rciFile.getPixels(i), palette);
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
-	}
-	else if (isSET)
-	{
-		SETFile setFile;
-		if (!setFile.init(filename.c_str()))
-		{
-			DebugCrash("Could not init .SET file \"" + filename + "\".");
-		}
-
-		// Create a texture for each image in the .SET.
-		for (int i = 0; i < setFile.getImageCount(); i++)
-		{
-			Surface surface = TextureManager::make32BitFromPaletted(
-				SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, setFile.getPixels(i), palette);
-			Texture texture = renderer.createTextureFromSurface(surface);
-			textureSet.push_back(std::move(texture));
-		}
+		*outID = ids.startID;
+		return true;
 	}
 	else
 	{
-		DebugCrash("Unrecognized texture list \"" + filename + "\".");
+		return false;
 	}
+}
 
-	// Set alpha transparency on for each texture.
-	for (auto &texture : textureSet)
+bool TextureManager::tryGetTextureID(const char *filename, PaletteID paletteID,
+	Renderer &renderer, TextureID *outID)
+{
+	IdGroup<TextureID> ids;
+	if (this->tryGetTextureIDs(filename, paletteID, renderer, &ids))
 	{
-		SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND);
+		*outID = ids.startID;
+		return true;
 	}
-
-	return textureSet;
-}
-
-const std::vector<Texture> &TextureManager::getTextures(const std::string &filename,
-	Renderer &renderer)
-{
-	return this->getTextures(filename, this->activePalette, renderer);
-}
-
-void TextureManager::init()
-{
-	DebugLog("Initializing.");
-
-	// Load default palette.
-	this->setPalette(PaletteFile::fromName(PaletteName::Default));
-}
-
-void TextureManager::setPalette(const std::string &paletteName)
-{
-	// Check if the palette hasn't already been loaded.
-	if (this->palettes.find(paletteName) == this->palettes.end())
+	else
 	{
-		this->loadPalette(paletteName);
+		return false;
 	}
+}
 
-	this->activePalette = paletteName;
+const Palette &TextureManager::getPalette(PaletteID id) const
+{
+	DebugAssertIndex(this->palettes, id);
+	return this->palettes[id];
+}
+
+const Image &TextureManager::getImage(ImageID id) const
+{
+	DebugAssertIndex(this->images, id);
+	return this->images[id];
+}
+
+const Surface &TextureManager::getSurface(SurfaceID id) const
+{
+	DebugAssertIndex(this->surfaces, id);
+	return this->surfaces[id];
+}
+
+const Texture &TextureManager::getTexture(TextureID id) const
+{
+	DebugAssertIndex(this->textures, id);
+	return this->textures[id];
 }

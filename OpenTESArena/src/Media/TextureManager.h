@@ -7,7 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "Image.h"
 #include "Palette.h"
+#include "TextureUtils.h"
 #include "../Rendering/Surface.h"
 #include "../Rendering/Texture.h"
 
@@ -18,74 +20,89 @@ class Renderer;
 
 class TextureManager
 {
-private:
-	std::unordered_map<std::string, Palette> palettes;
-
-	// The filename and palette name are concatenated when mapping to avoid using two 
-	// maps. I.e., "EQUIPMEN.IMG" and "PAL.COL" become "EQUIPMEN.IMGPAL.COL".
-	std::unordered_map<std::string, Surface> surfaces;
-	std::unordered_map<std::string, Texture> textures;
-	std::unordered_map<std::string, std::vector<Surface>> surfaceSets;
-	std::unordered_map<std::string, std::vector<Texture>> textureSets;
-	std::string activePalette;
-
-	// Specialty method for loading a COL file into the palettes map.
-	void loadCOLPalette(const std::string &colName);
-
-	// Specialty method for loading the palette from an IMG file into the palettes map.
-	void loadIMGPalette(const std::string &imgName);
-
-	// Helper method for loading a palette file into the palettes map.
-	void loadPalette(const std::string &paletteName);
 public:
-	~TextureManager();
+	// Defines a contiguous group of texture IDs in the texture manager.
+	template <typename T>
+	struct IdGroup
+	{
+		static_assert(std::is_integral_v<T>);
 
+		T startID;
+		int count;
+
+		IdGroup(T startID, int count)
+		{
+			this->startID = startID;
+			this->count = count;
+		}
+
+		IdGroup() = default;
+	};
+private:
+	// Mappings of texture filenames to their ID(s). 32-bit texture functions need to accept a
+	// palette ID and append it to the texture name behind the scenes so the same texture filename
+	// can map to different instances depending on the palette.
+	std::unordered_map<std::string, IdGroup<PaletteID>> paletteIDs;
+	std::unordered_map<std::string, IdGroup<ImageID>> imageIDs;
+	std::unordered_map<std::string, IdGroup<SurfaceID>> surfaceIDs;
+	std::unordered_map<std::string, IdGroup<TextureID>> textureIDs;
+
+	// Texture data for each texture type. Any groups of textures from the same filename are
+	// stored contiguously.
+	std::vector<Palette> palettes;
+	std::vector<Image> images;
+	std::vector<Surface> surfaces;
+	std::vector<Texture> textures;
+
+	// Validates the given texture filename.
+	static bool isValidFilename(const char *filename);
+
+	// Returns whether the given filename has the given extension.
+	static bool matchesExtension(const char *filename, const char *extension);
+
+	// Texture name mapping function, for combining a texture name with an optional
+	// palette ID so the same texture name can be used with multiple palettes.
+	static std::string makeTextureMappingName(const char *filename, const PaletteID *paletteID);
+
+	// 32-bit texture generation functions.
+	static Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
+		const Palette &palette);
+	static Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels,
+		const Palette &palette, Renderer &renderer);
+
+	// Helper functions for loading texture files.
+	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
+	static bool tryLoadImages(const char *filename, const PaletteID *paletteID,
+		Buffer<Image> *outImages);
+	static bool tryLoadSurfaces(const char *filename, const Palette &palette,
+		Buffer<Surface> *outSurfaces);
+	static bool tryLoadTextures(const char *filename, const Palette &palette,
+		Renderer &renderer, Buffer<Texture> *outTextures);
+public:
 	TextureManager &operator=(TextureManager &&textureManager) = delete;
 
-	// Creates a 32-bit image with the given dimensions and settings from an 8-bit image
-	// and a 256 color palette.
-	static Surface make32BitFromPaletted(int width, int height,
-		const uint8_t *srcPixels, const Palette &palette);
+	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes
+	// must be loaded by the caller in advance -- no palettes are loaded in non-palette loader
+	// functions. If the requested file has multiple images but the caller requested only one, the
+	// returned ID will be for the first image. Similarly, if the file has a single image but the
+	// caller expected several, the returned ID group will have only one ID.
+	bool tryGetPaletteIDs(const char *filename, IdGroup<PaletteID> *outIDs);
+	bool tryGetImageIDs(const char *filename, const PaletteID *paletteID, IdGroup<ImageID> *outIDs);
+	bool tryGetImageIDs(const char *filename, IdGroup<ImageID> *outIDs);
+	bool tryGetSurfaceIDs(const char *filename, PaletteID paletteID, IdGroup<SurfaceID> *outIDs);
+	bool tryGetTextureIDs(const char *filename, PaletteID paletteID, Renderer &renderer,
+		IdGroup<TextureID> *outIDs);
+	bool tryGetPaletteID(const char *filename, PaletteID *outID);
+	bool tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID);
+	bool tryGetImageID(const char *filename, ImageID *outID);
+	bool tryGetSurfaceID(const char *filename, PaletteID paletteID, SurfaceID *outID);
+	bool tryGetTextureID(const char *filename, PaletteID paletteID, Renderer &renderer, TextureID *outID);
 
-	// Loads an 8-bit surface by filename and returns the allocated buffer. Optionally
-	// writes out the image's palette if it has one.
-	static Buffer2D<uint8_t> make8BitSurface(
-		const std::string_view &filename, Palette *outPalette);
-	static Buffer2D<uint8_t> make8BitSurface(const std::string_view &filename);
-
-	// Loads a list of 8-bit surfaces by filename and returns the allocated buffers.
-	// Optionally writes out the image's palette if it has one (several in some cases).
-	static Buffer<Buffer2D<uint8_t>> make8BitSurfaces(
-		const std::string_view &filename, Buffer<Palette> *outPalettes);
-	static Buffer<Buffer2D<uint8_t>> make8BitSurfaces(const std::string_view &filename);
-
-	// Gets a surface by filename. It will be loaded if not already stored with the 
-	// requested palette. If no palette name is given, the active one is used.
-	const Surface &getSurface(const std::string &filename, const std::string &paletteName);
-	const Surface &getSurface(const std::string &filename);
-
-	// Similar to getSurface() but for hardware-accelerated textures.
-	const Texture &getTexture(const std::string &filename, const std::string &paletteName,
-		Renderer &renderer);
-	const Texture &getTexture(const std::string &filename, Renderer &renderer);
-	
-	// Gets a set of surfaces by filename. Intended for files that contain a collection
-	// of individual images.
-	const std::vector<Surface> &getSurfaces(const std::string &filename,
-		const std::string &paletteName);
-	const std::vector<Surface> &getSurfaces(const std::string &filename);
-
-	// Similar to getSurfaces() but for hardware-accelerated textures.
-	const std::vector<Texture> &getTextures(const std::string &filename,
-		const std::string &paletteName, Renderer &renderer);
-	const std::vector<Texture> &getTextures(const std::string &filename, Renderer &renderer);
-
-	void init();
-
-	// Sets the palette to use for subsequent images. The source of the palette can be
-	// from a loose .COL file, or can be built into an .IMG. If the .IMG does not have a 
-	// built-in palette, an error occurs.
-	void setPalette(const std::string &paletteName);
+	// Texture getter functions, fast look-up.
+	const Palette &getPalette(PaletteID id) const;
+	const Image &getImage(ImageID id) const;
+	const Surface &getSurface(SurfaceID id) const;
+	const Texture &getTexture(TextureID id) const;
 };
 
 #endif
