@@ -5,6 +5,7 @@
 #include <string>
 
 #include "../Math/Vector2.h"
+#include "../Media/TextureManager.h"
 #include "../Media/TextureUtils.h"
 
 // Each panel interprets user input and draws to the screen. There is only one panel 

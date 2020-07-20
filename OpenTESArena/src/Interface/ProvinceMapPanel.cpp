@@ -637,14 +637,14 @@ void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
 void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const auto &cityStateIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename, renderer);
-	const auto &townIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::TownIcon), backgroundFilename, renderer);
-	const auto &villageIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename, renderer);
-	const auto &dungeonIcon = textureManager.getTexture(
-		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename, renderer);
+	const TextureID cityStateIconTextureID = this->getTextureID(
+		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
+	const TextureID townIconTextureID = this->getTextureID(
+		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
+	const TextureID villageIconTextureID = this->getTextureID(
+		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
+	const TextureID dungeonIconTextureID = this->getTextureID(
+		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename);
 
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -655,9 +655,10 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	// Gets the displayed icon for a location.
-	auto getLocationIcon = [this, &backgroundFilename, &textureManager, &renderer, &cityStateIcon,
-		&townIcon, &villageIcon, &dungeonIcon](const LocationDefinition &locationDef) -> const Texture&
+	// Gets the displayed icon texture ID for a location.
+	auto getLocationIconTextureID = [this, &backgroundFilename, &textureManager, &renderer,
+		cityStateIconTextureID, townIconTextureID, villageIconTextureID,
+		dungeonIconTextureID](const LocationDefinition &locationDef) -> TextureID
 	{
 		switch (locationDef.getType())
 		{
@@ -666,18 +667,18 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 			switch (locationDef.getCityDefinition().type)
 			{
 			case LocationDefinition::CityDefinition::Type::CityState:
-				return cityStateIcon;
+				return cityStateIconTextureID;
 			case LocationDefinition::CityDefinition::Type::Town:
-				return townIcon;
+				return townIconTextureID;
 			case LocationDefinition::CityDefinition::Type::Village:
-				return villageIcon;
+				return villageIconTextureID;
 			default:
 				throw DebugException(std::to_string(
 					static_cast<int>(locationDef.getCityDefinition().type)));
 			}
 		}
 		case LocationDefinition::Type::Dungeon:
-			return dungeonIcon;
+			return dungeonIconTextureID;
 		case LocationDefinition::Type::MainQuestDungeon:
 		{
 			const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType =
@@ -685,14 +686,14 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 			{
-				const auto &staffDungeonIcons = textureManager.getTextures(
-					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename, renderer);
-				DebugAssertIndex(staffDungeonIcons, this->provinceID);
-				return staffDungeonIcons[this->provinceID];
+				const TextureManager::IdGroup<TextureID> staffDungeonIconTextureIDs = this->getTextureIDs(
+					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename);
+				const TextureID staffDungeonIconTextureID = staffDungeonIconTextureIDs.startID + this->provinceID;
+				return staffDungeonIconTextureID;
 			}
 			else
 			{
-				return dungeonIcon;
+				return dungeonIconTextureID;
 			}
 		}
 		default:
@@ -700,16 +701,17 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 		}
 	};
 
-	auto drawIconIfVisible = [this, &renderer, &provinceDef, &getLocationIcon](
-		const LocationInstance &locationInst)
+	auto drawIconIfVisible = [this, &textureManager, &renderer, &provinceDef,
+		&getLocationIconTextureID](const LocationInstance &locationInst)
 	{
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
-			const Texture &icon = getLocationIcon(locationDef);
-			this->drawCenteredIcon(icon, point, renderer);
+			const TextureID iconTextureID = getLocationIconTextureID(locationDef);
+			const Texture &iconTexture = textureManager.getTexture(iconTextureID);
+			this->drawCenteredIcon(iconTexture, point, renderer);
 		}
 	};
 
@@ -735,12 +737,14 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 	const std::string &outlinesFilename = TextureFile::fromName(
 		(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
 		TextureName::MapIconOutlines : TextureName::MapIconOutlinesBlinking);
-	const auto &highlights = textureManager.getTextures(
-		outlinesFilename, backgroundFilename, renderer);
 
-	auto handleCityHighlight = [&renderer, &locationDef, &drawHighlight, &highlights]()
+	const TextureManager::IdGroup<TextureID> highlightTextureIDs =
+		this->getTextureIDs(outlinesFilename, backgroundFilename);
+
+	auto handleCityHighlight = [&textureManager, &renderer, &locationDef,
+		&drawHighlight, &highlightTextureIDs]()
 	{
-		const int highlightIndex = [&locationDef, &highlights]()
+		const int highlightIndex = [&locationDef, &highlightTextureIDs]()
 		{
 			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
@@ -757,22 +761,25 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 			}
 		}();
 
-		DebugAssertIndex(highlights, highlightIndex);
-		const Texture &highlight = highlights[highlightIndex];
-		drawHighlight(highlight);
+		DebugAssert(highlightIndex >= 0);
+		DebugAssert(highlightIndex < highlightTextureIDs.count);
+		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+		const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
+		drawHighlight(highlightTexture);
 	};
 
-	auto handleDungeonHighlight = [this, &drawHighlight, &highlights]()
+	auto handleDungeonHighlight = [this, &textureManager, &drawHighlight, &highlightTextureIDs]()
 	{
 		// Named dungeon (they all use the same icon).
 		const int highlightIndex = 3;
-		DebugAssertIndex(highlights, highlightIndex);
-		const Texture &highlight = highlights[highlightIndex];
-		drawHighlight(highlight);
+		DebugAssert(highlightIndex < highlightTextureIDs.count);
+		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+		const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
+		drawHighlight(highlightTexture);
 	};
 
 	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &backgroundFilename,
-		&textureManager, &renderer, &drawHighlight, &highlights]()
+		&textureManager, &renderer, &drawHighlight, &highlightTextureIDs]()
 	{
 		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
 			locationDef.getMainQuestDungeonDefinition();
@@ -785,15 +792,16 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		{
 			// Staff map dungeon.
 			const int highlightIndex = 3;
-			DebugAssertIndex(highlights, highlightIndex);
-			const Texture &highlight = highlights[highlightIndex];
-			drawHighlight(highlight);
+			DebugAssert(highlightIndex < highlightTextureIDs.count);
+			const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+			const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
+			drawHighlight(highlightTexture);
 		}
 		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{
 			// Staff dungeon. It changes a value in the palette to give the icon's background
 			// its yellow color (since there are no highlight icons for staff dungeons).
-			const Texture highlight = [this, highlightType, &renderer]()
+			const Texture highlightTexture = [this, highlightType, &renderer]()
 			{
 				// Get the palette indices associated with the staff dungeon icon.
 				const CIFFile &iconCif = this->staffDungeonCif;
@@ -833,7 +841,7 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 				return texture;
 			}();
 
-			drawHighlight(highlight);
+			drawHighlight(highlightTexture);
 		}
 		else
 		{
@@ -921,15 +929,13 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw province map background.
+	auto &textureManager = this->getGame().getTextureManager();
 	const std::string backgroundFilename = this->getBackgroundFilename();
-	const auto &mapBackground = textureManager.getTexture(
-		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mapBackground);
+	const TextureID mapBackgroundTextureID = this->getTextureID(
+		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
+	const Texture &mapBackgroundTexture = textureManager.getTexture(mapBackgroundTextureID);
+	renderer.drawOriginal(mapBackgroundTexture);
 
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);

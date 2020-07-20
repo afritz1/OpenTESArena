@@ -566,7 +566,8 @@ void FastTravelSubPanel::render(Renderer &renderer)
 	// Draw horse animation.
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureManager::IdGroup<TextureID> animationTextureIDs = this->getAnimationTextureIDs();
-	const TextureID animationTextureID = animationTextureIDs.startID + this->frameIndex;
+	const TextureID animationTextureID =
+		animationTextureIDs.startID + static_cast<int>(this->frameIndex);
 	const Texture &animFrame = textureManager.getTexture(animationTextureID);
 
 	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);

@@ -61,23 +61,34 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		DebugAssert(height >= 40);
 
 		// Get the nine parchment tiles.
-		const auto &tiles = textureManager.getSurfaces(
-			TextureFile::fromName(TextureName::Parchment), "STARTGAM.MNU");
+		const std::string tilesPaletteFilename = "STARTGAM.MNU";
+		PaletteID tilesPaletteID;
+		if (!textureManager.tryGetPaletteID(tilesPaletteFilename.c_str(), &tilesPaletteID))
+		{
+			DebugCrash("Couldn't get palette ID for \"" + tilesPaletteFilename + "\".");
+		}
+
+		const std::string &tilesFilename = TextureFile::fromName(TextureName::Parchment);
+		TextureManager::IdGroup<SurfaceID> tileIDs;
+		if (!textureManager.tryGetSurfaceIDs(tilesFilename.c_str(), tilesPaletteID, &tileIDs))
+		{
+			DebugCrash("Couldn't get surface IDs for \"" + tilesFilename + "\".");
+		}
 
 		// Four corner tiles.
-		SDL_Surface *topLeft = tiles.at(0).get();
-		SDL_Surface *topRight = tiles.at(2).get();
-		SDL_Surface *bottomLeft = tiles.at(6).get();
-		SDL_Surface *bottomRight = tiles.at(8).get();
+		SDL_Surface *topLeft = textureManager.getSurface(tileIDs.startID).get();
+		SDL_Surface *topRight = textureManager.getSurface(tileIDs.startID + 2).get();
+		SDL_Surface *bottomLeft = textureManager.getSurface(tileIDs.startID + 6).get();
+		SDL_Surface *bottomRight = textureManager.getSurface(tileIDs.startID + 8).get();
 
 		// Four side tiles.
-		SDL_Surface *top = tiles.at(1).get();
-		SDL_Surface *left = tiles.at(3).get();
-		SDL_Surface *right = tiles.at(5).get();
-		SDL_Surface *bottom = tiles.at(7).get();
+		SDL_Surface *top = textureManager.getSurface(tileIDs.startID + 1).get();
+		SDL_Surface *left = textureManager.getSurface(tileIDs.startID + 3).get();
+		SDL_Surface *right = textureManager.getSurface(tileIDs.startID + 5).get();
+		SDL_Surface *bottom = textureManager.getSurface(tileIDs.startID + 7).get();
 
 		// One body tile.
-		SDL_Surface *body = tiles.at(4).get();
+		SDL_Surface *body = textureManager.getSurface(tileIDs.startID + 4).get();
 
 		// Draw body tiles.
 		for (int y = topLeft->h; y < (surface.getHeight() - topRight->h); y += body->h)

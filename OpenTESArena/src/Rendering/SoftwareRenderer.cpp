@@ -581,16 +581,17 @@ SoftwareRenderer::DistantObjects::DistantObjects()
 }
 
 void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
-	std::vector<SkyTexture> &skyTextures, const Palette &palette)
+	std::vector<SkyTexture> &skyTextures, const Palette &palette, TextureManager &textureManager)
 {
 	DebugAssert(skyTextures.size() == 0);
 
-	// Creates a render texture from the given surface, adds it to the sky textures list, and
-	// returns its index in the sky textures list.
-	auto addSkyTexture = [&skyTextures, &palette](const BufferView2D<const uint8_t> &buffer)
+	// Creates a render texture from the given 8-bit image ID, adds it to the sky textures list,
+	// and returns its index in the sky textures list.
+	auto addSkyTexture = [&skyTextures, &palette, &textureManager](ImageID imageID)
 	{
-		const int width = buffer.getWidth();
-		const int height = buffer.getHeight();
+		const Image &image = textureManager.getImage(imageID);
+		const int width = image.getWidth();
+		const int height = image.getHeight();
 		const int texelCount = width * height;
 
 		skyTextures.push_back(SkyTexture());
@@ -605,7 +606,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			{
 				// Similar to ghosts, some clouds have special palette indices for a simple
 				// form of transparency.
-				const uint8_t texel = buffer.get(x, y);
+				const uint8_t texel = image.getPixel(x, y);
 				const int index = x + (y * width);
 				texture.texels[index] = SkyTexel::makeFrom8Bit(texel, palette);
 			}
@@ -641,7 +642,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
 		const int entryIndex = landObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
 		this->lands.push_back(DistantObject<DistantSky::LandObject>(landObject, textureIndex));
 	}
 
@@ -653,11 +654,11 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 		DebugAssert(setEntryCount > 0);
 
 		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(distantSky.getTextureSetElement(setEntryIndex, 0));
+		const int textureIndex = addSkyTexture(distantSky.getTextureSetImageID(setEntryIndex, 0));
 
 		for (int j = 1; j < setEntryCount; j++)
 		{
-			addSkyTexture(distantSky.getTextureSetElement(setEntryIndex, j));
+			addSkyTexture(distantSky.getTextureSetImageID(setEntryIndex, j));
 		}
 
 		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(
@@ -668,7 +669,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
 		const int entryIndex = airObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
 		this->airs.push_back(DistantObject<DistantSky::AirObject>(airObject, textureIndex));
 	}
 
@@ -676,7 +677,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
 		const int entryIndex = moonObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTexture(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
 		this->moons.push_back(DistantObject<DistantSky::MoonObject>(moonObject, textureIndex));
 	}
 
@@ -694,7 +695,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			{
 				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
 				const int entryIndex = largeStar.entryIndex;
-				return addSkyTexture(distantSky.getTexture(entryIndex));
+				return addSkyTexture(distantSky.getImageID(entryIndex));
 			}
 			else
 			{
@@ -711,7 +712,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		// Add the sun to the sky textures and assign its texture index.
 		const int sunEntryIndex = distantSky.getSunEntryIndex();
-		this->sunTextureIndex = addSkyTexture(distantSky.getTexture(sunEntryIndex));
+		this->sunTextureIndex = addSkyTexture(distantSky.getImageID(sunEntryIndex));
 	}
 }
 
@@ -1158,14 +1159,15 @@ void SoftwareRenderer::setFogDistance(double fogDistance)
 	this->fogDistance = fogDistance;
 }
 
-void SoftwareRenderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
+void SoftwareRenderer::setDistantSky(const DistantSky &distantSky, const Palette &palette,
+	TextureManager &textureManager)
 {
 	// Clear old distant sky data.
 	this->distantObjects.clear();
 	this->skyTextures.clear();
 
 	// Create distant objects and set the sky textures.
-	this->distantObjects.init(distantSky, this->skyTextures, palette);
+	this->distantObjects.init(distantSky, this->skyTextures, palette, textureManager);
 }
 
 void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)

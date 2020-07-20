@@ -627,10 +627,11 @@ void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const
 	this->softwareRenderer.addChasmTexture(chasmType, colors, width, height, palette);
 }
 
-void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette)
+void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette,
+	TextureManager &textureManager)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setDistantSky(distantSky, palette);
+	this->softwareRenderer.setDistantSky(distantSky, palette, textureManager);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)

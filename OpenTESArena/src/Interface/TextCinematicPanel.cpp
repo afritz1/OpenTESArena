@@ -136,15 +136,12 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->imageIndex++;
 
-		auto &game = this->getGame();
-		auto &renderer = game.getRenderer();
-		auto &textureManager = game.getTextureManager();
-
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
-		const auto &textures = textureManager.getTextures(this->sequenceName, renderer);
-		const int textureCount = static_cast<int>(textures.size());
-		if (this->imageIndex == textureCount)
+		const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
+			this->sequenceName, PaletteFile::fromName(PaletteName::Default));
+
+		if (this->imageIndex == textureIDs.count)
 		{
 			this->imageIndex = 0;
 		}
@@ -156,20 +153,16 @@ void TextCinematicPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
+	// Draw current frame in animation.
 	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Get a reference to all relevant textures.
-	const auto &textures = textureManager.getTextures(this->sequenceName, renderer);
-
-	// Draw animation.
-	const auto &texture = textures.at(this->imageIndex);
+	const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
+		this->sequenceName, PaletteFile::fromName(PaletteName::Default));
+	const TextureID textureID = textureIDs.startID + this->imageIndex;
+	const Texture &texture = textureManager.getTexture(textureID);
 	renderer.drawOriginal(texture);
 
-	// Get the relevant text box.
-	const auto &textBox = this->textBoxes.at(this->textIndex);
-
-	// Draw text.
+	// Draw the relevant text box.
+	DebugAssertIndex(this->textBoxes, this->textIndex);
+	const auto &textBox = this->textBoxes[this->textIndex];
 	renderer.drawOriginal(textBox->getTexture(), textBox->getX(), textBox->getY());
 }

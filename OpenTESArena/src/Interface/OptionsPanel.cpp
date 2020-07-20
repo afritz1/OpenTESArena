@@ -991,15 +991,12 @@ void OptionsPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw solid background.
 	const Color backgroundColor(60, 60, 68);
 	renderer.clearOriginal(backgroundColor);
 
 	// Draw return button and tabs.
+	auto &textureManager = this->getGame().getTextureManager();
 	Texture tabBackground = Texture::generate(Texture::PatternType::Custom1,
 		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
 	for (int i = 0; i < 5; i++)

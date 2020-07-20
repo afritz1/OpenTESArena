@@ -1114,7 +1114,7 @@ void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 	}
 
 	// Give distant sky data to the renderer.
-	renderer.setDistantSky(this->distantSky, col.getPalette());
+	renderer.setDistantSky(this->distantSky, col.getPalette(), textureManager);
 }
 
 void ExteriorLevelData::tick(Game &game, double dt)

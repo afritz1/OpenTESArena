@@ -118,15 +118,13 @@ void MainQuestSplashPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw staff dungeon splash image.
-	const auto &splashImage = textureManager.getTexture(
-		this->splashFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(splashImage);
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &textureName = this->splashFilename;
+	const std::string &paletteName = textureName;
+	const TextureID splashImageTextureID = this->getTextureID(textureName, paletteName);
+	const Texture &splashImageTexture = textureManager.getTexture(splashImageTextureID);
+	renderer.drawOriginal(splashImageTexture);
 
 	// Draw text.
 	renderer.drawOriginal(this->textBox->getTexture(),

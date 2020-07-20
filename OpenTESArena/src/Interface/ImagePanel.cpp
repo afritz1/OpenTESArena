@@ -55,10 +55,9 @@ void ImagePanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	auto &textureManager = this->getGame().getTextureManager();
-
 	// Draw image.
-	const auto &image = textureManager.getTexture(
-		this->textureName, this->paletteName, renderer);
-	renderer.drawOriginal(image);
+	auto &textureManager = this->getGame().getTextureManager();
+	const TextureID textureID = this->getTextureID(this->textureName, this->paletteName);
+	const Texture &texture = textureManager.getTexture(textureID);
+	renderer.drawOriginal(texture);
 }

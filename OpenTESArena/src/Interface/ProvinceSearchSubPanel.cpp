@@ -480,12 +480,13 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 	// Draw list background.
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	const auto &listBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::PopUp8), this->getBackgroundFilename(), renderer);
+	const TextureID listBackgroundTextureID = this->getTextureID(
+		TextureFile::fromName(TextureName::PopUp8), this->getBackgroundFilename());
+	const Texture &listBackgroundTexture = textureManager.getTexture(listBackgroundTextureID);
 
 	const int listBackgroundX = 57;
 	const int listBackgroundY = 11;
-	renderer.drawOriginal(listBackground, listBackgroundX, listBackgroundY);
+	renderer.drawOriginal(listBackgroundTexture, listBackgroundX, listBackgroundY);
 
 	// Draw list box text.
 	renderer.drawOriginal(this->locationsListBox->getTexture(),

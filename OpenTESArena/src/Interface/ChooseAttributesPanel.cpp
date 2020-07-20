@@ -286,10 +286,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							return std::make_unique<GameData>(std::move(player), miscAssets);
 						}();
 
-						// Set palette (important for texture loading).
-						auto &textureManager = game.getTextureManager();
-						textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 						// Find starting dungeon location definition.
 						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
 						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
@@ -325,6 +321,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
+						auto &textureManager = game.getTextureManager();
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
 							VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
 							textureManager, renderer))
