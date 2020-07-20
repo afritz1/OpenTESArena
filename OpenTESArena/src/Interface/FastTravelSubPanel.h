@@ -6,6 +6,7 @@
 
 #include "Panel.h"
 #include "ProvinceMapPanel.h"
+#include "../Media/TextureUtils.h"
 
 // This sub-panel is the glue between the province map's travel button and the game world.
 
@@ -25,8 +26,8 @@ private:
 	// Gets the filename used for the world map image (intended for getting its palette).
 	const std::string &getBackgroundFilename() const;
 
-	// Gets the animation for display.
-	const std::vector<Texture> &getAnimation() const;
+	// Gets the animation texture IDs for display.
+	TextureManager::IdGroup<TextureID> getAnimationTextureIDs() const;
 
 	// Creates a text sub-panel for display when the player arrives at a city.
 	// - @todo: holiday pop-up function.

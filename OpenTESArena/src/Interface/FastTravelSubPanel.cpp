@@ -46,15 +46,27 @@ const std::string &FastTravelSubPanel::getBackgroundFilename() const
 	return TextureFile::fromName(TextureName::WorldMap);
 }
 
-const std::vector<Texture> &FastTravelSubPanel::getAnimation() const
+TextureManager::IdGroup<TextureID> FastTravelSubPanel::getAnimationTextureIDs() const
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const std::vector<Texture> &animation = textureManager.getTextures(
-		TextureFile::fromName(TextureName::FastTravel),
-		this->getBackgroundFilename(), renderer);
-	return animation;
+	auto &renderer = game.getRenderer();
+
+	const std::string &paletteFilename = this->getBackgroundFilename();
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+	}
+
+	const std::string &textureFilename = TextureFile::fromName(TextureName::FastTravel);
+	TextureManager::IdGroup<TextureID> textureIDs;
+	if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID, renderer, &textureIDs))
+	{
+		DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
+	}
+
+	return textureIDs;
 }
 
 std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
@@ -314,13 +326,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 Panel::CursorData FastTravelSubPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void FastTravelSubPanel::tickTravelTime(Random &random) const
@@ -541,7 +547,7 @@ void FastTravelSubPanel::tick(double dt)
 		this->currentSeconds -= FastTravelSubPanel::FRAME_TIME;
 		this->frameIndex++;
 
-		if (this->frameIndex == this->getAnimation().size())
+		if (this->frameIndex == this->getAnimationTextureIDs().count)
 		{
 			this->frameIndex = 0;
 		}
@@ -558,8 +564,10 @@ void FastTravelSubPanel::tick(double dt)
 void FastTravelSubPanel::render(Renderer &renderer)
 {
 	// Draw horse animation.
-	const std::vector<Texture> &animation = this->getAnimation();
-	const Texture &animFrame = animation.at(this->frameIndex);
+	auto &textureManager = this->getGame().getTextureManager();
+	const TextureManager::IdGroup<TextureID> animationTextureIDs = this->getAnimationTextureIDs();
+	const TextureID animationTextureID = animationTextureIDs.startID + this->frameIndex;
+	const Texture &animFrame = textureManager.getTexture(animationTextureID);
 
 	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);
 	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (animFrame.getHeight() / 2);

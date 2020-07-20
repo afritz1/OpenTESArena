@@ -63,13 +63,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 
 Panel::CursorData WorldMapPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void WorldMapPanel::handleEvent(const SDL_Event &e)

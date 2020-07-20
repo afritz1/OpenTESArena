@@ -6,6 +6,7 @@
 #include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
+#include "../Media/TextureUtils.h"
 #include "../Rendering/Texture.h"
 #include "../World/VoxelUtils.h"
 
@@ -38,6 +39,7 @@ private:
 	std::unique_ptr<TextBox> locationTextBox;
 	Button<Game&> backToGameButton;
 	Texture mapTexture;
+	TextureID backgroundTextureID;
 
 	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
 	Double2 automapOffset;

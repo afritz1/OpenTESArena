@@ -56,17 +56,28 @@ LogbookPanel::LogbookPanel(Game &game)
 		};
 		return Button<Game&>(center, 34, 14, function);
 	}();
+
+	auto &textureManager = game.getTextureManager();
+	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Logbook);
+	const std::string &backgroundPaletteName = backgroundTextureName;
+	PaletteID backgroundPaletteID;
+	if (!textureManager.tryGetPaletteID(backgroundPaletteName.c_str(), &backgroundPaletteID))
+	{
+		DebugLogWarning("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
+		return;
+	}
+
+	auto &renderer = game.getRenderer();
+	if (!textureManager.tryGetTextureID(backgroundTextureName.c_str(), backgroundPaletteID,
+		renderer, &this->backgroundTextureID))
+	{
+		DebugLogWarning("Couldn't get texture ID for \"" + backgroundTextureName + "\".");
+	}
 }
 
 Panel::CursorData LogbookPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void LogbookPanel::handleEvent(const SDL_Event &e)
@@ -100,15 +111,10 @@ void LogbookPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
+	// Logbook background.
 	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Draw logbook background.
-	const auto &logbookBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Logbook),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(logbookBackground);
+	const Texture &backgroundTexture = textureManager.getTexture(this->backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture);
 
 	// Draw text: title.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),

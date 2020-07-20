@@ -35,6 +35,15 @@ private:
 	std::array<Rect, 9> nativeCursorRegions;
 	std::vector<Int2> weaponOffsets;
 
+	// Helper functions for various UI textures.
+	static const Texture &getGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
+	const Texture &getCompassFrameTexture() const;
+	const Texture &getCompassSliderTexture() const;
+	const Texture &getPlayerPortraitTexture(const std::string &portraitsFilename, int portraitID) const;
+	const Texture &getStatusGradientTexture(int gradientID) const;
+	const Texture &getNoSpellTexture() const;
+	const Texture &getWeaponTexture(const std::string &weaponFilename, int index) const;
+
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
 	void updateCursorRegions(int width, int height);
@@ -90,8 +99,8 @@ public:
 
 	// Gets the center of the screen for pop-up related functions. The position depends on
 	// whether modern interface mode is set.
-	static Int2 getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
-		Renderer &renderer);
+	static Int2 getInterfaceCenter(bool modernInterface,
+		TextureManager &textureManager, Renderer &renderer);
 
 	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

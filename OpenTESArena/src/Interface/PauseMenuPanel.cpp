@@ -311,13 +311,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 
 Panel::CursorData PauseMenuPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void PauseMenuPanel::handleEvent(const SDL_Event &e)
