@@ -9,6 +9,7 @@
 #include "TextBox.h"
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
+#include "../Media/TextureUtils.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 
@@ -36,13 +37,13 @@ private:
 	std::vector<Int2> weaponOffsets;
 
 	// Helper functions for various UI textures.
-	static const Texture &getGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
-	const Texture &getCompassFrameTexture() const;
-	const Texture &getCompassSliderTexture() const;
-	const Texture &getPlayerPortraitTexture(const std::string &portraitsFilename, int portraitID) const;
-	const Texture &getStatusGradientTexture(int gradientID) const;
-	const Texture &getNoSpellTexture() const;
-	const Texture &getWeaponTexture(const std::string &weaponFilename, int index) const;
+	static TextureID getGameWorldInterfaceTextureID(TextureManager &textureManager, Renderer &renderer);
+	TextureID getCompassFrameTextureID() const;
+	TextureID getCompassSliderTextureID() const;
+	TextureID getPlayerPortraitTextureID(const std::string &portraitsFilename, int portraitID) const;
+	TextureID getStatusGradientTextureID(int gradientID) const;
+	TextureID getNoSpellTextureID() const;
+	TextureID getWeaponTextureID(const std::string &weaponFilename, int index) const;
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.

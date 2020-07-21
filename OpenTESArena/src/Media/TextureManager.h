@@ -99,6 +99,9 @@ public:
 	bool tryGetTextureID(const char *filename, PaletteID paletteID, Renderer &renderer, TextureID *outID);
 
 	// Texture getter functions, fast look-up.
+	// Note! The ID getter functions may resize the internal texture buffer causing
+	// dangling texture references, so get all IDs in advance of calling these functions,
+	// and store these references in as small of a scope as possible!
 	const Palette &getPalette(PaletteID id) const;
 	const Image &getImage(ImageID id) const;
 	const Surface &getSurface(SurfaceID id) const;

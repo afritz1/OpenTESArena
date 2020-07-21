@@ -296,7 +296,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			game.setPanel<CinematicPanel>(
 				game,
-				PaletteFile::fromName(PaletteName::Default),
+				PaletteFile::fromName(PaletteName::BuiltIn),
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				1.0 / 24.0,
 				changeToNewGameStory);

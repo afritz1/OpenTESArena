@@ -932,8 +932,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Draw province map background.
 	auto &textureManager = this->getGame().getTextureManager();
 	const std::string backgroundFilename = this->getBackgroundFilename();
+	const std::string &backgroundPaletteName = backgroundFilename;
 	const TextureID mapBackgroundTextureID = this->getTextureID(
-		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn));
+		backgroundFilename, backgroundPaletteName);
 	const Texture &mapBackgroundTexture = textureManager.getTexture(mapBackgroundTextureID);
 	renderer.drawOriginal(mapBackgroundTexture);
 

@@ -19,6 +19,7 @@
 #include "../Media/FontManager.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
+#include "../Media/PaletteUtils.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
@@ -143,23 +144,19 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	auto changeToQuote = [changeToScrolling](Game &game)
 	{
 		const double secondsToDisplay = 5.0;
-		game.setPanel<ImagePanel>(
-			game,
-			PaletteFile::fromName(PaletteName::BuiltIn),
-			TextureFile::fromName(TextureName::IntroQuote),
-			secondsToDisplay,
-			changeToScrolling);
+		const std::string &textureName = TextureFile::fromName(TextureName::IntroQuote);
+		const std::string &paletteName = textureName;
+		game.setPanel<ImagePanel>(game, paletteName, textureName,
+			secondsToDisplay, changeToScrolling);
 	};
 
 	auto makeIntroTitlePanel = [changeToQuote, &game]()
 	{
 		const double secondsToDisplay = 5.0;
-		return std::make_unique<ImagePanel>(
-			game,
-			PaletteFile::fromName(PaletteName::BuiltIn),
-			TextureFile::fromName(TextureName::IntroTitle),
-			secondsToDisplay,
-			changeToQuote);
+		const std::string &textureName = TextureFile::fromName(TextureName::IntroTitle);
+		const std::string &paletteName = textureName;
+		return std::make_unique<ImagePanel>(game, paletteName, textureName,
+			secondsToDisplay, changeToQuote);
 	};
 
 	// Decide how the game starts up. If only the floppy disk data is available,
@@ -253,10 +250,13 @@ TextureID Panel::getTextureID(const std::string &textureName,
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
+	const std::string &paletteFilename =
+		PaletteUtils::isBuiltIn(paletteName) ? textureName : paletteName;
+
 	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
 	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
 	}
 
 	TextureID textureID;
@@ -271,8 +271,7 @@ TextureID Panel::getTextureID(const std::string &textureName,
 TextureID Panel::getTextureID(TextureName textureName, PaletteName paletteName) const
 {
 	const std::string &textureFilename = TextureFile::fromName(textureName);
-	const std::string &paletteFilename = (paletteName == PaletteName::BuiltIn) ?
-		textureFilename : PaletteFile::fromName(paletteName);
+	const std::string &paletteFilename = PaletteFile::fromName(paletteName);
 	return this->getTextureID(textureFilename, paletteFilename);
 }
 
@@ -282,10 +281,13 @@ TextureManager::IdGroup<TextureID> Panel::getTextureIDs(const std::string &textu
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
+	const std::string &paletteFilename =
+		PaletteUtils::isBuiltIn(paletteName) ? textureName : paletteName;
+
 	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
 	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
 	}
 
 	TextureManager::IdGroup<TextureID> textureIDs;
@@ -301,8 +303,7 @@ TextureManager::IdGroup<TextureID> Panel::getTextureIDs(TextureName textureName,
 	PaletteName paletteName) const
 {
 	const std::string &textureFilename = TextureFile::fromName(textureName);
-	const std::string &paletteFilename = (paletteName == PaletteName::BuiltIn) ?
-		textureFilename : PaletteFile::fromName(paletteName);
+	const std::string &paletteFilename = PaletteFile::fromName(paletteName);
 	return this->getTextureIDs(textureFilename, paletteFilename);
 }
 
