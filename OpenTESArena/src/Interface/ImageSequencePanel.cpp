@@ -94,11 +94,13 @@ void ImageSequencePanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	auto &textureManager = this->getGame().getTextureManager();
-
 	// Draw image.
-	const auto &image = textureManager.getTexture(
-		this->textureNames.at(this->imageIndex),
-		this->paletteNames.at(this->imageIndex), renderer);
-	renderer.drawOriginal(image);
+	auto &textureManager = this->getGame().getTextureManager();
+	DebugAssertIndex(this->textureNames, this->imageIndex);
+	DebugAssertIndex(this->paletteNames, this->imageIndex);
+	const std::string &textureName = this->textureNames[this->imageIndex];
+	const std::string &paletteName = this->paletteNames[this->imageIndex];
+	const TextureID textureID = this->getTextureID(textureName, paletteName);
+	const Texture &texture = textureManager.getTexture(textureID);
+	renderer.drawOriginal(texture);
 }

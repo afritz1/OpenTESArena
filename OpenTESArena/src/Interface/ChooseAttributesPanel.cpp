@@ -286,10 +286,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							return std::make_unique<GameData>(std::move(player), miscAssets);
 						}();
 
-						// Set palette (important for texture loading).
-						auto &textureManager = game.getTextureManager();
-						textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 						// Find starting dungeon location definition.
 						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
 						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
@@ -325,6 +321,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
+						auto &textureManager = game.getTextureManager();
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
 							VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
 							textureManager, renderer))
@@ -651,13 +648,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 Panel::CursorData ChooseAttributesPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void ChooseAttributesPanel::handleEvent(const SDL_Event &e)
@@ -707,11 +698,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
-
 	const auto &charCreationState = game.getCharacterCreationState();
 	const bool male = charCreationState.isMale();
 	const int raceIndex = charCreationState.getRaceIndex();
@@ -736,21 +723,51 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const Int2 pantsOffset = PortraitFile::getPantsOffset(male);
 
 	// Draw the current portrait and clothes.
+	auto &textureManager = game.getTextureManager();
 	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
-	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(portraitIndex);
-	const auto &body = textureManager.getTexture(bodyFilename, renderer);
-	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
-	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
-	renderer.drawOriginal(body, Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawOriginal(pants, pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(head, headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirt, shirtOffset.x, shirtOffset.y);
+	const Texture &headTexture = [this, &textureManager, portraitIndex, &headsFilename]() -> const Texture&
+	{
+		const TextureManager::IdGroup<TextureID> headTextureIDs =
+			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
+		const TextureID headTextureID = headTextureIDs.startID + portraitIndex;
+		return textureManager.getTexture(headTextureID);
+	}();
+
+	const Texture &bodyTexture = [this, &textureManager, &bodyFilename]() -> const Texture&
+	{
+		const TextureID bodyTextureID = this->getTextureID(
+			bodyFilename, PaletteFile::fromName(PaletteName::CharSheet));
+		return textureManager.getTexture(bodyTextureID);
+	}();
+
+	const Texture &shirtTexture = [this, &textureManager, &shirtFilename]() -> const Texture&
+	{
+		const TextureID shirtTextureID = this->getTextureID(
+			shirtFilename, PaletteFile::fromName(PaletteName::CharSheet));
+		return textureManager.getTexture(shirtTextureID);
+	}();
+
+	const Texture &pantsTexture = [this, &textureManager, &pantsFilename]() -> const Texture&
+	{
+		const TextureID pantsTextureID = this->getTextureID(
+			pantsFilename, PaletteFile::fromName(PaletteName::CharSheet));
+		return textureManager.getTexture(pantsTextureID);
+	}();
+
+	renderer.drawOriginal(bodyTexture, Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
+	renderer.drawOriginal(pantsTexture, pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(headTexture, headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirtTexture, shirtOffset.x, shirtOffset.y);
 
 	// Draw attributes texture.
-	const auto &attributesBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats), renderer);
-	renderer.drawOriginal(attributesBackground);
+	const Texture &attributesBackgroundTexture = [this, &textureManager]() -> const Texture&
+	{
+		const TextureID attributesBackgroundTextureID = this->getTextureID(
+			TextureName::CharacterStats, PaletteName::CharSheet);
+		return textureManager.getTexture(attributesBackgroundTextureID);
+	}();
+
+	renderer.drawOriginal(attributesBackgroundTexture);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->nameTextBox->getTexture(),

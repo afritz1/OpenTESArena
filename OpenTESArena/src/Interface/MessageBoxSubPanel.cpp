@@ -26,9 +26,24 @@ Panel::CursorData MessageBoxSubPanel::getCurrentCursor() const
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
+
+	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
+	TextureID textureID;
+	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	{
+		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const Texture &texture = textureManager.getTexture(textureID);
 	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 

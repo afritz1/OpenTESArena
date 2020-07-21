@@ -5,6 +5,8 @@
 #include <string>
 
 #include "../Math/Vector2.h"
+#include "../Media/TextureManager.h"
+#include "../Media/TextureUtils.h"
 
 // Each panel interprets user input and draws to the screen. There is only one panel 
 // active at a time, and it is owned by the Game.
@@ -22,6 +24,8 @@ class Texture;
 
 enum class CursorAlignment;
 enum class FontName;
+enum class PaletteName;
+enum class TextureName;
 
 struct SDL_Texture;
 
@@ -36,6 +40,8 @@ public:
 		const Texture *texture;
 		CursorAlignment alignment;
 	public:
+		static const CursorData EMPTY;
+
 		CursorData(const Texture *texture, CursorAlignment alignment);
 
 		const Texture *getTexture() const;
@@ -50,6 +56,18 @@ protected:
 		FontName fontName, FontManager &fontManager, Renderer &renderer);
 
 	Game &getGame() const;
+
+	// Default cursor used by most panels.
+	CursorData getDefaultCursor() const;
+
+	// Helper functions for accessing common UI textures. These functions assume that the
+	// textures exist.
+	TextureID getTextureID(const std::string &textureName, const std::string &paletteName) const;
+	TextureID getTextureID(TextureName textureName, PaletteName paletteName) const;
+	TextureManager::IdGroup<TextureID> getTextureIDs(const std::string &textureName,
+		const std::string &paletteName) const;
+	TextureManager::IdGroup<TextureID> getTextureIDs(TextureName textureName,
+		PaletteName paletteName) const;
 public:
 	Panel(Game &game);
 	virtual ~Panel() = default;

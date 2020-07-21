@@ -365,7 +365,7 @@ private:
 		DistantObjects();
 
 		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures,
-			const Palette &palette);
+			const Palette &palette, TextureManager &textureManager);
 
 		void clear();
 	};
@@ -1000,7 +1000,8 @@ public:
 	void setFogDistance(double fogDistance);
 
 	// Sets textures for the distant sky (mountains, clouds, etc.).
-	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
+	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
+		TextureManager &textureManager);
 
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.

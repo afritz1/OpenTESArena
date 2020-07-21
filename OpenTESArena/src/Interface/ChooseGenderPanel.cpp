@@ -123,13 +123,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 Panel::CursorData ChooseGenderPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void ChooseGenderPanel::handleEvent(const SDL_Event &e)
@@ -166,15 +160,12 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw background.
-	const auto &background = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterCreation),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background);
+	auto &textureManager = this->getGame().getTextureManager();
+	const TextureID backgroundTextureID = this->getTextureID(
+		TextureName::CharacterCreation, PaletteName::BuiltIn);
+	const Texture &backgroundTexture = textureManager.getTexture(backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture);
 
 	// Draw parchments: title, male, and female.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -

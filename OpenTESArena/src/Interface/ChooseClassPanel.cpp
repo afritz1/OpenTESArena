@@ -165,13 +165,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 Panel::CursorData ChooseClassPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void ChooseClassPanel::handleEvent(const SDL_Event &e)
@@ -438,23 +432,21 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
+	// Draw background.
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Draw background.
-	const auto &background = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterCreation),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(background);
+	const TextureID backgroundTextureID = this->getTextureID(
+		TextureName::CharacterCreation, PaletteName::BuiltIn);
+	const Texture &backgroundTexture = textureManager.getTexture(backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture);
 
 	// Draw list pop-up.
-	const auto &listPopUp = textureManager.getTexture(
+	const TextureID listPopUpTextureID = this->getTextureID(
 		TextureFile::fromName(TextureName::PopUp2),
-		TextureFile::fromName(TextureName::CharacterCreation), renderer);
-	renderer.drawOriginal(listPopUp, 55, 9,
-		listPopUp.getWidth(), listPopUp.getHeight());
+		TextureFile::fromName(TextureName::CharacterCreation));
+	const Texture &listPopUpTexture = textureManager.getTexture(listPopUpTextureID);
+	renderer.drawOriginal(listPopUpTexture, 55, 9,
+		listPopUpTexture.getWidth(), listPopUpTexture.getHeight());
 
 	// Draw text: title, list.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),

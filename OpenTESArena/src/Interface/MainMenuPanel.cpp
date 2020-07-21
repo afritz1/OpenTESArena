@@ -296,7 +296,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			game.setPanel<CinematicPanel>(
 				game,
-				PaletteFile::fromName(PaletteName::Default),
+				PaletteFile::fromName(PaletteName::BuiltIn),
 				TextureFile::fromName(TextureSequenceName::OpeningScroll),
 				1.0 / 24.0,
 				changeToNewGameStory);
@@ -1022,13 +1022,7 @@ WorldType MainMenuPanel::getSelectedTestWorldType() const
 
 Panel::CursorData MainMenuPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void MainMenuPanel::handleEvent(const SDL_Event &e)
@@ -1156,33 +1150,28 @@ void MainMenuPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw main menu.
-	const auto &mainMenu = textureManager.getTexture(
-		TextureFile::fromName(TextureName::MainMenu),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mainMenu);
+	auto &textureManager = this->getGame().getTextureManager();
+	const TextureID mainMenuTextureID = this->getTextureID(TextureName::MainMenu, PaletteName::BuiltIn);
+	const Texture &mainMenuTexture = textureManager.getTexture(mainMenuTextureID);
+	renderer.drawOriginal(mainMenuTexture);
 
 	// Draw test buttons.
-	const auto &arrows = textureManager.getTexture(
-		TextureFile::fromName(TextureName::UpDown),
-		PaletteFile::fromName(PaletteName::CharSheet), renderer);
-	renderer.drawOriginal(arrows, this->testTypeUpButton.getX(),
+	const TextureID arrowsTextureID = this->getTextureID(TextureName::UpDown, PaletteName::CharSheet);
+	const Texture &arrowsTexture = textureManager.getTexture(arrowsTextureID);
+	renderer.drawOriginal(arrowsTexture, this->testTypeUpButton.getX(),
 		this->testTypeUpButton.getY());
-	renderer.drawOriginal(arrows, this->testIndexUpButton.getX(),
+	renderer.drawOriginal(arrowsTexture, this->testIndexUpButton.getX(),
 		this->testIndexUpButton.getY());
 
 	if (this->testType == TestType_Interior)
 	{
-		renderer.drawOriginal(arrows, this->testIndex2UpButton.getX(),
+		renderer.drawOriginal(arrowsTexture, this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
 	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		renderer.drawOriginal(arrows, this->testWeatherUpButton.getX(),
+		renderer.drawOriginal(arrowsTexture, this->testWeatherUpButton.getX(),
 			this->testWeatherUpButton.getY());
 	}
 

@@ -137,6 +137,22 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		return texture;
 	}();
 
+	auto &textureManager = game.getTextureManager();
+	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Automap);
+	const std::string &backgroundPaletteName = backgroundTextureName;
+	PaletteID backgroundPaletteID;
+	if (!textureManager.tryGetPaletteID(backgroundPaletteName.c_str(), &backgroundPaletteID))
+	{
+		DebugCrash("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
+	}
+
+	auto &renderer = game.getRenderer();
+	if (!textureManager.tryGetTextureID(backgroundTextureName.c_str(), backgroundPaletteID,
+		renderer, &this->backgroundTextureID))
+	{
+		DebugCrash("Couldn't get texture ID for \"" + backgroundTextureName + "\".");
+	}
+
 	this->automapOffset = AutomapPanel::makeAutomapOffset(
 		playerVoxel, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
 }
@@ -562,9 +578,24 @@ Panel::CursorData AutomapPanel::getCurrentCursor() const
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::QuillCursor),
-		TextureFile::fromName(TextureName::Automap), renderer);
+
+	const std::string &paletteFilename = TextureFile::fromName(TextureName::Automap);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const std::string &textureFilename = TextureFile::fromName(TextureName::QuillCursor);
+	TextureID textureID;
+	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	{
+		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const Texture &texture = textureManager.getTexture(textureID);
 	return CursorData(&texture, CursorAlignment::BottomLeft);
 }
 
@@ -660,15 +691,10 @@ void AutomapPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw automap background.
-	const auto &automapBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::Automap),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(automapBackground);
+	auto &textureManager = this->getGame().getTextureManager();
+	const Texture &backgroundTexture = textureManager.getTexture(this->backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture);
 
 	// Only draw the part of the automap within the drawing area.
 	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);

@@ -7,11 +7,10 @@
 
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
+#include "../Media/TextureManager.h"
+#include "../Media/TextureUtils.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
-#include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView2D.h"
 
 // Contains data for distant objects (mountains, clouds, stars). Each distant object's image
 // is owned by the texture manager.
@@ -137,23 +136,23 @@ private:
 	// Number of unique directions in 360 degrees.
 	static const int UNIQUE_ANGLES;
 
-	// Each texture entry holds its filename and 8-bit texture.
+	// Each texture entry holds its filename and 8-bit texture handle.
 	struct TextureEntry
 	{
 		std::string filename;
-		Buffer2D<uint8_t> texture;
+		ImageID imageID;
 
-		TextureEntry(std::string &&filename, Buffer2D<uint8_t> &&texture);
+		TextureEntry(std::string &&filename, ImageID imageID);
 	};
 
-	// Each texture set entry holds its filename and 8-bit textures. Intended only for
+	// Each texture set entry holds its filename and 8-bit texture handles. Intended only for
 	// animated distant objects.
 	struct TextureSetEntry
 	{
 		std::string filename;
-		Buffer<Buffer2D<uint8_t>> textures;
+		TextureManager::IdGroup<ImageID> imageIDs;
 
-		TextureSetEntry(std::string &&filename, Buffer<Buffer2D<uint8_t>> &&textures);
+		TextureSetEntry(std::string &&filename, TextureManager::IdGroup<ImageID> &&imageIDs);
 	};
 
 	// Each object's texture index points into here.
@@ -198,13 +197,13 @@ public:
 	const StarObject &getStarObject(int index) const;
 	int getSunEntryIndex() const;
 
-	BufferView2D<const uint8_t> getTexture(int index) const;
+	ImageID getImageID(int index) const;
 
 	// Gets the number of textures in the texture set at the given index.
 	int getTextureSetCount(int index) const;
 
-	// Gets the texture at the given element index in the given texture set.
-	BufferView2D<const uint8_t> getTextureSetElement(int index, int elementIndex) const;
+	// Gets the image ID at the given element index in the given texture set.
+	ImageID getTextureSetImageID(int index, int elementIndex) const;
 
 	// Added in the new engine for fun. Gets the number of stars for some density.
 	static int getStarCountFromDensity(int starDensity);

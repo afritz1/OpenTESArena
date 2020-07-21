@@ -3,6 +3,7 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Media/TextureUtils.h"
 
 class Renderer;
 class TextBox;
@@ -12,6 +13,7 @@ class LogbookPanel : public Panel
 private:
 	std::unique_ptr<TextBox> titleTextBox;
 	Button<Game&> backButton;
+	TextureID backgroundTextureID;
 public:
 	LogbookPanel(Game &game);
 	virtual ~LogbookPanel() = default;

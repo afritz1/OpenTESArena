@@ -125,24 +125,19 @@ CharacterPanel::CharacterPanel(Game &game)
 
 Panel::CursorData CharacterPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void CharacterPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
 
 	if (escapePressed || tabPressed)
 	{
-		this->doneButton.click(this->getGame());
+		this->doneButton.click(game);
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -150,16 +145,15 @@ void CharacterPanel::handleEvent(const SDL_Event &e)
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 mouseOriginalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		if (this->doneButton.contains(mouseOriginalPoint))
 		{
-			this->doneButton.click(this->getGame());
+			this->doneButton.click(game);
 		}
 		else if (this->nextPageButton.contains(mouseOriginalPoint))
 		{
-			this->nextPageButton.click(this->getGame());
+			this->nextPageButton.click(game);
 		}
 	}
 }
@@ -171,14 +165,9 @@ void CharacterPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::CharSheet));
-
-	// Get a reference to the active player data.
-	const auto &player = this->getGame().getGameData().getPlayer();
-
 	// Get the filenames for the portrait and clothes.
+	auto &game = this->getGame();
+	const auto &player = game.getGameData().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
 		player.isMale(), player.getRaceID(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
@@ -192,26 +181,44 @@ void CharacterPanel::render(Renderer &renderer)
 		player.isMale(), player.getCharacterClass().canCastMagic());
 	const Int2 pantsOffset = PortraitFile::getPantsOffset(player.isMale());
 
+	// Get all texture IDs in advance of any texture references.
+	const TextureID headTextureID = [this, &headsFilename, &player]()
+	{
+		const TextureManager::IdGroup<TextureID> headTextureIDs =
+			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
+		return headTextureIDs.startID + player.getPortraitID();
+	}();
+
+	const TextureID bodyTextureID = this->getTextureID(
+		bodyFilename, PaletteFile::fromName(PaletteName::CharSheet));
+	const TextureID shirtTextureID = this->getTextureID(
+		shirtFilename, PaletteFile::fromName(PaletteName::CharSheet));
+	const TextureID pantsTextureID = this->getTextureID(
+		pantsFilename, PaletteFile::fromName(PaletteName::CharSheet));
+	const TextureID statsBackgroundTextureID = this->getTextureID(
+		TextureName::CharacterStats, PaletteName::CharSheet);
+	const TextureID nextPageTextureID = this->getTextureID(
+		TextureName::NextPage, PaletteName::CharSheet);
+
 	// Draw the current portrait and clothes.
+	auto &textureManager = game.getTextureManager();
+	const Texture &headTexture = textureManager.getTexture(headTextureID);
+	const Texture &bodyTexture = textureManager.getTexture(bodyTextureID);
+	const Texture &shirtTexture = textureManager.getTexture(shirtTextureID);
+	const Texture &pantsTexture = textureManager.getTexture(pantsTextureID);
+
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
-	const auto &head = textureManager.getTextures(headsFilename,
-		PaletteFile::fromName(PaletteName::CharSheet), renderer).at(player.getPortraitID());
-	const auto &body = textureManager.getTexture(bodyFilename, renderer);
-	const auto &shirt = textureManager.getTexture(shirtFilename, renderer);
-	const auto &pants = textureManager.getTexture(pantsFilename, renderer);
-	renderer.drawOriginal(body, Renderer::ORIGINAL_WIDTH - body.getWidth(), 0);
-	renderer.drawOriginal(pants, pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(head, headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirt, shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(bodyTexture, Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
+	renderer.drawOriginal(pantsTexture, pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(headTexture, headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirtTexture, shirtOffset.x, shirtOffset.y);
 
 	// Draw character stats background.
-	const auto &statsBackground = textureManager.getTexture(
-		TextureFile::fromName(TextureName::CharacterStats), renderer);
-	renderer.drawOriginal(statsBackground);
+	const Texture &statsBackgroundTexture = textureManager.getTexture(statsBackgroundTextureID);
+	renderer.drawOriginal(statsBackgroundTexture);
 
 	// Draw "Next Page" texture.
-	const auto &nextPageTexture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::NextPage), renderer);
+	const Texture &nextPageTexture = textureManager.getTexture(nextPageTextureID);
 	renderer.drawOriginal(nextPageTexture, 108, 179);
 
 	// Draw text boxes: player name, race, class.

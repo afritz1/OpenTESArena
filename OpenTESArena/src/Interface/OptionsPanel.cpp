@@ -839,13 +839,7 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 
 Panel::CursorData OptionsPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void OptionsPanel::handleEvent(const SDL_Event &e)
@@ -997,15 +991,12 @@ void OptionsPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw solid background.
 	const Color backgroundColor(60, 60, 68);
 	renderer.clearOriginal(backgroundColor);
 
 	// Draw return button and tabs.
+	auto &textureManager = this->getGame().getTextureManager();
 	Texture tabBackground = Texture::generate(Texture::PatternType::Custom1,
 		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
 	for (int i = 0; i < 5; i++)

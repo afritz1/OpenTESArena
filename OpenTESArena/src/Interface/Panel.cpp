@@ -19,6 +19,7 @@
 #include "../Media/FontManager.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
+#include "../Media/PaletteUtils.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
@@ -26,6 +27,8 @@
 #include "../Rendering/Surface.h"
 
 #include "components/vfs/manager.hpp"
+
+const Panel::CursorData Panel::CursorData::EMPTY(nullptr, CursorAlignment::TopLeft);
 
 Panel::CursorData::CursorData(const Texture *texture, CursorAlignment alignment)
 {
@@ -141,23 +144,19 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 	auto changeToQuote = [changeToScrolling](Game &game)
 	{
 		const double secondsToDisplay = 5.0;
-		game.setPanel<ImagePanel>(
-			game,
-			PaletteFile::fromName(PaletteName::BuiltIn),
-			TextureFile::fromName(TextureName::IntroQuote),
-			secondsToDisplay,
-			changeToScrolling);
+		const std::string &textureName = TextureFile::fromName(TextureName::IntroQuote);
+		const std::string &paletteName = textureName;
+		game.setPanel<ImagePanel>(game, paletteName, textureName,
+			secondsToDisplay, changeToScrolling);
 	};
 
 	auto makeIntroTitlePanel = [changeToQuote, &game]()
 	{
 		const double secondsToDisplay = 5.0;
-		return std::make_unique<ImagePanel>(
-			game,
-			PaletteFile::fromName(PaletteName::BuiltIn),
-			TextureFile::fromName(TextureName::IntroTitle),
-			secondsToDisplay,
-			changeToQuote);
+		const std::string &textureName = TextureFile::fromName(TextureName::IntroTitle);
+		const std::string &paletteName = textureName;
+		return std::make_unique<ImagePanel>(game, paletteName, textureName,
+			secondsToDisplay, changeToQuote);
 	};
 
 	// Decide how the game starts up. If only the floppy disk data is available,
@@ -217,6 +216,95 @@ void Panel::resize(int windowWidth, int windowHeight)
 Game &Panel::getGame() const
 {
 	return this->game;
+}
+
+Panel::CursorData Panel::getDefaultCursor() const
+{
+	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	auto &textureManager = game.getTextureManager();
+
+	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
+	TextureID textureID;
+	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	{
+		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
+		return CursorData::EMPTY;
+	}
+
+	const Texture &texture = textureManager.getTexture(textureID);
+	return CursorData(&texture, CursorAlignment::TopLeft);
+}
+
+TextureID Panel::getTextureID(const std::string &textureName,
+	const std::string &paletteName) const
+{
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const std::string &paletteFilename =
+		PaletteUtils::isBuiltIn(paletteName) ? textureName : paletteName;
+
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+	}
+
+	TextureID textureID;
+	if (!textureManager.tryGetTextureID(textureName.c_str(), paletteID, renderer, &textureID))
+	{
+		DebugCrash("Couldn't get texture ID for \"" + textureName + "\".");
+	}
+
+	return textureID;
+}
+
+TextureID Panel::getTextureID(TextureName textureName, PaletteName paletteName) const
+{
+	const std::string &textureFilename = TextureFile::fromName(textureName);
+	const std::string &paletteFilename = PaletteFile::fromName(paletteName);
+	return this->getTextureID(textureFilename, paletteFilename);
+}
+
+TextureManager::IdGroup<TextureID> Panel::getTextureIDs(const std::string &textureName,
+	const std::string &paletteName) const
+{
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+
+	const std::string &paletteFilename =
+		PaletteUtils::isBuiltIn(paletteName) ? textureName : paletteName;
+
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+	}
+
+	TextureManager::IdGroup<TextureID> textureIDs;
+	if (!textureManager.tryGetTextureIDs(textureName.c_str(), paletteID, renderer, &textureIDs))
+	{
+		DebugCrash("Couldn't get texture IDs for \"" + textureName + "\".");
+	}
+
+	return textureIDs;
+}
+
+TextureManager::IdGroup<TextureID> Panel::getTextureIDs(TextureName textureName,
+	PaletteName paletteName) const
+{
+	const std::string &textureFilename = TextureFile::fromName(textureName);
+	const std::string &paletteFilename = PaletteFile::fromName(paletteName);
+	return this->getTextureIDs(textureFilename, paletteFilename);
 }
 
 void Panel::tick(double dt)

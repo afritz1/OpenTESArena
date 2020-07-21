@@ -222,12 +222,15 @@ const Double3 &DistantSky::StarObject::getDirection() const
 	return this->direction;
 }
 
-DistantSky::TextureEntry::TextureEntry(std::string &&filename, Buffer2D<uint8_t> &&texture)
-	: filename(std::move(filename)), texture(std::move(texture)) { }
+DistantSky::TextureEntry::TextureEntry(std::string &&filename, ImageID imageID)
+	: filename(std::move(filename))
+{
+	this->imageID = imageID;
+}
 
 DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename,
-	Buffer<Buffer2D<uint8_t>> &&textures)
-	: filename(std::move(filename)), textures(std::move(textures)) { }
+	TextureManager::IdGroup<ImageID> &&imageIDs)
+	: filename(std::move(filename)), imageIDs(std::move(imageIDs)) { }
 
 const int DistantSky::UNIQUE_ANGLES = 512;
 const double DistantSky::IDENTITY_DIM = 320.0;
@@ -348,8 +351,13 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			{
 				if (!entryIndex.has_value())
 				{
-					Buffer2D<uint8_t> surface = textureManager.make8BitSurface(filename);
-					TextureEntry textureEntry(std::move(filename), std::move(surface));
+					ImageID imageID;
+					if (!textureManager.tryGetImageID(filename.c_str(), &imageID))
+					{
+						DebugCrash("Couldn't get image ID for \"" + filename + "\".");
+					}
+
+					TextureEntry textureEntry(std::move(filename), imageID);
 					this->textures.push_back(std::move(textureEntry));
 					entryIndex = static_cast<int>(this->textures.size()) - 1;
 				}
@@ -444,28 +452,16 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 
 		if (!setEntryIndex.has_value())
 		{
-			// Determine which frames the animation will have.
-			// .DFAs have multiple frames, .IMGs do not.
-			const bool hasMultipleFrames = animFilename.find(".DFA") != std::string::npos;
-
-			if (hasMultipleFrames)
+			// Determine which frames the animation will have. .DFAs have multiple frames while
+			// .IMGs do not, although we can use the same texture manager function for both.
+			TextureManager::IdGroup<ImageID> imageIDs;
+			if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
 			{
-				// Several frames of animation.
-				Buffer<Buffer2D<uint8_t>> surfaces = textureManager.make8BitSurfaces(animFilename);
-				TextureSetEntry textureSetEntry(std::move(animFilename), std::move(surfaces));
-				this->textureSets.push_back(std::move(textureSetEntry));
-			}
-			else
-			{
-				// Only one frame of animation.
-				Buffer2D<uint8_t> surface = textureManager.make8BitSurface(animFilename);
-				Buffer<Buffer2D<uint8_t>> buffers(1);
-				buffers.set(0, std::move(surface));
-
-				TextureSetEntry textureSetEntry(std::move(animFilename), std::move(buffers));
-				this->textureSets.push_back(std::move(textureSetEntry));
+				DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
 			}
 
+			TextureSetEntry textureSetEntry(std::move(animFilename), std::move(imageIDs));
+			this->textureSets.push_back(std::move(textureSetEntry));
 			setEntryIndex = static_cast<int>(this->textureSets.size()) - 1;
 		}
 
@@ -507,13 +503,16 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
 			if (!entryIndex.has_value())
 			{
-				Buffer<Buffer2D<uint8_t>> surfaces = textureManager.make8BitSurfaces(filename);
+				TextureManager::IdGroup<ImageID> imageIDs;
+				if (!textureManager.tryGetImageIDs(filename.c_str(), &imageIDs))
+				{
+					DebugCrash("Couldn't get image IDs for \"" + filename + "\".");
+				}
 
 				DebugAssert(phaseIndex >= 0);
-				DebugAssert(phaseIndex < surfaces.getCount());
-				Buffer2D<uint8_t> &surface = surfaces.get(phaseIndex);
-
-				TextureEntry textureEntry(std::move(filename), std::move(surface));
+				DebugAssert(phaseIndex < imageIDs.count);
+				const ImageID imageID = imageIDs.startID + phaseIndex;
+				TextureEntry textureEntry(std::move(filename), imageID);
 				this->textures.push_back(std::move(textureEntry));
 				entryIndex = static_cast<int>(this->textures.size()) - 1;
 			}
@@ -684,8 +683,13 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 				std::optional<int> entryIndex = this->getTextureEntryIndex(starFilename);
 				if (!entryIndex.has_value())
 				{
-					Buffer2D<uint8_t> surface = textureManager.make8BitSurface(starFilename);
-					TextureEntry textureEntry(std::move(starFilename), std::move(surface));
+					ImageID imageID;
+					if (!textureManager.tryGetImageID(starFilename.c_str(), &imageID))
+					{
+						DebugCrash("Couldn't get image ID for \"" + starFilename + "\".");
+					}
+
+					TextureEntry textureEntry(std::move(starFilename), imageID);
 					this->textures.push_back(std::move(textureEntry));
 					entryIndex = static_cast<int>(this->textures.size()) - 1;
 				}
@@ -699,8 +703,13 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		std::optional<int> sunTextureIndex = this->getTextureEntryIndex(sunFilename);
 		if (!sunTextureIndex.has_value())
 		{
-			Buffer2D<uint8_t> surface = textureManager.make8BitSurface(sunFilename);
-			TextureEntry textureEntry(std::move(sunFilename), std::move(surface));
+			ImageID imageID;
+			if (!textureManager.tryGetImageID(sunFilename.c_str(), &imageID))
+			{
+				DebugCrash("Couldn't get image ID for \"" + sunFilename + "\".");
+			}
+
+			TextureEntry textureEntry(std::move(sunFilename), imageID);
 			this->textures.push_back(std::move(textureEntry));
 			sunTextureIndex = static_cast<int>(this->textures.size()) - 1;
 		}
@@ -775,26 +784,27 @@ int DistantSky::getSunEntryIndex() const
 	return *this->sunEntryIndex;
 }
 
-BufferView2D<const uint8_t> DistantSky::getTexture(int index) const
+ImageID DistantSky::getImageID(int index) const
 {
 	DebugAssertIndex(this->textures, index);
 	const TextureEntry &entry = this->textures[index];
-	const Buffer2D<uint8_t> &buffer = entry.texture;
-	return BufferView2D<const uint8_t>(buffer.get(), buffer.getWidth(), buffer.getHeight());
+	return entry.imageID;
 }
 
 int DistantSky::getTextureSetCount(int index) const
 {
 	DebugAssertIndex(this->textureSets, index);
-	return this->textureSets[index].textures.getCount();
+	const TextureSetEntry entry = this->textureSets[index];
+	return entry.imageIDs.count;
 }
 
-BufferView2D<const uint8_t> DistantSky::getTextureSetElement(int index, int elementIndex) const
+ImageID DistantSky::getTextureSetImageID(int index, int elementIndex) const
 {
 	DebugAssertIndex(this->textureSets, index);
 	const TextureSetEntry &entry = this->textureSets[index];
-	const Buffer2D<uint8_t> &buffer = entry.textures.get(elementIndex);
-	return BufferView2D<const uint8_t>(buffer.get(), buffer.getWidth(), buffer.getHeight());
+	const TextureManager::IdGroup<ImageID> &imageIDs = entry.imageIDs;
+	const ImageID imageID = imageIDs.startID + elementIndex;
+	return imageID;
 }
 
 int DistantSky::getStarCountFromDensity(int starDensity)

@@ -199,7 +199,8 @@ public:
 		const Palette &palette);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
-	void setDistantSky(const DistantSky &distantSky, const Palette &palette);
+	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
+		TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
 	void removeLight(int id);

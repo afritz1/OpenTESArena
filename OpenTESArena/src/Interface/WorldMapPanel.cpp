@@ -63,13 +63,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 
 Panel::CursorData WorldMapPanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void WorldMapPanel::handleEvent(const SDL_Event &e)
@@ -133,22 +127,27 @@ void WorldMapPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
-	// Draw world map background. This one has "Exit" at the bottom right.
-	const std::string &backgroundFilename = TextureFile::fromName(TextureName::WorldMap);
-	const auto &mapBackground = textureManager.getTexture(
-		backgroundFilename, PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(mapBackground);
-
-	// Draw yellow text over current province name.
+	// Get texture IDs in advance of any texture references.
 	const auto &gameData = this->getGame().getGameData();
 	const int provinceID = gameData.getProvinceDefinition().getRaceID();
-	const auto &provinceText = textureManager.getTextures(
-		TextureFile::fromName(TextureName::ProvinceNames),
-		backgroundFilename, renderer).at(provinceID);
+	const TextureID provinceTextTextureID = [this, provinceID]()
+	{
+		const TextureManager::IdGroup<TextureID> provinceTextTextureIDs = this->getTextureIDs(
+			TextureFile::fromName(TextureName::ProvinceNames),
+			TextureFile::fromName(TextureName::WorldMap));
+		return provinceTextTextureIDs.startID + provinceID;
+	}();
+
+	const TextureID mapBackgroundTextureID = this->getTextureID(
+		TextureName::WorldMap, PaletteName::BuiltIn);
+	
+	// Draw world map background. This one has "Exit" at the bottom right.
+	auto &textureManager = this->getGame().getTextureManager();
+	const Texture &mapBackgroundTexture = textureManager.getTexture(mapBackgroundTextureID);
+	renderer.drawOriginal(mapBackgroundTexture);
+
+	// Draw yellow text over current province name.
+	const Texture &provinceTextTexture = textureManager.getTexture(provinceTextTextureID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
-	renderer.drawOriginal(provinceText, nameOffset.x, nameOffset.y);
+	renderer.drawOriginal(provinceTextTexture, nameOffset.x, nameOffset.y);
 }

@@ -547,13 +547,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 
 Panel::CursorData ChooseRacePanel::getCurrentCursor() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-	const auto &texture = textureManager.getTexture(
-		TextureFile::fromName(TextureName::SwordCursor),
-		PaletteFile::fromName(PaletteName::Default), renderer);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return this->getDefaultCursor();
 }
 
 void ChooseRacePanel::handleEvent(const SDL_Event &e)
@@ -611,23 +605,21 @@ void ChooseRacePanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Set palette.
-	auto &textureManager = this->getGame().getTextureManager();
-	textureManager.setPalette(PaletteFile::fromName(PaletteName::Default));
-
 	// Draw background map.
-	const auto &raceSelectMap = textureManager.getTexture(
-		TextureFile::fromName(TextureName::RaceSelect),
-		PaletteFile::fromName(PaletteName::BuiltIn), renderer);
-	renderer.drawOriginal(raceSelectMap);
+	auto &textureManager = this->getGame().getTextureManager();
+	const TextureID raceSelectMapTextureID = this->getTextureID(
+		TextureName::RaceSelect, PaletteName::BuiltIn);
+	const Texture &raceSelectMapTexture = textureManager.getTexture(raceSelectMapTextureID);
+	renderer.drawOriginal(raceSelectMapTexture);
 
 	// Arena just covers up the "exit" text at the bottom right.
-	const auto &exitCover = textureManager.getTexture(
+	const TextureID exitCoverTextureID = this->getTextureID(
 		TextureFile::fromName(TextureName::NoExit),
-		TextureFile::fromName(TextureName::RaceSelect), renderer);
-	renderer.drawOriginal(exitCover,
-		Renderer::ORIGINAL_WIDTH - exitCover.getWidth(),
-		Renderer::ORIGINAL_HEIGHT - exitCover.getHeight());
+		TextureFile::fromName(TextureName::RaceSelect));
+	const Texture &exitCoverTexture = textureManager.getTexture(exitCoverTextureID);
+	renderer.drawOriginal(exitCoverTexture,
+		Renderer::ORIGINAL_WIDTH - exitCoverTexture.getWidth(),
+		Renderer::ORIGINAL_HEIGHT - exitCoverTexture.getHeight());
 }
 
 void ChooseRacePanel::renderSecondary(Renderer &renderer)

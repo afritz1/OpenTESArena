@@ -74,9 +74,6 @@ Game::Game()
 		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
 		this->options.getGraphics_LetterboxMode());
 
-	// Initialize the texture manager.
-	this->textureManager.init();
-
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
 	{
