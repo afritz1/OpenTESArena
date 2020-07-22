@@ -14,9 +14,15 @@
 #include "../Rendering/Texture.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/BufferRef2D.h"
 
 class Renderer;
+
+// BufferRef variations for avoiding returning easily-stale handles from texture manager.
+using PaletteRef = BufferRef2D<std::vector<Palette>, Palette>;
+using ImageRef = BufferRef2D<std::vector<Image>, Image>;
+using SurfaceRef = BufferRef2D<std::vector<Surface>, Surface>;
+using TextureRef = BufferRef2D<std::vector<Texture>, Texture>;
 
 class TextureManager
 {
