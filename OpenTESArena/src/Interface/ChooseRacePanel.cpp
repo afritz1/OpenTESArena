@@ -606,18 +606,18 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background map.
-	auto &textureManager = this->getGame().getTextureManager();
+	const auto &textureManager = this->getGame().getTextureManager();
 	const TextureID raceSelectMapTextureID = this->getTextureID(
 		TextureName::RaceSelect, PaletteName::BuiltIn);
-	const Texture &raceSelectMapTexture = textureManager.getTexture(raceSelectMapTextureID);
-	renderer.drawOriginal(raceSelectMapTexture);
+	const TextureRef raceSelectMapTexture = textureManager.getTextureRef(raceSelectMapTextureID);
+	renderer.drawOriginal(raceSelectMapTexture.get());
 
 	// Arena just covers up the "exit" text at the bottom right.
 	const TextureID exitCoverTextureID = this->getTextureID(
 		TextureFile::fromName(TextureName::NoExit),
 		TextureFile::fromName(TextureName::RaceSelect));
-	const Texture &exitCoverTexture = textureManager.getTexture(exitCoverTextureID);
-	renderer.drawOriginal(exitCoverTexture,
+	const TextureRef exitCoverTexture = textureManager.getTextureRef(exitCoverTextureID);
+	renderer.drawOriginal(exitCoverTexture.get(),
 		Renderer::ORIGINAL_WIDTH - exitCoverTexture.getWidth(),
 		Renderer::ORIGINAL_HEIGHT - exitCoverTexture.getHeight());
 }

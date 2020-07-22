@@ -673,7 +673,7 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 	{
 		const TextureID gameInterfaceTextureID =
 			GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-		const Texture &gameInterfaceTexture = textureManager.getTexture(gameInterfaceTextureID);
+		const TextureRef gameInterfaceTexture = textureManager.getTextureRef(gameInterfaceTextureID);
 
 		return Int2(Renderer::ORIGINAL_WIDTH / 2,
 			(Renderer::ORIGINAL_HEIGHT - gameInterfaceTexture.getHeight()) / 2);
@@ -718,7 +718,7 @@ Panel::CursorData GameWorldPanel::getCurrentCursor() const
 				}
 
 				const TextureID textureID = textureIDs.startID + i;
-				const Texture &texture = textureManager.getTexture(textureID);
+				const Texture &texture = textureManager.getTextureHandle(textureID);
 				return CursorData(&texture, ArrowCursorAlignments.at(i));
 			}
 		}
@@ -1567,8 +1567,8 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 					auto &renderer = game.getRenderer();
 					const TextureID gameWorldInterfaceTextureID =
 						GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-					const Texture &gameWorldInterfaceTexture =
-						textureManager.getTexture(gameWorldInterfaceTextureID);
+					const TextureRef gameWorldInterfaceTexture =
+						textureManager.getTextureRef(gameWorldInterfaceTextureID);
 					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
 					return rightClick && (originalCursorY <
 						(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight()));
@@ -2569,7 +2569,8 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID gameWorldInterfaceTextureID =
 		GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-	const Texture &gameWorldInterfaceTexture = textureManager.getTexture(gameWorldInterfaceTextureID);
+	const TextureRef gameWorldInterfaceTexture =
+		textureManager.getTextureRef(gameWorldInterfaceTextureID);
 
 	const int x = 0;
 	const int y = Renderer::ORIGINAL_HEIGHT -
@@ -2584,7 +2585,7 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction,
 	const TextureID compassFrameTextureID = this->getCompassFrameTextureID();
 
 	// Draw compass slider based on player direction.
-	const Texture &compassSlider = textureManager.getTexture(compassSliderTextureID);
+	const TextureRef compassSlider = textureManager.getTextureRef(compassSliderTextureID);
 
 	// Angle between 0 and 2 pi.
 	const double angle = std::atan2(-direction.y, -direction.x);
@@ -2607,11 +2608,11 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction,
 	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
 		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
 
-	renderer.drawOriginalClipped(compassSlider, clipRect, sliderX, sliderY);
+	renderer.drawOriginalClipped(compassSlider.get(), clipRect, sliderX, sliderY);
 
 	// Draw the compass frame over the slider.
-	const Texture &compassFrame = textureManager.getTexture(compassFrameTextureID);
-	renderer.drawOriginal(compassFrame,
+	const TextureRef compassFrame = textureManager.getTextureRef(compassFrameTextureID);
+	renderer.drawOriginal(compassFrame.get(),
 		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
 }
 
@@ -3021,21 +3022,22 @@ void GameWorldPanel::render(Renderer &renderer)
 	if (!modernInterface)
 	{
 		// Draw game world interface.
-		const Texture &gameWorldInterfaceTexture = textureManager.getTexture(gameWorldInterfaceTextureID);
-		renderer.drawOriginal(gameWorldInterfaceTexture, 0,
+		const TextureRef gameWorldInterfaceTexture =
+			textureManager.getTextureRef(gameWorldInterfaceTextureID);
+		renderer.drawOriginal(gameWorldInterfaceTexture.get(), 0,
 			Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight());
 
 		// Draw player portrait.
-		const Texture &statusGradientTexture = textureManager.getTexture(statusGradientTextureID);
-		const Texture &playerPortraitTexture = textureManager.getTexture(playerPortraitTextureID);
-		renderer.drawOriginal(statusGradientTexture, 14, 166);
-		renderer.drawOriginal(playerPortraitTexture, 14, 166);
+		const TextureRef statusGradientTexture = textureManager.getTextureRef(statusGradientTextureID);
+		const TextureRef playerPortraitTexture = textureManager.getTextureRef(playerPortraitTextureID);
+		renderer.drawOriginal(statusGradientTexture.get(), 14, 166);
+		renderer.drawOriginal(playerPortraitTexture.get(), 14, 166);
 
 		// If the player's class can't use magic, show the darkened spell icon.
 		if (!player.getCharacterClass().canCastMagic())
 		{
-			const Texture &noSpellTexture = textureManager.getTexture(noSpellTextureID);
-			renderer.drawOriginal(noSpellTexture, 91, 177);
+			const TextureRef noSpellTexture = textureManager.getTextureRef(noSpellTextureID);
+			renderer.drawOriginal(noSpellTexture.get(), 91, 177);
 		}
 
 		// Draw text: player name.
@@ -3071,9 +3073,9 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			return this->getWeaponTextureID(weaponFilename, weaponAnimIndex);
 		}();
 
-		const Texture &gameWorldInterfaceTexture =
-			textureManager.getTexture(gameWorldInterfaceTextureID);
-		const Texture &weaponTexture = textureManager.getTexture(weaponTextureID);
+		const TextureRef gameWorldInterfaceTexture =
+			textureManager.getTextureRef(gameWorldInterfaceTextureID);
+		const TextureRef weaponTexture = textureManager.getTextureRef(weaponTextureID);
 
 		DebugAssertIndex(this->weaponOffsets, weaponAnimIndex);
 		const Int2 &weaponOffset = this->weaponOffsets[weaponAnimIndex];
@@ -3110,7 +3112,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
 					std::max(Renderer::ORIGINAL_HEIGHT - weaponY, 0))) * weaponScaleY));
 
-			renderer.drawOriginal(weaponTexture,
+			renderer.drawOriginal(weaponTexture.get(),
 				weaponX, weaponY, weaponWidth, weaponHeight);
 
 			// Reset letterbox mode back to what it was.
@@ -3126,7 +3128,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
 			const int weaponHeight = std::clamp(weaponTexture.getHeight() + 1, 0, maxWeaponHeight);
-			renderer.drawOriginal(weaponTexture,
+			renderer.drawOriginal(weaponTexture.get(),
 				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
 		}
 	}
@@ -3145,7 +3147,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		const Texture *triggerTextTexture;
 		gameData.getTriggerTextRenderInfo(&triggerTextTexture);
 
-		const Texture &gameWorldInterfaceTexture = textureManager.getTexture(gameWorldInterfaceTextureID);
+		const TextureRef gameWorldInterfaceTexture = textureManager.getTextureRef(gameWorldInterfaceTextureID);
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
 		const int centerY = [modernInterface, &gameWorldInterfaceTexture, triggerTextTexture]()
 		{

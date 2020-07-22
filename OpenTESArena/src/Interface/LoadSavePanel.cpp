@@ -183,11 +183,12 @@ void LoadSavePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw slots background.
-	auto &textureManager = this->getGame().getTextureManager();
+	const auto &textureManager = this->getGame().getTextureManager();
 	const TextureID slotsBackgroundTextureID = this->getTextureID(
 		TextureName::LoadSave, PaletteName::Default);
-	const Texture &slotsBackgroundTexture = textureManager.getTexture(slotsBackgroundTextureID);
-	renderer.drawOriginal(slotsBackgroundTexture);
+	const TextureRef slotsBackgroundTexture =
+		textureManager.getTextureRef(slotsBackgroundTextureID);
+	renderer.drawOriginal(slotsBackgroundTexture.get());
 
 	// Draw save text.
 	for (const auto &textBox : this->saveTextBoxes)

@@ -568,9 +568,9 @@ void FastTravelSubPanel::render(Renderer &renderer)
 	const TextureManager::IdGroup<TextureID> animationTextureIDs = this->getAnimationTextureIDs();
 	const TextureID animationTextureID =
 		animationTextureIDs.startID + static_cast<int>(this->frameIndex);
-	const Texture &animFrame = textureManager.getTexture(animationTextureID);
+	const TextureRef animFrame = textureManager.getTextureRef(animationTextureID);
 
 	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);
 	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (animFrame.getHeight() / 2);
-	renderer.drawOriginal(animFrame, x, y);
+	renderer.drawOriginal(animFrame.get(), x, y);
 }

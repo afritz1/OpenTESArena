@@ -725,49 +725,49 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	// Draw the current portrait and clothes.
 	auto &textureManager = game.getTextureManager();
 	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
-	const Texture &headTexture = [this, &textureManager, portraitIndex, &headsFilename]() -> const Texture&
+	const TextureRef headTexture = [this, &textureManager, portraitIndex, &headsFilename]() -> TextureRef
 	{
 		const TextureManager::IdGroup<TextureID> headTextureIDs =
 			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
 		const TextureID headTextureID = headTextureIDs.startID + portraitIndex;
-		return textureManager.getTexture(headTextureID);
+		return textureManager.getTextureRef(headTextureID);
 	}();
 
-	const Texture &bodyTexture = [this, &textureManager, &bodyFilename]() -> const Texture&
+	const TextureRef bodyTexture = [this, &textureManager, &bodyFilename]() -> TextureRef
 	{
 		const TextureID bodyTextureID = this->getTextureID(
 			bodyFilename, PaletteFile::fromName(PaletteName::CharSheet));
-		return textureManager.getTexture(bodyTextureID);
+		return textureManager.getTextureRef(bodyTextureID);
 	}();
 
-	const Texture &shirtTexture = [this, &textureManager, &shirtFilename]() -> const Texture&
+	const TextureRef shirtTexture = [this, &textureManager, &shirtFilename]() -> TextureRef
 	{
 		const TextureID shirtTextureID = this->getTextureID(
 			shirtFilename, PaletteFile::fromName(PaletteName::CharSheet));
-		return textureManager.getTexture(shirtTextureID);
+		return textureManager.getTextureRef(shirtTextureID);
 	}();
 
-	const Texture &pantsTexture = [this, &textureManager, &pantsFilename]() -> const Texture&
+	const TextureRef pantsTexture = [this, &textureManager, &pantsFilename]() -> TextureRef
 	{
 		const TextureID pantsTextureID = this->getTextureID(
 			pantsFilename, PaletteFile::fromName(PaletteName::CharSheet));
-		return textureManager.getTexture(pantsTextureID);
+		return textureManager.getTextureRef(pantsTextureID);
 	}();
 
-	renderer.drawOriginal(bodyTexture, Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
-	renderer.drawOriginal(pantsTexture, pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(headTexture, headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirtTexture, shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(bodyTexture.get(), Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
+	renderer.drawOriginal(pantsTexture.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(headTexture.get(), headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirtTexture.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw attributes texture.
-	const Texture &attributesBackgroundTexture = [this, &textureManager]() -> const Texture&
+	const TextureRef attributesBackgroundTexture = [this, &textureManager]() -> TextureRef
 	{
 		const TextureID attributesBackgroundTextureID = this->getTextureID(
 			TextureName::CharacterStats, PaletteName::CharSheet);
-		return textureManager.getTexture(attributesBackgroundTextureID);
+		return textureManager.getTextureRef(attributesBackgroundTextureID);
 	}();
 
-	renderer.drawOriginal(attributesBackgroundTexture);
+	renderer.drawOriginal(attributesBackgroundTexture.get());
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->nameTextBox->getTexture(),

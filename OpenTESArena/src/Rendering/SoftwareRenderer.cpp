@@ -589,7 +589,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	// and returns its index in the sky textures list.
 	auto addSkyTexture = [&skyTextures, &palette, &textureManager](ImageID imageID)
 	{
-		const Image &image = textureManager.getImage(imageID);
+		const Image &image = textureManager.getImageHandle(imageID);
 		const int width = image.getWidth();
 		const int height = image.getHeight();
 		const int texelCount = width * height;

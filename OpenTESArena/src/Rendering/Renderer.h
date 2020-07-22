@@ -9,6 +9,7 @@
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
+#include "../Media/TextureManager.h"
 #include "../World/LevelData.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.

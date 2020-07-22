@@ -710,8 +710,8 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 			const TextureID iconTextureID = getLocationIconTextureID(locationDef);
-			const Texture &iconTexture = textureManager.getTexture(iconTextureID);
-			this->drawCenteredIcon(iconTexture, point, renderer);
+			const TextureRef iconTexture = textureManager.getTextureRef(iconTextureID);
+			this->drawCenteredIcon(iconTexture.get(), point, renderer);
 		}
 	};
 
@@ -764,8 +764,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		DebugAssert(highlightIndex >= 0);
 		DebugAssert(highlightIndex < highlightTextureIDs.count);
 		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
-		const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
-		drawHighlight(highlightTexture);
+		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
+		drawHighlight(highlightTexture.get());
 	};
 
 	auto handleDungeonHighlight = [this, &textureManager, &drawHighlight, &highlightTextureIDs]()
@@ -774,8 +774,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		const int highlightIndex = 3;
 		DebugAssert(highlightIndex < highlightTextureIDs.count);
 		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
-		const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
-		drawHighlight(highlightTexture);
+		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
+		drawHighlight(highlightTexture.get());
 	};
 
 	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &backgroundFilename,
@@ -794,8 +794,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 			const int highlightIndex = 3;
 			DebugAssert(highlightIndex < highlightTextureIDs.count);
 			const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
-			const Texture &highlightTexture = textureManager.getTexture(highlightTextureID);
-			drawHighlight(highlightTexture);
+			const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
+			drawHighlight(highlightTexture.get());
 		}
 		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{
@@ -935,8 +935,8 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	const std::string &backgroundPaletteName = backgroundFilename;
 	const TextureID mapBackgroundTextureID = this->getTextureID(
 		backgroundFilename, backgroundPaletteName);
-	const Texture &mapBackgroundTexture = textureManager.getTexture(mapBackgroundTextureID);
-	renderer.drawOriginal(mapBackgroundTexture);
+	const TextureRef mapBackgroundTexture = textureManager.getTextureRef(mapBackgroundTextureID);
+	renderer.drawOriginal(mapBackgroundTexture.get());
 
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);

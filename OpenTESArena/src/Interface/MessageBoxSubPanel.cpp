@@ -43,7 +43,7 @@ Panel::CursorData MessageBoxSubPanel::getCurrentCursor() const
 		return CursorData::EMPTY;
 	}
 
-	const Texture &texture = textureManager.getTexture(textureID);
+	const Texture &texture = textureManager.getTextureHandle(textureID);
 	return CursorData(&texture, CursorAlignment::TopLeft);
 }
 

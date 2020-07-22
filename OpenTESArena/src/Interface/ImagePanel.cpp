@@ -58,6 +58,6 @@ void ImagePanel::render(Renderer &renderer)
 	// Draw image.
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID textureID = this->getTextureID(this->textureName, this->paletteName);
-	const Texture &texture = textureManager.getTexture(textureID);
-	renderer.drawOriginal(texture);
+	const TextureRef texture = textureManager.getTextureRef(textureID);
+	renderer.drawOriginal(texture.get());
 }

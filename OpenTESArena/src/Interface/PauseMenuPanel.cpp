@@ -389,47 +389,47 @@ void PauseMenuPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID pauseBackgroundTextureID = this->getTextureID(
 		TextureName::PauseBackground, PaletteName::Default);
-	const Texture &pauseBackgroundTexture = textureManager.getTexture(pauseBackgroundTextureID);
-	renderer.drawOriginal(pauseBackgroundTexture);
+	const TextureRef pauseBackgroundTexture = textureManager.getTextureRef(pauseBackgroundTextureID);
+	renderer.drawOriginal(pauseBackgroundTexture.get());
 
 	// Draw game world interface below the pause menu.
 	const TextureID gameInterfaceTextureID = this->getTextureID(
 		TextureName::GameWorldInterface, PaletteName::Default);
-	const Texture &gameInterfaceTexture = textureManager.getTexture(gameInterfaceTextureID);
-	renderer.drawOriginal(gameInterfaceTexture, 0,
+	const TextureRef gameInterfaceTexture = textureManager.getTextureRef(gameInterfaceTextureID);
+	renderer.drawOriginal(gameInterfaceTexture.get(), 0,
 		Renderer::ORIGINAL_HEIGHT - gameInterfaceTexture.getHeight());
 
 	// Draw player portrait.
 	const auto &player = this->getGame().getGameData().getPlayer();
 	const auto &headsFilename = PortraitFile::getHeads(
 		player.isMale(), player.getRaceID(), true);
-	const Texture &portraitTexture = [this, &textureManager, &headsFilename, &player]() -> const Texture&
+	const TextureRef portraitTexture = [this, &textureManager, &headsFilename, &player]() -> TextureRef
 	{
 		const TextureManager::IdGroup<TextureID> portraitTextureIDs = this->getTextureIDs(
 			headsFilename, PaletteFile::fromName(PaletteName::Default));
 		const TextureID portraitTextureID = portraitTextureIDs.startID + player.getPortraitID();
-		return textureManager.getTexture(portraitTextureID);
+		return textureManager.getTextureRef(portraitTextureID);
 	}();
 
-	const Texture &statusTexture = [this, &textureManager]() -> const Texture&
+	const TextureRef statusTexture = [this, &textureManager]() -> TextureRef
 	{
 		const TextureManager::IdGroup<TextureID> statusTextureIDs = this->getTextureIDs(
 			TextureFile::fromName(TextureName::StatusGradients),
 			PaletteFile::fromName(PaletteName::Default));
 		const TextureID statusTextureID = statusTextureIDs.startID;
-		return textureManager.getTexture(statusTextureID);
+		return textureManager.getTextureRef(statusTextureID);
 	}();
 
-	renderer.drawOriginal(statusTexture, 14, 166);
-	renderer.drawOriginal(portraitTexture, 14, 166);
+	renderer.drawOriginal(statusTexture.get(), 14, 166);
+	renderer.drawOriginal(portraitTexture.get(), 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
 	if (!player.getCharacterClass().canCastMagic())
 	{
 		const TextureID nonMagicIconTextureID = this->getTextureID(
 			TextureName::NoSpell, PaletteName::Default);
-		const Texture &nonMagicIconTexture = textureManager.getTexture(nonMagicIconTextureID);
-		renderer.drawOriginal(nonMagicIconTexture, 91, 177);
+		const TextureRef nonMagicIconTexture = textureManager.getTextureRef(nonMagicIconTextureID);
+		renderer.drawOriginal(nonMagicIconTexture.get(), 91, 177);
 	}
 
 	// Cover up the detail slider with a new options background.

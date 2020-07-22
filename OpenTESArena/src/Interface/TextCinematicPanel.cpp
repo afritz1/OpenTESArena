@@ -159,9 +159,9 @@ void TextCinematicPanel::render(Renderer &renderer)
 	const TextureID textureID = textureIDs.startID + this->imageIndex;
 
 	// Draw current frame in animation.
-	auto &textureManager = this->getGame().getTextureManager();
-	const Texture &texture = textureManager.getTexture(textureID);
-	renderer.drawOriginal(texture);
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureRef texture = textureManager.getTextureRef(textureID);
+	renderer.drawOriginal(texture.get());
 
 	// Draw the relevant text box.
 	DebugAssertIndex(this->textBoxes, this->textIndex);

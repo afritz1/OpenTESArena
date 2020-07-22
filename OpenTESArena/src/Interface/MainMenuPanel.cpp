@@ -1153,25 +1153,25 @@ void MainMenuPanel::render(Renderer &renderer)
 	// Draw main menu.
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID mainMenuTextureID = this->getTextureID(TextureName::MainMenu, PaletteName::BuiltIn);
-	const Texture &mainMenuTexture = textureManager.getTexture(mainMenuTextureID);
-	renderer.drawOriginal(mainMenuTexture);
+	const TextureRef mainMenuTexture = textureManager.getTextureRef(mainMenuTextureID);
+	renderer.drawOriginal(mainMenuTexture.get());
 
 	// Draw test buttons.
 	const TextureID arrowsTextureID = this->getTextureID(TextureName::UpDown, PaletteName::CharSheet);
-	const Texture &arrowsTexture = textureManager.getTexture(arrowsTextureID);
-	renderer.drawOriginal(arrowsTexture, this->testTypeUpButton.getX(),
+	const TextureRef arrowsTexture = textureManager.getTextureRef(arrowsTextureID);
+	renderer.drawOriginal(arrowsTexture.get(), this->testTypeUpButton.getX(),
 		this->testTypeUpButton.getY());
-	renderer.drawOriginal(arrowsTexture, this->testIndexUpButton.getX(),
+	renderer.drawOriginal(arrowsTexture.get(), this->testIndexUpButton.getX(),
 		this->testIndexUpButton.getY());
 
 	if (this->testType == TestType_Interior)
 	{
-		renderer.drawOriginal(arrowsTexture, this->testIndex2UpButton.getX(),
+		renderer.drawOriginal(arrowsTexture.get(), this->testIndex2UpButton.getX(),
 			this->testIndex2UpButton.getY());
 	}
 	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		renderer.drawOriginal(arrowsTexture, this->testWeatherUpButton.getX(),
+		renderer.drawOriginal(arrowsTexture.get(), this->testWeatherUpButton.getX(),
 			this->testWeatherUpButton.getY());
 	}
 

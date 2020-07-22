@@ -187,11 +187,11 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background.
-	auto &textureManager = this->getGame().getTextureManager();
+	const auto &textureManager = this->getGame().getTextureManager();
 	const TextureID backgroundTextureID = this->getTextureID(
 		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const Texture &backgroundTexture = textureManager.getTexture(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture);
+	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture.get());
 
 	// Draw parchments: title, generate, select.
 	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 

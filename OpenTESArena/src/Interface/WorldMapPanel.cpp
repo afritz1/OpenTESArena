@@ -142,12 +142,12 @@ void WorldMapPanel::render(Renderer &renderer)
 		TextureName::WorldMap, PaletteName::BuiltIn);
 	
 	// Draw world map background. This one has "Exit" at the bottom right.
-	auto &textureManager = this->getGame().getTextureManager();
-	const Texture &mapBackgroundTexture = textureManager.getTexture(mapBackgroundTextureID);
-	renderer.drawOriginal(mapBackgroundTexture);
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureRef mapBackgroundTexture = textureManager.getTextureRef(mapBackgroundTextureID);
+	renderer.drawOriginal(mapBackgroundTexture.get());
 
 	// Draw yellow text over current province name.
-	const Texture &provinceTextTexture = textureManager.getTexture(provinceTextTextureID);
+	const TextureRef provinceTextTexture = textureManager.getTextureRef(provinceTextTextureID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
-	renderer.drawOriginal(provinceTextTexture, nameOffset.x, nameOffset.y);
+	renderer.drawOriginal(provinceTextTexture.get(), nameOffset.x, nameOffset.y);
 }

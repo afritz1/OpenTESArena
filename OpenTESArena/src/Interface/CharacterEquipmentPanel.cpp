@@ -299,21 +299,21 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 		TextureName::CharacterEquipment, PaletteName::CharSheet);
 
 	// Draw the current portrait and clothes.
-	auto &textureManager = game.getTextureManager();
-	const Texture &headTexture = textureManager.getTexture(headTextureID);
-	const Texture &bodyTexture = textureManager.getTexture(bodyTextureID);
-	const Texture &shirtTexture = textureManager.getTexture(shirtTextureID);
-	const Texture &pantsTexture = textureManager.getTexture(pantsTextureID);
+	const auto &textureManager = game.getTextureManager();
+	TextureRef headTexture = textureManager.getTextureRef(headTextureID);
+	TextureRef bodyTexture = textureManager.getTextureRef(bodyTextureID);
+	TextureRef shirtTexture = textureManager.getTextureRef(shirtTextureID);
+	TextureRef pantsTexture = textureManager.getTextureRef(pantsTextureID);
 
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
-	renderer.drawOriginal(bodyTexture, Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
-	renderer.drawOriginal(pantsTexture, pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(headTexture, headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirtTexture, shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(bodyTexture.get(), Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
+	renderer.drawOriginal(pantsTexture.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(headTexture.get(), headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirtTexture.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw character equipment background.
-	const Texture &equipmentBackgroundTexture = textureManager.getTexture(equipmentBackgroundTextureID);
-	renderer.drawOriginal(equipmentBackgroundTexture);
+	TextureRef equipmentBackgroundTexture = textureManager.getTextureRef(equipmentBackgroundTextureID);
+	renderer.drawOriginal(equipmentBackgroundTexture.get());
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->playerNameTextBox->getTexture(),

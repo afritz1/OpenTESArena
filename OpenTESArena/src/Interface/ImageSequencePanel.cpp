@@ -101,6 +101,6 @@ void ImageSequencePanel::render(Renderer &renderer)
 	const std::string &textureName = this->textureNames[this->imageIndex];
 	const std::string &paletteName = this->paletteNames[this->imageIndex];
 	const TextureID textureID = this->getTextureID(textureName, paletteName);
-	const Texture &texture = textureManager.getTexture(textureID);
-	renderer.drawOriginal(texture);
+	const TextureRef texture = textureManager.getTextureRef(textureID);
+	renderer.drawOriginal(texture.get());
 }
