@@ -201,25 +201,25 @@ void CharacterPanel::render(Renderer &renderer)
 		TextureName::NextPage, PaletteName::CharSheet);
 
 	// Draw the current portrait and clothes.
-	auto &textureManager = game.getTextureManager();
-	const Texture &headTexture = textureManager.getTexture(headTextureID);
-	const Texture &bodyTexture = textureManager.getTexture(bodyTextureID);
-	const Texture &shirtTexture = textureManager.getTexture(shirtTextureID);
-	const Texture &pantsTexture = textureManager.getTexture(pantsTextureID);
+	const auto &textureManager = game.getTextureManager();
+	const TextureRef headTexture = textureManager.getTextureRef(headTextureID);
+	const TextureRef bodyTexture = textureManager.getTextureRef(bodyTextureID);
+	const TextureRef shirtTexture = textureManager.getTextureRef(shirtTextureID);
+	const TextureRef pantsTexture = textureManager.getTextureRef(pantsTextureID);
 
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
-	renderer.drawOriginal(bodyTexture, Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
-	renderer.drawOriginal(pantsTexture, pantsOffset.x, pantsOffset.y);
-	renderer.drawOriginal(headTexture, headOffset.x, headOffset.y);
-	renderer.drawOriginal(shirtTexture, shirtOffset.x, shirtOffset.y);
+	renderer.drawOriginal(bodyTexture.get(), Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth(), 0);
+	renderer.drawOriginal(pantsTexture.get(), pantsOffset.x, pantsOffset.y);
+	renderer.drawOriginal(headTexture.get(), headOffset.x, headOffset.y);
+	renderer.drawOriginal(shirtTexture.get(), shirtOffset.x, shirtOffset.y);
 
 	// Draw character stats background.
-	const Texture &statsBackgroundTexture = textureManager.getTexture(statsBackgroundTextureID);
-	renderer.drawOriginal(statsBackgroundTexture);
+	const TextureRef statsBackgroundTexture = textureManager.getTextureRef(statsBackgroundTextureID);
+	renderer.drawOriginal(statsBackgroundTexture.get());
 
 	// Draw "Next Page" texture.
-	const Texture &nextPageTexture = textureManager.getTexture(nextPageTextureID);
-	renderer.drawOriginal(nextPageTexture, 108, 179);
+	const TextureRef nextPageTexture = textureManager.getTextureRef(nextPageTextureID);
+	renderer.drawOriginal(nextPageTexture.get(), 108, 179);
 
 	// Draw text boxes: player name, race, class.
 	renderer.drawOriginal(this->playerNameTextBox->getTexture(),

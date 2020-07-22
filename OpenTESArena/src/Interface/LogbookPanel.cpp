@@ -112,9 +112,9 @@ void LogbookPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Logbook background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const Texture &backgroundTexture = textureManager.getTexture(this->backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture);
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureRef backgroundTexture = textureManager.getTextureRef(this->backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture.get());
 
 	// Draw text: title.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),

@@ -1,8 +1,6 @@
 #ifndef BUFFER_REF_2D_H
 #define BUFFER_REF_2D_H
 
-#include <type_traits>
-
 #include "../debug/Debug.h"
 
 // This only exists because dangling pointers are bad and classes like the texture manager
@@ -15,8 +13,6 @@ template <typename ContainerT, typename T>
 class BufferRef2D
 {
 private:
-	static_assert(std::is_integral_v<T>);
-
 	ContainerT *container;
 	int index;
 public:
@@ -26,10 +22,16 @@ public:
 		this->index = index;
 	}
 
-	// NOTE: for privileged use only. Only public to avoid friend keyword.
 	T &get()
 	{
 		ContainerT &containerRef = *this->container;
+		DebugAssertIndex(containerRef, this->index);
+		return containerRef[this->index];
+	}
+
+	const T &get() const
+	{
+		const ContainerT &containerRef = *this->container;
 		DebugAssertIndex(containerRef, this->index);
 		return containerRef[this->index];
 	}

@@ -178,8 +178,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID backgroundTextureID = this->getTextureID(
 		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const Texture &backgroundTexture = textureManager.getTexture(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture);
+	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture.get());
 
 	// Draw parchment: title.
 	renderer.drawOriginal(this->parchment,

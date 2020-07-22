@@ -595,7 +595,7 @@ Panel::CursorData AutomapPanel::getCurrentCursor() const
 		return CursorData::EMPTY;
 	}
 
-	const Texture &texture = textureManager.getTexture(textureID);
+	const Texture &texture = textureManager.getTextureHandle(textureID);
 	return CursorData(&texture, CursorAlignment::BottomLeft);
 }
 
@@ -692,9 +692,9 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw automap background.
-	auto &textureManager = this->getGame().getTextureManager();
-	const Texture &backgroundTexture = textureManager.getTexture(this->backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture);
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureRef backgroundTexture = textureManager.getTextureRef(this->backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture.get());
 
 	// Only draw the part of the automap within the drawing area.
 	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);

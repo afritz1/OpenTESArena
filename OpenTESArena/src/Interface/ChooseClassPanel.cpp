@@ -434,18 +434,18 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
+	const auto &textureManager = game.getTextureManager();
 	const TextureID backgroundTextureID = this->getTextureID(
 		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const Texture &backgroundTexture = textureManager.getTexture(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture);
+	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
+	renderer.drawOriginal(backgroundTexture.get());
 
 	// Draw list pop-up.
 	const TextureID listPopUpTextureID = this->getTextureID(
 		TextureFile::fromName(TextureName::PopUp2),
 		TextureFile::fromName(TextureName::CharacterCreation));
-	const Texture &listPopUpTexture = textureManager.getTexture(listPopUpTextureID);
-	renderer.drawOriginal(listPopUpTexture, 55, 9,
+	const TextureRef listPopUpTexture = textureManager.getTextureRef(listPopUpTextureID);
+	renderer.drawOriginal(listPopUpTexture.get(), 55, 9,
 		listPopUpTexture.getWidth(), listPopUpTexture.getHeight());
 
 	// Draw text: title, list.

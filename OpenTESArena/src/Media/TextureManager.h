@@ -14,15 +14,17 @@
 #include "../Rendering/Texture.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/BufferRef.h"
 #include "components/utilities/BufferRef2D.h"
 
 class Renderer;
 
 // BufferRef variations for avoiding returning easily-stale handles from texture manager.
-using PaletteRef = BufferRef2D<std::vector<Palette>, Palette>;
-using ImageRef = BufferRef2D<std::vector<Image>, Image>;
-using SurfaceRef = BufferRef2D<std::vector<Surface>, Surface>;
-using TextureRef = BufferRef2D<std::vector<Texture>, Texture>;
+// All references are read-only interfaces.
+using PaletteRef = BufferRef<const std::vector<Palette>, const Palette>;
+using ImageRef = BufferRef2D<const std::vector<Image>, const Image>;
+using SurfaceRef = BufferRef2D<const std::vector<Surface>, const Surface>;
+using TextureRef = BufferRef2D<const std::vector<Texture>, const Texture>;
 
 class TextureManager
 {
@@ -104,14 +106,18 @@ public:
 	bool tryGetSurfaceID(const char *filename, PaletteID paletteID, SurfaceID *outID);
 	bool tryGetTextureID(const char *filename, PaletteID paletteID, Renderer &renderer, TextureID *outID);
 
-	// Texture getter functions, fast look-up.
-	// Note! The ID getter functions may resize the internal texture buffer causing
-	// dangling texture references, so get all IDs in advance of calling these functions,
-	// and store these references in as small of a scope as possible!
-	const Palette &getPalette(PaletteID id) const;
-	const Image &getImage(ImageID id) const;
-	const Surface &getSurface(SurfaceID id) const;
-	const Texture &getTexture(TextureID id) const;
+	// Texture getter functions, fast look-up. These return reference wrappers to avoid
+	// dangling pointer issues with internal buffer resizing.
+	PaletteRef getPaletteRef(PaletteID id) const;
+	ImageRef getImageRef(ImageID id) const;
+	SurfaceRef getSurfaceRef(SurfaceID id) const;
+	TextureRef getTextureRef(TextureID id) const;
+
+	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
+	const Palette &getPaletteHandle(PaletteID id) const;
+	const Image &getImageHandle(ImageID id) const;
+	const Surface &getSurfaceHandle(SurfaceID id) const;
+	const Texture &getTextureHandle(TextureID id) const;
 };
 
 #endif

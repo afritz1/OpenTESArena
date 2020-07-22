@@ -441,11 +441,11 @@ bool TextureManager::tryGetSurfaceIDs(const char *filename, PaletteID paletteID,
 	auto iter = this->surfaceIDs.find(mappingName);
 	if (iter == this->surfaceIDs.end())
 	{
-		const Palette &palette = this->getPalette(paletteID);
+		PaletteRef palette = this->getPaletteRef(paletteID);
 
 		// Load surface(s) from file.
 		Buffer<Surface> surfaces;
-		if (TextureManager::tryLoadSurfaces(filename, palette, &surfaces))
+		if (TextureManager::tryLoadSurfaces(filename, palette.get(), &surfaces))
 		{
 			const SurfaceID startID = static_cast<SurfaceID>(this->surfaces.size());
 			IdGroup<SurfaceID> ids(startID, surfaces.getCount());
@@ -482,11 +482,11 @@ bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
 	auto iter = this->textureIDs.find(mappingName);
 	if (iter == this->textureIDs.end())
 	{
-		const Palette &palette = this->getPalette(paletteID);
+		PaletteRef palette = this->getPaletteRef(paletteID);
 
 		// Load texture(s) from file.
 		Buffer<Texture> textures;
-		if (TextureManager::tryLoadTextures(filename, palette, renderer, &textures))
+		if (TextureManager::tryLoadTextures(filename, palette.get(), renderer, &textures))
 		{
 			const TextureID startID = static_cast<TextureID>(this->textures.size());
 			IdGroup<TextureID> ids(startID, textures.getCount());
@@ -573,25 +573,45 @@ bool TextureManager::tryGetTextureID(const char *filename, PaletteID paletteID,
 	}
 }
 
-const Palette &TextureManager::getPalette(PaletteID id) const
+PaletteRef TextureManager::getPaletteRef(PaletteID id) const
+{
+	return PaletteRef(&this->palettes, static_cast<int>(id));
+}
+
+ImageRef TextureManager::getImageRef(ImageID id) const
+{
+	return ImageRef(&this->images, static_cast<int>(id));
+}
+
+SurfaceRef TextureManager::getSurfaceRef(SurfaceID id) const
+{
+	return SurfaceRef(&this->surfaces, static_cast<int>(id));
+}
+
+TextureRef TextureManager::getTextureRef(TextureID id) const
+{
+	return TextureRef(&this->textures, static_cast<int>(id));
+}
+
+const Palette &TextureManager::getPaletteHandle(PaletteID id) const
 {
 	DebugAssertIndex(this->palettes, id);
 	return this->palettes[id];
 }
 
-const Image &TextureManager::getImage(ImageID id) const
+const Image &TextureManager::getImageHandle(ImageID id) const
 {
 	DebugAssertIndex(this->images, id);
 	return this->images[id];
 }
 
-const Surface &TextureManager::getSurface(SurfaceID id) const
+const Surface &TextureManager::getSurfaceHandle(SurfaceID id) const
 {
 	DebugAssertIndex(this->surfaces, id);
 	return this->surfaces[id];
 }
 
-const Texture &TextureManager::getTexture(TextureID id) const
+const Texture &TextureManager::getTextureHandle(TextureID id) const
 {
 	DebugAssertIndex(this->textures, id);
 	return this->textures[id];

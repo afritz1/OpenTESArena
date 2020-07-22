@@ -73,7 +73,7 @@ void CinematicPanel::render(Renderer &renderer)
 	const TextureID textureID = textureIDs.startID + this->imageIndex;
 
 	// Draw current frame of the cinematic.
-	auto &textureManager = this->getGame().getTextureManager();
-	const Texture &texture = textureManager.getTexture(textureID);
-	renderer.drawOriginal(texture);
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureRef texture = textureManager.getTextureRef(textureID);
+	renderer.drawOriginal(texture.get());
 }
