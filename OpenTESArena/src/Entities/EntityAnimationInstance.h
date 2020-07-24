@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "EntityAnimationDefinition.h"
+#include "EntityAnimationLibrary.h"
 #include "EntityAnimationUtils.h"
 
 #include "components/utilities/BufferView.h"
@@ -53,7 +54,7 @@ private:
 	std::vector<StateList> stateLists;
 	double currentSeconds; // Seconds through current animation.
 	int stateListIndex; // Determined by animation definition state lists.
-	int animDefIndex; // Index into animation definitions.
+	EntityAnimID animID; // Animation definition handle.
 
 	// @todo: other fancy stuff, like discriminated union for what kind of animation instance;
 	// NPC weapon ID, townsperson generated texture ID, etc..
@@ -64,11 +65,12 @@ public:
 	BufferView<const StateList> getStateLists() const;
 	double getCurrentSeconds() const;
 	int getStateListIndex() const;
-	int getDefinitionIndex() const;
+	EntityAnimID getAnimID() const;
 
 	void addStateList(StateList &&stateList);
 	void clearStateLists();
 	void setStateListIndex(int index);
+	void setAnimID(EntityAnimID animID);
 	void resetTime();
 	void tick(double dt, const EntityAnimationDefinition::State &defState);
 };

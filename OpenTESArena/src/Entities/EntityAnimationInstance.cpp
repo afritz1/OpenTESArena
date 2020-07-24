@@ -56,7 +56,7 @@ EntityAnimationInstance::EntityAnimationInstance()
 {
 	this->currentSeconds = 0.0;
 	this->stateListIndex = -1;
-	this->animDefIndex = -1;
+	this->animID = EntityAnimationLibrary::NO_ID;
 }
 
 int EntityAnimationInstance::getStateListCount() const
@@ -79,9 +79,9 @@ double EntityAnimationInstance::getCurrentSeconds() const
 	return this->currentSeconds;
 }
 
-int EntityAnimationInstance::getDefinitionIndex() const
+EntityAnimID EntityAnimationInstance::getAnimID() const
 {
-	return this->animDefIndex;
+	return this->animID;
 }
 
 void EntityAnimationInstance::addStateList(StateList &&stateList)
@@ -98,6 +98,11 @@ void EntityAnimationInstance::setStateListIndex(int index)
 {
 	this->stateListIndex = index;
 	this->resetTime();
+}
+
+void EntityAnimationInstance::setAnimID(EntityAnimID animID)
+{
+	this->animID = animID;
 }
 
 void EntityAnimationInstance::resetTime()
