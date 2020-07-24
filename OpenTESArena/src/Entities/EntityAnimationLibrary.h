@@ -4,11 +4,9 @@
 #include <vector>
 
 #include "EntityAnimationDefinition.h"
+#include "EntityAnimationUtils.h"
 
 #include "components/utilities/BufferRef.h"
-
-// Entity animation definition handle.
-using EntityAnimID = int;
 
 // Buffer reference wrapper for entity animation definitions to avoid dangling pointers.
 using EntityAnimRef = BufferRef<const std::vector<EntityAnimationDefinition>, const EntityAnimationDefinition>;

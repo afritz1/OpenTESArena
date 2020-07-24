@@ -9,6 +9,7 @@
 #include "DynamicEntity.h"
 #include "Entity.h"
 #include "EntityDefinition.h"
+#include "EntityUtils.h"
 #include "StaticEntity.h"
 #include "../Math/Vector3.h"
 #include "../World/VoxelGrid.h"
@@ -19,8 +20,6 @@
 class Game;
 
 enum class EntityType;
-
-using EntityID = int;
 
 class EntityManager
 {

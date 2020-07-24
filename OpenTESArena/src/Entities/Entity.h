@@ -2,6 +2,7 @@
 #define ENTITY_H
 
 #include "EntityAnimationData.h"
+#include "EntityUtils.h"
 #include "../Math/Vector2.h"
 #include "../World/VoxelUtils.h"
 
@@ -18,7 +19,7 @@ class Entity
 {
 private:
 	EntityAnimationData::Instance animation;
-	int id;
+	EntityID id;
 	int dataIndex; // EntityDefinition index in entity manager.
 protected:
 	NewDouble2 position;
@@ -30,7 +31,7 @@ public:
 	void init(int dataIndex);
 	
 	// Gets the unique ID for the entity.
-	int getID() const;
+	EntityID getID() const;
 
 	// Gets the entity's entity manager data index.
 	int getDataIndex() const;
@@ -46,7 +47,7 @@ public:
 	virtual EntityType getEntityType() const = 0;
 
 	// Sets the entity's ID.
-	void setID(int id);
+	void setID(EntityID id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
 	void setPosition(const NewDouble2 &position, EntityManager &entityManager,

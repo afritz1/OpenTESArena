@@ -17,7 +17,7 @@ void Entity::init(int dataIndex)
 	this->dataIndex = dataIndex;
 }
 
-int Entity::getID() const
+EntityID Entity::getID() const
 {
 	return this->id;
 }
@@ -42,7 +42,7 @@ const EntityAnimationData::Instance &Entity::getAnimation() const
 	return this->animation;
 }
 
-void Entity::setID(int id)
+void Entity::setID(EntityID id)
 {
 	this->id = id;
 }
