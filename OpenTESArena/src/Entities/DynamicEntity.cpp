@@ -84,7 +84,7 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 		return false;
 	}
 
-	const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDataIndex());
+	const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
 	if (!entityDef->isCreature())
 	{
 		return false;

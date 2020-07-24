@@ -244,7 +244,7 @@ namespace
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
@@ -1873,7 +1873,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
@@ -1920,11 +1920,11 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	for (int i = 0; i < entityCount; i++)
 	{
 		Entity *entity = entityBuffer.get(i);
-		const int dataIndex = entity->getDataIndex();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(dataIndex);
+		const EntityDefID defID = entity->getDefinitionID();
+		const EntityDefinition *entityDef = entityManager.getEntityDef(defID);
 		if (entityDef == nullptr)
 		{
-			DebugLogError("Missing entity definition " + std::to_string(dataIndex) + ".");
+			DebugLogError("Missing entity definition " + std::to_string(defID) + ".");
 			continue;
 		}
 

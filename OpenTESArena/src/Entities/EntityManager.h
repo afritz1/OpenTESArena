@@ -104,6 +104,7 @@ private:
 public:
 	// The default ID for entities with no ID.
 	static constexpr EntityID NO_ID = -1;
+	static constexpr EntityDefID NO_DEF_ID = -1;
 
 	// Requires the chunks per X and Z side in the voxel grid for allocating entity groups.
 	void init(SNInt chunkCountX, WEInt chunkCountZ);
@@ -135,8 +136,8 @@ public:
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;
 
-	// Gets an entity definition for the given flat index, or null if it doesn't exist.
-	const EntityDefinition *getEntityDef(int flatIndex) const;
+	// Gets an entity definition for the given ID, or null if it doesn't exist.
+	const EntityDefinition *getEntityDef(EntityDefID defID) const;
 
 	// Adds an entity data definition to the definitions list and returns a pointer to it.
 	EntityDefinition *addEntityDef(EntityDefinition &&def);

@@ -7,14 +7,14 @@ Entity::Entity()
 	: position(Double2::Zero)
 {
 	this->id = EntityManager::NO_ID;
-	this->dataIndex = -1;
+	this->defID = EntityManager::NO_DEF_ID;
 	this->animation.reset();
 }
 
-void Entity::init(int dataIndex)
+void Entity::init(EntityDefID defID)
 {
 	DebugAssert(this->id != EntityManager::NO_ID);
-	this->dataIndex = dataIndex;
+	this->defID = defID;
 }
 
 EntityID Entity::getID() const
@@ -22,9 +22,9 @@ EntityID Entity::getID() const
 	return this->id;
 }
 
-int Entity::getDataIndex() const
+EntityDefID Entity::getDefinitionID() const
 {
-	return this->dataIndex;
+	return this->defID;
 }
 
 const NewDouble2 &Entity::getPosition() const
@@ -59,8 +59,8 @@ void Entity::reset()
 	// Don't change the entity type -- the entity manager doesn't change an allocation's entity
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
+	this->defID = EntityManager::NO_DEF_ID;
 	this->position = Double2::Zero;
-	this->dataIndex = -1;
 	this->animation.reset();
 }
 
@@ -72,7 +72,7 @@ void Entity::tick(Game &game, double dt)
 		const WorldData &worldData = game.getGameData().getWorldData();
 		const LevelData &levelData = worldData.getActiveLevel();
 		const EntityManager &entityManager = levelData.getEntityManager();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDataIndex());
+		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
 		DebugAssert(entityDef != nullptr);
 
 		return entityDef->getAnimationData();

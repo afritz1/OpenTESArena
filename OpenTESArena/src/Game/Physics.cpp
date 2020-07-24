@@ -908,7 +908,7 @@ namespace Physics
 			for (const auto &visData : entityVisDataList)
 			{
 				const Entity &entity = *visData.entity;
-				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
+				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDefinitionID());
 
 				const double flatWidth = visData.keyframe.getWidth();
 				const double flatHeight = visData.keyframe.getHeight();

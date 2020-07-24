@@ -4,4 +4,7 @@
 // Entity instance handle.
 using EntityID = int;
 
+// Entity definition handle.
+using EntityDefID = int;
+
 #endif

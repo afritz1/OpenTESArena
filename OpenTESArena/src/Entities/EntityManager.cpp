@@ -554,12 +554,13 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
-const EntityDefinition *EntityManager::getEntityDef(int flatIndex) const
+const EntityDefinition *EntityManager::getEntityDef(EntityDefID defID) const
 {
+	// @todo: just do a direct vector look-up, don't do a search.
 	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
-		[flatIndex](const EntityDefinition &def)
+		[defID](const EntityDefinition &def)
 	{
-		return def.getInfData().flatIndex == flatIndex;
+		return def.getInfData().flatIndex == static_cast<int>(defID);
 	});
 
 	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
@@ -575,7 +576,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
-	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
+	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDefinitionID());
 	const EntityAnimationData &entityAnimData = entityDef.getAnimationData();
 
 	// Get active state.

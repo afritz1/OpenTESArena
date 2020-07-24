@@ -20,7 +20,7 @@ class Entity
 private:
 	EntityAnimationData::Instance animation;
 	EntityID id;
-	int dataIndex; // EntityDefinition index in entity manager.
+	EntityDefID defID;
 protected:
 	NewDouble2 position;
 public:
@@ -28,13 +28,13 @@ public:
 	virtual ~Entity() = default;
 
 	// Initializes the entity state (some values are initialized separately).
-	void init(int dataIndex);
+	void init(EntityDefID defID);
 	
 	// Gets the unique ID for the entity.
 	EntityID getID() const;
 
-	// Gets the entity's entity manager data index.
-	int getDataIndex() const;
+	// Gets the entity's definition ID.
+	EntityDefID getDefinitionID() const;
 
 	// Gets the XZ position of the entity.
 	const NewDouble2 &getPosition() const;
