@@ -20,6 +20,8 @@ class Game;
 
 enum class EntityType;
 
+using EntityID = int;
+
 class EntityManager
 {
 public:
@@ -48,7 +50,7 @@ private:
 		std::vector<bool> validEntities;
 
 		// Entity ID -> entity index mappings for fast insertion/deletion/look-up.
-		std::unordered_map<int, int> indices;
+		std::unordered_map<EntityID, int> indices;
 
 		// List of previously-owned entity indices that can be replaced with new entities.
 		std::vector<int> freeIndices;
@@ -69,16 +71,16 @@ private:
 		int getEntities(const Entity **outEntities, int outSize) const;
 
 		// Gets the index of an entity if the given ID has an associated mapping.
-		std::optional<int> getEntityIndex(int id) const;
+		std::optional<int> getEntityIndex(EntityID id) const;
 
 		// Inserts a new entity and assigns it the given ID.
-		T *addEntity(int id);
+		T *addEntity(EntityID id);
 
 		// Moves an entity from the old group to this group.
-		void acquireEntity(int id, EntityGroup<T> &oldGroup);
+		void acquireEntity(EntityID id, EntityGroup<T> &oldGroup);
 
 		// Removes an entity from the group.
-		void remove(int id);
+		void remove(EntityID id);
 
 		// Removes all entities.
 		void clear();
@@ -92,17 +94,17 @@ private:
 	std::vector<EntityDefinition> entityDefs;
 
 	// Free IDs (previously owned) and the next available ID (never owned).
-	std::vector<int> freeIDs;
-	int nextID;
+	std::vector<EntityID> freeIDs;
+	EntityID nextID;
 
 	// Obtains an available ID to be assigned to a new entity, incrementing the current max
 	// if no previously owned IDs are available to reuse.
-	int nextFreeID();
+	EntityID nextFreeID();
 
 	bool isValidChunk(const ChunkInt2 &chunk) const;
 public:
-	// The default ID assigned to entities that have no ID.
-	static const int NO_ID;
+	// The default ID for entities with no ID.
+	static constexpr EntityID NO_ID = -1;
 
 	// Requires the chunks per X and Z side in the voxel grid for allocating entity groups.
 	void init(SNInt chunkCountX, WEInt chunkCountZ);
@@ -112,8 +114,8 @@ public:
 	DynamicEntity *makeDynamicEntity();
 
 	// Gets an entity, given their ID. Returns null if no ID matches.
-	Entity *get(int id);
-	const Entity *get(int id) const;
+	Entity *get(EntityID id);
+	const Entity *get(EntityID id) const;
 
 	// Gets number of entities of the given type in the manager.
 	int getCount(EntityType entityType) const;
@@ -152,7 +154,7 @@ public:
 	void updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid);
 
 	// Deletes an entity.
-	void remove(int id);
+	void remove(EntityID id);
 
 	// Deletes all entities and data in the manager.
 	void clear();

@@ -1173,7 +1173,7 @@ void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const 
 	}
 }
 
-void Physics::Hit::initEntity(double t, const Double3 &point, int id)
+void Physics::Hit::initEntity(double t, const Double3 &point, EntityID id)
 {
 	this->t = t;
 	this->point = point;

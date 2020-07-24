@@ -15,7 +15,7 @@
 
 namespace
 {
-	constexpr int FIRST_ENTITY_ID = 0;
+	constexpr EntityID FIRST_ENTITY_ID = 0;
 	constexpr SNInt DEFAULT_CHUNK_X = 0;
 	constexpr WEInt DEFAULT_CHUNK_Z = 0;
 }
@@ -121,7 +121,7 @@ int EntityManager::EntityGroup<T>::getEntities(const Entity **outEntities, int o
 }
 
 template <typename T>
-std::optional<int> EntityManager::EntityGroup<T>::getEntityIndex(int id) const
+std::optional<int> EntityManager::EntityGroup<T>::getEntityIndex(EntityID id) const
 {
 	const auto iter = this->indices.find(id);
 	if (iter != this->indices.end())
@@ -159,7 +159,7 @@ int EntityManager::EntityGroup<T>::nextFreeIndex()
 }
 
 template <typename T>
-T *EntityManager::EntityGroup<T>::addEntity(int id)
+T *EntityManager::EntityGroup<T>::addEntity(EntityID id)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 	DebugAssert(this->validEntities.size() == this->entities.size());
@@ -183,7 +183,7 @@ T *EntityManager::EntityGroup<T>::addEntity(int id)
 }
 
 template <typename T>
-void EntityManager::EntityGroup<T>::acquireEntity(int id, EntityGroup<T> &oldGroup)
+void EntityManager::EntityGroup<T>::acquireEntity(EntityID id, EntityGroup<T> &oldGroup)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 
@@ -210,7 +210,7 @@ void EntityManager::EntityGroup<T>::acquireEntity(int id, EntityGroup<T> &oldGro
 }
 
 template <typename T>
-void EntityManager::EntityGroup<T>::remove(int id)
+void EntityManager::EntityGroup<T>::remove(EntityID id)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 	DebugAssert(this->validEntities.size() == this->entities.size());
@@ -248,8 +248,6 @@ void EntityManager::EntityGroup<T>::clear()
 	this->freeIndices.clear();
 }
 
-const int EntityManager::NO_ID = -1;
-
 void EntityManager::init(SNInt chunkCountX, WEInt chunkCountZ)
 {
 	this->staticGroups.init(chunkCountX, chunkCountZ);
@@ -257,19 +255,19 @@ void EntityManager::init(SNInt chunkCountX, WEInt chunkCountZ)
 	this->nextID = FIRST_ENTITY_ID;
 }
 
-int EntityManager::nextFreeID()
+EntityID EntityManager::nextFreeID()
 {
 	// Check if any pre-owned entity IDs are available.
 	if (this->freeIDs.size() > 0)
 	{
-		const int id = this->freeIDs.back();
+		const EntityID id = this->freeIDs.back();
 		this->freeIDs.pop_back();
 		return id;
 	}
 	else
 	{
 		// Get the next available ID.
-		const int id = this->nextID;
+		const EntityID id = this->nextID;
 		this->nextID++;
 		return id;
 	}
@@ -284,7 +282,7 @@ bool EntityManager::isValidChunk(const ChunkInt2 &chunk) const
 
 StaticEntity *EntityManager::makeStaticEntity()
 {
-	const int id = this->nextFreeID();
+	const EntityID id = this->nextFreeID();
 	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	StaticEntity *entity = staticGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
@@ -293,14 +291,14 @@ StaticEntity *EntityManager::makeStaticEntity()
 
 DynamicEntity *EntityManager::makeDynamicEntity()
 {
-	const int id = this->nextFreeID();
+	const EntityID id = this->nextFreeID();
 	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	DynamicEntity *entity = dynamicGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
 }
 
-Entity *EntityManager::get(int id)
+Entity *EntityManager::get(EntityID id)
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
@@ -333,7 +331,7 @@ Entity *EntityManager::get(int id)
 	return nullptr;
 }
 
-const Entity *EntityManager::get(int id) const
+const Entity *EntityManager::get(EntityID id) const
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
@@ -773,7 +771,7 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 	}
 }
 
-void EntityManager::remove(int id)
+void EntityManager::remove(EntityID id)
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
