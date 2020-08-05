@@ -70,16 +70,13 @@ public:
 	};
 private:
 	std::vector<State> states; // Idle, Attack, etc..
-	std::string name; // Rat, goblin, etc..
 public:
 	int getStateCount() const;
 	const State &getState(int index) const;
 	bool tryGetStateIndex(const char *name, int *outIndex) const;
-	const std::string &getName() const;
 
 	void addState(State &&state);
 	void removeState(const char *name);
-	void setName(const std::string &name);
 	void clear();
 };
 
