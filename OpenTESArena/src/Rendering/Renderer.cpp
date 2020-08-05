@@ -7,6 +7,7 @@
 
 #include "Renderer.h"
 #include "Surface.h"
+#include "../Entities/EntityAnimationInstance.h"
 #include "../Interface/CursorAlignment.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
@@ -269,8 +270,7 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 		// selectable (i.e. it's not transparent).
 		bool isSelected;
 		const bool withinEntity = this->softwareRenderer.tryGetEntitySelectionData(uv, flatIndex,
-			visData.keyframe.getTextureID(), visData.anglePercent, visData.stateType,
-			pixelPerfect, &isSelected);
+			visData.stateIndex, visData.angleIndex, visData.keyframeIndex, pixelPerfect, &isSelected);
 
 		return withinEntity && isSelected;
 	}
@@ -611,13 +611,18 @@ void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &
 	this->softwareRenderer.setVoxelTexture(id, srcTexels, palette);
 }
 
-void Renderer::addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType,
-	int angleID, bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
-	const Palette &palette)
+void Renderer::initFlatTextures(int flatIndex, EntityAnimationInstance &animInst)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.addFlatTexture(flatIndex, stateType, angleID, flipped,
-		reflective, srcTexels, width, height, palette);
+	this->softwareRenderer.initFlatTextures(flatIndex, animInst);
+}
+
+void Renderer::setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
+	const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette)
+{
+	DebugAssert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
+		srcTexels, width, height, reflective, palette);
 }
 
 void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,

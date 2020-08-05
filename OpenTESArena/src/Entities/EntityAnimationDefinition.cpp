@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 
 #include "EntityAnimationDefinition.h"
 
@@ -21,16 +22,72 @@ double EntityAnimationDefinition::Keyframe::getHeight() const
 	return this->height;
 }
 
-EntityAnimationDefinition::State::State(double totalSeconds, bool loop, bool flipped)
+EntityAnimationDefinition::KeyframeList::KeyframeList()
 {
-	this->totalSeconds = totalSeconds;
-	this->loop = loop;
+	this->flipped = false;
+}
+
+void EntityAnimationDefinition::KeyframeList::init(bool flipped)
+{
 	this->flipped = flipped;
 }
 
-BufferView<const EntityAnimationDefinition::Keyframe> EntityAnimationDefinition::State::getKeyframes() const
+int EntityAnimationDefinition::KeyframeList::getKeyframeCount() const
 {
-	return BufferView<const Keyframe>(this->keyframes.data(), static_cast<int>(this->keyframes.size()));
+	return static_cast<int>(this->keyframes.size());
+}
+
+const EntityAnimationDefinition::Keyframe &EntityAnimationDefinition::KeyframeList::getKeyframe(int index) const
+{
+	DebugAssertIndex(this->keyframes, index);
+	return this->keyframes[index];
+}
+
+bool EntityAnimationDefinition::KeyframeList::isFlipped() const
+{
+	return this->flipped;
+}
+
+void EntityAnimationDefinition::KeyframeList::addKeyframe(Keyframe &&keyframe)
+{
+	this->keyframes.push_back(std::move(keyframe));
+}
+
+void EntityAnimationDefinition::KeyframeList::clearKeyframes()
+{
+	this->keyframes.clear();
+}
+
+EntityAnimationDefinition::State::State()
+{
+	this->name.fill('\0');
+	this->totalSeconds = 0.0;
+	this->loop = false;
+}
+
+void EntityAnimationDefinition::State::init(const char *name, double totalSeconds, bool loop)
+{
+	DebugAssertMsg((name != nullptr) && (std::strlen(name) > 0), "State must have a name.");
+	std::snprintf(this->name.data(), this->name.size(), "%s", name);
+
+	this->totalSeconds = totalSeconds;
+	this->loop = loop;
+}
+
+const char *EntityAnimationDefinition::State::getName() const
+{
+	return this->name.data();
+}
+
+int EntityAnimationDefinition::State::getKeyframeListCount() const
+{
+	return static_cast<int>(this->keyframeLists.size());
+}
+
+const EntityAnimationDefinition::KeyframeList &EntityAnimationDefinition::State::getKeyframeList(int index) const
+{
+	DebugAssertIndex(this->keyframeLists, index);
+	return this->keyframeLists[index];
 }
 
 double EntityAnimationDefinition::State::getTotalSeconds() const
@@ -43,72 +100,41 @@ bool EntityAnimationDefinition::State::isLooping() const
 	return this->loop;
 }
 
-bool EntityAnimationDefinition::State::isFlipped() const
+void EntityAnimationDefinition::State::addKeyframeList(KeyframeList &&keyframeList)
 {
-	return this->flipped;
+	this->keyframeLists.push_back(std::move(keyframeList));
 }
 
-void EntityAnimationDefinition::State::addKeyframe(Keyframe &&keyframe)
+void EntityAnimationDefinition::State::clearKeyframeLists()
 {
-	this->keyframes.push_back(std::move(keyframe));
+	this->keyframeLists.clear();
 }
 
-void EntityAnimationDefinition::State::clearKeyframes()
+int EntityAnimationDefinition::getStateCount() const
 {
-	this->keyframes.clear();
+	return static_cast<int>(this->states.size());
 }
 
-EntityAnimationDefinition::StateList::StateList(const char *name)
+const EntityAnimationDefinition::State &EntityAnimationDefinition::getState(int index) const
 {
-	DebugAssertMsg((name != nullptr) && (std::strlen(name) > 0), "State list must have a name.");
-	std::snprintf(this->name.data(), this->name.size(), "%s", name);
+	DebugAssertIndex(this->states, index);
+	return this->states[index];
 }
 
-const char *EntityAnimationDefinition::StateList::getName() const
-{
-	return this->name.data();
-}
-
-BufferView<const EntityAnimationDefinition::State> EntityAnimationDefinition::StateList::getStates() const
-{
-	return BufferView<const State>(this->states.data(), static_cast<int>(this->states.size()));
-}
-
-void EntityAnimationDefinition::StateList::addState(State &&state)
-{
-	this->states.push_back(std::move(state));
-}
-
-void EntityAnimationDefinition::StateList::clearStates()
-{
-	this->states.clear();
-}
-
-int EntityAnimationDefinition::getStateListCount() const
-{
-	return static_cast<int>(this->stateLists.size());
-}
-
-const EntityAnimationDefinition::StateList &EntityAnimationDefinition::getStateList(int index) const
-{
-	DebugAssertIndex(this->stateLists, index);
-	return this->stateLists[index];
-}
-
-bool EntityAnimationDefinition::tryGetStateListIndex(const char *name, int *outStateIndex) const
+bool EntityAnimationDefinition::tryGetStateIndex(const char *name, int *outIndex) const
 {
 	if ((name == nullptr) || (std::strlen(name) == 0))
 	{
 		return false;
 	}
 
-	const int stateListCount = static_cast<int>(this->stateLists.size());
-	for (int i = 0; i < stateListCount; i++)
+	const int stateCount = static_cast<int>(this->states.size());
+	for (int i = 0; i < stateCount; i++)
 	{
-		const StateList &stateList = this->stateLists[i];
-		if (StringView::caseInsensitiveEquals(stateList.getName(), name))
+		const State &state = this->states[i];
+		if (StringView::caseInsensitiveEquals(state.getName(), name))
 		{
-			*outStateIndex = i;
+			*outIndex = i;
 			return true;
 		}
 	}
@@ -121,17 +147,17 @@ const std::string &EntityAnimationDefinition::getName() const
 	return this->name;
 }
 
-void EntityAnimationDefinition::addStateList(StateList &&stateList)
+void EntityAnimationDefinition::addState(State &&state)
 {
-	this->stateLists.push_back(std::move(stateList));
+	this->states.push_back(std::move(state));
 }
 
-void EntityAnimationDefinition::removeStateList(const char *name)
+void EntityAnimationDefinition::removeState(const char *name)
 {
 	int stateIndex;
-	if (this->tryGetStateListIndex(name, &stateIndex))
+	if (this->tryGetStateIndex(name, &stateIndex))
 	{
-		this->stateLists.erase(this->stateLists.begin() + stateIndex);
+		this->states.erase(this->states.begin() + stateIndex);
 	}
 }
 
@@ -142,6 +168,6 @@ void EntityAnimationDefinition::setName(const std::string &name)
 
 void EntityAnimationDefinition::clear()
 {
-	this->stateLists.clear();
+	this->states.clear();
 	this->name.clear();
 }

@@ -28,11 +28,14 @@ public:
 	{
 		const Entity *entity;
 		Double3 flatPosition;
-		EntityAnimationData::Keyframe keyframe;
-		double anglePercent;
-		EntityAnimationData::StateType stateType;
+		int stateIndex;
+		int angleIndex;
+		int keyframeIndex;
 
 		EntityVisibilityData();
+
+		void init(const Entity *entity, const Double3 &flatPosition, int stateIndex,
+			int angleIndex, int keyframeIndex);
 	};
 private:
 	template <typename T>
@@ -145,6 +148,11 @@ public:
 	// Gets the data necessary for rendering and ray cast selection.
 	void getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
 		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
+
+	// Convenience function for getting the active keyframe from an entity, given some
+	// visibility data.
+	const EntityAnimationDefinition::Keyframe &getEntityAnimKeyframe(const Entity &entity,
+		const EntityVisibilityData &visData) const;
 
 	// Gets the entity's 3D bounding box. This is view-dependent!
 	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,

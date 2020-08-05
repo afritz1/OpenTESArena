@@ -27,52 +27,58 @@ public:
 		double getHeight() const;
 	};
 
-	class State
+	class KeyframeList
 	{
 	private:
 		std::vector<Keyframe> keyframes;
-		double totalSeconds; // Duration of state in seconds.
-		bool loop;
 		bool flipped;
 	public:
-		State(double totalSeconds, bool loop, bool flipped);
+		KeyframeList();
 
-		BufferView<const Keyframe> getKeyframes() const;
-		double getTotalSeconds() const;
-		bool isLooping() const;
+		void init(bool flipped);
+
+		int getKeyframeCount() const;
+		const Keyframe &getKeyframe(int index) const;
 		bool isFlipped() const;
 
 		void addKeyframe(Keyframe &&keyframe);
 		void clearKeyframes();
 	};
 
-	// Each of a state list's entries are for a specific animation angle.
+	// Each of a state's entries are for a specific animation angle.
 	// They are expected to be in clockwise order with respect to direction.
-	class StateList
+	class State
 	{
 	private:
 		std::array<char, EntityAnimationUtils::NAME_LENGTH> name; // Idle, Attack, etc..
-		std::vector<State> states;
+		std::vector<KeyframeList> keyframeLists; // Each list occupies a slice of 360 degrees.
+		double totalSeconds; // Duration of state in seconds.
+		bool loop;
 	public:
-		StateList(const char *name);
+		State();
+
+		void init(const char *name, double totalSeconds, bool loop);
 
 		const char *getName() const;
-		BufferView<const State> getStates() const;
+		int getKeyframeListCount() const;
+		const KeyframeList &getKeyframeList(int index) const;
+		double getTotalSeconds() const;
+		bool isLooping() const;
 
-		void addState(State &&state);
-		void clearStates();
+		void addKeyframeList(KeyframeList &&keyframeList);
+		void clearKeyframeLists();
 	};
 private:
-	std::vector<StateList> stateLists;
+	std::vector<State> states; // Idle, Attack, etc..
 	std::string name; // Rat, goblin, etc..
 public:
-	int getStateListCount() const;
-	const StateList &getStateList(int index) const;
-	bool tryGetStateListIndex(const char *name, int *outStateIndex) const;
+	int getStateCount() const;
+	const State &getState(int index) const;
+	bool tryGetStateIndex(const char *name, int *outIndex) const;
 	const std::string &getName() const;
 
-	void addStateList(StateList &&stateList);
-	void removeStateList(const char *name);
+	void addState(State &&state);
+	void removeState(const char *name);
 	void setName(const std::string &name);
 	void clear();
 };

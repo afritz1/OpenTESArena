@@ -8,14 +8,16 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../Entities/EntityAnimationData.h"
+#include "INFFile.h"
+#include "../Entities/EntityAnimationDefinition.h"
+#include "../Entities/EntityAnimationInstance.h"
 #include "../Media/Palette.h"
 
 class ArenaRandom;
 class CFAFile;
 class ExeData;
-class INFFile;
 class MiscAssets;
+class TextureManager;
 
 enum class ClimateType;
 enum class EntityType;
@@ -43,8 +45,8 @@ namespace ArenaAnimUtils
 	// Animation values for static .DFA files.
 	constexpr double StaticIdleSecondsPerFrame = 1.0 / 12.0;
 	constexpr double StaticActivatedSecondsPerFrame = StaticIdleSecondsPerFrame;
-	const bool StaticIdleLoop = true;
-	const bool StaticActivatedLoop = StaticIdleLoop;
+	constexpr bool StaticIdleLoop = true;
+	constexpr bool StaticActivatedLoop = StaticIdleLoop;
 
 	// Animation values for creatures with .CFA files.
 	constexpr double CreatureIdleSecondsPerFrame = 1.0 / 12.0;
@@ -53,11 +55,11 @@ namespace ArenaAnimUtils
 	constexpr double CreatureAttackSecondsPerFrame = 1.0 / 12.0;
 	constexpr double CreatureDeathSecondsPerFrame = 1.0 / 12.0;
 	constexpr int CreatureAttackFrameIndex = 10;
-	const bool CreatureIdleLoop = true;
-	const bool CreatureLookLoop = false;
-	const bool CreatureWalkLoop = true;
-	const bool CreatureAttackLoop = false;
-	const bool CreatureDeathLoop = false;
+	constexpr bool CreatureIdleLoop = true;
+	constexpr bool CreatureLookLoop = false;
+	constexpr bool CreatureWalkLoop = true;
+	constexpr bool CreatureAttackLoop = false;
+	constexpr bool CreatureDeathLoop = false;
 	const std::vector<int> CreatureIdleIndices = { 0 };
 	const std::vector<int> CreatureLookIndices = { 6, 0, 7, 0 };
 	const std::vector<int> CreatureWalkIndices = { 0, 1, 2, 3, 4, 5 };
@@ -68,10 +70,10 @@ namespace ArenaAnimUtils
 	constexpr double HumanWalkSecondsPerFrame = CreatureWalkSecondsPerFrame;
 	constexpr double HumanAttackSecondsPerFrame = CreatureAttackSecondsPerFrame;
 	constexpr double HumanDeathSecondsPerFrame = CreatureDeathSecondsPerFrame;
-	const bool HumanIdleLoop = CreatureIdleLoop;
-	const bool HumanWalkLoop = CreatureWalkLoop;
-	const bool HumanAttackLoop = CreatureAttackLoop;
-	const bool HumanDeathLoop = CreatureDeathLoop;
+	constexpr bool HumanIdleLoop = CreatureIdleLoop;
+	constexpr bool HumanWalkLoop = CreatureWalkLoop;
+	constexpr bool HumanAttackLoop = CreatureAttackLoop;
+	constexpr bool HumanDeathLoop = CreatureDeathLoop;
 	const std::vector<int> HumanIdleIndices = CreatureIdleIndices;
 	const std::vector<int> HumanWalkIndices = CreatureWalkIndices;
 
@@ -82,33 +84,6 @@ namespace ArenaAnimUtils
 	const bool CitizenWalkLoop = HumanWalkLoop;
 	const std::vector<int> CitizenIdleIndices = { 6, 7, 8 };
 	const std::vector<int> CitizenWalkIndices = HumanWalkIndices;
-
-	// Cache for .CFA/.DFA/.IMG files referenced multiple times during entity loading.
-	template <typename T>
-	class AnimFileCache
-	{
-	private:
-		std::unordered_map<std::string, T> files;
-	public:
-		bool tryGet(const std::string &filename, const T **outFile)
-		{
-			auto iter = this->files.find(filename);
-			if (iter == this->files.end())
-			{
-				T file;
-				if (!file.init(filename.c_str()))
-				{
-					DebugLogError("Couldn't init cached anim file \"" + filename + "\".");
-					return false;
-				}
-
-				iter = this->files.emplace(std::make_pair(filename, std::move(file))).first;
-			}
-
-			*outFile = &iter->second;
-			return true;
-		}
-	};
 
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
@@ -152,11 +127,7 @@ namespace ArenaAnimUtils
 	bool isAnimDirectionFlipped(int animDirectionID);
 
 	// Given a creature direction anim ID like 7, will return the index of the non-flipped anim.
-	int getDynamicEntityCorrectedAnimID(int animDirectionID, bool *outIsFlipped);
-
-	// Helper function for generating a default entity animation state for later modification.
-	EntityAnimationData::State makeAnimState(EntityAnimationData::StateType stateType,
-		double secondsPerFrame, bool loop, bool flipped = false);
+	int getDynamicEntityCorrectedAnimDirID(int animDirectionID, bool *outIsFlipped);
 
 	// Works for both creature and human enemy filenames.
 	bool trySetDynamicEntityFilenameDirection(std::string &filename, int animDirectionID);
@@ -174,33 +145,20 @@ namespace ArenaAnimUtils
 	// Writes the human type data into the given filename if possible.
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
-	// Static entity animation state functions.
-	void makeStaticEntityAnimStates(int flatIndex, StaticAnimCondition condition,
-		const std::optional<bool> &rulerIsMale, const INFFile &inf, const ExeData &exeData,
-		std::vector<EntityAnimationData::State> *outIdleStates,
-		std::vector<EntityAnimationData::State> *outActivatedStates);
-	void makeRulerAnimStates(bool rulerIsMale, const INFFile &inf,
-		const ExeData &exeData, std::vector<EntityAnimationData::State> *outIdleStates);
-	void makeStreetlightAnimStates(const INFFile &inf, const ExeData &exeData,
-		std::vector<EntityAnimationData::State> *outIdleStates,
-		std::vector<EntityAnimationData::State> *outActivatedStates);
+	// Writes out static entity animation data to animation states.
+	bool tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition condition,
+		const std::optional<bool> &rulerIsMale, const INFFile &inf, TextureManager &textureManager,
+		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
-	// Write out to lists of dynamic entity animation states for each animation direction.
-	// For any of the dynamic entity anim states, if the returned state list is empty,
-	// it is assumed that the entity has no information for that state.
-	void makeDynamicEntityAnimStates(int flatIndex, const INFFile &inf,
-		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
-		std::vector<EntityAnimationData::State> *outIdleStates,
-		std::vector<EntityAnimationData::State> *outLookStates,
-		std::vector<EntityAnimationData::State> *outWalkStates,
-		std::vector<EntityAnimationData::State> *outAttackStates,
-		std::vector<EntityAnimationData::State> *outDeathStates);
+	// Writes out dynamic entity animation data to animation states.
+	bool tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf,
+		const MiscAssets &miscAssets, TextureManager &textureManager,
+		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
-	// Write out to lists of citizen animation states for each animation direction.
-	void makeCitizenAnimStates(bool isMale, ClimateType climateType, const INFFile &inf,
-		const MiscAssets &miscAssets, AnimFileCache<CFAFile> &cfaCache,
-		std::vector<EntityAnimationData::State> *outIdleStates,
-		std::vector<EntityAnimationData::State> *outWalkStates);
+	// Writes out citizen animation data to animation states.
+	bool tryMakeCitizenAnims(bool isMale, ClimateType climateType, const INFFile &inf,
+		const MiscAssets &miscAssets, TextureManager &textureManager,
+		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
 	// Transforms the palette used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.

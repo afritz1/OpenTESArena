@@ -8,6 +8,7 @@
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationLibrary.h"
 #include "EntityAnimationUtils.h"
+#include "../Media/TextureUtils.h"
 
 #include "components/utilities/BufferView.h"
 
@@ -19,41 +20,40 @@ public:
 	class Keyframe
 	{
 	private:
-		int textureID;
+		ImageID imageID;
 	public:
-		Keyframe(int textureID);
+		Keyframe(ImageID imageID);
 
-		int getTextureID() const;
+		int getImageID() const;
+	};
+
+	class KeyframeList
+	{
+	private:
+		std::vector<Keyframe> keyframes;
+	public:
+		int getKeyframeCount() const;
+		const Keyframe &getKeyframe(int index) const;
+
+		void addKeyframe(Keyframe &&keyframe);
+		void clearKeyframes();
 	};
 
 	class State
 	{
 	private:
-		std::vector<Keyframe> keyframes;
-		std::string textureName; // Used for writing textures to the renderer.
+		std::vector<KeyframeList> keyframeLists;
 	public:
-		BufferView<const Keyframe> getKeyframes() const;
-		const std::string &getTextureName() const;
+		int getKeyframeListCount() const;
+		const KeyframeList &getKeyframeList(int index) const;
 
-		void addKeyframe(Keyframe &&keyframe);
-		void clearKeyframes();
-		void setTextureName(std::string &&textureName);
-	};
-
-	class StateList
-	{
-	private:
-		std::vector<State> states;
-	public:
-		BufferView<const State> getStates() const;
-
-		void addState(State &&state);
-		void clearStates();
+		void addKeyframeList(KeyframeList &&keyframeList);
+		void clearKeyframeLists();
 	};
 private:
-	std::vector<StateList> stateLists;
-	double currentSeconds; // Seconds through current animation.
-	int stateListIndex; // Determined by animation definition state lists.
+	std::vector<State> states;
+	double currentSeconds; // Seconds through current state.
+	int stateIndex; // Active state, also usable with animation definition states.
 	EntityAnimID animID; // Animation definition handle.
 
 	// @todo: other fancy stuff, like discriminated union for what kind of animation instance;
@@ -61,18 +61,26 @@ private:
 public:
 	EntityAnimationInstance();
 
-	int getStateListCount() const;
-	BufferView<const StateList> getStateLists() const;
+	int getStateCount() const;
+	const State &getState(int index) const;
 	double getCurrentSeconds() const;
-	int getStateListIndex() const;
+	int getStateIndex() const;
 	EntityAnimID getAnimID() const;
 
-	void addStateList(StateList &&stateList);
-	void clearStateLists();
-	void setStateListIndex(int index);
+	void addState(State &&state);
+	void clearStates();
+
+	// Sets the active state index shared between this instance and its definition.
+	void setStateIndex(int index);
+
+	// Sets the entity animation definition ID used by this instance.
 	void setAnimID(EntityAnimID animID);
+
+	void reset();
 	void resetTime();
-	void tick(double dt, const EntityAnimationDefinition::State &defState);
+
+	// Animates the instance by delta time and loops if the total seconds is exceeded.
+	void tick(double dt, double totalSeconds, bool looping);
 };
 
 #endif

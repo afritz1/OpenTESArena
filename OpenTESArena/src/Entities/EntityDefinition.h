@@ -4,7 +4,8 @@
 #include <optional>
 #include <string_view>
 
-#include "EntityAnimationData.h"
+#include "EntityAnimationDefinition.h"
+#include "EntityAnimationUtils.h"
 #include "../Assets/ExeData.h"
 
 class EntityDefinition
@@ -61,25 +62,27 @@ public:
 			const std::optional<int> &lightIntensity);
 	};
 private:
-	EntityAnimationData animationData;
 	CreatureData creatureData;
 	InfData infData;
+	EntityAnimationDefinition animDef; // @todo: might move to EntityAnimationLibrary eventually
+	//EntityAnimID animID;
 	bool isCreatureInited;
 	bool isHumanEnemyInited;
 	bool isOtherInited;
 public:
 	EntityDefinition();
 
-	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData);
+	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData,
+		EntityAnimationDefinition &&animDef);
 
 	void initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider, bool largeScale,
 		bool dark, bool transparent, bool ceiling, bool mediumScale,
-		const std::optional<int> &lightIntensity);
+		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
 
 	// @todo: eventually blacksmith/wizard/etc. info here, or no? (entirely dependent on current level?)
 	void initOther(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
 		bool transparent, bool ceiling, bool mediumScale, bool streetLight,
-		const std::optional<int> &lightIntensity);
+		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
 
 	std::string_view getDisplayName() const;
 
@@ -89,8 +92,9 @@ public:
 	bool isHumanEnemy() const;
 	bool isOther() const;
 
-	EntityAnimationData &getAnimationData();
-	const EntityAnimationData &getAnimationData() const;
+	/*EntityAnimID &getAnimID();
+	const EntityAnimID &getAnimID() const;*/
+	const EntityAnimationDefinition &getAnimDef() const;
 
 	CreatureData &getCreatureData();
 	const CreatureData &getCreatureData() const;

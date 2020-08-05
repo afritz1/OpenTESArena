@@ -909,9 +909,11 @@ namespace Physics
 			{
 				const Entity &entity = *visData.entity;
 				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDefinitionID());
+				const EntityAnimationDefinition::Keyframe &animKeyframe =
+					entityManager.getEntityAnimKeyframe(entity, visData);
 
-				const double flatWidth = visData.keyframe.getWidth();
-				const double flatHeight = visData.keyframe.getHeight();
+				const double flatWidth = animKeyframe.getWidth();
+				const double flatHeight = animKeyframe.getHeight();
 
 				Double3 hitPoint;
 				if (renderer.getEntityRayIntersection(visData, entityDef.getInfData().flatIndex,

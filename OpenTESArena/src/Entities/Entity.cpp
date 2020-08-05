@@ -8,13 +8,14 @@ Entity::Entity()
 {
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
-	this->animation.reset();
+	this->animInst.reset();
 }
 
-void Entity::init(EntityDefID defID)
+void Entity::init(EntityDefID defID, const EntityAnimationInstance &animInst)
 {
 	DebugAssert(this->id != EntityManager::NO_ID);
 	this->defID = defID;
+	this->animInst = animInst;
 }
 
 EntityID Entity::getID() const
@@ -32,14 +33,14 @@ const NewDouble2 &Entity::getPosition() const
 	return this->position;
 }
 
-EntityAnimationData::Instance &Entity::getAnimation()
+EntityAnimationInstance &Entity::getAnimInstance()
 {
-	return this->animation;
+	return this->animInst;
 }
 
-const EntityAnimationData::Instance &Entity::getAnimation() const
+const EntityAnimationInstance &Entity::getAnimInstance() const
 {
-	return this->animation;
+	return this->animInst;
 }
 
 void Entity::setID(EntityID id)
@@ -61,13 +62,12 @@ void Entity::reset()
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
 	this->position = Double2::Zero;
-	this->animation.reset();
+	this->animInst.reset();
 }
 
 void Entity::tick(Game &game, double dt)
 {
-	// Get entity animation data.
-	const EntityAnimationData &animationData = [this, &game]() -> const EntityAnimationData&
+	const EntityAnimationDefinition &animDef = [this, &game]() -> const EntityAnimationDefinition&
 	{
 		const WorldData &worldData = game.getGameData().getWorldData();
 		const LevelData &levelData = worldData.getActiveLevel();
@@ -75,10 +75,14 @@ void Entity::tick(Game &game, double dt)
 		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
 		DebugAssert(entityDef != nullptr);
 
-		return entityDef->getAnimationData();
+		// @todo: use EntityAnimationLibrary + entityDef->getAnimID() instead.
+		return entityDef->getAnimDef();
 	}();
 
+	// Get current animation keyframe from instance, so we know which anim def state to get.
+	const int stateIndex = this->animInst.getStateIndex();
+	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
+
 	// Animate.
-	auto &animation = this->getAnimation();
-	animation.tick(dt, animationData);
+	this->animInst.tick(dt, animDefState.getTotalSeconds(), animDefState.isLooping());
 }

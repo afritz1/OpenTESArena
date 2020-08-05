@@ -2,76 +2,79 @@
 
 #include "EntityAnimationInstance.h"
 
-EntityAnimationInstance::Keyframe::Keyframe(int textureID)
+#include "components/debug/Debug.h"
+
+EntityAnimationInstance::Keyframe::Keyframe(ImageID imageID)
 {
-	this->textureID = textureID;
+	this->imageID = imageID;
 }
 
-int EntityAnimationInstance::Keyframe::getTextureID() const
+ImageID EntityAnimationInstance::Keyframe::getImageID() const
 {
-	return this->textureID;
+	return this->imageID;
 }
 
-BufferView<const EntityAnimationInstance::Keyframe> EntityAnimationInstance::State::getKeyframes() const
+int EntityAnimationInstance::KeyframeList::getKeyframeCount() const
 {
-	return BufferView<const Keyframe>(this->keyframes.data(), static_cast<int>(this->keyframes.size()));
+	return static_cast<int>(this->keyframes.size());
 }
 
-const std::string &EntityAnimationInstance::State::getTextureName() const
+const EntityAnimationInstance::Keyframe &EntityAnimationInstance::KeyframeList::getKeyframe(int index) const
 {
-	return this->textureName;
+	DebugAssertIndex(this->keyframes, index);
+	return this->keyframes[index];
 }
 
-void EntityAnimationInstance::State::addKeyframe(Keyframe &&keyframe)
+void EntityAnimationInstance::KeyframeList::addKeyframe(Keyframe &&keyframe)
 {
 	this->keyframes.push_back(std::move(keyframe));
 }
 
-void EntityAnimationInstance::State::clearKeyframes()
+void EntityAnimationInstance::KeyframeList::clearKeyframes()
 {
 	this->keyframes.clear();
 }
 
-void EntityAnimationInstance::State::setTextureName(std::string &&textureName)
+int EntityAnimationInstance::State::getKeyframeListCount() const
 {
-	this->textureName = std::move(textureName);
+	return static_cast<int>(this->keyframeLists.size());
 }
 
-BufferView<const EntityAnimationInstance::State> EntityAnimationInstance::StateList::getStates() const
+const EntityAnimationInstance::KeyframeList &EntityAnimationInstance::State::getKeyframeList(int index) const
 {
-	return BufferView<const State>(this->states.data(), static_cast<int>(this->states.size()));
+	DebugAssertIndex(this->keyframeLists, index);
+	return this->keyframeLists[index];
 }
 
-void EntityAnimationInstance::StateList::addState(EntityAnimationInstance::State &&state)
+void EntityAnimationInstance::State::addKeyframeList(EntityAnimationInstance::KeyframeList &&keyframeList)
 {
-	this->states.push_back(std::move(state));
+	this->keyframeLists.push_back(std::move(keyframeList));
 }
 
-void EntityAnimationInstance::StateList::clearStates()
+void EntityAnimationInstance::State::clearKeyframeLists()
 {
-	this->states.clear();
+	this->keyframeLists.clear();
 }
 
 EntityAnimationInstance::EntityAnimationInstance()
 {
-	this->currentSeconds = 0.0;
-	this->stateListIndex = -1;
-	this->animID = EntityAnimationLibrary::NO_ID;
+	this->reset();
 }
 
-int EntityAnimationInstance::getStateListCount() const
+int EntityAnimationInstance::getStateCount() const
 {
-	return static_cast<int>(this->stateLists.size());
+	return static_cast<int>(this->states.size());
 }
 
-BufferView<const EntityAnimationInstance::StateList> EntityAnimationInstance::getStateLists() const
+const EntityAnimationInstance::State &EntityAnimationInstance::getState(int index) const
 {
-	return BufferView<const StateList>(this->stateLists.data(), static_cast<int>(this->stateLists.size()));
+	DebugAssertIndex(this->states, index);
+	return this->states[index];
 }
 
-int EntityAnimationInstance::getStateListIndex() const
+int EntityAnimationInstance::getStateIndex() const
 {
-	return this->stateListIndex;
+	return this->stateIndex;
 }
 
 double EntityAnimationInstance::getCurrentSeconds() const
@@ -84,19 +87,19 @@ EntityAnimID EntityAnimationInstance::getAnimID() const
 	return this->animID;
 }
 
-void EntityAnimationInstance::addStateList(StateList &&stateList)
+void EntityAnimationInstance::addState(State &&state)
 {
-	this->stateLists.push_back(std::move(stateList));
+	this->states.push_back(std::move(state));
 }
 
-void EntityAnimationInstance::clearStateLists()
+void EntityAnimationInstance::clearStates()
 {
-	this->stateLists.clear();
+	this->states.clear();
 }
 
-void EntityAnimationInstance::setStateListIndex(int index)
+void EntityAnimationInstance::setStateIndex(int index)
 {
-	this->stateListIndex = index;
+	this->stateIndex = index;
 	this->resetTime();
 }
 
@@ -105,17 +108,23 @@ void EntityAnimationInstance::setAnimID(EntityAnimID animID)
 	this->animID = animID;
 }
 
+void EntityAnimationInstance::reset()
+{
+	this->stateIndex = -1;
+	this->animID = EntityAnimationLibrary::NO_ID;
+	this->resetTime();
+	this->states.clear();
+}
+
 void EntityAnimationInstance::resetTime()
 {
 	this->currentSeconds = 0.0;
 }
 
-void EntityAnimationInstance::tick(double dt, const EntityAnimationDefinition::State &defState)
+void EntityAnimationInstance::tick(double dt, double totalSeconds, bool looping)
 {
 	this->currentSeconds += dt;
-
-	const double totalSeconds = defState.getTotalSeconds();
-	if (defState.isLooping() && (this->currentSeconds >= totalSeconds))
+	if (looping && (this->currentSeconds >= totalSeconds))
 	{
 		this->currentSeconds = std::fmod(this->currentSeconds, totalSeconds);
 	}

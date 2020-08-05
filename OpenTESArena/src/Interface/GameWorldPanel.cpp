@@ -19,6 +19,8 @@
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
+#include "../Entities/EntityAnimationInstance.h"
+#include "../Entities/EntityAnimationUtils.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
@@ -1930,10 +1932,19 @@ void GameWorldPanel::handleNightLightChange(bool active)
 
 		if (entityDef->isOther() && entityDef->getInfData().streetLight)
 		{
-			auto &entityAnim = entity->getAnimation();
-			const EntityAnimationData::StateType newStateType = active ?
-				EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
-			entityAnim.setStateType(newStateType);
+			const std::string &newStateName = active ?
+				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
+
+			const EntityAnimationDefinition &animDef = entityDef->getAnimDef();
+			int newStateIndex;
+			if (!animDef.tryGetStateIndex(newStateName.c_str(), &newStateIndex))
+			{
+				DebugLogWarning("Missing entity animation state \"" + newStateName + "\".");
+				continue;
+			}
+
+			EntityAnimationInstance &animInst = entity->getAnimInstance();
+			animInst.setStateIndex(newStateIndex);
 		}
 	}
 

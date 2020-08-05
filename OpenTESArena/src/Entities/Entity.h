@@ -1,7 +1,7 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "EntityAnimationData.h"
+#include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
 #include "../Math/Vector2.h"
 #include "../World/VoxelUtils.h"
@@ -18,7 +18,7 @@ enum class EntityType;
 class Entity
 {
 private:
-	EntityAnimationData::Instance animation;
+	EntityAnimationInstance animInst;
 	EntityID id;
 	EntityDefID defID;
 protected:
@@ -28,7 +28,7 @@ public:
 	virtual ~Entity() = default;
 
 	// Initializes the entity state (some values are initialized separately).
-	void init(EntityDefID defID);
+	void init(EntityDefID defID, const EntityAnimationInstance &animInst);
 	
 	// Gets the unique ID for the entity.
 	EntityID getID() const;
@@ -40,8 +40,8 @@ public:
 	const NewDouble2 &getPosition() const;
 
 	// Gets the entity's animation instance.
-	EntityAnimationData::Instance &getAnimation();
-	const EntityAnimationData::Instance &getAnimation() const;
+	EntityAnimationInstance &getAnimInstance();
+	const EntityAnimationInstance &getAnimInstance() const;
 
 	// Gets the entity's derived type (NPC, doodad, etc.).
 	virtual EntityType getEntityType() const = 0;
