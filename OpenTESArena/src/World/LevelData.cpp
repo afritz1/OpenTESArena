@@ -1657,30 +1657,32 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			renderer.initFlatTextures(flatIndex, entityAnimInst);
 			for (int stateIndex = 0; stateIndex < entityAnimInst.getStateCount(); stateIndex++)
 			{
-				const EntityAnimationInstance::State &state = entityAnimInst.getState(stateIndex);
-				const int keyframeListCount = state.getKeyframeListCount();
+				const EntityAnimationDefinition::State &defState = entityAnimDefRef.getState(stateIndex);
+				const EntityAnimationInstance::State &instState = entityAnimInst.getState(stateIndex);
+				const int keyframeListCount = defState.getKeyframeListCount();
+
 				for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
 				{
+					const EntityAnimationDefinition::KeyframeList &defKeyframeList =
+						defState.getKeyframeList(keyframeListIndex);
 					const EntityAnimationInstance::KeyframeList &keyframeList =
-						state.getKeyframeList(keyframeListIndex);
-					const int keyframeCount = keyframeList.getKeyframeCount();
+						instState.getKeyframeList(keyframeListIndex);
+					const int keyframeCount = defKeyframeList.getKeyframeCount();
+					const bool flipped = defKeyframeList.isFlipped();
+
 					for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
 					{
 						const EntityAnimationInstance::Keyframe &keyframe =
 							keyframeList.getKeyframe(keyframeIndex);
-
 						const int stateID = stateIndex;
 						const int angleID = keyframeListIndex;
 						const int keyframeID = keyframeIndex;
-
-						// Arena angle IDs are 1-based for use with anim filenames.
-						const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID + 1);
 
 						// Get texture associated with image ID and write texture data
 						// to the renderer.
 						const ImageID imageID = keyframe.getImageID();
 						const Image &image = textureManager.getImageHandle(imageID);
-						renderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, isFlipped,
+						renderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
 							image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
 					}
 				}

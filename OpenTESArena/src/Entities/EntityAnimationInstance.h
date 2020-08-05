@@ -23,7 +23,7 @@ public:
 	public:
 		Keyframe(ImageID imageID);
 
-		int getImageID() const;
+		ImageID getImageID() const;
 	};
 
 	class KeyframeList

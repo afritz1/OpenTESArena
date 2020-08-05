@@ -75,7 +75,6 @@ void Entity::tick(Game &game, double dt)
 		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
 		DebugAssert(entityDef != nullptr);
 
-		// @todo: use EntityAnimationLibrary + entityDef->getAnimID() instead.
 		return entityDef->getAnimDef();
 	}();
 
