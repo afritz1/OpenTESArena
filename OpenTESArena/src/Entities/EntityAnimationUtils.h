@@ -3,9 +3,6 @@
 
 #include <string>
 
-// Entity animation definition handle.
-using EntityAnimID = int;
-
 namespace EntityAnimationUtils
 {
 	const std::string STATE_IDLE = "Idle";

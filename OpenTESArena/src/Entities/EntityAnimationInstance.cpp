@@ -82,11 +82,6 @@ double EntityAnimationInstance::getCurrentSeconds() const
 	return this->currentSeconds;
 }
 
-EntityAnimID EntityAnimationInstance::getAnimID() const
-{
-	return this->animID;
-}
-
 void EntityAnimationInstance::addState(State &&state)
 {
 	this->states.push_back(std::move(state));
@@ -103,15 +98,9 @@ void EntityAnimationInstance::setStateIndex(int index)
 	this->resetTime();
 }
 
-void EntityAnimationInstance::setAnimID(EntityAnimID animID)
-{
-	this->animID = animID;
-}
-
 void EntityAnimationInstance::reset()
 {
 	this->stateIndex = -1;
-	this->animID = EntityAnimationLibrary::NO_ID;
 	this->resetTime();
 	this->states.clear();
 }

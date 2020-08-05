@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "EntityAnimationDefinition.h"
-#include "EntityAnimationLibrary.h"
 #include "EntityAnimationUtils.h"
 #include "../Media/TextureUtils.h"
 
@@ -54,7 +53,6 @@ private:
 	std::vector<State> states;
 	double currentSeconds; // Seconds through current state.
 	int stateIndex; // Active state, also usable with animation definition states.
-	EntityAnimID animID; // Animation definition handle.
 
 	// @todo: other fancy stuff, like discriminated union for what kind of animation instance;
 	// NPC weapon ID, townsperson generated texture ID, etc..
@@ -65,16 +63,12 @@ public:
 	const State &getState(int index) const;
 	double getCurrentSeconds() const;
 	int getStateIndex() const;
-	EntityAnimID getAnimID() const;
 
 	void addState(State &&state);
 	void clearStates();
 
 	// Sets the active state index shared between this instance and its definition.
 	void setStateIndex(int index);
-
-	// Sets the entity animation definition ID used by this instance.
-	void setAnimID(EntityAnimID animID);
 
 	void reset();
 	void resetTime();
