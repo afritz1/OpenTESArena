@@ -194,7 +194,11 @@ namespace ArenaAnimUtils
 
 			for (const int frameIndex : animIndices)
 			{
-				const ImageID imageID = imageIDs.startID + frameIndex;
+				// Certain creatures don't have anim frames for a look animation, so just use
+				// frame 0 as a fallback.
+				const int correctedFrameIndex = frameIndex < imageIDs.count ? frameIndex : 0;
+
+				const ImageID imageID = imageIDs.startID + correctedFrameIndex;
 				const Image &image = textureManager.getImageHandle(imageID);
 
 				double width, height;
