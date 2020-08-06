@@ -58,7 +58,8 @@ void EntityAnimationInstance::State::clearKeyframeLists()
 
 EntityAnimationInstance::EntityAnimationInstance()
 {
-	this->reset();
+	this->stateIndex = -1;
+	this->currentSeconds = 0.0;
 }
 
 int EntityAnimationInstance::getStateCount() const

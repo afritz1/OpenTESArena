@@ -1604,11 +1604,6 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				const EntityDefID entityDefID = dataIndex;
 				entity->init(entityDefID, entityAnimInst);
 
-				const NewDouble2 positionXZ(
-					static_cast<SNDouble>(position.x) + 0.50,
-					static_cast<WEDouble>(position.y) + 0.50);
-				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
-
 				// Set default animation state.
 				int defaultStateIndex;
 				if (!isStreetlight)
@@ -1637,6 +1632,13 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 				EntityAnimationInstance &animInst = entity->getAnimInstance();
 				animInst.setStateIndex(defaultStateIndex);
+
+				// @todo: setPosition() must be last in scope until there is some EntityRef wrapper
+				// because the entity pointer can become dangling after its chunk is updated.
+				const NewDouble2 positionXZ(
+					static_cast<SNDouble>(position.x) + 0.50,
+					static_cast<WEDouble>(position.y) + 0.50);
+				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 			}
 
 			// Palette for renderer textures.
