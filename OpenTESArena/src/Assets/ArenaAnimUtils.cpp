@@ -1128,13 +1128,23 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 
 		if (isCreature)
 		{
-			return ArenaAnimUtils::tryMakeDynamicEntityCreatureAttackAnimState(
-				itemIndex, isFinalBoss, exeData, textureManager, &defState, &instState);
+			if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAttackAnimState(
+				itemIndex, isFinalBoss, exeData, textureManager, &defState, &instState))
+			{
+				DebugLogWarning("Couldn't make creature attack anim for *ITEM \"" +
+					std::to_string(itemIndex) + "\".");
+				return false;
+			}
 		}
 		else if (isHuman)
 		{
-			return ArenaAnimUtils::tryMakeDynamicEntityHumanAttackAnimState(
-				itemIndex, miscAssets, textureManager, &defState, &instState);
+			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanAttackAnimState(
+				itemIndex, miscAssets, textureManager, &defState, &instState))
+			{
+				DebugLogWarning("Couldn't make human attack anim for *ITEM \"" +
+					std::to_string(itemIndex) + "\".");
+				return false;
+			}
 		}
 		else
 		{
@@ -1143,6 +1153,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 
 		outAnimDef->addState(std::move(defState));
 		outAnimInst->addState(std::move(instState));
+		return true;
 	};
 
 	auto tryAddDeathState = [&inf, &textureManager, outAnimDef, outAnimInst, &exeData, itemIndex,
@@ -1153,13 +1164,23 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 
 		if (isCreature)
 		{
-			return ArenaAnimUtils::tryMakeDynamicEntityCreatureDeathAnimState(
-				itemIndex, isFinalBoss, exeData, textureManager, &defState, &instState);
+			if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureDeathAnimState(
+				itemIndex, isFinalBoss, exeData, textureManager, &defState, &instState))
+			{
+				DebugLogWarning("Couldn't make creature death anim for *ITEM \"" +
+					std::to_string(itemIndex) + "\".");
+				return false;
+			}
 		}
 		else if (isHuman)
 		{
-			return ArenaAnimUtils::tryMakeDynamicEntityHumanDeathAnimState(
-				inf, textureManager, &defState, &instState);
+			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanDeathAnimState(
+				inf, textureManager, &defState, &instState))
+			{
+				DebugLogWarning("Couldn't make human death anim for *ITEM \"" +
+					std::to_string(itemIndex) + "\".");
+				return false;
+			}
 		}
 		else
 		{
@@ -1168,6 +1189,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 
 		outAnimDef->addState(std::move(defState));
 		outAnimInst->addState(std::move(instState));
+		return true;
 	};
 
 	addBasicStates();
