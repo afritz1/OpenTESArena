@@ -908,10 +908,12 @@ namespace Physics
 			for (const auto &visData : entityVisDataList)
 			{
 				const Entity &entity = *visData.entity;
-				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDataIndex());
+				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDefinitionID());
+				const EntityAnimationDefinition::Keyframe &animKeyframe =
+					entityManager.getEntityAnimKeyframe(entity, visData);
 
-				const double flatWidth = visData.keyframe.getWidth();
-				const double flatHeight = visData.keyframe.getHeight();
+				const double flatWidth = animKeyframe.getWidth();
+				const double flatHeight = animKeyframe.getHeight();
 
 				Double3 hitPoint;
 				if (renderer.getEntityRayIntersection(visData, entityDef.getInfData().flatIndex,
@@ -1173,7 +1175,7 @@ void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const 
 	}
 }
 
-void Physics::Hit::initEntity(double t, const Double3 &point, int id)
+void Physics::Hit::initEntity(double t, const Double3 &point, EntityID id)
 {
 	this->t = t;
 	this->point = point;

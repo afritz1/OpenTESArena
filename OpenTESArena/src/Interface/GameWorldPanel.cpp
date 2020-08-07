@@ -19,6 +19,8 @@
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClass.h"
 #include "../Entities/Entity.h"
+#include "../Entities/EntityAnimationInstance.h"
+#include "../Entities/EntityAnimationUtils.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
@@ -244,7 +246,7 @@ namespace
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
@@ -1873,7 +1875,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				const Entity *entity = entityManager.get(entityHit.id);
 				DebugAssert(entity != nullptr);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDataIndex());
+				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
@@ -1920,20 +1922,29 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	for (int i = 0; i < entityCount; i++)
 	{
 		Entity *entity = entityBuffer.get(i);
-		const int dataIndex = entity->getDataIndex();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(dataIndex);
+		const EntityDefID defID = entity->getDefinitionID();
+		const EntityDefinition *entityDef = entityManager.getEntityDef(defID);
 		if (entityDef == nullptr)
 		{
-			DebugLogError("Missing entity definition " + std::to_string(dataIndex) + ".");
+			DebugLogError("Missing entity definition " + std::to_string(defID) + ".");
 			continue;
 		}
 
 		if (entityDef->isOther() && entityDef->getInfData().streetLight)
 		{
-			auto &entityAnim = entity->getAnimation();
-			const EntityAnimationData::StateType newStateType = active ?
-				EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
-			entityAnim.setStateType(newStateType);
+			const std::string &newStateName = active ?
+				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
+
+			const EntityAnimationDefinition &animDef = entityDef->getAnimDef();
+			int newStateIndex;
+			if (!animDef.tryGetStateIndex(newStateName.c_str(), &newStateIndex))
+			{
+				DebugLogWarning("Missing entity animation state \"" + newStateName + "\".");
+				continue;
+			}
+
+			EntityAnimationInstance &animInst = entity->getAnimInstance();
+			animInst.setStateIndex(newStateIndex);
 		}
 	}
 

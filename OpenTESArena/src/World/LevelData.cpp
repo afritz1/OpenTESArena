@@ -1478,11 +1478,59 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			// instantiate it and write textures to the renderer.
 			DebugAssert(flatDef.getPositions().size() > 0);
 
+			// Add entity animation data. Static entities have only idle animations (and maybe on/off
+			// state for lampposts). Dynamic entities have several animation states and directions.
+			//auto &entityAnimData = newEntityDef.getAnimationData();
+			EntityAnimationDefinition entityAnimDef;
+			EntityAnimationInstance entityAnimInst;
+			if (entityType == EntityType::Static)
+			{
+				if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, staticAnimCondition,
+					optRulerIsMale, this->inf, textureManager, &entityAnimDef, &entityAnimInst))
+				{
+					DebugLogWarning("Couldn't make static entity anims for flat \"" +
+						std::to_string(flatIndex) + "\".");
+					continue;
+				}
+
+				// The entity can only be instantiated if there is at least an idle animation.
+				int idleStateIndex;
+				if (!entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+				{
+					DebugLogWarning("Missing static entity idle anim state for flat \"" +
+						std::to_string(flatIndex) + "\".");
+					continue;
+				}
+			}
+			else if (entityType == EntityType::Dynamic)
+			{
+				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, this->inf, miscAssets,
+					textureManager, &entityAnimDef, &entityAnimInst))
+				{
+					DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
+						std::to_string(flatIndex) + "\".");
+					continue;
+				}
+
+				// Must have at least an idle animation.
+				int idleStateIndex;
+				if (!entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+				{
+					DebugLogWarning("Missing dynamic entity idle anim state for flat \"" +
+						std::to_string(flatIndex) + "\".");
+					continue;
+				}
+			}
+			else
+			{
+				DebugCrash("Unrecognized entity type \"" +
+					std::to_string(static_cast<int>(entityType)) + "\".");
+			}
+
 			// Entity data index is currently the flat index (depends on .INF file).
 			const int dataIndex = flatIndex;
 
 			// Add a new entity data instance.
-			// @todo: assign creature data here from .exe data if the flat is a creature.
 			DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
 			EntityDefinition newEntityDef;
 			if (isCreature)
@@ -1494,7 +1542,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
-				newEntityDef.initCreature(creatureIndex, isFinalBoss, flatIndex, exeData);
+				newEntityDef.initCreature(creatureIndex, isFinalBoss, flatIndex,
+					exeData, std::move(entityAnimDef));
 			}
 			else if (isHumanEnemy)
 			{
@@ -1506,7 +1555,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 				newEntityDef.initHumanEnemy(charClassName.c_str(), flatIndex, flatData.yOffset,
 					flatData.collider, flatData.largeScale, flatData.dark, flatData.transparent,
-					flatData.ceiling, flatData.mediumScale, flatData.lightIntensity);
+					flatData.ceiling, flatData.mediumScale, flatData.lightIntensity,
+					std::move(entityAnimDef));
 			}
 			else
 			{
@@ -1515,77 +1565,15 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				newEntityDef.initOther(flatIndex, flatData.yOffset,
 					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
 					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
-					flatData.lightIntensity);
-			}
-
-			// Add entity animation data. Static entities have only idle animations (and maybe on/off
-			// state for lampposts). Dynamic entities have several animation states and directions.
-			auto &entityAnimData = newEntityDef.getAnimationData();
-			std::vector<EntityAnimationData::State> idleStates, lookStates, walkStates,
-				attackStates, deathStates, activatedStates;
-
-			// Cache for .CFA files referenced multiple times.
-			ArenaAnimUtils::AnimFileCache<CFAFile> cfaCache;
-
-			if (entityType == EntityType::Static)
-			{
-				ArenaAnimUtils::makeStaticEntityAnimStates(flatIndex, staticAnimCondition, optRulerIsMale,
-					this->inf, exeData, &idleStates, &activatedStates);
-
-				// The entity can only be instantiated if there is at least one idle animation frame.
-				const bool success = (idleStates.size() > 0) &&
-					(idleStates.front().getKeyframes().getCount() > 0);
-
-				if (!success)
-				{
-					continue;
-				}
-
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-
-				if (activatedStates.size() > 0)
-				{
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(activatedStates));
-				}
-			}
-			else if (entityType == EntityType::Dynamic)
-			{
-				ArenaAnimUtils::makeDynamicEntityAnimStates(flatIndex, this->inf, miscAssets, cfaCache,
-					&idleStates, &lookStates, &walkStates, &attackStates, &deathStates);
-
-				// Must at least have an idle state.
-				DebugAssert(idleStates.size() > 0);
-				entityAnimData.addStateList(std::vector<EntityAnimationData::State>(idleStates));
-
-				if (lookStates.size() > 0)
-				{
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(lookStates));
-				}
-
-				if (walkStates.size() > 0)
-				{
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(walkStates));
-				}
-
-				if (attackStates.size() > 0)
-				{
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(attackStates));
-				}
-
-				if (deathStates.size() > 0)
-				{
-					entityAnimData.addStateList(std::vector<EntityAnimationData::State>(deathStates));
-				}
-			}
-			else
-			{
-				DebugCrash("Unrecognized entity type \"" +
-					std::to_string(static_cast<int>(entityType)) + "\".");
+					flatData.lightIntensity, std::move(entityAnimDef));
 			}
 
 			const bool isStreetlight = newEntityDef.getInfData().streetLight;
 			const bool isPuddle = newEntityDef.getInfData().puddle;
-			this->entityManager.addEntityDef(std::move(newEntityDef));
+			const EntityDefinition *entityDefPtr = this->entityManager.addEntityDef(std::move(newEntityDef));
+			
+			// Quick hack to get back the anim def that was moved into the entity def.
+			const EntityAnimationDefinition &entityAnimDefRef = entityDefPtr->getAnimDef();
 
 			// Initialize each instance of the flat def.
 			for (const Int2 &position : flatDef.getPositions())
@@ -1613,123 +1601,94 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					}
 				}();
 
-				entity->init(dataIndex);
+				const EntityDefID entityDefID = dataIndex;
+				entity->init(entityDefID, entityAnimInst);
 
-				const Double2 positionXZ(
-					static_cast<double>(position.x) + 0.50,
-					static_cast<double>(position.y) + 0.50);
-				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
-
-				// Need to turn streetlights on or off at initialization.
-				if (isStreetlight)
+				// Set default animation state.
+				int defaultStateIndex;
+				if (!isStreetlight)
 				{
-					auto &entityAnim = entity->getAnimation();
-					const EntityAnimationData::StateType streetlightStateType = nightLightsAreActive ?
-						EntityAnimationData::StateType::Activated : EntityAnimationData::StateType::Idle;
-					entityAnim.setStateType(streetlightStateType);
-				}
-			}
-
-			auto addTexturesFromState = [&renderer, &palette, flatIndex, &cfaCache, isPuddle](
-				const EntityAnimationData::State &animState, int angleID)
-			{
-				// Check whether the animation direction ID is for a flipped animation.
-				const bool isFlipped = ArenaAnimUtils::isAnimDirectionFlipped(angleID);
-
-				// Write the flat def's textures to the renderer.
-				const std::string &entityAnimName = animState.getTextureName();
-				const std::string_view extension = StringView::getExtension(entityAnimName);
-				const bool isCFA = extension == "CFA";
-				const bool isDFA = extension == "DFA";
-				const bool isIMG = extension == "IMG";
-				const bool noExtension = extension.size() == 0;
-
-				// Entities can be partially transparent. Some palette indices determine whether
-				// there should be any "alpha blending" (in the original game, it implements alpha
-				// using light level diminishing with 13 different levels in an .LGT file). Others
-				// can be reflective puddles, and that cannot be determined from texels alone.
-				auto addFlatTexture = [&renderer, &palette, isPuddle, isFlipped](const uint8_t *texels,
-					int width, int height, int flatIndex, EntityAnimationData::StateType stateType,
-					int angleID)
-				{
-					renderer.addFlatTexture(flatIndex, stateType, angleID, isFlipped, isPuddle,
-						texels, width, height, palette);
-				};
-
-				if (isCFA)
-				{
-					const CFAFile *cfa;
-					if (!cfaCache.tryGet(entityAnimName.c_str(), &cfa))
+					// Entities will use idle animation by default.
+					if (!entityAnimDefRef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &defaultStateIndex))
 					{
-						DebugCrash("Couldn't get cached .CFA file \"" + entityAnimName + "\".");
+						DebugLogWarning("Couldn't get idle state index for flat \"" +
+							std::to_string(flatIndex) + "\".");
+						continue;
 					}
-
-					for (int i = 0; i < cfa->getImageCount(); i++)
-					{
-						addFlatTexture(cfa->getPixels(i), cfa->getWidth(), cfa->getHeight(),
-							flatIndex, animState.getType(), angleID);
-					}
-				}
-				else if (isDFA)
-				{
-					DFAFile dfa;
-					if (!dfa.init(entityAnimName.c_str()))
-					{
-						DebugCrash("Couldn't init .DFA file \"" + entityAnimName + "\".");
-					}
-
-					for (int i = 0; i < dfa.getImageCount(); i++)
-					{
-						addFlatTexture(dfa.getPixels(i), dfa.getWidth(), dfa.getHeight(),
-							flatIndex, animState.getType(), angleID);
-					}
-				}
-				else if (isIMG)
-				{
-					IMGFile img;
-					if (!img.init(entityAnimName.c_str()))
-					{
-						DebugCrash("Could not init .IMG file \"" + entityAnimName + "\".");
-					}
-
-					addFlatTexture(img.getPixels(), img.getWidth(), img.getHeight(),
-						flatIndex, animState.getType(), angleID);
-				}
-				else if (noExtension)
-				{
-					// Ignore texture names with no extension. They appear to be lore-related names
-					// that were used at one point in Arena's development.
-					static_cast<void>(entityAnimName);
 				}
 				else
 				{
-					DebugCrash("Unrecognized flat texture name \"" + entityAnimName + "\".");
-				}
-			};
+					// Need to turn streetlights on or off at initialization.
+					const std::string &streetlightStateName = nightLightsAreActive ?
+						EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
 
-			auto addTexturesFromStateList = [&renderer, &palette, &addTexturesFromState](
-				const std::vector<EntityAnimationData::State> &animStateList)
+					if (!entityAnimDefRef.tryGetStateIndex(streetlightStateName.c_str(), &defaultStateIndex))
+					{
+						DebugLogWarning("Couldn't get \"" + streetlightStateName +
+							"\" streetlight state index for flat \"" + std::to_string(flatIndex) + "\".");
+						continue;
+					}
+				}
+
+				EntityAnimationInstance &animInst = entity->getAnimInstance();
+				animInst.setStateIndex(defaultStateIndex);
+
+				// @todo: setPosition() must be last in scope until there is some EntityRef wrapper
+				// because the entity pointer can become dangling after its chunk is updated.
+				const NewDouble2 positionXZ(
+					static_cast<SNDouble>(position.x) + 0.50,
+					static_cast<WEDouble>(position.y) + 0.50);
+				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
+			}
+
+			// Palette for renderer textures.
+			const Palette &palette = [&textureManager]() -> const Palette&
 			{
-				for (size_t i = 0; i < animStateList.size(); i++)
+				const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
+				PaletteID paletteID;
+				if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
 				{
-					const auto &animState = animStateList[i];
-					const int angleID = static_cast<int>(i + 1);
-					addTexturesFromState(animState, angleID);
+					DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
 				}
-			};
 
-			// Add textures to the renderer for each of the entity's animation states.
-			// @todo: don't add duplicate textures to the renderer (needs to be handled both here and
-			// in the renderer implementation, because it seems to group textures by flat index only,
-			// which could be wasteful).
-			// - probably do it by having a hash set of <flatIndex, stateType> pairs and checking
-			//   in the addTextureFromState lambda.
-			addTexturesFromStateList(idleStates);
-			addTexturesFromStateList(lookStates);
-			addTexturesFromStateList(walkStates);
-			addTexturesFromStateList(attackStates);
-			addTexturesFromStateList(deathStates);
-			addTexturesFromStateList(activatedStates);
+				return textureManager.getPaletteHandle(paletteID);
+			}();
+
+			// Initialize renderer buffers for the entity animation then populate
+			// all textures of the animation.
+			renderer.initFlatTextures(flatIndex, entityAnimInst);
+			for (int stateIndex = 0; stateIndex < entityAnimInst.getStateCount(); stateIndex++)
+			{
+				const EntityAnimationDefinition::State &defState = entityAnimDefRef.getState(stateIndex);
+				const EntityAnimationInstance::State &instState = entityAnimInst.getState(stateIndex);
+				const int keyframeListCount = defState.getKeyframeListCount();
+
+				for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
+				{
+					const EntityAnimationDefinition::KeyframeList &defKeyframeList =
+						defState.getKeyframeList(keyframeListIndex);
+					const EntityAnimationInstance::KeyframeList &keyframeList =
+						instState.getKeyframeList(keyframeListIndex);
+					const int keyframeCount = defKeyframeList.getKeyframeCount();
+					const bool flipped = defKeyframeList.isFlipped();
+
+					for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
+					{
+						const EntityAnimationInstance::Keyframe &keyframe =
+							keyframeList.getKeyframe(keyframeIndex);
+						const int stateID = stateIndex;
+						const int angleID = keyframeListIndex;
+						const int keyframeID = keyframeIndex;
+
+						// Get texture associated with image ID and write texture data
+						// to the renderer.
+						const ImageID imageID = keyframe.getImageID();
+						const Image &image = textureManager.getImageHandle(imageID);
+						renderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
+							image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
+					}
+				}
+			}
 		}
 	};
 

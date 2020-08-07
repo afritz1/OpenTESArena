@@ -279,35 +279,36 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
-	// Each .INF flat index has a set of animation state type mappings to groups of texture
+	// Each .INF flat index has a set of animation state mappings to groups of texture
 	// lists ordered by entity angle.
 	class FlatTextureGroup
 	{
-	public:
-		// Angle ID maps to texture list. Only used for insertion, not reading during rendering.
-		using TextureList = std::vector<FlatTexture>;
-		using AngleGroup = std::vector<std::pair<int, TextureList>>;
-		using StateTypeMapping = std::pair<EntityAnimationData::StateType, AngleGroup>;
 	private:
-		std::vector<StateTypeMapping> stateTypeMappings;
+		// Slimmed-down copies of entity animation definitions for rendering. One texture list
+		// per facing/direction, stored clockwise.
+		using TextureList = std::vector<FlatTexture>;
+		using State = std::vector<TextureList>;
 
-		StateTypeMapping *findMapping(EntityAnimationData::StateType stateType);
-		const StateTypeMapping *findMapping(EntityAnimationData::StateType stateType) const;
+		// Accessible like entity animations. Index of state is determined by anim state name.
+		std::vector<State> states;
 
-		static int anglePercentToIndex(const AngleGroup &angleGroup, double anglePercent);
-
-		// Only for inserting textures at initialization.
-		static TextureList *findTextureList(AngleGroup &angleGroup, int angleID);
+		bool isValidLookup(int stateID, int angleID, int textureID) const;
 	public:
-		// Looks up a texture list by state type and 0->1 angle percent of the entity's direction,
-		// where 0 is forward and 1 is all the way around clockwise.
-		const TextureList *getTextureList(EntityAnimationData::StateType stateType,
-			double anglePercent) const;
+		// State ID points into states list, angle ID points into texture lists, and texture ID
+		// points into texture list.
+		const FlatTexture &getTexture(int stateID, int angleID, int textureID) const;
 
-		// Adds a texture to the given state type mapping (adding if missing) and angle group.
-		void addTexture(EntityAnimationData::StateType stateType, int angleID, bool flipped,
-			bool reflective, const uint8_t *srcTexels, int width, int height,
-			const Palette &palette);
+		// Initializes internal buffers to fit each discrete frame of the given entity animation.
+		// Basically "I want to allocate space for this animation, and textures will come next".
+		// Each keyframe's texture should be populated immediately afterwards by the caller.
+		void init(const EntityAnimationInstance &animInst);
+
+		// Sets the given texture's data. It is expected that the caller uses the entity animation
+		// instance to determine which textures to loop over.
+		// @todo: pass some TextureDataDef instead that has either 8-bit + palette or 32-bit data,
+		// determined by a trueColor bool.
+		void setTexture(int stateID, int angleID, int textureID, bool flipped,
+			const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
 	};
 
 	// Each chasm texture group contains one animation's worth of textures.
@@ -330,12 +331,11 @@ private:
 		// Camera Z for depth sorting.
 		double z;
 
-		// Flat texture state. The animation state type determines which texture list to
-		// use the texture ID with.
-		int flatIndex; // @todo: remove dependency on this. Tightly coupled with .INF flat.
-		int textureID;
-		double anglePercent; // @todo: remove dependency on this and just use textureID directly.
-		EntityAnimationData::StateType animStateType; // @todo: remove dependency on this.
+		// Entity animation texture look-up values.
+		int flatIndex; // @todo: remove dependency on .INF flat (maybe keep this int though).
+		int animStateID;
+		int animAngleID;
+		int animTextureID;
 	};
 
 	// Pairs together a distant sky object with its render texture index. If it's an animation,
@@ -704,7 +704,7 @@ private:
 		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.
-	static void getLightVisibilityData(const EntityManager::EntityVisibilityData &visData,
+	static void getLightVisibilityData(const Double3 &flatPosition, double flatHeight,
 		int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
 		double viewDistance, LightVisibilityData *outVisData);
 
@@ -977,9 +977,8 @@ public:
 
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.
-	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int textureID,
-		double anglePercent, EntityAnimationData::StateType animStateType, bool pixelPerfect,
-		bool *outIsSelected) const;
+	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int animStateID,
+		int animAngleID, int animKeyframeID, bool pixelPerfect, bool *outIsSelected) const;
 
 	// Converts a screen point to a ray into the game world.
 	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -1014,12 +1013,14 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 
-	// Adds a flat texture to the given flat's animation texture list at the specified angle
-	// group. 8-bit colors with a palette is required here since some palette indices have
-	// special behavior for transparency.
-	void addFlatTexture(int flatIndex, EntityAnimationData::StateType stateType, int angleID,
-		bool flipped, bool reflective, const uint8_t *srcTexels, int width, int height,
-		const Palette &palette);
+	// Allocates space for all pieces of a flat's animation but does not populate them.
+	void initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst);
+
+	// Sets a flat's texture for some state-angle-keyframe tuple to the given texture data.
+	// group. For 8-bit colors, some palette indices have special behavior for transparency.
+	// @todo: pass some TextureDataDef instead that wraps 8-bit + palette and 32-bit.
+	void setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
+		const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

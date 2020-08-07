@@ -103,19 +103,20 @@ EntityDefinition::EntityDefinition()
 }
 
 void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int flatIndex,
-	const ExeData &exeData)
+	const ExeData &exeData, EntityAnimationDefinition &&animDef)
 {
 	this->creatureData.init(creatureIndex, isFinalBoss, exeData);
 	this->infData.flatIndex = flatIndex;
 	this->infData.yOffset = this->creatureData.yOffset;
 	this->infData.collider = true;
 
+	this->animDef = std::move(animDef);
 	this->isCreatureInited = true;
 }
 
 void EntityDefinition::initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider,
 	bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
-	const std::optional<int> &lightIntensity)
+	const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef)
 {
 	const bool puddle = false;
 	const bool streetlight = false;
@@ -124,18 +125,20 @@ void EntityDefinition::initHumanEnemy(const char *name, int flatIndex, int yOffs
 
 	std::snprintf(std::begin(this->creatureData.name), std::size(this->creatureData.name), "%s", name);
 
+	this->animDef = std::move(animDef);
 	this->isHumanEnemyInited = true;
 }
 
 void EntityDefinition::initOther(int flatIndex, int yOffset, bool collider, bool puddle,
 	bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale, bool streetLight,
-	const std::optional<int> &lightIntensity)
+	const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef)
 {
 	this->infData.init(flatIndex, yOffset, collider, puddle, largeScale, dark, transparent,
 		ceiling, mediumScale, streetLight, lightIntensity);
 
 	std::fill(std::begin(this->creatureData.name), std::end(this->creatureData.name), '\0');
 
+	this->animDef = std::move(animDef);
 	this->isOtherInited = true;
 }
 
@@ -147,27 +150,32 @@ std::string_view EntityDefinition::getDisplayName() const
 
 bool EntityDefinition::isCreature() const
 {
-	return isCreatureInited;
+	return this->isCreatureInited;
 }
 
 bool EntityDefinition::isHumanEnemy() const
 {
-	return isHumanEnemyInited;
+	return this->isHumanEnemyInited;
 }
 
 bool EntityDefinition::isOther() const
 {
-	return isOtherInited;
+	return this->isOtherInited;
 }
 
-EntityAnimationData &EntityDefinition::getAnimationData()
+/*EntityAnimID &EntityDefinition::getAnimID()
 {
-	return this->animationData;
+	return this->animID;
 }
 
-const EntityAnimationData &EntityDefinition::getAnimationData() const
+const EntityAnimID &EntityDefinition::getAnimID() const
 {
-	return this->animationData;
+	return this->animID;
+}*/
+
+const EntityAnimationDefinition &EntityDefinition::getAnimDef() const
+{
+	return this->animDef;
 }
 
 EntityDefinition::CreatureData &EntityDefinition::getCreatureData()

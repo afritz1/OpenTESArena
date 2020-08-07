@@ -1,7 +1,8 @@
 #ifndef ENTITY_H
 #define ENTITY_H
 
-#include "EntityAnimationData.h"
+#include "EntityAnimationInstance.h"
+#include "EntityUtils.h"
 #include "../Math/Vector2.h"
 #include "../World/VoxelUtils.h"
 
@@ -17,9 +18,9 @@ enum class EntityType;
 class Entity
 {
 private:
-	EntityAnimationData::Instance animation;
-	int id;
-	int dataIndex; // EntityDefinition index in entity manager.
+	EntityAnimationInstance animInst;
+	EntityID id;
+	EntityDefID defID;
 protected:
 	NewDouble2 position;
 public:
@@ -27,26 +28,26 @@ public:
 	virtual ~Entity() = default;
 
 	// Initializes the entity state (some values are initialized separately).
-	void init(int dataIndex);
+	void init(EntityDefID defID, const EntityAnimationInstance &animInst);
 	
 	// Gets the unique ID for the entity.
-	int getID() const;
+	EntityID getID() const;
 
-	// Gets the entity's entity manager data index.
-	int getDataIndex() const;
+	// Gets the entity's definition ID.
+	EntityDefID getDefinitionID() const;
 
 	// Gets the XZ position of the entity.
 	const NewDouble2 &getPosition() const;
 
 	// Gets the entity's animation instance.
-	EntityAnimationData::Instance &getAnimation();
-	const EntityAnimationData::Instance &getAnimation() const;
+	EntityAnimationInstance &getAnimInstance();
+	const EntityAnimationInstance &getAnimInstance() const;
 
 	// Gets the entity's derived type (NPC, doodad, etc.).
 	virtual EntityType getEntityType() const = 0;
 
 	// Sets the entity's ID.
-	void setID(int id);
+	void setID(EntityID id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
 	void setPosition(const NewDouble2 &position, EntityManager &entityManager,

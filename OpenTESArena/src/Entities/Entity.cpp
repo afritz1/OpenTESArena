@@ -7,24 +7,25 @@ Entity::Entity()
 	: position(Double2::Zero)
 {
 	this->id = EntityManager::NO_ID;
-	this->dataIndex = -1;
-	this->animation.reset();
+	this->defID = EntityManager::NO_DEF_ID;
+	this->animInst.reset();
 }
 
-void Entity::init(int dataIndex)
+void Entity::init(EntityDefID defID, const EntityAnimationInstance &animInst)
 {
 	DebugAssert(this->id != EntityManager::NO_ID);
-	this->dataIndex = dataIndex;
+	this->defID = defID;
+	this->animInst = animInst;
 }
 
-int Entity::getID() const
+EntityID Entity::getID() const
 {
 	return this->id;
 }
 
-int Entity::getDataIndex() const
+EntityDefID Entity::getDefinitionID() const
 {
-	return this->dataIndex;
+	return this->defID;
 }
 
 const NewDouble2 &Entity::getPosition() const
@@ -32,17 +33,17 @@ const NewDouble2 &Entity::getPosition() const
 	return this->position;
 }
 
-EntityAnimationData::Instance &Entity::getAnimation()
+EntityAnimationInstance &Entity::getAnimInstance()
 {
-	return this->animation;
+	return this->animInst;
 }
 
-const EntityAnimationData::Instance &Entity::getAnimation() const
+const EntityAnimationInstance &Entity::getAnimInstance() const
 {
-	return this->animation;
+	return this->animInst;
 }
 
-void Entity::setID(int id)
+void Entity::setID(EntityID id)
 {
 	this->id = id;
 }
@@ -59,26 +60,28 @@ void Entity::reset()
 	// Don't change the entity type -- the entity manager doesn't change an allocation's entity
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
+	this->defID = EntityManager::NO_DEF_ID;
 	this->position = Double2::Zero;
-	this->dataIndex = -1;
-	this->animation.reset();
+	this->animInst.reset();
 }
 
 void Entity::tick(Game &game, double dt)
 {
-	// Get entity animation data.
-	const EntityAnimationData &animationData = [this, &game]() -> const EntityAnimationData&
+	const EntityAnimationDefinition &animDef = [this, &game]() -> const EntityAnimationDefinition&
 	{
 		const WorldData &worldData = game.getGameData().getWorldData();
 		const LevelData &levelData = worldData.getActiveLevel();
 		const EntityManager &entityManager = levelData.getEntityManager();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDataIndex());
+		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
 		DebugAssert(entityDef != nullptr);
 
-		return entityDef->getAnimationData();
+		return entityDef->getAnimDef();
 	}();
 
+	// Get current animation keyframe from instance, so we know which anim def state to get.
+	const int stateIndex = this->animInst.getStateIndex();
+	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
+
 	// Animate.
-	auto &animation = this->getAnimation();
-	animation.tick(dt, animationData);
+	this->animInst.tick(dt, animDefState.getTotalSeconds(), animDefState.isLooping());
 }

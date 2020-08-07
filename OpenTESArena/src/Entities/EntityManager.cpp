@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include "EntityManager.h"
 #include "EntityType.h"
@@ -15,17 +16,28 @@
 
 namespace
 {
-	constexpr int FIRST_ENTITY_ID = 0;
+	constexpr EntityID FIRST_ENTITY_ID = 0;
 	constexpr SNInt DEFAULT_CHUNK_X = 0;
 	constexpr WEInt DEFAULT_CHUNK_Z = 0;
 }
 
 EntityManager::EntityVisibilityData::EntityVisibilityData() :
-	flatPosition(Double3::Zero), keyframe(EntityAnimationData::Keyframe(0, 0, 0))
+	flatPosition(Double3::Zero)
 {
 	this->entity = nullptr;
-	this->anglePercent = 0.0;
-	this->stateType = EntityAnimationData::StateType::Idle;
+	this->stateIndex = -1;
+	this->angleIndex = -1;
+	this->keyframeIndex = -1;
+}
+
+void EntityManager::EntityVisibilityData::init(const Entity *entity, const Double3 &flatPosition,
+	int stateIndex, int angleIndex, int keyframeIndex)
+{
+	this->entity = entity;
+	this->flatPosition = flatPosition;
+	this->stateIndex = stateIndex;
+	this->angleIndex = angleIndex;
+	this->keyframeIndex = keyframeIndex;
 }
 
 template <typename T>
@@ -121,7 +133,7 @@ int EntityManager::EntityGroup<T>::getEntities(const Entity **outEntities, int o
 }
 
 template <typename T>
-std::optional<int> EntityManager::EntityGroup<T>::getEntityIndex(int id) const
+std::optional<int> EntityManager::EntityGroup<T>::getEntityIndex(EntityID id) const
 {
 	const auto iter = this->indices.find(id);
 	if (iter != this->indices.end())
@@ -159,7 +171,7 @@ int EntityManager::EntityGroup<T>::nextFreeIndex()
 }
 
 template <typename T>
-T *EntityManager::EntityGroup<T>::addEntity(int id)
+T *EntityManager::EntityGroup<T>::addEntity(EntityID id)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 	DebugAssert(this->validEntities.size() == this->entities.size());
@@ -183,7 +195,7 @@ T *EntityManager::EntityGroup<T>::addEntity(int id)
 }
 
 template <typename T>
-void EntityManager::EntityGroup<T>::acquireEntity(int id, EntityGroup<T> &oldGroup)
+void EntityManager::EntityGroup<T>::acquireEntity(EntityID id, EntityGroup<T> &oldGroup)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 
@@ -210,7 +222,7 @@ void EntityManager::EntityGroup<T>::acquireEntity(int id, EntityGroup<T> &oldGro
 }
 
 template <typename T>
-void EntityManager::EntityGroup<T>::remove(int id)
+void EntityManager::EntityGroup<T>::remove(EntityID id)
 {
 	DebugAssert(id != EntityManager::NO_ID);
 	DebugAssert(this->validEntities.size() == this->entities.size());
@@ -248,8 +260,6 @@ void EntityManager::EntityGroup<T>::clear()
 	this->freeIndices.clear();
 }
 
-const int EntityManager::NO_ID = -1;
-
 void EntityManager::init(SNInt chunkCountX, WEInt chunkCountZ)
 {
 	this->staticGroups.init(chunkCountX, chunkCountZ);
@@ -257,19 +267,19 @@ void EntityManager::init(SNInt chunkCountX, WEInt chunkCountZ)
 	this->nextID = FIRST_ENTITY_ID;
 }
 
-int EntityManager::nextFreeID()
+EntityID EntityManager::nextFreeID()
 {
 	// Check if any pre-owned entity IDs are available.
 	if (this->freeIDs.size() > 0)
 	{
-		const int id = this->freeIDs.back();
+		const EntityID id = this->freeIDs.back();
 		this->freeIDs.pop_back();
 		return id;
 	}
 	else
 	{
 		// Get the next available ID.
-		const int id = this->nextID;
+		const EntityID id = this->nextID;
 		this->nextID++;
 		return id;
 	}
@@ -284,7 +294,7 @@ bool EntityManager::isValidChunk(const ChunkInt2 &chunk) const
 
 StaticEntity *EntityManager::makeStaticEntity()
 {
-	const int id = this->nextFreeID();
+	const EntityID id = this->nextFreeID();
 	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	StaticEntity *entity = staticGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
@@ -293,14 +303,14 @@ StaticEntity *EntityManager::makeStaticEntity()
 
 DynamicEntity *EntityManager::makeDynamicEntity()
 {
-	const int id = this->nextFreeID();
+	const EntityID id = this->nextFreeID();
 	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
 	DynamicEntity *entity = dynamicGroup.addEntity(id);
 	DebugAssert(entity->getID() == id);
 	return entity;
 }
 
-Entity *EntityManager::get(int id)
+Entity *EntityManager::get(EntityID id)
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
@@ -333,7 +343,7 @@ Entity *EntityManager::get(int id)
 	return nullptr;
 }
 
-const Entity *EntityManager::get(int id) const
+const Entity *EntityManager::get(EntityID id) const
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
@@ -556,12 +566,13 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
-const EntityDefinition *EntityManager::getEntityDef(int flatIndex) const
+const EntityDefinition *EntityManager::getEntityDef(EntityDefID defID) const
 {
+	// @todo: just do a direct vector look-up, don't do a search.
 	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
-		[flatIndex](const EntityDefinition &def)
+		[defID](const EntityDefinition &def)
 	{
-		return def.getInfData().flatIndex == flatIndex;
+		return def.getInfData().flatIndex == static_cast<int>(defID);
 	});
 
 	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
@@ -577,16 +588,19 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
-	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDataIndex());
-	const EntityAnimationData &entityAnimData = entityDef.getAnimationData();
+	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDefinitionID());
+	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+	const EntityAnimationInstance &animInst = entity.getAnimInstance();
 
-	// Get active state.
-	const EntityAnimationData::Instance &animInstance = entity.getAnimation();
-	const std::vector<EntityAnimationData::State> &stateList = animInstance.getStateList(entityAnimData);
-	const int stateCount = static_cast<int>(stateList.size()); // 1 if it's the same for all angles.
+	// Get active animation state.
+	const int animStateIndex = animInst.getStateIndex();
+	const EntityAnimationDefinition::State &animDefState = animDef.getState(animStateIndex);
+	const EntityAnimationInstance::State &animInstState = animInst.getState(animStateIndex);
+	outVisData.stateIndex = animStateIndex;
 
-	// Calculate state index based on entity direction relative to camera.
-	const double animAngle = [&entity, &eye2D, stateCount]()
+	// Get animation angle based on entity direction relative to some camera/eye.
+	const int angleCount = animInstState.getKeyframeListCount();
+	const Radians animAngle = [&entity, &eye2D, angleCount]()
 	{
 		if (entity.getEntityType() == EntityType::Static)
 		{
@@ -607,7 +621,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 			const Radians resultAngle = Constants::TwoPi + (entityAngle - diffAngle);
 
 			// Angle bias so the final direction is centered within its angle range.
-			const Radians angleBias = (Constants::TwoPi / static_cast<double>(stateCount)) * 0.50;
+			const Radians angleBias = (Constants::TwoPi / static_cast<double>(angleCount)) * 0.50;
 
 			return std::fmod(resultAngle + angleBias, Constants::TwoPi);
 		}
@@ -618,29 +632,37 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 		}
 	}();
 
-	outVisData.anglePercent = std::clamp(animAngle / Constants::TwoPi, 0.0, Constants::JustBelowOne);
-
-	const int stateIndex = [&outVisData, stateCount]()
+	// Index into animation keyframe lists for the state.
+	outVisData.angleIndex = [angleCount, animAngle]()
 	{
-		const int index = static_cast<int>(static_cast<double>(stateCount) * outVisData.anglePercent);
-		return std::clamp(index, 0, stateCount - 1);
+		const double angleCountReal = static_cast<double>(angleCount);
+		const double anglePercent = animAngle / Constants::TwoPi;
+		const int angleIndex = static_cast<int>(angleCountReal * anglePercent);
+		return std::clamp(angleIndex, 0, angleCount - 1);
 	}();
 
-	DebugAssertIndex(stateList, stateIndex);
-	const EntityAnimationData::State &animState = stateList[stateIndex];
-	outVisData.stateType = animState.getType();
+	// Keyframe list for the current state and angle.
+	const EntityAnimationDefinition::KeyframeList &animDefKeyframeList =
+		animDefState.getKeyframeList(outVisData.angleIndex);
 
-	// Get the entity's current animation frame (dimensions, texture, etc.).
-	outVisData.keyframe = [&entity, &entityAnimData, &animInstance, stateIndex, &animState]()
-		-> const EntityAnimationData::Keyframe&
+	// Progress through current animation.
+	outVisData.keyframeIndex = [&animInst, &animDefState, &animDefKeyframeList]()
 	{
-		const int keyframeIndex = animInstance.getKeyframeIndex(stateIndex, entityAnimData);
-		const BufferView<const EntityAnimationData::Keyframe> keyframes = animState.getKeyframes();
-		return keyframes.get(keyframeIndex);
+		const int keyframeCount = animDefKeyframeList.getKeyframeCount();
+		const double keyframeCountReal = static_cast<double>(keyframeCount);
+		const double animCurSeconds = animInst.getCurrentSeconds();
+		const double animTotalSeconds = animDefState.getTotalSeconds();
+		const double animPercent = animCurSeconds / animTotalSeconds;
+		const int keyframeIndex = static_cast<int>(keyframeCountReal * animPercent);
+		return std::clamp(keyframeIndex, 0, keyframeCount - 1);
 	}();
 
-	const double flatWidth = outVisData.keyframe.getWidth();
-	const double flatHeight = outVisData.keyframe.getHeight();
+	// Current animation frame based on everything above.
+	const EntityAnimationDefinition::Keyframe &animDefKeyframe =
+		animDefKeyframeList.getKeyframe(outVisData.keyframeIndex);
+
+	const double flatWidth = animDefKeyframe.getWidth();
+	const double flatHeight = animDefKeyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
 	const NewDouble2 &entityPos = entity.getPosition();
@@ -677,14 +699,32 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 		entityPosZ);
 }
 
+const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
+	const EntityVisibilityData &visData) const
+{
+	const EntityDefinition *entityDef = this->getEntityDef(entity.getDefinitionID());
+	DebugAssert(entityDef != nullptr);
+
+	const EntityAnimationDefinition &animDef = entityDef->getAnimDef();
+	const EntityAnimationDefinition::State &animState = animDef.getState(visData.stateIndex);
+	const EntityAnimationDefinition::KeyframeList &animKeyframeList =
+		animState.getKeyframeList(visData.angleIndex);
+	const EntityAnimationDefinition::Keyframe &animKeyframe =
+		animKeyframeList.getKeyframe(visData.keyframeIndex);
+	return animKeyframe;
+}
+
 void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
 	Double3 *outMin, Double3 *outMax) const
 {
-	// Start with a bounding cylinder.
-	const double radius = visData.keyframe.getWidth() / 2.0;
-	const double height = visData.keyframe.getHeight();
+	// Get animation frame from visibility data.
+	const EntityAnimationDefinition::Keyframe &keyframe = this->getEntityAnimKeyframe(entity, visData);
 
-	// Convert the bounding cylinder to an axis-aligned bounding box.
+	// Start with bounding cylinder.
+	const double radius = keyframe.getWidth() / 2.0;
+	const double height = keyframe.getHeight();
+
+	// Convert bounding cylinder to axis-aligned bounding box.
 	outMin->x = visData.flatPosition.x - radius;
 	outMin->y = visData.flatPosition.y;
 	outMin->z = visData.flatPosition.z - radius;
@@ -773,7 +813,7 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 	}
 }
 
-void EntityManager::remove(int id)
+void EntityManager::remove(EntityID id)
 {
 	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
 	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
