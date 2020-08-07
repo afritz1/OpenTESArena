@@ -844,8 +844,7 @@ void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *liste
 	// Check if another music is staged and should start when the current one is done.
 	if (this->hasNextMusic())
 	{
-		DebugAssert(mSongStream != nullptr);
-		const bool canChangeToNextMusic = !mSongStream->isPlaying();
+		const bool canChangeToNextMusic = (mSongStream == nullptr) || !mSongStream->isPlaying();
 		if (canChangeToNextMusic)
 		{
 			// Assume that the next music always loops.
