@@ -145,7 +145,7 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 		TextureManager::matchesExtension(filename, EXTENSION_MNU))
 	{
 		Palette palette;
-		if (!IMGFile::extractPalette(filename, palette))
+		if (!IMGFile::tryExtractPalette(filename, palette))
 		{
 			DebugLogWarning("Couldn't extract .IMG palette from \"" + std::string(filename) + "\".");
 			return false;

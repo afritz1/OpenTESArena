@@ -14,6 +14,8 @@
 
 namespace
 {
+	constexpr int HeaderSize = 12;
+
 	// These .IMG files are actually headerless/raw files with hardcoded dimensions.
 	const std::unordered_map<std::string, Int2> RawImgOverride =
 	{
@@ -48,10 +50,8 @@ bool IMGFile::init(const char *filename)
 	// to use them, so if they are requested here, just return a dummy image.
 	if (MisspelledIMGs.find(filename) != MisspelledIMGs.end())
 	{
-		this->width = 1;
-		this->height = 1;
-		this->pixels = std::make_unique<uint8_t[]>(this->width * this->height);
-		this->pixels[0] = 0;
+		this->image.init(1, 1);
+		this->image.set(0, 0, 0);
 		return true;
 	}
 
@@ -63,15 +63,15 @@ bool IMGFile::init(const char *filename)
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.get());
-	uint16_t xoff, yoff, width, height, flags, len;
+	uint16_t xOffset, yOffset, width, height, flags, len;
 
 	// Read header data if not raw. Wall .IMGs have no header and are 4096 bytes.
 	const auto rawOverride = RawImgOverride.find(filename);
 	const bool isRaw = rawOverride != RawImgOverride.end();
 	if (isRaw)
 	{
-		xoff = 0;
-		yoff = 0;
+		xOffset = 0;
+		yOffset = 0;
 		width = rawOverride->second.x;
 		height = rawOverride->second.y;
 		flags = 0;
@@ -82,8 +82,8 @@ bool IMGFile::init(const char *filename)
 		// Some wall .IMGs have rows of black (transparent) pixels near the 
 		// beginning, so the header would just be zeroes. This is a guess to 
 		// try and fix that issue as well as cover all other wall .IMGs.
-		xoff = 0;
-		yoff = 0;
+		xOffset = 0;
+		yOffset = 0;
 		width = 64;
 		height = 64;
 		flags = 0;
@@ -92,15 +92,13 @@ bool IMGFile::init(const char *filename)
 	else
 	{
 		// Read header data.
-		xoff = Bytes::getLE16(srcPtr);
-		yoff = Bytes::getLE16(srcPtr + 2);
+		xOffset = Bytes::getLE16(srcPtr);
+		yOffset = Bytes::getLE16(srcPtr + 2);
 		width = Bytes::getLE16(srcPtr + 4);
 		height = Bytes::getLE16(srcPtr + 6);
 		flags = Bytes::getLE16(srcPtr + 8);
 		len = Bytes::getLE16(srcPtr + 10);
 	}
-
-	const int headerSize = 12;
 
 	// Read the .IMG's built-in palette if it has one.
 	const bool hasBuiltInPalette = (flags & 0x0100) != 0;
@@ -108,16 +106,14 @@ bool IMGFile::init(const char *filename)
 	{
 		// Read the palette data.
 		this->palette = std::make_unique<Palette>(
-			IMGFile::readPalette(srcPtr + headerSize + len));
+			IMGFile::readPalette(srcPtr + HeaderSize + len));
 	}
 
 	// Lambda for setting members and constructing the final image.
 	auto makeImage = [this](int width, int height, const uint8_t *data)
 	{
-		this->width = width;
-		this->height = height;
-		this->pixels = std::make_unique<uint8_t[]>(width * height);
-		std::copy(data, data + (width * height), this->pixels.get());
+		this->image.init(width, height);
+		std::copy(data, data + (width * height), this->image.get());
 	};
 
 	// Decide how to use the pixel data.
@@ -127,25 +123,24 @@ bool IMGFile::init(const char *filename)
 		// expects it to be a 64x64 texture, so it needs its own case.
 		if (std::strcmp(filename, "DZTTAV.IMG") == 0)
 		{
-			this->width = 64;
-			this->height = 64;
-			this->pixels = std::make_unique<uint8_t[]>(this->width * this->height);
-			std::fill(this->pixels.get(), this->pixels.get() + (this->width * this->height), 0);
+			this->image.init(64, 64);
+			this->image.fill(0);
 
+			uint8_t *imagePtr = this->image.get();
 			for (int y = 0; y < height; y++)
 			{
 				for (int x = 0; x < width; x++)
 				{
 					// Offset the destination X by 32 so it matches DZTTEP.IMG.
 					const int srcIndex = x + (y * width);
-					const int dstIndex = (x + 32) + (y * this->width);
-					this->pixels[dstIndex] = *(srcPtr + srcIndex);
+					const int dstIndex = (x + 32) + (y * this->image.getWidth());
+					imagePtr[dstIndex] = *(srcPtr + srcIndex);
 				}
 			}
 		}
 		else
 		{
-			// Uncompressed IMG with no header (excluding walls).
+			// Uncompressed .IMG with no header (excluding walls).
 			makeImage(width, height, srcPtr);
 		}
 	}
@@ -156,17 +151,17 @@ bool IMGFile::init(const char *filename)
 	}
 	else
 	{
-		// Decode the pixel data according to the IMG flags.
+		// Decode the pixel data according to the .IMG flags.
 		if ((flags & 0x00FF) == 0)
 		{
-			// Uncompressed IMG with header.
-			makeImage(width, height, srcPtr + headerSize);
+			// Uncompressed .IMG with header.
+			makeImage(width, height, srcPtr + HeaderSize);
 		}
 		else if ((flags & 0x00FF) == 0x0004)
 		{
 			// Type 4 compression.
 			std::vector<uint8_t> decomp(width * height);
-			Compression::decodeType04(srcPtr + headerSize, srcPtr + headerSize + len, decomp);
+			Compression::decodeType04(srcPtr + HeaderSize, srcPtr + HeaderSize + len, decomp);
 
 			// Create 32-bit image.
 			makeImage(width, height, decomp.data());
@@ -176,14 +171,14 @@ bool IMGFile::init(const char *filename)
 			// Type 8 compression. Contains a 2 byte decompressed length after
 			// the header, so skip that (should be equivalent to width * height).
 			std::vector<uint8_t> decomp(width * height);
-			Compression::decodeType08(srcPtr + headerSize + 2, srcPtr + headerSize + len, decomp);
+			Compression::decodeType08(srcPtr + HeaderSize + 2, srcPtr + HeaderSize + len, decomp);
 
 			// Create 32-bit image.
 			makeImage(width, height, decomp.data());
 		}
 		else
 		{
-			DebugLogError("Unrecognized IMG \"" + std::string(filename) + "\".");
+			DebugLogWarning("Unrecognized .IMG \"" + std::string(filename) + "\".");
 			return false;
 		}
 	}
@@ -217,7 +212,7 @@ Palette IMGFile::readPalette(const uint8_t *paletteData)
 	return palette;
 }
 
-bool IMGFile::extractPalette(const char *filename, Palette &palette)
+bool IMGFile::tryExtractPalette(const char *filename, Palette &palette)
 {
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
@@ -234,8 +229,6 @@ bool IMGFile::extractPalette(const char *filename, Palette &palette)
 	const uint16_t flags = Bytes::getLE16(srcPtr + 8);
 	const uint16_t len = Bytes::getLE16(srcPtr + 10);
 
-	const int headerSize = 12;
-
 	// Don't try to read a built-in palette if there isn't one.
 	if ((flags & 0x0100) == 0)
 	{
@@ -244,18 +237,18 @@ bool IMGFile::extractPalette(const char *filename, Palette &palette)
 	}
 
 	// Get the palette.
-	palette = IMGFile::readPalette(srcPtr + headerSize + len);
+	palette = IMGFile::readPalette(srcPtr + HeaderSize + len);
 	return true;
 }
 
 int IMGFile::getWidth() const
 {
-	return this->width;
+	return this->image.getWidth();
 }
 
 int IMGFile::getHeight() const
 {
-	return this->height;
+	return this->image.getHeight();
 }
 
 const Palette *IMGFile::getPalette() const
@@ -265,5 +258,5 @@ const Palette *IMGFile::getPalette() const
 
 const uint8_t *IMGFile::getPixels() const
 {
-	return this->pixels.get();
+	return this->image.get();
 }

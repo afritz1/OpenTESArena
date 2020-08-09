@@ -153,7 +153,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 
 	// Get the palette for the background image.
 	const std::string backgroundFilename = this->getBackgroundFilename();
-	if (!IMGFile::extractPalette(backgroundFilename.c_str(), this->provinceMapPalette))
+	if (!IMGFile::tryExtractPalette(backgroundFilename.c_str(), this->provinceMapPalette))
 	{
 		DebugCrash("Could not extract palette from \"" + backgroundFilename + "\".");
 	}

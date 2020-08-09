@@ -6,24 +6,25 @@
 
 #include "../Media/Palette.h"
 
-// An IMG file can have one of a few formats; either with a header that determines
-// properties, or without a header (either raw or a wall). Some IMGs also have a
+#include "components/utilities/Buffer2D.h"
+
+// An .IMG file can have one of a few formats; either with a header that determines
+// properties, or without a header (either raw or a wall). Some .IMGs also have a
 // built-in palette, which they may or may not use eventually.
 
 class IMGFile
 {
 private:
-	std::unique_ptr<uint8_t[]> pixels;
+	Buffer2D<uint8_t> image;
 	std::unique_ptr<Palette> palette;
-	int width, height;
 
 	// Reads the palette from an .IMG file's palette data.
 	static Palette readPalette(const uint8_t *paletteData);
 public:
 	bool init(const char *filename);
 
-	// Extracts the palette from an .IMG file.
-	static bool extractPalette(const char *filename, Palette &palette);
+	// Extracts the palette from an .IMG file (if any).
+	static bool tryExtractPalette(const char *filename, Palette &palette);
 
 	// Gets the width in pixels.
 	int getWidth() const;
