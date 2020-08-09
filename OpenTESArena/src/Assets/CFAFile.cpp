@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <string>
+#include <vector>
 
 #include "CFAFile.h"
 #include "Compression.h"
@@ -37,7 +38,8 @@ bool CFAFile::init(const char *filename)
 	const uint8_t *lookUpTable = srcPtr + 76;
 
 	// Line buffer (generously over-allocated for demuxing).
-	std::vector<uint8_t> encoded(widthUncompressed + 16, 0);
+	Buffer<uint8_t> encoded(widthUncompressed + 16);
+	encoded.fill(0);
 
 	// Index values from demuxing are stored here each pass, and are
 	// eventually translated into color indices.
@@ -51,20 +53,22 @@ bool CFAFile::init(const char *filename)
 	// Decompress the RLE data of the CFA images (they're all packed together).
 	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount, decomp);
 
-	// Temporary buffers for frame palette indices.
-	std::vector<std::vector<uint8_t>> frames;
+	// Buffers for frame palette indices.
+	this->images.init(frameCount);
+	for (int i = 0; i < this->images.getCount(); i++)
+	{
+		Buffer2D<uint8_t> &image = this->images.get(i);
+		image.init(widthUncompressed, height);
+	}
 
 	// Byte offset into bit-packed data. All frames are packed together,
 	// so this value can simply be incremented by the compressed width.
 	uint32_t offset = 0;
 
-	for (uint32_t frameNum = 0; frameNum < frameCount; frameNum++)
+	for (int i = 0; i < this->images.getCount(); i++)
 	{
-		// Allocate a new output frame.
-		frames.push_back(std::vector<uint8_t>(widthUncompressed * height));
-
 		// Destination buffer for the frame's decompressed palette indices.
-		std::vector<uint8_t> &dst = frames.back();
+		Buffer2D<uint8_t> &dst = this->images.get(i);
 		uint32_t dstOffset = 0;
 
 		for (uint32_t y = 0; y < height; y++)
@@ -73,7 +77,7 @@ bool CFAFile::init(const char *filename)
 
 			// Copy the current line to the scratch buffer.
 			const uint8_t *decompPtr = decomp.data() + offset;
-			std::copy(decompPtr, decompPtr + widthCompressed, encoded.begin());
+			std::copy(decompPtr, decompPtr + widthCompressed, encoded.get());
 
 			// Lambda for which demux routine to do, based on bits per pixel.
 			auto runDemux = [&dst, dstOffset, &count, &encoded, &translate, lookUpTable](
@@ -82,14 +86,17 @@ bool CFAFile::init(const char *filename)
 			{
 				for (uint32_t x = 0; x < end; x++)
 				{
-					demux(encoded.data() + (x * demuxMultiplier), translate.data());
+					demux(encoded.get() + (x * demuxMultiplier), translate.data());
 
 					uint32_t upTo = std::min(upToMin, count);
 					count -= upTo;
 
+					uint8_t *dstPtr = dst.get();
 					for (uint32_t i = 0; i < upTo; i++)
 					{
-						dst.at((x * upToMin) + i + dstOffset) = lookUpTable[translate.at(i)];
+						const int dstIndex = (x * upToMin) + i + dstOffset;
+						const uint8_t translateVal = translate[i];
+						dstPtr[dstIndex] = lookUpTable[translateVal];
 					}
 				}
 			};
@@ -98,9 +105,12 @@ bool CFAFile::init(const char *filename)
 			if (bitsPerPixel == 8)
 			{
 				// No demuxing needed.
+				const uint8_t *encodedPtr = encoded.get();
+				uint8_t *dstPtr = dst.get();
 				for (uint32_t x = 0; x < widthCompressed; x++)
 				{
-					dst.at(x + dstOffset) = encoded.at(x);
+					const int dstIndex = x + dstOffset;
+					dstPtr[dstIndex] = encodedPtr[x];
 				}
 			}
 			else if (bitsPerPixel == 7)
@@ -142,21 +152,12 @@ bool CFAFile::init(const char *filename)
 	this->height = height;
 	this->xOffset = xOffset;
 	this->yOffset = yOffset;
-
-	// Store each 8-bit image.
-	for (const auto &frame : frames)
-	{
-		this->pixels.push_back(std::make_unique<uint8_t[]>(this->width * this->height));
-		uint8_t *pixels = this->pixels.back().get();
-		std::copy(frame.begin(), frame.end(), pixels);
-	}
-
 	return true;
 }
 
 int CFAFile::getImageCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return this->images.getCount();
 }
 
 int CFAFile::getWidth() const
@@ -181,8 +182,10 @@ int CFAFile::getYOffset() const
 
 const uint8_t *CFAFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].get();
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->images.getCount());
+	const Buffer2D<uint8_t> &image = this->images.get(index);
+	return image.get();
 }
 
 void CFAFile::demux1(const uint8_t *src, uint8_t *dst)

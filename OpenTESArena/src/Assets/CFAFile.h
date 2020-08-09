@@ -2,15 +2,16 @@
 #define CFA_FILE_H
 
 #include <cstdint>
-#include <memory>
-#include <vector>
 
-// A CFA file is for creatures and spell animations.
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Buffer2D.h"
+
+// A .CFA file is for creatures and spell animations.
 
 class CFAFile
 {
 private:
-	std::vector<std::unique_ptr<uint8_t[]>> pixels;
+	Buffer<Buffer2D<uint8_t>> images;
 	int width, height, xOffset, yOffset;
 
 	// CFA files have their palette indices compressed into fewer bits depending
