@@ -923,7 +923,7 @@ namespace Physics
 					const double distance = (hitPoint - rayStart).length();
 					if (distance < entityHit.getT())
 					{
-						entityHit.initEntity(distance, hitPoint, entity.getID());
+						entityHit.initEntity(distance, hitPoint, entity.getID(), entity.getEntityType());
 					}
 				}
 			}
@@ -1175,12 +1175,13 @@ void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const 
 	}
 }
 
-void Physics::Hit::initEntity(double t, const Double3 &point, EntityID id)
+void Physics::Hit::initEntity(double t, const Double3 &point, EntityID id, EntityType type)
 {
 	this->t = t;
 	this->point = point;
 	this->type = Hit::Type::Entity;
 	this->entityHit.id = id;
+	this->entityHit.type = type;
 }
 
 double Physics::Hit::getT() const

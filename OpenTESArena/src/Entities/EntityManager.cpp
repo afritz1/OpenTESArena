@@ -292,88 +292,190 @@ bool EntityManager::isValidChunk(const ChunkInt2 &chunk) const
 	return (chunk.x >= 0) && (chunk.x < chunkCountX) && (chunk.y >= 0) && (chunk.y < chunkCountZ);
 }
 
-StaticEntity *EntityManager::makeStaticEntity()
+EntityRef EntityManager::makeEntity(EntityType type)
 {
 	const EntityID id = this->nextFreeID();
-	auto &staticGroup = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
-	StaticEntity *entity = staticGroup.addEntity(id);
-	DebugAssert(entity->getID() == id);
-	return entity;
-}
-
-DynamicEntity *EntityManager::makeDynamicEntity()
-{
-	const EntityID id = this->nextFreeID();
-	auto &dynamicGroup = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
-	DynamicEntity *entity = dynamicGroup.addEntity(id);
-	DebugAssert(entity->getID() == id);
-	return entity;
-}
-
-Entity *EntityManager::get(EntityID id)
-{
-	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
-	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
-
-	// Find which entity group the given entity ID is in. This is a slow look-up because there is
-	// no hint where the entity is at.
-	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
+	EntityRef entityRef = [this, type, id]()
 	{
-		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
+		if (type == EntityType::Static)
 		{
-			auto &staticGroup = this->staticGroups.get(x, z);
-			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
-			if (entityIndex.has_value())
-			{
-				// Static entity.
-				return staticGroup.getEntityAtIndex(*entityIndex);
-			}
+			auto &group = this->staticGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
+			StaticEntity *entity = group.addEntity(id);
+			return EntityRef(this, id, type);
+		}
+		else if (type == EntityType::Dynamic)
+		{
+			auto &group = this->dynamicGroups.get(DEFAULT_CHUNK_X, DEFAULT_CHUNK_Z);
+			DynamicEntity *entity = group.addEntity(id);
+			return EntityRef(this, id, type);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(type)));
+			return EntityRef(nullptr, EntityManager::NO_ID, EntityType::Static);
+		}
+	}();
 
-			auto &dynamicGroup = this->dynamicGroups.get(x, z);
-			entityIndex = dynamicGroup.getEntityIndex(id);
-			if (entityIndex.has_value())
+	DebugAssert(entityRef.getID() == id);
+	return entityRef;
+}
+
+template <typename T>
+Entity *EntityManager::getInternal(EntityID id, EntityGroup<T> &group)
+{
+	if (id == EntityManager::NO_ID)
+	{
+		return nullptr;
+	}
+
+	const std::optional<int> index = group.getEntityIndex(id);
+	return index.has_value() ? group.getEntityAtIndex(*index) : nullptr;
+}
+
+template <typename T>
+const Entity *EntityManager::getInternal(EntityID id, const EntityGroup<T> &group) const
+{
+	if (id == EntityManager::NO_ID)
+	{
+		return nullptr;
+	}
+
+	const std::optional<int> index = group.getEntityIndex(id);
+	return index.has_value() ? group.getEntityAtIndex(*index) : nullptr;
+}
+
+Entity *EntityManager::getEntityHandle(EntityID id, EntityType type)
+{
+	// Use the given entity type to determine which entity group to look in.
+	auto tryGetEntityHandle = [this, id](auto &entityGroups) -> Entity*
+	{
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
+		{
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
 			{
-				// Dynamic entity.
-				return dynamicGroup.getEntityAtIndex(*entityIndex);
+				auto &group = entityGroups.get(x, z);
+				Entity *entity = this->getInternal(id, group);
+				if (entity != nullptr)
+				{
+					return entity;
+				}
 			}
 		}
+
+		return nullptr;
+	};
+
+	switch (type)
+	{
+	case EntityType::Static:
+		return tryGetEntityHandle(this->staticGroups);
+	case EntityType::Dynamic:
+		return tryGetEntityHandle(this->dynamicGroups);
+	default:
+		DebugUnhandledReturnMsg(nullptr_t, std::to_string(static_cast<int>(type)));
+	}
+}
+
+const Entity *EntityManager::getEntityHandle(EntityID id, EntityType type) const
+{
+	// Use the given entity type to determine which entity group to look in.
+	auto tryGetEntityHandle = [this, id](const auto &entityGroups) -> const Entity*
+	{
+		for (WEInt z = 0; z < entityGroups.getHeight(); z++)
+		{
+			for (SNInt x = 0; x < entityGroups.getWidth(); x++)
+			{
+				const auto &group = entityGroups.get(x, z);
+				const Entity *entity = this->getInternal(id, group);
+				if (entity != nullptr)
+				{
+					return entity;
+				}
+			}
+		}
+
+		return nullptr;
+	};
+
+	switch (type)
+	{
+	case EntityType::Static:
+		return tryGetEntityHandle(this->staticGroups);
+	case EntityType::Dynamic:
+		return tryGetEntityHandle(this->dynamicGroups);
+	default:
+		DebugUnhandledReturnMsg(nullptr_t, std::to_string(static_cast<int>(type)));
+	}
+}
+
+Entity *EntityManager::getEntityHandle(EntityID id)
+{
+	// Find which entity group the given entity ID is in. This is a slow look-up because there is
+	// no hint where the entity is at.
+	Entity *entity = this->getEntityHandle(id, EntityType::Static);
+	if (entity != nullptr)
+	{
+		// Static entity.
+		return entity;
+	}
+
+	entity = this->getEntityHandle(id, EntityType::Dynamic);
+	if (entity != nullptr)
+	{
+		// Dynamic entity.
+		return entity;
 	}
 
 	// Not in any entity group.
 	return nullptr;
 }
 
-const Entity *EntityManager::get(EntityID id) const
+const Entity *EntityManager::getEntityHandle(EntityID id) const
 {
-	DebugAssert(this->staticGroups.getWidth() == this->dynamicGroups.getWidth());
-	DebugAssert(this->staticGroups.getHeight() == this->dynamicGroups.getHeight());
-
 	// Find which entity group the given entity ID is in. This is a slow look-up because there is
 	// no hint where the entity is at.
-	for (WEInt z = 0; z < this->staticGroups.getHeight(); z++)
+	const Entity *entity = this->getEntityHandle(id, EntityType::Static);
+	if (entity != nullptr)
 	{
-		for (SNInt x = 0; x < this->staticGroups.getWidth(); x++)
-		{
-			const auto &staticGroup = this->staticGroups.get(x, z);
-			std::optional<int> entityIndex = staticGroup.getEntityIndex(id);
-			if (entityIndex.has_value())
-			{
-				// Static entity.
-				return staticGroup.getEntityAtIndex(*entityIndex);
-			}
+		// Static entity.
+		return entity;
+	}
 
-			const auto &dynamicGroup = this->dynamicGroups.get(x, z);
-			entityIndex = dynamicGroup.getEntityIndex(id);
-			if (entityIndex.has_value())
-			{
-				// Dynamic entity.
-				return dynamicGroup.getEntityAtIndex(*entityIndex);
-			}
-		}
+	entity = this->getEntityHandle(id, EntityType::Dynamic);
+	if (entity != nullptr)
+	{
+		// Dynamic entity.
+		return entity;
 	}
 
 	// Not in any entity group.
 	return nullptr;
+}
+
+EntityRef EntityManager::getEntityRef(EntityID id, EntityType type)
+{
+	return EntityRef(this, id, type);
+}
+
+ConstEntityRef EntityManager::getEntityRef(EntityID id, EntityType type) const
+{
+	return ConstEntityRef(this, id, type);
+}
+
+EntityRef EntityManager::getEntityRef(EntityID id)
+{
+	// Get the entity's type if possible.
+	Entity *entity = this->getEntityHandle(id);
+	EntityType entityType = (entity != nullptr) ? entity->getEntityType() : EntityType::Static;
+	return this->getEntityRef(id, entityType);
+}
+
+ConstEntityRef EntityManager::getEntityRef(EntityID id) const
+{
+	// Get the entity's type if possible.
+	const Entity *entity = this->getEntityHandle(id);
+	EntityType entityType = (entity != nullptr) ? entity->getEntityType() : EntityType::Static;
+	return this->getEntityRef(id, entityType);
 }
 
 int EntityManager::getCount(EntityType entityType) const

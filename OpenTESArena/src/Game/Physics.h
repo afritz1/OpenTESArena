@@ -33,6 +33,7 @@ namespace Physics
 		struct EntityHit
 		{
 			EntityID id;
+			EntityType type;
 		};
 	private:
 		double t;
@@ -47,7 +48,7 @@ namespace Physics
 
 		void initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
 			const VoxelFacing *facing);
-		void initEntity(double t, const Double3 &point, EntityID id);
+		void initEntity(double t, const Double3 &point, EntityID id, EntityType type);
 
 		double getT() const;
 		double getTSqr() const;

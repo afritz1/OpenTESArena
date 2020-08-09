@@ -1578,31 +1578,26 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			// Initialize each instance of the flat def.
 			for (const Int2 &position : flatDef.getPositions())
 			{
-				Entity *entity = [this, entityType]() -> Entity*
+				EntityRef entityRef = this->entityManager.makeEntity(entityType);
+				if (entityType == EntityType::Static)
 				{
-					if (entityType == EntityType::Static)
-					{
-						StaticEntity *staticEntity = this->entityManager.makeStaticEntity();
-						staticEntity->setDerivedType(StaticEntityType::Doodad);
-						return staticEntity;
-					}
-					else if (entityType == EntityType::Dynamic)
-					{
-						DynamicEntity *dynamicEntity = this->entityManager.makeDynamicEntity();
-						dynamicEntity->setDerivedType(DynamicEntityType::NPC);
-						dynamicEntity->setDirection(CardinalDirection::North);
-						return dynamicEntity;
-					}
-					else
-					{
-						DebugCrash("Unrecognized entity type \"" +
-							std::to_string(static_cast<int>(entityType)) + "\".");
-						return nullptr;
-					}
-				}();
+					StaticEntity *staticEntity = entityRef.getDerived<StaticEntity>();
+					staticEntity->setDerivedType(StaticEntityType::Doodad);
+				}
+				else if (entityType == EntityType::Dynamic)
+				{
+					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
+					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+					dynamicEntity->setDirection(CardinalDirection::North);
+				}
+				else
+				{
+					DebugCrash("Unrecognized entity type \"" +
+						std::to_string(static_cast<int>(entityType)) + "\".");
+				}
 
 				const EntityDefID entityDefID = dataIndex;
-				entity->init(entityDefID, entityAnimInst);
+				entityRef.get()->init(entityDefID, entityAnimInst);
 
 				// Set default animation state.
 				int defaultStateIndex;
@@ -1630,15 +1625,13 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					}
 				}
 
-				EntityAnimationInstance &animInst = entity->getAnimInstance();
-				animInst.setStateIndex(defaultStateIndex);
-
-				// @todo: setPosition() must be last in scope until there is some EntityRef wrapper
-				// because the entity pointer can become dangling after its chunk is updated.
 				const NewDouble2 positionXZ(
 					static_cast<SNDouble>(position.x) + 0.50,
 					static_cast<WEDouble>(position.y) + 0.50);
-				entity->setPosition(positionXZ, this->entityManager, this->voxelGrid);
+				entityRef.get()->setPosition(positionXZ, this->entityManager, this->voxelGrid);
+
+				EntityAnimationInstance &animInst = entityRef.get()->getAnimInstance();
+				animInst.setStateIndex(defaultStateIndex);
 			}
 
 			// Palette for renderer textures.

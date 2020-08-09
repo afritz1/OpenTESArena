@@ -9,6 +9,7 @@
 #include "DynamicEntity.h"
 #include "Entity.h"
 #include "EntityDefinition.h"
+#include "EntityRef.h"
 #include "EntityUtils.h"
 #include "StaticEntity.h"
 #include "../Math/Vector3.h"
@@ -104,6 +105,12 @@ private:
 	EntityID nextFreeID();
 
 	bool isValidChunk(const ChunkInt2 &chunk) const;
+
+	// Helper functions for looking up an entity in the given group by ID.
+	template <typename T>
+	Entity *getInternal(EntityID id, EntityGroup<T> &group);
+	template <typename T>
+	const Entity *getInternal(EntityID id, const EntityGroup<T> &group) const;
 public:
 	// The default ID for entities with no ID.
 	static constexpr EntityID NO_ID = -1;
@@ -113,12 +120,21 @@ public:
 	void init(SNInt chunkCountX, WEInt chunkCountZ);
 
 	// Factory functions. These assign the entity an available ID.
-	StaticEntity *makeStaticEntity();
-	DynamicEntity *makeDynamicEntity();
+	EntityRef makeEntity(EntityType type);
 
-	// Gets an entity, given their ID. Returns null if no ID matches.
-	Entity *get(EntityID id);
-	const Entity *get(EntityID id) const;
+	// Gets a raw entity handle, given their ID and an optional entity type for faster look-up.
+	// Returns null if no ID matches. Does not protect against dangling pointers.
+	Entity *getEntityHandle(EntityID id, EntityType type);
+	const Entity *getEntityHandle(EntityID id, EntityType type) const;
+	Entity *getEntityHandle(EntityID id);
+	const Entity *getEntityHandle(EntityID id) const;
+
+	// Gets an entity reference that protects against dangling pointers. Returns null entity
+	// if no ID matches.
+	EntityRef getEntityRef(EntityID id, EntityType type);
+	ConstEntityRef getEntityRef(EntityID id, EntityType type) const;
+	EntityRef getEntityRef(EntityID id);
+	ConstEntityRef getEntityRef(EntityID id) const;
 
 	// Gets number of entities of the given type in the manager.
 	int getCount(EntityType entityType) const;

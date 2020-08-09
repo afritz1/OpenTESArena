@@ -243,10 +243,11 @@ namespace
 
 				// Try inspecting the entity (can be from any distance). If they have a display name,
 				// then show it.
-				const Entity *entity = entityManager.get(entityHit.id);
-				DebugAssert(entity != nullptr);
+				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
+				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
+				const EntityDefinition *entityDef =
+					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
@@ -1605,7 +1606,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	auto &worldData = gameData.getWorldData();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
-	auto &entityManager = level.getEntityManager();
+	const auto &entityManager = level.getEntityManager();
 	const double ceilingHeight = level.getCeilingHeight();
 
 	const Double3 rayStart = player.getPosition();
@@ -1872,10 +1873,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				// Try inspecting the entity (can be from any distance). If they have a display name,
 				// then show it.
-				const Entity *entity = entityManager.get(entityHit.id);
-				DebugAssert(entity != nullptr);
+				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
+				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition *entityDef = entityManager.getEntityDef(entity->getDefinitionID());
+				const EntityDefinition *entityDef =
+					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
 				DebugAssert(entityDef != nullptr);
 
 				const std::string_view entityName = entityDef->getDisplayName();
