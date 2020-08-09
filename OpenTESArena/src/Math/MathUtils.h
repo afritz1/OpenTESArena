@@ -1,6 +1,8 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#include <vector>
+
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/VoxelUtils.h"
@@ -56,6 +58,10 @@ namespace MathUtils
 	// - Returns the distance between these two points.
 	double distanceBetweenLineSegments(const Double3 &p0, const Double3 &p1,
 		const Double3 &q0, const Double3 &q1, double &s, double &t);
+
+	// Generates a list of points along a Bresenham line. Only signed integers can be
+	// used in a Bresenham's line due to the error calculation.
+	std::vector<Int2> bresenhamLine(const Int2 &p1, const Int2 &p2);
 }
 
 #endif

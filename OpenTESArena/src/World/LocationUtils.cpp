@@ -4,6 +4,7 @@
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "../Assets/MiscAssets.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 
@@ -189,7 +190,7 @@ int LocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGl
 	const auto &cityData = miscAssets.getCityDataFile();
 
 	// Get all the points along the line between the two points.
-	const std::vector<Int2> points = Int2::bresenhamLine(startGlobalPoint, endGlobalPoint);
+	const std::vector<Int2> points = MathUtils::bresenhamLine(startGlobalPoint, endGlobalPoint);
 
 	int totalTime = 0;
 	for (const Int2 &point : points)

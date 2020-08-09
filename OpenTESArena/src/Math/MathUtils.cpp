@@ -242,3 +242,44 @@ double MathUtils::distanceBetweenLineSegments(const Double3 &p0, const Double3 &
 	// The distance between these two points is the shortest distance between the line segments.
 	return (Psc - Qtc).length();
 }
+
+std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
+{
+	const int dx = std::abs(p2.x - p1.x);
+	const int dy = std::abs(p2.y - p1.y);
+	const int dirX = (p1.x < p2.x) ? 1 : -1;
+	const int dirY = (p1.y < p2.y) ? 1 : -1;
+
+	int pointX = p1.x;
+	int pointY = p1.y;
+	int error = ((dx > dy) ? dx : -dy) / 2;
+	const int endX = p2.x;
+	const int endY = p2.y;
+	std::vector<Int2> points;
+
+	while (true)
+	{
+		points.push_back(Int2(pointX, pointY));
+
+		if ((pointX == endX) && (pointY == endY))
+		{
+			break;
+		}
+
+		const int innerError = error;
+
+		if (innerError > -dx)
+		{
+			error -= dy;
+			pointX += dirX;
+		}
+
+		if (innerError < dy)
+		{
+			error += dx;
+			pointY += dirY;
+		}
+	}
+
+	return points;
+}
