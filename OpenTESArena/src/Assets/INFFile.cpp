@@ -119,6 +119,11 @@ INFFile::FlatTextureData::FlatTextureData(const char *filename)
 	std::snprintf(this->filename.data(), this->filename.size(), "%s", filename);
 }
 
+INFFile::FlatTextureData::FlatTextureData()
+{
+	this->filename.fill('\0');
+}
+
 INFFile::CeilingData::CeilingData()
 {
 	this->height = CeilingData::DEFAULT_HEIGHT;
