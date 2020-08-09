@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include "../debug/Debug.h"
-
 // Various string operations and conversions.
 
 namespace String
