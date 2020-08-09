@@ -30,7 +30,7 @@ public:
 
 	// Only signed integers can use negation.
 	template <typename C = T>
-	typename std::enable_if<std::is_signed<C>::value, Vector3i<T>>::type operator-() const
+	typename std::enable_if_t<std::is_signed<C>::value, Vector3i<T>> operator-() const
 	{
 		return Vector3i<T>(-this->x, -this->y, -this->z);
 	}

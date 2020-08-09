@@ -27,7 +27,7 @@ public:
 
 	// Only signed integers can use negation.
 	template <typename C = T>
-	typename std::enable_if<std::is_signed<C>::value, Vector4i<T>>::type operator-() const
+	typename std::enable_if_t<std::is_signed<C>::value, Vector4i<T>> operator-() const
 	{
 		return Vector4i<T>(-this->x, -this->y, -this->z, -this->w);
 	}

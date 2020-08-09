@@ -24,7 +24,7 @@ public:
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line (due to the error calculation).
 	template <typename C = T>
-	static typename std::enable_if<std::is_signed<C>::value, std::vector<Vector2i<T>>>::type
+	static typename std::enable_if_t<std::is_signed<C>::value, std::vector<Vector2i<T>>>
 		bresenhamLine(const Vector2i<T> &p1, const Vector2i<T> &p2)
 	{
 		const T dx = std::abs(p2.x - p1.x);
@@ -74,7 +74,7 @@ public:
 	
 	// Only signed integers can use negation.
 	template <typename C = T>
-	typename std::enable_if<std::is_signed<C>::value, Vector2i<T>>::type operator-() const
+	typename std::enable_if_t<std::is_signed<C>::value, Vector2i<T>> operator-() const
 	{
 		return Vector2i<T>(-this->x, -this->y);
 	}
