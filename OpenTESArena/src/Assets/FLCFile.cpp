@@ -5,6 +5,7 @@
 #include "FLCFile.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
@@ -125,14 +126,14 @@ bool FLCFile::init(const char *filename)
 
 	// Current state of the frame's palette indices. Completely updated by byte runs
 	// and partially updated by delta frames.
-	std::vector<uint8_t> framePixels(this->width * this->height);
+	Buffer2D<uint8_t> framePixels(this->width, this->height);
+	framePixels.fill(0);
 
 	// Start decoding frames. The data starts after the header.
 	uint32_t dataOffset = sizeof(FLICHeader);
 	while ((srcPtr + dataOffset) < srcEnd)
 	{
 		const uint8_t *framePtr = srcPtr + dataOffset;
-
 		const FrameHeader frameHeader(Bytes::getLE32(framePtr),
 			Bytes::getLE16(framePtr + 4), Bytes::getLE16(framePtr + 6));
 
@@ -168,23 +169,23 @@ bool FLCFile::init(const char *filename)
 				else if (chunkHeader.type == ChunkType::FLI_BRUN)
 				{
 					// Full frame chunk.
-					std::unique_ptr<uint8_t[]> frame = this->decodeFullFrame(
+					Buffer2D<uint8_t> frame = this->decodeFullFrame(
 						chunkData, chunkHeader.size, framePixels);
 					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
-					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
+					this->images.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else if (chunkHeader.type == ChunkType::FLI_SS2)
 				{
 					// Delta frame chunk.
-					std::unique_ptr<uint8_t[]> frame = this->decodeDeltaFrame(
+					Buffer2D<uint8_t> frame = this->decodeDeltaFrame(
 						chunkData, chunkHeader.size, framePixels);
 					const int paletteIndex = static_cast<int>(this->palettes.size()) - 1;
-					this->pixels.push_back(std::make_pair(paletteIndex, std::move(frame)));
+					this->images.push_back(std::make_pair(paletteIndex, std::move(frame)));
 				}
 				else
 				{
 					// Ignoring other chunk types for now since they're not needed.
-					/*Debug::mention("FLCFile", "Unrecognized chunk type \"" +
+					/*DebugLog("Unrecognized chunk type \"" +
 						std::to_string(static_cast<int>(chunkHeader.type)) + "\".");*/
 				}
 
@@ -193,7 +194,7 @@ bool FLCFile::init(const char *filename)
 		}
 		else if (frameHeader.type == FrameType::PREFIX_CHUNK)
 		{
-			// CEL prefix chunk, can be skipped.
+			// .CEL prefix chunk, can be skipped.
 		}
 		else
 		{
@@ -207,7 +208,7 @@ bool FLCFile::init(const char *filename)
 
 	// Pop the last frame off, since they all seem to loop around to the beginning
 	// at the end.
-	this->pixels.pop_back();
+	this->images.pop_back();
 	return true;
 }
 
@@ -240,8 +241,8 @@ bool FLCFile::readPalette(const uint8_t *chunkData, Palette *dst)
 	return true;
 }
 
-std::unique_ptr<uint8_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
-	int chunkSize, std::vector<uint8_t> &initialFrame)
+Buffer2D<uint8_t> FLCFile::decodeFullFrame(const uint8_t *chunkData,
+	int chunkSize, Buffer2D<uint8_t> &initialFrame)
 {
 	// Decode a fullscreen image chunk. Most likely the first image in the FLIC.
 	std::vector<uint8_t> decomp(this->width * this->height);
@@ -302,18 +303,17 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeFullFrame(const uint8_t *chunkData,
 	}
 
 	// Write the decoded frame to the initial (scratch) frame.
-	initialFrame = decomp;
-
 	const uint8_t *srcPixels = decomp.data();
-	auto image = std::make_unique<uint8_t[]>(this->width * this->height);
-	uint8_t *dstPixels = image.get();
-	std::copy(srcPixels, srcPixels + decomp.size(), dstPixels);
+	std::copy(srcPixels, srcPixels + decomp.size(), initialFrame.get());
 
-	return std::move(image);
+	// Return a copy of the decoded frame.
+	Buffer2D<uint8_t> image(this->width, this->height);
+	std::copy(srcPixels, srcPixels + decomp.size(), image.get());
+	return image;
 }
 
-std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
-	int chunkSize, std::vector<uint8_t> &initialFrame)
+Buffer2D<uint8_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
+	int chunkSize, Buffer2D<uint8_t> &initialFrame)
 {
 	// Decode a delta frame chunk. The majority of FLIC frames are this format.
 
@@ -333,6 +333,7 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 		int packetCount = 0;
 
 		// Walk through the data until a non-negative packet is found.
+		uint8_t *initialFramePtr = initialFrame.get();
 		while (offset < chunkSize)
 		{
 			const int16_t packet = Bytes::getLE16(chunkData + offset);
@@ -355,7 +356,8 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 					// Bit 15 (the sign bit) is set. Set the last pixel in the row using
 					// the lower byte of the packet.
 					const uint8_t pixel = packet & 0x00FF;
-					initialFrame.at((this->width - 1) + (y * this->width)) = pixel;
+					const int dstIndex = (this->width - 1) + (y * this->width);
+					initialFramePtr[dstIndex] = pixel;
 
 					// Go to the next row.
 					y++;
@@ -392,12 +394,12 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 					const uint8_t color1 = *(chunkData + offset);
 					const uint8_t color2 = *(chunkData + offset + 1);
 
-					initialFrame.at(x + (y * this->width)) = color1;
+					initialFramePtr[x + (y * this->width)] = color1;
 					x++;
 
 					if (x < this->width)
 					{
-						initialFrame.at(x + (y * this->width)) = color2;
+						initialFramePtr[x + (y * this->width)] = color2;
 						x++;
 					}
 
@@ -415,12 +417,12 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 
 				for (int j = 0; (j < positiveCount) && (x < this->width); j++)
 				{
-					initialFrame.at(x + (y * this->width)) = color1;
+					initialFramePtr[x + (y * this->width)] = color1;
 					x++;
 
 					if (x < this->width)
 					{
-						initialFrame.at(x + (y * this->width)) = color2;
+						initialFramePtr[x + (y * this->width)] = color2;
 						x++;
 					}
 				}
@@ -436,17 +438,15 @@ std::unique_ptr<uint8_t[]> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 
 	// Use the modified initial frame as the source instead of a separate
 	// decompressed buffer.
-	const uint8_t *srcPixels = initialFrame.data();
-	auto image = std::make_unique<uint8_t[]>(this->width * this->height);
-	uint8_t *dstPixels = image.get();
-	std::copy(srcPixels, srcPixels + initialFrame.size(), dstPixels);
-
+	const uint8_t *srcPixels = initialFrame.get();
+	Buffer2D<uint8_t> image(this->width, this->height);
+	std::copy(srcPixels, srcPixels + (initialFrame.getWidth() * initialFrame.getHeight()), image.get());
 	return std::move(image);
 }
 
 int FLCFile::getFrameCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return static_cast<int>(this->images.size());
 }
 
 double FLCFile::getFrameDuration() const
@@ -466,8 +466,8 @@ int FLCFile::getHeight() const
 
 const Palette &FLCFile::getFramePalette(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	const int paletteIndex = this->pixels[index].first;
+	DebugAssertIndex(this->images, index);
+	const int paletteIndex = this->images[index].first;
 
 	DebugAssertIndex(this->palettes, paletteIndex);
 	return this->palettes[paletteIndex];
@@ -475,6 +475,7 @@ const Palette &FLCFile::getFramePalette(int index) const
 
 const uint8_t *FLCFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].second.get();
+	DebugAssertIndex(this->images, index);
+	const Buffer2D<uint8_t> &image = this->images[index].second;
+	return image.get();
 }

@@ -8,13 +8,15 @@
 
 #include "../Media/Palette.h"
 
-// An FLC file is a video file. CEL files are nearly identical to FLCs, though with 
+#include "components/utilities/Buffer2D.h"
+
+// An .FLC file is a video file. .CEL files are nearly identical to .FLCs, though with 
 // an extra chunk of header data (which can probably be skipped).
 
-// I'm fairly certain now after looking into it, that the Arena developers used the
-// "Autodesk Animator" program to make these FLC and CEL animations.
+// I'm fairly certain now after looking into it, that the Arena developers used
+// Autodesk Animator to make these .FLC and .CEL animations.
 
-// Some interesting trivia I found in some FLC files:
+// Some interesting trivia I found in some .FLC files:
 // - END02.FLC was initially created on Friday, Oct. 15th, 1993, and last updated
 //   on the Wednesday after that.
 // - KING.FLC was initially created on Tuesday, Oct. 19th, 1993.
@@ -27,8 +29,8 @@
 class FLCFile
 {
 private:
-	// One unique_ptr for each frame. Each integer points into that frame's palette.
-	std::vector<std::pair<int, std::unique_ptr<uint8_t[]>>> pixels;
+	// One buffer for each frame. Each integer points into that frame's palette.
+	std::vector<std::pair<int, Buffer2D<uint8_t>>> images;
 	std::vector<Palette> palettes;
 	double frameDuration;
 	int width;
@@ -39,13 +41,13 @@ private:
 
 	// Decodes a fullscreen FLC chunk by updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint8_t[]> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
-		std::vector<uint8_t> &initialFrame);
+	Buffer2D<uint8_t> decodeFullFrame(const uint8_t *chunkData, int chunkSize,
+		Buffer2D<uint8_t> &initialFrame);
 
 	// Decodes a delta FLC chunk by partially updating the initial frame indices and
 	// returning a complete frame.
-	std::unique_ptr<uint8_t[]> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
-		std::vector<uint8_t> &initialFrame);
+	Buffer2D<uint8_t> decodeDeltaFrame(const uint8_t *chunkData, int chunkSize,
+		Buffer2D<uint8_t> &initialFrame);
 public:
 	bool init(const char *filename);
 
