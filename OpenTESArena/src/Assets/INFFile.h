@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "components/dos/DOSUtils.h"
+
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
 // are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
 // which kinds of triggers, etc..
@@ -17,22 +19,20 @@ class INFFile
 public:
 	struct VoxelTextureData
 	{
-		std::string filename;
+		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
 		std::optional<int> setIndex; // Index into .SET file texture (if any).
 
-		VoxelTextureData(const std::string &filename, int setIndex);
-		VoxelTextureData(const std::string &filename);
-		VoxelTextureData(VoxelTextureData&&) = default;
-		VoxelTextureData() = default;
+		VoxelTextureData(const char *filename, const std::optional<int> &setIndex);
+		VoxelTextureData(const char *filename);
+		VoxelTextureData();
 	};
 
 	struct FlatTextureData
 	{
-		std::string filename;
+		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
 
-		FlatTextureData(const std::string &filename);
-		FlatTextureData(FlatTextureData&&) = default;
-		FlatTextureData() = default;
+		FlatTextureData(const char *filename);
+		FlatTextureData();
 	};
 
 	struct CeilingData
@@ -84,7 +84,7 @@ public:
 
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
-		std::string nextFlat;
+		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> nextFlat;
 		std::optional<int> deathEffect;
 
 		// Used with S:#, where '#' is light intensity (for candles, etc.).
@@ -131,7 +131,7 @@ private:
 	std::vector<FlatData> flats;
 
 	// .VOC files for each sound ID.
-	std::unordered_map<int, std::string> sounds;
+	std::unordered_map<int, std::array<char, DOSUtils::FILENAME_BUFFER_SIZE>> sounds;
 
 	// Key info for *TEXT IDs.
 	std::unordered_map<int, KeyData> keys;
@@ -142,7 +142,7 @@ private:
 	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, TextData> texts;
 
-	std::string name;
+	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> name;
 
 	// References into the textures vector (if any).
 	std::optional<int> dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;
@@ -160,14 +160,14 @@ public:
 	int getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
 	const FlatData *getFlatWithItemIndex(int itemIndex) const;
-	const std::string &getSound(int index) const;
+	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;
 	bool hasTextIndex(int index) const;
 	const KeyData &getKey(int index) const;
 	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
-	const std::string &getName() const;
+	const char *getName() const;
 	const int *getDryChasmIndex() const;
 	const int *getLavaChasmIndex() const;
 	const int *getLevelDownIndex() const;

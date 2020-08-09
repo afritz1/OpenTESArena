@@ -246,3 +246,9 @@ std::string String::toLowercase(const std::string &str)
 
 	return newStr;
 }
+
+bool String::tryCopy(const char *src, char *dst, size_t dstSize)
+{
+	const int status = std::snprintf(dst, dstSize, "%s", src);
+	return (status >= 0) && (status < dstSize);
+}

@@ -8,7 +8,9 @@
 #include <string>
 #include <vector>
 
-// This namespace offers various string operations and conversions.
+#include "../debug/Debug.h"
+
+// Various string operations and conversions.
 
 namespace String
 {
@@ -128,6 +130,10 @@ namespace String
 		ss << std::fixed << std::setprecision(precision) << value;
 		return ss.str();
 	}
+
+	// Attempts to copy the source string to the destination buffer. Returns whether
+	// the entire source string was copied.
+	bool tryCopy(const char *src, char *dst, size_t dstSize);
 }
 
 #endif

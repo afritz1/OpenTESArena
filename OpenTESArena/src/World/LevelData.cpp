@@ -1333,7 +1333,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			DebugAssertIndex(voxelTextures, i);
 			const auto &textureData = voxelTextures[i];
 
-			const std::string textureName = String::toUppercase(textureData.filename);
+			const std::string textureName = String::toUppercase(textureData.filename.data());
 			const std::string_view extension = StringView::getExtension(textureName);
 			const bool isIMG = extension == "IMG";
 			const bool isSET = extension == "SET";

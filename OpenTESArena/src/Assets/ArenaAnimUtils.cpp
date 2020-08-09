@@ -96,12 +96,12 @@ namespace ArenaAnimUtils
 		EntityAnimationInstance::State *outInstState)
 	{
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-		const std::string &flatTextureName = [&inf, &flatData]() -> const std::string&
+		const char *flatTextureName = [&inf, &flatData]()
 		{
 			const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, flatData.textureIndex);
 			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
-			return flatTextureData.filename;
+			return flatTextureData.filename.data();
 		}();
 
 		// Avoid files with no extension. They are lore-based names that are not used in-game.
@@ -114,9 +114,10 @@ namespace ArenaAnimUtils
 		const double dimensionModifier = GetDimensionModifier(flatData);
 
 		TextureManager::IdGroup<ImageID> imageIDs;
-		if (!textureManager.tryGetImageIDs(flatTextureName.c_str(), &imageIDs))
+		if (!textureManager.tryGetImageIDs(flatTextureName, &imageIDs))
 		{
-			DebugLogWarning("Couldn't get static anim image IDs for \"" + flatTextureName + "\".");
+			DebugLogWarning("Couldn't get static anim image IDs for \"" +
+				std::string(flatTextureName) + "\".");
 			return false;
 		}
 
@@ -558,7 +559,8 @@ namespace ArenaAnimUtils
 			const int corpseFlatTextureIndex = corpseFlat->textureIndex;
 			const auto &flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
-			return String::toUppercase(flatTextures[corpseFlatTextureIndex].filename);
+			const INFFile::FlatTextureData &flatTextureData = flatTextures[corpseFlatTextureIndex];
+			return String::toUppercase(flatTextureData.filename.data());
 		}();
 
 		ImageID imageID;
