@@ -15,7 +15,7 @@
 namespace Compression
 {
 	// Uncompresses an RLE run of bytes.
-	void decodeRLE(const uint8_t *src, int stopCount, std::vector<uint8_t> &out);
+	void decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int dstSize);
 
 	// Uncompresses an RLE run of words. Used with .RMD files.
 	void decodeRLEWords(const uint8_t *src, int stopCount, std::vector<uint8_t> &out);

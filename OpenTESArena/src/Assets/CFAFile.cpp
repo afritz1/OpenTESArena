@@ -51,7 +51,8 @@ bool CFAFile::init(const char *filename)
 		sizeof(uint32_t) + (widthUncompressed * 16));
 
 	// Decompress the RLE data of the CFA images (they're all packed together).
-	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount, decomp);
+	Compression::decodeRLE(srcPtr + headerSize, widthCompressed * height * frameCount,
+		decomp.data(), static_cast<int>(decomp.size()));
 
 	// Buffers for frame palette indices.
 	this->images.init(frameCount);

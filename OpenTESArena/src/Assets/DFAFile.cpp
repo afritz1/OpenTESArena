@@ -28,16 +28,20 @@ bool DFAFile::init(const char *filename)
 	const uint16_t compressedLength = Bytes::getLE16(srcPtr + 10); // First frame.
 
 	// Frame data with palette indices.
-	std::vector<std::vector<uint8_t>> frames;
+	this->images.init(imageCount);
 
 	// Uncompress the initial frame.
-	frames.push_back(std::vector<uint8_t>(width * height));
-	Compression::decodeRLE(srcPtr + 12, width * height, frames.front());
+	Buffer2D<uint8_t> &firstImage = this->images.get(0);
+	firstImage.init(width, height);
+	Compression::decodeRLE(srcPtr + 12, width * height, firstImage.get(),
+		firstImage.getWidth() * firstImage.getHeight());
 
 	// Make copies of the original frame for each update chunk.
 	for (int i = 1; i < imageCount; i++)
 	{
-		frames.push_back(frames.front());
+		Buffer2D<uint8_t> &image = this->images.get(i);
+		image.init(firstImage.getWidth(), firstImage.getHeight());
+		std::copy(firstImage.get(), firstImage.end(), image.get());
 	}
 
 	// Offset to the beginning of the chunk data; advances as the chunk data is read.
@@ -48,7 +52,7 @@ bool DFAFile::init(const char *filename)
 	for (uint32_t frameIndex = 1; frameIndex < imageCount; frameIndex++)
 	{
 		// Select the frame buffer at the current frame index.
-		std::vector<uint8_t> &frame = frames.at(frameIndex);
+		Buffer2D<uint8_t> &image = this->images.get(frameIndex);
 
 		// Pointer to the beginning of the chunk data. Each update chunk
 		// changes a group of pixels in a copy of the original image.
@@ -68,9 +72,11 @@ bool DFAFile::init(const char *filename)
 			// Move the offset past the update header.
 			offset += 4;
 
+			uint8_t *imagePtr = image.get();
 			for (uint32_t i = 0; i < updateCount; i++)
 			{
-				frame.at(updateOffset + i) = *(srcPtr + offset);
+				const int dstIndex = updateOffset + i;
+				imagePtr[dstIndex] = *(srcPtr + offset);
 				offset++;
 			}
 		}
@@ -78,21 +84,12 @@ bool DFAFile::init(const char *filename)
 
 	this->width = width;
 	this->height = height;
-
-	// Store each 8-bit image.
-	for (const auto &frame : frames)
-	{
-		this->pixels.push_back(std::make_unique<uint8_t[]>(this->width * this->height));
-		uint8_t *dstPixels = this->pixels.back().get();
-		std::copy(frame.begin(), frame.end(), dstPixels);
-	}
-
 	return true;
 }
 
 int DFAFile::getImageCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return this->images.getCount();
 }
 
 int DFAFile::getWidth() const
@@ -107,6 +104,7 @@ int DFAFile::getHeight() const
 
 const uint8_t *DFAFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].get();
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->images.getCount());
+	return this->images.get(index).get();
 }

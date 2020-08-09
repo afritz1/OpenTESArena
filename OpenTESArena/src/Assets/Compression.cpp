@@ -1,9 +1,9 @@
 #include "Compression.h"
 
+#include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 
-void Compression::decodeRLE(const uint8_t *src, int stopCount,
-	std::vector<uint8_t> &out)
+void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int dstSize)
 {
 	// Adapted from WinArena.
 	int i = 0;
@@ -22,9 +22,11 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount,
 
 			const uint32_t count = static_cast<uint32_t>(sample) - 0x7F;
 
+			DebugAssert(o >= 0);
+			DebugAssert((o + count) <= dstSize);
 			for (uint32_t j = 0; j < count; j++)
 			{
-				out.at(o) = value;
+				dst[o] = value;
 				o++;
 			}
 		}
@@ -32,9 +34,11 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount,
 		{
 			const uint32_t count = static_cast<uint32_t>(sample) + 1;
 
+			DebugAssert(o >= 0);
+			DebugAssert((o + count) <= dstSize);
 			for (uint32_t j = 0; j < count; j++)
 			{
-				out.at(o) = src[i];
+				dst[o] = src[i];
 				o++;
 				i++;
 			}

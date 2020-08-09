@@ -2,16 +2,17 @@
 #define DFA_FILE_H
 
 #include <cstdint>
-#include <memory>
-#include <vector>
 
-// A DFA file contains images for entities that animate but don't move in the world, 
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Buffer2D.h"
+
+// A .DFA file contains images for entities that animate but don't move in the world, 
 // like shopkeepers, tavern folk, lamps, fountains, staff pieces, and torches.
 
 class DFAFile
 {
 private:
-	std::vector<std::unique_ptr<uint8_t[]>> pixels;
+	Buffer<Buffer2D<uint8_t>> images;
 	int width, height;
 public:
 	bool init(const char *filename);

@@ -85,7 +85,8 @@ bool CIFFile::init(const char *filename)
 			len = Bytes::getLE16(header + 10);
 
 			std::vector<uint8_t> decomp(width * height);
-			Compression::decodeRLE(header + 12, width * height, decomp);
+			Compression::decodeRLE(header + 12, width * height, decomp.data(),
+				static_cast<int>(decomp.size()));
 
 			this->images.push_back(Buffer2D<uint8_t>(width, height));
 			this->offsets.push_back(Int2(xOffset, yOffset));
