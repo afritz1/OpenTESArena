@@ -7,8 +7,6 @@
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
-const int SETFile::CHUNK_WIDTH = 64;
-const int SETFile::CHUNK_HEIGHT = 64;
 const int SETFile::CHUNK_SIZE = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
 
 bool SETFile::init(const char *filename)
@@ -36,15 +34,14 @@ bool SETFile::init(const char *filename)
 
 	// Number of uncompressed chunks packed in the .SET.
 	const int chunkCount = static_cast<int>(srcData.size()) / SETFile::CHUNK_SIZE;
-
-	// Create an image for each uncompressed chunk.
-	for (int i = 0; i < chunkCount; i++)
+	this->images.init(chunkCount);
+	for (int i = 0; i < this->images.getCount(); i++)
 	{
-		this->pixels.push_back(std::make_unique<uint8_t[]>(SETFile::CHUNK_SIZE));
+		Buffer2D<uint8_t> &image = this->images.get(i);
+		image.init(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT);
 
 		const uint8_t *srcPixels = srcData.data() + (SETFile::CHUNK_SIZE * i);
-		uint8_t *dstPixels = this->pixels.back().get();
-		std::copy(srcPixels, srcPixels + SETFile::CHUNK_SIZE, dstPixels);
+		std::copy(srcPixels, srcPixels + SETFile::CHUNK_SIZE, image.get());
 	}
 
 	return true;
@@ -52,11 +49,12 @@ bool SETFile::init(const char *filename)
 
 int SETFile::getImageCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return this->images.getCount();
 }
 
 const uint8_t *SETFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].get();
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->images.getCount());
+	return this->images.get(index).get();
 }
