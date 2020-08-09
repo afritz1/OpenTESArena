@@ -6,8 +6,6 @@
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
-const int RCIFile::WIDTH = 320;
-const int RCIFile::HEIGHT = 100;
 const int RCIFile::FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
 
 bool RCIFile::init(const char *filename)
@@ -23,15 +21,14 @@ bool RCIFile::init(const char *filename)
 
 	// Number of uncompressed frames packed in the .RCI.
 	const int frameCount = src.getCount() / RCIFile::FRAME_SIZE;
-
-	// Create an image for each uncompressed frame using the given palette.
-	for (int i = 0; i < frameCount; i++)
+	this->images.init(frameCount);
+	for (int i = 0; i < this->images.getCount(); i++)
 	{
-		this->pixels.push_back(std::make_unique<uint8_t[]>(RCIFile::FRAME_SIZE));
+		Buffer2D<uint8_t> &image = this->images.get(i);
+		image.init(RCIFile::WIDTH, RCIFile::HEIGHT);
 
 		const uint8_t *srcPixels = srcPtr + (RCIFile::FRAME_SIZE * i);
-		uint8_t *dstPixels = this->pixels.back().get();
-		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, dstPixels);
+		std::copy(srcPixels, srcPixels + RCIFile::FRAME_SIZE, image.get());
 	}
 
 	return true;
@@ -39,11 +36,12 @@ bool RCIFile::init(const char *filename)
 
 int RCIFile::getImageCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return this->images.getCount();
 }
 
 const uint8_t *RCIFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].get();
+	DebugAssert(index >= 0);
+	DebugAssert(index < this->images.getCount());
+	return this->images.get(index).get();
 }

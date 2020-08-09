@@ -2,8 +2,9 @@
 #define RCI_FILE_H
 
 #include <cstdint>
-#include <memory>
-#include <vector>
+
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Buffer2D.h"
 
 // An RCI file is for screen-space animations like water and lava. It is packed 
 // with five uncompressed 320x100 images.
@@ -11,17 +12,15 @@
 class RCIFile
 {
 private:
-	// One unique_ptr for each frame.
-	std::vector<std::unique_ptr<uint8_t[]>> pixels;
+	Buffer<Buffer2D<uint8_t>> images;
 
 	// Number of bytes in a 320x100 frame (should be 32000).
 	static const int FRAME_SIZE;
 public:
 	bool init(const char *filename);
 
-	// All individual frames are 320x100.
-	static const int WIDTH;
-	static const int HEIGHT;
+	static constexpr int WIDTH = 320;
+	static constexpr int HEIGHT = 100;
 
 	// Gets the number of frames (should be 5).
 	int getImageCount() const;
