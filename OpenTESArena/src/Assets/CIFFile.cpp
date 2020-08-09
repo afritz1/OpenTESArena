@@ -40,17 +40,17 @@ bool CIFFile::init(const char *filename)
 	const uint8_t *srcEnd = reinterpret_cast<const uint8_t*>(src.end());
 
 	// X and Y offset might be useful for weapon positions on the screen.
-	uint16_t xoff, yoff, width, height, flags, len;
+	uint16_t xOffset, yOffset, width, height, flags, len;
 
 	// Read header data if it is not a raw file.
-	const auto rawOverride = RawCifOverride.find(filename);
-	const bool isRaw = rawOverride != RawCifOverride.end();
+	const auto rawOverrideIter = RawCifOverride.find(filename);
+	const bool isRaw = rawOverrideIter != RawCifOverride.end();
 	if (isRaw)
 	{
-		xoff = 0;
-		yoff = 0;
+		xOffset = 0;
+		yOffset = 0;
 
-		const Int2 &dims = rawOverride->second.second;
+		const Int2 &dims = rawOverrideIter->second.second;
 		width = dims.x;
 		height = dims.y;
 
@@ -59,26 +59,26 @@ bool CIFFile::init(const char *filename)
 	}
 	else
 	{
-		xoff = Bytes::getLE16(srcPtr);
-		yoff = Bytes::getLE16(srcPtr + 2);
+		xOffset = Bytes::getLE16(srcPtr);
+		yOffset = Bytes::getLE16(srcPtr + 2);
 		width = Bytes::getLE16(srcPtr + 4);
 		height = Bytes::getLE16(srcPtr + 6);
 		flags = Bytes::getLE16(srcPtr + 8);
 		len = Bytes::getLE16(srcPtr + 10);
 	}
 
-	const int headerSize = 12;
+	constexpr int headerSize = 12;
 
 	if ((flags & 0x00FF) == 0x0002)
 	{
-		// Type 2 CIF.
+		// Type 2 .CIF.
 		int offset = 0;
 
 		while ((srcPtr + offset) < srcEnd)
 		{
 			const uint8_t *header = srcPtr + offset;
-			xoff = Bytes::getLE16(header);
-			yoff = Bytes::getLE16(header + 2);
+			xOffset = Bytes::getLE16(header);
+			yOffset = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
 			height = Bytes::getLE16(header + 6);
 			flags = Bytes::getLE16(header + 8);
@@ -87,12 +87,11 @@ bool CIFFile::init(const char *filename)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeRLE(header + 12, width * height, decomp);
 
-			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->offsets.push_back(Int2(xoff, yoff));
-			this->dimensions.push_back(Int2(width, height));
+			this->images.push_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->pixels.back().get();
+			uint8_t *dstPixels = this->images.back().get();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			offset += headerSize + len;
@@ -100,14 +99,14 @@ bool CIFFile::init(const char *filename)
 	}
 	else if ((flags & 0x00FF) == 0x0004)
 	{
-		// Type 4 CIF.
+		// Type 4 .CIF.
 		int offset = 0;
 
 		while ((srcPtr + offset) < srcEnd)
 		{
 			const uint8_t *header = srcPtr + offset;
-			xoff = Bytes::getLE16(header);
-			yoff = Bytes::getLE16(header + 2);
+			xOffset = Bytes::getLE16(header);
+			yOffset = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
 			height = Bytes::getLE16(header + 6);
 			flags = Bytes::getLE16(header + 8);
@@ -116,12 +115,11 @@ bool CIFFile::init(const char *filename)
 			std::vector<uint8_t> decomp(width * height);
 			Compression::decodeType04(header + 12, header + 12 + len, decomp);
 
-			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->offsets.push_back(Int2(xoff, yoff));
-			this->dimensions.push_back(Int2(width, height));
+			this->images.push_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->pixels.back().get();
+			uint8_t *dstPixels = this->images.back().get();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			offset += headerSize + len;
@@ -129,14 +127,14 @@ bool CIFFile::init(const char *filename)
 	}
 	else if ((flags & 0x00FF) == 0x0008)
 	{
-		// Type 8 CIF.
+		// Type 8 .CIF.
 		int offset = 0;
 
 		while ((srcPtr + offset) < srcEnd)
 		{
 			const uint8_t *header = srcPtr + offset;
-			xoff = Bytes::getLE16(header);
-			yoff = Bytes::getLE16(header + 2);
+			xOffset = Bytes::getLE16(header);
+			yOffset = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
 			height = Bytes::getLE16(header + 6);
 			flags = Bytes::getLE16(header + 8);
@@ -148,12 +146,11 @@ bool CIFFile::init(const char *filename)
 			// (should be equivalent to width * height).
 			Compression::decodeType08(header + 12 + 2, header + 12 + len, decomp);
 
-			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->offsets.push_back(Int2(xoff, yoff));
-			this->dimensions.push_back(Int2(width, height));
+			this->images.push_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = decomp.data();
-			uint8_t *dstPixels = this->pixels.back().get();
+			uint8_t *dstPixels = this->images.back().get();
 			std::copy(srcPixels, srcPixels + (width * height), dstPixels);
 
 			// Skip to the next image header.
@@ -162,42 +159,40 @@ bool CIFFile::init(const char *filename)
 	}
 	else if (isRaw)
 	{
-		// Uncompressed raw CIF.
-		const int imageCount = rawOverride->second.first;
+		// Uncompressed raw .CIF.
+		const int imageCount = rawOverrideIter->second.first;
 
 		for (int i = 0; i < imageCount; i++)
 		{
-			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->offsets.push_back(Int2(xoff, yoff));
-			this->dimensions.push_back(Int2(width, height));
+			this->images.push_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = srcPtr + (i * len);
-			uint8_t *dstPixels = this->pixels.back().get();
+			uint8_t *dstPixels = this->images.back().get();
 			std::copy(srcPixels, srcPixels + len, dstPixels);
 		}
 	}
 	else if ((flags & 0x00FF) == 0)
 	{
-		// Uncompressed CIF with headers.
+		// Uncompressed .CIF with headers.
 		int offset = 0;
 
 		// Read uncompressed images until the end of the file.
 		while ((srcPtr + offset) < srcEnd)
 		{
 			const uint8_t *header = srcPtr + offset;
-			xoff = Bytes::getLE16(header);
-			yoff = Bytes::getLE16(header + 2);
+			xOffset = Bytes::getLE16(header);
+			yOffset = Bytes::getLE16(header + 2);
 			width = Bytes::getLE16(header + 4);
 			height = Bytes::getLE16(header + 6);
 			flags = Bytes::getLE16(header + 8);
 			len = Bytes::getLE16(header + 10);
 
-			this->pixels.push_back(std::make_unique<uint8_t[]>(width * height));
-			this->offsets.push_back(Int2(xoff, yoff));
-			this->dimensions.push_back(Int2(width, height));
+			this->images.push_back(Buffer2D<uint8_t>(width, height));
+			this->offsets.push_back(Int2(xOffset, yOffset));
 
 			const uint8_t *srcPixels = header + headerSize;
-			uint8_t *dstPixels = this->pixels.back().get();
+			uint8_t *dstPixels = this->images.back().get();
 			std::copy(srcPixels, srcPixels + len, dstPixels);
 
 			// Skip to the next image header.
@@ -215,7 +210,7 @@ bool CIFFile::init(const char *filename)
 
 int CIFFile::getImageCount() const
 {
-	return static_cast<int>(this->pixels.size());
+	return static_cast<int>(this->images.size());
 }
 
 int CIFFile::getXOffset(int index) const
@@ -232,18 +227,18 @@ int CIFFile::getYOffset(int index) const
 
 int CIFFile::getWidth(int index) const
 {
-	DebugAssertIndex(this->dimensions, index);
-	return this->dimensions[index].x;
+	DebugAssertIndex(this->images, index);
+	return this->images[index].getWidth();
 }
 
 int CIFFile::getHeight(int index) const
 {
-	DebugAssertIndex(this->dimensions, index);
-	return this->dimensions[index].y;
+	DebugAssertIndex(this->images, index);
+	return this->images[index].getHeight();
 }
 
 const uint8_t *CIFFile::getPixels(int index) const
 {
-	DebugAssertIndex(this->pixels, index);
-	return this->pixels[index].get();
+	DebugAssertIndex(this->images, index);
+	return this->images[index].get();
 }
