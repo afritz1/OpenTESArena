@@ -18,6 +18,9 @@ namespace String
 	static constexpr char TAB = '\t';
 	static constexpr char FILE_EXTENSION_SEPARATOR = '.';
 
+	// Returns whether the given C string is null or the empty string.
+	bool isNullOrEmpty(const char *str);
+
 	// Performs a case-insensitive ASCII string comparison.
 	bool caseInsensitiveEquals(const std::string &a, const std::string &b);
 

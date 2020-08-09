@@ -4,6 +4,7 @@
 #include "EntityAnimationDefinition.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 
 EntityAnimationDefinition::Keyframe::Keyframe(double width, double height)
@@ -67,7 +68,7 @@ EntityAnimationDefinition::State::State()
 
 void EntityAnimationDefinition::State::init(const char *name, double totalSeconds, bool loop)
 {
-	DebugAssertMsg((name != nullptr) && (std::strlen(name) > 0), "State must have a name.");
+	DebugAssertMsg(!String::isNullOrEmpty(name), "State must have a name.");
 	std::snprintf(this->name.data(), this->name.size(), "%s", name);
 
 	this->totalSeconds = totalSeconds;
@@ -123,7 +124,7 @@ const EntityAnimationDefinition::State &EntityAnimationDefinition::getState(int 
 
 bool EntityAnimationDefinition::tryGetStateIndex(const char *name, int *outIndex) const
 {
-	if ((name == nullptr) || (std::strlen(name) == 0))
+	if (String::isNullOrEmpty(name))
 	{
 		return false;
 	}

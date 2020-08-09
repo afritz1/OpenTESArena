@@ -1,6 +1,12 @@
 #include <cctype>
+#include <cstring>
 
 #include "String.h"
+
+bool String::isNullOrEmpty(const char *str)
+{
+	return (str == nullptr) || (std::strlen(str) == 0);
+}
 
 bool String::caseInsensitiveEquals(const std::string &a, const std::string &b)
 {
