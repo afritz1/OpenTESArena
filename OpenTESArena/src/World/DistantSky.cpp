@@ -509,9 +509,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 					DebugCrash("Couldn't get image IDs for \"" + filename + "\".");
 				}
 
-				DebugAssert(phaseIndex >= 0);
-				DebugAssert(phaseIndex < imageIDs.count);
-				const ImageID imageID = imageIDs.startID + phaseIndex;
+				const ImageID imageID = imageIDs.getID(phaseIndex);
 				TextureEntry textureEntry(std::move(filename), imageID);
 				this->textures.push_back(std::move(textureEntry));
 				entryIndex = static_cast<int>(this->textures.size()) - 1;
@@ -795,7 +793,7 @@ int DistantSky::getTextureSetCount(int index) const
 {
 	DebugAssertIndex(this->textureSets, index);
 	const TextureSetEntry entry = this->textureSets[index];
-	return entry.imageIDs.count;
+	return entry.imageIDs.getCount();
 }
 
 ImageID DistantSky::getTextureSetImageID(int index, int elementIndex) const
@@ -803,7 +801,7 @@ ImageID DistantSky::getTextureSetImageID(int index, int elementIndex) const
 	DebugAssertIndex(this->textureSets, index);
 	const TextureSetEntry &entry = this->textureSets[index];
 	const TextureManager::IdGroup<ImageID> &imageIDs = entry.imageIDs;
-	const ImageID imageID = imageIDs.startID + elementIndex;
+	const ImageID imageID = imageIDs.getID(elementIndex);
 	return imageID;
 }
 

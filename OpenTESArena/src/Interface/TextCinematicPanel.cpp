@@ -141,7 +141,7 @@ void TextCinematicPanel::tick(double dt)
 		const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
 			this->sequenceName, PaletteFile::fromName(PaletteName::BuiltIn));
 
-		if (this->imageIndex == textureIDs.count)
+		if (this->imageIndex == textureIDs.getCount())
 		{
 			this->imageIndex = 0;
 		}
@@ -156,7 +156,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 	// Get texture IDs in advance of any texture references.
 	const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
 		this->sequenceName, PaletteFile::fromName(PaletteName::BuiltIn));
-	const TextureID textureID = textureIDs.startID + this->imageIndex;
+	const TextureID textureID = textureIDs.getID(this->imageIndex);
 
 	// Draw current frame in animation.
 	const auto &textureManager = this->getGame().getTextureManager();

@@ -515,7 +515,7 @@ bool TextureManager::tryGetPaletteID(const char *filename, PaletteID *outID)
 	IdGroup<PaletteID> ids;
 	if (this->tryGetPaletteIDs(filename, &ids))
 	{
-		*outID = ids.startID;
+		*outID = ids.getID(0);
 		return true;
 	}
 	else
@@ -529,7 +529,7 @@ bool TextureManager::tryGetImageID(const char *filename, const PaletteID *palett
 	IdGroup<ImageID> ids;
 	if (this->tryGetImageIDs(filename, paletteID, &ids))
 	{
-		*outID = ids.startID;
+		*outID = ids.getID(0);
 		return true;
 	}
 	else
@@ -549,7 +549,7 @@ bool TextureManager::tryGetSurfaceID(const char *filename, PaletteID paletteID, 
 	IdGroup<SurfaceID> ids;
 	if (this->tryGetSurfaceIDs(filename, paletteID, &ids))
 	{
-		*outID = ids.startID;
+		*outID = ids.getID(0);
 		return true;
 	}
 	else
@@ -564,7 +564,7 @@ bool TextureManager::tryGetTextureID(const char *filename, PaletteID paletteID,
 	IdGroup<TextureID> ids;
 	if (this->tryGetTextureIDs(filename, paletteID, renderer, &ids))
 	{
-		*outID = ids.startID;
+		*outID = ids.getID(0);
 		return true;
 	}
 	else

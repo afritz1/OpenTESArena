@@ -76,19 +76,19 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		}
 
 		// Four corner tiles.
-		SDL_Surface *topLeft = textureManager.getSurfaceHandle(tileIDs.startID).get();
-		SDL_Surface *topRight = textureManager.getSurfaceHandle(tileIDs.startID + 2).get();
-		SDL_Surface *bottomLeft = textureManager.getSurfaceHandle(tileIDs.startID + 6).get();
-		SDL_Surface *bottomRight = textureManager.getSurfaceHandle(tileIDs.startID + 8).get();
+		SDL_Surface *topLeft = textureManager.getSurfaceHandle(tileIDs.getID(0)).get();
+		SDL_Surface *topRight = textureManager.getSurfaceHandle(tileIDs.getID(2)).get();
+		SDL_Surface *bottomLeft = textureManager.getSurfaceHandle(tileIDs.getID(6)).get();
+		SDL_Surface *bottomRight = textureManager.getSurfaceHandle(tileIDs.getID(8)).get();
 
 		// Four side tiles.
-		SDL_Surface *top = textureManager.getSurfaceHandle(tileIDs.startID + 1).get();
-		SDL_Surface *left = textureManager.getSurfaceHandle(tileIDs.startID + 3).get();
-		SDL_Surface *right = textureManager.getSurfaceHandle(tileIDs.startID + 5).get();
-		SDL_Surface *bottom = textureManager.getSurfaceHandle(tileIDs.startID + 7).get();
+		SDL_Surface *top = textureManager.getSurfaceHandle(tileIDs.getID(1)).get();
+		SDL_Surface *left = textureManager.getSurfaceHandle(tileIDs.getID(3)).get();
+		SDL_Surface *right = textureManager.getSurfaceHandle(tileIDs.getID(5)).get();
+		SDL_Surface *bottom = textureManager.getSurfaceHandle(tileIDs.getID(7)).get();
 
 		// One body tile.
-		SDL_Surface *body = textureManager.getSurfaceHandle(tileIDs.startID + 4).get();
+		SDL_Surface *body = textureManager.getSurfaceHandle(tileIDs.getID(4)).get();
 
 		// Draw body tiles.
 		for (int y = topLeft->h; y < (surface.getHeight() - topRight->h); y += body->h)

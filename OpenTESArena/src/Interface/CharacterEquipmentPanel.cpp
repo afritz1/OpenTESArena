@@ -286,7 +286,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	{
 		const TextureManager::IdGroup<TextureID> headTextureIDs =
 			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
-		return headTextureIDs.startID + player.getPortraitID();
+		return headTextureIDs.getID(player.getPortraitID());
 	}();
 
 	const TextureID bodyTextureID = this->getTextureID(

@@ -33,11 +33,12 @@ public:
 	template <typename T>
 	struct IdGroup
 	{
+	private:
 		static_assert(std::is_integral_v<T>);
 
 		T startID;
 		int count;
-
+	public:
 		IdGroup(T startID, int count)
 		{
 			this->startID = startID;
@@ -45,6 +46,18 @@ public:
 		}
 
 		IdGroup() = default;
+
+		int getCount() const
+		{
+			return this->count;
+		}
+
+		T getID(int index) const
+		{
+			DebugAssert(index >= 0);
+			DebugAssert(index < count);
+			return this->startID + index;
+		}
 	};
 private:
 	// Mappings of texture filenames to their ID(s). 32-bit texture functions need to accept a

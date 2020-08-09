@@ -729,7 +729,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	{
 		const TextureManager::IdGroup<TextureID> headTextureIDs =
 			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
-		const TextureID headTextureID = headTextureIDs.startID + portraitIndex;
+		const TextureID headTextureID = headTextureIDs.getID(portraitIndex);
 		return textureManager.getTextureRef(headTextureID);
 	}();
 

@@ -407,7 +407,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	{
 		const TextureManager::IdGroup<TextureID> portraitTextureIDs = this->getTextureIDs(
 			headsFilename, PaletteFile::fromName(PaletteName::Default));
-		const TextureID portraitTextureID = portraitTextureIDs.startID + player.getPortraitID();
+		const TextureID portraitTextureID = portraitTextureIDs.getID(player.getPortraitID());
 		return textureManager.getTextureRef(portraitTextureID);
 	}();
 
@@ -416,7 +416,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		const TextureManager::IdGroup<TextureID> statusTextureIDs = this->getTextureIDs(
 			TextureFile::fromName(TextureName::StatusGradients),
 			PaletteFile::fromName(PaletteName::Default));
-		const TextureID statusTextureID = statusTextureIDs.startID;
+		const TextureID statusTextureID = statusTextureIDs.getID(0);
 		return textureManager.getTextureRef(statusTextureID);
 	}();
 

@@ -547,7 +547,7 @@ void FastTravelSubPanel::tick(double dt)
 		this->currentSeconds -= FastTravelSubPanel::FRAME_TIME;
 		this->frameIndex++;
 
-		if (this->frameIndex == this->getAnimationTextureIDs().count)
+		if (this->frameIndex == this->getAnimationTextureIDs().getCount())
 		{
 			this->frameIndex = 0;
 		}
@@ -566,8 +566,7 @@ void FastTravelSubPanel::render(Renderer &renderer)
 	// Draw horse animation.
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureManager::IdGroup<TextureID> animationTextureIDs = this->getAnimationTextureIDs();
-	const TextureID animationTextureID =
-		animationTextureIDs.startID + static_cast<int>(this->frameIndex);
+	const TextureID animationTextureID = animationTextureIDs.getID(static_cast<int>(this->frameIndex));
 	const TextureRef animFrame = textureManager.getTextureRef(animationTextureID);
 
 	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);

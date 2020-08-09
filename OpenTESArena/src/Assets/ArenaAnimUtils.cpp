@@ -126,9 +126,9 @@ namespace ArenaAnimUtils
 		constexpr bool flipped = false; // Static anims cannot be flipped.
 		defKeyframeList.init(flipped);
 
-		for (int i = 0; i < imageIDs.count; i++)
+		for (int i = 0; i < imageIDs.getCount(); i++)
 		{
-			const ImageID imageID = imageIDs.startID + i;
+			const ImageID imageID = imageIDs.getID(i);
 			const Image &image = textureManager.getImageHandle(imageID);
 			const double width = MakeStaticKeyframeDimension(image.getWidth(), dimensionModifier);
 			const double height = MakeStaticKeyframeDimension(image.getHeight(), dimensionModifier);
@@ -197,9 +197,9 @@ namespace ArenaAnimUtils
 			{
 				// Certain creatures don't have anim frames for a look animation, so just use
 				// frame 0 as a fallback.
-				const int correctedFrameIndex = frameIndex < imageIDs.count ? frameIndex : 0;
+				const int correctedFrameIndex = frameIndex < imageIDs.getCount() ? frameIndex : 0;
 
-				const ImageID imageID = imageIDs.startID + correctedFrameIndex;
+				const ImageID imageID = imageIDs.getID(correctedFrameIndex);
 				const Image &image = textureManager.getImageHandle(imageID);
 
 				double width, height;
@@ -310,7 +310,7 @@ namespace ArenaAnimUtils
 
 			for (const int frameIndex : animIndices)
 			{
-				const ImageID imageID = imageIDs.startID + frameIndex;
+				const ImageID imageID = imageIDs.getID(frameIndex);
 				const Image &image = textureManager.getImageHandle(imageID);
 
 				double width, height;
@@ -388,7 +388,7 @@ namespace ArenaAnimUtils
 
 		for (const int frameIndex : CreatureAttackIndices)
 		{
-			const ImageID imageID = imageIDs.startID + frameIndex;
+			const ImageID imageID = imageIDs.getID(frameIndex);
 			const Image &image = textureManager.getImageHandle(imageID);
 
 			double width, height;
@@ -468,9 +468,9 @@ namespace ArenaAnimUtils
 		defKeyframeList.init(animIsFlipped);
 
 		// No need for extra anim indices list, just use sequential image IDs.
-		for (int i = 0; i < imageIDs.count; i++)
+		for (int i = 0; i < imageIDs.getCount(); i++)
 		{
-			const ImageID imageID = imageIDs.startID + i;
+			const ImageID imageID = imageIDs.getID(i);
 			const Image &image = textureManager.getImageHandle(imageID);
 
 			double width, height;
@@ -523,9 +523,9 @@ namespace ArenaAnimUtils
 		defKeyframeList.init(animIsFlipped);
 
 		// No need for extra anim indices list, just use sequential image IDs.
-		for (int i = 0; i < imageIDs.count; i++)
+		for (int i = 0; i < imageIDs.getCount(); i++)
 		{
-			const ImageID imageID = imageIDs.startID + i;
+			const ImageID imageID = imageIDs.getID(i);
 			const Image &image = textureManager.getImageHandle(imageID);
 
 			double width, height;
@@ -630,7 +630,7 @@ namespace ArenaAnimUtils
 
 			for (const int frameIndex : animIndices)
 			{
-				const ImageID imageID = imageIDs.startID + frameIndex;
+				const ImageID imageID = imageIDs.getID(frameIndex);
 				const Image &image = textureManager.getImageHandle(imageID);
 				const double width = MakeDefaultKeyframeDimension(image.getWidth());
 				const double height = MakeDefaultKeyframeDimension(image.getHeight());

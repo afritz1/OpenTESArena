@@ -720,7 +720,7 @@ Panel::CursorData GameWorldPanel::getCurrentCursor() const
 					DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
 				}
 
-				const TextureID textureID = textureIDs.startID + i;
+				const TextureID textureID = textureIDs.getID(i);
 				const Texture &texture = textureManager.getTextureHandle(textureID);
 				return CursorData(&texture, ArrowCursorAlignments.at(i));
 			}
@@ -766,7 +766,7 @@ TextureID GameWorldPanel::getPlayerPortraitTextureID(
 {
 	const TextureManager::IdGroup<TextureID> textureIDs =
 		this->getTextureIDs(portraitsFilename, PaletteFile::fromName(PaletteName::Default));
-	const TextureID textureID = textureIDs.startID + portraitID;
+	const TextureID textureID = textureIDs.getID(portraitID);
 	return textureID;
 }
 
@@ -774,7 +774,7 @@ TextureID GameWorldPanel::getStatusGradientTextureID(int gradientID) const
 {
 	const TextureManager::IdGroup<TextureID> textureIDs =
 		this->getTextureIDs(TextureName::StatusGradients, PaletteName::Default);
-	const TextureID textureID = textureIDs.startID + gradientID;
+	const TextureID textureID = textureIDs.getID(gradientID);
 	return textureID;
 }
 
@@ -787,7 +787,7 @@ TextureID GameWorldPanel::getWeaponTextureID(const std::string &weaponFilename, 
 {
 	const TextureManager::IdGroup<TextureID> textureIDs =
 		this->getTextureIDs(weaponFilename, PaletteFile::fromName(PaletteName::Default));
-	const TextureID textureID = textureIDs.startID + index;
+	const TextureID textureID = textureIDs.getID(index);
 	return textureID;
 }
 

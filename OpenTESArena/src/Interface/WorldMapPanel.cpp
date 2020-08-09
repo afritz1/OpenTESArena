@@ -135,7 +135,7 @@ void WorldMapPanel::render(Renderer &renderer)
 		const TextureManager::IdGroup<TextureID> provinceTextTextureIDs = this->getTextureIDs(
 			TextureFile::fromName(TextureName::ProvinceNames),
 			TextureFile::fromName(TextureName::WorldMap));
-		return provinceTextTextureIDs.startID + provinceID;
+		return provinceTextTextureIDs.getID(provinceID);
 	}();
 
 	const TextureID mapBackgroundTextureID = this->getTextureID(

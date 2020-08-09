@@ -688,7 +688,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 			{
 				const TextureManager::IdGroup<TextureID> staffDungeonIconTextureIDs = this->getTextureIDs(
 					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename);
-				const TextureID staffDungeonIconTextureID = staffDungeonIconTextureIDs.startID + this->provinceID;
+				const TextureID staffDungeonIconTextureID = staffDungeonIconTextureIDs.getID(this->provinceID);
 				return staffDungeonIconTextureID;
 			}
 			else
@@ -761,9 +761,7 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 			}
 		}();
 
-		DebugAssert(highlightIndex >= 0);
-		DebugAssert(highlightIndex < highlightTextureIDs.count);
-		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+		const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
 		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
 		drawHighlight(highlightTexture.get());
 	};
@@ -771,9 +769,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 	auto handleDungeonHighlight = [this, &textureManager, &drawHighlight, &highlightTextureIDs]()
 	{
 		// Named dungeon (they all use the same icon).
-		const int highlightIndex = 3;
-		DebugAssert(highlightIndex < highlightTextureIDs.count);
-		const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+		constexpr int highlightIndex = 3;
+		const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
 		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
 		drawHighlight(highlightTexture.get());
 	};
@@ -791,9 +788,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Map)
 		{
 			// Staff map dungeon.
-			const int highlightIndex = 3;
-			DebugAssert(highlightIndex < highlightTextureIDs.count);
-			const TextureID highlightTextureID = highlightTextureIDs.startID + highlightIndex;
+			constexpr int highlightIndex = 3;
+			const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
 			const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
 			drawHighlight(highlightTexture.get());
 		}

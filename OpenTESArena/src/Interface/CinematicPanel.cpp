@@ -55,9 +55,9 @@ void CinematicPanel::tick(double dt)
 		this->getTextureIDs(this->sequenceName, this->paletteName);
 
 	// If at the end, then prepare for the next panel.
-	if (this->imageIndex >= textureIDs.count)
+	if (this->imageIndex >= textureIDs.getCount())
 	{
-		this->imageIndex = static_cast<int>(textureIDs.count - 1);
+		this->imageIndex = static_cast<int>(textureIDs.getCount() - 1);
 		this->skipButton.click(game);
 	}
 }
@@ -70,7 +70,7 @@ void CinematicPanel::render(Renderer &renderer)
 	// Get texture IDs in advance of any texture references.
 	const TextureManager::IdGroup<TextureID> textureIDs =
 		this->getTextureIDs(this->sequenceName, this->paletteName);
-	const TextureID textureID = textureIDs.startID + this->imageIndex;
+	const TextureID textureID = textureIDs.getID(this->imageIndex);
 
 	// Draw current frame of the cinematic.
 	const auto &textureManager = this->getGame().getTextureManager();
