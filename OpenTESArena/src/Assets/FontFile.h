@@ -12,17 +12,19 @@
 
 class FontFile
 {
+public:
+	using Pixel = bool;
 private:
 	// One entry per character from ASCII 32 to 127 inclusive, with space (ASCII 32)
-	// at index 0. Each entry stores its letter as transparent and white pixel data.
-	std::vector<Buffer2D<uint32_t>> characters;
+	// at index 0. Each letter's pixels are set (true) or unset (false).
+	std::vector<Buffer2D<Pixel>> characters;
 	int characterHeight;
 public:
 	bool init(const char *filename);
 
 	int getWidth(char c) const;
 	int getHeight() const;
-	const uint32_t *getPixels(char c) const;
+	const Pixel *getPixels(char c) const;
 };
 
 #endif

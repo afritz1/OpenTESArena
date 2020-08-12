@@ -89,20 +89,16 @@ bool FontFile::init(const char *filename)
 	this->characterHeight = charHeight;
 	this->characters.resize(symbols.size());
 
-	// Colors for setting pixels.
-	const uint32_t transparent = Color::Transparent.toARGB();
-	const uint32_t white = Color::White.toARGB();
-
 	// Adapted from WinArena "Raster.cpp".
 	for (size_t i = 0; i < symbols.size(); i++)
 	{
 		// Use white for pixels and transparent for background.
 		FontElement &element = symbols[i];
 
-		Buffer2D<uint32_t> &character = this->characters.at(i);
+		Buffer2D<Pixel> &character = this->characters.at(i);
 		character.init(element.width, element.height);
 
-		uint32_t *charPixels = character.get();
+		Pixel *charPixels = character.get();
 		for (uint32_t cy = 0; cy < element.height; cy++)
 		{
 			uint16_t mask = 0x8000;
@@ -112,8 +108,8 @@ bool FontFile::init(const char *filename)
 			{
 				const int index = cx + (cy * element.width);
 
-				// Color the pixel white if the character's bit is set there.
-				charPixels[index] = ((bits & mask) != 0) ? white : transparent;
+				// Color the pixel 'true' if the character's bit is set there.
+				charPixels[index] = (bits & mask) != 0;
 
 				mask >>= 1;
 			}
@@ -145,7 +141,7 @@ int FontFile::getHeight() const
 	return this->characterHeight;
 }
 
-const uint32_t *FontFile::getPixels(char c) const
+const FontFile::Pixel *FontFile::getPixels(char c) const
 {
 	// If an invalid character is requested, print a warning and return
 	// a default character.

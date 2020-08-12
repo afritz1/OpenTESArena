@@ -50,7 +50,7 @@ Font::Font(FontName fontName)
 	{
 		const char c = i + 32;
 		const int elementWidth = fontFile.getWidth(c);
-		const uint32_t *elementPixels = fontFile.getPixels(c);
+		const FontFile::Pixel *elementPixels = fontFile.getPixels(c);
 
 		Surface surface = Surface::createWithFormat(elementWidth, elementHeight,
 			Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
@@ -58,9 +58,13 @@ Font::Font(FontName fontName)
 		uint32_t *pixels = static_cast<uint32_t*>(surface.get()->pixels);
 		const int pixelCount = surface.getWidth() * surface.getHeight();
 
+		const uint32_t setColor = Color::White.toARGB();
+		const uint32_t unsetColor = Color::Transparent.toARGB();
+
 		for (int index = 0; index < pixelCount; index++)
 		{
-			pixels[index] = elementPixels[index];
+			const bool pixelIsSet = elementPixels[index];
+			pixels[index] = pixelIsSet ? setColor : unsetColor;
 		}
 
 		this->characters.at(i) = std::move(surface);
