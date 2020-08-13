@@ -21,7 +21,7 @@
 #include "../Items/Weapon.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -58,14 +58,15 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassList;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::C,
 			Color(211, 211, 211),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->classesListBox = [this, &game]()
@@ -91,7 +92,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 			elements,
 			FontName::A,
 			maxDisplayed,
-			game.getFontManager(),
+			game.getFontLibrary(),
 			game.getRenderer());
 	}();
 
@@ -406,7 +407,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 			"Weapons: " + this->getClassWeapons(characterClass);
 
 		Texture texture = Panel::createTooltip(
-			text, FontName::D, this->getGame().getFontManager(), renderer);
+			text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 		tooltipIter = this->tooltipTextures.emplace(std::make_pair(
 			tooltipIndex, std::move(texture))).first;

@@ -6,10 +6,11 @@
 
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/FontDefinition.h"
 
 // A formatted string for use with Arena's text boxes.
 
-class FontManager;
+class FontLibrary;
 
 enum class FontName;
 enum class TextAlignment;
@@ -19,7 +20,7 @@ struct SDL_Surface;
 class RichTextString
 {
 private:
-	std::vector<std::vector<const SDL_Surface*>> surfaceLists; // Surfaces for each line of text.
+	std::vector<std::vector<FontDefinition::CharID>> characterLists; // Font indices for each line of text.
 	std::vector<int> lineWidths; // Width in pixels for each line of surfaces.
 	std::string text;
 	FontName fontName;
@@ -30,11 +31,11 @@ private:
 	int characterHeight;
 public:
 	RichTextString(const std::string &text, FontName fontName, const Color &color,
-		TextAlignment alignment, int lineSpacing, FontManager &fontManager);
+		TextAlignment alignment, int lineSpacing, const FontLibrary &fontLibrary);
 	RichTextString(const std::string &text, FontName fontName, const Color &color,
-		TextAlignment alignment, FontManager &fontManager);
+		TextAlignment alignment, const FontLibrary &fontLibrary);
 
-	const std::vector<std::vector<const SDL_Surface*>> &getSurfaceLists() const;
+	const std::vector<std::vector<FontDefinition::CharID>> &getCharacterLists() const;
 	const std::vector<int> &getLineWidths() const;
 	const std::string &getText() const;
 	FontName getFontName() const;

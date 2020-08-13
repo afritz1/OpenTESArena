@@ -9,15 +9,16 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/Font.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontDefinition.h"
+#include "../Media/FontLibrary.h"
+#include "../Media/FontUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
 ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-	FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+	FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
 	Renderer &renderer)
 	: point(x, y)
 {
@@ -28,10 +29,16 @@ ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> 
 	this->rowSpacing = rowSpacing;
 	this->scrollIndex = 0;
 
-	// Get the font data associated with the font name.
-	const Font &font = fontManager.getFont(fontName);
+	// Get the font associated with the font name.
+	const char *fontNameStr = FontUtils::fromName(fontName);
+	int fontIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
+	{
+		DebugCrash("Couldn't get font index \"" + std::string(fontNameStr) + "\".");
+	}
 
-	this->characterHeight = font.getCharacterHeight();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
+	this->characterHeight = fontDef.getCharacterHeight();
 
 	// Make text boxes for getting list box dimensions now and drawing later.
 	// It's okay for there to be zero elements. Just be blank, then!
@@ -47,13 +54,13 @@ ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> 
 
 		const RichTextString richText(
 			trimmedElement,
-			font.getFontName(),
+			fontName,
 			textColor,
 			TextAlignment::Left,
-			fontManager);
+			fontLibrary);
 
 		// Store the text box for later.
-		auto textBox = std::make_unique<TextBox>(textBoxX, textBoxY, richText, renderer);
+		auto textBox = std::make_unique<TextBox>(textBoxX, textBoxY, richText, fontLibrary, renderer);
 		this->textBoxes.push_back(std::move(textBox));
 	}
 
@@ -74,7 +81,7 @@ ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> 
 		return maxWidth;
 	}();
 
-	const int height = (font.getCharacterHeight() * maxDisplayed) +
+	const int height = (fontDef.getCharacterHeight() * maxDisplayed) +
 		(rowSpacing * (maxDisplayed - 1));
 
 	// Create the clear surface. This exists because the text box surfaces can't
@@ -95,19 +102,19 @@ ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> 
 }
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+	FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
 	Renderer &renderer)
 	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName, maxDisplayed,
-		rowSpacing, fontManager, renderer) { }
+		rowSpacing, fontLibrary, renderer) { }
 
 ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
-	: ListBox(x, y, elements, fontName, maxDisplayed, 0, fontManager, renderer) { }
+	FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer)
+	: ListBox(x, y, elements, fontName, maxDisplayed, 0, fontLibrary, renderer) { }
 
 ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer)
+	FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer)
 	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName,
-		maxDisplayed, 0, fontManager, renderer) { }
+		maxDisplayed, 0, fontLibrary, renderer) { }
 
 int ListBox::getScrollIndex() const
 {

@@ -16,7 +16,7 @@
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -85,19 +85,20 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 				text.replace(index, 2, pluralRaceName);
 
 				const int lineSpacing = 1;
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					text,
 					FontName::A,
 					textColor,
 					TextAlignment::Center,
 					lineSpacing,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2),
 					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -116,18 +117,19 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			MessageBoxSubPanel::Element messageBoxYes;
 			messageBoxYes.textBox = [&game, &renderer, &textColor]()
 			{
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					"Yes",
 					FontName::A,
 					textColor,
 					TextAlignment::Center,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 28);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -174,7 +176,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						textColor,
 						TextAlignment::Center,
 						lineSpacing,
-						game.getFontManager());
+						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
 					Texture texture = Texture::generate(Texture::PatternType::Parchment,
@@ -234,7 +236,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						textColor,
 						TextAlignment::Center,
 						lineSpacing,
-						game.getFontManager());
+						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
 					Texture texture = Texture::generate(Texture::PatternType::Parchment,
@@ -295,7 +297,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						textColor,
 						TextAlignment::Center,
 						lineSpacing,
-						game.getFontManager());
+						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
 					Texture texture = Texture::generate(Texture::PatternType::Parchment,
@@ -374,7 +376,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						textColor,
 						TextAlignment::Center,
 						lineSpacing,
-						game.getFontManager());
+						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y, 40);
 					Texture texture = Texture::generate(Texture::PatternType::Parchment,
@@ -399,18 +401,19 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			MessageBoxSubPanel::Element messageBoxNo;
 			messageBoxNo.textBox = [&game, &renderer, &textColor]()
 			{
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					"No",
 					FontName::A,
 					textColor,
 					TextAlignment::Center,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 68);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxNo.texture = [&textureManager, &renderer, &messageBoxYes]()
@@ -494,7 +497,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		color,
 		TextAlignment::Center,
 		lineSpacing,
-		game.getFontManager());
+		game.getFontLibrary());
 
 	Texture texture = Texture::generate(Texture::PatternType::Parchment, 240, 60,
 		game.getTextureManager(), game.getRenderer());
@@ -585,7 +588,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	const std::string &raceName = exeData.races.pluralNames.at(provinceID);
 
 	const Texture tooltip = Panel::createTooltip(
-		"Land of the " + raceName, FontName::D, this->getGame().getFontManager(), renderer);
+		"Land of the " + raceName, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

@@ -28,7 +28,7 @@
 
 class CharacterClass;
 class CityDataFile;
-class FontManager;
+class FontLibrary;
 class INFFile;
 class LocationDefinition;
 class LocationInstance;
@@ -211,9 +211,9 @@ public:
 	void getEffectTextRenderInfo(const Texture **outTexture) const;
 
 	// Sets on-screen text for various types of in-game messages.
-	void setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer);
-	void setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer);
-	void setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer);
+	void setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
+	void setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
+	void setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
 
 	// Resets on-screen text boxes to empty and hidden.
 	void resetTriggerText();

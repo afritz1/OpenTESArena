@@ -22,9 +22,16 @@ private:
 public:
 	bool init(const char *filename);
 
-	int getWidth(char c) const;
+	// Attempts to convert an ASCII character to its index in the characters list.
+	static bool tryGetCharacterIndex(char c, int *outIndex);
+
+	// Attempts to convert a character index to its associated ASCII character.
+	static bool tryGetChar(int index, char *outChar);
+
+	int getCharacterCount() const;
+	int getWidth(int index) const;
 	int getHeight() const;
-	const Pixel *getPixels(char c) const;
+	const Pixel *getPixels(int index) const;
 };
 
 #endif

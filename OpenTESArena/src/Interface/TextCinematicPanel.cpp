@@ -9,7 +9,7 @@
 #include "TextCinematicPanel.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -69,15 +69,17 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 			const int lineSpacing = 1;
 
 			// Eventually use a different color for other cinematics (Tharn, Emperor, etc.).
+			const auto &fontLibrary = game.getFontLibrary();
 			const RichTextString richText(
 				textBoxText,
 				FontName::Arena,
 				Color(105, 174, 207),
 				TextAlignment::Center,
 				lineSpacing,
-				game.getFontManager());
+				fontLibrary);
 
-			auto textBox = std::make_unique<TextBox>(center, richText, game.getRenderer());
+			auto textBox = std::make_unique<TextBox>(
+				center, richText, fontLibrary, game.getRenderer());
 			textBoxes.push_back(std::move(textBox));
 		}
 

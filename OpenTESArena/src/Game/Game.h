@@ -14,7 +14,7 @@
 #include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -44,7 +44,7 @@ private:
 	AudioManager audioManager;
 	MusicLibrary musicLibrary;
 	InputManager inputManager;
-	FontManager fontManager;
+	FontLibrary fontLibrary;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
@@ -100,8 +100,8 @@ public:
 	// all classes except the Game class.
 	InputManager &getInputManager();
 
-	// Gets the font manager object for creating text with.
-	FontManager &getFontManager();
+	// Gets the font library for obtaining various fonts.
+	FontLibrary &getFontLibrary();
 
 	// Determines if a game session is currently running. This is true when a player
 	// is loaded into memory.

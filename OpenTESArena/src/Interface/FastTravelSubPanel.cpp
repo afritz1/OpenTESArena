@@ -307,7 +307,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		color,
 		TextAlignment::Center,
 		lineSpacing,
-		game.getFontManager());
+		game.getFontLibrary());
 
 	Texture texture = Texture::generate(Texture::PatternType::Dark,
 		richText.getDimensions().x + 10, richText.getDimensions().y + 12,

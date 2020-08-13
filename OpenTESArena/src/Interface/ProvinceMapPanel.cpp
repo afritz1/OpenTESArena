@@ -26,7 +26,7 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Math/Rect.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -589,7 +589,7 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 		color,
 		TextAlignment::Center,
 		lineSpacing,
-		game.getFontManager());
+		game.getFontLibrary());
 
 	// Parchment minimum height is 40 pixels.
 	const int parchmentHeight = std::max(richText.getDimensions().y + 16, 40);
@@ -878,15 +878,16 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	const Int2 center(locationDef.getScreenX(), locationDef.getScreenY());
 	const std::string &locationName = locationInst.getName(locationDef);
 
+	const auto &fontLibrary = game.getFontLibrary();
 	const RichTextString richText(
 		locationName,
 		FontName::Arena,
 		Color(158, 0, 0),
 		TextAlignment::Center,
-		this->getGame().getFontManager());
+		fontLibrary);
 
 	const TextBox::ShadowData shadowData(Color(48, 48, 48), Int2(1, 0));
-	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, renderer);
+	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, fontLibrary, renderer);
 	const Surface &textBoxSurface = textBox.getSurface();
 
 	// Clamp to screen edges, with some extra space on the left and right.
@@ -903,7 +904,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
 
 	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer);
+		text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

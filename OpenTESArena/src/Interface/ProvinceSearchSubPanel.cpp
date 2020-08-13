@@ -42,14 +42,15 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.travel.searchTitleText;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(52, 24, 8),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->textEntryTextBox = [&game]()
@@ -57,14 +58,15 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 		const int x = ProvinceSearchSubPanel::DEFAULT_TEXT_CURSOR_POSITION.x;
 		const int y = ProvinceSearchSubPanel::DEFAULT_TEXT_CURSOR_POSITION.y;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			std::string(),
 			FontName::Arena,
 			Color(52, 24, 8),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->textAcceptButton = []()
@@ -307,7 +309,7 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 			locationNames,
 			FontName::Arena,
 			maxDisplayed,
-			game.getFontManager(),
+			game.getFontLibrary(),
 			game.getRenderer());
 	}();
 }
@@ -358,14 +360,15 @@ void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
 
 				const RichTextString &oldRichText = this->textEntryTextBox->getRichText();
 
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					this->locationName,
 					oldRichText.getFontName(),
 					oldRichText.getColor(),
 					oldRichText.getAlignment(),
-					game.getFontManager());
+					fontLibrary);
 
-				return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+				return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 			}();
 		}
 	}

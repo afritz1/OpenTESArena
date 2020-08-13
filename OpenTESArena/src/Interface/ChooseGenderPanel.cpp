@@ -13,7 +13,7 @@
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -36,14 +36,15 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseGender;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->maleTextBox = [&game]()
@@ -53,14 +54,15 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderMale;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->femaleTextBox = [&game]()
@@ -70,14 +72,15 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderFemale;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->backToNameButton = []()

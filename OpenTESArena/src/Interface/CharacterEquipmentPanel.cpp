@@ -14,7 +14,7 @@
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -35,14 +35,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		const int x = 10;
 		const int y = 8;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			game.getGameData().getPlayer().getDisplayName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->playerRaceTextBox = [&game]()
@@ -54,14 +55,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.races.singularNames.at(player.getRaceID());
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->playerClassTextBox = [&game]()
@@ -69,14 +71,15 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		const int x = 10;
 		const int y = 26;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			game.getGameData().getPlayer().getCharacterClass().getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->inventoryListBox = [&game]()
@@ -108,7 +111,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		const int maxDisplayed = 7;
 		const int rowSpacing = 3;
 		return std::make_unique<ListBox>(x, y, elements, FontName::Teeny, maxDisplayed,
-			rowSpacing, game.getFontManager(), game.getRenderer());
+			rowSpacing, game.getFontLibrary(), game.getRenderer());
 	}();
 
 	this->backToStatsButton = []()

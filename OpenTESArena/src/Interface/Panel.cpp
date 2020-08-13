@@ -16,7 +16,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/PaletteUtils.h"
@@ -50,7 +50,7 @@ Panel::Panel(Game &game)
 	: game(game) { }
 
 Texture Panel::createTooltip(const std::string &text,
-	FontName fontName, FontManager &fontManager, Renderer &renderer)
+	FontName fontName, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const Color textColor(255, 255, 255, 255);
 	const Color backColor(32, 32, 32, 192);
@@ -63,14 +63,14 @@ Texture Panel::createTooltip(const std::string &text,
 		fontName,
 		textColor,
 		TextAlignment::Left,
-		fontManager);
+		fontLibrary);
 
 	// Create text.
-	const TextBox textBox(x, y, richText, renderer);
+	const TextBox textBox(x, y, richText, fontLibrary, renderer);
 	const Surface &textSurface = textBox.getSurface();
 
 	// Create background. Make it a little bigger than the text box.
-	const int padding = 4;
+	constexpr int padding = 4;
 	Surface background = Surface::createWithFormat(
 		textSurface.getWidth() + padding, textSurface.getHeight() + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);

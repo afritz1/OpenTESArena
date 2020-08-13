@@ -17,7 +17,7 @@
 // Though the index of a selected item can be obtained, this class is not intended
 // for holding data about those selected items. It is simply a view for the text.
 
-class FontManager;
+class FontLibrary;
 class Renderer;
 class TextBox;
 
@@ -47,21 +47,21 @@ private:
 public:
 	// Per-element color customization and customizable distance between elements.
 	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
 		Renderer &renderer);
 
 	// Customizable distance between elements.
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-		FontName fontName, int maxDisplayed, int rowSpacing, FontManager &fontManager,
+		FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
 		Renderer &renderer);
 
 	// Per-element color customization.
 	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
+		FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer);
 
 	// No color or distance customization.
 	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-		FontName fontName, int maxDisplayed, FontManager &fontManager, Renderer &renderer);
+		FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer);
 
 	// Gets the index of the top-most displayed element.
 	int getScrollIndex() const;

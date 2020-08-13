@@ -13,7 +13,6 @@
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
 #include "../Interface/Panel.h"
-#include "../Media/FontManager.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
@@ -108,8 +107,17 @@ Game::Game()
 		throw DebugException("\"" + fullArenaPath + "\" does not have an Arena executable.");
 	}();
 
+	// Load fonts.
+	if (!this->fontLibrary.init())
+	{
+		DebugCrash("Couldn't init font library.");
+	}
+
 	// Load various miscellaneous assets.
-	this->miscAssets.init(isFloppyVersion);
+	if (!this->miscAssets.init(isFloppyVersion))
+	{
+		DebugCrash("Couldn't init misc assets.");
+	}
 
 	// Load and set window icon.
 	const Surface icon = [this]()
@@ -194,9 +202,9 @@ InputManager &Game::getInputManager()
 	return this->inputManager;
 }
 
-FontManager &Game::getFontManager()
+FontLibrary &Game::getFontLibrary()
 {
-	return this->fontManager;
+	return this->fontLibrary;
 }
 
 bool Game::gameDataIsActive() const

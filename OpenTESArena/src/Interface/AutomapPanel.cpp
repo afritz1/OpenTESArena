@@ -17,7 +17,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -92,15 +92,17 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 	{
 		const Int2 center(120, 28);
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			locationName,
 			FontName::A,
 			Color(56, 16, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
 		const TextBox::ShadowData shadowData(Color(150, 101, 52), Int2(2, 2));
-		return std::make_unique<TextBox>(center, richText, &shadowData, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, &shadowData,
+			fontLibrary, game.getRenderer());
 	}();
 
 	this->backToGameButton = []()
@@ -666,7 +668,7 @@ void AutomapPanel::handleMouse(double dt)
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer);
+		text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

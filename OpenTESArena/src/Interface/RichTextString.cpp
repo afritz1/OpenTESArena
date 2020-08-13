@@ -1,64 +1,74 @@
 #include "SDL.h"
 
 #include "RichTextString.h"
-#include "../Media/Font.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
+#include "../Media/FontUtils.h"
 
 #include "components/utilities/String.h"
 
 RichTextString::RichTextString(const std::string &text, FontName fontName,
-	const Color &color, TextAlignment alignment, int lineSpacing, FontManager &fontManager)
+	const Color &color, TextAlignment alignment, int lineSpacing, const FontLibrary &fontLibrary)
 	: text(text), fontName(fontName), color(color), alignment(alignment),
 	lineSpacing(lineSpacing)
 {
-	// Get the font data associated with the font name.
-	const Font &font = fontManager.getFont(fontName);
+	// Get the font associated with the font name.
+	const char *fontNameStr = FontUtils::fromName(fontName);
+	int fontIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
+	{
+		DebugCrash("Couldn't get font index \"" + std::string(fontNameStr) + "\".");
+	}
 
-	// Get the height in pixels for all characters in the font.
-	this->characterHeight = font.getCharacterHeight();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
+	this->characterHeight = fontDef.getCharacterHeight();
 
-	// Get the character surfaces associated with each line of text.
-	this->surfaceLists = [&text, &font]()
+	// Get the font characters associated with each line of text.
+	this->characterLists = [&text, &fontDef]()
 	{
 		// Split the text on each newline. If the text is empty, then just add a space, 
 		// so there doesn't need to be any "zero-character" special case.
 		const std::vector<std::string> textLines =
 			String::split((text.size() > 0) ? text : std::string(" "), '\n');
 
-		std::vector<std::vector<const SDL_Surface*>> tempLists;
+		std::vector<std::vector<FontDefinition::CharID>> tempLists;
 
-		// Go through each line of text and get the associated surface pointers.
-		for (const auto &textLine : textLines)
+		// Go through each line of text and get the associated font characters.
+		for (const std::string &textLine : textLines)
 		{
-			std::vector<const SDL_Surface*> surfaces;
-
-			// Add a surface pointer associated with each character.
+			std::vector<FontDefinition::CharID> charIDs;
 			for (const char c : textLine)
 			{
-				const SDL_Surface *charSurface = font.getSurface(c);
-				surfaces.push_back(charSurface);
+				const std::string charUtf8(1, c);
+				FontDefinition::CharID charID;
+				if (!fontDef.tryGetCharacterID(charUtf8.c_str(), &charID))
+				{
+					DebugLogWarning("Couldn't get font character ID for \"" + charUtf8 + "\".");
+					continue;
+				}
+
+				charIDs.push_back(charID);
 			}
 
-			tempLists.push_back(std::move(surfaces));
+			tempLists.push_back(std::move(charIDs));
 		}
 
 		return tempLists;
 	}();
 
-	// Get the width of each line in pixels (for determining the longest line).
-	this->lineWidths = [this]()
+	// Get the width of each line in pixels, for determining the longest line.
+	this->lineWidths = [this, &fontDef]()
 	{
 		std::vector<int> widths;
-
-		for (const auto &surfaceList : this->surfaceLists)
+		for (const std::vector<FontDefinition::CharID> &charIDs : this->characterLists)
 		{
 			// Start a new count on the line widths.
 			widths.push_back(0);
 
-			// Get the combined widths for the current line's surfaces.
-			for (const auto *surface : surfaceList)
+			// Get the combined widths for the current line's characters.
+			for (const FontDefinition::CharID charID : charIDs)
 			{
-				widths.back() += surface->w;
+				const FontDefinition::Character &character = fontDef.getCharacter(charID);
+				widths.back() += character.getWidth();
 			}
 		}
 
@@ -84,7 +94,7 @@ RichTextString::RichTextString(const std::string &text, FontName fontName,
 		}();
 
 		// Get the height in pixels for the texture. Also include line spacing.
-		const int lineCount = static_cast<int>(this->surfaceLists.size());
+		const int lineCount = static_cast<int>(this->characterLists.size());
 		const int textureHeight = (this->characterHeight * lineCount) +
 			(lineSpacing * (lineCount - 1));
 
@@ -93,12 +103,12 @@ RichTextString::RichTextString(const std::string &text, FontName fontName,
 }
 
 RichTextString::RichTextString(const std::string &text, FontName fontName,
-	const Color &color, TextAlignment alignment, FontManager &fontManager)
-	: RichTextString(text, fontName, color, alignment, 0, fontManager) { }
+	const Color &color, TextAlignment alignment, const FontLibrary &fontLibrary)
+	: RichTextString(text, fontName, color, alignment, 0, fontLibrary) { }
 
-const std::vector<std::vector<const SDL_Surface*>> &RichTextString::getSurfaceLists() const
+const std::vector<std::vector<FontDefinition::CharID>> &RichTextString::getCharacterLists() const
 {
-	return this->surfaceLists;
+	return this->characterLists;
 }
 
 const std::vector<int> &RichTextString::getLineWidths() const

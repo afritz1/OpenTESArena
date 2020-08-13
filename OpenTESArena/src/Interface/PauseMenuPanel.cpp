@@ -21,7 +21,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -40,14 +40,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int x = 17;
 		const int y = 154;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			game.getGameData().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->musicTextBox = [&game]()
@@ -57,14 +58,15 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const std::string text = std::to_string(static_cast<int>(
 			std::round(game.getOptions().getAudio_MusicVolume() * 100.0)));
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(12, 73, 16),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->soundTextBox = [&game]()
@@ -74,31 +76,32 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const std::string text = std::to_string(static_cast<int>(
 			std::round(game.getOptions().getAudio_SoundVolume() * 100.0)));
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(12, 73, 16),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->optionsTextBox = [&game]()
 	{
 		const Int2 center(234, 95);
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			"OPTIONS",
 			FontName::Arena,
 			Color(215, 158, 4),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
 		const TextBox::ShadowData shadowData(Color(101, 77, 24), Int2(-1, 1));
-
 		return std::make_unique<TextBox>(
-			center, richText, &shadowData, game.getRenderer());
+			center, richText, &shadowData, fontLibrary, game.getRenderer());
 	}();
 
 	this->loadButton = []()
@@ -275,15 +278,16 @@ void PauseMenuPanel::updateMusicText(double volume)
 
 		const RichTextString &oldRichText = this->musicTextBox->getRichText();
 
+		const auto &fontLibrary = this->getGame().getFontLibrary();
 		const RichTextString richText(
 			std::to_string(displayedVolume),
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
+			fontLibrary);
 
 		return std::make_unique<TextBox>(
-			center, richText, this->getGame().getRenderer());
+			center, richText, fontLibrary, this->getGame().getRenderer());
 	}();
 }
 
@@ -297,15 +301,16 @@ void PauseMenuPanel::updateSoundText(double volume)
 
 		const RichTextString &oldRichText = this->soundTextBox->getRichText();
 		
+		const auto &fontLibrary = this->getGame().getFontLibrary();
 		const RichTextString richText(
 			std::to_string(displayedVolume),
 			oldRichText.getFontName(),
 			oldRichText.getColor(),
 			oldRichText.getAlignment(),
-			this->getGame().getFontManager());
+			fontLibrary);
 
 		return std::make_unique<TextBox>(
-			center, richText, this->getGame().getRenderer());
+			center, richText, fontLibrary, this->getGame().getRenderer());
 	}();
 }
 

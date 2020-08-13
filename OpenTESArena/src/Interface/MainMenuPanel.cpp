@@ -1183,17 +1183,18 @@ void MainMenuPanel::render(Renderer &renderer)
 		testButton.getWidth(), testButton.getHeight());
 
 	// Draw test text.
+	const auto &fontLibrary = this->getGame().getFontLibrary();
 	const RichTextString testButtonText(
 		"Test",
 		FontName::Arena,
 		Color::White,
 		TextAlignment::Center,
-		this->getGame().getFontManager());
+		fontLibrary);
 
 	const Int2 testButtonTextBoxPoint(
 		TestButtonRect.getLeft() + (TestButtonRect.getWidth() / 2),
 		TestButtonRect.getTop() + (TestButtonRect.getHeight() / 2));
-	const TextBox testButtonTextBox(testButtonTextBoxPoint, testButtonText, renderer);
+	const TextBox testButtonTextBox(testButtonTextBoxPoint, testButtonText, fontLibrary, renderer);
 
 	renderer.drawOriginal(testButtonTextBox.getTexture(),
 		testButtonTextBox.getX(), testButtonTextBox.getY());
@@ -1227,13 +1228,14 @@ void MainMenuPanel::render(Renderer &renderer)
 		testButtonText.getFontName(),
 		testButtonText.getColor(),
 		TextAlignment::Left,
-		this->getGame().getFontManager());
+		fontLibrary);
 
 	const int testTypeTextBoxX = this->testTypeUpButton.getX() -
 		testTypeText.getDimensions().x - 2;
 	const int testTypeTextBoxY = this->testTypeUpButton.getY() +
 		(testTypeText.getDimensions().y / 2);
-	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY, testTypeText, renderer);
+	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY,
+		testTypeText, fontLibrary, renderer);
 
 	renderer.drawOriginal(testTypeTextBox.getTexture(),
 		testTypeTextBox.getX(), testTypeTextBox.getY());
@@ -1243,12 +1245,13 @@ void MainMenuPanel::render(Renderer &renderer)
 		testTypeText.getFontName(),
 		testTypeText.getColor(),
 		testTypeText.getAlignment(),
-		this->getGame().getFontManager());
+		fontLibrary);
 	const int testNameTextBoxX = this->testIndexUpButton.getX() -
 		testNameText.getDimensions().x - 2;
 	const int testNameTextBoxY = this->testIndexUpButton.getY() +
 		(testNameText.getDimensions().y / 2);
-	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY, testNameText, renderer);
+	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY,
+		testNameText, fontLibrary, renderer);
 	renderer.drawOriginal(testNameTextBox.getTexture(),
 		testNameTextBox.getX(), testNameTextBox.getY());
 
@@ -1263,14 +1266,14 @@ void MainMenuPanel::render(Renderer &renderer)
 			testTypeText.getFontName(),
 			testTypeText.getColor(),
 			testTypeText.getAlignment(),
-			this->getGame().getFontManager());
+			fontLibrary);
 
 		const int testWeatherTextBoxX = this->testWeatherUpButton.getX() -
 			testWeatherText.getDimensions().x - 2;
 		const int testWeatherTextBoxY = this->testWeatherUpButton.getY() +
 			(testWeatherText.getDimensions().y / 2);
-		const TextBox testWeatherTextBox(
-			testWeatherTextBoxX, testWeatherTextBoxY, testWeatherText, renderer);
+		const TextBox testWeatherTextBox(testWeatherTextBoxX, testWeatherTextBoxY,
+			testWeatherText, fontLibrary, renderer);
 
 		renderer.drawOriginal(testWeatherTextBox.getTexture(),
 			testWeatherTextBox.getX(), testWeatherTextBox.getY());

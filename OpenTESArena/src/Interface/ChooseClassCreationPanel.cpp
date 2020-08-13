@@ -13,7 +13,7 @@
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -41,15 +41,16 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 		const int lineSpacing = 1;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
 			lineSpacing,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->generateTextBox = [&game]()
@@ -59,14 +60,15 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationGenerate;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->selectTextBox = [&game]()
@@ -76,14 +78,15 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		const auto &exeData = game.getMiscAssets().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationSelect;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->backToMainMenuButton = []()
@@ -166,7 +169,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer);
+		text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

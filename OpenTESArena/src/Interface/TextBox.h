@@ -12,6 +12,7 @@
 
 // Redesigned for use with the font system using Arena assets.
 
+class FontLibrary;
 class Rect;
 class Renderer;
 
@@ -37,11 +38,13 @@ public:
 	static const int DEFAULT_TEXT_WRAP = 60;
 
 	TextBox(int x, int y, const RichTextString &richText, const ShadowData *shadow,
-		Renderer &renderer);
+		const FontLibrary &fontLibrary, Renderer &renderer);
 	TextBox(const Int2 &center, const RichTextString &richText, const ShadowData *shadow,
+		const FontLibrary &fontLibrary, Renderer &renderer);
+	TextBox(int x, int y, const RichTextString &richText, const FontLibrary &fontLibrary,
 		Renderer &renderer);
-	TextBox(int x, int y, const RichTextString &richText, Renderer &renderer);
-	TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer);
+	TextBox(const Int2 &center, const RichTextString &richText, const FontLibrary &fontLibrary,
+		Renderer &renderer);
 
 	int getX() const;
 	int getY() const;

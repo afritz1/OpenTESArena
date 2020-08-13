@@ -705,7 +705,7 @@ void GameData::getEffectTextRenderInfo(const Texture **outTexture) const
 	}
 }
 
-void GameData::setTriggerText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+void GameData::setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const int lineSpacing = 1;
 	const RichTextString richText(
@@ -714,7 +714,7 @@ void GameData::setTriggerText(const std::string &text, FontManager &fontManager,
 		TriggerTextColor,
 		TextAlignment::Center,
 		lineSpacing,
-		fontManager);
+		fontLibrary);
 
 	const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
 
@@ -724,6 +724,7 @@ void GameData::setTriggerText(const std::string &text, FontManager &fontManager,
 		Int2(0, 0),
 		richText,
 		&shadowData,
+		fontLibrary,
 		renderer);
 
 	// Assign the text box and its duration to the triggered text member.
@@ -731,14 +732,14 @@ void GameData::setTriggerText(const std::string &text, FontManager &fontManager,
 	this->triggerText = TimedTextBox(duration, std::move(textBox));
 }
 
-void GameData::setActionText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+void GameData::setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const RichTextString richText(
 		text,
 		FontName::Arena,
 		ActionTextColor,
 		TextAlignment::Center,
-		fontManager);
+		fontLibrary);
 
 	const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
 
@@ -748,6 +749,7 @@ void GameData::setActionText(const std::string &text, FontManager &fontManager, 
 		Int2(0, 0),
 		richText,
 		&shadowData,
+		fontLibrary,
 		renderer);
 
 	// Assign the text box and its duration to the action text.
@@ -755,7 +757,7 @@ void GameData::setActionText(const std::string &text, FontManager &fontManager, 
 	this->actionText = TimedTextBox(duration, std::move(textBox));
 }
 
-void GameData::setEffectText(const std::string &text, FontManager &fontManager, Renderer &renderer)
+void GameData::setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	// @todo
 }

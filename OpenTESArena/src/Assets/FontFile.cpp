@@ -3,9 +3,6 @@
 #include <string>
 
 #include "FontFile.h"
-#include "../Media/Color.h"
-#include "../Media/Font.h"
-#include "../Media/FontName.h"
 
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
@@ -119,20 +116,42 @@ bool FontFile::init(const char *filename)
 	return true;
 }
 
-int FontFile::getWidth(char c) const
+bool FontFile::tryGetCharacterIndex(char c, int *outIndex)
 {
-	// If an invalid character is requested, print a warning and return
-	// a default character.
+	// Space (ASCII 32) is at index 0.
 	if ((c < 32) || (c > 127))
 	{
-		DebugLogWarning("Character value \"" + std::to_string(c) + 
+		DebugLogWarning("Character value \"" + std::string(1, c) +
 			"\" out of range (must be ASCII 32-127).");
-		DebugAssert(this->characters.size() > 0);
-		return this->characters[0].getWidth();
+		return false;
 	}
 
+	*outIndex = c - 32;
+	return true;
+}
+
+bool FontFile::tryGetChar(int index, char *outChar)
+{
 	// Space (ASCII 32) is at index 0.
-	const int index = DebugMakeIndex(this->characters, c - 32);
+	if ((index < 0) || (index > 95))
+	{
+		DebugLogWarning("Character index \"" + std::to_string(index) +
+			"\" out of range (must be 0-95).");
+		return false;
+	}
+
+	*outChar = index + 32;
+	return true;
+}
+
+int FontFile::getCharacterCount() const
+{
+	return static_cast<int>(this->characters.size());
+}
+
+int FontFile::getWidth(int index) const
+{
+	DebugAssertIndex(this->characters, index);
 	return this->characters[index].getWidth();
 }
 
@@ -141,19 +160,8 @@ int FontFile::getHeight() const
 	return this->characterHeight;
 }
 
-const FontFile::Pixel *FontFile::getPixels(char c) const
+const FontFile::Pixel *FontFile::getPixels(int index) const
 {
-	// If an invalid character is requested, print a warning and return
-	// a default character.
-	if ((c < 32) || (c > 127))
-	{
-		DebugLogWarning("Character value \"" + std::to_string(c) +
-			"\" out of range (must be ASCII 32-127).");
-		DebugAssert(this->characters.size() > 0);
-		return this->characters[0].get();
-	}
-
-	// Space (ASCII 32) is at index 0.
-	const int index = DebugMakeIndex(this->characters, c - 32);
+	DebugAssertIndex(this->characters, index);
 	return this->characters[index].get();
 }

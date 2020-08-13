@@ -17,7 +17,7 @@
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -51,14 +51,15 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 		std::string text = exeData.charCreation.chooseName;
 		text = String::replace(text, "%s", charClass.getName());
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->nameTextBox = [&game]()
@@ -66,14 +67,15 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 		const int x = 61;
 		const int y = 101;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			std::string(),
 			FontName::A,
 			Color(48, 12, 12),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->backToClassButton = []()
@@ -156,14 +158,15 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 				auto &game = this->getGame();
 				const RichTextString &oldRichText = this->nameTextBox->getRichText();
 
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					this->name,
 					oldRichText.getFontName(),
 					oldRichText.getColor(),
 					oldRichText.getAlignment(),
-					game.getFontManager());
+					fontLibrary);
 
-				return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+				return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 			}();
 		}
 	}

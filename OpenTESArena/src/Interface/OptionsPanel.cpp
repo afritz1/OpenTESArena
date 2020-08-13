@@ -16,7 +16,7 @@
 #include "../Game/PlayerInterface.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -259,14 +259,15 @@ OptionsPanel::OptionsPanel(Game &game)
 	{
 		const Int2 center(160, 24);
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			"Options",
 			FontName::A,
 			Color::White,
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->backToPauseMenuTextBox = [&game]()
@@ -275,28 +276,29 @@ OptionsPanel::OptionsPanel(Game &game)
 			Renderer::ORIGINAL_WIDTH - 30,
 			Renderer::ORIGINAL_HEIGHT - 15);
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			"Return",
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	}();
 
 	// Lambda for creating tab text boxes.
 	auto makeTabTextBox = [&game](const Int2 &center, const std::string &text)
 	{
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Center,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(
-			center, richText, game.getRenderer());
+		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	};
 
 	const Int2 initialTabCenter(
@@ -788,17 +790,19 @@ void OptionsPanel::updateOptionTextBox(int index)
 	auto &game = this->getGame();
 	const auto &visibleOption = this->getVisibleOptions().at(index);
 
+	const auto &fontLibrary = game.getFontLibrary();
 	const RichTextString richText(
 		visibleOption->getName() + ": " + visibleOption->getDisplayedValue(),
 		FontName::Arena,
 		Color::White,
 		TextAlignment::Left,
-		game.getFontManager());
+		fontLibrary);
 
 	this->currentTabTextBoxes.at(index) = std::make_unique<TextBox>(
 		ListOrigin.x,
 		ListOrigin.y + (richText.getDimensions().y * index),
 		richText,
+		fontLibrary,
 		game.getRenderer());
 }
 
@@ -819,19 +823,16 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 {
 	auto &game = this->getGame();
-
+	const auto &fontLibrary = game.getFontLibrary();
 	const RichTextString richText(
 		text,
 		FontName::Arena,
 		Color::White,
 		TextAlignment::Left,
-		game.getFontManager());
+		fontLibrary);
 
 	auto descriptionTextBox = std::make_unique<TextBox>(
-		DescriptionOrigin.x,
-		DescriptionOrigin.y,
-		richText,
-		game.getRenderer());
+		DescriptionOrigin.x, DescriptionOrigin.y, richText, fontLibrary, game.getRenderer());
 
 	renderer.drawOriginal(descriptionTextBox->getTexture(),
 		descriptionTextBox->getX(), descriptionTextBox->getY());

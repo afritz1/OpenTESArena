@@ -23,7 +23,7 @@
 #include "../Game/PlayerInterface.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
@@ -55,14 +55,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 		const std::string_view name = charCreationState.getName();
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			std::string(name),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->raceTextBox = [&game, &charCreationState]()
@@ -76,14 +77,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 		DebugAssertIndex(singularNames, raceIndex);
 		const std::string &text = singularNames[raceIndex];
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->classTextBox = [&game, &charCreationState]()
@@ -97,14 +99,15 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 		DebugAssertIndex(classDefs, classIndex);
 		const std::string &className = classDefs[classIndex].getName();
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			className,
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->backToRaceButton = []()
@@ -137,18 +140,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 				const Color textColor(199, 199, 199);
 
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					text,
 					FontName::A,
 					textColor,
 					TextAlignment::Center,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2),
 					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -176,18 +180,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 				// - For now, just delete them.
 				text.erase(1, 2);
 
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					text,
 					FontName::A,
 					buttonTextColor,
 					TextAlignment::Center,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 2);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxSave.texture = [&textureManager, &renderer, &messageBoxTitle]()
@@ -223,7 +228,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					color,
 					TextAlignment::Center,
 					lineSpacing,
-					game.getFontManager());
+					game.getFontLibrary());
 
 				Texture texture = Texture::generate(Texture::PatternType::Dark,
 					richText.getDimensions().x + 10, richText.getDimensions().y + 12,
@@ -513,18 +518,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 				// - For now, just delete them.
 				text.erase(1, 2);
 
+				const auto &fontLibrary = game.getFontLibrary();
 				const RichTextString richText(
 					text,
 					FontName::A,
 					buttonTextColor,
 					TextAlignment::Center,
-					game.getFontManager());
+					fontLibrary);
 
 				const Int2 center(
 					(Renderer::ORIGINAL_WIDTH / 2) - 1,
 					(Renderer::ORIGINAL_HEIGHT / 2) + 26);
 
-				return std::make_unique<TextBox>(center, richText, renderer);
+				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
 
 			messageBoxReroll.texture = [&textureManager, &renderer, &messageBoxSave]()
@@ -625,7 +631,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			color,
 			TextAlignment::Center,
 			lineSpacing,
-			game.getFontManager());
+			game.getFontLibrary());
 
 		Texture texture = Texture::generate(Texture::PatternType::Dark, 183, 42,
 			game.getTextureManager(), game.getRenderer());

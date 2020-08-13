@@ -5,20 +5,30 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Rect.h"
-#include "../Media/Font.h"
+#include "../Media/FontDefinition.h"
+#include "../Media/FontLibrary.h"
+#include "../Media/FontUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
 TextBox::TextBox(int x, int y, const RichTextString &richText,
-	const ShadowData *shadow, Renderer &renderer)
+	const ShadowData *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
 	: richText(richText)
 {
 	this->x = x;
 	this->y = y;
 
-	// Get the width and height of the rich text.
+	// Get the font used by the rich text string.
+	const char *fontNameStr = FontUtils::fromName(richText.getFontName());
+	int fontIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
+	{
+		DebugCrash("Couldn't get font index \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const Int2 &dimensions = richText.getDimensions();
 
 	// Get the shadow data (if any).
@@ -37,12 +47,36 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 		return surface;
 	}();
 
-	// Lambda for drawing a surface onto another surface.
-	auto blitToSurface = [](const SDL_Surface *src, int x, int y, Surface &dst)
+	// Lambda for drawing a font character onto a surface.
+	auto blitCharToSurface = [](const FontDefinition::Character &src, int dstX, int dstY, Surface &dst)
+	{
+		const uint32_t white = dst.mapRGBA(255, 255, 255, 255);
+		const uint32_t transparent = dst.mapRGBA(0, 0, 0, 0);
+
+		const FontDefinition::Pixel *srcPixels = src.get();
+		uint32_t *dstPixels = static_cast<uint32_t*>(dst.getPixels());
+
+		DebugAssert((dstX + src.getWidth()) <= dst.getWidth());
+		DebugAssert((dstY + src.getHeight()) <= dst.getHeight());
+
+		for (int y = 0; y < src.getHeight(); y++)
+		{
+			for (int x = 0; x < src.getWidth(); x++)
+			{
+				// Convert font characters (1-bit) to surface format.
+				const int srcIndex = x + (y * src.getWidth());
+				const int dstIndex = (dstX + x) + ((dstY + y) * dst.getWidth());
+				const bool pixelIsSet = srcPixels[srcIndex];
+				dstPixels[dstIndex] = pixelIsSet ? white : transparent;
+			}
+		}
+	};
+
+	auto blitSurfaceToSurface = [](const SDL_Surface *src, int dstX, int dstY, Surface &dst)
 	{
 		SDL_Rect rect;
-		rect.x = x;
-		rect.y = y;
+		rect.x = dstX;
+		rect.y = dstY;
 		rect.w = src->w;
 		rect.h = src->h;
 
@@ -68,24 +102,25 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	};
 
 	// Lambda for drawing the text to the temp surface with some color.
-	auto drawTempText = [&richText, &dimensions, &tempSurface, &blitToSurface,
+	auto drawTempText = [&richText, &dimensions, &fontDef, &tempSurface, &blitCharToSurface,
 		&setNonTransparentPixels](const Color &color)
 	{
-		// The surface lists are a set of character surfaces for each line of text.
-		const auto &surfaceLists = richText.getSurfaceLists();
+		// Get the character surfaces for each line of text.
+		const auto &characterLists = richText.getCharacterLists();
 		const TextAlignment alignment = richText.getAlignment();
 
 		// Draw each character's surface onto the intermediate surface based on alignment.
 		if (alignment == TextAlignment::Left)
 		{
 			int yOffset = 0;
-			for (const auto &surfaceList : surfaceLists)
+			for (const std::vector<FontDefinition::CharID> &charIDs : characterLists)
 			{
 				int xOffset = 0;
-				for (auto *surface : surfaceList)
+				for (const FontDefinition::CharID charID : charIDs)
 				{
-					blitToSurface(surface, xOffset, yOffset, tempSurface);
-					xOffset += surface->w;
+					const FontDefinition::Character &character = fontDef.getCharacter(charID);
+					blitCharToSurface(character, xOffset, yOffset, tempSurface);
+					xOffset += character.getWidth();
 				}
 
 				yOffset += richText.getCharacterHeight() + richText.getLineSpacing();
@@ -94,20 +129,21 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 		else if (alignment == TextAlignment::Center)
 		{
 			const std::vector<int> &lineWidths = richText.getLineWidths();
-			DebugAssert(lineWidths.size() == surfaceLists.size());
+			DebugAssert(lineWidths.size() == characterLists.size());
 
 			int yOffset = 0;
-			for (size_t i = 0; i < surfaceLists.size(); i++)
+			for (size_t i = 0; i < characterLists.size(); i++)
 			{
-				const auto &charSurfaces = surfaceLists[i];
+				const std::vector<FontDefinition::CharID> &charIDs = characterLists[i];
 				const int lineWidth = lineWidths[i];
 				const int xStart = (dimensions.x / 2) - (lineWidth / 2);
 
 				int xOffset = 0;
-				for (auto *surface : charSurfaces)
+				for (const FontDefinition::CharID charID : charIDs)
 				{
-					blitToSurface(surface, xStart + xOffset, yOffset, tempSurface);
-					xOffset += surface->w;
+					const FontDefinition::Character &character = fontDef.getCharacter(charID);
+					blitCharToSurface(character, xStart + xOffset, yOffset, tempSurface);
+					xOffset += character.getWidth();
 				}
 
 				yOffset += richText.getCharacterHeight() + richText.getLineSpacing();
@@ -143,19 +179,19 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	if (hasShadow)
 	{
 		drawTempText(shadowColor);
-		blitToSurface(tempSurface.get(), std::max(shadowOffset.x, 0),
+		blitSurfaceToSurface(tempSurface.get(), std::max(shadowOffset.x, 0),
 			std::max(shadowOffset.y, 0), this->surface);
 
 		// Set all shadow pixels in the temp surface to the main color.
 		setNonTransparentPixels(richText.getColor());
 
-		blitToSurface(tempSurface.get(), std::max(-shadowOffset.x, 0),
+		blitSurfaceToSurface(tempSurface.get(), std::max(-shadowOffset.x, 0),
 			std::max(-shadowOffset.y, 0), this->surface);
 	}
 	else
 	{
 		drawTempText(richText.getColor());
-		blitToSurface(tempSurface.get(), 0, 0, this->surface);
+		blitSurfaceToSurface(tempSurface.get(), 0, 0, this->surface);
 	}
 
 	// Create the destination SDL textures (keeping the surfaces' color keys).
@@ -163,8 +199,8 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 }
 
 TextBox::TextBox(const Int2 &center, const RichTextString &richText,
-	const ShadowData *shadow, Renderer &renderer)
-	: TextBox(center.x, center.y, richText, shadow, renderer)
+	const ShadowData *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
+	: TextBox(center.x, center.y, richText, shadow, fontLibrary, renderer)
 {
 	// Shift the resulting text box coordinates left and up to center it over
 	// the text (ignoring any shadow).
@@ -172,11 +208,13 @@ TextBox::TextBox(const Int2 &center, const RichTextString &richText,
 	this->y -= richText.getDimensions().y / 2;
 }
 
-TextBox::TextBox(int x, int y, const RichTextString &richText, Renderer &renderer)
-	: TextBox(x, y, richText, nullptr, renderer) { }
+TextBox::TextBox(int x, int y, const RichTextString &richText, const FontLibrary &fontLibrary,
+	Renderer &renderer)
+	: TextBox(x, y, richText, nullptr, fontLibrary, renderer) { }
 
-TextBox::TextBox(const Int2 &center, const RichTextString &richText, Renderer &renderer)
-	: TextBox(center, richText, nullptr, renderer) { }
+TextBox::TextBox(const Int2 &center, const RichTextString &richText, 
+	const FontLibrary &fontLibrary, Renderer &renderer)
+	: TextBox(center, richText, nullptr, fontLibrary, renderer) { }
 
 int TextBox::getX() const
 {

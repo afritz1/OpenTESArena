@@ -12,7 +12,7 @@
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -50,16 +50,17 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 			const auto &entry = names->entries.at(i);
 
 			const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 8 + (i * 14));
+			const auto &fontLibrary = game.getFontLibrary();
 			const RichTextString richText(
 				std::string(entry.name.data()),
 				FontName::Arena,
 				Color::White,
 				TextAlignment::Center,
-				game.getFontManager());
+				fontLibrary);
 
 			// Create text box from entry text.
 			this->saveTextBoxes.at(i) = std::make_unique<TextBox>(
-				center, richText, game.getRenderer());
+				center, richText, fontLibrary, game.getRenderer());
 		}
 	}
 	else
@@ -83,7 +84,7 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 				Color(150, 97, 0),
 				TextAlignment::Center,
 				lineSpacing,
-				game.getFontManager());
+				game.getFontLibrary());
 
 			auto popUpFunction = [](Game &game)
 			{

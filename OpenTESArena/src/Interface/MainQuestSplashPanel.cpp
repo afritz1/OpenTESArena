@@ -42,18 +42,18 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		}();
 
 		const int lineSpacing = 1;
-
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Teeny,
 			Color(195, 158, 0),
 			TextAlignment::Center,
 			lineSpacing,
-			game.getFontManager());
+			fontLibrary);
 		
 		const int x = (Renderer::ORIGINAL_WIDTH / 2) - (richText.getDimensions().x / 2);
 		const int y = 133;
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->exitButton = []()

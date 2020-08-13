@@ -6,7 +6,7 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureFile.h"
@@ -20,7 +20,8 @@ TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	: Panel(game), endingAction(endingAction), texture(std::move(texture)),
 	textureCenter(textureCenter)
 {
-	this->textBox = std::make_unique<TextBox>(textCenter, richText, game.getRenderer());
+	this->textBox = std::make_unique<TextBox>(textCenter, richText,
+		game.getFontLibrary(), game.getRenderer());
 }
 
 TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,

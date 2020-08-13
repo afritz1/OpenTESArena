@@ -17,7 +17,7 @@
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
 class Color;
-class FontManager;
+class FontLibrary;
 class Game;
 class Renderer;
 class Texture;
@@ -53,7 +53,7 @@ protected:
 	// Generates a tooltip texture with the default white foreground and gray
 	// background with alpha blending.
 	static Texture createTooltip(const std::string &text,
-		FontName fontName, FontManager &fontManager, Renderer &renderer);
+		FontName fontName, FontLibrary &fontLibrary, Renderer &renderer);
 
 	Game &getGame() const;
 

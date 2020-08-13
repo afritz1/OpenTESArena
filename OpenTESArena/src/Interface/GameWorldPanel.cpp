@@ -35,8 +35,9 @@
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
 #include "../Media/Color.h"
-#include "../Media/FontManager.h"
+#include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
+#include "../Media/FontUtils.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -275,14 +276,15 @@ namespace
 			text = "No hit";
 		}
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::Arena,
 			Color::White,
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		const TextBox textBox(0, 0, richText, renderer);
+		const TextBox textBox(0, 0, richText, fontLibrary, renderer);
 		const int originalX = Renderer::ORIGINAL_WIDTH / 2;
 		const int originalY = (Renderer::ORIGINAL_HEIGHT / 2) + 10;
 		renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
@@ -299,14 +301,15 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		const int x = 17;
 		const int y = 154;
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			game.getGameData().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, game.getRenderer());
+		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();
 
 	this->characterSheetButton = []()
@@ -475,7 +478,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				color,
 				TextAlignment::Center,
 				lineSpacing,
-				game.getFontManager());
+				game.getFontLibrary());
 
 			const Int2 &richTextDimensions = richText.getDimensions();
 
@@ -958,7 +961,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		}();
 
 		auto &gameData = game.getGameData();
-		gameData.setActionText(text, game.getFontManager(), game.getRenderer());
+		gameData.setActionText(text, game.getFontLibrary(), game.getRenderer());
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1848,7 +1851,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							}();
 
 							auto &gameData = game.getGameData();
-							gameData.setActionText(menuName, game.getFontManager(), game.getRenderer());
+							gameData.setActionText(menuName, game.getFontLibrary(), game.getRenderer());
 						}
 					}
 				}
@@ -1897,7 +1900,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				}
 
 				auto &gameData = game.getGameData();
-				gameData.setActionText(text, game.getFontManager(), game.getRenderer());
+				gameData.setActionText(text, game.getFontLibrary(), game.getRenderer());
 			}
 		}
 		else
@@ -1979,7 +1982,7 @@ void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 					0, textTrigger->getText().size() - 1);
 
 				auto &gameData = game.getGameData();
-				gameData.setTriggerText(text, game.getFontManager(), game.getRenderer());
+				gameData.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
 
 				// Set the text trigger as activated (regardless of whether or not it's
 				// single-shot, just for consistency).
@@ -2577,7 +2580,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontManager(), renderer);
+		text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	auto &textureManager = this->getGame().getTextureManager();
 	const TextureID gameWorldInterfaceTextureID =
@@ -2651,16 +2654,18 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string fpsText = String::fixedPrecision(fps, 1);
 		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 1);
 		const std::string text = "FPS: " + fpsText + " (" + frameTimeText + "ms)";
+
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::D,
 			Color::White,
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
 		const int x = 2;
 		const int y = 2;
-		const TextBox textBox(x, y, richText, renderer);
+		const TextBox textBox(x, y, richText, fontLibrary, renderer);
 		renderer.drawOriginal(textBox.getTexture(), x, y);
 	}
 
@@ -2720,21 +2725,30 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			text += "\nChunk: " + chunkX + ", " + chunkY;
 		}
 
-		auto &fontManager = game.getFontManager();
+		auto &fontLibrary = game.getFontLibrary();
 		const FontName fontName = FontName::D;
 		const RichTextString richText(
 			text,
 			fontName,
 			Color::White,
 			TextAlignment::Left,
-			fontManager);
+			fontLibrary);
 
 		// Get character height of the FPS font so Y position is correct.
-		const int yOffset = fontManager.getFont(fontName).getCharacterHeight();
+		const char *fontNameStr = FontUtils::fromName(fontName);
+		int fontIndex;
+		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
+		{
+			DebugLogWarning("Couldn't get font \"" + std::string(fontNameStr) + "\".");
+			return;
+		}
+
+		const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
+		const int yOffset = fontDef.getCharacterHeight();
 
 		const int x = 2;
 		const int y = 2 + yOffset;
-		const TextBox textBox(x, y, richText, renderer);
+		const TextBox textBox(x, y, richText, fontLibrary, renderer);
 		renderer.drawOriginal(textBox.getTexture(), x, y);
 	}
 
@@ -2753,16 +2767,17 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
 			"                               " + std::to_string(0);
 
+		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
 			FontName::D,
 			Color::White,
 			TextAlignment::Left,
-			game.getFontManager());
+			fontLibrary);
 
 		const int x = 2;
 		const int y = 72;
-		const TextBox textBox(x, y, richText, renderer);
+		const TextBox textBox(x, y, richText, fontLibrary, renderer);
 
 		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps]()
 		{
