@@ -1,6 +1,8 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#include <cmath>
+#include <type_traits>
 #include <vector>
 
 #include "../Math/Vector2.h"
@@ -17,6 +19,14 @@ namespace MathUtils
 
 	// Returns whether the two values are within epsilon of each other.
 	double almostEqual(double a, double b);
+
+	// Returns whether the given value represents a number on the number line, including infinity.
+	template <typename T>
+	bool isValidFloatingPoint(T value)
+	{
+		static_assert(std::is_floating_point_v<T>);
+		return !std::isnan(value);
+	}
 
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
