@@ -23,7 +23,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int
 			const uint32_t count = static_cast<uint32_t>(sample) - 0x7F;
 
 			DebugAssert(o >= 0);
-			DebugAssert((o + count) <= dstSize);
+			DebugAssert((o + static_cast<int>(count)) <= dstSize);
 			for (uint32_t j = 0; j < count; j++)
 			{
 				dst[o] = value;
@@ -35,7 +35,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, uint8_t *dst, int
 			const uint32_t count = static_cast<uint32_t>(sample) + 1;
 
 			DebugAssert(o >= 0);
-			DebugAssert((o + count) <= dstSize);
+			DebugAssert((o + static_cast<int>(count)) <= dstSize);
 			for (uint32_t j = 0; j < count; j++)
 			{
 				dst[o] = src[i];
