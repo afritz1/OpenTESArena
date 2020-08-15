@@ -113,6 +113,9 @@ Game::Game()
 		DebugCrash("Couldn't init font library.");
 	}
 
+	// Load cinematic definitions.
+	this->cinematicLibrary.init();
+
 	// Load various miscellaneous assets.
 	if (!this->miscAssets.init(isFloppyVersion))
 	{
@@ -205,6 +208,11 @@ InputManager &Game::getInputManager()
 FontLibrary &Game::getFontLibrary()
 {
 	return this->fontLibrary;
+}
+
+const CinematicLibrary &Game::getCinematicLibrary() const
+{
+	return this->cinematicLibrary;
 }
 
 bool Game::gameDataIsActive() const

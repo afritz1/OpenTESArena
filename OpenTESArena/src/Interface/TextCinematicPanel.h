@@ -3,11 +3,13 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Media/TextureManager.h"
 
 // Very similar to a cinematic panel, only now it's designed for cinematics with
 // subtitles at the bottom (a.k.a., "text").
@@ -27,14 +29,35 @@ class TextBox;
 class TextCinematicPanel : public Panel
 {
 private:
+	// Only used when speech files are available (such as with CD version).
+	class SpeechState
+	{
+	private:
+		int templateDatKey, nextVoiceIndex;
+	public:
+		SpeechState();
+
+		void init(int templateDatKey);
+
+		static bool isFirstVoice(int voiceIndex);
+		static bool isBeginningOfNewPage(int voiceIndex);
+
+		int getNextVoiceIndex() const;
+		std::string getVoiceFilename(int voiceIndex) const;
+		void incrementVoiceIndex();
+		void resetVoiceIndex();
+	};
+
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
 	Button<Game&> skipButton;
-	std::string sequenceName;
+	TextureManager::IdGroup<TextureID> animTextureIDs;
+	SpeechState speechState;
 	double secondsPerImage, currentImageSeconds;
-	int imageIndex, textIndex;
+	int animImageIndex, textIndex, textCinematicDefIndex;
+	
+	bool shouldPlaySpeech() const;
 public:
-	TextCinematicPanel(Game &game, const std::string &sequenceName,
-		const std::string &text, double secondsPerImage,
+	TextCinematicPanel(Game &game, int textCinematicDefIndex, double secondsPerImage,
 		const std::function<void(Game&)> &endingAction);
 	virtual ~TextCinematicPanel() = default;
 

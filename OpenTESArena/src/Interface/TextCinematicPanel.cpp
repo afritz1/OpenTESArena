@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdio>
 
 #include "SDL.h"
 
@@ -9,39 +11,104 @@
 #include "TextCinematicPanel.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
+#include "../Media/AudioManager.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
+#include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
+#include "components/dos/DOSUtils.h"
 #include "components/utilities/String.h"
 
-TextCinematicPanel::TextCinematicPanel(Game &game, 
-	const std::string &sequenceName, const std::string &text, 
-	double secondsPerImage, const std::function<void(Game&)> &endingAction)
-	: Panel(game), sequenceName(sequenceName)
+TextCinematicPanel::SpeechState::SpeechState()
 {
-	// Text cannot be empty.
-	DebugAssert(text.size() > 0);
+	this->templateDatKey = -1;
+	this->nextVoiceIndex = -1;
+}
 
-	this->textBoxes = [&game, &text]()
+void TextCinematicPanel::SpeechState::init(int templateDatKey)
+{
+	this->templateDatKey = templateDatKey;
+	this->nextVoiceIndex = 0;
+}
+
+bool TextCinematicPanel::SpeechState::isFirstVoice(int voiceIndex)
+{
+	return voiceIndex == 0;
+}
+
+bool TextCinematicPanel::SpeechState::isBeginningOfNewPage(int voiceIndex)
+{
+	return (voiceIndex % 2) == 0;
+}
+
+int TextCinematicPanel::SpeechState::getNextVoiceIndex() const
+{
+	return this->nextVoiceIndex;
+}
+
+std::string TextCinematicPanel::SpeechState::getVoiceFilename(int voiceIndex) const
+{
+	const int index = voiceIndex / 2;
+	const char letter = SpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
+
+	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	std::snprintf(filename.data(), filename.size(), "%d_%02d%c.VOC",
+		this->templateDatKey, index, letter);
+
+	return "SPEECH/" + std::string(filename.data());
+}
+
+void TextCinematicPanel::SpeechState::incrementVoiceIndex()
+{
+	this->nextVoiceIndex++;
+}
+
+void TextCinematicPanel::SpeechState::resetVoiceIndex()
+{
+	this->nextVoiceIndex = 0;
+}
+
+TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
+	double secondsPerImage, const std::function<void(Game&)> &endingAction)
+	: Panel(game)
+{
+	const auto &cinematicLibrary = game.getCinematicLibrary();
+	const TextCinematicDefinition &textCinematicDef =
+		cinematicLibrary.getTextDefinition(textCinematicDefIndex);
+
+	this->textBoxes = [&game, &textCinematicDef]()
 	{
 		const Int2 center(
 			Renderer::ORIGINAL_WIDTH / 2, 
 			Renderer::ORIGINAL_HEIGHT - 11);
 
+		const auto &miscAssets = game.getMiscAssets();
+		const auto &templateDat = miscAssets.getTemplateDat();
+		const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
+		std::string cinematicText = templateDatEntry.values.front();
+		cinematicText.push_back('\n');
+
+		// Replace substitution tokens. The original game wraps text onto the next screen if the
+		// player's name is too long, which may push the text for every subsequent screen forward
+		// by a little bit.
+		const std::string playerFirstName = game.getGameData().getPlayer().getFirstName();
+		cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
+
 		// Re-distribute newlines.
-		const std::string newText = String::distributeNewlines(text, 60);
+		const std::string newText = String::distributeNewlines(cinematicText, 60);
+
+		// Some more formatting should be done in the future so the text wraps nicer. That is,
+		// replace all new lines with spaces and redistribute new lines given some max line
+		// length value.
 
 		// Count new lines.
-		const int newLineCount = static_cast<int>(
-			std::count(newText.begin(), newText.end(), '\n'));
+		const int newLineCount = static_cast<int>(std::count(newText.begin(), newText.end(), '\n'));
 
 		// Split text into lines.
 		const std::vector<std::string> textLines = String::split(newText, '\n');
@@ -73,7 +140,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 			const RichTextString richText(
 				textBoxText,
 				FontName::Arena,
-				Color(105, 174, 207),
+				textCinematicDef.getFontColor(),
 				TextAlignment::Center,
 				lineSpacing,
 				fontLibrary);
@@ -91,42 +158,81 @@ TextCinematicPanel::TextCinematicPanel(Game &game,
 		return Button<Game&>(endingAction);
 	}();
 
+	// Optionally initialize speech state if speech is available.
+	if (this->shouldPlaySpeech())
+	{
+		this->speechState.init(textCinematicDef.getTemplateDatKey());
+	}
+
+	// Load texture IDs for the cinematic animation.
+	auto &textureManager = game.getTextureManager();
+	const std::string &animFilename = textCinematicDef.getAnimationFilename();
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(animFilename.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette ID for \"" + animFilename + "\".");
+	}
+
+	if (!textureManager.tryGetTextureIDs(animFilename.c_str(), paletteID,
+		game.getRenderer(), &this->animTextureIDs))
+	{
+		DebugCrash("Couldn't get texture IDs for \"" + animFilename + "\".");
+	}
+
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
-	this->imageIndex = 0;
+	this->textCinematicDefIndex = textCinematicDefIndex;
+	this->animImageIndex = 0;
 	this->textIndex = 0;
+}
+
+bool TextCinematicPanel::shouldPlaySpeech() const
+{
+	auto &game = this->getGame();
+	const auto &miscAssets = game.getMiscAssets();
+	const auto &exeData = miscAssets.getExeData();
+	return !exeData.isFloppyVersion();
 }
 
 void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
-	const auto &inputManager = this->getGame().getInputManager();
+	auto &game = this->getGame();
+	const auto &inputManager = game.getInputManager();
 	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
 	{
 		// Force the cinematic to end.
-		this->skipButton.click(this->getGame());
+		this->skipButton.click(game);
+
+		// Stop voice if it is still playing.
+		auto &audioManager = game.getAudioManager();
+		audioManager.stopSound();
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
-
-	bool skipHotkeyPressed = spacePressed || enterPressed;
-
-	if (leftClick || skipHotkeyPressed)
+	// Only allow page skipping if there is no speech.
+	if (!this->shouldPlaySpeech())
 	{
-		this->textIndex++;
+		bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+		bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
+		bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
+			inputManager.keyPressed(e, SDLK_KP_ENTER);
 
-		// If done with the last text box, then prepare for the next panel.
-		int textBoxCount = static_cast<int>(this->textBoxes.size());
-		if (this->textIndex >= textBoxCount)
+		bool skipHotkeyPressed = spacePressed || enterPressed;
+
+		if (leftClick || skipHotkeyPressed)
 		{
-			this->textIndex = textBoxCount - 1;
-			this->skipButton.click(this->getGame());
+			this->textIndex++;
+
+			// If done with the last text box, then prepare for the next panel.
+			int textBoxCount = static_cast<int>(this->textBoxes.size());
+			if (this->textIndex >= textBoxCount)
+			{
+				this->textIndex = textBoxCount - 1;
+				this->skipButton.click(game);
+			}
 		}
-	}	
+	}
 }
 
 void TextCinematicPanel::tick(double dt)
@@ -136,16 +242,57 @@ void TextCinematicPanel::tick(double dt)
 	while (this->currentImageSeconds > this->secondsPerImage)
 	{
 		this->currentImageSeconds -= this->secondsPerImage;
-		this->imageIndex++;
+		this->animImageIndex++;
 
 		// If at the end of the sequence, go back to the first image. The cinematic 
 		// ends at the end of the last text box.
-		const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
-			this->sequenceName, PaletteFile::fromName(PaletteName::BuiltIn));
-
-		if (this->imageIndex == textureIDs.getCount())
+		if (this->animImageIndex == this->animTextureIDs.getCount())
 		{
-			this->imageIndex = 0;
+			this->animImageIndex = 0;
+		}
+	}
+
+	if (this->shouldPlaySpeech())
+	{
+		// Update speech state, optionally ending the cinematic if done with last speech.
+		auto &game = this->getGame();
+		auto &audioManager = game.getAudioManager();
+
+		const bool playedFirstVoice = !SpeechState::isFirstVoice(this->speechState.getNextVoiceIndex());
+		if (!playedFirstVoice)
+		{
+			const std::string voiceFilename =
+				this->speechState.getVoiceFilename(this->speechState.getNextVoiceIndex());
+			audioManager.playSound(voiceFilename);
+			this->speechState.incrementVoiceIndex();
+		}
+		else
+		{
+			const int prevVoiceIndex = this->speechState.getNextVoiceIndex() - 1;
+			const std::string prevVoiceFilename = this->speechState.getVoiceFilename(prevVoiceIndex);
+
+			// Wait until previous voice is done playing.
+			if (!audioManager.isPlayingSound(prevVoiceFilename))
+			{
+				const int nextVoiceIndex = this->speechState.getNextVoiceIndex();
+				const std::string nextVoiceFilename = this->speechState.getVoiceFilename(nextVoiceIndex);
+
+				if (audioManager.soundExists(nextVoiceFilename))
+				{
+					audioManager.playSound(nextVoiceFilename);
+					this->speechState.incrementVoiceIndex();
+
+					if (SpeechState::isBeginningOfNewPage(nextVoiceIndex))
+					{
+						this->textIndex++;
+					}
+				}
+				else
+				{
+					// No remaining voices to play.
+					this->skipButton.click(game);
+				}
+			}
 		}
 	}
 }
@@ -155,13 +302,9 @@ void TextCinematicPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Get texture IDs in advance of any texture references.
-	const TextureManager::IdGroup<TextureID> textureIDs = this->getTextureIDs(
-		this->sequenceName, PaletteFile::fromName(PaletteName::BuiltIn));
-	const TextureID textureID = textureIDs.getID(this->imageIndex);
-
 	// Draw current frame in animation.
 	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureID textureID = this->animTextureIDs.getID(this->animImageIndex);
 	const TextureRef texture = textureManager.getTextureRef(textureID);
 	renderer.drawOriginal(texture.get());
 

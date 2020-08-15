@@ -24,6 +24,7 @@
 #include "../Math/Vector4.h"
 
 #include "components/debug/Debug.h"
+#include "components/vfs/manager.hpp"
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
@@ -51,10 +52,6 @@ private:
 	// necessarily identical (depending on the resampling implementation). Causes an error
 	// if the resampling extension is unsupported.
 	static ALint getResamplingIndex(int value);
-
-	// Returns whether the given sound is currently playing. Intended for limiting certain
-	// sounds to only have one instance at a time.
-	bool soundIsPlaying(const std::string &filename) const;
 public:
 	float mMusicVolume;
 	float mSfxVolume;
@@ -83,6 +80,11 @@ public:
 		bool is3D, const std::string &midiConfig);
 
 	bool hasNextMusic() const;
+
+	// Returns whether the given sound is currently playing.
+	bool soundIsPlaying(const std::string &filename) const;
+
+	bool soundExists(const std::string &filename) const;
 
 	void playMusic(const std::string &filename, bool loop);
 	void playSound(const std::string &filename, const std::optional<Double3> &position);
@@ -480,18 +482,6 @@ ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
 	}
 }
 
-bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
-{
-	// Check through used sources' filenames.
-	const auto iter = std::find_if(mUsedSources.begin(), mUsedSources.end(),
-		[&filename](const std::pair<std::string, ALuint> &pair)
-	{
-		return pair.first == filename;
-	});
-
-	return iter != mUsedSources.end();
-}
-
 void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
 	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
@@ -567,6 +557,23 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 bool AudioManagerImpl::hasNextMusic() const
 {
 	return !this->mNextSong.empty();
+}
+
+bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
+{
+	// Check through used sources' filenames.
+	const auto iter = std::find_if(mUsedSources.begin(), mUsedSources.end(),
+		[&filename](const std::pair<std::string, ALuint> &pair)
+	{
+		return pair.first == filename;
+	});
+
+	return iter != mUsedSources.end();
+}
+
+bool AudioManagerImpl::soundExists(const std::string &filename) const
+{
+	return VFS::Manager::get().open(filename.c_str()) != nullptr;
 }
 
 void AudioManagerImpl::playMusic(const std::string &filename, bool loop)
@@ -887,6 +894,16 @@ double AudioManager::getSoundVolume() const
 bool AudioManager::hasResamplerExtension() const
 {
 	return pImpl->mHasResamplerExtension;
+}
+
+bool AudioManager::isPlayingSound(const std::string &filename) const
+{
+	return pImpl->soundIsPlaying(filename);
+}
+
+bool AudioManager::soundExists(const std::string &filename) const
+{
+	return pImpl->soundExists(filename);
 }
 
 void AudioManager::playMusic(const std::string &filename, bool loop)

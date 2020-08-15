@@ -14,6 +14,7 @@
 #include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
+#include "../Media/CinematicLibrary.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
@@ -45,6 +46,7 @@ private:
 	MusicLibrary musicLibrary;
 	InputManager inputManager;
 	FontLibrary fontLibrary;
+	CinematicLibrary cinematicLibrary;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
@@ -102,6 +104,9 @@ public:
 
 	// Gets the font library for obtaining various fonts.
 	FontLibrary &getFontLibrary();
+
+	// Gets the cinematic library for obtaining various cinematic definitions.
+	const CinematicLibrary &getCinematicLibrary() const;
 
 	// Determines if a game session is currently running. This is true when a player
 	// is loaded into memory.

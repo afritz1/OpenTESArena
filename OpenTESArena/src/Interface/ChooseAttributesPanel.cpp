@@ -342,26 +342,6 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					{
 						gameDataFunction(game);
 
-						// The original game wraps text onto the next screen if the player's name
-						// is too long. For example, it causes "listen to me" to go down one line
-						// and "Imperial Battle" to go onto the next screen, which then pushes the
-						// text for every subsequent screen forward by a little bit.
-
-						// Read cinematic text from TEMPLATE.DAT.
-						const auto &templateDat = game.getMiscAssets().getTemplateDat();
-						const auto &entry = templateDat.getEntry(1400);
-						std::string cinematicText = entry.values.front();
-						cinematicText.append("\n");
-
-						// Replace all instances of %pcf with the player's first name.
-						const std::string playerName =
-							game.getGameData().getPlayer().getFirstName();
-						cinematicText = String::replace(cinematicText, "%pcf", playerName);
-
-						// Some more formatting should be done in the future so the text wraps
-						// nicer. That is, replace all new lines with spaces and redistribute new
-						// lines given some max line length value.
-
 						auto gameFunction = [](Game &game)
 						{
 							// Create the function that will be called when the player leaves
@@ -463,13 +443,31 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							game.setMusic(musicDef);
 						};
 
+						const auto &cinematicLibrary = game.getCinematicLibrary();
+						int textCinematicDefIndex;
+						const bool success = cinematicLibrary.findTextDefinitionIndexIf(
+							[](const TextCinematicDefinition &def)
+						{
+							if (def.getType() == TextCinematicDefinition::Type::MainQuest)
+							{
+								const auto &mainQuestCinematicDef = def.getMainQuestDefinition();
+								const bool isMainQuestStartCinematic = mainQuestCinematicDef.progress == 0;
+								if (isMainQuestStartCinematic)
+								{
+									return true;
+								}
+							}
+
+							return false;
+						}, &textCinematicDefIndex);
+
+						if (!success)
+						{
+							DebugCrash("Couldn't find main quest start text cinematic definition.");
+						}
+
 						game.setCharacterCreationState(nullptr);
-						game.setPanel<TextCinematicPanel>(
-							game,
-							TextureFile::fromName(TextureSequenceName::Silmane),
-							cinematicText,
-							0.171,
-							gameFunction);
+						game.setPanel<TextCinematicPanel>(game, textCinematicDefIndex, 0.171, gameFunction);
 
 						// Play dream music.
 						const MusicLibrary &musicLibrary = game.getMusicLibrary();

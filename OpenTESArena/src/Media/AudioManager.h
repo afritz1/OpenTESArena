@@ -45,6 +45,12 @@ public:
 	// Returns whether the implementation supports resampling options.
 	bool hasResamplerExtension() const;
 
+	// Returns whether the given filename is playing in any sound handle.
+	bool isPlayingSound(const std::string &filename) const;
+
+	// Returns whether the given filename references an actual sound.
+	bool soundExists(const std::string &filename) const;
+
 	// Plays a music file.
 	void playMusic(const std::string &filename, bool loop);
 
