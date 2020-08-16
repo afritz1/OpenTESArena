@@ -1,36 +1,25 @@
 #include "CharacterQuestion.h"
-#include "../Entities/CharacterClassCategoryName.h"
 
-#include "components/debug/Debug.h"
-
-CharacterQuestion::CharacterQuestion(const std::string &description,
-	const std::pair<std::string, CharacterClassCategoryName> &a,
-	const std::pair<std::string, CharacterClassCategoryName> &b,
-	const std::pair<std::string, CharacterClassCategoryName> &c)
-	: description(description), a(a), b(b), c(c)
-{
-	// Make sure none of the class categories match.
-	DebugAssert(a.second != b.second);
-	DebugAssert(a.second != c.second);
-	DebugAssert(b.second != c.second);
-}
+CharacterQuestion::CharacterQuestion(std::string &&description, Choice &&a,
+	Choice &&b, Choice &&c)
+	: description(std::move(description)), a(std::move(a)), b(std::move(b)), c(std::move(c)) { }
 
 const std::string &CharacterQuestion::getDescription() const
 {
 	return this->description;
 }
 
-const std::pair<std::string, CharacterClassCategoryName> &CharacterQuestion::getA() const
+const CharacterQuestion::Choice &CharacterQuestion::getA() const
 {
 	return this->a;
 }
 
-const std::pair<std::string, CharacterClassCategoryName> &CharacterQuestion::getB() const
+const CharacterQuestion::Choice &CharacterQuestion::getB() const
 {
 	return this->b;
 }
 
-const std::pair<std::string, CharacterClassCategoryName> &CharacterQuestion::getC() const
+const CharacterQuestion::Choice &CharacterQuestion::getC() const
 {
 	return this->c;
 }

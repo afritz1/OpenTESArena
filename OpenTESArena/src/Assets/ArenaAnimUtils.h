@@ -15,6 +15,7 @@
 
 class ArenaRandom;
 class CFAFile;
+class CharacterClassLibrary;
 class ExeData;
 class MiscAssets;
 class TextureManager;
@@ -136,8 +137,8 @@ namespace ArenaAnimUtils
 	bool trySetCitizenFilenameDirection(std::string &filename, int animDirectionID);
 
 	// Writes out values for human enemy animations.
-	void getHumanEnemyProperties(int itemIndex, const MiscAssets &miscAssets,
-		int *outTypeIndex, bool *outIsMale);
+	void getHumanEnemyProperties(int itemIndex, const CharacterClassLibrary &charClassLibrary,
+		const ExeData &exeData, int *outTypeIndex, bool *outIsMale);
 
 	// Writes the gender data into the given filename if possible.
 	bool trySetHumanFilenameGender(std::string &filename, bool isMale);
@@ -152,8 +153,9 @@ namespace ArenaAnimUtils
 
 	// Writes out dynamic entity animation data to animation states.
 	bool tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf,
-		const MiscAssets &miscAssets, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+		EntityAnimationInstance *outAnimInst);
 
 	// Writes out citizen animation data to animation states.
 	bool tryMakeCitizenAnims(bool isMale, ClimateType climateType, const INFFile &inf,

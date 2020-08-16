@@ -93,15 +93,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 		const int x = 10;
 		const int y = 26;
 
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &classDefs = miscAssets.getClassDefinitions();
-		const int classIndex = charCreationState.getClassIndex();
-		DebugAssertIndex(classDefs, classIndex);
-		const std::string &className = classDefs[classIndex].getName();
+		const int charClassDefID = charCreationState.getClassDefID();
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			className,
+			charClassDef.getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
@@ -272,20 +270,20 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								const bool male = charCreationState.isMale();
 								const int raceIndex = charCreationState.getRaceIndex();
 
-								const auto &classDefs = miscAssets.getClassDefinitions();
-								const int classIndex = charCreationState.getClassIndex();
-								DebugAssertIndex(classDefs, classIndex);
-								const auto &charClass = classDefs[classIndex];
+								const auto &charClassLibrary = game.getCharacterClassLibrary();
+								const int charClassDefID = charCreationState.getClassDefID();
+								const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 								const int portraitIndex = charCreationState.getPortraitIndex();
 
-								const auto &allowedWeapons = charClass.getAllowedWeapons();
-								const int weaponID = allowedWeapons.at(
-									game.getRandom().next(static_cast<int>(allowedWeapons.size())));
+								const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+								const int weaponID = charClassDef.getAllowedWeapon(
+									game.getRandom().next(allowedWeaponCount));
 
-								return Player(std::string(name), male, raceIndex, charClass, portraitIndex,
-									dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED,
-									Player::DEFAULT_RUN_SPEED, weaponID, exeData);
+								return Player(std::string(name), male, raceIndex, charClassDefID,
+									portraitIndex, dummyPosition, direction, velocity,
+									Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID,
+									exeData);
 							}();
 
 							return std::make_unique<GameData>(std::move(player), miscAssets);
@@ -328,8 +326,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 						auto &textureManager = game.getTextureManager();
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
-							VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
-							textureManager, renderer))
+							VoxelDefinition::WallData::MenuType::Dungeon, mif,
+							game.getCharacterClassLibrary(), miscAssets, textureManager, renderer))
 						{
 							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
 						}
@@ -388,7 +386,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								const auto &miscAssets = game.getMiscAssets();
 								auto &renderer = game.getRenderer();
 								if (!gameData.loadCity(locationDef, provinceDef, weatherType,
-									starCount, miscAssets, game.getTextureManager(), renderer))
+									starCount, game.getCharacterClassLibrary(), miscAssets,
+									game.getTextureManager(), renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}
@@ -707,23 +706,21 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const bool male = charCreationState.isMale();
 	const int raceIndex = charCreationState.getRaceIndex();
 	const int portraitIndex = charCreationState.getPortraitIndex();
-	const CharacterClass &charClass = [&game, &charCreationState]() -> const CharacterClass&
+	const auto &charClassDef = [&game, &charCreationState]() -> const CharacterClassDefinition&
 	{
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &classDefs = miscAssets.getClassDefinitions();
-		const int classIndex = charCreationState.getClassIndex();
-		DebugAssertIndex(classDefs, classIndex);
-		return classDefs[classIndex];
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = charCreationState.getClassDefID();
+		return charClassLibrary.getDefinition(charClassDefID);
 	}();
 
 	// Get the filenames for the portrait and clothes.
 	const std::string &headsFilename = PortraitFile::getHeads(male, raceIndex, false);
 	const std::string &bodyFilename = PortraitFile::getBody(male, raceIndex);
-	const std::string &shirtFilename = PortraitFile::getShirt(male, charClass.canCastMagic());
+	const std::string &shirtFilename = PortraitFile::getShirt(male, charClassDef.canCastMagic());
 	const std::string &pantsFilename = PortraitFile::getPants(male);
 
 	// Get pixel offsets for each clothes texture.
-	const Int2 shirtOffset = PortraitFile::getShirtOffset(male, charClass.canCastMagic());
+	const Int2 shirtOffset = PortraitFile::getShirtOffset(male, charClassDef.canCastMagic());
 	const Int2 pantsOffset = PortraitFile::getPantsOffset(male);
 
 	// Draw the current portrait and clothes.

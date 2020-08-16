@@ -10,7 +10,8 @@
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
-#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassDefinition.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -73,9 +74,16 @@ CharacterPanel::CharacterPanel(Game &game)
 		const int x = 10;
 		const int y = 26;
 
+		const auto &charClassDef = [&game]() -> const CharacterClassDefinition&
+		{
+			const auto &charClassLibrary = game.getCharacterClassLibrary();
+			const auto &player = game.getGameData().getPlayer();
+			return charClassLibrary.getDefinition(player.getCharacterClassDefID());
+		}();
+
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameData().getPlayer().getCharacterClass().getName(),
+			charClassDef.getName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
@@ -171,17 +179,23 @@ void CharacterPanel::render(Renderer &renderer)
 	// Get the filenames for the portrait and clothes.
 	auto &game = this->getGame();
 	const auto &player = game.getGameData().getPlayer();
+	const auto &charClassDef = [&game, &player]() -> const CharacterClassDefinition&
+	{
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		return charClassLibrary.getDefinition(player.getCharacterClassDefID());
+	}();
+
 	const std::string &headsFilename = PortraitFile::getHeads(
 		player.isMale(), player.getRaceID(), false);
 	const std::string &bodyFilename = PortraitFile::getBody(
 		player.isMale(), player.getRaceID());
 	const std::string &shirtFilename = PortraitFile::getShirt(
-		player.isMale(), player.getCharacterClass().canCastMagic());
+		player.isMale(), charClassDef.canCastMagic());
 	const std::string &pantsFilename = PortraitFile::getPants(player.isMale());
 
 	// Get pixel offsets for each clothes texture.
 	const Int2 shirtOffset = PortraitFile::getShirtOffset(
-		player.isMale(), player.getCharacterClass().canCastMagic());
+		player.isMale(), charClassDef.canCastMagic());
 	const Int2 pantsOffset = PortraitFile::getPantsOffset(player.isMale());
 
 	// Get all texture IDs in advance of any texture references.

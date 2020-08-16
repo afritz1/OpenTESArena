@@ -11,6 +11,7 @@
 #include "InputManager.h"
 #include "Options.h"
 #include "../Assets/MiscAssets.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
@@ -47,6 +48,7 @@ private:
 	InputManager inputManager;
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
+	CharacterClassLibrary charClassLibrary;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
@@ -107,6 +109,9 @@ public:
 
 	// Gets the cinematic library for obtaining various cinematic definitions.
 	const CinematicLibrary &getCinematicLibrary() const;
+	
+	// Gets the character class library for obtaining various class definitions.
+	const CharacterClassLibrary &getCharacterClassLibrary() const;
 
 	// Determines if a game session is currently running. This is true when a player
 	// is loaded into memory.

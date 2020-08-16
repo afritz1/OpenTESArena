@@ -12,7 +12,8 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
-#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassDefinition.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
@@ -429,7 +430,9 @@ void PauseMenuPanel::render(Renderer &renderer)
 	renderer.drawOriginal(portraitTexture.get(), 14, 166);
 
 	// If the player's class can't use magic, show the darkened spell icon.
-	if (!player.getCharacterClass().canCastMagic())
+	const auto &charClassLibrary = this->getGame().getCharacterClassLibrary();
+	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+	if (!charClassDef.canCastMagic())
 	{
 		const TextureID nonMagicIconTextureID = this->getTextureID(
 			TextureName::NoSpell, PaletteName::Default);

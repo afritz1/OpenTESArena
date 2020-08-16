@@ -7,7 +7,7 @@
 #include "Button.h"
 #include "ListBox.h"
 #include "Panel.h"
-#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassDefinition.h"
 #include "../Rendering/Texture.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
@@ -29,13 +29,13 @@ private:
 	std::unique_ptr<ListBox> classesListBox;
 	Button<Game&> backToClassCreationButton;
 	Button<ChooseClassPanel&> upButton, downButton;
-	Button<Game&, const CharacterClass&> acceptButton;
+	Button<Game&, int> acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
-	std::vector<CharacterClass> charClasses;
+	std::vector<CharacterClassDefinition> charClasses;
 
-	std::string getClassArmors(const CharacterClass &charClass) const;
-	std::string getClassShields(const CharacterClass &charClass) const;
-	std::string getClassWeapons(const CharacterClass &charClass) const;
+	std::string getClassArmors(const CharacterClassDefinition &charClassDef) const;
+	std::string getClassShields(const CharacterClassDefinition &charClassDef) const;
+	std::string getClassWeapons(const CharacterClassDefinition &charClassDef) const;
 
 	// Gets the rectangle for the class list's area.
 	static Rect getClassListRect(const ExeData &exeData);

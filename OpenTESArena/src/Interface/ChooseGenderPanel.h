@@ -5,7 +5,6 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
 
 class Renderer;

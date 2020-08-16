@@ -2,9 +2,9 @@
 #define PLAYER_H
 
 #include "Camera3D.h"
-#include "CharacterClass.h"
 #include "WeaponAnimation.h"
 
+class CharacterClassLibrary;
 class ExeData;
 class Game;
 class Random;
@@ -25,7 +25,7 @@ private:
 	std::string displayName;
 	bool male;
 	int raceID;
-	CharacterClass charClass;
+	int charClassDefID;
 	int portraitID;
 	Camera3D camera;
 	Double3 velocity;
@@ -42,10 +42,9 @@ private:
 	// Updates the player's position and velocity based on interactions with the world.
 	void updatePhysics(const WorldData &worldData, bool collision, double dt);
 public:
-	Player(const std::string &displayName, bool male, int raceID,
-		const CharacterClass &charClass, int portraitID, const Double3 &position,
-		const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-		double maxRunSpeed, int weaponID, const ExeData &exeData);
+	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+		int portraitID, const Double3 &position, const Double3 &direction, const Double3 &velocity,
+		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
 	// Distance from player's feet to head.
 	static const double HEIGHT;
@@ -60,10 +59,10 @@ public:
 	int getPortraitID() const;
 	bool isMale() const;
 	int getRaceID() const;
-	const CharacterClass &getCharacterClass() const;
+	int getCharacterClassDefID() const;
 
 	// Generates a random player for testing.
-	static Player makeRandom(const std::vector<CharacterClass> &charClasses,
+	static Player makeRandom(const CharacterClassLibrary &charClassLibrary,
 		const ExeData &exeData, Random &random);
 
 	// Gets the direction the player is facing.

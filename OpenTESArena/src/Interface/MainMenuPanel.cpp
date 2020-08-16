@@ -337,7 +337,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Create a player with random data for testing.
 			const auto &miscAssets = game.getMiscAssets();
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
-				miscAssets.getClassDefinitions(), miscAssets.getExeData(), game.getRandom()), miscAssets);
+				game.getCharacterClassLibrary(), miscAssets.getExeData(), game.getRandom()),
+				miscAssets);
 
 			const int starCount = DistantSky::getStarCountFromDensity(
 				options.getMisc_StarDensity());
@@ -375,8 +376,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						return provinceDef.getLocationDef(locationIndex);
 					}();
 
-					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount, miscAssets,
-						game.getTextureManager(), renderer))
+					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount,
+						game.getCharacterClassLibrary(), miscAssets, game.getTextureManager(),
+						renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -420,7 +422,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Load city into game data. Location data is loaded, too.
 					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
-						miscAssets, game.getTextureManager(), renderer))
+						game.getCharacterClassLibrary(), miscAssets, game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
 					}
@@ -493,8 +495,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					DebugAssert(optInteriorType.has_value());
 					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
-					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif, miscAssets,
-						game.getTextureManager(), renderer))
+					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif,
+						game.getCharacterClassLibrary(), miscAssets, game.getTextureManager(),
+						renderer))
 					{
 						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
 					}
@@ -520,7 +523,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 							"Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
 						if (!gameData->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
-							interiorType, miscAssets, game.getTextureManager(), renderer))
+							interiorType, game.getCharacterClassLibrary(), miscAssets,
+							game.getTextureManager(), renderer))
 						{
 							DebugCrash("Couldn't load named dungeon \"" + locationDefPtr->getName() + "\".");
 						}
@@ -544,8 +548,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 						if (!gameData->loadWildernessDungeon(locationDef, provinceDef, wildBlockX,
-							wildBlockY, interiorType, miscAssets.getCityDataFile(), miscAssets,
-							game.getTextureManager(), renderer))
+							wildBlockY, interiorType, miscAssets.getCityDataFile(),
+							game.getCharacterClassLibrary(), miscAssets, game.getTextureManager(),
+							renderer))
 						{
 							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
 						}
@@ -576,7 +581,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// Load wilderness into game data. Location data is loaded, too.
 				const bool ignoreGatePos = true;
 				if (!gameData->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
-					filteredWeatherType, starCount, miscAssets, game.getTextureManager(), renderer))
+					filteredWeatherType, starCount, game.getCharacterClassLibrary(), miscAssets,
+					game.getTextureManager(), renderer))
 				{
 					DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 				}

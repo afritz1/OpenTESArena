@@ -411,7 +411,8 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Load the destination city.
 		if (!gameData.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
-			game.getMiscAssets(), game.getTextureManager(), game.getRenderer()))
+			game.getCharacterClassLibrary(), game.getMiscAssets(), game.getTextureManager(),
+			game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}
@@ -471,8 +472,8 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
 		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
-			VoxelDefinition::WallData::MenuType::Dungeon, miscAssets,
-			game.getTextureManager(), game.getRenderer()))
+			VoxelDefinition::WallData::MenuType::Dungeon, game.getCharacterClassLibrary(),
+			miscAssets, game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
 		}
@@ -505,8 +506,8 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
-			VoxelDefinition::WallData::MenuType::Dungeon, mif, miscAssets,
-			game.getTextureManager(), game.getRenderer()))
+			VoxelDefinition::WallData::MenuType::Dungeon, mif, game.getCharacterClassLibrary(),
+			miscAssets, game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load interior \"" + travelLocationDef.getName() + "\".");
 		}

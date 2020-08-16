@@ -12,6 +12,8 @@
 #include "TextEntry.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
+#include "../Entities/CharacterClassDefinition.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/CharacterCreationState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -40,16 +42,14 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 		const int x = 26;
 		const int y = 82;
 
-		const auto &miscAssets = game.getMiscAssets();
 		const auto &charCreationState = game.getCharacterCreationState();
-		const auto &classDefs = miscAssets.getClassDefinitions();
-		const int classIndex = charCreationState.getClassIndex();
-		DebugAssertIndex(classDefs, classIndex);
-		const CharacterClass &charClass = classDefs[classIndex];
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = charCreationState.getClassDefID();
+		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-		const auto &exeData = miscAssets.getExeData();
+		const auto &exeData = game.getMiscAssets().getExeData();
 		std::string text = exeData.charCreation.chooseName;
-		text = String::replace(text, "%s", charClass.getName());
+		text = String::replace(text, "%s", charClassDef.getName());
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(

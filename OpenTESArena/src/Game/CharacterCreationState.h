@@ -13,7 +13,7 @@ private:
 
 	std::array<char, MAX_NAME_LENGTH + 1> name;
 	// @todo: attributes collection
-	int classIndex;
+	int classDefID;
 	int raceIndex;
 	int portraitIndex;
 	bool male;
@@ -21,13 +21,13 @@ public:
 	CharacterCreationState();
 
 	const std::string_view getName() const;
-	int getClassIndex() const;
+	int getClassDefID() const;
 	int getRaceIndex() const;
 	int getPortraitIndex() const;
 	bool isMale() const;
 
 	void setName(const char *name);
-	void setClassIndex(int index);
+	void setClassDefID(int id);
 	void setRaceIndex(int index);
 	void setPortraitIndex(int index);
 	void setGender(bool male);

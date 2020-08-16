@@ -11,8 +11,7 @@
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
-#include "../Entities/CharacterClassCategory.h"
-#include "../Entities/CharacterClassCategoryName.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Items/ArmorMaterial.h"
@@ -38,14 +37,18 @@ const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
 ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game)
 {
-	// Read in character classes (just copy from misc. assets for now).
-	const auto &classDefs = game.getMiscAssets().getClassDefinitions();
-	this->charClasses = std::vector<CharacterClass>(classDefs.begin(), classDefs.end());
+	// Read in character classes.
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	this->charClasses = std::vector<CharacterClassDefinition>(charClassLibrary.getDefinitionCount());
 	DebugAssert(this->charClasses.size() > 0);
+	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
+	{
+		this->charClasses[i] = charClassLibrary.getDefinition(i);
+	}
 
 	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
-		[](const CharacterClass &a, const CharacterClass &b)
+		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b)
 	{
 		return a.getName().compare(b.getName()) < 0;
 	});
@@ -148,15 +151,15 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	this->acceptButton = []
 	{
-		auto function = [](Game &game, const CharacterClass &charClass)
+		auto function = [](Game &game, int charClassDefID)
 		{
 			auto &charCreationState = game.getCharacterCreationState();
-			charCreationState.setClassIndex(charClass.getClassIndex());
+			charCreationState.setClassDefID(charClassDefID);
 
 			game.setPanel<ChooseNamePanel>(game);
 		};
 
-		return Button<Game&, const CharacterClass&>(function);
+		return Button<Game&, int>(function);
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. 
@@ -203,8 +206,18 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
 			{
 				DebugAssertIndex(this->charClasses, index);
-				const CharacterClass &charClass = this->charClasses[index];
-				this->acceptButton.click(game, charClass);
+				const CharacterClassDefinition &charClassDef = this->charClasses[index];
+
+				const auto &charClassLibrary = game.getCharacterClassLibrary();
+				int charClassDefID;
+				if (!charClassLibrary.tryGetDefinitionIndex(charClassDef, &charClassDefID))
+				{
+					DebugLogError("Couldn't get index of character class definition \"" +
+						charClassDef.getName() + "\".");
+					return;
+				}
+
+				this->acceptButton.click(game, charClassDefID);
 			}
 		}
 		else if (mouseWheelUp)
@@ -230,18 +243,20 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
-std::string ChooseClassPanel::getClassArmors(const CharacterClass &charClass) const
+std::string ChooseClassPanel::getClassArmors(const CharacterClassDefinition &charClassDef) const
 {
-	const int armorCount = static_cast<int>(charClass.getAllowedArmors().size());
+	std::vector<int> allowedArmors(charClassDef.getAllowedArmorCount());
+	for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
+	{
+		allowedArmors[i] = charClassDef.getAllowedArmor(i);
+	}
 
-	// Sort as they are listed in the CharacterClassParser.
-	auto allowedArmors = charClass.getAllowedArmors();
 	std::sort(allowedArmors.begin(), allowedArmors.end());
 
 	std::string armorString;
 
 	// Decide what the armor string says.
-	if (armorCount == 0)
+	if (allowedArmors.size() == 0)
 	{
 		armorString = "None";
 	}
@@ -250,15 +265,16 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &charClass) co
 		int lengthCounter = 0;
 
 		// Collect all allowed armor display names for the class.
-		for (int i = 0; i < armorCount; i++)
+		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
-			const auto materialType = allowedArmors.at(i);
-			auto materialString = ArmorMaterial::typeToString(materialType);
+			const int materialType = allowedArmors[i];
+			auto materialString = ArmorMaterial::typeToString(
+				static_cast<ArmorMaterialType>(materialType));
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
 			// If not the last element, add a comma.
-			if (i < (armorCount - 1))
+			if (i < (static_cast<int>(allowedArmors.size()) - 1))
 			{
 				armorString.append(", ");
 
@@ -277,18 +293,20 @@ std::string ChooseClassPanel::getClassArmors(const CharacterClass &charClass) co
 	return armorString;
 }
 
-std::string ChooseClassPanel::getClassShields(const CharacterClass &charClass) const
+std::string ChooseClassPanel::getClassShields(const CharacterClassDefinition &charClassDef) const
 {
-	const int shieldCount = static_cast<int>(charClass.getAllowedShields().size());
+	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
+	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
+	{
+		allowedShields[i] = charClassDef.getAllowedShield(i);
+	}
 
-	// Sort as they are listed in the CharacterClassParser.
-	auto allowedShields = charClass.getAllowedShields();
 	std::sort(allowedShields.begin(), allowedShields.end());
 
 	std::string shieldsString;
 
 	// Decide what the shield string says.
-	if (shieldCount == 0)
+	if (allowedShields.size() == 0)
 	{
 		shieldsString = "None";
 	}
@@ -297,16 +315,16 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &charClass) c
 		int lengthCounter = 0;
 
 		// Collect all allowed shield display names for the class.
-		for (int i = 0; i < shieldCount; i++)
+		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
-			const auto shieldType = allowedShields.at(i);
-			auto dummyMetal = MetalType::Iron;
-			auto typeString = Shield(shieldType, dummyMetal).typeToString();
+			const int shieldType = allowedShields[i];
+			MetalType dummyMetal = MetalType::Iron;
+			auto typeString = Shield(static_cast<ShieldType>(shieldType), dummyMetal).typeToString();
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
 			// If not the last element, add a comma.
-			if (i < (shieldCount - 1))
+			if (i < (static_cast<int>(allowedShields.size()) - 1))
 			{
 				shieldsString.append(", ");
 
@@ -325,16 +343,18 @@ std::string ChooseClassPanel::getClassShields(const CharacterClass &charClass) c
 	return shieldsString;
 }
 
-std::string ChooseClassPanel::getClassWeapons(const CharacterClass &charClass) const
+std::string ChooseClassPanel::getClassWeapons(const CharacterClassDefinition &charClassDef) const
 {
-	const int weaponCount = static_cast<int>(charClass.getAllowedWeapons().size());
-
 	// Get weapon names from the executable.
 	const auto &exeData = this->getGame().getMiscAssets().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
-	// Sort as they are listed in the CharacterClassParser.
-	std::vector<int> allowedWeapons = charClass.getAllowedWeapons();
+	std::vector<int> allowedWeapons(charClassDef.getAllowedWeaponCount());
+	for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
+	{
+		allowedWeapons[i] = charClassDef.getAllowedWeapon(i);
+	}
+
 	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
 		[&weaponStrings](int a, int b)
 	{
@@ -346,7 +366,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &charClass) c
 	std::string weaponsString;
 
 	// Decide what the weapon string says.
-	if (weaponCount == 0)
+	if (allowedWeapons.size() == 0)
 	{
 		// If the class is allowed zero weapons, it still doesn't exclude fists, I think.
 		weaponsString = "None";
@@ -356,7 +376,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &charClass) c
 		int lengthCounter = 0;
 
 		// Collect all allowed weapon display names for the class.
-		for (int i = 0; i < weaponCount; i++)
+		for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
 		{
 			const int weaponID = allowedWeapons.at(i);
 			const std::string &weaponName = weaponStrings.at(weaponID);
@@ -364,7 +384,7 @@ std::string ChooseClassPanel::getClassWeapons(const CharacterClass &charClass) c
 			weaponsString.append(weaponName);
 
 			// If not the the last element, add a comma.
-			if (i < (weaponCount - 1))
+			if (i < (static_cast<int>(allowedWeapons.size()) - 1))
 			{
 				weaponsString.append(", ");
 
@@ -396,15 +416,27 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 	auto tooltipIter = this->tooltipTextures.find(tooltipIndex);
 	if (tooltipIter == this->tooltipTextures.end())
 	{
-		const auto &characterClass = this->charClasses.at(tooltipIndex);
+		const auto &charClassDef = this->charClasses.at(tooltipIndex);
 
-		const std::string text = characterClass.getName() + " (" +
-			CharacterClassCategory::toString(characterClass.getCategoryName()) + " class)\n" +
-			"\n" + (characterClass.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
-			"Health die: " + "d" + std::to_string(characterClass.getHealthDie()) + "\n" +
-			"Armors: " + this->getClassArmors(characterClass) + "\n" +
-			"Shields: " + this->getClassShields(characterClass) + "\n" +
-			"Weapons: " + this->getClassWeapons(characterClass);
+		// Doesn't look like the category name is easy to get from the original data.
+		// Potentially could attach something to the char class definition like a bool
+		// saying "the class name is also a category name".
+		constexpr std::array<const char*, 3> ClassCategoryNames =
+		{
+			"Mage", "Thief", "Warrior"
+		};
+
+		const int categoryIndex = charClassDef.getCategoryID();
+		DebugAssertIndex(ClassCategoryNames, categoryIndex);
+		const std::string categoryName = ClassCategoryNames[categoryIndex];
+
+		const std::string text = charClassDef.getName() + " (" +
+			categoryName + " class)\n" +
+			"\n" + (charClassDef.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
+			"Health die: " + "d" + std::to_string(charClassDef.getHealthDie()) + "\n" +
+			"Armors: " + this->getClassArmors(charClassDef) + "\n" +
+			"Shields: " + this->getClassShields(charClassDef) + "\n" +
+			"Weapons: " + this->getClassWeapons(charClassDef);
 
 		Texture texture = Panel::createTooltip(
 			text, FontName::D, this->getGame().getFontLibrary(), renderer);

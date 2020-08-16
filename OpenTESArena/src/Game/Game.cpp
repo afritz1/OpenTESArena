@@ -122,6 +122,9 @@ Game::Game()
 		DebugCrash("Couldn't init misc assets.");
 	}
 
+	// Load character classes (dependent on original game's data).
+	this->charClassLibrary.init(this->miscAssets.getExeData());
+
 	// Load and set window icon.
 	const Surface icon = [this]()
 	{
@@ -213,6 +216,11 @@ FontLibrary &Game::getFontLibrary()
 const CinematicLibrary &Game::getCinematicLibrary() const
 {
 	return this->cinematicLibrary;
+}
+
+const CharacterClassLibrary &Game::getCharacterClassLibrary() const
+{
+	return this->charClassLibrary;
 }
 
 bool Game::gameDataIsActive() const

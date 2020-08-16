@@ -5,7 +5,7 @@
 
 #include "MIFUtils.h"
 #include "MiscAssets.h"
-#include "../Entities/CharacterClassCategoryName.h"
+#include "../Entities/CharacterClassDefinition.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Items/ShieldType.h"
 #include "../Math/Random.h"
@@ -713,7 +713,7 @@ bool MiscAssets::initQuestionTxt()
 		const std::string &a, const std::string &b, const std::string &c)
 	{
 		// Lambda for determining which choices point to which class categories.
-		auto getCategory = [](const std::string &choice)
+		auto getCategory = [](const std::string &choice) -> CharacterClassDefinition::CategoryID
 		{
 			const char mageChar = 'l'; // Logical?
 			const char thiefChar = 'c'; // Clever?
@@ -722,15 +722,15 @@ bool MiscAssets::initQuestionTxt()
 
 			if (categoryChar == mageChar)
 			{
-				return CharacterClassCategoryName::Mage;
+				return 0;
 			}
 			else if (categoryChar == thiefChar)
 			{
-				return CharacterClassCategoryName::Thief;
+				return 1;
 			}
 			else if (categoryChar == warriorChar)
 			{
-				return CharacterClassCategoryName::Warrior;
+				return 2;
 			}
 			else
 			{
@@ -740,9 +740,8 @@ bool MiscAssets::initQuestionTxt()
 			}
 		};
 
-		this->questionTxt.push_back(CharacterQuestion(description,
-			std::make_pair(a, getCategory(a)),
-			std::make_pair(b, getCategory(b)),
+		this->questionTxt.push_back(CharacterQuestion(std::string(description),
+			std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)),
 			std::make_pair(c, getCategory(c))));
 	};
 
@@ -902,173 +901,6 @@ bool MiscAssets::initClasses(const ExeData &exeData)
 		choice.a = *(srcPtr + offset);
 		choice.b = *(srcPtr + offset + 1);
 		choice.c = *(srcPtr + offset + 2);
-	}
-
-	// Now read in the character class data from A.EXE. Some of it also depends on
-	// data from CLASSES.DAT.
-	const auto &classNameStrs = exeData.charClasses.classNames;
-	const auto &allowedArmorsValues = exeData.charClasses.allowedArmors;
-	const auto &allowedShieldsLists = exeData.charClasses.allowedShieldsLists;
-	const auto &allowedShieldsIndices = exeData.charClasses.allowedShieldsIndices;
-	const auto &allowedWeaponsLists = exeData.charClasses.allowedWeaponsLists;
-	const auto &allowedWeaponsIndices = exeData.charClasses.allowedWeaponsIndices;
-	const auto &preferredAttributesStrs = exeData.charClasses.preferredAttributes;
-	const auto &classNumbersToIDsValues = exeData.charClasses.classNumbersToIDs;
-	const auto &initialExpCapValues = exeData.charClasses.initialExperienceCaps;
-	const auto &healthDiceValues = exeData.charClasses.healthDice;
-	const auto &lockpickingDivisorValues = exeData.charClasses.lockpickingDivisors;
-
-	const int classCount = 18;
-	for (int i = 0; i < classCount; i++)
-	{
-		const std::string &name = classNameStrs.at(i);
-		const std::string &preferredAttributes = preferredAttributesStrs.at(i);
-
-		const std::vector<ArmorMaterialType> allowedArmors = [&allowedArmorsValues, i]()
-		{
-			// Determine which armors are allowed based on a one-digit value.
-			const uint8_t value = allowedArmorsValues.at(i);
-
-			if (value == 0)
-			{
-				return std::vector<ArmorMaterialType>
-				{
-					ArmorMaterialType::Leather, ArmorMaterialType::Chain, ArmorMaterialType::Plate
-				};
-			}
-			else if (value == 1)
-			{
-				return std::vector<ArmorMaterialType>
-				{
-					ArmorMaterialType::Leather, ArmorMaterialType::Chain
-				};
-			}
-			else if (value == 2)
-			{
-				return std::vector<ArmorMaterialType>
-				{
-					ArmorMaterialType::Leather
-				};
-			}
-			else if (value == 3)
-			{
-				return std::vector<ArmorMaterialType>();
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(std::vector<ArmorMaterialType>, std::to_string(value));
-			}
-		}();
-
-		const std::vector<ShieldType> allowedShields = [&allowedShieldsLists,
-			&allowedShieldsIndices, i]()
-		{
-			// Get the pre-calculated shield index.
-			const int shieldIndex = allowedShieldsIndices.at(i);
-			const int NO_INDEX = -1;
-
-			// If the index is "null" (-1), that means all shields are allowed for this class.
-			if (shieldIndex == NO_INDEX)
-			{
-				return std::vector<ShieldType>
-				{
-					ShieldType::Buckler, ShieldType::Round, ShieldType::Kite, ShieldType::Tower
-				};
-			}
-			else
-			{
-				// Mappings of shield IDs to shield types. The index in the array is the ID 
-				// minus 7 because shields and armors are treated as the same type in Arena,
-				// so they're in the same array, but we separate them here because that seems 
-				// more object-oriented.
-				const std::array<ShieldType, 4> ShieldIDMappings =
-				{
-					ShieldType::Buckler,
-					ShieldType::Round,
-					ShieldType::Kite,
-					ShieldType::Tower
-				};
-
-				const std::vector<uint8_t> &shieldsList = allowedShieldsLists.at(shieldIndex);
-				std::vector<ShieldType> shields;
-
-				for (const uint8_t shield : shieldsList)
-				{
-					shields.push_back(ShieldIDMappings.at(shield - 7));
-				}
-
-				return shields;
-			}
-		}();
-
-		const std::vector<int> allowedWeapons = [&allowedWeaponsLists,
-			&allowedWeaponsIndices, i]()
-		{
-			// Get the pre-calculated weapon index.
-			const int weaponIndex = allowedWeaponsIndices.at(i);
-			const int NO_INDEX = -1;
-
-			// Weapon IDs as they are shown in the executable (staff, sword, ..., long bow).
-			const std::vector<int> WeaponIDs = []()
-			{
-				std::vector<int> weapons(18);
-				std::iota(weapons.begin(), weapons.end(), 0);
-				return weapons;
-			}();
-
-			// If the index is "null" (-1), that means all weapons are allowed for this class.
-			if (weaponIndex == NO_INDEX)
-			{
-				return WeaponIDs;
-			}
-			else
-			{
-				const std::vector<uint8_t> &weaponsList = allowedWeaponsLists.at(weaponIndex);
-				std::vector<int> weapons;
-
-				for (const uint8_t weapon : weaponsList)
-				{
-					weapons.push_back(WeaponIDs.at(weapon));
-				}
-
-				return weapons;
-			}
-		}();
-
-		const CharacterClassCategoryName categoryName = [i]()
-		{
-			if (i < 6)
-			{
-				return CharacterClassCategoryName::Mage;
-			}
-			else if (i < 12)
-			{
-				return CharacterClassCategoryName::Thief;
-			}
-			else
-			{
-				return CharacterClassCategoryName::Warrior;
-			}
-		}();
-
-		const double lockpicking = [&lockpickingDivisorValues, i]()
-		{
-			const uint8_t divisor = lockpickingDivisorValues.at(i);
-			return static_cast<double>(200 / divisor) / 100.0;
-		}();
-
-		const int healthDie = healthDiceValues.at(i);
-		const int initialExperienceCap = initialExpCapValues.at(i);
-		const int classNumberToID = classNumbersToIDsValues.at(i);
-
-		const int classIndex = classNumberToID & CharacterClassGeneration::ID_MASK;
-		const bool mage = (classNumberToID & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
-		const bool thief = (classNumberToID & CharacterClassGeneration::THIEF_MASK) != 0;
-		const bool criticalHit = (classNumberToID & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
-
-		this->classDefinitions.push_back(CharacterClass(name, preferredAttributes,
-			allowedArmors, allowedShields, allowedWeapons, categoryName, lockpicking,
-			healthDie, initialExperienceCap, classIndex, mage, thief, criticalHit));
 	}
 
 	return true;
@@ -1448,11 +1280,6 @@ const std::unordered_map<std::string, MIFFile> &MiscAssets::getCityBlockMifs() c
 const CharacterClassGeneration &MiscAssets::getClassGenData() const
 {
 	return this->classesDat;
-}
-
-const std::vector<CharacterClass> &MiscAssets::getClassDefinitions() const
-{
-	return this->classDefinitions;
 }
 
 const std::vector<std::pair<std::string, std::string>> &MiscAssets::getDungeonTxtDungeons() const

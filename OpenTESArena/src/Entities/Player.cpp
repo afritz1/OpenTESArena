@@ -2,6 +2,8 @@
 #include <cmath>
 #include <vector>
 
+#include "CharacterClassDefinition.h"
+#include "CharacterClassLibrary.h"
 #include "EntityType.h"
 #include "Player.h"
 #include "../Assets/MIFUtils.h"
@@ -28,11 +30,10 @@ const double Player::JUMP_VELOCITY = 3.0;
 const double Player::GRAVITY = 9.81;
 const double Player::FRICTION = 4.0;
 
-Player::Player(const std::string &displayName, bool male, int raceID,
-	const CharacterClass &charClass, int portraitID, const Double3 &position,
-	const Double3 &direction, const Double3 &velocity, double maxWalkSpeed,
-	double maxRunSpeed, int weaponID, const ExeData &exeData)
-	: displayName(displayName), male(male), raceID(raceID), charClass(charClass),
+Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
+	int portraitID, const Double3 &position, const Double3 &direction, const Double3 &velocity,
+	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
+	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
@@ -67,27 +68,31 @@ int Player::getRaceID() const
 	return this->raceID;
 }
 
-const CharacterClass &Player::getCharacterClass() const
+int Player::getCharacterClassDefID() const
 {
-	return this->charClass;
+	return this->charClassDefID;
 }
 
-Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
+Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
 	const ExeData &exeData, Random &random)
 {
 	const std::string name("Player");
 	const bool isMale = random.next(2) == 0;
 	const int raceID = random.next(8);
-	const CharacterClass &charClass = charClasses.at(
-		random.next(static_cast<int>(charClasses.size())));
+	const int charClassDefID = random.next(charClassLibrary.getDefinitionCount());
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const int portraitID = random.next(10);
 	const Double3 position = Double3::Zero;
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	const Double3 velocity = Double3::Zero;
-	const int weaponID = [&random, &charClass]()
+	const int weaponID = [&random, &charClassDef]()
 	{
 		// Pick a random weapon available to the player's class.
-		std::vector<int> weapons = charClass.getAllowedWeapons();
+		std::vector<int> weapons(charClassDef.getAllowedWeaponCount());
+		for (int i = 0; i < static_cast<int>(weapons.size()); i++)
+		{
+			weapons[i] = charClassDef.getAllowedWeapon(i);
+		}
 
 		// Add fists.
 		weapons.push_back(-1);
@@ -95,7 +100,7 @@ Player Player::makeRandom(const std::vector<CharacterClass> &charClasses,
 		return weapons.at(random.next(static_cast<int>(weapons.size())));
 	}();
 
-	return Player(name, isMale, raceID, charClass, portraitID, position, direction, velocity,
+	return Player(name, isMale, raceID, charClassDefID, portraitID, position, direction, velocity,
 		Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 }
 

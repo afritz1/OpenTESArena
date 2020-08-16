@@ -12,7 +12,6 @@
 #include "MIFFile.h"
 #include "RMDFile.h"
 #include "WorldMapMask.h"
-#include "../Entities/CharacterClass.h"
 #include "../Game/CharacterClassGeneration.h"
 #include "../Game/CharacterQuestion.h"
 #include "../World/WorldMapDefinition.h"
@@ -125,7 +124,6 @@ private:
 	std::vector<CharacterQuestion> questionTxt;
 	std::unordered_map<std::string, MIFFile> cityBlockMifs;
 	CharacterClassGeneration classesDat;
-	std::vector<CharacterClass> classDefinitions;
 	std::vector<std::pair<std::string, std::string>> dungeonTxt;
 	std::array<ArtifactTavernText, 16> artifactTavernText1, artifactTavernText2;
 	TradeText tradeText;
@@ -192,7 +190,6 @@ public:
 	const std::unordered_map<std::string, MIFFile> &getCityBlockMifs() const;
 
 	const CharacterClassGeneration &getClassGenData() const;
-	const std::vector<CharacterClass> &getClassDefinitions() const;
 
 	// Returns all of the main quest dungeon names paired with their description. 
 	// These are just the dungeons with a unique icon on the world map, not the 

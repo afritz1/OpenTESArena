@@ -5,7 +5,6 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Entities/CharacterClass.h"
 #include "../Rendering/Texture.h"
 
 // If Escape is pressed here, just go to the class list (even if the user went

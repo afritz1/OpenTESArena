@@ -16,7 +16,7 @@
 #include "../Assets/MiscAssets.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
-#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Game/CardinalDirection.h"
@@ -1309,8 +1309,8 @@ void LevelData::updateFadingVoxels(double dt)
 }
 
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
-	const LocationDefinition &locationDef, const MiscAssets &miscAssets,
-	TextureManager &textureManager, Renderer &renderer)
+	const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
+	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1411,8 +1411,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	};
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
-	auto loadEntities = [this, nightLightsAreActive, &worldData, &locationDef, &miscAssets,
-		&textureManager, &renderer, &palette]()
+	auto loadEntities = [this, nightLightsAreActive, &worldData, &locationDef, &charClassLibrary,
+		&miscAssets, &textureManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
 		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
@@ -1504,8 +1504,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 			else if (entityType == EntityType::Dynamic)
 			{
-				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, this->inf, miscAssets,
-					textureManager, &entityAnimDef, &entityAnimInst))
+				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, this->inf, charClassLibrary,
+					miscAssets, textureManager, &entityAnimDef, &entityAnimInst))
 				{
 					DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
 						std::to_string(flatIndex) + "\".");

@@ -6,7 +6,6 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Entities/CharacterClass.h"
 #include "../Math/Vector2.h"
 
 // This panel is for choosing character creation attributes and the portrait.

@@ -26,7 +26,7 @@
 // the character resources). Whichever entry points into the "game" there are, they
 // need to load data into the game data object.
 
-class CharacterClass;
+class CharacterClassLibrary;
 class CityDataFile;
 class FontLibrary;
 class INFFile;
@@ -128,42 +128,45 @@ public:
 	// Reads in data from an interior .MIF file and writes it to the game data.
 	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
 	void enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
-		const Int2 &returnVoxel, const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+		const Int2 &returnVoxel, const CharacterClassLibrary &charClassLibrary, 
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Leaves the current interior and returns to the exterior. Only call this method if the
 	// player is in an interior that has an outside area to return to.
-	void leaveInterior(const MiscAssets &miscAssets, TextureManager &textureManager,
-		Renderer &renderer);
+	void leaveInterior(const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	bool loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
 	// game data. This does not modify the current map location.
 	bool loadWildernessDungeon(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
 		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
 	bool loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+		WeatherType weatherType, int starCount, const CharacterClassLibrary &charClassLibrary,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from wilderness and writes it to the game data.
 	bool loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos,
-		WeatherType weatherType, int starCount, const MiscAssets &miscAssets,
-		TextureManager &textureManager, Renderer &renderer);
+		WeatherType weatherType, int starCount, const CharacterClassLibrary &charClassLibrary,
+		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
 
 	const std::array<WeatherType, 36> &getWeathersArray() const;
 

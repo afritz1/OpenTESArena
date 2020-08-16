@@ -17,7 +17,8 @@
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
-#include "../Entities/CharacterClass.h"
+#include "../Entities/CharacterClassDefinition.h"
+#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Entity.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Entities/EntityAnimationUtils.h"
@@ -2110,7 +2111,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Leave the interior and go to the saved exterior.
 		const auto &miscAssets = game.getMiscAssets();
-		gameData.leaveInterior(miscAssets, textureManager, renderer);
+		gameData.leaveInterior(game.getCharacterClassLibrary(), miscAssets, textureManager, renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2251,7 +2252,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 
 					gameData.enterInterior(menuType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
-						miscAssets, game.getTextureManager(), game.getRenderer());
+						game.getCharacterClassLibrary(), miscAssets, game.getTextureManager(),
+						game.getRenderer());
 
 					// Change to interior music.
 					const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2334,8 +2336,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 					const bool ignoreGatePos = false;
 					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
-						ignoreGatePos, gameData.getWeatherType(), starCount, miscAssets,
-						textureManager, renderer))
+						ignoreGatePos, gameData.getWeatherType(), starCount,
+						game.getCharacterClassLibrary(), miscAssets, textureManager, renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
@@ -2344,7 +2346,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From wilderness to city.
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
-						starCount, miscAssets, textureManager, renderer))
+						starCount, game.getCharacterClassLibrary(), miscAssets, textureManager,
+						renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -2510,8 +2513,8 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-				gameData.getLocationDefinition(), game.getMiscAssets(), game.getTextureManager(),
-				game.getRenderer());
+				gameData.getLocationDefinition(), game.getCharacterClassLibrary(),
+				game.getMiscAssets(), game.getTextureManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
@@ -3062,7 +3065,9 @@ void GameWorldPanel::render(Renderer &renderer)
 		renderer.drawOriginal(playerPortraitTexture.get(), 14, 166);
 
 		// If the player's class can't use magic, show the darkened spell icon.
-		if (!player.getCharacterClass().canCastMagic())
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+		if (!charClassDef.canCastMagic())
 		{
 			const TextureRef noSpellTexture = textureManager.getTextureRef(noSpellTextureID);
 			renderer.drawOriginal(noSpellTexture.get(), 91, 177);
@@ -3205,13 +3210,17 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	// Check if the mouse is over one of the buttons for tooltips in classic mode.
 	if (!modernInterface)
 	{
-		const auto &inputManager = this->getGame().getInputManager();
+		auto &game = this->getGame();
+		const auto &inputManager = game.getInputManager();
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 
 		// Get the hovered tooltip string, or the empty string if none are hovered over.
-		const std::string tooltip = [this, &player, &originalPosition]() -> std::string
+		const std::string tooltip = [this, &game, &player, &originalPosition]() -> std::string
 		{
+			const auto &charClassLibrary = game.getCharacterClassLibrary();
+			const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
+
 			if (this->characterSheetButton.contains(originalPosition))
 			{
 				return "Character Sheet";
@@ -3232,8 +3241,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			{
 				return "Status";
 			}
-			else if (this->magicButton.contains(originalPosition) &&
-				player.getCharacterClass().canCastMagic())
+			else if (this->magicButton.contains(originalPosition) && charClassDef.canCastMagic())
 			{
 				return "Spells";
 			}

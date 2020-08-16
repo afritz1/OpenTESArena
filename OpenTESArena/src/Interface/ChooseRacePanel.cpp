@@ -208,14 +208,13 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						segment = String::replace(segment, '\r', '\n');
 
 						const auto &charCreationState = game.getCharacterCreationState();
-						const auto &classDefs = miscAssets.getClassDefinitions();
-						const int classIndex = charCreationState.getClassIndex();
-						DebugAssertIndex(classDefs, classIndex);
-						const auto &charClass = classDefs[classIndex];
+						const auto &charClassLibrary = game.getCharacterClassLibrary();
+						const int charClassDefID = charCreationState.getClassDefID();
+						const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 						const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
-						DebugAssertIndex(preferredAttributes, classIndex);
-						const std::string &preferredAttributesStr = preferredAttributes[classIndex];
+						DebugAssertIndex(preferredAttributes, charClassDefID);
+						const std::string &preferredAttributesStr = preferredAttributes[charClassDefID];
 
 						// Replace first %s with desired class attributes.
 						size_t index = segment.find("%s");
@@ -223,7 +222,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 						// Replace second %s with class name.
 						index = segment.find("%s");
-						segment.replace(index, 2, charClass.getName());
+						segment.replace(index, 2, charClassDef.getName());
 
 						return segment;
 					}();
@@ -337,14 +336,13 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						DebugAssertIndex(pluralRaceNames, raceIndex);
 						const std::string &pluralRaceName = pluralRaceNames[raceIndex];
 
-						const auto &classDefs = miscAssets.getClassDefinitions();
-						const int classIndex = charCreationState.getClassIndex();
-						DebugAssertIndex(classDefs, classIndex);
-						const CharacterClass &charClass = classDefs[classIndex];
+						const auto &charClassLibrary = game.getCharacterClassLibrary();
+						const int charClassDefID = charCreationState.getClassDefID();
+						const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 						// Replace first %s with player class.
 						size_t index = segment.find("%s");
-						segment.replace(index, 2, charClass.getName());
+						segment.replace(index, 2, charClassDef.getName());
 
 						// Replace second %s with player name.
 						index = segment.find("%s");
@@ -473,10 +471,9 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		segment = String::replace(segment, '\r', '\n');
 
 		const auto &charCreationState = game.getCharacterCreationState();
-		const auto &classDefs = miscAssets.getClassDefinitions();
-		const int classIndex = charCreationState.getClassIndex();
-		DebugAssertIndex(classDefs, classIndex);
-		const CharacterClass &charClass = classDefs[classIndex];
+		const auto &charClassLibrary = game.getCharacterClassLibrary();
+		const int charClassDefID = charCreationState.getClassDefID();
+		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 		// Replace first "%s" with player name.
 		size_t index = segment.find("%s");
@@ -484,7 +481,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 
 		// Replace second "%s" with character class.
 		index = segment.find("%s");
-		segment.replace(index, 2, charClass.getName());
+		segment.replace(index, 2, charClassDef.getName());
 
 		return segment;
 	}();
