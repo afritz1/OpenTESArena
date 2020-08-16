@@ -58,7 +58,7 @@ public:
 	}
 
 	// Returns whether the button's area contains the given point.
-	bool contains(const Int2 &point)
+	bool contains(const Int2 &point) const
 	{
 		return this->rect.contains(point);
 	}
