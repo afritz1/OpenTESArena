@@ -13,10 +13,11 @@ enum class CardinalDirectionName;
 namespace CardinalDirection
 {
 	// Cardinal directions in the XZ plane (bird's eye view).
-	const NewDouble2 North(static_cast<double>(VoxelUtils::North.x), static_cast<double>(VoxelUtils::North.y));
-	const NewDouble2 South(static_cast<double>(VoxelUtils::South.x), static_cast<double>(VoxelUtils::South.y));
-	const NewDouble2 East(static_cast<double>(VoxelUtils::East.x), static_cast<double>(VoxelUtils::East.y));
-	const NewDouble2 West(static_cast<double>(VoxelUtils::West.x), static_cast<double>(VoxelUtils::West.y));
+	// CANNOT INITIALIZE FROM VOXELUTILS due to global initialization order uncertainty.
+	const NewDouble2 North(-1.0, 0.0);
+	const NewDouble2 South(1.0, 0.0);
+	const NewDouble2 East(0.0, -1.0);
+	const NewDouble2 West(0.0, 1.0);
 
 	CardinalDirectionName getDirectionName(const NewDouble2 &direction);
 	const std::string &toString(CardinalDirectionName directionName);
