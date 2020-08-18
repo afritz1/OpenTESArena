@@ -19,7 +19,7 @@ class INFFile
 public:
 	struct VoxelTextureData
 	{
-		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+		DOSUtils::FilenameBuffer filename;
 		std::optional<int> setIndex; // Index into .SET file texture (if any).
 
 		VoxelTextureData(const char *filename, const std::optional<int> &setIndex);
@@ -29,7 +29,7 @@ public:
 
 	struct FlatTextureData
 	{
-		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+		DOSUtils::FilenameBuffer filename;
 
 		FlatTextureData(const char *filename);
 		FlatTextureData();
@@ -84,7 +84,7 @@ public:
 
 		// Used with N:#, where '#' is the death effect. The "next flat" is probably 
 		// used for displaying corpses.
-		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> nextFlat;
+		DOSUtils::FilenameBuffer nextFlat;
 		std::optional<int> deathEffect;
 
 		// Used with S:#, where '#' is light intensity (for candles, etc.).
@@ -131,7 +131,7 @@ private:
 	std::vector<FlatData> flats;
 
 	// .VOC files for each sound ID.
-	std::unordered_map<int, std::array<char, DOSUtils::FILENAME_BUFFER_SIZE>> sounds;
+	std::unordered_map<int, DOSUtils::FilenameBuffer> sounds;
 
 	// Key info for *TEXT IDs.
 	std::unordered_map<int, KeyData> keys;
@@ -142,7 +142,7 @@ private:
 	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
 	std::unordered_map<int, TextData> texts;
 
-	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> name;
+	DOSUtils::FilenameBuffer name;
 
 	// References into the textures vector (if any).
 	std::optional<int> dryChasmIndex, lavaChasmIndex, levelDownIndex, levelUpIndex, wetChasmIndex;

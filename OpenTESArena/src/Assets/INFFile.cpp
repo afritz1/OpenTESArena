@@ -763,7 +763,7 @@ bool INFFile::init(const char *filename)
 		const std::string vocFilename = String::toUppercase(std::string(tokens.front()));
 		const int vocID = std::stoi(std::string(tokens.at(1)));
 
-		std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> vocFilenameBuffer;
+		DOSUtils::FilenameBuffer vocFilenameBuffer;
 		if (!String::tryCopy(vocFilename.c_str(), vocFilenameBuffer.data(), vocFilenameBuffer.size()))
 		{
 			DebugLogError("Couldn't write .VOC filename \"" + vocFilename + "\".");

@@ -57,7 +57,7 @@ std::string TextCinematicPanel::SpeechState::getVoiceFilename(int voiceIndex) co
 	const int index = voiceIndex / 2;
 	const char letter = SpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
 
-	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	DOSUtils::FilenameBuffer filename;
 	std::snprintf(filename.data(), filename.size(), "%d_%02d%c.VOC",
 		this->templateDatKey, index, letter);
 

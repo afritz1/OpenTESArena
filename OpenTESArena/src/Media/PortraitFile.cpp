@@ -9,7 +9,7 @@
 
 std::string PortraitFile::getHeads(bool male, int raceID, bool trimmed)
 {
-	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	DOSUtils::FilenameBuffer filename;
 	std::snprintf(filename.data(), filename.size(), "FACES%s%d%d.CIF",
 		male ? "" : "F", trimmed ? 0 : 1, raceID);
 
@@ -18,7 +18,7 @@ std::string PortraitFile::getHeads(bool male, int raceID, bool trimmed)
 
 std::string PortraitFile::getBody(bool male, int raceID)
 {
-	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> filename;
+	DOSUtils::FilenameBuffer filename;
 	std::snprintf(filename.data(), filename.size(), "%s0%d.IMG",
 		male ? "CHARBK" : "CHRBKF", raceID);
 
