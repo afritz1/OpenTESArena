@@ -9,6 +9,8 @@
 
 // Various functions for working with .MIF files.
 
+class ArenaRandom;
+
 namespace MIFUtils
 {
 	// Texture IDs for various chasms in voxel data.
@@ -21,6 +23,20 @@ namespace MIFUtils
 	// them to voxel coordinates (including decimal values; i.e., X=1.5 means the middle of the 
 	// voxel at X coordinate 1).
 	constexpr double ARENA_UNITS = 128.0;
+
+	// City generation block types.
+	enum class BlockType
+	{
+		Empty,
+		Reserved,
+		Equipment,
+		MagesGuild,
+		NobleHouse,
+		Temple,
+		Tavern,
+		Spacer,
+		Houses
+	};
 
 	// Returns whether the texture ID points to a chasm texture.
 	bool isChasm(int textureID);
@@ -43,6 +59,9 @@ namespace MIFUtils
 
 	// Makes a city block .MIF filename for city generation.
 	std::string makeCityBlockMifName(const char *code, int variation, const char *rotation);
+
+	// Generates a random .MIF block type for use with city generation.
+	BlockType generateRandomBlockType(ArenaRandom &random);
 }
 
 #endif

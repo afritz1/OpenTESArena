@@ -32,27 +32,20 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 	ArenaRandom &random, const MiscAssets &miscAssets, Buffer2D<uint16_t> &dstFlor,
 	Buffer2D<uint16_t> &dstMap1, Buffer2D<uint16_t> &dstMap2)
 {
-	// Decide which city blocks to load.
-	enum class BlockType
-	{
-		Empty, Reserved, Equipment, MagesGuild,
-		NobleHouse, Temple, Tavern, Spacer, Houses
-	};
-
 	// Get the city's local X and Y, to be used later for building name generation.
 	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
 
 	const int citySize = cityDim * cityDim;
-	std::vector<BlockType> plan(citySize, BlockType::Empty);
+	std::vector<MIFUtils::BlockType> plan(citySize, MIFUtils::BlockType::Empty);
 
-	auto placeBlock = [citySize, &plan, &random](BlockType blockType)
+	auto placeBlock = [citySize, &plan, &random](MIFUtils::BlockType blockType)
 	{
 		int planIndex;
 
 		do
 		{
 			planIndex = random.next() % citySize;
-		} while (plan.at(planIndex) != BlockType::Empty);
+		} while (plan.at(planIndex) != MIFUtils::BlockType::Empty);
 
 		plan.at(planIndex) = blockType;
 	};
@@ -65,48 +58,24 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 		// explicitly.
 		if (block < plan.size())
 		{
-			plan.at(block) = BlockType::Reserved;
+			plan.at(block) = MIFUtils::BlockType::Reserved;
 		}
 	}
 
 	// Initial block placement.
-	placeBlock(BlockType::Equipment);
-	placeBlock(BlockType::MagesGuild);
-	placeBlock(BlockType::NobleHouse);
-	placeBlock(BlockType::Temple);
-	placeBlock(BlockType::Tavern);
-	placeBlock(BlockType::Spacer);
+	placeBlock(MIFUtils::BlockType::Equipment);
+	placeBlock(MIFUtils::BlockType::MagesGuild);
+	placeBlock(MIFUtils::BlockType::NobleHouse);
+	placeBlock(MIFUtils::BlockType::Temple);
+	placeBlock(MIFUtils::BlockType::Tavern);
+	placeBlock(MIFUtils::BlockType::Spacer);
 
 	// Create city plan according to RNG.
 	const int emptyBlocksInPlan = static_cast<int>(
-		std::count(plan.begin(), plan.end(), BlockType::Empty));
+		std::count(plan.begin(), plan.end(), MIFUtils::BlockType::Empty));
 	for (int remainingBlocks = emptyBlocksInPlan; remainingBlocks > 0; remainingBlocks--)
 	{
-		const uint32_t randVal = random.next();
-		const BlockType blockType = [randVal]()
-		{
-			if (randVal <= 0x7333)
-			{
-				return BlockType::Houses;
-			}
-			else if (randVal <= 0xA666)
-			{
-				return BlockType::Tavern;
-			}
-			else if (randVal <= 0xCCCC)
-			{
-				return BlockType::Equipment;
-			}
-			else if (randVal <= 0xE666)
-			{
-				return BlockType::Temple;
-			}
-			else
-			{
-				return BlockType::NobleHouse;
-			}
-		}();
-
+		const MIFUtils::BlockType blockType = MIFUtils::generateRandomBlockType(random);
 		placeBlock(blockType);
 	}
 
@@ -114,9 +83,9 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 	WEInt xDim = 0;
 	SNInt zDim = 0;
 
-	for (const BlockType block : plan)
+	for (const MIFUtils::BlockType block : plan)
 	{
-		if (block != BlockType::Reserved)
+		if (block != MIFUtils::BlockType::Reserved)
 		{
 			const int blockIndex = static_cast<int>(block) - 2;
 			const std::string &blockCode = MIFUtils::getCityBlockCode(blockIndex);

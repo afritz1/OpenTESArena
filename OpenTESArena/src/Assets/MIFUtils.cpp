@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "MIFUtils.h"
+#include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"
@@ -77,4 +78,29 @@ std::string MIFUtils::makeCityBlockMifName(const char *code, int variation, cons
 	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> buffer;
 	std::snprintf(buffer.data(), buffer.size(), "%sBD%d%s.MIF", code, variation, rotation);
 	return std::string(buffer.data());
+}
+
+MIFUtils::BlockType MIFUtils::generateRandomBlockType(ArenaRandom &random)
+{
+	const uint32_t randVal = random.next();
+	if (randVal <= 0x7333)
+	{
+		return BlockType::Houses;
+	}
+	else if (randVal <= 0xA666)
+	{
+		return BlockType::Tavern;
+	}
+	else if (randVal <= 0xCCCC)
+	{
+		return BlockType::Equipment;
+	}
+	else if (randVal <= 0xE666)
+	{
+		return BlockType::Temple;
+	}
+	else
+	{
+		return BlockType::NobleHouse;
+	}
 }
