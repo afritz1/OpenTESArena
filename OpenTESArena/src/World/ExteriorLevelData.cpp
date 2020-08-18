@@ -87,14 +87,7 @@ void ExteriorLevelData::generateCity(uint32_t citySeed, int cityDim, WEInt gridD
 	{
 		if (block != MIFUtils::BlockType::Reserved)
 		{
-			const int blockIndex = static_cast<int>(block) - 2;
-			const std::string &blockCode = MIFUtils::getCityBlockCode(blockIndex);
-			const std::string &rotation = MIFUtils::getCityBlockRotation(
-				random.next() % MIFUtils::getCityBlockRotationCount());
-			const int variationCount = MIFUtils::getCityBlockVariations(blockIndex);
-			const int variation = std::max(random.next() % variationCount, 1);
-			const std::string blockMifName = MIFUtils::makeCityBlockMifName(
-				blockCode.c_str(), variation, rotation.c_str());
+			const std::string blockMifName = MIFUtils::makeCityBlockMifName(block, random);
 
 			// Load the block's .MIF data into the level.
 			const auto &cityBlockMifs = miscAssets.getCityBlockMifs();

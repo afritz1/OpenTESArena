@@ -73,11 +73,23 @@ const std::string &MIFUtils::getCityBlockRotation(int index)
 	return CityBlockRotations[index];
 }
 
-std::string MIFUtils::makeCityBlockMifName(const char *code, int variation, const char *rotation)
+std::string MIFUtils::makeCityBlockMifName(const char *blockCode, int variation,
+	const char *rotation)
 {
 	std::array<char, DOSUtils::FILENAME_BUFFER_SIZE> buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%sBD%d%s.MIF", code, variation, rotation);
+	std::snprintf(buffer.data(), buffer.size(), "%sBD%d%s.MIF", blockCode, variation, rotation);
 	return std::string(buffer.data());
+}
+
+std::string MIFUtils::makeCityBlockMifName(BlockType blockType, ArenaRandom &random)
+{
+	const int blockIndex = static_cast<int>(blockType) - 2;
+	const std::string &blockCode = MIFUtils::getCityBlockCode(blockIndex);
+	const std::string &rotation = MIFUtils::getCityBlockRotation(
+		random.next() % MIFUtils::getCityBlockRotationCount());
+	const int variationCount = MIFUtils::getCityBlockVariations(blockIndex);
+	const int variation = std::max(random.next() % variationCount, 1);
+	return MIFUtils::makeCityBlockMifName(blockCode.c_str(), variation, rotation.c_str());
 }
 
 MIFUtils::BlockType MIFUtils::generateRandomBlockType(ArenaRandom &random)

@@ -59,6 +59,7 @@ namespace MIFUtils
 
 	// Makes a city block .MIF filename for city generation.
 	std::string makeCityBlockMifName(const char *code, int variation, const char *rotation);
+	std::string makeCityBlockMifName(BlockType blockType, ArenaRandom &random);
 
 	// Generates a random .MIF block type for use with city generation.
 	BlockType generateRandomBlockType(ArenaRandom &random);
