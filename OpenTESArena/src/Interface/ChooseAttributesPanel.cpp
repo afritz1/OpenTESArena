@@ -17,6 +17,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/Player.h"
+#include "../Game/CardinalDirection.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -262,7 +263,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							Player player = [this, &game, &miscAssets, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
-								const Double3 direction = Double3::UnitX;
+								const Double3 direction(
+									CardinalDirection::North.x,
+									0.0,
+									CardinalDirection::North.y);
 								const Double3 velocity = Double3::Zero;
 
 								const auto &charCreationState = game.getCharacterCreationState();
