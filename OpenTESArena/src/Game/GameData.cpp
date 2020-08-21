@@ -823,7 +823,7 @@ void GameData::updateWeather(const ExeData &exeData)
 	}
 }
 
-void GameData::tickTime(double dt, Game &game)
+void GameData::tick(double dt, Game &game)
 {
 	DebugAssert(dt >= 0.0);
 
@@ -866,4 +866,7 @@ void GameData::tickTime(double dt, Game &game)
 	tryTickTextBox(this->triggerText);
 	tryTickTextBox(this->actionText);
 	tryTickTextBox(this->effectText);
+
+	// Tick citizen manager state (check if new citizens should spawn, etc.).
+	this->citizenManager.tick(game);
 }

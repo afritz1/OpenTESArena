@@ -10,6 +10,7 @@
 #include "Clock.h"
 #include "Date.h"
 #include "../Assets/MiscAssets.h"
+#include "../Entities/CitizenManager.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Interface/TimedTextBox.h"
@@ -69,6 +70,7 @@ private:
 
 	Player player;
 	std::unique_ptr<WorldData> worldData;
+	CitizenManager citizenManager; // Tracks active citizens and spawning.
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -227,7 +229,7 @@ public:
 	void updateWeather(const ExeData &exeData);
 
 	// Ticks the game clock (for the current time of day and date).
-	void tickTime(double dt, Game &game);
+	void tick(double dt, Game &game);
 };
 
 #endif
