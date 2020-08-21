@@ -1586,8 +1586,9 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				}
 				else if (entityType == EntityType::Dynamic)
 				{
+					// All dynamic entities in a level are creatures (never citizens).
 					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
-					dynamicEntity->setDerivedType(DynamicEntityType::NPC);
+					dynamicEntity->setDerivedType(DynamicEntityType::Creature);
 					dynamicEntity->setDirection(CardinalDirection::North);
 				}
 				else

@@ -43,8 +43,10 @@ private:
 	// Helper method for rotating.
 	void yaw(double radians);
 
-	// Updates NPC-relevant data in the entity.
-	void updateNpcState(Game &game, double dt);
+	// Update functions for various dynamic entity types.
+	void updateCitizenState(Game &game, double dt);
+	void updateCreatureState(Game &game, double dt);
+	void updateProjectileState(Game &game, double dt);
 
 	// Updates the entity's physics in the world (if any).
 	void updatePhysics(const WorldData &worldData, double dt);

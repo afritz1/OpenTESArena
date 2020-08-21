@@ -79,7 +79,7 @@ bool DynamicEntity::withinHearingDistance(const Double3 &point, double ceilingHe
 bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManager,
 	std::string *outFilename) const
 {
-	if (this->derivedType != DynamicEntityType::NPC)
+	if (this->derivedType != DynamicEntityType::Creature)
 	{
 		return false;
 	}
@@ -158,13 +158,20 @@ void DynamicEntity::setDestination(const NewDouble2 *point)
 	this->setDestination(point, minDistance);
 }
 
-void DynamicEntity::updateNpcState(Game &game, double dt)
+void DynamicEntity::updateCitizenState(Game &game, double dt)
+{
+	// @todo: citizen AI
+}
+
+void DynamicEntity::updateCreatureState(Game &game, double dt)
 {
 	auto &gameData = game.getGameData();
 	const auto &worldData = gameData.getWorldData();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &entityManager = levelData.getEntityManager();
 	const double ceilingHeight = levelData.getCeilingHeight();
+
+	// @todo: creature AI
 
 	// Tick down the NPC's creature sound (if any). This is done on the top level so the counter
 	// doesn't predictably begin when the player enters the creature's hearing distance.
@@ -190,6 +197,11 @@ void DynamicEntity::updateNpcState(Game &game, double dt)
 	}
 }
 
+void DynamicEntity::updateProjectileState(Game &game, double dt)
+{
+	// @todo: projectile motion + collision
+}
+
 void DynamicEntity::updatePhysics(const WorldData &worldData, double dt)
 {
 	// @todo
@@ -210,16 +222,21 @@ void DynamicEntity::tick(Game &game, double dt)
 	// Update derived entity state.
 	switch (this->derivedType)
 	{
-	case DynamicEntityType::NPC:
-		this->updateNpcState(game, dt);
+	case DynamicEntityType::Citizen:
+		this->updateCitizenState(game, dt);
+		break;
+	case DynamicEntityType::Creature:
+		this->updateCreatureState(game, dt);
 		break;
 	case DynamicEntityType::Projectile:
+		this->updateProjectileState(game, dt);
 		break;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->derivedType)));
 	}
 
 	// Update physics/pathfinding/etc..
+	// @todo: add a check here if updating the entity state has put them in a non-physics state.
 	const auto &worldData = game.getGameData().getWorldData();
 	this->updatePhysics(worldData, dt);
 }

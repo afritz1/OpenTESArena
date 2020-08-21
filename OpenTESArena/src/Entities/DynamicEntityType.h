@@ -1,13 +1,11 @@
 #ifndef DYNAMIC_ENTITY_TYPE_H
 #define DYNAMIC_ENTITY_TYPE_H
 
-// NPC: non-player-character or creature (separate from static NPC).
-// Projectiles: flying objects or spells.
-
 enum class DynamicEntityType
 {
-	NPC,
-	Projectile
+	Citizen, // Wanders around and can talk to player.
+	Creature, // Enemy NPC, anywhere from a rat to the final boss.
+	Projectile // Flying objects like arrows or spells.
 };
 
 #endif
