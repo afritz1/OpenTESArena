@@ -40,6 +40,8 @@ public:
 	// Alternative to constructor to avoid accidentally copying pointers and double-freeing, etc..
 	// Most code shouldn't touch a native texture directly.
 	void init(SDL_Texture *texture);
+
+	void clear();
 };
 
 #endif

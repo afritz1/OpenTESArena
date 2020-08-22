@@ -59,6 +59,8 @@ public:
 	void blit(Surface &dst, int dstX, int dstY) const;
 	void blitRect(const Rect &srcRect, Surface &dst, const Rect &dstRect) const;
 	void blitRect(const Rect &srcRect, Surface &dst, int dstX, int dstY) const;
+
+	void clear();
 };
 
 #endif

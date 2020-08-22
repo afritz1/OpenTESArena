@@ -182,3 +182,12 @@ void Surface::blitRect(const Rect &srcRect, Surface &dst, int dstX, int dstY) co
 	const Rect dstRect(dstX, dstY, this->getWidth(), this->getHeight());
 	this->blitRect(srcRect, dst, dstRect);
 }
+
+void Surface::clear()
+{
+	if (this->surface != nullptr)
+	{
+		SDL_FreeSurface(this->surface);
+		this->surface = nullptr;
+	}
+}

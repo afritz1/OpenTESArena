@@ -265,3 +265,12 @@ void Texture::init(SDL_Texture *texture)
 	DebugAssert(this->texture == nullptr);
 	this->texture = texture;
 }
+
+void Texture::clear()
+{
+	if (this->texture != nullptr)
+	{
+		SDL_DestroyTexture(this->texture);
+		this->texture = nullptr;
+	}
+}

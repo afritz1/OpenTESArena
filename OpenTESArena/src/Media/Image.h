@@ -29,6 +29,8 @@ public:
 
 	uint8_t getPixel(int x, int y) const;
 	void setPixel(int x, int y, uint8_t color);
+
+	void clear();
 };
 
 #endif

@@ -49,3 +49,9 @@ void Image::setPixel(int x, int y, uint8_t color)
 {
 	this->pixels.set(x, y, color);
 }
+
+void Image::clear()
+{
+	this->pixels.clear();
+	this->paletteID = std::nullopt;
+}
