@@ -8,6 +8,8 @@
 #include "EntityAnimationUtils.h"
 #include "../Assets/ExeData.h"
 
+enum class ClimateType;
+
 class EntityDefinition
 {
 public:
@@ -34,6 +36,16 @@ public:
 		CreatureData();
 
 		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+	};
+
+	struct CitizenData
+	{
+		bool male;
+		ClimateType climateType;
+
+		CitizenData();
+
+		void init(bool male, ClimateType climateType);
 	};
 
 	struct InfData
@@ -63,14 +75,19 @@ public:
 	};
 private:
 	CreatureData creatureData;
+	CitizenData citizenData;
 	InfData infData;
-	EntityAnimationDefinition animDef; // @todo: might move to EntityAnimationLibrary eventually
-	//EntityAnimID animID;
+	EntityAnimationDefinition animDef;
 	bool isCreatureInited;
 	bool isHumanEnemyInited;
+	bool isCitizenInited;
 	bool isOtherInited;
 public:
 	EntityDefinition();
+
+	// Hack to make citizens work with current .INF data look-up system.
+	// @todo: remove dependency on .INF flatIndex in renderer.
+	static int makeTempCitizenFlatIndex(bool male);
 
 	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData,
 		EntityAnimationDefinition &&animDef);
@@ -78,6 +95,8 @@ public:
 	void initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider, bool largeScale,
 		bool dark, bool transparent, bool ceiling, bool mediumScale,
 		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
+
+	void initCitizen(bool male, ClimateType climateType, EntityAnimationDefinition &&animDef);
 
 	// @todo: eventually blacksmith/wizard/etc. info here, or no? (entirely dependent on current level?)
 	void initOther(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
@@ -90,10 +109,9 @@ public:
 	// @todo: more formal discriminated union.
 	bool isCreature() const;
 	bool isHumanEnemy() const;
+	bool isCitizen() const;
 	bool isOther() const;
 
-	/*EntityAnimID &getAnimID();
-	const EntityAnimID &getAnimID() const;*/
 	const EntityAnimationDefinition &getAnimDef() const;
 
 	CreatureData &getCreatureData();

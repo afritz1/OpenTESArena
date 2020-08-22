@@ -1527,11 +1527,6 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					std::to_string(static_cast<int>(entityType)) + "\".");
 			}
 
-			// Entity data index is currently the flat index (depends on .INF file).
-			const int dataIndex = flatIndex;
-
-			// Add a new entity data instance.
-			DebugAssert(this->entityManager.getEntityDef(dataIndex) == nullptr);
 			EntityDefinition newEntityDef;
 			if (isCreature)
 			{
@@ -1570,10 +1565,11 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 			const bool isStreetlight = newEntityDef.getInfData().streetLight;
 			const bool isPuddle = newEntityDef.getInfData().puddle;
-			const EntityDefinition *entityDefPtr = this->entityManager.addEntityDef(std::move(newEntityDef));
+			const EntityDefID entityDefID = this->entityManager.addEntityDef(std::move(newEntityDef));
+			const EntityDefinition &entityDefRef = this->entityManager.getEntityDef(entityDefID);
 			
 			// Quick hack to get back the anim def that was moved into the entity def.
-			const EntityAnimationDefinition &entityAnimDefRef = entityDefPtr->getAnimDef();
+			const EntityAnimationDefinition &entityAnimDefRef = entityDefRef.getAnimDef();
 
 			// Initialize each instance of the flat def.
 			for (const Int2 &position : flatDef.getPositions())
@@ -1597,7 +1593,6 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 						std::to_string(static_cast<int>(entityType)) + "\".");
 				}
 
-				const EntityDefID entityDefID = dataIndex;
 				entityRef.get()->init(entityDefID, entityAnimInst);
 
 				// Set default animation state.

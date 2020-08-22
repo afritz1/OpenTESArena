@@ -260,6 +260,11 @@ TextureManager &Game::getTextureManager()
 	return this->textureManager;
 }
 
+TextureInstanceManager &Game::getTextureInstanceManager()
+{
+	return this->textureInstManager;
+}
+
 MiscAssets &Game::getMiscAssets()
 {
 	return this->miscAssets;

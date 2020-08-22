@@ -155,11 +155,14 @@ public:
 	// Gets pointers to all entities. Returns number of entities written.
 	int getTotalEntities(const Entity **outEntities, int outSize) const;
 
-	// Gets an entity definition for the given ID, or null if it doesn't exist.
-	const EntityDefinition *getEntityDef(EntityDefID defID) const;
+	// Returns whether the given entity definition ID points to a valid definition.
+	bool hasEntityDef(EntityDefID defID) const;
 
-	// Adds an entity data definition to the definitions list and returns a pointer to it.
-	EntityDefinition *addEntityDef(EntityDefinition &&def);
+	// Gets an entity definition for the given ID.
+	const EntityDefinition &getEntityDef(EntityDefID defID) const;
+
+	// Adds an entity data definition to the definitions list and returns its ID.
+	EntityDefID addEntityDef(EntityDefinition &&def);
 
 	// Gets the data necessary for rendering and ray cast selection.
 	void getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,

@@ -196,7 +196,7 @@ public:
 		const double *intensity);
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
-	void initFlatTextures(int flatIndex, EntityAnimationInstance &animInst);
+	void initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst);
 	void setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
 		const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,

@@ -18,6 +18,7 @@
 #include "../Media/CinematicLibrary.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
+#include "../Media/TextureInstanceManager.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
@@ -55,6 +56,7 @@ private:
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	Renderer renderer;
 	TextureManager textureManager;
+	TextureInstanceManager textureInstManager;
 	MiscAssets miscAssets;
 	Random random; // Convenience random for ease of use.
 	ScratchAllocator scratchAllocator;
@@ -135,6 +137,9 @@ public:
 
 	// Gets the texture manager object for loading images from file.
 	TextureManager &getTextureManager();
+
+	// Gets the texture instance manager for generating textures in-engine.
+	TextureInstanceManager &getTextureInstanceManager();
 
 	// Gets the miscellaneous assets object for loading some Arena-related files.
 	MiscAssets &getMiscAssets();

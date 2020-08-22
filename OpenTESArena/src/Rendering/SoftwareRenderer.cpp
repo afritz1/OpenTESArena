@@ -1819,7 +1819,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			continue;
 		}
 
-		const EntityDefinition &entityDef = *entityManager.getEntityDef(entity->getDefinitionID());
+		const EntityDefinition &entityDef = entityManager.getEntityDef(entity->getDefinitionID());
 
 		EntityManager::EntityVisibilityData visData;
 		entityManager.getEntityVisibilityData(*entity, eye2D, ceilingHeight, voxelGrid, visData);

@@ -668,29 +668,28 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 	return writeIndex;
 }
 
-const EntityDefinition *EntityManager::getEntityDef(EntityDefID defID) const
+bool EntityManager::hasEntityDef(EntityDefID defID) const
 {
-	// @todo: just do a direct vector look-up, don't do a search.
-	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
-		[defID](const EntityDefinition &def)
-	{
-		return def.getInfData().flatIndex == static_cast<int>(defID);
-	});
-
-	return (iter != this->entityDefs.end()) ? &(*iter) : nullptr;
+	return (defID >= 0) && (defID < static_cast<int>(this->entityDefs.size()));
 }
 
-EntityDefinition *EntityManager::addEntityDef(EntityDefinition &&def)
+const EntityDefinition &EntityManager::getEntityDef(EntityDefID defID) const
+{
+	DebugAssertIndex(this->entityDefs, defID);
+	return this->entityDefs[defID];
+}
+
+EntityDefID EntityManager::addEntityDef(EntityDefinition &&def)
 {
 	this->entityDefs.push_back(std::move(def));
-	return &this->entityDefs.back();
+	return static_cast<EntityDefID>(this->entityDefs.size()) - 1;
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
 	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
-	const EntityDefinition &entityDef = *this->getEntityDef(entity.getDefinitionID());
+	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID());
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationInstance &animInst = entity.getAnimInstance();
 
@@ -804,10 +803,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
 	const EntityVisibilityData &visData) const
 {
-	const EntityDefinition *entityDef = this->getEntityDef(entity.getDefinitionID());
-	DebugAssert(entityDef != nullptr);
-
-	const EntityAnimationDefinition &animDef = entityDef->getAnimDef();
+	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID());
+	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationDefinition::State &animState = animDef.getState(visData.stateIndex);
 	const EntityAnimationDefinition::KeyframeList &animKeyframeList =
 		animState.getKeyframeList(visData.angleIndex);

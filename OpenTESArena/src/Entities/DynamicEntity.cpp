@@ -84,13 +84,13 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 		return false;
 	}
 
-	const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
-	if (!entityDef->isCreature())
+	const EntityDefinition &entityDef = entityManager.getEntityDef(this->getDefinitionID());
+	if (!entityDef.isCreature())
 	{
 		return false;
 	}
 
-	const std::string creatureSoundName = entityDef->getCreatureData().soundName;
+	const std::string creatureSoundName = entityDef.getCreatureData().soundName;
 	*outFilename = String::toUppercase(creatureSoundName);
 	return true;
 }

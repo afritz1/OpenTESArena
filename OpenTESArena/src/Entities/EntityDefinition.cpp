@@ -63,6 +63,17 @@ void EntityDefinition::CreatureData::init(int creatureIndex, bool isFinalBoss,
 	std::copy(srcAttributes.begin(), srcAttributes.end(), std::begin(this->attributes));
 }
 
+EntityDefinition::CitizenData::CitizenData()
+{
+	this->male = false;
+}
+
+void EntityDefinition::CitizenData::init(bool male, ClimateType climateType)
+{
+	this->male = male;
+	this->climateType = climateType;
+}
+
 EntityDefinition::InfData::InfData()
 {
 	this->flatIndex = -1;
@@ -99,7 +110,13 @@ EntityDefinition::EntityDefinition()
 {
 	this->isCreatureInited = false;
 	this->isHumanEnemyInited = false;
+	this->isCitizenInited = false;
 	this->isOtherInited = false;
+}
+
+int EntityDefinition::makeTempCitizenFlatIndex(bool male)
+{
+	return 100000000 + (male ? 0 : 1);
 }
 
 void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int flatIndex,
@@ -127,6 +144,20 @@ void EntityDefinition::initHumanEnemy(const char *name, int flatIndex, int yOffs
 
 	this->animDef = std::move(animDef);
 	this->isHumanEnemyInited = true;
+}
+
+void EntityDefinition::initCitizen(bool male, ClimateType climateType,
+	EntityAnimationDefinition &&animDef)
+{
+	this->citizenData.init(male, climateType);
+
+	// @temp: need to remove dependency on .INF data flatIndex for renderer.
+	this->infData.flatIndex = EntityDefinition::makeTempCitizenFlatIndex(male);
+
+	std::fill(std::begin(this->creatureData.name), std::end(this->creatureData.name), '\0');
+
+	this->animDef = std::move(animDef);
+	this->isCitizenInited = true;
 }
 
 void EntityDefinition::initOther(int flatIndex, int yOffset, bool collider, bool puddle,
@@ -158,20 +189,15 @@ bool EntityDefinition::isHumanEnemy() const
 	return this->isHumanEnemyInited;
 }
 
+bool EntityDefinition::isCitizen() const
+{
+	return this->isCitizenInited;
+}
+
 bool EntityDefinition::isOther() const
 {
 	return this->isOtherInited;
 }
-
-/*EntityAnimID &EntityDefinition::getAnimID()
-{
-	return this->animID;
-}
-
-const EntityAnimID &EntityDefinition::getAnimID() const
-{
-	return this->animID;
-}*/
 
 const EntityAnimationDefinition &EntityDefinition::getAnimDef() const
 {

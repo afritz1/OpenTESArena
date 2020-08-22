@@ -72,10 +72,8 @@ void Entity::tick(Game &game, double dt)
 		const WorldData &worldData = game.getGameData().getWorldData();
 		const LevelData &levelData = worldData.getActiveLevel();
 		const EntityManager &entityManager = levelData.getEntityManager();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(this->getDefinitionID());
-		DebugAssert(entityDef != nullptr);
-
-		return entityDef->getAnimDef();
+		const EntityDefinition &entityDef = entityManager.getEntityDef(this->getDefinitionID());
+		return entityDef.getAnimDef();
 	}();
 
 	// Get current animation keyframe from instance, so we know which anim def state to get.

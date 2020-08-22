@@ -248,11 +248,9 @@ namespace
 				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition *entityDef =
+				const EntityDefinition &entityDef =
 					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
-				DebugAssert(entityDef != nullptr);
-
-				const std::string_view entityName = entityDef->getDisplayName();
+				const std::string_view entityName = entityDef.getDisplayName();
 
 				if (entityName.size() > 0)
 				{
@@ -1880,11 +1878,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition *entityDef =
+				const EntityDefinition &entityDef =
 					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
-				DebugAssert(entityDef != nullptr);
-
-				const std::string_view entityName = entityDef->getDisplayName();
+				const std::string_view entityName = entityDef.getDisplayName();
 
 				std::string text;
 				if (entityName.size() > 0)
@@ -1929,19 +1925,14 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	{
 		Entity *entity = entityBuffer.get(i);
 		const EntityDefID defID = entity->getDefinitionID();
-		const EntityDefinition *entityDef = entityManager.getEntityDef(defID);
-		if (entityDef == nullptr)
-		{
-			DebugLogError("Missing entity definition " + std::to_string(defID) + ".");
-			continue;
-		}
+		const EntityDefinition &entityDef = entityManager.getEntityDef(defID);
 
-		if (entityDef->isOther() && entityDef->getInfData().streetLight)
+		if (entityDef.isOther() && entityDef.getInfData().streetLight)
 		{
 			const std::string &newStateName = active ?
 				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
 
-			const EntityAnimationDefinition &animDef = entityDef->getAnimDef();
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 			int newStateIndex;
 			if (!animDef.tryGetStateIndex(newStateName.c_str(), &newStateIndex))
 			{

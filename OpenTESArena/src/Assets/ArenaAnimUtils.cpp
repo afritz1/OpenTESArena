@@ -62,7 +62,7 @@ namespace ArenaAnimUtils
 		ArenaAnimUtils::getBaseFlatDimensions(width, height, creatureScale, &baseWidth, &baseHeight);
 		*outWidth = static_cast<double>(baseWidth) / MIFUtils::ARENA_UNITS;
 		*outHeight = static_cast<double>(baseHeight) / MIFUtils::ARENA_UNITS;
-	};
+	}
 
 	// Converts an original human's dimensions to vector space which can represent the entity's
 	// world space size.
@@ -73,7 +73,12 @@ namespace ArenaAnimUtils
 		ArenaAnimUtils::getBaseFlatDimensions(width, height, humanScale, &baseWidth, &baseHeight);
 		*outWidth = static_cast<double>(baseWidth) / MIFUtils::ARENA_UNITS;
 		*outHeight = static_cast<double>(baseHeight) / MIFUtils::ARENA_UNITS;
-	};
+	}
+
+	void MakeCitizenKeyframeDimensions(int width, int height, double *outWidth, double *outHeight)
+	{
+		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
+	}
 
 	// Scaler for world-space dimensions depending on special .INF-related modifiers.
 	double GetDimensionModifier(const INFFile::FlatData &flatData)
@@ -634,10 +639,15 @@ namespace ArenaAnimUtils
 
 			for (const int frameIndex : animIndices)
 			{
-				const ImageID imageID = imageIDs.getID(frameIndex);
+				// Citizens only have forward-facing idle animations, so use frame 0 for other facings.
+				const int correctedFrameIndex = frameIndex < imageIDs.getCount() ? frameIndex : 0;
+
+				const ImageID imageID = imageIDs.getID(correctedFrameIndex);
 				const Image &image = textureManager.getImageHandle(imageID);
-				const double width = MakeDefaultKeyframeDimension(image.getWidth());
-				const double height = MakeDefaultKeyframeDimension(image.getHeight());
+
+				double width, height;
+				MakeCitizenKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
+
 				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
 				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
 			}
@@ -1292,6 +1302,10 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(bool isMale, ClimateType climateType,
 			std::to_string(citizenIndex) + "\".");
 	}
 
+	outAnimDef->addState(std::move(idleDefState));
+	outAnimDef->addState(std::move(walkDefState));
+	outAnimInst->addState(std::move(idleInstState));
+	outAnimInst->addState(std::move(walkInstState));
 	return true;
 }
 

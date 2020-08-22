@@ -611,7 +611,7 @@ void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &
 	this->softwareRenderer.setVoxelTexture(id, srcTexels, palette);
 }
 
-void Renderer::initFlatTextures(int flatIndex, EntityAnimationInstance &animInst)
+void Renderer::initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.initFlatTextures(flatIndex, animInst);

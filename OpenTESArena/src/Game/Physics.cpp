@@ -908,7 +908,7 @@ namespace Physics
 			for (const auto &visData : entityVisDataList)
 			{
 				const Entity &entity = *visData.entity;
-				const EntityDefinition &entityDef = *entityManager.getEntityDef(entity.getDefinitionID());
+				const EntityDefinition &entityDef = entityManager.getEntityDef(entity.getDefinitionID());
 				const EntityAnimationDefinition::Keyframe &animKeyframe =
 					entityManager.getEntityAnimKeyframe(entity, visData);
 
