@@ -82,6 +82,7 @@ public:
 
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();
+	const WeaponAnimation &getWeaponAnimation() const;
 
 	// Returns whether the player is standing on ground and with no Y velocity.
 	bool onGround(const WorldData &worldData) const;

@@ -94,8 +94,13 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 					random.next() % voxelGrid.getDepth());
 
 				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
+				const uint16_t groundVoxelID = voxelGrid.getVoxel(voxel.x, 0, voxel.y);
+
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				if (voxelDef.dataType == VoxelDataType::None)
+				const VoxelDefinition &groundVoxelDef = voxelGrid.getVoxelDef(groundVoxelID);
+
+				if ((voxelDef.dataType == VoxelDataType::None) &&
+					(groundVoxelDef.dataType == VoxelDataType::Floor))
 				{
 					foundSpawnPosition = true;
 					return voxel;

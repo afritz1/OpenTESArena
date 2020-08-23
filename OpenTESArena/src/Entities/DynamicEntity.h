@@ -49,7 +49,7 @@ private:
 	void updateProjectileState(Game &game, double dt);
 
 	// Updates the entity's physics in the world (if any).
-	void updatePhysics(const WorldData &worldData, double dt);
+	void updatePhysics(const WorldData &worldData, Random &random, double dt);
 public:
 	DynamicEntity();
 	virtual ~DynamicEntity() = default;

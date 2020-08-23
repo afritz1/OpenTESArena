@@ -21,20 +21,10 @@ const std::unordered_map<CardinalDirectionName, std::string> CardinalDirectionDi
 
 CardinalDirectionName CardinalDirection::getDirectionName(const NewDouble2 &direction)
 {
-	// The caller should normalize their vector. A "direction" is implied to be normalized.
-	DebugAssert(direction.isNormalized());
-
 	const NewDouble2 northEast = CardinalDirection::North.slerp(CardinalDirection::East, 0.5);
 	const NewDouble2 southEast = CardinalDirection::South.slerp(CardinalDirection::East, 0.5);
 	const NewDouble2 southWest = CardinalDirection::South.slerp(CardinalDirection::West, 0.5);
 	const NewDouble2 northWest = CardinalDirection::North.slerp(CardinalDirection::West, 0.5);
-
-	// The spherical interpolations should already be normalized if their parent vectors
-	// are normalized.
-	DebugAssert(northEast.isNormalized());
-	DebugAssert(southEast.isNormalized());
-	DebugAssert(southWest.isNormalized());
-	DebugAssert(northWest.isNormalized());
 
 	// Each direction gets an equal slice of the circle's area.
 	// (I'm not sure why the deviation is 1/12th; at a glance it should be 1/8th).

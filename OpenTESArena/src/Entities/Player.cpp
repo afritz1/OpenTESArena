@@ -138,6 +138,11 @@ WeaponAnimation &Player::getWeaponAnimation()
 	return this->weaponAnimation;
 }
 
+const WeaponAnimation &Player::getWeaponAnimation() const
+{
+	return this->weaponAnimation;
+}
+
 double Player::getFeetY() const
 {
 	return this->camera.position.y - Player::HEIGHT;
