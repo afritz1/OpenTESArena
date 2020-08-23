@@ -41,6 +41,11 @@ namespace
 			{ CardinalDirectionName::West, CardinalDirection::West }
 		}
 	};
+
+	int GetRandomCitizenDirectionIndex(Random &random)
+	{
+		return random.next() % static_cast<int>(CitizenDirections.size());
+	}
 }
 
 DynamicEntity::DynamicEntity()
@@ -223,10 +228,15 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		const bool shouldChangeToWalking = !playerWeaponAnim.isSheathed() ||
 			(distToPlayerSqr > citizenIdleDistSqr);
 
+		// @todo: need to preserve their previous direction so they stay aligned with
+		// the center of the voxel. Basically need to store cardinal direction as internal state.
 		if (shouldChangeToWalking)
 		{
 			animInst.setStateIndex(walkStateIndex);
-			//this->velocity = CardinalDirection::North * CitizenSpeed; // @todo: temp fix, need to find valid direction.
+			const int citizenDirectionIndex = GetRandomCitizenDirectionIndex(random);
+			const auto &citizenDirection = CitizenDirections[citizenDirectionIndex];
+			this->direction = citizenDirection.second;
+			this->velocity = this->direction * CitizenSpeed;
 		}
 		else
 		{
@@ -236,10 +246,8 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	}
 	else if (curAnimStateIndex == walkStateIndex)
 	{
-		// @todo: still buggy with cardinal directions and going into walls/out-of-bounds.
-		/*const bool shouldChangeToIdle = playerWeaponAnim.isSheathed() &&
-			(distToPlayerSqr <= citizenIdleDistSqr);*/
-		const bool shouldChangeToIdle = false;
+		const bool shouldChangeToIdle = playerWeaponAnim.isSheathed() &&
+			(distToPlayerSqr <= citizenIdleDistSqr);
 
 		if (shouldChangeToIdle)
 		{
