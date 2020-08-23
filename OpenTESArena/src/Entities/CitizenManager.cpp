@@ -24,36 +24,33 @@ bool CitizenManager::shouldSpawn(Game &game) const
 		return false;
 	}
 
-	auto &gameData = game.getGameData();
+	// Only worry about tick-related spawning; spawning at level start is handled by level loading.
+	return false;
+	/*auto &gameData = game.getGameData();
 	auto &worldData = gameData.getWorldData();
 	const WorldType activeWorldType = worldData.getActiveWorldType();
-	return (activeWorldType == WorldType::City) || (activeWorldType == WorldType::Wilderness);
+	return (activeWorldType == WorldType::City) || (activeWorldType == WorldType::Wilderness);*/
 }
 
-void CitizenManager::spawnCitizens(Game &game)
+void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinition &locationDef,
+	const MiscAssets &miscAssets, Random &random, TextureManager &textureManager, Renderer &renderer)
 {
-	auto &gameData = game.getGameData();
-	auto &textureManager = game.getTextureManager();
-	auto &worldData = gameData.getWorldData();
-	auto &levelData = worldData.getActiveLevel();
-	auto &voxelGrid = levelData.getVoxelGrid();
 	auto &entityManager = levelData.getEntityManager();
+	const auto &voxelGrid = levelData.getVoxelGrid();
 
-	const ClimateType climateType = [&gameData]()
+	const ClimateType climateType = [&locationDef]()
 	{
-		const auto &locationDef = gameData.getLocationDefinition();
 		DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
-
 		const auto &cityDef = locationDef.getCityDefinition();
 		return cityDef.climateType;
 	}();
 
-	auto tryMakeEntityData = [&game, &levelData, climateType](bool male, EntityDefinition *outDef,
-		EntityAnimationInstance *outAnimInst)
+	auto tryMakeEntityData = [&miscAssets, &textureManager, &levelData, climateType](bool male,
+		EntityDefinition *outDef, EntityAnimationInstance *outAnimInst)
 	{
 		EntityAnimationDefinition animDef;
 		if (!ArenaAnimUtils::tryMakeCitizenAnims(male, climateType, levelData.getInfFile(),
-			game.getMiscAssets(), game.getTextureManager(), &animDef, outAnimInst))
+			miscAssets, textureManager, &animDef, outAnimInst))
 		{
 			DebugLogWarning(std::string("Couldn't make citizen anims (male: ") + (male ? "yes" : "no") +
 				", climate: " + std::to_string(static_cast<int>(climateType)) + ").");
@@ -82,11 +79,9 @@ void CitizenManager::spawnCitizens(Game &game)
 	const EntityDefID maleEntityDefID = entityManager.addEntityDef(std::move(maleEntityDef));
 	const EntityDefID femaleEntityDefID = entityManager.addEntityDef(std::move(femaleEntityDef));
 
-	constexpr int citizenCount = 200;
+	constexpr int citizenCount = 200; // Arbitrary.
 	for (int i = 0; i < citizenCount; i++)
 	{
-		Random &random = game.getRandom();
-
 		// Find suitable spawn position; might not succeed if there is no available spot.
 		bool foundSpawnPosition = false;
 		const NewInt2 spawnPositionXZ = [&voxelGrid, &random, &foundSpawnPosition]()
@@ -170,7 +165,6 @@ void CitizenManager::spawnCitizens(Game &game)
 
 	// Initialize renderer buffers for the entity animation then populate
 	// all textures of the animation.
-	auto &renderer = game.getRenderer();
 	auto writeTextures = [&textureManager, &entityManager, maleEntityDefID, femaleEntityDefID,
 		&maleAnimInst, &femaleAnimInst, &palette, &renderer](bool male)
 	{
@@ -249,12 +243,25 @@ void CitizenManager::clearCitizens(Game &game)
 
 void CitizenManager::tick(Game &game)
 {
+	// @todo: in the event some citizens are removed when a chunk is removed,
+	// the citizen manager should re-populate the number of citizens that
+	// were removed.
+
 	// @todo: expand this very primitive first attempt.
 	if (this->stateType == StateType::WaitingToSpawn)
 	{
 		if (this->shouldSpawn(game))
 		{
-			this->spawnCitizens(game);
+			auto &gameData = game.getGameData();
+			auto &worldData = gameData.getWorldData();
+			auto &levelData = worldData.getActiveLevel();
+			const auto &locationDef = gameData.getLocationDefinition();
+			const auto &miscAssets = game.getMiscAssets();
+			auto &random = game.getRandom();
+			auto &textureManager = game.getTextureManager();
+			auto &renderer = game.getRenderer();
+			this->spawnCitizens(levelData, locationDef, miscAssets, random, textureManager, renderer);
+
 			this->stateType = StateType::HasSpawned;
 		}
 	}

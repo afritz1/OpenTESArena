@@ -331,7 +331,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						auto &textureManager = game.getTextureManager();
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
 							VoxelDefinition::WallData::MenuType::Dungeon, mif,
-							game.getCharacterClassLibrary(), miscAssets, textureManager, renderer))
+							game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
+							textureManager, renderer))
 						{
 							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
 						}
@@ -391,7 +392,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								auto &renderer = game.getRenderer();
 								if (!gameData.loadCity(locationDef, provinceDef, weatherType,
 									starCount, game.getCharacterClassLibrary(), miscAssets,
-									game.getTextureManager(), renderer))
+									game.getRandom(), game.getTextureManager(), renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}

@@ -11,6 +11,12 @@
 // to some utils namespace if it isn't already.
 
 class Game;
+class LevelData;
+class LocationDefinition;
+class MiscAssets;
+class Random;
+class Renderer;
+class TextureManager;
 
 class CitizenManager
 {
@@ -25,12 +31,13 @@ private:
 	// @todo: need to track changes in active world type (i.e. city -> wilderness).
 
 	bool shouldSpawn(Game &game) const;
-
-	void spawnCitizens(Game &game);
-	void clearCitizens(Game &game);
 public:
 	CitizenManager();
 
+	void spawnCitizens(LevelData &levelData, const LocationDefinition &locationDef,
+		const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
+		Renderer &renderer);
+	void clearCitizens(Game &game);
 	void tick(Game &game);
 };
 

@@ -96,7 +96,8 @@ public:
 	// Calls the base level data method then does some exterior-specific work.
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer) override;
+		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		TextureManager &textureManager, Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
 	virtual void tick(Game &game, double dt) override;

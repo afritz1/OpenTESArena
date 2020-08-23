@@ -243,10 +243,11 @@ void InteriorLevelData::readTriggers(const BufferView<const ArenaTypes::MIFTrigg
 
 void InteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	LevelData::setActive(nightLightsAreActive, worldData, locationDef, charClassLibrary,
-		miscAssets, textureManager, renderer);
+		miscAssets, random, citizenManager, textureManager, renderer);
 
 	// Set interior sky color.
 	renderer.setSkyPalette(&this->skyColor, 1);

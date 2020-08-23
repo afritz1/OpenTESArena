@@ -35,10 +35,12 @@
 
 class ArenaRandom;
 class CharacterClassLibrary;
+class CitizenManager;
 class ExeData;
 class Game;
 class LocationDefinition;
 class MiscAssets;
+class Random;
 class Renderer;
 class TextureManager;
 
@@ -208,7 +210,8 @@ public:
 	// do some extra work (like set interior sky colors in the renderer).
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer);
+		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
 	virtual void tick(Game &game, double dt);

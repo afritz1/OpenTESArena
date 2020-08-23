@@ -17,6 +17,7 @@
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/CitizenManager.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Game/CardinalDirection.h"
@@ -1310,7 +1311,8 @@ void LevelData::updateFadingVoxels(double dt)
 
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
-	const MiscAssets &miscAssets, TextureManager &textureManager, Renderer &renderer)
+	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
@@ -1412,7 +1414,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
 	auto loadEntities = [this, nightLightsAreActive, &worldData, &locationDef, &charClassLibrary,
-		&miscAssets, &textureManager, &renderer, &palette]()
+		&miscAssets, &random, &citizenManager, &textureManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
 		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
@@ -1678,6 +1680,14 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					}
 				}
 			}
+		}
+
+		// Spawn citizens at level start if the conditions are met for the new level.
+		const bool isWild = worldData.getActiveWorldType() == WorldType::Wilderness;
+		if (isCity || isWild)
+		{
+			citizenManager.spawnCitizens(*this, locationDef, miscAssets, random,
+				textureManager, renderer);
 		}
 	};
 

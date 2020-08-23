@@ -81,5 +81,7 @@ void Entity::tick(Game &game, double dt)
 	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
 
 	// Animate.
+	// @todo: maybe want to add an 'isRandom' bool to EntityAnimationDefinition::State so
+	// it can more closely match citizens' animations from the original game.
 	this->animInst.tick(dt, animDefState.getTotalSeconds(), animDefState.isLooping());
 }
