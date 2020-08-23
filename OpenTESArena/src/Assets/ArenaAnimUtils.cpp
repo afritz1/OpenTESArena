@@ -1255,9 +1255,9 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(bool isMale, ClimateType climateType,
 			case ClimateType::Temperate:
 				return 2;
 			case ClimateType::Desert:
-				return 0;
-			case ClimateType::Mountain:
 				return 1;
+			case ClimateType::Mountain:
+				return 0;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
 			}
