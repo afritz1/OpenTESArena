@@ -14,10 +14,13 @@ public:
 	StaticEntity();
 	virtual ~StaticEntity() = default;
 
+	void initNPC(EntityDefID defID, const EntityAnimationInstance &animInst);
+	void initDoodad(EntityDefID defID, const EntityAnimationInstance &animInst);
+	void initContainer(EntityDefID defID, const EntityAnimationInstance &animInst);
+	void initTransition(EntityDefID defID, const EntityAnimationInstance &animInst);
+
 	EntityType getEntityType() const override;
 	StaticEntityType getDerivedType() const;
-
-	void setDerivedType(StaticEntityType derivedType);
 
 	virtual void reset() override;
 };

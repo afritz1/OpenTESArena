@@ -17,6 +17,8 @@ class EntityManager;
 class ExeData;
 class WorldData;
 
+enum class CardinalDirectionName;
+
 class DynamicEntity final : public Entity
 {
 private:
@@ -54,15 +56,20 @@ public:
 	DynamicEntity();
 	virtual ~DynamicEntity() = default;
 
+	void initCitizen(EntityDefID defID, const EntityAnimationInstance &animInst,
+		CardinalDirectionName direction);
+	void initCreature(EntityDefID defID, const EntityAnimationInstance &animInst,
+		const NewDouble2 &direction, Random &random);
+	void initProjectile(EntityDefID defID, const EntityAnimationInstance &animInst,
+		const NewDouble2 &direction);
+
 	EntityType getEntityType() const override;
 	DynamicEntityType getDerivedType() const;
 	const NewDouble2 &getDirection() const;
 	const NewDouble2 &getVelocity() const;
 	const NewDouble2 *getDestination() const;
 
-	void setDerivedType(DynamicEntityType derivedType);
 	void setDirection(const NewDouble2 &direction);
-	void resetCreatureSoundTime(Random &random);
 
 	// Turns the camera around the global up vector by the given degrees.
 	void rotate(double degrees);

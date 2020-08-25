@@ -23,12 +23,12 @@ private:
 	EntityDefID defID;
 protected:
 	NewDouble2 position;
-public:
-	Entity();
-	virtual ~Entity() = default;
 
 	// Initializes the entity state (some values are initialized separately).
 	void init(EntityDefID defID, const EntityAnimationInstance &animInst);
+public:
+	Entity();
+	virtual ~Entity() = default;
 	
 	// Gets the unique ID for the entity.
 	EntityID getID() const;

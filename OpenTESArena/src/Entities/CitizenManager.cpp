@@ -4,7 +4,7 @@
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
-#include "../Game/CardinalDirection.h"
+#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../World/VoxelDataType.h"
 #include "../World/WorldType.h"
@@ -122,11 +122,9 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 		const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
 
 		EntityRef entityRef = entityManager.makeEntity(EntityType::Dynamic);
-		entityRef.get()->init(entityDefID, male ? maleAnimInst : femaleAnimInst);
-
 		DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
-		dynamicEntity->setDerivedType(DynamicEntityType::Citizen);
-		dynamicEntity->setDirection(CardinalDirection::North);
+		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst,
+			CardinalDirectionName::North);
 
 		// @todo: run random NPC texture generation
 		// - need: 1) climate, 2) gender, 3) check if variation already generated.

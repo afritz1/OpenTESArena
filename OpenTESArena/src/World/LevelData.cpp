@@ -1580,23 +1580,20 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				if (entityType == EntityType::Static)
 				{
 					StaticEntity *staticEntity = entityRef.getDerived<StaticEntity>();
-					staticEntity->setDerivedType(StaticEntityType::Doodad);
+					staticEntity->initDoodad(entityDefID, entityAnimInst);
 				}
 				else if (entityType == EntityType::Dynamic)
 				{
 					// All dynamic entities in a level are creatures (never citizens).
 					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
-					dynamicEntity->setDerivedType(DynamicEntityType::Creature);
-					dynamicEntity->setDirection(CardinalDirection::North);
-					dynamicEntity->resetCreatureSoundTime(random);
+					dynamicEntity->initCreature(entityDefID, entityAnimInst,
+						CardinalDirection::North, random);
 				}
 				else
 				{
 					DebugCrash("Unrecognized entity type \"" +
 						std::to_string(static_cast<int>(entityType)) + "\".");
 				}
-
-				entityRef.get()->init(entityDefID, entityAnimInst);
 
 				// Set default animation state.
 				int defaultStateIndex;

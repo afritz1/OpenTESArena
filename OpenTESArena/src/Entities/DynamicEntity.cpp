@@ -39,6 +39,26 @@ namespace
 		}
 	};
 
+	bool TryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName,
+		NewDouble2 *outDirection)
+	{
+		const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
+			[directionName](const auto &pair)
+		{
+			return pair.first == directionName;
+		});
+
+		if (iter != CitizenDirections.end())
+		{
+			*outDirection = iter->second;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
 	int GetRandomCitizenDirectionIndex(Random &random)
 	{
 		return random.next() % static_cast<int>(CitizenDirections.size());
@@ -50,6 +70,36 @@ DynamicEntity::DynamicEntity()
 {
 	this->secondsTillCreatureSound = 0.0;
 	this->derivedType = static_cast<DynamicEntityType>(-1);
+}
+
+void DynamicEntity::initCitizen(EntityDefID defID, const EntityAnimationInstance &animInst,
+	CardinalDirectionName direction)
+{
+	this->init(defID, animInst);
+	this->derivedType = DynamicEntityType::Citizen;
+
+	if (!TryGetCitizenDirectionFromCardinalDirection(direction, &this->direction))
+	{
+		DebugCrash("Couldn't get citizen direction for \"" +
+			std::to_string(static_cast<int>(direction)) + "\".");
+	}
+}
+
+void DynamicEntity::initCreature(EntityDefID defID, const EntityAnimationInstance &animInst,
+	const NewDouble2 &direction, Random &random)
+{
+	this->init(defID, animInst);
+	this->derivedType = DynamicEntityType::Creature;
+	this->direction = direction;
+	this->secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
+}
+
+void DynamicEntity::initProjectile(EntityDefID defID, const EntityAnimationInstance &animInst,
+	const NewDouble2 &direction)
+{
+	this->init(defID, animInst);
+	this->derivedType = DynamicEntityType::Projectile;
+	this->direction = direction;
 }
 
 EntityType DynamicEntity::getEntityType() const
@@ -77,20 +127,10 @@ const NewDouble2 *DynamicEntity::getDestination() const
 	return this->destination.has_value() ? &this->destination.value() : nullptr;
 }
 
-void DynamicEntity::setDerivedType(DynamicEntityType derivedType)
-{
-	this->derivedType = derivedType;
-}
-
 void DynamicEntity::setDirection(const NewDouble2 &direction)
 {
 	DebugAssert(std::isfinite(direction.lengthSquared()));
 	this->direction = direction;
-}
-
-void DynamicEntity::resetCreatureSoundTime(Random &random)
-{
-	this->secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
 }
 
 double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
