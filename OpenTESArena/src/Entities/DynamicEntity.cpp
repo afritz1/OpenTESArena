@@ -26,7 +26,7 @@ namespace
 	constexpr double CitizenIdleDistance = 1.25;
 
 	// Walking speed of citizens.
-	constexpr double CitizenSpeed = 2.0;
+	constexpr double CitizenSpeed = 2.25;
 
 	// Allowed directions for citizens to walk.
 	const std::array<std::pair<CardinalDirectionName, NewDouble2>, 4> CitizenDirections =
