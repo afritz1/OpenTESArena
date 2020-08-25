@@ -1588,6 +1588,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
 					dynamicEntity->setDerivedType(DynamicEntityType::Creature);
 					dynamicEntity->setDirection(CardinalDirection::North);
+					dynamicEntity->resetCreatureSoundTime(random);
 				}
 				else
 				{

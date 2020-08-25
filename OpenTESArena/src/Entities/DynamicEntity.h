@@ -62,6 +62,7 @@ public:
 
 	void setDerivedType(DynamicEntityType derivedType);
 	void setDirection(const NewDouble2 &direction);
+	void resetCreatureSoundTime(Random &random);
 
 	// Turns the camera around the global up vector by the given degrees.
 	void rotate(double degrees);

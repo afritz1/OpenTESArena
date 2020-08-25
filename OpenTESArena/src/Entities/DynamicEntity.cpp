@@ -18,9 +18,6 @@
 
 namespace
 {
-	// @todo: maybe want this to be a part of GameData? File-scope globals are not ideal.
-	Random CreatureSoundRandom;
-
 	// Arbitrary value for how far away a creature can be heard from.
 	// @todo: make this be part of the player, not creatures.
 	constexpr double HearingDistance = 6.0;
@@ -89,6 +86,11 @@ void DynamicEntity::setDirection(const NewDouble2 &direction)
 {
 	DebugAssert(std::isfinite(direction.lengthSquared()));
 	this->direction = direction;
+}
+
+void DynamicEntity::resetCreatureSoundTime(Random &random)
+{
+	this->secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(random);
 }
 
 double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
@@ -284,7 +286,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 				this->playCreatureSound(creatureSoundFilename, ceilingHeight, audioManager);
 
 				const double creatureSoundWaitTime =
-					DynamicEntity::nextCreatureSoundWaitTime(CreatureSoundRandom);
+					DynamicEntity::nextCreatureSoundWaitTime(game.getRandom());
 				this->secondsTillCreatureSound = creatureSoundWaitTime;
 			}
 		}
@@ -421,7 +423,7 @@ void DynamicEntity::reset()
 {
 	Entity::reset();
 	this->derivedType = static_cast<DynamicEntityType>(-1);
-	this->secondsTillCreatureSound = DynamicEntity::nextCreatureSoundWaitTime(CreatureSoundRandom);
+	this->secondsTillCreatureSound = 0.0;
 	this->destination = std::nullopt;
 }
 
