@@ -23,7 +23,7 @@ namespace
 	constexpr double HearingDistance = 6.0;
 
 	// How far away a citizen will consider idling around the player.
-	constexpr double CitizenIdleDistance = 1.50;
+	constexpr double CitizenIdleDistance = 1.25;
 
 	// Walking speed of citizens.
 	constexpr double CitizenSpeed = 2.0;

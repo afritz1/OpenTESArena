@@ -80,7 +80,7 @@ namespace ArenaAnimUtils
 
 	// Animation values for citizens with .CFA files.
 	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 4.0;
-	constexpr double CitizenWalkSecondsPerFrame = HumanWalkSecondsPerFrame;
+	constexpr double CitizenWalkSecondsPerFrame = 1.0 / 12.0;
 	const bool CitizenIdleLoop = HumanIdleLoop;
 	const bool CitizenWalkLoop = HumanWalkLoop;
 	const std::vector<int> CitizenIdleIndices = { 6, 7, 8 };
