@@ -85,10 +85,6 @@ private:
 public:
 	EntityDefinition();
 
-	// Hack to make citizens work with current .INF data look-up system.
-	// @todo: remove dependency on .INF flatIndex in renderer.
-	static int makeTempCitizenFlatIndex(bool male);
-
 	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData,
 		EntityAnimationDefinition &&animDef);
 

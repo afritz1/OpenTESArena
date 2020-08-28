@@ -79,6 +79,12 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 	const EntityDefID maleEntityDefID = entityManager.addEntityDef(std::move(maleEntityDef));
 	const EntityDefID femaleEntityDefID = entityManager.addEntityDef(std::move(femaleEntityDef));
 
+	// @todo: might be a resource leak until level change. Should store these as CitizenManager members
+	// and maybe track the climate or have an OnLevelChange() listener. tl;dr: try to eventually
+	// cache the EntityInstantiateInfo once that becomes a thing.
+	const EntityRenderID maleEntityRenderID = renderer.makeEntityRenderID();
+	const EntityRenderID femaleEntityRenderID = renderer.makeEntityRenderID();
+
 	constexpr int citizenCount = 200; // Arbitrary.
 	for (int i = 0; i < citizenCount; i++)
 	{
@@ -120,11 +126,13 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID);
 		const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
+		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
 
 		EntityRef entityRef = entityManager.makeEntity(EntityType::Dynamic);
 		DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
 		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst,
 			CardinalDirectionName::North);
+		dynamicEntity->setRenderID(entityRenderID); // @todo: will eventually depend on variation
 
 		// @todo: run random NPC texture generation
 		// - need: 1) climate, 2) gender, 3) check if variation already generated.
@@ -169,18 +177,17 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 	// Initialize renderer buffers for the entity animation then populate
 	// all textures of the animation.
 	auto writeTextures = [&textureManager, &entityManager, maleEntityDefID, femaleEntityDefID,
-		&maleAnimInst, &femaleAnimInst, &palette, &renderer](bool male)
+		maleEntityRenderID, femaleEntityRenderID, &maleAnimInst, &femaleAnimInst, &palette,
+		&renderer](bool male)
 	{
-		// @todo: remove renderer dependency on flatIndex and use some better unique identifier.
-		// - maybe something the renderer considers unique? EntityRenderID? Influenced by entity instance.
-		const int flatIndex = EntityDefinition::makeTempCitizenFlatIndex(male);
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
+		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
 
 		// @todo: move this code into something reusable between this and LevelData::setActive().
-		renderer.initFlatTextures(flatIndex, animInst);
+		renderer.initFlatTextures(entityRenderID, animInst);
 		for (int stateIndex = 0; stateIndex < animInst.getStateCount(); stateIndex++)
 		{
 			const EntityAnimationDefinition::State &defState = animDef.getState(stateIndex);
@@ -209,7 +216,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 					const ImageID imageID = keyframe.getImageID();
 					const Image &image = textureManager.getImageHandle(imageID);
 					const bool isPuddle = false;
-					renderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
+					renderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
 						image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
 				}
 			}

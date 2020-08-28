@@ -196,9 +196,11 @@ public:
 		const double *intensity);
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
-	void initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst);
-	void setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
-		const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
+	EntityRenderID makeEntityRenderID();
+	void initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst);
+	void setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID, int keyframeID,
+		bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
+		const Palette &palette);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
@@ -206,7 +208,7 @@ public:
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
 	void removeLight(int id);
-	void clearTextures();
+	void clearTexturesAndEntityRenderIDs();
 	void clearDistantSky();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.

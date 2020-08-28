@@ -611,17 +611,24 @@ void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &
 	this->softwareRenderer.setVoxelTexture(id, srcTexels, palette);
 }
 
-void Renderer::initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst)
+EntityRenderID Renderer::makeEntityRenderID()
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.initFlatTextures(flatIndex, animInst);
+	return this->softwareRenderer.makeEntityRenderID();
 }
 
-void Renderer::setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
-	const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette)
+void Renderer::initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
+	this->softwareRenderer.initFlatTextures(entityRenderID, animInst);
+}
+
+void Renderer::setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID,
+	int keyframeID, bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
+	const Palette &palette)
+{
+	DebugAssert(this->softwareRenderer.isInited());
+	this->softwareRenderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
 		srcTexels, width, height, reflective, palette);
 }
 
@@ -657,10 +664,10 @@ void Renderer::removeLight(int id)
 	this->softwareRenderer.removeLight(id);
 }
 
-void Renderer::clearTextures()
+void Renderer::clearTexturesAndEntityRenderIDs()
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.clearTextures();
+	this->softwareRenderer.clearTexturesAndEntityRenderIDs();
 }
 
 void Renderer::clearDistantSky()

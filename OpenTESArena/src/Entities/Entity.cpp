@@ -8,6 +8,7 @@ Entity::Entity()
 {
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
+	this->renderID = EntityManager::NO_RENDER_ID;
 	this->animInst.reset();
 }
 
@@ -26,6 +27,11 @@ EntityID Entity::getID() const
 EntityDefID Entity::getDefinitionID() const
 {
 	return this->defID;
+}
+
+EntityRenderID Entity::getRenderID() const
+{
+	return this->renderID;
 }
 
 const NewDouble2 &Entity::getPosition() const
@@ -48,6 +54,11 @@ void Entity::setID(EntityID id)
 	this->id = id;
 }
 
+void Entity::setRenderID(EntityRenderID id)
+{
+	this->renderID = id;
+}
+
 void Entity::setPosition(const NewDouble2 &position, EntityManager &entityManager,
 	const VoxelGrid &voxelGrid)
 {
@@ -61,6 +72,7 @@ void Entity::reset()
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
+	this->renderID = EntityManager::NO_RENDER_ID;
 	this->position = Double2::Zero;
 	this->animInst.reset();
 }
@@ -82,6 +94,7 @@ void Entity::tick(Game &game, double dt)
 
 	// Animate.
 	// @todo: maybe want to add an 'isRandom' bool to EntityAnimationDefinition::State so
-	// it can more closely match citizens' animations from the original game.
+	// it can more closely match citizens' animations from the original game. Either that
+	// or have a separate tickRandom() method so it's more optimizable.
 	this->animInst.tick(dt, animDefState.getTotalSeconds(), animDefState.isLooping());
 }

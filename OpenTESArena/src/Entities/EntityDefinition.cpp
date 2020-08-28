@@ -114,11 +114,6 @@ EntityDefinition::EntityDefinition()
 	this->isOtherInited = false;
 }
 
-int EntityDefinition::makeTempCitizenFlatIndex(bool male)
-{
-	return 100000000 + (male ? 0 : 1);
-}
-
 void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int flatIndex,
 	const ExeData &exeData, EntityAnimationDefinition &&animDef)
 {
@@ -150,9 +145,7 @@ void EntityDefinition::initCitizen(bool male, ClimateType climateType,
 	EntityAnimationDefinition &&animDef)
 {
 	this->citizenData.init(male, climateType);
-
-	// @temp: need to remove dependency on .INF data flatIndex for renderer.
-	this->infData.flatIndex = EntityDefinition::makeTempCitizenFlatIndex(male);
+	this->infData.flatIndex = -1;
 
 	std::fill(std::begin(this->creatureData.name), std::end(this->creatureData.name), '\0');
 

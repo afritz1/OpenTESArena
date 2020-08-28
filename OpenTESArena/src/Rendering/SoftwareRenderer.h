@@ -279,7 +279,7 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
-	// Each .INF flat index has a set of animation state mappings to groups of texture
+	// Each renderable entity ID has a set of animation state mappings to groups of texture
 	// lists ordered by entity angle.
 	class FlatTextureGroup
 	{
@@ -311,6 +311,9 @@ private:
 			const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
 	};
 
+	// Each flat texture group is indexed by the entity render ID.
+	using FlatTextureGroups = std::vector<FlatTextureGroup>;
+
 	// Each chasm texture group contains one animation's worth of textures.
 	using ChasmTextureGroup = std::vector<ChasmTexture>;
 	using ChasmTextureGroups = std::unordered_map<int, ChasmTextureGroup>;
@@ -332,7 +335,7 @@ private:
 		double z;
 
 		// Entity animation texture look-up values.
-		int flatIndex; // @todo: remove dependency on .INF flat (maybe keep this int though).
+		EntityRenderID entityRenderID;
 		int animStateID;
 		int animAngleID;
 		int animTextureID;
@@ -508,13 +511,13 @@ private:
 			const std::vector<VisibleFlat> *visibleFlats;
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
-			const std::unordered_map<int, FlatTextureGroup> *flatTextureGroups;
+			const FlatTextureGroups *flatTextureGroups;
 			bool doneSorting; // True when render threads can start rendering flats.
 
 			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 				const std::vector<VisibleLight> &visLights,
 				const Buffer2D<VisibleLightList> &visLightLists,
-				const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups);
+				const FlatTextureGroups &flatTextureGroups);
 		};
 
 		SkyGradient skyGradient;
@@ -566,7 +569,7 @@ private:
 	Buffer2D<VisibleLightList> visLightLists; // Potentially-visible voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
-	std::unordered_map<int, FlatTextureGroup> flatTextureGroups; // Mappings from flat index to textures.
+	FlatTextureGroups flatTextureGroups; // Entity anim textures accessed by entity render ID.
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
@@ -954,8 +957,7 @@ private:
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
-		const std::vector<VisibleFlat> &visibleFlats,
-		const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
+		const std::vector<VisibleFlat> &visibleFlats, const FlatTextureGroups &flatTextureGroups,
 		const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, SNInt gridWidth, WEInt gridDepth,
 		const FrameView &frame);
@@ -975,10 +977,14 @@ public:
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const;
 
+	// Returns whether the given entity render ID points to a valid entry.
+	bool isValidEntityRenderID(EntityRenderID id) const;
+
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.
-	bool tryGetEntitySelectionData(const Double2 &uv, int flatIndex, int animStateID,
-		int animAngleID, int animKeyframeID, bool pixelPerfect, bool *outIsSelected) const;
+	bool tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
+		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
+		bool *outIsSelected) const;
 
 	// Converts a screen point to a ray into the game world.
 	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -1013,14 +1019,18 @@ public:
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 
-	// Allocates space for all pieces of a flat's animation but does not populate them.
-	void initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst);
+	// Gets the next available entity render ID to be assigned to entities in the engine.
+	EntityRenderID makeEntityRenderID();
+
+	// Allocates space for all pieces of an entity's animation but does not populate them.
+	void initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst);
 
 	// Sets a flat's texture for some state-angle-keyframe tuple to the given texture data.
 	// group. For 8-bit colors, some palette indices have special behavior for transparency.
 	// @todo: pass some TextureDataDef instead that wraps 8-bit + palette and 32-bit.
-	void setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID, bool flipped,
-		const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
+	void setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID, int keyframeID,
+		bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
+		const Palette &palette);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
@@ -1030,8 +1040,8 @@ public:
 	// Removes a light. Causes an error if no ID matches.
 	void removeLight(int id);
 
-	// Zeroes out all renderer textures.
-	void clearTextures();
+	// Zeroes out all renderer textures and entity render ID mappings to textures.
+	void clearTexturesAndEntityRenderIDs();
 
 	// Removes all distant sky objects.
 	void clearDistantSky();

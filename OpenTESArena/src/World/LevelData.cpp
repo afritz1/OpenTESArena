@@ -1315,7 +1315,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
-	renderer.clearTextures();
+	renderer.clearTexturesAndEntityRenderIDs();
 	renderer.clearDistantSky();
 	this->entityManager.clear();
 
@@ -1573,6 +1573,9 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			// Quick hack to get back the anim def that was moved into the entity def.
 			const EntityAnimationDefinition &entityAnimDefRef = entityDefRef.getAnimDef();
 
+			// Generate render ID for this entity type to share between identical instances.
+			const EntityRenderID entityRenderID = renderer.makeEntityRenderID();
+
 			// Initialize each instance of the flat def.
 			for (const Int2 &position : flatDef.getPositions())
 			{
@@ -1594,6 +1597,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					DebugCrash("Unrecognized entity type \"" +
 						std::to_string(static_cast<int>(entityType)) + "\".");
 				}
+
+				entityRef.get()->setRenderID(entityRenderID);
 
 				// Set default animation state.
 				int defaultStateIndex;
@@ -1643,9 +1648,9 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				return textureManager.getPaletteHandle(paletteID);
 			}();
 
-			// Initialize renderer buffers for the entity animation then populate
-			// all textures of the animation.
-			renderer.initFlatTextures(flatIndex, entityAnimInst);
+			// Initialize renderer buffers for the entity animation then populate all textures
+			// of the animation.
+			renderer.initFlatTextures(entityRenderID, entityAnimInst);
 			for (int stateIndex = 0; stateIndex < entityAnimInst.getStateCount(); stateIndex++)
 			{
 				const EntityAnimationDefinition::State &defState = entityAnimDefRef.getState(stateIndex);
@@ -1673,7 +1678,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 						// to the renderer.
 						const ImageID imageID = keyframe.getImageID();
 						const Image &image = textureManager.getImageHandle(imageID);
-						renderer.setFlatTexture(flatIndex, stateID, angleID, keyframeID, flipped,
+						renderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
 							image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
 					}
 				}

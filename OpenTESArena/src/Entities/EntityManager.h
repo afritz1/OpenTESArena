@@ -115,6 +115,7 @@ public:
 	// The default ID for entities with no ID.
 	static constexpr EntityID NO_ID = -1;
 	static constexpr EntityDefID NO_DEF_ID = -1;
+	static constexpr EntityRenderID NO_RENDER_ID = -1;
 
 	// Requires the chunks per X and Z side in the voxel grid for allocating entity groups.
 	void init(SNInt chunkCountX, WEInt chunkCountZ);

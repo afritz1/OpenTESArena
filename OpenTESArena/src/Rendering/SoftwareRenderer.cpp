@@ -875,10 +875,8 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double 
 }
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
-	const std::vector<VisibleFlat> &visibleFlats,
-	const std::vector<VisibleLight> &visLights,
-	const Buffer2D<VisibleLightList> &visLightLists,
-	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups)
+	const std::vector<VisibleFlat> &visibleFlats, const std::vector<VisibleLight> &visLights,
+	const Buffer2D<VisibleLightList> &visLightLists, const FlatTextureGroups &flatTextureGroups)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
@@ -953,22 +951,21 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 	return data;
 }
 
-bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, int flatIndex,
+bool SoftwareRenderer::isValidEntityRenderID(EntityRenderID id) const
+{
+	return (id >= 0) && (id < static_cast<int>(this->flatTextureGroups.size()));
+}
+
+bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
 	int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
 	bool *outIsSelected) const
 {
 	// Branch depending on whether the selection request needs to include texture data.
 	if (pixelPerfect)
 	{
-		const auto iter = flatTextureGroups.find(flatIndex);
-		if (iter == flatTextureGroups.end())
-		{
-			DebugLogWarning("No flat texture group found for flat \"" + std::to_string(flatIndex) + "\".");
-			return false;
-		}
-
 		// Get the texture list from the texture group at the given animation state and angle.
-		const FlatTextureGroup &textureGroup = iter->second;
+		DebugAssert(this->isValidEntityRenderID(entityRenderID));
+		const FlatTextureGroup &textureGroup = this->flatTextureGroups[entityRenderID];
 		const FlatTexture &texture = textureGroup.getTexture(animStateID, animAngleID, animKeyframeID);
 
 		// Convert texture coordinates to a texture index. Don't need to clamp; just return
@@ -1041,7 +1038,7 @@ void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
 
 	// Initialize texture vectors to default sizes.
 	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
-	this->flatTextureGroups = std::unordered_map<int, FlatTextureGroup>();
+	this->flatTextureGroups = FlatTextureGroups();
 
 	this->width = width;
 	this->height = height;
@@ -1100,29 +1097,25 @@ void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const P
 	}
 }
 
-void SoftwareRenderer::initFlatTextures(int flatIndex, const EntityAnimationInstance &animInst)
+EntityRenderID SoftwareRenderer::makeEntityRenderID()
 {
-	// If the flat mapping doesn't exist, add a new one.
-	auto iter = this->flatTextureGroups.find(flatIndex);
-	if (iter == this->flatTextureGroups.end())
-	{
-		iter = this->flatTextureGroups.emplace(
-			std::make_pair(flatIndex, FlatTextureGroup())).first;
-	}
+	this->flatTextureGroups.push_back(FlatTextureGroup());
+	return static_cast<EntityRenderID>(this->flatTextureGroups.size()) - 1;
+}
 
-	FlatTextureGroup &flatTextureGroup = iter->second;
+void SoftwareRenderer::initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst)
+{
+	DebugAssert(this->isValidEntityRenderID(entityRenderID));
+	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
 	flatTextureGroup.init(animInst);
 }
 
-void SoftwareRenderer::setFlatTexture(int flatIndex, int stateID, int angleID, int keyframeID,
-	bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
+void SoftwareRenderer::setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID,
+	int keyframeID, bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
 	const Palette &palette)
 {
-	// The flat texture group mapping must be allocated beforehand.
-	const auto iter = this->flatTextureGroups.find(flatIndex);
-	DebugAssert(iter != this->flatTextureGroups.end());
-
-	FlatTextureGroup &flatTextureGroup = iter->second;
+	DebugAssert(this->isValidEntityRenderID(entityRenderID));
+	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
 	const int textureID = keyframeID;
 	flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, srcTexels,
 		width, height, reflective, palette);
@@ -1220,7 +1213,7 @@ void SoftwareRenderer::removeLight(int id)
 	DebugNotImplemented();
 }
 
-void SoftwareRenderer::clearTextures()
+void SoftwareRenderer::clearTexturesAndEntityRenderIDs()
 {
 	for (auto &texture : this->voxelTextures)
 	{
@@ -1893,7 +1886,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
-			visFlat.flatIndex = entityDef.getInfData().flatIndex;
+			visFlat.entityRenderID = entity->getRenderID();
 			visFlat.animStateID = visData.stateIndex;
 			visFlat.animAngleID = visData.angleIndex;
 			visFlat.animTextureID = visData.keyframeIndex;
@@ -7824,8 +7817,8 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 
 void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
-	const std::unordered_map<int, FlatTextureGroup> &flatTextureGroups,
-	const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
+	const FlatTextureGroups &flatTextureGroups, const ShadingInfo &shadingInfo, int chunkDistance,
+	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, SNInt gridWidth, WEInt gridDepth,
 	const FrameView &frame)
 {
@@ -7838,15 +7831,8 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 
 		// Texture of the flat. It might be flipped horizontally as well, given by
 		// the "flat.flipped" value.
-		const int flatIndex = flat.flatIndex;
-		const auto iter = flatTextureGroups.find(flatIndex);
-		if (iter == flatTextureGroups.end())
-		{
-			// No flat texture group available for the flat.
-			continue;
-		}
-
-		const FlatTextureGroup &textureGroup = iter->second;
+		const EntityRenderID entityRenderID = flat.entityRenderID;
+		const FlatTextureGroup &textureGroup = flatTextureGroups[entityRenderID];
 		const FlatTexture &texture = textureGroup.getTexture(
 			flat.animStateID, flat.animAngleID, flat.animTextureID);
 
