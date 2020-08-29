@@ -1650,39 +1650,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 			// Initialize renderer buffers for the entity animation then populate all textures
 			// of the animation.
-			renderer.initFlatTextures(entityRenderID, entityAnimInst);
-			for (int stateIndex = 0; stateIndex < entityAnimInst.getStateCount(); stateIndex++)
-			{
-				const EntityAnimationDefinition::State &defState = entityAnimDefRef.getState(stateIndex);
-				const EntityAnimationInstance::State &instState = entityAnimInst.getState(stateIndex);
-				const int keyframeListCount = defState.getKeyframeListCount();
-
-				for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
-				{
-					const EntityAnimationDefinition::KeyframeList &defKeyframeList =
-						defState.getKeyframeList(keyframeListIndex);
-					const EntityAnimationInstance::KeyframeList &keyframeList =
-						instState.getKeyframeList(keyframeListIndex);
-					const int keyframeCount = defKeyframeList.getKeyframeCount();
-					const bool flipped = defKeyframeList.isFlipped();
-
-					for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
-					{
-						const EntityAnimationInstance::Keyframe &keyframe =
-							keyframeList.getKeyframe(keyframeIndex);
-						const int stateID = stateIndex;
-						const int angleID = keyframeListIndex;
-						const int keyframeID = keyframeIndex;
-
-						// Get texture associated with image ID and write texture data
-						// to the renderer.
-						const ImageID imageID = keyframe.getImageID();
-						const Image &image = textureManager.getImageHandle(imageID);
-						renderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
-							image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
-					}
-				}
-			}
+			renderer.setFlatTextures(entityRenderID, entityAnimDefRef, entityAnimInst, isPuddle,
+				palette, textureManager);
 		}
 
 		// Spawn citizens at level start if the conditions are met for the new level.

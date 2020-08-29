@@ -1022,15 +1022,11 @@ public:
 	// Gets the next available entity render ID to be assigned to entities in the engine.
 	EntityRenderID makeEntityRenderID();
 
-	// Allocates space for all pieces of an entity's animation but does not populate them.
-	void initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst);
-
-	// Sets a flat's texture for some state-angle-keyframe tuple to the given texture data.
-	// group. For 8-bit colors, some palette indices have special behavior for transparency.
-	// @todo: pass some TextureDataDef instead that wraps 8-bit + palette and 32-bit.
-	void setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID, int keyframeID,
-		bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
-		const Palette &palette);
+	// Populates an entity's animation render buffers with textures.
+	// @todo: replace 8-bit restriction with some texture wrapper for 8-bit+palette/32-bit.
+	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
+		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
+		TextureManager &textureManager);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

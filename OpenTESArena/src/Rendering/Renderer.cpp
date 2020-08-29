@@ -617,19 +617,13 @@ EntityRenderID Renderer::makeEntityRenderID()
 	return this->softwareRenderer.makeEntityRenderID();
 }
 
-void Renderer::initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst)
+void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
+	const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
+	TextureManager &textureManager)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.initFlatTextures(entityRenderID, animInst);
-}
-
-void Renderer::setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID,
-	int keyframeID, bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
-	const Palette &palette)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
-		srcTexels, width, height, reflective, palette);
+	this->softwareRenderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
+		palette, textureManager);
 }
 
 void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,

@@ -1103,22 +1103,46 @@ EntityRenderID SoftwareRenderer::makeEntityRenderID()
 	return static_cast<EntityRenderID>(this->flatTextureGroups.size()) - 1;
 }
 
-void SoftwareRenderer::initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst)
+void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
+	const EntityAnimationDefinition &animDef, const EntityAnimationInstance &animInst,
+	bool isPuddle, const Palette &palette, TextureManager &textureManager)
 {
 	DebugAssert(this->isValidEntityRenderID(entityRenderID));
 	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
 	flatTextureGroup.init(animInst);
-}
 
-void SoftwareRenderer::setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID,
-	int keyframeID, bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
-	const Palette &palette)
-{
-	DebugAssert(this->isValidEntityRenderID(entityRenderID));
-	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
-	const int textureID = keyframeID;
-	flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, srcTexels,
-		width, height, reflective, palette);
+	for (int stateIndex = 0; stateIndex < animInst.getStateCount(); stateIndex++)
+	{
+		const EntityAnimationDefinition::State &defState = animDef.getState(stateIndex);
+		const EntityAnimationInstance::State &instState = animInst.getState(stateIndex);
+		const int keyframeListCount = defState.getKeyframeListCount();
+
+		for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
+		{
+			const EntityAnimationDefinition::KeyframeList &defKeyframeList =
+				defState.getKeyframeList(keyframeListIndex);
+			const EntityAnimationInstance::KeyframeList &keyframeList =
+				instState.getKeyframeList(keyframeListIndex);
+			const int keyframeCount = defKeyframeList.getKeyframeCount();
+			const bool flipped = defKeyframeList.isFlipped();
+
+			for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
+			{
+				const EntityAnimationInstance::Keyframe &keyframe =
+					keyframeList.getKeyframe(keyframeIndex);
+				const int stateID = stateIndex;
+				const int angleID = keyframeListIndex;
+				const int keyframeID = keyframeIndex;
+
+				// Get texture associated with image ID and write texture data.
+				const ImageID imageID = keyframe.getImageID();
+				const Image &image = textureManager.getImageHandle(imageID);
+				const int textureID = keyframeID;
+				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, image.getPixels(),
+					image.getWidth(), image.getHeight(), isPuddle, palette);
+			}
+		}
+	}
 }
 
 void SoftwareRenderer::updateLight(int id, const Double3 *point,

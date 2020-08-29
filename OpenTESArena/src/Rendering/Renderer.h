@@ -18,6 +18,7 @@
 
 class Color;
 class DistantSky;
+class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityManager;
 class Rect;
@@ -197,10 +198,9 @@ public:
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	EntityRenderID makeEntityRenderID();
-	void initFlatTextures(EntityRenderID entityRenderID, const EntityAnimationInstance &animInst);
-	void setFlatTexture(EntityRenderID entityRenderID, int stateID, int angleID, int keyframeID,
-		bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
-		const Palette &palette);
+	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
+		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
+		TextureManager &textureManager);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,

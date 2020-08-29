@@ -174,8 +174,8 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 		return textureManager.getPaletteHandle(paletteID);
 	}();
 
-	// Initialize renderer buffers for the entity animation then populate
-	// all textures of the animation.
+	// Initialize renderer buffers for the entity animation and populate all
+	// textures of the animation.
 	auto writeTextures = [&textureManager, &entityManager, maleEntityDefID, femaleEntityDefID,
 		maleEntityRenderID, femaleEntityRenderID, &maleAnimInst, &femaleAnimInst, &palette,
 		&renderer](bool male)
@@ -185,42 +185,10 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
 		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
+		const bool isPuddle = false;
 
-		// @todo: move this code into something reusable between this and LevelData::setActive().
-		renderer.initFlatTextures(entityRenderID, animInst);
-		for (int stateIndex = 0; stateIndex < animInst.getStateCount(); stateIndex++)
-		{
-			const EntityAnimationDefinition::State &defState = animDef.getState(stateIndex);
-			const EntityAnimationInstance::State &instState = animInst.getState(stateIndex);
-			const int keyframeListCount = defState.getKeyframeListCount();
-
-			for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
-			{
-				const EntityAnimationDefinition::KeyframeList &defKeyframeList =
-					defState.getKeyframeList(keyframeListIndex);
-				const EntityAnimationInstance::KeyframeList &keyframeList =
-					instState.getKeyframeList(keyframeListIndex);
-				const int keyframeCount = defKeyframeList.getKeyframeCount();
-				const bool flipped = defKeyframeList.isFlipped();
-
-				for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
-				{
-					const EntityAnimationInstance::Keyframe &keyframe =
-						keyframeList.getKeyframe(keyframeIndex);
-					const int stateID = stateIndex;
-					const int angleID = keyframeListIndex;
-					const int keyframeID = keyframeIndex;
-
-					// Get texture associated with image ID and write texture data
-					// to the renderer.
-					const ImageID imageID = keyframe.getImageID();
-					const Image &image = textureManager.getImageHandle(imageID);
-					const bool isPuddle = false;
-					renderer.setFlatTexture(entityRenderID, stateID, angleID, keyframeID, flipped,
-						image.getPixels(), image.getWidth(), image.getHeight(), isPuddle, palette);
-				}
-			}
-		}
+		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
+			palette, textureManager);
 	};
 
 	writeTextures(true);
