@@ -24,6 +24,7 @@
 #include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 
 namespace
 {
@@ -35,6 +36,9 @@ namespace
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;
+	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_LOWEST = 1;
+	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_HIGHEST = 13;
+	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_DIVISOR = 14;
 	constexpr uint8_t PALETTE_INDEX_RED_SRC1 = 14;
 	constexpr uint8_t PALETTE_INDEX_RED_SRC2 = 15;
 	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
@@ -44,137 +48,110 @@ namespace
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
 }
 
-SoftwareRenderer::VoxelTexel::VoxelTexel()
+void SoftwareRenderer::VoxelTexel::init(double r, double g, double b, double emission,
+	bool transparent)
 {
-	this->r = 0.0;
-	this->g = 0.0;
-	this->b = 0.0;
-	this->emission = 0.0;
-	this->transparent = false;
+	this->r = r;
+	this->g = g;
+	this->b = b;
+	this->emission = emission;
+	this->transparent = transparent;
 }
 
-SoftwareRenderer::VoxelTexel SoftwareRenderer::VoxelTexel::makeFrom8Bit(
-	uint8_t texel, const Palette &palette)
+void SoftwareRenderer::FlatTexel::init(double r, double g, double b, double a, uint8_t reflection)
 {
-	// Convert ARGB color from integer to double-precision format. This does waste
-	// an extreme amount of memory (32 bytes per pixel!), but it's not a big deal
-	// for Arena's textures (eight textures is a megabyte).
-	const uint32_t srcARGB = palette[texel].toARGB();
-	const Double4 srcTexel = Double4::fromARGB(srcARGB);
-	VoxelTexel voxelTexel;
-	voxelTexel.r = srcTexel.x;
-	voxelTexel.g = srcTexel.y;
-	voxelTexel.b = srcTexel.z;
-	voxelTexel.transparent = srcTexel.w == 0.0;
-	return voxelTexel;
+	this->r = r;
+	this->g = g;
+	this->b = b;
+	this->a = a;
+	this->reflection = reflection;
 }
 
-SoftwareRenderer::FlatTexel::FlatTexel()
+void SoftwareRenderer::SkyTexel::init(double r, double g, double b, double a)
 {
-	this->r = 0.0;
-	this->g = 0.0;
-	this->b = 0.0;
-	this->a = 0.0;
+	this->r = r;
+	this->g = g;
+	this->b = b;
+	this->a = a;
 }
 
-SoftwareRenderer::FlatTexel SoftwareRenderer::FlatTexel::makeFrom8Bit(
-	uint8_t texel, bool reflective, const Palette &palette)
+void SoftwareRenderer::ChasmTexel::init(double r, double g, double b)
 {
-	// Palette indices 1-13 are used for light level diminishing in the original game.
-	// These texels do not have any color and are purely for manipulating the previously
-	// rendered color in the frame buffer.
-	FlatTexel flatTexel;
+	this->r = r;
+	this->g = g;
+	this->b = b;
+}
 
-	if ((texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST))
+SoftwareRenderer::VoxelTexture::VoxelTexture()
+{
+	this->width = 0;
+	this->height = 0;
+}
+
+void SoftwareRenderer::VoxelTexture::init(int width, int height, const uint8_t *srcTexels,
+	const Palette &palette)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(width == height); // Must be square.
+	DebugAssert(Bytes::isPowerOf2(width)); // Must be power-of-two dimensions for mipmaps.
+	DebugAssert(Bytes::isPowerOf2(height));
+	DebugAssert(srcTexels != nullptr);
+
+	this->texels.resize(width * height);
+	this->lightTexels.clear();
+	this->width = width;
+	this->height = height;
+
+	for (int y = 0; y < height; y++)
 	{
-		flatTexel.r = 0.0;
-		flatTexel.g = 0.0;
-		flatTexel.b = 0.0;
-		flatTexel.a = static_cast<double>(texel) /
-			static_cast<double>(PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
-		flatTexel.reflection = 0;
-	}
-	else if (reflective && ((texel == PALETTE_INDEX_PUDDLE_EVEN_ROW) ||
-		(texel == PALETTE_INDEX_PUDDLE_ODD_ROW)))
-	{
-		// Puddle texel. The shader needs to know which reflection type it is.
-		flatTexel.r = 0.0;
-		flatTexel.g = 0.0;
-		flatTexel.b = 0.0;
-		flatTexel.a = 1.0;
-		flatTexel.reflection = texel;
-	}
-	else
-	{
-		// Check if the color is hardcoded to another palette index. Otherwise,
-		// color the texel normally.
-		const int paletteIndex = (texel == PALETTE_INDEX_RED_SRC1) ? PALETTE_INDEX_RED_DST1 :
-			((texel == PALETTE_INDEX_RED_SRC2) ? PALETTE_INDEX_RED_DST2 : texel);
+		for (int x = 0; x < width; x++)
+		{
+			const int index = x + (y * width);
+			const uint8_t srcTexel = srcTexels[index];
+			const Color &srcColor = palette[srcTexel];
 
-		const uint32_t srcARGB = palette[paletteIndex].toARGB();
-		const Double4 dstTexel = Double4::fromARGB(srcARGB);
-		flatTexel.r = dstTexel.x;
-		flatTexel.g = dstTexel.y;
-		flatTexel.b = dstTexel.z;
-		flatTexel.a = dstTexel.w;
-		flatTexel.reflection = 0;
-	}
+			const Double4 dstColor = Double4::fromARGB(srcColor.toARGB());
+			const double r = dstColor.x;
+			const double g = dstColor.y;
+			const double b = dstColor.z;
+			constexpr double emission = 0.0;
+			const bool transparent = dstColor.w == 0.0;
 
-	return flatTexel;
+			VoxelTexel &dstTexel = this->texels[index];
+			dstTexel.init(r, g, b, emission, transparent);
+
+			// Check if the texel is used with night lights (yellow at night).
+			if (srcTexel == PALETTE_INDEX_NIGHT_LIGHT)
+			{
+				this->lightTexels.push_back(Int2(x, y));
+			}
+		}
+	}
 }
 
-SoftwareRenderer::SkyTexel::SkyTexel()
+void SoftwareRenderer::VoxelTexture::setLightTexelsActive(bool active)
 {
-	this->r = 0.0;
-	this->g = 0.0;
-	this->b = 0.0;
-	this->a = 0.0;
-}
+	const Color activeColor(255, 166, 0);
+	const Color inactiveColor = Color::Black;
 
-SoftwareRenderer::SkyTexel SoftwareRenderer::SkyTexel::makeFrom8Bit(
-	uint8_t texel, const Palette &palette)
-{
-	// Same as flat texels but for sky objects and without some hardcoded indices.
-	SkyTexel skyTexel;
+	// Change voxel texels based on whether it's night.
+	const Double4 texelColor = Double4::fromARGB((active ? activeColor : inactiveColor).toARGB());
+	const double texelEmission = active ? 1.0 : 0.0;
 
-	if ((texel >= 1) && (texel <= 13))
+	for (const Int2 &lightTexel : this->lightTexels)
 	{
-		skyTexel.r = 0.0;
-		skyTexel.g = 0.0;
-		skyTexel.b = 0.0;
-		skyTexel.a = static_cast<double>(texel) / 14.0;
+		const int index = lightTexel.x + (lightTexel.y * this->width);
+
+		DebugAssertIndex(this->texels, index);
+		VoxelTexel &texel = this->texels[index];
+		const double r = texelColor.x;
+		const double g = texelColor.y;
+		const double b = texelColor.z;
+		const double emission = texelEmission;
+		const bool transparent = texelColor.w == 0.0;
+		texel.init(r, g, b, emission, transparent);
 	}
-	else
-	{
-		// Color the texel normally.
-		const uint32_t srcARGB = palette[texel].toARGB();
-		const Double4 dstTexel = Double4::fromARGB(srcARGB);
-		skyTexel.r = dstTexel.x;
-		skyTexel.g = dstTexel.y;
-		skyTexel.b = dstTexel.z;
-		skyTexel.a = dstTexel.w;
-	}
-
-	return skyTexel;
-}
-
-SoftwareRenderer::ChasmTexel::ChasmTexel()
-{
-	this->r = 0.0;
-	this->g = 0.0;
-	this->b = 0.0;
-}
-
-SoftwareRenderer::ChasmTexel SoftwareRenderer::ChasmTexel::makeFrom8Bit(
-	uint8_t texel, const Palette &palette)
-{
-	const uint32_t srcARGB = palette[texel].toARGB();
-	const Double4 srcTexel = Double4::fromARGB(srcARGB);
-	ChasmTexel chasmTexel;
-	chasmTexel.r = srcTexel.x;
-	chasmTexel.g = srcTexel.y;
-	chasmTexel.b = srcTexel.z;
-	return chasmTexel;
 }
 
 SoftwareRenderer::FlatTexture::FlatTexture()
@@ -183,10 +160,160 @@ SoftwareRenderer::FlatTexture::FlatTexture()
 	this->height = 0;
 }
 
+void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *srcTexels,
+	bool flipped, bool reflective, const Palette &palette)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(srcTexels != nullptr);
+
+	this->texels.resize(width * height);
+	this->width = width;
+	this->height = height;
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			const int srcIndex = x + (y * width);
+			const uint8_t srcTexel = srcTexels[srcIndex];
+
+			// Texel order depends on whether the animation is flipped.
+			const int dstIndex = !flipped ? srcIndex : (((width - 1) - x) + (y * width));
+			FlatTexel &dstTexel = this->texels[dstIndex];
+
+			// Determine how to interpret the source texel. Palette indices 1-13 are used for
+			// light level diminishing in the original game. These texels do not have any color
+			// and are purely for manipulating the previously rendered color in the frame buffer.
+			if ((srcTexel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST &&
+				(srcTexel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST)))
+			{
+				// Ghost texel.
+				constexpr double r = 0.0;
+				constexpr double g = 0.0;
+				constexpr double b = 0.0;
+				const double a = static_cast<double>(srcTexel) /
+					static_cast<double>(PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+				constexpr uint8_t reflection = 0;
+				dstTexel.init(r, g, b, a, reflection);
+			}
+			else if (reflective && ((srcTexel == PALETTE_INDEX_PUDDLE_EVEN_ROW) ||
+				(srcTexel == PALETTE_INDEX_PUDDLE_ODD_ROW)))
+			{
+				// Puddle texel. The shader needs to know which reflection type it is.
+				constexpr double r = 0.0;
+				constexpr double g = 0.0;
+				constexpr double b = 0.0;
+				constexpr double a = 1.0;
+				const uint8_t reflection = srcTexel;
+				dstTexel.init(r, g, b, a, reflection);
+			}
+			else
+			{
+				// Check if the color is hardcoded to another palette index. Otherwise,
+				// color the texel normally.
+				const int paletteIndex = (srcTexel == PALETTE_INDEX_RED_SRC1) ? PALETTE_INDEX_RED_DST1 :
+					((srcTexel == PALETTE_INDEX_RED_SRC2) ? PALETTE_INDEX_RED_DST2 : srcTexel);
+
+				const Color &paletteColor = palette[paletteIndex];
+				const Double4 dstColor = Double4::fromARGB(paletteColor.toARGB());
+				const double r = dstColor.x;
+				const double g = dstColor.y;
+				const double b = dstColor.z;
+				const double a = dstColor.w;
+				constexpr uint8_t reflection = 0;
+				dstTexel.init(r, g, b, a, reflection);
+			}
+		}
+	}
+}
+
 SoftwareRenderer::SkyTexture::SkyTexture()
 {
 	this->width = 0;
 	this->height = 0;
+}
+
+void SoftwareRenderer::SkyTexture::init(int width, int height, const uint8_t *srcTexels,
+	const Palette &palette)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(srcTexels != nullptr);
+
+	this->texels.resize(width * height);
+	this->width = width;
+	this->height = height;
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			const int index = x + (y * width);
+			const uint8_t srcTexel = srcTexels[index];
+			SkyTexel &dstTexel = this->texels[index];
+
+			// Same as flat texels but for sky objects and without some hardcoded indices.
+			if ((srcTexel >= PALETTE_INDEX_SKY_LEVEL_LOWEST) &&
+				(srcTexel <= PALETTE_INDEX_SKY_LEVEL_HIGHEST))
+			{
+				// Transparency for clouds.
+				constexpr double r = 0.0;
+				constexpr double g = 0.0;
+				constexpr double b = 0.0;
+				const double a = static_cast<double>(srcTexel) /
+					static_cast<double>(PALETTE_INDEX_SKY_LEVEL_DIVISOR);
+				dstTexel.init(r, g, b, a);
+			}
+			else
+			{
+				// Color the texel normally.
+				const Color &paletteColor = palette[srcTexel];
+				const Double4 dstColor = Double4::fromARGB(paletteColor.toARGB());
+				const double r = dstColor.x;
+				const double g = dstColor.y;
+				const double b = dstColor.z;
+				const double a = dstColor.w;
+				dstTexel.init(r, g, b, a);
+			}
+		}
+	}
+}
+
+SoftwareRenderer::ChasmTexture::ChasmTexture()
+{
+	this->width = 0;
+	this->height = 0;
+}
+
+void SoftwareRenderer::ChasmTexture::init(int width, int height, const uint8_t *srcTexels,
+	const Palette &palette)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(srcTexels != nullptr);
+
+	this->texels.resize(width * height);
+	this->width = width;
+	this->height = height;
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			const int index = x + (y * width);
+			const uint8_t srcTexel = srcTexels[index];
+			const Color &srcColor = palette[srcTexel];
+
+			const Double4 dstColor = Double4::fromARGB(srcColor.toARGB());
+			const double r = dstColor.x;
+			const double g = dstColor.y;
+			const double b = dstColor.z;
+
+			ChasmTexel &dstTexel = this->texels[index];
+			dstTexel.init(r, g, b);
+		}
+	}
 }
 
 bool SoftwareRenderer::FlatTextureGroup::isValidLookup(int stateID, int angleID, int textureID) const
@@ -272,21 +399,7 @@ void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, in
 	FlatTextureGroup::State &state = this->states[stateID];
 	FlatTextureGroup::TextureList &textureList = state[angleID];
 	FlatTexture &texture = textureList[textureID];
-	texture.width = width;
-	texture.height = height;
-	texture.texels.resize(width * height);
-
-	for (int y = 0; y < height; y++)
-	{
-		for (int x = 0; x < width; x++)
-		{
-			// Texel order depends on whether the animation is flipped.
-			const int srcIndex = x + (y * width);
-			const int dstIndex = !flipped ? srcIndex : (((width - 1) - x) + (y * width));
-			const uint8_t srcTexel = srcTexels[srcIndex];
-			texture.texels[dstIndex] = FlatTexel::makeFrom8Bit(srcTexel, reflective, palette);
-		}
-	}
+	texture.init(width, height, srcTexels, flipped, reflective, palette);
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
@@ -569,27 +682,10 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	auto addSkyTexture = [&skyTextures, &palette, &textureManager](ImageID imageID)
 	{
 		const Image &image = textureManager.getImageHandle(imageID);
-		const int width = image.getWidth();
-		const int height = image.getHeight();
-		const int texelCount = width * height;
 
 		skyTextures.push_back(SkyTexture());
 		SkyTexture &texture = skyTextures.back();
-		texture.texels = std::vector<SkyTexel>(texelCount);
-		texture.width = width;
-		texture.height = height;
-
-		for (int y = 0; y < height; y++)
-		{
-			for (int x = 0; x < width; x++)
-			{
-				// Similar to ghosts, some clouds have special palette indices for a simple
-				// form of transparency.
-				const uint8_t texel = image.getPixel(x, y);
-				const int index = x + (y * width);
-				texture.texels[index] = SkyTexel::makeFrom8Bit(texel, palette);
-			}
-		}
+		texture.init(image.getWidth(), image.getHeight(), image.getPixels(), palette);
 
 		return static_cast<int>(skyTextures.size()) - 1;
 	};
@@ -1069,32 +1165,14 @@ void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &col
 
 void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette)
 {
-	// Clear the selected texture.
-	VoxelTexture &texture = this->voxelTextures.at(id);
-	std::fill(texture.texels.begin(), texture.texels.end(), VoxelTexel());
-	texture.lightTexels.clear();
+	DebugAssertIndex(this->voxelTextures, id);
+	VoxelTexture &texture = this->voxelTextures[id];
 
-	for (int y = 0; y < VoxelTexture::HEIGHT; y++)
-	{
-		for (int x = 0; x < VoxelTexture::WIDTH; x++)
-		{
-			// @todo: change this calculation for rotated textures. Make sure to have a 
-			// source index and destination index.
-			// - "dstX" and "dstY" should be calculated, and also used with lightTexels.
-			const int index = x + (y * VoxelTexture::WIDTH);
-			const uint8_t srcTexel = srcTexels[index];
-			VoxelTexel voxelTexel = VoxelTexel::makeFrom8Bit(srcTexel, palette);
-			texture.texels[index] = voxelTexel;
+	// Hardcoded dimensions for now.
+	constexpr int width = 64;
+	constexpr int height = width;
 
-			// If it's a white texel, it's used with night lights (i.e., yellow at night).
-			const bool isWhite = srcTexel == PALETTE_INDEX_NIGHT_LIGHT;
-
-			if (isWhite)
-			{
-				texture.lightTexels.push_back(Int2(x, y));
-			}
-		}
-	}
+	texture.init(width, height, srcTexels, palette);
 }
 
 EntityRenderID SoftwareRenderer::makeEntityRenderID()
@@ -1180,9 +1258,6 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType,
 	const uint8_t *colors, int width, int height, const Palette &palette)
 {
-	DebugAssert(width == ChasmTexture::WIDTH);
-	DebugAssert(height == ChasmTexture::HEIGHT);
-
 	const int chasmID = RendererUtils::getChasmIdFromType(chasmType);
 
 	auto iter = this->chasmTextureGroups.find(chasmID);
@@ -1194,41 +1269,16 @@ void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmTyp
 	ChasmTextureGroup &textureGroup = iter->second;
 	textureGroup.push_back(ChasmTexture());
 	ChasmTexture &texture = textureGroup.back();
-
-	for (int y = 0; y < ChasmTexture::HEIGHT; y++)
-	{
-		for (int x = 0; x < ChasmTexture::WIDTH; x++)
-		{
-			const int index = x + (y * ChasmTexture::WIDTH);
-			texture.texels.at(index) = ChasmTexel::makeFrom8Bit(colors[index], palette);
-		}
-	}
+	texture.init(width, height, colors, palette);
 }
 
 void SoftwareRenderer::setNightLightsActive(bool active)
 {
 	// @todo: activate lights (don't worry about textures).
 
-	// Change voxel texels based on whether it's night.
-	const Double4 texelColor = Double4::fromARGB(
-		(active ? Color(255, 166, 0) : Color::Black).toARGB());
-	const double texelEmission = active ? 1.0 : 0.0;
-
-	for (auto &voxelTexture : this->voxelTextures)
+	for (VoxelTexture &voxelTexture : this->voxelTextures)
 	{
-		auto &texels = voxelTexture.texels;
-
-		for (const auto &lightTexels : voxelTexture.lightTexels)
-		{
-			const int index = lightTexels.x + (lightTexels.y * VoxelTexture::WIDTH);
-
-			VoxelTexel &texel = texels.at(index);
-			texel.r = texelColor.x;
-			texel.g = texelColor.y;
-			texel.b = texelColor.z;
-			texel.transparent = texelColor.w == 0.0;
-			texel.emission = texelEmission;
-		}
+		voxelTexture.setLightTexelsActive(active);
 	}
 }
 
@@ -3355,15 +3405,15 @@ template <int FilterMode, bool Transparency>
 void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u, double v,
 	double *r, double *g, double *b, double *emission, bool *transparent)
 {
-	constexpr double textureWidthReal = static_cast<double>(VoxelTexture::WIDTH);
-	constexpr double textureHeightReal = static_cast<double>(VoxelTexture::HEIGHT);
+	const double textureWidthReal = static_cast<double>(texture.width);
+	const double textureHeightReal = static_cast<double>(texture.height);
 
 	if constexpr (FilterMode == 0)
 	{
 		// Nearest.
 		const int textureX = static_cast<int>(u * textureWidthReal);
 		const int textureY = static_cast<int>(v * textureHeightReal);
-		const int textureIndex = textureX + (textureY * VoxelTexture::WIDTH);
+		const int textureIndex = textureX + (textureY * texture.width);
 
 		const VoxelTexel &texel = texture.texels[textureIndex];
 		*r = texel.r;
@@ -3379,10 +3429,10 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 	else if constexpr (FilterMode == 1)
 	{
 		// Linear.
-		constexpr double texelWidth = 1.0 / textureWidthReal;
-		constexpr double texelHeight = 1.0 / textureHeightReal;
-		constexpr double halfTexelWidth = texelWidth / 2.0;
-		constexpr double halfTexelHeight = texelHeight / 2.0;
+		const double texelWidth = 1.0 / textureWidthReal;
+		const double texelHeight = 1.0 / textureHeightReal;
+		const double halfTexelWidth = texelWidth / 2.0;
+		const double halfTexelHeight = texelHeight / 2.0;
 		const double uL = std::max(u - halfTexelWidth, 0.0); // Change to wrapping for better texture edges
 		const double uR = std::min(u + halfTexelWidth, Constants::JustBelowOne);
 		const double vT = std::max(v - halfTexelHeight, 0.0);
@@ -3432,15 +3482,15 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double screenXPercent,
 	double screenYPercent, double *r, double *g, double *b)
 {
-	constexpr double textureWidthReal = static_cast<double>(ChasmTexture::WIDTH);
-	constexpr double textureHeightReal = static_cast<double>(ChasmTexture::HEIGHT);
+	const double textureWidthReal = static_cast<double>(texture.width);
+	const double textureHeightReal = static_cast<double>(texture.height);
 
 	// @todo: this is just the first implementation of chasm texturing. There is apparently no
 	// perfect solution, so there will probably be graphics options to tweak how exactly this
 	// sampling is done (stretch, tile, etc.).
 	const int textureX = static_cast<int>(screenXPercent * textureWidthReal);
-	const int textureY = static_cast<int>((screenYPercent * 2.0) * textureHeightReal) % ChasmTexture::HEIGHT;
-	const int textureIndex = textureX + (textureY * ChasmTexture::WIDTH);
+	const int textureY = static_cast<int>((screenYPercent * 2.0) * textureHeightReal) % texture.height;
+	const int textureIndex = textureX + (textureY * texture.width);
 
 	const ChasmTexel &texel = texture.texels[textureIndex];
 	*r = texel.r;

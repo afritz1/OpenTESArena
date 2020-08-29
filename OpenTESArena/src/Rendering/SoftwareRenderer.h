@@ -45,11 +45,9 @@ private:
 	struct VoxelTexel
 	{
 		double r, g, b, emission;
-		bool transparent; // Voxel texels only support alpha testing, not alpha blending.
+		bool transparent; // Only supports alpha testing, not alpha blending.
 
-		VoxelTexel();
-
-		static VoxelTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+		void init(double r, double g, double b, double emission, bool transparent);
 	};
 
 	struct FlatTexel
@@ -57,9 +55,7 @@ private:
 		double r, g, b, a;
 		uint8_t reflection; // Puddle texels have two reflection states.
 
-		FlatTexel();
-
-		static FlatTexel makeFrom8Bit(uint8_t texel, bool reflective, const Palette &palette);
+		void init(double r, double g, double b, double a, uint8_t reflection);
 	};
 
 	// For distant sky objects (mountains, clouds, etc.). Although most distant objects
@@ -69,28 +65,27 @@ private:
 	{
 		double r, g, b, a;
 
-		SkyTexel();
-
-		static SkyTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+		void init(double r, double g, double b, double a);
 	};
 
 	struct ChasmTexel
 	{
 		double r, g, b;
 
-		ChasmTexel();
-
-		static ChasmTexel makeFrom8Bit(uint8_t texel, const Palette &palette);
+		void init(double r, double g, double b);
 	};
 
 	struct VoxelTexture
 	{
-		static const int WIDTH = 64;
-		static const int HEIGHT = VoxelTexture::WIDTH;
-		static const int TEXEL_COUNT = VoxelTexture::WIDTH * VoxelTexture::HEIGHT;
-
-		std::array<VoxelTexel, VoxelTexture::TEXEL_COUNT> texels;
+		std::vector<VoxelTexel> texels;
 		std::vector<Int2> lightTexels; // Black during the day, yellow at night.
+		// @todo: replace lightTexels with two VoxelTextures: one for day, one for night.
+		int width, height;
+
+		VoxelTexture();
+
+		void init(int width, int height, const uint8_t *srcTexels, const Palette &palette);
+		void setLightTexelsActive(bool active);
 	};
 
 	struct FlatTexture
@@ -99,6 +94,9 @@ private:
 		int width, height;
 
 		FlatTexture();
+
+		void init(int width, int height, const uint8_t *srcTexels, bool flipped, bool reflective,
+			const Palette &palette);
 	};
 
 	struct SkyTexture
@@ -107,15 +105,18 @@ private:
 		int width, height;
 
 		SkyTexture();
+
+		void init(int width, int height, const uint8_t *srcTexels, const Palette &palette);
 	};
 
 	struct ChasmTexture
 	{
-		static const int WIDTH = 320;
-		static const int HEIGHT = 100;
-		static const int TEXEL_COUNT = ChasmTexture::WIDTH * ChasmTexture::HEIGHT;
+		std::vector<ChasmTexel> texels;
+		int width, height;
 
-		std::array<ChasmTexel, ChasmTexture::TEXEL_COUNT> texels;
+		ChasmTexture();
+
+		void init(int width, int height, const uint8_t *srcTexels, const Palette &palette);
 	};
 
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
