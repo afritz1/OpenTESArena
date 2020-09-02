@@ -262,7 +262,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					DebugLogWarning("Missing character creation music.");
 				}
 
-				game.setMusic(musicDef);
+				AudioManager &audioManager = game.getAudioManager();
+				audioManager.setMusic(musicDef);
 			};
 
 			auto changeToNewGameStory = [changeToCharCreation](Game &game)
@@ -315,8 +316,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				DebugLogWarning("Missing intro music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
 		};
+
 		return Button<Game&>(center, width, height, function);
 	}();
 
@@ -686,8 +689,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Initialize game world panel.
 			game.setPanel<GameWorldPanel>(game);
-			game.setMusic(musicDef, jingleMusicDef);
+
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef, jingleMusicDef);
 		};
+
 		return Button<Game&, int, int, const std::string&,
 			const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType>(function);
 	}();

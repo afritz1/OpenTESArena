@@ -14,6 +14,8 @@ class Random;
 
 class MusicLibrary
 {
+public:
+	using Predicate = std::function<bool(const MusicDefinition&)>;
 private:
 	std::unordered_map<MusicDefinition::Type, std::vector<MusicDefinition>> definitions;
 
@@ -29,7 +31,7 @@ public:
 	const MusicDefinition *getFirstMusicDefinition(MusicDefinition::Type type) const;
 	const MusicDefinition *getRandomMusicDefinition(MusicDefinition::Type type, Random &random) const;
 	const MusicDefinition *getRandomMusicDefinitionIf(MusicDefinition::Type type, Random &random,
-		const std::function<bool(const MusicDefinition&)> &predicate) const;
+		const Predicate &predicate) const;
 };
 
 #endif

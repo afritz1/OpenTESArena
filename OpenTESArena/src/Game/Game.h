@@ -191,10 +191,6 @@ public:
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
 
-	// Sets the music to the given music name, with an optional jingle to play first. If no
-	// music definition is given, the current music is stopped.
-	void setMusic(const MusicDefinition *musicDef, const MusicDefinition *jingleMusicDef = nullptr);
-
 	// Sets the current game data object. A game session is active if the game data
 	// is not null.
 	void setGameData(std::unique_ptr<GameData> gameData);

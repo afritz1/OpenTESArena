@@ -148,8 +148,10 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 				DebugLogWarning("Missing main menu music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
 		};
+
 		return Button<Game&>(x, y, 65, 29, function);
 	}();
 

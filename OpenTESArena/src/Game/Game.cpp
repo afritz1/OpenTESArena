@@ -169,7 +169,7 @@ Game::Game()
 		DebugLogWarning("Missing main menu music.");
 	}
 
-	this->setMusic(mainMenuMusicDef);
+	this->audioManager.setMusic(mainMenuMusicDef);
 
 	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
@@ -311,33 +311,6 @@ void Game::popSubPanel()
 	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
 
 	this->requestedSubPanelPop = true;
-}
-
-void Game::setMusic(const MusicDefinition *musicDef, const MusicDefinition *jingleMusicDef)
-{
-	if (jingleMusicDef != nullptr)
-	{
-		// Play jingle first and set the main music as the next music.
-		const std::string &jingleFilename = jingleMusicDef->getFilename();
-		const bool loop = false;
-		this->audioManager.playMusic(jingleFilename, loop);
-
-		DebugAssert(musicDef != nullptr);
-		std::string nextFilename = musicDef->getFilename();
-		this->audioManager.setNextMusic(std::move(nextFilename));
-	}
-	else if (musicDef != nullptr)
-	{
-		// Play main music immediately.
-		const std::string &filename = musicDef->getFilename();
-		const bool loop = true;
-		this->audioManager.playMusic(filename, loop);
-	}
-	else
-	{
-		// No music to play.
-		this->audioManager.stopMusic();
-	}
 }
 
 void Game::setGameData(std::unique_ptr<GameData> gameData)

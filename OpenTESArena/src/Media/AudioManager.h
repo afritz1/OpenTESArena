@@ -10,6 +10,7 @@
 // This class manages what sounds and music are played by OpenAL Soft.
 
 class AudioManagerImpl;
+class MusicDefinition;
 class Options;
 
 class AudioManager
@@ -51,13 +52,14 @@ public:
 	// Returns whether the given filename references an actual sound.
 	bool soundExists(const std::string &filename) const;
 
-	// Plays a music file.
-	void playMusic(const std::string &filename, bool loop);
-
 	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
 	// is played globally.
 	void playSound(const std::string &filename,
 		const std::optional<Double3> &position = std::nullopt);
+
+	// Sets the music to the given music definition, with an optional music to play first as a
+	// lead-in to the actual music. If no music definition is given, the current music is stopped.
+	void setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef = nullptr);
 
 	// Stops the music.
 	void stopMusic();
@@ -84,9 +86,6 @@ public:
 	// live instance at a time.
 	void addSingleInstanceSound(std::string &&filename);
 	void clearSingleInstanceSounds();
-
-	// Sets the next music to play after the current one is finished.
-	void setNextMusic(std::string &&filename);
 
 	// Updates any state not handled by a background thread, such as resetting
 	// the sources of finished sounds, and updating listener values (if any).

@@ -74,7 +74,9 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 				DebugLogWarning("Missing dungeon music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
+
 			game.setPanel<GameWorldPanel>(game);
 		};
 		return Button<Game&>(x, y, width, height, function);

@@ -423,7 +423,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									DebugLogWarning("Missing exterior music.");
 								}
 
-								game.setMusic(musicDef);
+								AudioManager &audioManager = game.getAudioManager();
+								audioManager.setMusic(musicDef);
 							};
 
 							// Set the *LEVELUP voxel enter event.
@@ -444,7 +445,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								DebugLogWarning("Missing dungeon music.");
 							}
 
-							game.setMusic(musicDef);
+							AudioManager &audioManager = game.getAudioManager();
+							audioManager.setMusic(musicDef);
 						};
 
 						const auto &cinematicLibrary = game.getCinematicLibrary();
@@ -488,7 +490,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugLogWarning("Missing vision music.");
 						}
 
-						game.setMusic(musicDef);
+						AudioManager &audioManager = game.getAudioManager();
+						audioManager.setMusic(musicDef);
 					};
 
 					const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);

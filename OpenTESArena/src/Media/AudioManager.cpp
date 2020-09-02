@@ -15,6 +15,7 @@
 
 #include "alext.h" // Using local copy (+ "efx.h") to guarantee existence on system.
 #include "AudioManager.h"
+#include "MusicDefinition.h"
 #include "WildMidi.h"
 #include "../Assets/VOCFile.h"
 #include "../Game/Options.h"
@@ -906,14 +907,36 @@ bool AudioManager::soundExists(const std::string &filename) const
 	return pImpl->soundExists(filename);
 }
 
-void AudioManager::playMusic(const std::string &filename, bool loop)
-{
-	pImpl->playMusic(filename, loop);
-}
-
 void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
 {
 	pImpl->playSound(filename, position);
+}
+
+void AudioManager::setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef)
+{
+	if (optMusicDef != nullptr)
+	{
+		// Play optional music first and set the main music as the next music.
+		const std::string &optFilename = optMusicDef->getFilename();
+		const bool loop = false;
+		pImpl->playMusic(optFilename, loop);
+
+		DebugAssert(musicDef != nullptr);
+		const std::string &nextFilename = musicDef->getFilename();
+		pImpl->setNextMusic(std::string(nextFilename));
+	}
+	else if (musicDef != nullptr)
+	{
+		// Play main music immediately.
+		const std::string &filename = musicDef->getFilename();
+		const bool loop = true;
+		pImpl->playMusic(filename, loop);
+	}
+	else
+	{
+		// No music to play.
+		this->stopMusic();
+	}
 }
 
 void AudioManager::stopMusic()
@@ -954,11 +977,6 @@ void AudioManager::addSingleInstanceSound(std::string &&filename)
 void AudioManager::clearSingleInstanceSounds()
 {
 	pImpl->clearSingleInstanceSounds();
-}
-
-void AudioManager::setNextMusic(std::string &&filename)
-{
-	pImpl->setNextMusic(std::move(filename));
 }
 
 void AudioManager::update(double dt, const ListenerData *listenerData)

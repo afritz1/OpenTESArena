@@ -105,7 +105,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 				DebugLogWarning("Missing main menu music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
 		};
 
 		return Button<Game&>(function);

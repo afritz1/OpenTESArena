@@ -400,7 +400,7 @@ const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::T
 }
 
 const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicDefinition::Type type,
-	Random &random, const std::function<bool(const MusicDefinition&)> &predicate) const
+	Random &random, const Predicate &predicate) const
 {
 	std::vector<int> musicDefIndices(this->getMusicDefinitionCount(type));
 	std::iota(musicDefIndices.begin(), musicDefIndices.end(), 0);

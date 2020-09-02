@@ -2154,7 +2154,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			}
 		}
 
-		game.setMusic(musicDef, jingleMusicDef);
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef, jingleMusicDef);
 	}
 	else
 	{
@@ -2274,7 +2275,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						DebugLogWarning("Missing interior music.");
 					}
 
-					game.setMusic(musicDef);
+					AudioManager &audioManager = game.getAudioManager();
+					audioManager.setMusic(musicDef);
 				}
 				else
 				{
@@ -2396,7 +2398,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 				}
 
-				game.setMusic(musicDef, jingleMusicDef);
+				AudioManager &audioManager = game.getAudioManager();
+				audioManager.setMusic(musicDef, jingleMusicDef);
 			}
 		}
 	}
@@ -2923,7 +2926,8 @@ void GameWorldPanel::tick(double dt)
 				DebugLogWarning("Missing weather music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
 		}
 		else if (changeToNightMusic)
 		{
@@ -2935,7 +2939,8 @@ void GameWorldPanel::tick(double dt)
 				DebugLogWarning("Missing night music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
 		}
 	}
 

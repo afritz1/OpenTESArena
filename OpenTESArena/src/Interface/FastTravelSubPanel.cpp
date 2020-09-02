@@ -457,7 +457,9 @@ void FastTravelSubPanel::switchToNextPanel()
 			DebugLogWarning("Missing jingle music.");
 		}
 
-		game.setMusic(musicDef, jingleMusicDef);
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef, jingleMusicDef);
+
 		game.setPanel<GameWorldPanel>(game);
 
 		// Push a text sub-panel for the city arrival pop-up.
@@ -488,7 +490,9 @@ void FastTravelSubPanel::switchToNextPanel()
 			DebugLogWarning("Missing dungeon music.");
 		}
 
-		game.setMusic(musicDef);
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef);
+
 		game.setPanel<GameWorldPanel>(game);
 	}
 	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
@@ -529,7 +533,9 @@ void FastTravelSubPanel::switchToNextPanel()
 				DebugLogWarning("Missing dungeon music.");
 			}
 
-			game.setMusic(musicDef);
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
+
 			game.setPanel<GameWorldPanel>(game);
 		}
 	}
