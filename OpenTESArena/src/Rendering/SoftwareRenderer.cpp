@@ -3451,10 +3451,10 @@ void SoftwareRenderer::sampleVoxelTexture(const VoxelTexture &texture, double u,
 		const int textureXR = static_cast<int>(uR * textureWidthReal);
 		const int textureYT = static_cast<int>(vT * textureHeightReal);
 		const int textureYB = static_cast<int>(vB * textureHeightReal);
-		const int textureIndexTL = textureXL + (textureYT * VoxelTexture::WIDTH);
-		const int textureIndexTR = textureXR + (textureYT * VoxelTexture::WIDTH);
-		const int textureIndexBL = textureXL + (textureYB * VoxelTexture::WIDTH);
-		const int textureIndexBR = textureXR + (textureYB * VoxelTexture::WIDTH);
+		const int textureIndexTL = textureXL + (textureYT * texture.width);
+		const int textureIndexTR = textureXR + (textureYT * texture.width);
+		const int textureIndexBL = textureXL + (textureYB * texture.width);
+		const int textureIndexBR = textureXR + (textureYB * texture.width);
 
 		const VoxelTexel &texelTL = texture.texels[textureIndexTL];
 		const VoxelTexel &texelTR = texture.texels[textureIndexTR];
@@ -3512,7 +3512,7 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 
 	// Horizontal offset in texture.
 	// - Taken care of in texture sampling function (redundant calculation, though).
-	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+	//const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.getFogColor();
@@ -3770,7 +3770,7 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 
 	// Horizontal offset in texture.
 	// - Taken care of in texture sampling function (redundant calculation, though).
-	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+	//const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.getFogColor();
@@ -3863,7 +3863,7 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 
 	// Horizontal offset in texture.
 	// - Taken care of in texture sampling function (redundant calculation, though).
-	//const int textureX = static_cast<int>(u * static_cast<double>(VoxelTexture::WIDTH));
+	//const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
 	// Linearly interpolated fog.
 	const Double3 &fogColor = shadingInfo.getFogColor();
