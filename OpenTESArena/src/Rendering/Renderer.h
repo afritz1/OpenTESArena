@@ -127,8 +127,8 @@ public:
 	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
 	// function because the exact method of testing may depend on the 3D representation of the entity.
 	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-		int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
-		const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
+		const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
+		double entityWidth, double entityHeight, const Double3 &rayPoint,
 		const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const;
 
 	// Converts a [0, 1] screen point to a ray through the world. The exact direction is

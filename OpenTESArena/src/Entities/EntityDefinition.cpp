@@ -76,7 +76,6 @@ void EntityDefinition::CitizenData::init(bool male, ClimateType climateType)
 
 EntityDefinition::InfData::InfData()
 {
-	this->flatIndex = -1;
 	this->yOffset = 0;
 	this->collider = false;
 	this->puddle = false;
@@ -89,11 +88,10 @@ EntityDefinition::InfData::InfData()
 	this->lightIntensity = std::nullopt;
 }
 
-void EntityDefinition::InfData::init(int flatIndex, int yOffset, bool collider, bool puddle,
-	bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale, bool streetLight,
+void EntityDefinition::InfData::init(int yOffset, bool collider, bool puddle, bool largeScale,
+	bool dark, bool transparent, bool ceiling, bool mediumScale, bool streetLight,
 	const std::optional<int> &lightIntensity)
 {
-	this->flatIndex = flatIndex;
 	this->yOffset = yOffset;
 	this->collider = collider;
 	this->puddle = puddle;
@@ -118,7 +116,6 @@ void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int fla
 	const ExeData &exeData, EntityAnimationDefinition &&animDef)
 {
 	this->creatureData.init(creatureIndex, isFinalBoss, exeData);
-	this->infData.flatIndex = flatIndex;
 	this->infData.yOffset = this->creatureData.yOffset;
 	this->infData.collider = true;
 
@@ -126,14 +123,14 @@ void EntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, int fla
 	this->isCreatureInited = true;
 }
 
-void EntityDefinition::initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider,
-	bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale,
+void EntityDefinition::initHumanEnemy(const char *name, int yOffset, bool collider, bool largeScale,
+	bool dark, bool transparent, bool ceiling, bool mediumScale,
 	const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef)
 {
 	const bool puddle = false;
 	const bool streetlight = false;
-	this->infData.init(flatIndex, yOffset, collider, puddle, largeScale, dark, transparent,
-		ceiling, mediumScale, streetlight, lightIntensity);
+	this->infData.init(yOffset, collider, puddle, largeScale, dark, transparent, ceiling,
+		mediumScale, streetlight, lightIntensity);
 
 	std::snprintf(std::begin(this->creatureData.name), std::size(this->creatureData.name), "%s", name);
 
@@ -145,7 +142,6 @@ void EntityDefinition::initCitizen(bool male, ClimateType climateType,
 	EntityAnimationDefinition &&animDef)
 {
 	this->citizenData.init(male, climateType);
-	this->infData.flatIndex = -1;
 
 	std::fill(std::begin(this->creatureData.name), std::end(this->creatureData.name), '\0');
 
@@ -153,12 +149,12 @@ void EntityDefinition::initCitizen(bool male, ClimateType climateType,
 	this->isCitizenInited = true;
 }
 
-void EntityDefinition::initOther(int flatIndex, int yOffset, bool collider, bool puddle,
-	bool largeScale, bool dark, bool transparent, bool ceiling, bool mediumScale, bool streetLight,
+void EntityDefinition::initOther(int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
+	bool transparent, bool ceiling, bool mediumScale, bool streetLight,
 	const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef)
 {
-	this->infData.init(flatIndex, yOffset, collider, puddle, largeScale, dark, transparent,
-		ceiling, mediumScale, streetLight, lightIntensity);
+	this->infData.init(yOffset, collider, puddle, largeScale, dark, transparent, ceiling,
+		mediumScale, streetLight, lightIntensity);
 
 	std::fill(std::begin(this->creatureData.name), std::end(this->creatureData.name), '\0');
 

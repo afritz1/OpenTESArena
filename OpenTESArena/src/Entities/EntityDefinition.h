@@ -50,11 +50,6 @@ public:
 
 	struct InfData
 	{
-		// .INF flat index.
-		// @todo: remove dependency on this? I.e. just keep all the equivalent data (entity
-		// double size, puddle, etc.) in this class.
-		int flatIndex;
-
 		// Several copied over from .INF data (not all, just for initial implementation).
 		int yOffset;
 		bool collider;
@@ -69,8 +64,8 @@ public:
 
 		InfData();
 
-		void init(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale,
-			bool dark, bool transparent, bool ceiling, bool mediumScale, bool streetLight,
+		void init(int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
+			bool transparent, bool ceiling, bool mediumScale, bool streetLight,
 			const std::optional<int> &lightIntensity);
 	};
 private:
@@ -88,14 +83,14 @@ public:
 	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData,
 		EntityAnimationDefinition &&animDef);
 
-	void initHumanEnemy(const char *name, int flatIndex, int yOffset, bool collider, bool largeScale,
-		bool dark, bool transparent, bool ceiling, bool mediumScale,
-		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
+	void initHumanEnemy(const char *name, int yOffset, bool collider, bool largeScale, bool dark,
+		bool transparent, bool ceiling, bool mediumScale, const std::optional<int> &lightIntensity,
+		EntityAnimationDefinition &&animDef);
 
 	void initCitizen(bool male, ClimateType climateType, EntityAnimationDefinition &&animDef);
 
 	// @todo: eventually blacksmith/wizard/etc. info here, or no? (entirely dependent on current level?)
-	void initOther(int flatIndex, int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
+	void initOther(int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
 		bool transparent, bool ceiling, bool mediumScale, bool streetLight,
 		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
 

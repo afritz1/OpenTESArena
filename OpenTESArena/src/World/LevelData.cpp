@@ -1550,19 +1550,17 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				DebugAssertIndex(charClassNames, charClassIndex);
 				const std::string &charClassName = charClassNames[charClassIndex];
 
-				newEntityDef.initHumanEnemy(charClassName.c_str(), flatIndex, flatData.yOffset,
-					flatData.collider, flatData.largeScale, flatData.dark, flatData.transparent,
-					flatData.ceiling, flatData.mediumScale, flatData.lightIntensity,
-					std::move(entityAnimDef));
+				newEntityDef.initHumanEnemy(charClassName.c_str(), flatData.yOffset, flatData.collider,
+					flatData.largeScale, flatData.dark, flatData.transparent, flatData.ceiling,
+					flatData.mediumScale, flatData.lightIntensity, std::move(entityAnimDef));
 			}
 			else
 			{
 				// No display name.
 				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
-				newEntityDef.initOther(flatIndex, flatData.yOffset,
-					flatData.collider, flatData.puddle, flatData.largeScale, flatData.dark,
-					flatData.transparent, flatData.ceiling, flatData.mediumScale, streetLight,
-					flatData.lightIntensity, std::move(entityAnimDef));
+				newEntityDef.initOther(flatData.yOffset, flatData.collider, flatData.puddle,
+					flatData.largeScale, flatData.dark, flatData.transparent, flatData.ceiling,
+					flatData.mediumScale, streetLight, flatData.lightIntensity, std::move(entityAnimDef));
 			}
 
 			const bool isStreetlight = newEntityDef.getInfData().streetLight;

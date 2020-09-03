@@ -248,9 +248,9 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 }
 
 bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-	int flatIndex, const Double3 &entityForward, const Double3 &entityRight,
-	const Double3 &entityUp, double entityWidth, double entityHeight, const Double3 &rayPoint,
-	const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const
+	const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
+	double entityWidth, double entityHeight, const Double3 &rayPoint, const Double3 &rayDirection,
+	bool pixelPerfect, Double3 *outHitPoint) const
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	const Entity &entity = *visData.entity;
@@ -269,8 +269,9 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 		// See if the ray successfully hit a point on the entity, and that point is considered
 		// selectable (i.e. it's not transparent).
 		bool isSelected;
-		const bool withinEntity = this->softwareRenderer.tryGetEntitySelectionData(uv, flatIndex,
-			visData.stateIndex, visData.angleIndex, visData.keyframeIndex, pixelPerfect, &isSelected);
+		const bool withinEntity = this->softwareRenderer.tryGetEntitySelectionData(uv,
+			entity.getRenderID(), visData.stateIndex, visData.angleIndex, visData.keyframeIndex,
+			pixelPerfect, &isSelected);
 
 		return withinEntity && isSelected;
 	}
