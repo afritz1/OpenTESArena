@@ -13,103 +13,311 @@ enum class ClimateType;
 class EntityDefinition
 {
 public:
-	struct CreatureData
+	enum class Type
 	{
-		char name[64];
-		int level;
-		int minHP;
-		int maxHP;
-		int baseExp;
-		int expMultiplier;
-		int soundIndex;
-		char soundName[32];
-		int minDamage;
-		int maxDamage;
-		int magicEffects;
-		int scale;
-		int yOffset;
-		bool hasNoCorpse;
-		int bloodIndex;
-		int diseaseChances;
-		int attributes[8];
-
-		CreatureData();
-
-		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+		Enemy, // Creatures and human enemies.
+		Citizen, // Wandering people.
+		StaticNPC, // Bartenders, priests, etc..
+		Item, // Keys, tablets, staff pieces, etc..
+		Container, // Chests, loot piles, etc..
+		Projectile, // Arrows, spells, etc..
+		Transition, // Wilderness den.
+		Doodad // Trees, chairs, streetlights, etc..
 	};
 
-	struct CitizenData
+	class EnemyDefinition
+	{
+	public:
+		enum class Type
+		{
+			Creature,
+			Human
+		};
+
+		// @todo: move this into a creature library so it can just be an ID instead.
+		struct CreatureDefinition
+		{
+			char name[64];
+			int level;
+			int minHP;
+			int maxHP;
+			int baseExp;
+			int expMultiplier;
+			int soundIndex;
+			char soundName[32];
+			int minDamage;
+			int maxDamage;
+			int magicEffects;
+			int scale;
+			int yOffset;
+			bool hasNoCorpse;
+			int bloodIndex;
+			int diseaseChances;
+			int attributes[8];
+
+			void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+		};
+
+		struct HumanDefinition
+		{
+			bool male;
+			int charClassID;
+
+			void init(bool male, int charClassID);
+		};
+	private:
+		EnemyDefinition::Type type;
+
+		union
+		{
+			CreatureDefinition creature;
+			HumanDefinition human;
+		};
+	public:
+		EnemyDefinition();
+
+		EnemyDefinition::Type getType() const;
+		const CreatureDefinition &getCreature() const;
+		const HumanDefinition &getHuman() const;
+
+		void initCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+		void initHuman(bool male, int charClassID);
+	};
+
+	struct CitizenDefinition
 	{
 		bool male;
 		ClimateType climateType;
 
-		CitizenData();
+		CitizenDefinition();
 
 		void init(bool male, ClimateType climateType);
 	};
 
-	struct InfData
+	class StaticNpcDefinition
 	{
-		// Several copied over from .INF data (not all, just for initial implementation).
+	public:
+		// Unique types of interaction.
+		enum class Type
+		{
+			Shopkeeper,
+			Person
+		};
+
+		struct ShopkeeperDefinition
+		{
+			enum class Type
+			{
+				Blacksmith,
+				Bartender,
+				Wizard
+			};
+
+			ShopkeeperDefinition::Type type;
+
+			void init(ShopkeeperDefinition::Type type);
+		};
+
+		struct PersonDefinition
+		{
+			// Personality, isRuler, etc..
+			// @todo: probably want like a personality ID into personality library.
+		};
+	private:
+		StaticNpcDefinition::Type type;
+
+		union
+		{
+			ShopkeeperDefinition shopkeeper;
+			PersonDefinition person;
+		};
+	public:
+		StaticNpcDefinition();
+
+		StaticNpcDefinition::Type getType() const;
+		const ShopkeeperDefinition &getShopkeeper() const;
+		const PersonDefinition &getPerson() const;
+
+		void initShopkeeper(ShopkeeperDefinition::Type type);
+		void initPerson();
+	};
+
+	class ItemDefinition
+	{
+	public:
+		enum class Type
+		{
+			Key, QuestItem
+		};
+
+		struct KeyDefinition
+		{
+			// @todo
+		};
+
+		struct QuestItemDefinition
+		{
+			// @todo
+		};
+	private:
+		ItemDefinition::Type type;
+
+		union
+		{
+			KeyDefinition key;
+			QuestItemDefinition questItem;
+		};
+	public:
+		ItemDefinition();
+
+		ItemDefinition::Type getType() const;
+		const KeyDefinition &getKey() const;
+		const QuestItemDefinition &getQuestItem() const;
+
+		void initKey();
+		void initQuestItem();
+	};
+
+	class ContainerDefinition
+	{
+	public:
+		enum class Type
+		{
+			Holder, // Can be opened/closed.
+			Pile // Loose on the ground.
+		};
+
+		struct HolderDefinition
+		{
+			bool locked;
+			// @todo: loot table ID?
+
+			HolderDefinition();
+
+			void init(bool locked);
+		};
+
+		struct PileDefinition
+		{
+			// @todo: loot table ID?
+		};
+	private:
+		ContainerDefinition::Type type;
+
+		union
+		{
+			HolderDefinition holder;
+			PileDefinition pile;
+		};
+	public:
+		ContainerDefinition();
+
+		ContainerDefinition::Type getType() const;
+		const HolderDefinition &getHolder() const;
+		const PileDefinition &getPile() const;
+
+		void initHolder(bool locked);
+		void initPile();
+	};
+
+	struct ProjectileDefinition
+	{
+		// @todo: may or may not want to store physical damage and spell effects in the same 'effect'.
+
+		bool hasGravity;
+
+		ProjectileDefinition();
+
+		void init(bool hasGravity);
+	};
+
+	struct TransitionDefinition
+	{
+		// @todo: destination info (type of level, level count, etc.)
+
+		TransitionDefinition();
+
+		void init();
+	};
+
+	struct DoodadDefinition
+	{
+		// @todo: eventually convert these to modern values (percentages, etc.).
 		int yOffset;
+		double scale;
 		bool collider;
-		bool puddle;
-		bool largeScale;
-		bool dark;
 		bool transparent;
 		bool ceiling;
-		bool mediumScale;
-		bool streetLight;
-		std::optional<int> lightIntensity;
+		bool streetlight;
+		bool puddle;
+		int lightIntensity; // Has intensity if over 0.
 
-		InfData();
+		DoodadDefinition();
 
-		void init(int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
-			bool transparent, bool ceiling, bool mediumScale, bool streetLight,
-			const std::optional<int> &lightIntensity);
+		void init(int yOffset, double scale, bool collider, bool transparent, bool ceiling,
+			bool streetlight, bool puddle, int lightIntensity);
 	};
 private:
-	CreatureData creatureData;
-	CitizenData citizenData;
-	InfData infData;
+	Type type;
 	EntityAnimationDefinition animDef;
-	bool isCreatureInited;
-	bool isHumanEnemyInited;
-	bool isCitizenInited;
-	bool isOtherInited;
+
+	union
+	{
+		EnemyDefinition enemy;
+		CitizenDefinition citizen;
+		StaticNpcDefinition staticNpc;
+		ItemDefinition item;
+		ContainerDefinition container;
+		ProjectileDefinition projectile;
+		TransitionDefinition transition;
+		DoodadDefinition doodad;
+	};
+
+	void init(Type type, EntityAnimationDefinition &&animDef);
 public:
 	EntityDefinition();
 
-	void initCreature(int creatureIndex, bool isFinalBoss, int flatIndex, const ExeData &exeData,
-		EntityAnimationDefinition &&animDef);
+	Type getType() const;
+	const EntityAnimationDefinition &getAnimDef() const;
+	const EnemyDefinition &getEnemy() const;
+	const CitizenDefinition &getCitizen() const;
+	const StaticNpcDefinition &getStaticNpc() const;
+	const ItemDefinition &getItem() const;
+	const ContainerDefinition &getContainer() const;
+	const ProjectileDefinition &getProjectile() const;
+	const TransitionDefinition &getTransition() const;
+	const DoodadDefinition &getDoodad() const;
 
-	void initHumanEnemy(const char *name, int yOffset, bool collider, bool largeScale, bool dark,
-		bool transparent, bool ceiling, bool mediumScale, const std::optional<int> &lightIntensity,
+	// Enemy.
+	void initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData,
 		EntityAnimationDefinition &&animDef);
+	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
 
+	// Citizen.
 	void initCitizen(bool male, ClimateType climateType, EntityAnimationDefinition &&animDef);
 
-	// @todo: eventually blacksmith/wizard/etc. info here, or no? (entirely dependent on current level?)
-	void initOther(int yOffset, bool collider, bool puddle, bool largeScale, bool dark,
-		bool transparent, bool ceiling, bool mediumScale, bool streetLight,
-		const std::optional<int> &lightIntensity, EntityAnimationDefinition &&animDef);
+	// Static NPC.
+	void initStaticNpcShopkeeper(StaticNpcDefinition::ShopkeeperDefinition::Type type,
+		EntityAnimationDefinition &&animDef);
+	void initStaticNpcPerson(EntityAnimationDefinition &&animDef);
 
-	std::string_view getDisplayName() const;
+	// Item.
+	void initItemKey(EntityAnimationDefinition &&animDef);
+	void initItemQuestItem(EntityAnimationDefinition &&animDef);
 
-	// @todo: quick hacks; probably refactor or use some enum class or integrate with each data struct?
-	// @todo: more formal discriminated union.
-	bool isCreature() const;
-	bool isHumanEnemy() const;
-	bool isCitizen() const;
-	bool isOther() const;
+	// Container.
+	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
+	void initContainerPile(EntityAnimationDefinition &&animDef);
 
-	const EntityAnimationDefinition &getAnimDef() const;
+	// Projectile.
+	void initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef);
 
-	CreatureData &getCreatureData();
-	const CreatureData &getCreatureData() const;
+	// Transition.
+	void initTransition(EntityAnimationDefinition &&animDef);
 
-	InfData &getInfData();
-	const InfData &getInfData() const;
+	// Doodad.
+	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling,
+		bool streetlight, bool puddle, int lightIntensity, EntityAnimationDefinition &&animDef);
 };
 
 #endif

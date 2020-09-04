@@ -770,7 +770,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const SNDouble entityPosX = entityPos.x;
 	const WEDouble entityPosZ = entityPos.y;
 
-	const double flatYOffset = static_cast<double>(-entityDef.getInfData().yOffset) / MIFUtils::ARENA_UNITS;
+	const int baseYOffset = EntityUtils::getYOffset(entityDef);
+	const double flatYOffset =  static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()

@@ -30,6 +30,8 @@ private:
 	StateType stateType;
 	// @todo: need to track changes in active world type (i.e. city -> wilderness).
 
+	// @todo: tuple for citizen texture map -> entity render ID, refreshed on level change.
+
 	bool shouldSpawn(Game &game) const;
 public:
 	CitizenManager();

@@ -80,23 +80,6 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
-	// Scaler for world-space dimensions depending on special .INF-related modifiers.
-	double GetDimensionModifier(const INFFile::FlatData &flatData)
-	{
-		if (flatData.largeScale)
-		{
-			return ArenaAnimUtils::LargeScale;
-		}
-		else if (flatData.mediumScale)
-		{
-			return ArenaAnimUtils::MediumScale;
-		}
-		else
-		{
-			return 1.0;
-		}
-	}
-
 	bool tryMakeStaticEntityAnimState(int flatIndex, const char *stateName, double secondsPerFrame,
 		bool looping, const INFFile &inf, TextureManager &textureManager,
 		EntityAnimationDefinition::State *outDefState,
@@ -118,7 +101,7 @@ namespace ArenaAnimUtils
 			return true;
 		}
 
-		const double dimensionModifier = GetDimensionModifier(flatData);
+		const double dimensionModifier = ArenaAnimUtils::getDimensionModifier(flatData);
 
 		TextureManager::IdGroup<ImageID> imageIDs;
 		if (!textureManager.tryGetImageIDs(flatTextureName, &imageIDs))
@@ -780,6 +763,22 @@ void ArenaAnimUtils::getBaseFlatDimensions(int width, int height, uint16_t scale
 {
 	*baseWidth = (width * scale) / 256;
 	*baseHeight = (((height * scale) / 256) * 200) / 256;
+}
+
+double ArenaAnimUtils::getDimensionModifier(const INFFile::FlatData &flatData)
+{
+	if (flatData.largeScale)
+	{
+		return ArenaAnimUtils::LargeScale;
+	}
+	else if (flatData.mediumScale)
+	{
+		return ArenaAnimUtils::MediumScale;
+	}
+	else
+	{
+		return 1.0;
+	}
 }
 
 bool ArenaAnimUtils::isAnimDirectionFlipped(int animDirectionID)

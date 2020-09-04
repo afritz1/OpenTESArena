@@ -248,13 +248,14 @@ namespace
 				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition &entityDef =
-					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
-				const std::string_view entityName = entityDef.getDisplayName();
+				const EntityDefinition &entityDef = entityManager.getEntityDef(
+					entityRef.get()->getDefinitionID());
+				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
-				if (entityName.size() > 0)
+				std::string entityName;
+				if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
 				{
-					text = std::string(entityName);
+					text = std::move(entityName);
 				}
 				else
 				{
@@ -1878,22 +1879,24 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
-				const EntityDefinition &entityDef =
-					entityManager.getEntityDef(entityRef.get()->getDefinitionID());
-				const std::string_view entityName = entityDef.getDisplayName();
+				const EntityDefinition &entityDef = entityManager.getEntityDef(
+					entityRef.get()->getDefinitionID());
+				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
+				std::string entityName;
 				std::string text;
-				if (entityName.size() > 0)
+				if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
 				{
 					text = exeData.ui.inspectedEntityName;
 
 					// Replace format specifier with entity name.
-					text = String::replace(text, "%s", std::string(entityName));
+					text = String::replace(text, "%s", entityName);
 				}
 				else
 				{
 					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityHit.id);
+					text = "Entity " + std::to_string(entityHit.id) + " (" +
+						EntityUtils::defTypeToString(entityDef) + ")";
 				}
 
 				auto &gameData = game.getGameData();
@@ -1927,7 +1930,8 @@ void GameWorldPanel::handleNightLightChange(bool active)
 		const EntityDefID defID = entity->getDefinitionID();
 		const EntityDefinition &entityDef = entityManager.getEntityDef(defID);
 
-		if (entityDef.isOther() && entityDef.getInfData().streetLight)
+		if ((entityDef.getType() == EntityDefinition::Type::Doodad) &&
+			(entityDef.getDoodad().streetlight))
 		{
 			const std::string &newStateName = active ?
 				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;

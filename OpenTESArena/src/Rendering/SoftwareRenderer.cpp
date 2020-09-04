@@ -1904,21 +1904,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const double flatHalfWidth = flatWidth * 0.50;
 
 		// See if the entity is a light.
-		const int lightIntensity = [&shadingInfo, &entityDef]()
+		int lightIntensity;
+		if (!EntityUtils::tryGetLightIntensity(entityDef, &lightIntensity))
 		{
-			const std::optional<int> &optLightIntensity = entityDef.getInfData().lightIntensity;
-			if (optLightIntensity.has_value())
-			{
-				return *optLightIntensity;
-			}
-			else
-			{
-				const int streetLightIntensity = 4;
-				const bool isActiveStreetLight = (entityDef.isOther() &&
-					entityDef.getInfData().streetLight) && shadingInfo.nightLightsAreActive;
-				return isActiveStreetLight ? streetLightIntensity : 0;
-			}
-		}();
+			constexpr int streetLightIntensity = 4;
+			const bool isActiveStreetLight = ((entityDef.getType() == EntityDefinition::Type::Doodad) &&
+				entityDef.getDoodad().streetlight) && shadingInfo.nightLightsAreActive;
+			lightIntensity = isActiveStreetLight ? streetLightIntensity : 0;
+		}
 
 		const bool isLight = lightIntensity > 0;
 		if (isLight)

@@ -1529,6 +1529,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					std::to_string(static_cast<int>(entityType)) + "\".");
 			}
 
+			// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.
+			// - Most likely also need location type, etc. because flatIndex is level-dependent.
 			EntityDefinition newEntityDef;
 			if (isCreature)
 			{
@@ -1539,32 +1541,31 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
-				newEntityDef.initCreature(creatureIndex, isFinalBoss, flatIndex,
-					exeData, std::move(entityAnimDef));
+				newEntityDef.initEnemyCreature(creatureIndex, isFinalBoss, exeData,
+					std::move(entityAnimDef));
 			}
 			else if (isHumanEnemy)
 			{
-				// Use character class name as the display name.
-				const auto &charClassNames = exeData.charClasses.classNames;
-				const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
-				DebugAssertIndex(charClassNames, charClassIndex);
-				const std::string &charClassName = charClassNames[charClassIndex];
-
-				newEntityDef.initHumanEnemy(charClassName.c_str(), flatData.yOffset, flatData.collider,
-					flatData.largeScale, flatData.dark, flatData.transparent, flatData.ceiling,
-					flatData.mediumScale, flatData.lightIntensity, std::move(entityAnimDef));
+				const bool male = (random.next() % 2) == 0;
+				const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
+				newEntityDef.initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 			}
-			else
+			else // @todo: handle other entity definition types.
 			{
-				// No display name.
+				// Doodad.
 				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
-				newEntityDef.initOther(flatData.yOffset, flatData.collider, flatData.puddle,
-					flatData.largeScale, flatData.dark, flatData.transparent, flatData.ceiling,
-					flatData.mediumScale, streetLight, flatData.lightIntensity, std::move(entityAnimDef));
+				const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
+				const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
+
+				newEntityDef.initDoodad(flatData.yOffset, scale, flatData.collider,
+					flatData.transparent, flatData.ceiling, streetLight, flatData.puddle,
+					lightIntensity, std::move(entityAnimDef));
 			}
 
-			const bool isStreetlight = newEntityDef.getInfData().streetLight;
-			const bool isPuddle = newEntityDef.getInfData().puddle;
+			const bool isStreetlight = (newEntityDef.getType() == EntityDefinition::Type::Doodad) &&
+				newEntityDef.getDoodad().streetlight;
+			const bool isPuddle = (newEntityDef.getType() == EntityDefinition::Type::Doodad) &&
+				newEntityDef.getDoodad().puddle;
 			const EntityDefID entityDefID = this->entityManager.addEntityDef(std::move(newEntityDef));
 			const EntityDefinition &entityDefRef = this->entityManager.getEntityDef(entityDefID);
 			
