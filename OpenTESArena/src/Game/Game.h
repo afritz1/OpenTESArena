@@ -8,10 +8,10 @@
 
 #include "CharacterCreationState.h"
 #include "GameData.h"
-#include "InputManager.h"
 #include "Options.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Input/InputManager.h"
 #include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
