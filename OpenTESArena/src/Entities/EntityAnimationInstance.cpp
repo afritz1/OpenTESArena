@@ -1,17 +1,25 @@
 #include <cmath>
 
 #include "EntityAnimationInstance.h"
+#include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
 
-EntityAnimationInstance::Keyframe::Keyframe(ImageID imageID)
+EntityAnimationInstance::Keyframe::Keyframe(ImageID overrideImageID)
 {
-	this->imageID = imageID;
+	this->overrideImageID = overrideImageID;
 }
 
-ImageID EntityAnimationInstance::Keyframe::getImageID() const
+EntityAnimationInstance::Keyframe::Keyframe()
 {
-	return this->imageID;
+	this->overrideImageID = TextureManager::NO_ID;
+}
+
+ImageID EntityAnimationInstance::Keyframe::getImageID(
+	const EntityAnimationDefinition::Keyframe &defKeyframe) const
+{
+	return (this->overrideImageID != TextureManager::NO_ID) ?
+		this->overrideImageID : defKeyframe.getImageID();
 }
 
 int EntityAnimationInstance::KeyframeList::getKeyframeCount() const

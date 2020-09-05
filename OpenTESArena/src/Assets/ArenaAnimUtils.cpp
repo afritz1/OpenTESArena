@@ -122,8 +122,8 @@ namespace ArenaAnimUtils
 			const Image &image = textureManager.getImageHandle(imageID);
 			const double width = MakeStaticKeyframeDimension(image.getWidth(), dimensionModifier);
 			const double height = MakeStaticKeyframeDimension(image.getHeight(), dimensionModifier);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
 		const int keyframeCount = defKeyframeList.getKeyframeCount();
@@ -196,8 +196,8 @@ namespace ArenaAnimUtils
 				MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(), image.getHeight(),
 					exeData, &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -308,8 +308,8 @@ namespace ArenaAnimUtils
 				double width, height;
 				MakeHumanKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -387,8 +387,8 @@ namespace ArenaAnimUtils
 			MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(), image.getHeight(),
 				exeData, &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -468,8 +468,8 @@ namespace ArenaAnimUtils
 			double width, height;
 			MakeHumanKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -524,8 +524,8 @@ namespace ArenaAnimUtils
 			ArenaAnimUtils::MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(),
 				image.getHeight(), exeData, &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
 		outDefState->addKeyframeList(std::move(defKeyframeList));
@@ -569,8 +569,8 @@ namespace ArenaAnimUtils
 		const Image &image = textureManager.getImageHandle(imageID);
 		const double width = MakeDefaultKeyframeDimension(image.getWidth());
 		const double height = MakeDefaultKeyframeDimension(image.getHeight());
-		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-		instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+		instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		outDefState->addKeyframeList(std::move(defKeyframeList));
 		outInstState->addKeyframeList(std::move(instKeyframeList));
 
@@ -631,8 +631,8 @@ namespace ArenaAnimUtils
 				double width, height;
 				MakeCitizenKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(width, height));
-				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe(imageID));
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 
 			outDefState->addKeyframeList(std::move(defKeyframeList));

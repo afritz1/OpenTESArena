@@ -19,11 +19,13 @@ public:
 	class Keyframe
 	{
 	private:
-		ImageID imageID;
+		ImageID overrideImageID; // Overrides default definition image ID.
+		// @todo: ImageInstanceID for custom citizen textures; will need check for which ID to use.
 	public:
-		Keyframe(ImageID imageID);
+		Keyframe(ImageID overrideImageID);
+		Keyframe();
 
-		ImageID getImageID() const;
+		ImageID getImageID(const EntityAnimationDefinition::Keyframe &defKeyframe) const;
 	};
 
 	class KeyframeList

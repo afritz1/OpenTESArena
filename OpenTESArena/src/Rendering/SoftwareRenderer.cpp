@@ -1141,21 +1141,23 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 		{
 			const EntityAnimationDefinition::KeyframeList &defKeyframeList =
 				defState.getKeyframeList(keyframeListIndex);
-			const EntityAnimationInstance::KeyframeList &keyframeList =
+			const EntityAnimationInstance::KeyframeList &instKeyframeList =
 				instState.getKeyframeList(keyframeListIndex);
 			const int keyframeCount = defKeyframeList.getKeyframeCount();
 			const bool flipped = defKeyframeList.isFlipped();
 
 			for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
 			{
-				const EntityAnimationInstance::Keyframe &keyframe =
-					keyframeList.getKeyframe(keyframeIndex);
+				const EntityAnimationDefinition::Keyframe &defKeyframe =
+					defKeyframeList.getKeyframe(keyframeIndex);
+				const EntityAnimationInstance::Keyframe &instKeyframe =
+					instKeyframeList.getKeyframe(keyframeIndex);
 				const int stateID = stateIndex;
 				const int angleID = keyframeListIndex;
 				const int keyframeID = keyframeIndex;
 
 				// Get texture associated with image ID and write texture data.
-				const ImageID imageID = keyframe.getImageID();
+				const ImageID imageID = instKeyframe.getImageID(defKeyframe);
 				const Image &image = textureManager.getImageHandle(imageID);
 				const int textureID = keyframeID;
 				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, image.getPixels(),

@@ -100,6 +100,8 @@ private:
 	static bool tryLoadTextures(const char *filename, const Palette &palette,
 		Renderer &renderer, Buffer<Texture> *outTextures);
 public:
+	static constexpr int NO_ID = -1;
+
 	TextureManager &operator=(TextureManager &&textureManager) = delete;
 
 	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes

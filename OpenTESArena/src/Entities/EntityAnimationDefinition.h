@@ -6,6 +6,7 @@
 #include <string>
 
 #include "EntityAnimationUtils.h"
+#include "../Media/TextureUtils.h"
 
 #include "components/utilities/BufferView.h"
 
@@ -20,9 +21,12 @@ public:
 		// Dimensions of flat in world space. Required for determining the size of the
 		// flat on-screen for selection and rendering.
 		double width, height;
-	public:
-		Keyframe(double width, double height);
 
+		ImageID imageID;
+	public:
+		Keyframe(ImageID imageID, double width, double height);
+
+		ImageID getImageID() const;
 		double getWidth() const;
 		double getHeight() const;
 	};
