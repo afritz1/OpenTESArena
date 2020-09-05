@@ -1157,12 +1157,6 @@ void SoftwareRenderer::setRenderThreadsMode(int mode)
 	this->initRenderThreads(this->width, this->height, threadCount);
 }
 
-void SoftwareRenderer::addLight(int id, const Double3 &point, const Double3 &color, 
-	double intensity)
-{
-	DebugNotImplemented();
-}
-
 void SoftwareRenderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette)
 {
 	DebugAssertIndex(this->voxelTextures, id);
@@ -1223,12 +1217,6 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 	}
 }
 
-void SoftwareRenderer::updateLight(int id, const Double3 *point,
-	const Double3 *color, const double *intensity)
-{
-	DebugNotImplemented();
-}
-
 void SoftwareRenderer::setFogDistance(double fogDistance)
 {
 	this->fogDistance = fogDistance;
@@ -1280,11 +1268,6 @@ void SoftwareRenderer::setNightLightsActive(bool active)
 	{
 		voxelTexture.setLightTexelsActive(active);
 	}
-}
-
-void SoftwareRenderer::removeLight(int id)
-{
-	DebugNotImplemented();
 }
 
 void SoftwareRenderer::clearTexturesAndEntityRenderIDs()

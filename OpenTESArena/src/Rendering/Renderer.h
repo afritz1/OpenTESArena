@@ -187,14 +187,7 @@ public:
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
-	// Helper methods for changing data in the 3D renderer. Some data, like the voxel
-	// grid, are passed each frame by reference.
-	// - Some 'add' methods take a unique ID and parameters to create a new object.
-	// - 'update' methods take optional parameters for updating, ignoring null ones.
-	// - 'remove' methods delete an object from renderer memory if it exists.
-	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-	void updateLight(int id, const Double3 *point, const Double3 *color,
-		const double *intensity);
+	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
 	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	EntityRenderID makeEntityRenderID();
@@ -207,7 +200,6 @@ public:
 		TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active);
-	void removeLight(int id);
 	void clearTexturesAndEntityRenderIDs();
 	void clearDistantSky();
 

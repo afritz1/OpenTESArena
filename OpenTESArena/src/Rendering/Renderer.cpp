@@ -587,19 +587,6 @@ void Renderer::setRenderThreadsMode(int mode)
 	this->softwareRenderer.setRenderThreadsMode(mode);
 }
 
-void Renderer::addLight(int id, const Double3 &point, const Double3 &color, double intensity)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.addLight(id, point, color, intensity);
-}
-
-void Renderer::updateLight(int id, const Double3 *point, const Double3 *color, 
-	const double *intensity)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.updateLight(id, point, color, intensity);
-}
-
 void Renderer::setFogDistance(double fogDistance)
 {
 	DebugAssert(this->softwareRenderer.isInited());
@@ -651,12 +638,6 @@ void Renderer::setNightLightsActive(bool active)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setNightLightsActive(active);
-}
-
-void Renderer::removeLight(int id)
-{
-	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.removeLight(id);
 }
 
 void Renderer::clearTexturesAndEntityRenderIDs()

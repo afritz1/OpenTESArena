@@ -994,14 +994,6 @@ public:
 	// Sets the render threads mode to use (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
 
-	// Adds a light. Causes an error if the ID exists.
-	void addLight(int id, const Double3 &point, const Double3 &color, double intensity);
-
-	// Updates various data for a light. If a value doesn't need updating, pass null.
-	// Causes an error if no ID matches.
-	void updateLight(int id, const Double3 *point, const Double3 *color,
-		const double *intensity);
-
 	// Sets the distance at which the fog is maximum.
 	void setFogDistance(double fogDistance);
 
@@ -1033,9 +1025,6 @@ public:
 	// exterior locations (i.e., cities and wilderness) because those are the only places
 	// with time-dependent light sources and textures.
 	void setNightLightsActive(bool active);
-
-	// Removes a light. Causes an error if no ID matches.
-	void removeLight(int id);
 
 	// Zeroes out all renderer textures and entity render ID mappings to textures.
 	void clearTexturesAndEntityRenderIDs();
