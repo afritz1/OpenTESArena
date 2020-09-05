@@ -5,9 +5,12 @@
 
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
+#include "../Math/Vector3.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
+
+#include "components/utilities/BufferView.h"
 
 namespace RendererUtils
 {
@@ -57,6 +60,24 @@ namespace RendererUtils
 
 	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
 	Matrix4d getTimeOfDayRotation(double daytimePercent);
+
+	// Gets the direction towards the sun. The sun rises in the west and sets in the east.
+	Double3 getSunDirection(const Matrix4d &timeRotation, double latitude);
+
+	// Gets the color of the sun for shading with.
+	Double3 getSunColor(const Double3 &sunDirection, bool isExterior);
+
+	// Generates the sky colors from the horizon to the top of the sky. The number of colors to
+	// make is variable but five seems enough for clean gradient generation across the screen.
+	void writeSkyColors(const std::vector<Double3> &skyPalette,
+		BufferView<Double3> &skyColors, double daytimePercent);
+
+	// Gets the ambient percent applied to distant sky as a function of global ambient.
+	double getDistantAmbientPercent(double ambientPercent);
+
+	// Returns whether the given percent through the day is before noon. This affects
+	// the sliding window direction of the sky palette.
+	bool isBeforeNoon(double daytimePercent);
 }
 
 #endif

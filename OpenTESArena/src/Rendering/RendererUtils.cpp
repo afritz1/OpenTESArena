@@ -176,3 +176,71 @@ Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
 {
 	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }
+
+Double3 RendererUtils::getSunDirection(const Matrix4d &timeRotation, double latitude)
+{
+	// The sun gets a bonus to latitude. Arena angle units are 0->100.
+	const double sunLatitude = latitude + (13.0 / 100.0);
+	const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
+	const Double3 baseDir = -Double3::UnitY;
+	const Double4 dir = sunRotation * (timeRotation * Double4(baseDir, 0.0));
+	return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negated for +X south/+Z west.
+}
+
+Double3 RendererUtils::getSunColor(const Double3 &sunDirection, bool isExterior)
+{
+	if (isExterior)
+	{
+		// @todo: model this better/differently?
+		const Double3 baseSunColor(0.90, 0.875, 0.85); // Arbitrary value.
+
+		// Darken the sun color if it's below the horizon so wall faces aren't lit 
+		// as much during the night. This is just a made-up artistic value to compensate
+		// for the lack of shadows.
+		return (sunDirection.y >= 0.0) ? baseSunColor :
+			(baseSunColor * (1.0 - (5.0 * std::abs(sunDirection.y)))).clamped();
+	}
+	else
+	{
+		// No sunlight indoors.
+		return Double3::Zero;
+	}
+}
+
+void RendererUtils::writeSkyColors(const std::vector<Double3> &skyPalette,
+	BufferView<Double3> &skyColors, double daytimePercent)
+{
+	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
+	// and forwards in the PM (horizon is earliest in the palette).
+	const bool isAM = RendererUtils::isBeforeNoon(daytimePercent);
+	const int slideDirection = isAM ? -1 : 1;
+
+	// Get the real index (not the integer index) of the color for the current time as a
+	// reference point so each sky color can be interpolated between two samples.
+	const int paletteCount = static_cast<int>(skyPalette.size());
+	const double realIndex = MathUtils::getRealIndex(paletteCount, daytimePercent);
+	const double percent = realIndex - std::floor(realIndex);
+
+	// Calculate sky colors based on the time of day.
+	for (int i = 0; i < skyColors.getCount(); i++)
+	{
+		const int indexDiff = slideDirection * i;
+		const int index = MathUtils::getWrappedIndex(paletteCount, static_cast<int>(realIndex) + indexDiff);
+		const int nextIndex = MathUtils::getWrappedIndex(paletteCount, index + slideDirection);
+		const Double3 &color = skyPalette.at(index);
+		const Double3 &nextColor = skyPalette.at(nextIndex);
+		const Double3 skyColor = color.lerp(nextColor, isAM ? (1.0 - percent) : percent);
+		skyColors.set(i, skyColor);
+	}
+}
+
+double RendererUtils::getDistantAmbientPercent(double ambientPercent)
+{
+	// At their darkest, distant objects are ~1/4 of their intensity.
+	return std::clamp(ambientPercent, 0.25, 1.0);
+}
+
+bool RendererUtils::isBeforeNoon(double daytimePercent)
+{
+	return daytimePercent < 0.50;
+}

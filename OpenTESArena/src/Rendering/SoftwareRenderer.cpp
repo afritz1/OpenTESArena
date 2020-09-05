@@ -574,70 +574,18 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 {
 	this->timeRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
-
-	// The "sliding window" of sky colors is backwards in the AM (horizon is latest in the palette)
-	// and forwards in the PM (horizon is earliest in the palette).
-	this->isAM = daytimePercent < 0.50;
 	this->nightLightsAreActive = nightLightsAreActive;
-	const int slideDirection = this->isAM ? -1 : 1;
 
-	// Get the real index (not the integer index) of the color for the current time as a
-	// reference point so each sky color can be interpolated between two samples via 'percent'.
-	const int paletteCount = static_cast<int>(skyPalette.size());
-	const double realIndex = MathUtils::getRealIndex(paletteCount, daytimePercent);
-	const double percent = realIndex - std::floor(realIndex);
+	BufferView<Double3> skyColorsView(this->skyColors.data(), static_cast<int>(this->skyColors.size()));
+	RendererUtils::writeSkyColors(skyPalette, skyColorsView, daytimePercent);
 
-	// Calculate sky colors based on the time of day.
-	for (int i = 0; i < static_cast<int>(this->skyColors.size()); i++)
-	{
-		const int indexDiff = slideDirection * i;
-		const int index = MathUtils::getWrappedIndex(paletteCount, static_cast<int>(realIndex) + indexDiff);
-		const int nextIndex = MathUtils::getWrappedIndex(paletteCount, index + slideDirection);
-		const Double3 &color = skyPalette.at(index);
-		const Double3 &nextColor = skyPalette.at(nextIndex);
-
-		this->skyColors[i] = color.lerp(nextColor, this->isAM ? (1.0 - percent) : percent);
-	}
-
-	// The sun rises in the west and sets in the east.
-	this->sunDirection = [this, latitude]()
-	{
-		// The sun gets a bonus to latitude. Arena angle units are 0->100.
-		const double sunLatitude = latitude + (13.0 / 100.0);
-		const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
-		const Double3 baseDir = -Double3::UnitY;
-		const Double4 dir = sunRotation * (this->timeRotation * Double4(baseDir, 0.0));
-		return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negated for +X south/+Z west.
-	}();
-	
-	this->sunColor = [this, isExterior]()
-	{
-		if (isExterior)
-		{
-			const Double3 baseSunColor(0.90, 0.875, 0.85);
-
-			// Darken the sun color if it's below the horizon so wall faces aren't lit 
-			// as much during the night. This is just an artistic value to compensate
-			// for the lack of shadows.
-			return (this->sunDirection.y >= 0.0) ? baseSunColor :
-				(baseSunColor * (1.0 - (5.0 * std::abs(this->sunDirection.y)))).clamped();
-		}
-		else
-		{
-			// No sunlight indoors.
-			return Double3::Zero;
-		}
-	}();
-
+	this->sunDirection = RendererUtils::getSunDirection(this->timeRotation, latitude);	
+	this->sunColor = RendererUtils::getSunColor(this->sunDirection, isExterior);
 	this->isExterior = isExterior;
 	this->ambient = ambient;
-
-	// At their darkest, distant objects are ~1/4 of their intensity.
-	this->distantAmbient = std::clamp(ambient, 0.25, 1.0);
-
+	this->distantAmbient = RendererUtils::getDistantAmbientPercent(ambient);
 	this->fogDistance = fogDistance;
 	this->chasmAnimPercent = chasmAnimPercent;
-
 	this->playerHasLight = playerHasLight;
 }
 

@@ -249,9 +249,6 @@ private:
 		// Percent through the chasm animation.
 		double chasmAnimPercent;
 
-		// Whether the current clock time is before noon.
-		bool isAM;
-
 		// Whether street lights and building lights are on.
 		bool nightLightsAreActive;
 
