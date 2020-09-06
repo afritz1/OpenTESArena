@@ -231,15 +231,14 @@ namespace ArenaAnimUtils
 
 	// Idle or walk animation state for human enemies.
 	bool tryMakeDynamicEntityHumanBasicAnimState(const char *stateName, double secondsPerFrame,
-		bool looping, int itemIndex, const std::vector<int> &animIndices,
+		bool looping, int itemIndex, bool isMale, const std::vector<int> &animIndices,
 		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
 		TextureManager &textureManager, EntityAnimationDefinition::State *outDefState,
 		EntityAnimationInstance::State *outInstState)
 	{
 		int humanFilenameTypeIndex;
-		bool isMale;
 		ArenaAnimUtils::getHumanEnemyProperties(itemIndex, charClassLibrary, miscAssets.getExeData(),
-			&humanFilenameTypeIndex, &isMale);
+			&humanFilenameTypeIndex);
 
 		const auto &exeData = miscAssets.getExeData();
 		auto tryAddDirectionToState = [itemIndex, &animIndices, &textureManager, humanFilenameTypeIndex,
@@ -400,9 +399,10 @@ namespace ArenaAnimUtils
 		return true;
 	}
 
-	bool tryMakeDynamicEntityHumanAttackAnimState(int itemIndex, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, TextureManager &textureManager,
-		EntityAnimationDefinition::State *outDefState, EntityAnimationInstance::State *outInstState)
+	bool tryMakeDynamicEntityHumanAttackAnimState(int itemIndex, bool isMale,
+		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+		TextureManager &textureManager, EntityAnimationDefinition::State *outDefState,
+		EntityAnimationInstance::State *outInstState)
 	{
 		// Attack state is only in the first .CFA file and is never flipped because it only
 		// faces forward.
@@ -410,9 +410,8 @@ namespace ArenaAnimUtils
 		constexpr bool animIsFlipped = false;
 
 		int humanFilenameTypeIndex;
-		bool isMale;
 		ArenaAnimUtils::getHumanEnemyProperties(itemIndex, charClassLibrary, miscAssets.getExeData(),
-			&humanFilenameTypeIndex, &isMale);
+			&humanFilenameTypeIndex);
 
 		constexpr int attackTemplateIndex = 1;
 		const auto &exeData = miscAssets.getExeData();
@@ -832,9 +831,9 @@ bool ArenaAnimUtils::trySetCitizenFilenameDirection(std::string &filename, int a
 
 void ArenaAnimUtils::getHumanEnemyProperties(int itemIndex,
 	const CharacterClassLibrary &charClassLibrary, const ExeData &exeData,
-	int *outTypeIndex, bool *outIsMale)
+	int *outTypeIndex)
 {
-	const int charClassIndex = getCharacterClassIndexFromItemIndex(itemIndex);
+	const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
 
 	int charClassDefIndex;
 	const bool success = charClassLibrary.findDefinitionIndexIf(
@@ -904,9 +903,6 @@ void ArenaAnimUtils::getHumanEnemyProperties(int itemIndex,
 			return 3;
 		}
 	}();
-
-	// Assume all non-randomly generated enemies are male.
-	*outIsMale = true;
 }
 
 bool ArenaAnimUtils::trySetHumanFilenameGender(std::string &filename, bool isMale)
@@ -1045,8 +1041,8 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition
 	}
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
+bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 	EntityAnimationInstance *outAnimInst)
 {
@@ -1068,9 +1064,13 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 	bool isFinalBoss;
 	const bool isCreature = ArenaAnimUtils::isCreatureIndex(itemIndex, &isFinalBoss);
 	const bool isHuman = ArenaAnimUtils::isHumanEnemyIndex(itemIndex);
+	if (isHuman)
+	{
+		DebugAssert(isMale.has_value());
+	}
 
 	// Basic states are idle/look/walk.
-	auto addBasicStates = [flatIndex, &charClassLibrary, &miscAssets, &textureManager,
+	auto addBasicStates = [flatIndex, &isMale, &charClassLibrary, &miscAssets, &textureManager,
 		outAnimDef, outAnimInst, &exeData, itemIndex, isFinalBoss, isCreature, isHuman]()
 	{
 		if (isCreature)
@@ -1122,8 +1122,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 			EntityAnimationInstance::State idleInstState;
 			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanBasicAnimState(
 				EntityAnimationUtils::STATE_IDLE.c_str(), HumanIdleSecondsPerFrame,
-				HumanIdleLoop, itemIndex, HumanIdleIndices, charClassLibrary, miscAssets,
-				textureManager, &idleDefState, &idleInstState))
+				HumanIdleLoop, itemIndex, *isMale, HumanIdleIndices, charClassLibrary,
+				miscAssets, textureManager, &idleDefState, &idleInstState))
 			{
 				DebugLogWarning("Couldn't make human idle anim state for *ITEM \"" +
 					std::to_string(itemIndex) + "\".");
@@ -1133,8 +1133,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 			EntityAnimationInstance::State walkInstState;
 			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanBasicAnimState(
 				EntityAnimationUtils::STATE_WALK.c_str(), HumanWalkSecondsPerFrame,
-				HumanWalkLoop, itemIndex, HumanWalkIndices, charClassLibrary, miscAssets,
-				textureManager, &walkDefState, &walkInstState))
+				HumanWalkLoop, itemIndex, *isMale, HumanWalkIndices, charClassLibrary,
+				miscAssets, textureManager, &walkDefState, &walkInstState))
 			{
 				DebugLogWarning("Couldn't make human walk anim state for *ITEM \"" +
 					std::to_string(itemIndex) + "\".");
@@ -1151,8 +1151,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 		}
 	};
 
-	auto tryAddAttackState = [&charClassLibrary, &miscAssets, &textureManager, outAnimDef,
-		outAnimInst, &exeData, itemIndex, isFinalBoss, isCreature, isHuman]()
+	auto tryAddAttackState = [&isMale, &charClassLibrary, &miscAssets, &textureManager,
+		outAnimDef, outAnimInst, &exeData, itemIndex, isFinalBoss, isCreature, isHuman]()
 	{
 		EntityAnimationDefinition::State defState;
 		EntityAnimationInstance::State instState;
@@ -1169,8 +1169,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const INFFile &inf
 		}
 		else if (isHuman)
 		{
-			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanAttackAnimState(itemIndex, charClassLibrary,
-				miscAssets, textureManager, &defState, &instState))
+			if (!ArenaAnimUtils::tryMakeDynamicEntityHumanAttackAnimState(itemIndex, *isMale,
+				charClassLibrary, miscAssets, textureManager, &defState, &instState))
 			{
 				DebugLogWarning("Couldn't make human attack anim for *ITEM \"" +
 					std::to_string(itemIndex) + "\".");

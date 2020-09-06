@@ -1508,8 +1508,11 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 			else if (entityType == EntityType::Dynamic)
 			{
-				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, this->inf, charClassLibrary,
-					miscAssets, textureManager, &entityAnimDef, &entityAnimInst))
+				// Assume that human enemies in level data are male.
+				const std::optional<bool> isMale = true;
+
+				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, this->inf,
+					charClassLibrary, miscAssets, textureManager, &entityAnimDef, &entityAnimInst))
 				{
 					DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
 						std::to_string(flatIndex) + "\".");
