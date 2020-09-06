@@ -1125,7 +1125,8 @@ EntityRenderID SoftwareRenderer::makeEntityRenderID()
 
 void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 	const EntityAnimationDefinition &animDef, const EntityAnimationInstance &animInst,
-	bool isPuddle, const Palette &palette, TextureManager &textureManager)
+	bool isPuddle, const Palette &palette, const TextureManager &textureManager,
+	const TextureInstanceManager &textureInstManager)
 {
 	DebugAssert(this->isValidEntityRenderID(entityRenderID));
 	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
@@ -1157,8 +1158,8 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 				const int keyframeID = keyframeIndex;
 
 				// Get texture associated with image ID and write texture data.
-				const ImageID imageID = instKeyframe.getImageID(defKeyframe);
-				const Image &image = textureManager.getImageHandle(imageID);
+				const Image &image = instKeyframe.getImageHandle(
+					defKeyframe, textureManager, textureInstManager);
 				const int textureID = keyframeID;
 				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, image.getPixels(),
 					image.getWidth(), image.getHeight(), isPuddle, palette);

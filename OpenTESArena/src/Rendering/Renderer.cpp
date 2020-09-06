@@ -607,11 +607,11 @@ EntityRenderID Renderer::makeEntityRenderID()
 
 void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 	const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-	TextureManager &textureManager)
+	const TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
-		palette, textureManager);
+		palette, textureManager, textureInstManager);
 }
 
 void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,

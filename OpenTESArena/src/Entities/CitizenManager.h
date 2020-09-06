@@ -16,6 +16,7 @@ class LocationDefinition;
 class MiscAssets;
 class Random;
 class Renderer;
+class TextureInstanceManager;
 class TextureManager;
 
 class CitizenManager
@@ -38,7 +39,7 @@ public:
 
 	void spawnCitizens(LevelData &levelData, const LocationDefinition &locationDef,
 		const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
-		Renderer &renderer);
+		TextureInstanceManager &textureInstManager, Renderer &renderer);
 	void clearCitizens(Game &game);
 	void tick(Game &game);
 };

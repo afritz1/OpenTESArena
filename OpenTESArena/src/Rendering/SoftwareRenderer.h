@@ -1016,7 +1016,7 @@ public:
 	// @todo: replace 8-bit restriction with some texture wrapper for 8-bit+palette/32-bit.
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager);
+		const TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

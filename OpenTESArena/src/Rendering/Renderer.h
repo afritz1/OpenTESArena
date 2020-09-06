@@ -9,7 +9,6 @@
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
-#include "../Media/TextureManager.h"
 #include "../World/LevelData.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
@@ -23,6 +22,8 @@ class EntityAnimationInstance;
 class EntityManager;
 class Rect;
 class Surface;
+class TextureInstanceManager;
+class TextureManager;
 class VoxelGrid;
 
 enum class CursorAlignment;
@@ -193,7 +194,7 @@ public:
 	EntityRenderID makeEntityRenderID();
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager);
+		const TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,

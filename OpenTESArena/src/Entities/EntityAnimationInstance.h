@@ -13,19 +13,28 @@
 
 // Instance-specific animation data, references a shared animation definition.
 
+class Image;
+class TextureInstanceManager;
+class TextureManager;
+
 class EntityAnimationInstance
 {
 public:
 	class Keyframe
 	{
 	private:
-		ImageID overrideImageID; // Overrides default definition image ID.
-		// @todo: ImageInstanceID for custom citizen textures; will need check for which ID to use.
+		ImageID overrideImageID;
+		ImageInstanceID overrideImageInstID;
 	public:
-		Keyframe(ImageID overrideImageID);
 		Keyframe();
 
-		ImageID getImageID(const EntityAnimationDefinition::Keyframe &defKeyframe) const;
+		Keyframe makeFromImage(ImageID overrideImageID);
+		Keyframe makeFromImageInstance(ImageInstanceID overrideImageInstID);
+
+		// Gets the raw image handle for this keyframe (does not protect from dangling pointers).
+		// It checks the generated instance ID, then the regular ID, then the definition's ID.
+		const Image &getImageHandle(const EntityAnimationDefinition::Keyframe &defKeyframe,
+			const TextureManager &textureManager, const TextureInstanceManager &textureInstManager) const;
 	};
 
 	class KeyframeList

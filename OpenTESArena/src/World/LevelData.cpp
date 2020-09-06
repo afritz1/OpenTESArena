@@ -1312,7 +1312,7 @@ void LevelData::updateFadingVoxels(double dt)
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
 	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
-	TextureManager &textureManager, Renderer &renderer)
+	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTexturesAndEntityRenderIDs();
@@ -1414,7 +1414,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
 	auto loadEntities = [this, nightLightsAreActive, &worldData, &locationDef, &charClassLibrary,
-		&miscAssets, &random, &citizenManager, &textureManager, &renderer, &palette]()
+		&miscAssets, &random, &citizenManager, &textureManager, &textureInstManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
 		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
@@ -1650,7 +1650,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			// Initialize renderer buffers for the entity animation then populate all textures
 			// of the animation.
 			renderer.setFlatTextures(entityRenderID, entityAnimDefRef, entityAnimInst, isPuddle,
-				palette, textureManager);
+				palette, textureManager, textureInstManager);
 		}
 
 		// Spawn citizens at level start if the conditions are met for the new level.
@@ -1658,7 +1658,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		if (isCity || isWild)
 		{
 			citizenManager.spawnCitizens(*this, locationDef, miscAssets, random,
-				textureManager, renderer);
+				textureManager, textureInstManager, renderer);
 		}
 	};
 

@@ -97,7 +97,8 @@ public:
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
 		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
-		TextureManager &textureManager, Renderer &renderer) override;
+		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
+		Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
 	virtual void tick(Game &game, double dt) override;

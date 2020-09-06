@@ -2107,7 +2107,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// Leave the interior and go to the saved exterior.
 		const auto &miscAssets = game.getMiscAssets();
 		gameData.leaveInterior(game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-			textureManager, renderer);
+			textureManager, game.getTextureInstanceManager(), renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2250,7 +2250,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 					gameData.enterInterior(menuType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
 						game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						game.getTextureManager(), game.getRenderer());
+						game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
 
 					// Change to interior music.
 					const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2336,7 +2336,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
 						ignoreGatePos, gameData.getWeatherType(), starCount,
 						game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						textureManager, renderer))
+						textureManager, game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
@@ -2346,7 +2346,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// From wilderness to city.
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
 						starCount, game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						textureManager, renderer))
+						textureManager, game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -2515,7 +2515,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
 				gameData.getLocationDefinition(), game.getCharacterClassLibrary(),
 				game.getMiscAssets(), game.getRandom(), gameData.getCitizenManager(),
-				game.getTextureManager(), game.getRenderer());
+				game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(

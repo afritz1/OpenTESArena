@@ -28,8 +28,6 @@ using TextureInstanceRef = BufferRef2D<const std::vector<Texture>, const Texture
 class TextureInstanceManager
 {
 private:
-	static constexpr int NO_ID = -1;
-
 	// All textures are reference-counted for ease of use, so users don't need to worry about
 	// freeing when multiple things share the same ID.
 	std::vector<Image> images;
@@ -48,6 +46,8 @@ private:
 	SurfaceInstanceID getNextFreeSurfaceID();
 	TextureInstanceID getNextFreeTextureID();
 public:
+	static constexpr int NO_ID = -1;
+
 	// @todo: makeSurfaceFrom8Bit() from TextureManager?
 
 	// Texture creation functions.

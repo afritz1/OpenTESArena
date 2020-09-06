@@ -42,6 +42,7 @@ class LocationDefinition;
 class MiscAssets;
 class Random;
 class Renderer;
+class TextureInstanceManager;
 class TextureManager;
 
 enum class WorldType;
@@ -211,7 +212,8 @@ public:
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const LocationDefinition &locationDef, const CharacterClassLibrary &charClassLibrary,
 		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
-		TextureManager &textureManager, Renderer &renderer);
+		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
+		Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
 	virtual void tick(Game &game, double dt);

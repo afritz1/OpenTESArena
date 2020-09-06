@@ -33,7 +33,8 @@ bool CitizenManager::shouldSpawn(Game &game) const
 }
 
 void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinition &locationDef,
-	const MiscAssets &miscAssets, Random &random, TextureManager &textureManager, Renderer &renderer)
+	const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
+	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	auto &entityManager = levelData.getEntityManager();
 	const auto &voxelGrid = levelData.getVoxelGrid();
@@ -176,9 +177,9 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 
 	// Initialize renderer buffers for the entity animation and populate all
 	// textures of the animation.
-	auto writeTextures = [&textureManager, &entityManager, maleEntityDefID, femaleEntityDefID,
-		maleEntityRenderID, femaleEntityRenderID, &maleAnimInst, &femaleAnimInst, &palette,
-		&renderer](bool male)
+	auto writeTextures = [&textureManager, &textureInstManager, &renderer, &entityManager,
+		maleEntityDefID, femaleEntityDefID, maleEntityRenderID, femaleEntityRenderID,
+		&maleAnimInst, &femaleAnimInst, &palette](bool male)
 	{
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID);
@@ -188,7 +189,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, const LocationDefinitio
 		const bool isPuddle = false;
 
 		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
-			palette, textureManager);
+			palette, textureManager, textureInstManager);
 	};
 
 	writeTextures(true);
@@ -237,8 +238,10 @@ void CitizenManager::tick(Game &game)
 			const auto &miscAssets = game.getMiscAssets();
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
+			auto &textureInstManager = game.getTextureInstanceManager();
 			auto &renderer = game.getRenderer();
-			this->spawnCitizens(levelData, locationDef, miscAssets, random, textureManager, renderer);
+			this->spawnCitizens(levelData, locationDef, miscAssets, random, textureManager,
+				textureInstManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
 		}

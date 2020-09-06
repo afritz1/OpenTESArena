@@ -2,24 +2,48 @@
 
 #include "EntityAnimationInstance.h"
 #include "../Media/TextureManager.h"
+#include "../Media/TextureInstanceManager.h"
 
 #include "components/debug/Debug.h"
-
-EntityAnimationInstance::Keyframe::Keyframe(ImageID overrideImageID)
-{
-	this->overrideImageID = overrideImageID;
-}
 
 EntityAnimationInstance::Keyframe::Keyframe()
 {
 	this->overrideImageID = TextureManager::NO_ID;
+	this->overrideImageInstID = TextureInstanceManager::NO_ID;
 }
 
-ImageID EntityAnimationInstance::Keyframe::getImageID(
-	const EntityAnimationDefinition::Keyframe &defKeyframe) const
+EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromImage(
+	ImageID overrideImageID)
 {
-	return (this->overrideImageID != TextureManager::NO_ID) ?
-		this->overrideImageID : defKeyframe.getImageID();
+	Keyframe keyframe;
+	keyframe.overrideImageID = overrideImageID;
+	return keyframe;
+}
+
+EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromImageInstance(
+	ImageInstanceID overrideImageInstID)
+{
+	Keyframe keyframe;
+	keyframe.overrideImageInstID = overrideImageInstID;
+	return keyframe;
+}
+
+const Image &EntityAnimationInstance::Keyframe::getImageHandle(
+	const EntityAnimationDefinition::Keyframe &defKeyframe, const TextureManager &textureManager,
+	const TextureInstanceManager &textureInstManager) const
+{
+	if (this->overrideImageInstID != TextureInstanceManager::NO_ID)
+	{
+		return textureInstManager.getImageHandle(this->overrideImageInstID);
+	}
+	else if (this->overrideImageID != TextureManager::NO_ID)
+	{
+		return textureManager.getImageHandle(this->overrideImageID);
+	}
+	else
+	{
+		return textureManager.getImageHandle(defKeyframe.getImageID());
+	}
 }
 
 int EntityAnimationInstance::KeyframeList::getKeyframeCount() const
