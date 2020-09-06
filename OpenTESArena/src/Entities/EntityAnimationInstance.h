@@ -28,8 +28,8 @@ public:
 	public:
 		Keyframe();
 
-		Keyframe makeFromImage(ImageID overrideImageID);
-		Keyframe makeFromImageInstance(ImageInstanceID overrideImageInstID);
+		static Keyframe makeFromImage(ImageID overrideImageID);
+		static Keyframe makeFromImageInstance(ImageInstanceID overrideImageInstID);
 
 		// Gets the raw image handle for this keyframe (does not protect from dangling pointers).
 		// It checks the generated instance ID, then the regular ID, then the definition's ID.

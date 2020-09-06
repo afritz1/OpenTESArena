@@ -2513,9 +2513,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			// Set the new level active in the renderer.
 			auto &newActiveLevel = interior.getActiveLevel();
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-				gameData.getLocationDefinition(), game.getCharacterClassLibrary(),
-				game.getMiscAssets(), game.getRandom(), gameData.getCitizenManager(),
-				game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
+				gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
+				game.getCharacterClassLibrary(), game.getMiscAssets(), game.getRandom(),
+				gameData.getCitizenManager(), game.getTextureManager(),
+				game.getTextureInstanceManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
