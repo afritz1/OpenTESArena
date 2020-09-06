@@ -24,17 +24,14 @@ public:
 	{
 	private:
 		ImageID overrideImageID;
-		ImageInstanceID overrideImageInstID;
 	public:
 		Keyframe();
 
 		static Keyframe makeFromImage(ImageID overrideImageID);
-		static Keyframe makeFromImageInstance(ImageInstanceID overrideImageInstID);
 
 		// Gets the raw image handle for this keyframe (does not protect from dangling pointers).
-		// It checks the generated instance ID, then the regular ID, then the definition's ID.
 		const Image &getImageHandle(const EntityAnimationDefinition::Keyframe &defKeyframe,
-			const TextureManager &textureManager, const TextureInstanceManager &textureInstManager) const;
+			const TextureManager &textureManager) const;
 	};
 
 	class KeyframeList

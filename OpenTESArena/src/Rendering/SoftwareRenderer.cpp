@@ -1158,8 +1158,7 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 				const int keyframeID = keyframeIndex;
 
 				// Get texture associated with image ID and write texture data.
-				const Image &image = instKeyframe.getImageHandle(
-					defKeyframe, textureManager, textureInstManager);
+				const Image &image = instKeyframe.getImageHandle(defKeyframe, textureManager);
 				const int textureID = keyframeID;
 				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, image.getPixels(),
 					image.getWidth(), image.getHeight(), isPuddle, palette);

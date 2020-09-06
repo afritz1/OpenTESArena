@@ -9,7 +9,6 @@
 EntityAnimationInstance::Keyframe::Keyframe()
 {
 	this->overrideImageID = TextureManager::NO_ID;
-	this->overrideImageInstID = TextureInstanceManager::NO_ID;
 }
 
 EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromImage(
@@ -20,23 +19,10 @@ EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromIma
 	return keyframe;
 }
 
-EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromImageInstance(
-	ImageInstanceID overrideImageInstID)
-{
-	Keyframe keyframe;
-	keyframe.overrideImageInstID = overrideImageInstID;
-	return keyframe;
-}
-
 const Image &EntityAnimationInstance::Keyframe::getImageHandle(
-	const EntityAnimationDefinition::Keyframe &defKeyframe, const TextureManager &textureManager,
-	const TextureInstanceManager &textureInstManager) const
+	const EntityAnimationDefinition::Keyframe &defKeyframe, const TextureManager &textureManager) const
 {
-	if (this->overrideImageInstID != TextureInstanceManager::NO_ID)
-	{
-		return textureInstManager.getImageHandle(this->overrideImageInstID);
-	}
-	else if (this->overrideImageID != TextureManager::NO_ID)
+	if (this->overrideImageID != TextureManager::NO_ID)
 	{
 		return textureManager.getImageHandle(this->overrideImageID);
 	}
