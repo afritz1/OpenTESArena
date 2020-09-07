@@ -579,8 +579,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalett
 	BufferView<Double3> skyColorsView(this->skyColors.data(), static_cast<int>(this->skyColors.size()));
 	RendererUtils::writeSkyColors(skyPalette, skyColorsView, daytimePercent);
 
-	this->sunDirection = RendererUtils::getSunDirection(this->timeRotation, latitude);	
-	this->sunColor = RendererUtils::getSunColor(this->sunDirection, isExterior);
+	this->sunDirection = RendererUtils::getSunDirection(this->timeRotation, latitude);
 	this->isExterior = isExterior;
 	this->ambient = ambient;
 	this->distantAmbient = RendererUtils::getDistantAmbientPercent(ambient);
@@ -3444,16 +3443,8 @@ void SoftwareRenderer::drawPixelsShader(int x, const DrawRange &drawRange, doubl
 	const Double3 &fogColor = shadingInfo.getFogColor();
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// Shading on the texture.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
@@ -3558,16 +3549,8 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 	// Fog color to interpolate with.
 	const Double3 &fogColor = shadingInfo.getFogColor();
 
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// Base shading on the texture.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Values for perspective-correct interpolation.
 	const double depthStartRecip = 1.0 / depthStart;
@@ -3702,16 +3685,8 @@ void SoftwareRenderer::drawTransparentPixels(int x, const DrawRange &drawRange, 
 	const Double3 &fogColor = shadingInfo.getFogColor();
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// Shading on the texture.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Clip the Y start and end coordinates as needed, but do not refresh the occlusion buffer,
 	// because transparent ranges do not occlude as simply as opaque ranges.
@@ -3795,17 +3770,8 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 	const Double3 &fogColor = shadingInfo.getFogColor();
 	const double fogPercent = std::min(depth / shadingInfo.fogDistance, 1.0);
 
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// Shading on the texture.
-	// - @todo: contribution from lights.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Clip the Y start and end coordinates as needed, and refresh the occlusion buffer.
 	occlusion.clipRange(&yStart, &yEnd);
@@ -3965,17 +3931,8 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 	// Fog color to interpolate with.
 	const Double3 &fogColor = shadingInfo.getFogColor();
 
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// Shading on the texture.
-	// - @todo: contribution from lights.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Values for perspective-correct interpolation.
 	const double depthStartRecip = 1.0 / depthStart;
@@ -7196,11 +7153,6 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
 	const FrameView &frame)
 {
-	// Contribution from the sun.
-	const double lightNormalDot = std::max(0.0, shadingInfo.sunDirection.dot(normal));
-	const Double3 sunComponent = (shadingInfo.sunColor * lightNormalDot).clamped(
-		0.0, 1.0 - shadingInfo.ambient);
-
 	// X percents across the screen for the given start and end columns.
 	const double startXPercent = (static_cast<double>(startX) + 0.50) / 
 		static_cast<double>(frame.width);
@@ -7254,10 +7206,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	const int yEnd = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
 
 	// Shading on the texture.
-	const Double3 shading(
-		shadingInfo.ambient + sunComponent.x,
-		shadingInfo.ambient + sunComponent.y,
-		shadingInfo.ambient + sunComponent.z);
+	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
 	// Draw by-column, similar to wall rendering.
 	for (int x = xStart; x < xEnd; x++)

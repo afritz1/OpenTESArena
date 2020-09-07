@@ -234,8 +234,8 @@ private:
 		// horizon color. For interiors, every color in the array is the same.
 		std::array<Double3, SKY_COLOR_COUNT> skyColors;
 
-		// Light and direction of the sun.
-		Double3 sunColor, sunDirection;
+		// Direction towards the sun.
+		Double3 sunDirection;
 
 		// Global ambient light percent.
 		double ambient;
