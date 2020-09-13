@@ -14,11 +14,16 @@ using EntityRenderID = int;
 
 class CharacterClassLibrary;
 class EntityDefinition;
+class EntityDefinitionLibrary;
 
 namespace EntityUtils
 {
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
+
+	// Returns whether the given entity definition ID is from a level, or if it is in the
+	// entity definition library.
+	bool isLevelDependentDef(EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary);
 
 	int getYOffset(const EntityDefinition &entityDef);
 

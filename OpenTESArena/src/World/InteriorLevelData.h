@@ -56,9 +56,10 @@ public:
 	// Calls the base level data method then does some interior-specific work.
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
-		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
-		Random &random, CitizenManager &citizenManager, TextureManager &textureManager,
-		TextureInstanceManager &textureInstManager, Renderer &renderer) override;
+		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
+		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
+		Renderer &renderer) override;
 };
 
 #endif

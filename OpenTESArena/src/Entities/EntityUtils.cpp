@@ -1,6 +1,7 @@
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
+#include "EntityDefinitionLibrary.h"
 #include "EntityUtils.h"
 
 std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
@@ -28,6 +29,12 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(type)));
 	}
+}
+
+bool EntityUtils::isLevelDependentDef(EntityDefID defID,
+	const EntityDefinitionLibrary &entityDefLibrary)
+{
+	return (defID >= 0) && (defID < entityDefLibrary.getDefinitionCount());
 }
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)

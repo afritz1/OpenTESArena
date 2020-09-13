@@ -18,6 +18,7 @@
 
 #include "components/utilities/Buffer2D.h"
 
+class EntityDefinitionLibrary;
 class Game;
 
 enum class EntityType;
@@ -93,8 +94,9 @@ private:
 	Buffer2D<EntityGroup<StaticEntity>> staticGroups;
 	Buffer2D<EntityGroup<DynamicEntity>> dynamicGroups;
 
-	// Entity definitions.
-	std::vector<EntityDefinition> entityDefs;
+	// Entity definitions for the currently-active level. Their definition IDs CANNOT be assumed
+	// to be zero-based because these are in addition to ones in the entity definition library.
+	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
 	// Free IDs (previously owned) and the next available ID (never owned).
 	std::vector<EntityID> freeIDs;
@@ -159,24 +161,27 @@ public:
 	// Returns whether the given entity definition ID points to a valid definition.
 	bool hasEntityDef(EntityDefID defID) const;
 
-	// Gets an entity definition for the given ID.
-	const EntityDefinition &getEntityDef(EntityDefID defID) const;
+	// Gets an entity definition for the given ID. If the definition is not a part of the active
+	// level, it will look in the definition library instead.
+	const EntityDefinition &getEntityDef(EntityDefID defID,
+		const EntityDefinitionLibrary &entityDefLibrary) const;
 
-	// Adds an entity data definition to the definitions list and returns its ID.
-	EntityDefID addEntityDef(EntityDefinition &&def);
+	// Adds an entity definition and returns its ID.
+	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Gets the data necessary for rendering and ray cast selection.
 	void getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
-		double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const;
+		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
+		EntityVisibilityData &outVisData) const;
 
 	// Convenience function for getting the active keyframe from an entity, given some
 	// visibility data.
 	const EntityAnimationDefinition::Keyframe &getEntityAnimKeyframe(const Entity &entity,
-		const EntityVisibilityData &visData) const;
+		const EntityVisibilityData &visData, const EntityDefinitionLibrary &entityDefLibrary) const;
 
 	// Gets the entity's 3D bounding box. This is view-dependent!
 	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
-		Double3 *outMin, Double3 *outMax) const;
+		const EntityDefinitionLibrary &entityDefLibrary, Double3 *outMin, Double3 *outMax) const;
 
 	// Puts the entity into the chunk representative of their 3D position.
 	void updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid);

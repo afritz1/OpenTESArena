@@ -55,14 +55,12 @@ const CitizenManager::GenerationEntry *CitizenManager::findGenerationEntry(bool 
 }
 
 void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
-	const LocationDefinition &locationDef, const MiscAssets &miscAssets, Random &random,
-	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
+	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
+	const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
+	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Clear any previously-generated citizen tuples.
 	this->generationEntries.clear();
-
-	auto &entityManager = levelData.getEntityManager();
-	const auto &voxelGrid = levelData.getVoxelGrid();
 
 	const ClimateType climateType = [&locationDef]()
 	{
@@ -71,39 +69,48 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		return cityDef.climateType;
 	}();
 
-	auto tryMakeEntityData = [&miscAssets, &textureManager, &levelData, climateType](bool male,
-		EntityDefinition *outDef, EntityAnimationInstance *outAnimInst)
+	auto tryMakeEntityAnimInst = [&levelData, &miscAssets, &textureManager, climateType](
+		bool male, EntityAnimationInstance *outAnimInst)
 	{
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeCitizenAnims(male, climateType, levelData.getInfFile(),
-			miscAssets, textureManager, &animDef, outAnimInst))
+		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, miscAssets.getExeData(),
+			textureManager, &animDef, outAnimInst))
 		{
 			DebugLogWarning(std::string("Couldn't make citizen anims (male: ") + (male ? "yes" : "no") +
 				", climate: " + std::to_string(static_cast<int>(climateType)) + ").");
 			return false;
 		}
 
-		outDef->initCitizen(male, climateType, std::move(animDef));
 		return true;
 	};
 
 	// Only two citizen entity definitions for a given climate, based on the gender.
-	EntityDefinition maleEntityDef, femaleEntityDef;
 	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	if (!tryMakeEntityData(true, &maleEntityDef, &maleAnimInst))
+	if (!tryMakeEntityAnimInst(true, &maleAnimInst))
 	{
-		DebugLogWarning("Couldn't make male citizen entity data.");
+		DebugLogWarning("Couldn't make male citizen entity anim instance.");
 		return;
 	}
 
-	if (!tryMakeEntityData(false, &femaleEntityDef, &femaleAnimInst))
+	if (!tryMakeEntityAnimInst(false, &femaleAnimInst))
 	{
-		DebugLogWarning("Couldn't make female citizen entity data.");
+		DebugLogWarning("Couldn't make female citizen entity anim instance.");
 		return;
 	}
 
-	const EntityDefID maleEntityDefID = entityManager.addEntityDef(std::move(maleEntityDef));
-	const EntityDefID femaleEntityDefID = entityManager.addEntityDef(std::move(femaleEntityDef));
+	// Citizen entity definitions are level-independent and stored in a library beforehand.
+	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
+	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
+	maleEntityDefKey.initCitizen(true, climateType);
+	femaleEntityDefKey.initCitizen(false, climateType);
+
+	EntityDefID maleEntityDefID, femaleEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(maleEntityDefKey, &maleEntityDefID) ||
+		!entityDefLibrary.tryGetDefinitionID(femaleEntityDefKey, &femaleEntityDefID))
+	{
+		DebugLogWarning("Couldn't get citizen entity def ID from library.");
+		return;
+	}
 
 	// Base palette for citizens to generate from.
 	const Palette &basePalette = [&textureManager]() -> const Palette&
@@ -121,6 +128,8 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	constexpr int citizenCount = 150; // Arbitrary.
 	for (int i = 0; i < citizenCount; i++)
 	{
+		const auto &voxelGrid = levelData.getVoxelGrid();
+
 		// Find suitable spawn position; might not succeed if there is no available spot.
 		bool foundSpawnPosition = false;
 		const NewInt2 spawnPositionXZ = [&voxelGrid, &random, &foundSpawnPosition]()
@@ -155,9 +164,10 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 			continue;
 		}
 
+		auto &entityManager = levelData.getEntityManager();
 		const bool male = (random.next() % 2) == 0;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
-		const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID);
+		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
 
 		const uint16_t colorSeed = static_cast<uint16_t>(random.next());
@@ -198,14 +208,14 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	}
 
 	// Initializes textures in the renderer for this citizen variation.
-	auto writeTextures = [&textureManager, &textureInstManager, &renderer, &entityManager, maleEntityDefID,
+	auto writeTextures = [&entityDefLibrary, &textureManager, &textureInstManager, &renderer, maleEntityDefID,
 		femaleEntityDefID, &maleAnimInst, &femaleAnimInst](const GenerationEntry &generationEntry)
 	{
 		const bool male = generationEntry.male;
 		const Palette &palette = generationEntry.palette;
 		const EntityRenderID entityRenderID = generationEntry.entityRenderID;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
-		const EntityDefinition &entityDef = entityManager.getEntityDef(entityDefID);
+		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
 		const bool isPuddle = false;
@@ -260,13 +270,14 @@ void CitizenManager::tick(Game &game)
 			auto &levelData = worldData.getActiveLevel();
 			const auto &provinceDef = gameData.getProvinceDefinition();
 			const auto &locationDef = gameData.getLocationDefinition();
+			const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 			const auto &miscAssets = game.getMiscAssets();
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
 			auto &textureInstManager = game.getTextureInstanceManager();
 			auto &renderer = game.getRenderer();
-			this->spawnCitizens(levelData, provinceDef.getRaceID(), locationDef, miscAssets,
-				random, textureManager, textureInstManager, renderer);
+			this->spawnCitizens(levelData, provinceDef.getRaceID(), locationDef, entityDefLibrary,
+				miscAssets, random, textureManager, textureInstManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
 		}

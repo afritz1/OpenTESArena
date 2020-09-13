@@ -1779,7 +1779,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager)
+	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	this->visibleFlats.clear();
 	this->visibleLights.clear();
@@ -1818,10 +1818,12 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			continue;
 		}
 
-		const EntityDefinition &entityDef = entityManager.getEntityDef(entity->getDefinitionID());
+		const EntityDefinition &entityDef = entityManager.getEntityDef(
+			entity->getDefinitionID(), entityDefLibrary);
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(*entity, eye2D, ceilingHeight, voxelGrid, visData);
+		entityManager.getEntityVisibilityData(*entity, eye2D, ceilingHeight, voxelGrid,
+			entityDefLibrary, visData);
 
 		// Get entity animation state to determine render properties.
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
@@ -7905,7 +7907,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager, uint32_t *colorBuffer)
+	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
+	uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -7973,7 +7976,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	// Refresh the visible flats. This should erase the old list, calculate a new list, and sort
 	// it by depth.
 	this->updateVisibleFlats(camera, shadingInfo, chunkDistance, ceilingHeight,
-		voxelGrid, entityManager);
+		voxelGrid, entityManager, entityDefLibrary);
 
 	// Refresh visible light lists used for shading voxels and entities efficiently.
 	this->updateVisibleLightLists(camera, chunkDistance, ceilingHeight, voxelGrid);

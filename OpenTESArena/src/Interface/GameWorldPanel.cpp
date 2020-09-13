@@ -146,7 +146,7 @@ namespace
 				Physics::Hit hit;
 				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance,
 					ceilingHeight, cameraDirection, pixelPerfect, includeEntities, entityManager,
-					voxelGrid, renderer, hit);
+					voxelGrid, game.getEntityDefinitionLibrary(), renderer, hit);
 
 				if (success)
 				{
@@ -219,7 +219,7 @@ namespace
 		const bool success = Physics::rayCast(rayStart, rayDirection,
 			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), cameraDirection,
 			options.getInput_PixelPerfectSelection(), includeEntities, entityManager, voxelGrid,
-			renderer, hit);
+			game.getEntityDefinitionLibrary(), renderer, hit);
 
 		std::string text;
 		if (success)
@@ -249,7 +249,7 @@ namespace
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
 				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entityRef.get()->getDefinitionID());
+					entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
 				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 				std::string entityName;
@@ -1643,7 +1643,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
 		cameraDirection, pixelPerfectSelection, includeEntities, entityManager, voxelGrid,
-		game.getRenderer(), hit);
+		game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -1880,7 +1880,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
 
 				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entityRef.get()->getDefinitionID());
+					entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
 				const auto &charClassLibrary = game.getCharacterClassLibrary();
 
 				std::string entityName;
@@ -1918,6 +1918,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	auto &worldData = gameData.getWorldData();
 	auto &levelData = worldData.getActiveLevel();
 	auto &entityManager = levelData.getEntityManager();
+	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 
 	// Turn streetlights on or off.
 	Buffer<Entity*> entityBuffer(entityManager.getCount(EntityType::Static));
@@ -1928,7 +1929,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	{
 		Entity *entity = entityBuffer.get(i);
 		const EntityDefID defID = entity->getDefinitionID();
-		const EntityDefinition &entityDef = entityManager.getEntityDef(defID);
+		const EntityDefinition &entityDef = entityManager.getEntityDef(defID, entityDefLibrary);
 
 		if ((entityDef.getType() == EntityDefinition::Type::Doodad) &&
 			(entityDef.getDoodad().streetlight))
@@ -2106,8 +2107,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Leave the interior and go to the saved exterior.
 		const auto &miscAssets = game.getMiscAssets();
-		gameData.leaveInterior(game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-			textureManager, game.getTextureInstanceManager(), renderer);
+		gameData.leaveInterior(game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+			miscAssets, game.getRandom(), textureManager, game.getTextureInstanceManager(), renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2249,8 +2250,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 
 					gameData.enterInterior(menuType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
-						game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
+						game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(),
+						game.getRenderer());
 
 					// Change to interior music.
 					const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2335,8 +2337,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const bool ignoreGatePos = false;
 					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
 						ignoreGatePos, gameData.getWeatherType(), starCount,
-						game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						textureManager, game.getTextureInstanceManager(), renderer))
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
+						game.getRandom(), textureManager, game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
@@ -2345,8 +2347,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From wilderness to city.
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
-						starCount, game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
-						textureManager, game.getTextureInstanceManager(), renderer))
+						starCount, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						miscAssets, game.getRandom(), textureManager, game.getTextureInstanceManager(),
+						renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -2514,9 +2517,9 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			auto &newActiveLevel = interior.getActiveLevel();
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
 				gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
-				game.getCharacterClassLibrary(), game.getMiscAssets(), game.getRandom(),
-				gameData.getCitizenManager(), game.getTextureManager(),
-				game.getTextureInstanceManager(), game.getRenderer());
+				game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+				game.getMiscAssets(), game.getRandom(), gameData.getCitizenManager(),
+				game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
 			player.teleport(Double3(
@@ -3026,7 +3029,8 @@ void GameWorldPanel::render(Renderer &renderer)
 		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
 		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level.getOpenDoors(),
-		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager());
+		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager(),
+		game.getEntityDefinitionLibrary());
 
 	// Get texture IDs in advance of any texture references.
 	auto &textureManager = game.getTextureManager();

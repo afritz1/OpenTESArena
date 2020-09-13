@@ -14,6 +14,7 @@
 
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
+class EntityDefinitionLibrary;
 class Game;
 class LevelData;
 class LocationDefinition;
@@ -53,8 +54,9 @@ public:
 	CitizenManager();
 
 	void spawnCitizens(LevelData &levelData, int raceID, const LocationDefinition &locationDef,
-		const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
-		TextureInstanceManager &textureInstManager, Renderer &renderer);
+		const EntityDefinitionLibrary &entityDefLibrary, const MiscAssets &miscAssets,
+		Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
+		Renderer &renderer);
 	void clearCitizens(Game &game);
 	void tick(Game &game);
 };

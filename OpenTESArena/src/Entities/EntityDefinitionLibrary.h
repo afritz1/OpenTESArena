@@ -10,6 +10,9 @@
 // due to insufficient information for look-up/comparison and therefore the definitions
 // must be split between this library and the currently active level.
 
+class ExeData;
+class TextureManager;
+
 enum class ClimateType;
 
 class EntityDefinitionLibrary
@@ -21,7 +24,7 @@ public:
 		enum class Type
 		{
 			Creature,
-			HumanEnemy,
+			//HumanEnemy, // Not supported due to dependence on .INF file's corpse texture.
 			Citizen
 		};
 
@@ -35,7 +38,7 @@ public:
 			void init(int creatureIndex, bool isFinalBoss);
 		};
 
-		struct HumanEnemyKey
+		/*struct HumanEnemyKey
 		{
 			bool male;
 			int charClassID;
@@ -43,7 +46,7 @@ public:
 			bool operator==(const HumanEnemyKey &other) const;
 
 			void init(bool male, int charClassID);
-		};
+		};*/
 
 		struct CitizenKey
 		{
@@ -60,7 +63,7 @@ public:
 		union
 		{
 			CreatureKey creature;
-			HumanEnemyKey humanEnemy;
+			//HumanEnemyKey humanEnemy;
 			CitizenKey citizen;
 		};
 
@@ -72,11 +75,11 @@ public:
 
 		Type getType() const;
 		const CreatureKey &getCreature() const;
-		const HumanEnemyKey &getHumanEnemy() const;
+		//const HumanEnemyKey &getHumanEnemy() const;
 		const CitizenKey &getCitizen() const;
 
 		void initCreature(int creatureIndex, bool isFinalBoss);
-		void initHumanEnemy(bool male, int charClassID);
+		//void initHumanEnemy(bool male, int charClassID);
 		void initCitizen(bool male, ClimateType climateType);
 	};
 private:
@@ -97,10 +100,22 @@ public:
 	// Only a subset of definition types are supported due to variable information
 	// available for each. For example, it is currently hard to differentiate a tree
 	// and a chair, so they are not supported here.
-	static bool supportsDefType(EntityDefinition::Type type);
+	static constexpr bool supportsDefType(EntityDefinition::Type type)
+	{
+		switch (type)
+		{
+		case EntityDefinition::Type::Citizen:
+		case EntityDefinition::Type::Enemy:
+			return true;
+		default:
+			return false;
+		}
+	}
 
-	// Gets the number of entity definitions. This would be useful for the currently-
-	// active entity manager that needs to start its definition IDs at the end of these.
+	void init(const ExeData &exeData, TextureManager &textureManager);
+
+	// Gets the number of entity definitions. This is useful for the currently-active entity
+	// manager that needs to start its definition IDs at the end of these.
 	int getDefinitionCount() const;
 
 	// Returns raw handle to entity definition (does not protect from dangling pointers).

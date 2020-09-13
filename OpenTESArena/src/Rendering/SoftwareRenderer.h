@@ -598,7 +598,8 @@ private:
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo, int chunkDistance,
-		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager);
+		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
 	void updateVisibleLightLists(const Camera &camera, int chunkDistance, double ceilingHeight,
@@ -1042,7 +1043,8 @@ public:
 		bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager, uint32_t *colorBuffer);
+		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
+		uint32_t *colorBuffer);
 };
 
 #endif

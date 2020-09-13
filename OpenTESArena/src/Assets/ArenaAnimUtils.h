@@ -99,11 +99,17 @@ namespace ArenaAnimUtils
 	// Returns whether the given flat index is for a static or dynamic entity.
 	EntityType getEntityTypeFromFlat(int flatIndex, const INFFile &inf);
 
+	// Gets the first creature's *ITEM index (rat).
+	int getFirstCreatureItemIndex();
+
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
 	int getCreatureIDFromItemIndex(int itemIndex);
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
 	int getFinalBossCreatureID();
+
+	// Converts the 1-based creature ID to an index usable with .exe data arrays.
+	int getCreatureIndexFromID(int creatureID);
 
 	// Character classes (mage, warrior, etc.) used by human enemies.
 	int getCharacterClassIndexFromItemIndex(int itemIndex);
@@ -140,7 +146,7 @@ namespace ArenaAnimUtils
 	bool trySetCitizenFilenameDirection(std::string &filename, int animDirectionID);
 
 	// Writes out values for human enemy animations.
-	void getHumanEnemyProperties(int itemIndex, const CharacterClassLibrary &charClassLibrary,
+	void getHumanEnemyProperties(int charClassIndex, const CharacterClassLibrary &charClassLibrary,
 		const ExeData &exeData, int *outTypeIndex);
 
 	// Writes the gender data into the given filename if possible.
@@ -154,16 +160,28 @@ namespace ArenaAnimUtils
 		const std::optional<bool> &rulerIsMale, const INFFile &inf, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
-	// Writes out dynamic entity animation data to animation states.
+	// Writes out creature animation data to animation states.
+	bool tryMakeDynamicEntityCreatureAnims(int creatureID, const ExeData &exeData,
+		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+		EntityAnimationInstance *outAnimInst);
+
+	// Writes out human enemy animation data to animation states.
+	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale,
+		const CharacterClassLibrary &charClassLibrary, const INFFile &inf,
+		const MiscAssets &miscAssets, TextureManager &textureManager,
+		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+
+	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
+	// entity type (creature, human, etc.) is unknown.
 	bool tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const MiscAssets &miscAssets, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
 	// Writes out citizen animation data to animation states.
-	bool tryMakeCitizenAnims(bool isMale, ClimateType climateType, const INFFile &inf,
-		const MiscAssets &miscAssets, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+	bool tryMakeCitizenAnims(ClimateType climateType, bool isMale, const ExeData &exeData,
+		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+		EntityAnimationInstance *outAnimInst);
 
 	// Transforms the palette used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.

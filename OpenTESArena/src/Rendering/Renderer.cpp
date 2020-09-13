@@ -734,7 +734,7 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager)
+	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->softwareRenderer.isInited());
@@ -753,7 +753,8 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
 		latitude, parallaxSky, nightLightsAreActive, isExterior, playerHasLight, chunkDistance,
-		ceilingHeight, openDoors, fadingVoxels, voxelGrid, entityManager, gameWorldPixels);
+		ceilingHeight, openDoors, fadingVoxels, voxelGrid, entityManager, entityDefLibrary,
+		gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.

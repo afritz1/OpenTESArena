@@ -66,12 +66,12 @@ namespace Physics
 	// parameter. Returns true if the ray hit something.
 	bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 		double ceilingHeight, const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
-		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
-		Physics::Hit &hit);
+		const EntityManager &entityManager, const VoxelGrid &voxelGrid,
+		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit);
 	bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
-		const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
-		Physics::Hit &hit);
+		const EntityManager &entityManager, const VoxelGrid &voxelGrid,
+		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit);
 };
 
 #endif

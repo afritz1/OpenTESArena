@@ -66,7 +66,8 @@ namespace Physics
 	// behind the camera.
 	Physics::VoxelEntityMap makeVoxelEntityMap(const Double3 &cameraPosition,
 		const Double3 &cameraDirection, int chunkDistance, double ceilingHeight,
-		const VoxelGrid &voxelGrid, const EntityManager &entityManager)
+		const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary)
 	{
 		const NewDouble2 cameraPosXZ(cameraPosition.x, cameraPosition.z);
 		const NewDouble2 cameraDirXZ(cameraDirection.x, cameraDirection.z);
@@ -133,11 +134,12 @@ namespace Physics
 			}
 
 			EntityManager::EntityVisibilityData visData;
-			entityManager.getEntityVisibilityData(entity, cameraPosXZ, ceilingHeight, voxelGrid, visData);
+			entityManager.getEntityVisibilityData(entity, cameraPosXZ, ceilingHeight, voxelGrid,
+				entityDefLibrary, visData);
 
 			// Use a bounding box to determine which voxels the entity could be in.
 			Double3 minPoint, maxPoint;
-			entityManager.getEntityBoundingBox(entity, visData, &minPoint, &maxPoint);
+			entityManager.getEntityBoundingBox(entity, visData, entityDefLibrary, &minPoint, &maxPoint);
 
 			// Only iterate over voxels the entity could be in (at least partially).
 			// This loop should always hit at least 1 voxel.
@@ -894,7 +896,8 @@ namespace Physics
 	bool testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &flatForward, const Double3 &flatRight, const Double3 &flatUp,
 		const Int3 &voxel, const VoxelEntityMap &voxelEntityMap, bool pixelPerfect,
-		const EntityManager &entityManager, const Renderer &renderer, Physics::Hit &hit)
+		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
+		const Renderer &renderer, Physics::Hit &hit)
 	{
 		// Use a separate hit variable so we can determine whether an entity was closer.
 		Physics::Hit entityHit;
@@ -908,9 +911,10 @@ namespace Physics
 			for (const auto &visData : entityVisDataList)
 			{
 				const Entity &entity = *visData.entity;
-				const EntityDefinition &entityDef = entityManager.getEntityDef(entity.getDefinitionID());
+				const EntityDefinition &entityDef = entityManager.getEntityDef(
+					entity.getDefinitionID(), entityDefLibrary);
 				const EntityAnimationDefinition::Keyframe &animKeyframe =
-					entityManager.getEntityAnimKeyframe(entity, visData);
+					entityManager.getEntityAnimKeyframe(entity, visData, entityDefLibrary);
 
 				const double flatWidth = animKeyframe.getWidth();
 				const double flatHeight = animKeyframe.getHeight();
@@ -946,7 +950,7 @@ namespace Physics
 	void rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &cameraForward, double ceilingHeight, const VoxelGrid &voxelGrid,
 		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const EntityManager &entityManager,
-		const Renderer &renderer, Physics::Hit &hit)
+		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 	{
 		// Each flat shares the same axes. The forward direction always faces opposite to 
 		// the camera direction.
@@ -1059,7 +1063,8 @@ namespace Physics
 			bool success = Physics::testInitialVoxelRay(rayStart, rayDirection, rayStartVoxel,
 				facing, initialFarPoint, ceilingHeight, voxelGrid, hit);
 			success |= Physics::testEntitiesInVoxel(rayStart, rayDirection, flatForward, flatRight,
-				flatUp, rayStartVoxel, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+				flatUp, rayStartVoxel, voxelEntityMap, pixelPerfect, entityManager,
+				entityDefLibrary, renderer, hit);
 
 			if (success)
 			{
@@ -1142,7 +1147,8 @@ namespace Physics
 			bool success = Physics::testVoxelRay(rayStart, rayDirection, savedVoxel, savedFacing,
 				nearPoint, farPoint, axisLen.y, voxelGrid, hit);
 			success |= Physics::testEntitiesInVoxel(rayStart, rayDirection, flatForward, flatRight,
-				flatUp, savedVoxel, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+				flatUp, savedVoxel, voxelEntityMap, pixelPerfect, entityManager, entityDefLibrary,
+				renderer, hit);
 
 			if (success)
 			{
@@ -1222,8 +1228,8 @@ void Physics::Hit::setT(double t)
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 	double ceilingHeight, const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
-	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
-	Physics::Hit &hit)
+	const EntityManager &entityManager, const VoxelGrid &voxelGrid,
+	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
@@ -1232,8 +1238,8 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 	VoxelEntityMap voxelEntityMap;
 	if (includeEntities)
 	{
-		voxelEntityMap = Physics::makeVoxelEntityMap(
-			rayStart, rayDirection, chunkDistance, ceilingHeight, voxelGrid, entityManager);
+		voxelEntityMap = Physics::makeVoxelEntityMap(rayStart, rayDirection, chunkDistance,
+			ceilingHeight, voxelGrid, entityManager, entityDefLibrary);
 	}
 
 	// Ray cast through the voxel grid, populating the output hit data. Use the ray direction
@@ -1250,12 +1256,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 		}
 		else
@@ -1263,12 +1271,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 		}
 	}
@@ -1279,12 +1289,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 		}
 		else
@@ -1292,12 +1304,14 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager, renderer, hit);
+					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					entityDefLibrary, renderer, hit);
 			}
 		}
 	}
@@ -1308,10 +1322,10 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
 	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
-	const EntityManager &entityManager, const VoxelGrid &voxelGrid, const Renderer &renderer,
-	Physics::Hit &hit)
+	const EntityManager &entityManager, const VoxelGrid &voxelGrid,
+	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
 	constexpr double ceilingHeight = 1.0;
 	return Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight, cameraForward,
-		pixelPerfect, includeEntities, entityManager, voxelGrid, renderer, hit);
+		pixelPerfect, includeEntities, entityManager, voxelGrid, entityDefLibrary, renderer, hit);
 }

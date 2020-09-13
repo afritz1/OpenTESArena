@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cstring>
 
+#include "EntityDefinitionLibrary.h"
 #include "EntityManager.h"
 #include "EntityType.h"
 #include "../Assets/MIFUtils.h"
@@ -673,23 +674,35 @@ bool EntityManager::hasEntityDef(EntityDefID defID) const
 	return (defID >= 0) && (defID < static_cast<int>(this->entityDefs.size()));
 }
 
-const EntityDefinition &EntityManager::getEntityDef(EntityDefID defID) const
+const EntityDefinition &EntityManager::getEntityDef(EntityDefID defID,
+	const EntityDefinitionLibrary &entityDefLibrary) const
 {
-	DebugAssertIndex(this->entityDefs, defID);
-	return this->entityDefs[defID];
+	const auto iter = this->entityDefs.find(defID);
+	if (iter != this->entityDefs.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		return entityDefLibrary.getDefinition(defID);
+	}
 }
 
-EntityDefID EntityManager::addEntityDef(EntityDefinition &&def)
+EntityDefID EntityManager::addEntityDef(EntityDefinition &&def,
+	const EntityDefinitionLibrary &entityDefLibrary)
 {
-	this->entityDefs.push_back(std::move(def));
-	return static_cast<EntityDefID>(this->entityDefs.size()) - 1;
+	const int libraryDefCount = entityDefLibrary.getDefinitionCount();
+	const EntityDefID defID = static_cast<EntityDefID>(libraryDefCount + this->entityDefs.size());
+	this->entityDefs.emplace(std::make_pair(defID, std::move(def)));
+	return defID;
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
-	double ceilingHeight, const VoxelGrid &voxelGrid, EntityVisibilityData &outVisData) const
+	double ceilingHeight, const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
+	EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
-	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID());
+	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationInstance &animInst = entity.getAnimInstance();
 
@@ -802,9 +815,9 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 }
 
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
-	const EntityVisibilityData &visData) const
+	const EntityVisibilityData &visData, const EntityDefinitionLibrary &entityDefLibrary) const
 {
-	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID());
+	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationDefinition::State &animState = animDef.getState(visData.stateIndex);
 	const EntityAnimationDefinition::KeyframeList &animKeyframeList =
@@ -815,10 +828,11 @@ const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(
 }
 
 void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
-	Double3 *outMin, Double3 *outMax) const
+	const EntityDefinitionLibrary &entityDefLibrary, Double3 *outMin, Double3 *outMax) const
 {
 	// Get animation frame from visibility data.
-	const EntityAnimationDefinition::Keyframe &keyframe = this->getEntityAnimKeyframe(entity, visData);
+	const EntityAnimationDefinition::Keyframe &keyframe = this->getEntityAnimKeyframe(
+		entity, visData, entityDefLibrary);
 
 	// Start with bounding cylinder.
 	const double radius = keyframe.getWidth() / 2.0;

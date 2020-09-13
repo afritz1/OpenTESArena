@@ -125,6 +125,9 @@ Game::Game()
 	// Load character classes (dependent on original game's data).
 	this->charClassLibrary.init(this->miscAssets.getExeData());
 
+	// Load entity definitions (dependent on original game's data).
+	this->entityDefLibrary.init(this->miscAssets.getExeData(), this->textureManager);
+
 	// Load and set window icon.
 	const Surface icon = [this]()
 	{
@@ -221,6 +224,11 @@ const CinematicLibrary &Game::getCinematicLibrary() const
 const CharacterClassLibrary &Game::getCharacterClassLibrary() const
 {
 	return this->charClassLibrary;
+}
+
+const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const
+{
+	return this->entityDefLibrary;
 }
 
 bool Game::gameDataIsActive() const

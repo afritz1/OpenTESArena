@@ -18,6 +18,7 @@
 #include "../Assets/SETFile.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/CitizenManager.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Game/CardinalDirection.h"
@@ -1311,9 +1312,9 @@ void LevelData::updateFadingVoxels(double dt)
 
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
-	const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets,
-	Random &random, CitizenManager &citizenManager, TextureManager &textureManager,
-	TextureInstanceManager &textureInstManager, Renderer &renderer)
+	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
+	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTexturesAndEntityRenderIDs();
@@ -1415,7 +1416,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
 	auto loadEntities = [this, nightLightsAreActive, &worldData, &provinceDef, &locationDef,
-		&charClassLibrary, &miscAssets, &random, &citizenManager, &textureManager,
+		&entityDefLibrary, &charClassLibrary, &miscAssets, &random, &citizenManager, &textureManager,
 		&textureInstManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
@@ -1539,15 +1540,26 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			EntityDefinition newEntityDef;
 			if (isCreature)
 			{
-				// Read from .exe data instead for creatures.
 				const int itemIndex = *optItemIndex;
 				const int creatureID = isFinalBoss ?
 					ArenaAnimUtils::getFinalBossCreatureID() :
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 				const int creatureIndex = creatureID - 1;
 
-				newEntityDef.initEnemyCreature(creatureIndex, isFinalBoss, exeData,
-					std::move(entityAnimDef));
+				// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
+				// Currently these are just going to be duplicates of defs in the library.
+				EntityDefinitionLibrary::Key entityDefKey;
+				entityDefKey.initCreature(creatureIndex, isFinalBoss);
+
+				EntityDefID entityDefID;
+				if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
+				{
+					DebugLogWarning("Couldn't get creature definition " +
+						std::to_string(creatureIndex) + " from library.");
+					continue;
+				}
+
+				newEntityDef = entityDefLibrary.getDefinition(entityDefID);
 			}
 			else if (isHumanEnemy)
 			{
@@ -1571,8 +1583,10 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				newEntityDef.getDoodad().streetlight;
 			const bool isPuddle = (newEntityDef.getType() == EntityDefinition::Type::Doodad) &&
 				newEntityDef.getDoodad().puddle;
-			const EntityDefID entityDefID = this->entityManager.addEntityDef(std::move(newEntityDef));
-			const EntityDefinition &entityDefRef = this->entityManager.getEntityDef(entityDefID);
+			const EntityDefID entityDefID = this->entityManager.addEntityDef(
+				std::move(newEntityDef), entityDefLibrary);
+			const EntityDefinition &entityDefRef = this->entityManager.getEntityDef(
+				entityDefID, entityDefLibrary);
 			
 			// Quick hack to get back the anim def that was moved into the entity def.
 			const EntityAnimationDefinition &entityAnimDefRef = entityDefRef.getAnimDef();
@@ -1662,8 +1676,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const bool isWild = worldData.getActiveWorldType() == WorldType::Wilderness;
 		if (isCity || isWild)
 		{
-			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef, miscAssets,
-				random, textureManager, textureInstManager, renderer);
+			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,
+				entityDefLibrary, miscAssets, random, textureManager, textureInstManager, renderer);
 		}
 	};
 

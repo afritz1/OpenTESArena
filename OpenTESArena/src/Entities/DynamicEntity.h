@@ -13,6 +13,7 @@
 // on the entity's position relative to the player's camera.
 
 class AudioManager;
+class EntityDefinitionLibrary;
 class EntityManager;
 class ExeData;
 class WorldData;
@@ -36,7 +37,7 @@ private:
 
 	// Attempts to get the entity's creature sound filename (if any). Returns success.
 	bool tryGetCreatureSoundFilename(const EntityManager &entityManager,
-		std::string *outFilename) const;
+		const EntityDefinitionLibrary &entityDefLibrary, std::string *outFilename) const;
 
 	// Plays the given creature sound on the entity.
 	void playCreatureSound(const std::string &soundFilename, double ceilingHeight,
@@ -51,7 +52,8 @@ private:
 	void updateProjectileState(Game &game, double dt);
 
 	// Updates the entity's physics in the world (if any).
-	void updatePhysics(const WorldData &worldData, Random &random, double dt);
+	void updatePhysics(const WorldData &worldData, const EntityDefinitionLibrary &entityDefLibrary,
+		Random &random, double dt);
 public:
 	DynamicEntity();
 	virtual ~DynamicEntity() = default;

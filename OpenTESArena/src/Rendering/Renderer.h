@@ -19,6 +19,7 @@ class Color;
 class DistantSky;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
+class EntityDefinitionLibrary;
 class EntityManager;
 class Rect;
 class Surface;
@@ -226,7 +227,7 @@ public:
 		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager);
+		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

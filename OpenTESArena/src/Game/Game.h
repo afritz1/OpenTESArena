@@ -11,6 +11,7 @@
 #include "Options.h"
 #include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassLibrary.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
 #include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
@@ -50,6 +51,7 @@ private:
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
+	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<GameData> gameData;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
@@ -114,6 +116,9 @@ public:
 	
 	// Gets the character class library for obtaining various class definitions.
 	const CharacterClassLibrary &getCharacterClassLibrary() const;
+
+	// Gets the entity definition library for obtaining various entity definitions.
+	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;
 
 	// Determines if a game session is currently running. This is true when a player
 	// is loaded into memory.

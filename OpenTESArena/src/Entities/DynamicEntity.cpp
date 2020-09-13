@@ -146,14 +146,15 @@ bool DynamicEntity::withinHearingDistance(const Double3 &point, double ceilingHe
 }
 
 bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManager,
-	std::string *outFilename) const
+	const EntityDefinitionLibrary &entityDefLibrary, std::string *outFilename) const
 {
 	if (this->derivedType != DynamicEntityType::Creature)
 	{
 		return false;
 	}
 
-	const EntityDefinition &entityDef = entityManager.getEntityDef(this->getDefinitionID());
+	const EntityDefinition &entityDef = entityManager.getEntityDef(
+		this->getDefinitionID(), entityDefLibrary);
 	if (entityDef.getType() != EntityDefinition::Type::Enemy)
 	{
 		return false;
@@ -243,7 +244,9 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const auto &entityManager = levelData.getEntityManager();
-	const EntityDefinition &entityDef = entityManager.getEntityDef(this->getDefinitionID());
+	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
+	const EntityDefinition &entityDef = entityManager.getEntityDef(
+		this->getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 	// Distance to player is used for switching animation states.
@@ -312,6 +315,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	const auto &worldData = gameData.getWorldData();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &entityManager = levelData.getEntityManager();
+	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 	const double ceilingHeight = levelData.getCeilingHeight();
 
 	// @todo: creature AI
@@ -327,7 +331,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
-			if (this->tryGetCreatureSoundFilename(entityManager, &creatureSoundFilename))
+			if (this->tryGetCreatureSoundFilename(entityManager, entityDefLibrary, &creatureSoundFilename))
 			{
 				auto &audioManager = game.getAudioManager();
 				this->playCreatureSound(creatureSoundFilename, ceilingHeight, audioManager);
@@ -345,7 +349,8 @@ void DynamicEntity::updateProjectileState(Game &game, double dt)
 	// @todo: projectile motion + collision
 }
 
-void DynamicEntity::updatePhysics(const WorldData &worldData, Random &random, double dt)
+void DynamicEntity::updatePhysics(const WorldData &worldData,
+	const EntityDefinitionLibrary &entityDefLibrary, Random &random, double dt)
 {
 	const auto &levelData = worldData.getActiveLevel();
 	const DynamicEntityType dynamicEntityType = this->getDerivedType();
@@ -355,7 +360,8 @@ void DynamicEntity::updatePhysics(const WorldData &worldData, Random &random, do
 		// Update citizen position and change facing if about to hit something.
 		const auto &voxelGrid = levelData.getVoxelGrid();
 		const auto &entityManager = levelData.getEntityManager();
-		const EntityDefinition &entityDef = entityManager.getEntityDef(this->getDefinitionID());
+		const EntityDefinition &entityDef = entityManager.getEntityDef(
+			this->getDefinitionID(), entityDefLibrary);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		// If citizen and walking, continue walking until next block is not air.
@@ -497,5 +503,6 @@ void DynamicEntity::tick(Game &game, double dt)
 	// Update physics/pathfinding/etc..
 	// @todo: add a check here if updating the entity state has put them in a non-physics state.
 	const auto &worldData = game.getGameData().getWorldData();
-	this->updatePhysics(worldData, game.getRandom(), dt);
+	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
+	this->updatePhysics(worldData, entityDefLibrary, game.getRandom(), dt);
 }
