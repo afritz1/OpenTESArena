@@ -1171,7 +1171,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isM
 
 	outAnimDef->addState(std::move(deathDefState));
 	outAnimInst->addState(std::move(deathInstState));
-	return false;
+	return true;
 }
 
 bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
@@ -1208,7 +1208,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const std::optiona
 	{
 		DebugAssert(isMale.has_value());
 		const int charClassIndex = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(itemIndex);
-		return ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(*isMale, charClassIndex,
+		return ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(charClassIndex, *isMale,
 			charClassLibrary, inf, miscAssets, textureManager, outAnimDef, outAnimInst);
 	}
 	else
