@@ -1313,9 +1313,9 @@ Palette ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t seed, con
 			{
 				const int oldIndex = dest + j;
 				const int newIndex = src + j;
-				DebugAssertIndex(palette, oldIndex);
-				DebugAssertIndex(newPalette, newIndex);
-				newPalette[newIndex] = palette[oldIndex];
+				DebugAssertIndex(newPalette, oldIndex);
+				DebugAssertIndex(palette, newIndex);
+				newPalette[oldIndex] = palette[newIndex];
 			}
 		}
 	}
