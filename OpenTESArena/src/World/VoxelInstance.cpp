@@ -103,7 +103,7 @@ void VoxelInstance::FadeState::update(double dt)
 	}
 }
 
-void VoxelInstance::init(WEInt x, int y, SNInt z, Type type)
+void VoxelInstance::init(SNInt x, int y, WEInt z, Type type)
 {
 	this->x = x;
 	this->y = y;
@@ -111,7 +111,7 @@ void VoxelInstance::init(WEInt x, int y, SNInt z, Type type)
 	this->type = type;
 }
 
-VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed, double percentOpen,
+VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
 	DoorState::StateType stateType)
 {
 	VoxelInstance voxelInst;
@@ -120,14 +120,14 @@ VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed, dou
 	return voxelInst;
 }
 
-VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed)
+VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed)
 {
 	constexpr double percentOpen = 0.0;
 	constexpr DoorState::StateType stateType = DoorState::StateType::Opening;
 	return VoxelInstance::makeDoor(x, y, z, speed, percentOpen, stateType);
 }
 
-VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed, double percentFaded)
+VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded)
 {
 	VoxelInstance voxelInst;
 	voxelInst.init(x, y, z, Type::Fading);
@@ -135,13 +135,13 @@ VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed, d
 	return voxelInst;
 }
 
-VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed)
+VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed)
 {
 	constexpr double percentFaded = 0.0;
 	return VoxelInstance::makeFading(x, y, z, speed, percentFaded);
 }
 
-WEInt VoxelInstance::getX() const
+SNInt VoxelInstance::getX() const
 {
 	return this->x;
 }
@@ -151,7 +151,7 @@ int VoxelInstance::getY() const
 	return this->y;
 }
 
-SNInt VoxelInstance::getZ() const
+WEInt VoxelInstance::getZ() const
 {
 	return this->z;
 }

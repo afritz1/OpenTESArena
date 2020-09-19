@@ -12,7 +12,8 @@
 
 #include "components/utilities/Buffer3D.h"
 
-// A single level of a map with voxels, entities, etc..
+// A single unbaked level of a map with voxels, entities, etc.. It can be an interior level,
+// whole city, or wilderness block.
 
 class LevelDefinition
 {
@@ -23,7 +24,7 @@ private:
 	struct EntityPlacementDef
 	{
 		int defsIndex; // Index into entity definitions list.
-		std::vector<OriginalDouble2> positions;
+		std::vector<LevelDouble2> positions;
 	};
 
 	Buffer3D<VoxelID> voxels; // Points into voxel definitions list.
@@ -33,23 +34,32 @@ private:
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
 public:
-	void init(WEInt width, int height, SNInt depth);
+	static constexpr VoxelID AIR = 0;
+
+	void init(SNInt width, int height, WEInt depth);
 
 	// Width and depth are the same as the map the level is in.
-	WEInt getWidth() const;
+	SNInt getWidth() const;
 	int getHeight() const;
-	SNInt getDepth() const;
+	WEInt getDepth() const;
 
-	// Gets the number of voxel definitions for the level.
 	int getVoxelDefCount() const;
-
-	// Gets the voxel definition associated with an ID. Note that the voxel definitions list in
-	// a level definition is read-only -- any new ones added in-game (like new chasm permutations)
-	// must go in the level instance.
 	const VoxelDefinition &getVoxelDef(VoxelID id) const;
 
-	VoxelID getVoxel(WEInt x, int y, SNInt z) const;
-	void setVoxel(WEInt x, int y, SNInt z, VoxelID voxel);
+	int getEntityPlacementDefCount() const;
+	const EntityPlacementDef &getEntityPlacementDef(int index) const;
+
+	int getEntityDefsCount() const;
+	const EntityDefinition &getEntityDef(int index) const;
+
+	int getLockDefsCount() const;
+	const LockDefinition &getLockDef(int index) const;
+
+	int getTriggerDefCount() const;
+	const TriggerDefinition &getTriggerDef(int index) const;
+
+	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
+	void setVoxel(SNInt x, int y, WEInt z, VoxelID voxel);
 };
 
 #endif

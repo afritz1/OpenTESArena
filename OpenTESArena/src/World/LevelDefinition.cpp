@@ -1,11 +1,11 @@
 #include "LevelDefinition.h"
 
-void LevelDefinition::init(WEInt width, int height, SNInt depth)
+void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxels.init(width, height, depth);
 }
 
-WEInt LevelDefinition::getWidth() const
+SNInt LevelDefinition::getWidth() const
 {
 	return this->voxels.getWidth();
 }
@@ -15,7 +15,7 @@ int LevelDefinition::getHeight() const
 	return this->voxels.getHeight();
 }
 
-SNInt LevelDefinition::getDepth() const
+WEInt LevelDefinition::getDepth() const
 {
 	return this->voxels.getDepth();
 }
@@ -31,12 +31,56 @@ const VoxelDefinition &LevelDefinition::getVoxelDef(VoxelID id) const
 	return this->voxelDefs[id];
 }
 
-LevelDefinition::VoxelID LevelDefinition::getVoxel(WEInt x, int y, SNInt z) const
+int LevelDefinition::getEntityPlacementDefCount() const
+{
+	return static_cast<int>(this->entityPlacementDefs.size());
+}
+
+const LevelDefinition::EntityPlacementDef &LevelDefinition::getEntityPlacementDef(int index) const
+{
+	DebugAssertIndex(this->entityPlacementDefs, index);
+	return this->entityPlacementDefs[index];
+}
+
+int LevelDefinition::getEntityDefsCount() const
+{
+	return static_cast<int>(this->entityDefs.size());
+}
+
+const EntityDefinition &LevelDefinition::getEntityDef(int index) const
+{
+	DebugAssertIndex(this->entityDefs, index);
+	return this->entityDefs[index];
+}
+
+int LevelDefinition::getLockDefsCount() const
+{
+	return static_cast<int>(this->lockDefs.size());
+}
+
+const LockDefinition &LevelDefinition::getLockDef(int index) const
+{
+	DebugAssertIndex(this->lockDefs, index);
+	return this->lockDefs[index];
+}
+
+int LevelDefinition::getTriggerDefCount() const
+{
+	return static_cast<int>(this->triggerDefs.size());
+}
+
+const TriggerDefinition &LevelDefinition::getTriggerDef(int index) const
+{
+	DebugAssertIndex(this->triggerDefs, index);
+	return this->triggerDefs[index];
+}
+
+LevelDefinition::VoxelID LevelDefinition::getVoxel(SNInt x, int y, WEInt z) const
 {
 	return this->voxels.get(x, y, z);
 }
 
-void LevelDefinition::setVoxel(WEInt x, int y, SNInt z, VoxelID voxel)
+void LevelDefinition::setVoxel(SNInt x, int y, WEInt z, VoxelID voxel)
 {
 	this->voxels.set(x, y, z, voxel);
 }
