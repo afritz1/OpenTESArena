@@ -1,124 +1,62 @@
 #include "LevelInstance.h"
+#include "WorldType.h"
 
 #include "components/debug/Debug.h"
 
-void LevelInstance::init()
+LevelInstance::LevelInstance()
 {
-	this->changedVoxels.clear();
-	this->voxelInsts.clear();
+	this->worldType = static_cast<WorldType>(-1);
 }
 
-Int3 LevelInstance::makeVoxelCoord(WEInt x, int y, SNInt z)
+void LevelInstance::init(WorldType worldType, int chunkDistance)
 {
-	return Int3(x, y, z);
+	this->worldType = worldType;
+	this->chunkManager.init(chunkDistance);
+
+	// @todo: remove fixed-size grid dependency in entity manager.
+	DebugNotImplemented();
+	//this->entityManager.init(-1, -1);
 }
 
-LevelInstance::ChangedVoxel *LevelInstance::findVoxel(WEInt x, int y, SNInt z)
+void LevelInstance::initInterior(int chunkDistance)
 {
-	const Int3 voxelCoord = LevelInstance::makeVoxelCoord(x, y, z);
-	for (ChangedVoxel &changedVoxel : this->changedVoxels)
-	{
-		if (changedVoxel.first == voxelCoord)
-		{
-			return &changedVoxel;
-		}
-	}
-
-	return nullptr;
+	this->init(WorldType::Interior, chunkDistance);
 }
 
-const LevelInstance::ChangedVoxel *LevelInstance::findVoxel(WEInt x, int y, SNInt z) const
+void LevelInstance::initCity(int chunkDistance)
 {
-	const Int3 voxelCoord = LevelInstance::makeVoxelCoord(x, y, z);
-	for (const ChangedVoxel &changedVoxel : this->changedVoxels)
-	{
-		if (changedVoxel.first == voxelCoord)
-		{
-			return &changedVoxel;
-		}
-	}
-
-	return nullptr;
+	this->init(WorldType::City, chunkDistance);
 }
 
-int LevelInstance::getChangedVoxelCount() const
+void LevelInstance::initWilderness(int chunkDistance)
 {
-	return static_cast<int>(this->changedVoxels.size());
+	this->init(WorldType::Wilderness, chunkDistance);
 }
 
-const LevelInstance::ChangedVoxel &LevelInstance::getChangedVoxel(int index) const
+ChunkManager &LevelInstance::getChunkManager()
 {
-	DebugAssertIndex(this->changedVoxels, index);
-	return this->changedVoxels[index];
+	return this->chunkManager;
 }
 
-const VoxelDefinition &LevelInstance::getVoxelDef(LevelDefinition::VoxelID id,
-	const LevelDefinition &levelDef) const
+const ChunkManager &LevelInstance::getChunkManager() const
 {
-	const int baseVoxelDefCount = levelDef.getVoxelDefCount();
-	const bool useBaseVoxelDefs = id < baseVoxelDefCount;
-	if (useBaseVoxelDefs)
-	{
-		return levelDef.getVoxelDef(id);
-	}
-	else
-	{
-		const int index = static_cast<int>(id) - baseVoxelDefCount;
-		DebugAssertIndex(this->voxelDefAdditions, index);
-		return this->voxelDefAdditions[index];
-	}
+	return this->chunkManager;
 }
 
-int LevelInstance::getVoxelInstanceCount() const
+EntityManager &LevelInstance::getEntityManager()
 {
-	return static_cast<int>(this->voxelInsts.size());
+	return this->entityManager;
 }
 
-VoxelInstance &LevelInstance::getVoxelInstance(int index)
+const EntityManager &LevelInstance::getEntityManager() const
 {
-	DebugAssertIndex(this->voxelInsts, index);
-	return this->voxelInsts[index];
-}
-
-LevelDefinition::VoxelID LevelInstance::getVoxel(WEInt x, int y, SNInt z,
-	const LevelDefinition &levelDef) const
-{
-	const ChangedVoxel *changedVoxel = this->findVoxel(x, y, z);
-	return (changedVoxel != nullptr) ? changedVoxel->second : levelDef.getVoxel(x, y, z);
-}
-
-void LevelInstance::setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::VoxelID voxelID)
-{
-	ChangedVoxel *changedVoxel = this->findVoxel(x, y, z);
-
-	if (changedVoxel != nullptr)
-	{
-		changedVoxel->second = voxelID;
-	}
-	else
-	{
-		const Int3 voxelCoord = LevelInstance::makeVoxelCoord(x, y, z);
-		this->changedVoxels.push_back(std::make_pair(voxelCoord, voxelID));
-	}
-}
-
-LevelDefinition::VoxelID LevelInstance::addVoxelDef(const VoxelDefinition &voxelDef)
-{
-	this->voxelDefAdditions.push_back(voxelDef);
-	return static_cast<LevelDefinition::VoxelID>(this->voxelDefAdditions.size() - 1);
+	return this->entityManager;
 }
 
 void LevelInstance::update(double dt)
 {
-	// @todo: reverse iterate over voxel instances, removing ones that are finished doing
-	// their animation, etc.. See LevelData::updateFadingVoxels() for reference.
-	// @todo: when updating adjacent chasms, add new voxel definitions to the level definition
-	// if necessary. It's okay to mutate the level def because new chasm permutations aren't
-	// really "instance data" -- they belong in the level def in the first place.
-	/*for (VoxelInstance &voxelInst : this->voxelInsts)
-	{
-		voxelInst.update(dt);
-	}*/
+	// @todo: call update on chunk manager so it can remove finished voxel instances, etc..
+	// See LevelData::updateFadingVoxels() for reference.
 
 	DebugNotImplemented();
 }
