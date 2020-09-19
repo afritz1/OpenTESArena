@@ -44,17 +44,17 @@ Chunk::VoxelID Chunk::get(int x, int y, int z) const
 	return this->voxels.get(x, y, z);
 }
 
+int Chunk::getVoxelDefCount() const
+{
+	return static_cast<int>(std::count(this->activeVoxelDefs.begin(),
+		this->activeVoxelDefs.end(), true));
+}
+
 const VoxelDefinition &Chunk::getVoxelDef(VoxelID id) const
 {
 	DebugAssert(id < this->voxelDefs.size());
 	DebugAssert(this->activeVoxelDefs[id]);
 	return this->voxelDefs[id];
-}
-
-int Chunk::debug_getVoxelDefCount() const
-{
-	return static_cast<int>(
-		std::count(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), true));
 }
 
 void Chunk::setCoord(const ChunkInt2 &coord)
@@ -67,18 +67,22 @@ void Chunk::set(int x, int y, int z, VoxelID value)
 	this->voxels.set(x, y, z, value);
 }
 
-Chunk::VoxelID Chunk::addVoxelDef(VoxelDefinition &&voxelDef)
+bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
 {
 	// Find a place to add the voxel data.
 	const auto iter = std::find(this->activeVoxelDefs.begin(), this->activeVoxelDefs.end(), false);
 
-	// If we ever hit this, we need more bits per voxel.
-	DebugAssert(iter != this->activeVoxelDefs.end());
+	// If this is ever true, we need more bits per voxel.
+	if (iter == this->activeVoxelDefs.end())
+	{
+		return false;
+	}
 
 	const VoxelID id = static_cast<VoxelID>(std::distance(this->activeVoxelDefs.begin(), iter));
 	this->voxelDefs[id] = std::move(voxelDef);
 	this->activeVoxelDefs[id] = true;
-	return id;
+	*outID = id;
+	return true;
 }
 
 void Chunk::removeVoxelDef(VoxelID id)
