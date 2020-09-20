@@ -5,13 +5,30 @@
 
 // Values for a voxel changing over time or being uniquely different in some way.
 
+enum class VoxelFacing;
+
 class VoxelInstance
 {
 public:
-	enum class Type { OpenDoor, Fading };
+	enum class Type { Chasm, OpenDoor, Fading };
 
-	// @todo: move chasm facings here from VoxelDefinition
 	// @todo: maybe a BashState?
+
+	class ChasmState
+	{
+	private:
+		// Visible chasm faces.
+		bool north, east, south, west;
+	public:
+		void init(bool north, bool east, bool south, bool west);
+
+		bool getNorth() const;
+		bool getEast() const;
+		bool getSouth() const;
+		bool getWest() const;
+		bool faceIsVisible(VoxelFacing facing) const;
+		int getFaceCount() const;
+	};
 
 	class DoorState
 	{
@@ -54,12 +71,16 @@ private:
 
 	union
 	{
+		ChasmState chasm;
 		DoorState door;
 		FadeState fade;
 	};
 
 	void init(SNInt x, int y, WEInt z, Type type);
 public:
+	static VoxelInstance makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
+		bool south, bool west);
+
 	static VoxelInstance makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
 		DoorState::StateType stateType);
 	
@@ -75,6 +96,8 @@ public:
 	int getY() const;
 	WEInt getZ() const;
 	Type getType() const;
+	ChasmState &getChasmState();
+	const ChasmState &getChasmState() const;
 	DoorState &getDoorState();
 	const DoorState &getDoorState() const;
 	FadeState &getFadeState();
