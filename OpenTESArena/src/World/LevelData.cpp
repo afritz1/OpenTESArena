@@ -574,6 +574,14 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 		{
 			const Int3 voxel(x, 0, z);
 
+			// Ignore non-chasm voxels.
+			const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
+			if (voxelDef.dataType != VoxelDataType::Chasm)
+			{
+				continue;
+			}
+
 			// Query surrounding voxels to see which faces should be set.
 			uint16_t northID, southID, eastID, westID;
 			this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
