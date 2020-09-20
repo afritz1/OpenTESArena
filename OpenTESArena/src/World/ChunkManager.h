@@ -21,7 +21,6 @@ class ChunkManager
 private:
 	std::vector<std::unique_ptr<Chunk>> chunkPool;
 	std::vector<std::unique_ptr<Chunk>> activeChunks;
-	ChunkInt2 origin;
 
 	int findChunkIndex(const ChunkInt2 &coord) const;
 public:
@@ -32,9 +31,6 @@ public:
 	const Chunk &getChunkAtIndex(int index) const;
 	Chunk *getChunk(const ChunkInt2 &coord);
 	const Chunk *getChunk(const ChunkInt2 &coord) const;
-
-	// Sets the chunk that all other active chunks are relative to.
-	void setOriginChunk(const ChunkInt2 &coord);
 
 	// Fills the chunk with the data required based on its position and the world type.
 	bool tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType, Game &game);
