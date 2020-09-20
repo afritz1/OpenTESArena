@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 
 #include "Physics.h"
@@ -8,6 +9,7 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../World/ChunkUtils.h"
+#include "../World/LevelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGeometry.h"
@@ -181,7 +183,8 @@ namespace Physics
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		const Int3 &voxel, VoxelFacing farFacing, const Double3 &farPoint, double ceilingHeight,
-		const VoxelGrid &voxelGrid, Physics::Hit &hit)
+		const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
+		Physics::Hit &hit)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
@@ -453,6 +456,19 @@ namespace Physics
 			// See if the ray starts above or below the chasm floor.
 			if (rayStart.y >= chasmYBottom)
 			{
+				// Get any non-default state for this chasm voxel.
+				const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
+				{
+					const NewInt2 voxelXZ(voxel.x, voxel.z);
+					const auto iter = std::find_if(chasmStates.begin(), chasmStates.end(),
+						[&voxelXZ](const LevelData::ChasmState &chasmState)
+					{
+						return chasmState.getVoxel() == voxelXZ;
+					});
+
+					return (iter != chasmStates.end()) ? &(*iter) : nullptr;
+				}();
+
 				// Above the floor. See which face the ray hits.
 				if ((farFacing == VoxelFacing::NegativeY) || (farPoint.y < chasmYBottom))
 				{
@@ -474,7 +490,8 @@ namespace Physics
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
-				else if (farFacing != VoxelFacing::PositiveY && chasm.faceIsVisible(farFacing))
+				else if ((farFacing != VoxelFacing::PositiveY) &&
+					((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing)))
 				{
 					// Hits a side wall.
 					const double t = (farPoint - rayStart).length();
@@ -532,9 +549,10 @@ namespace Physics
 
 	// Checks a voxel for ray hits and writes them into the output parameter. Returns
 	// true if the ray hit something.
-	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-		const Int3 &voxel, VoxelFacing nearFacing, const Double3 &nearPoint,
-		const Double3 &farPoint, double ceilingHeight, const VoxelGrid &voxelGrid, Physics::Hit &hit)
+	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection, const Int3 &voxel,
+		VoxelFacing nearFacing, const Double3 &nearPoint, const Double3 &farPoint,
+		double ceilingHeight, const std::vector<LevelData::ChasmState> &chasmStates,
+		const VoxelGrid &voxelGrid, Physics::Hit &hit)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 
@@ -563,7 +581,8 @@ namespace Physics
 		{
 			// Intersect the floor as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(
+				voxelDef, voxel, ceilingHeight, chasmStates, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			Double3 hitPoint;
@@ -586,7 +605,8 @@ namespace Physics
 		{
 			// Intersect the ceiling as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(
+				voxelDef, voxel, ceilingHeight, chasmStates, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			Double3 hitPoint;
@@ -609,11 +629,11 @@ namespace Physics
 		{
 			// Intersect each face of the platform and find the closest one (if any).
 			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, &quadCount);
+			VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(
-				voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight,
+				chasmStates, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
 			double closestT = Hit::MAX_T;
@@ -665,7 +685,8 @@ namespace Physics
 		{
 			// Intersect the diagonal as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(
+				voxelDef, voxel, ceilingHeight, chasmStates, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			Double3 hitPoint;
@@ -687,11 +708,11 @@ namespace Physics
 		{
 			// Intersect each face and find the closest one (if any).
 			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, &quadCount);
+			VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(
-				voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight,
+				chasmStates, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
 			double closestT = Hit::MAX_T;
@@ -747,7 +768,8 @@ namespace Physics
 			{
 				// Intersect the edge as a quad.
 				Quad quad;
-				const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, &quad, 1);
+				const int quadsWritten = VoxelGeometry::getQuads(
+					voxelDef, voxel, ceilingHeight, chasmStates, &quad, 1);
 				DebugAssert(quadsWritten == 1);
 
 				Double3 hitPoint;
@@ -774,11 +796,11 @@ namespace Physics
 		{
 			// Intersect each face and find the closest one (if any).
 			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, &quadCount);
+			VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(
-				voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight,
+				chasmStates, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
 			double closestT = Hit::MAX_T;
@@ -834,11 +856,11 @@ namespace Physics
 
 			// Intersect each face and find the closest one (if any).
 			int quadCount;
-			VoxelGeometry::getInfo(voxelDef, &quadCount);
+			VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(
-				voxelDef, voxel, ceilingHeight, quads.data(), static_cast<int>(quads.size()));
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight,
+				chasmStates, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
 			double closestT = Hit::MAX_T;
@@ -948,7 +970,8 @@ namespace Physics
 	// ray intersections with voxel data and entities.
 	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
 	void rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &cameraForward, double ceilingHeight, const VoxelGrid &voxelGrid,
+		const Double3 &cameraForward, double ceilingHeight,
+		const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
 		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 	{
@@ -1061,7 +1084,7 @@ namespace Physics
 
 			// Test the initial voxel for ray intersections.
 			bool success = Physics::testInitialVoxelRay(rayStart, rayDirection, rayStartVoxel,
-				facing, initialFarPoint, ceilingHeight, voxelGrid, hit);
+				facing, initialFarPoint, ceilingHeight, chasmStates, voxelGrid, hit);
 			success |= Physics::testEntitiesInVoxel(rayStart, rayDirection, flatForward, flatRight,
 				flatUp, rayStartVoxel, voxelEntityMap, pixelPerfect, entityManager,
 				entityDefLibrary, renderer, hit);
@@ -1145,7 +1168,7 @@ namespace Physics
 
 			// Test the current voxel for ray intersections.
 			bool success = Physics::testVoxelRay(rayStart, rayDirection, savedVoxel, savedFacing,
-				nearPoint, farPoint, axisLen.y, voxelGrid, hit);
+				nearPoint, farPoint, axisLen.y, chasmStates, voxelGrid, hit);
 			success |= Physics::testEntitiesInVoxel(rayStart, rayDirection, flatForward, flatRight,
 				flatUp, savedVoxel, voxelEntityMap, pixelPerfect, entityManager, entityDefLibrary,
 				renderer, hit);
@@ -1227,7 +1250,8 @@ void Physics::Hit::setT(double t)
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-	double ceilingHeight, const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
+	double ceilingHeight, const std::vector<LevelData::ChasmState> &chasmStates,
+	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 	const EntityManager &entityManager, const VoxelGrid &voxelGrid,
 	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 {
@@ -1256,13 +1280,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 		}
@@ -1271,13 +1295,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 		}
@@ -1289,13 +1313,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 		}
@@ -1304,13 +1328,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 			if (nonNegativeDirZ)
 			{
 				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward,
-					ceilingHeight, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
+					ceilingHeight, chasmStates, voxelGrid, voxelEntityMap, pixelPerfect, entityManager,
 					entityDefLibrary, renderer, hit);
 			}
 		}
@@ -1321,11 +1345,13 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
-	const EntityManager &entityManager, const VoxelGrid &voxelGrid,
-	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
+	const std::vector<LevelData::ChasmState> &chasmStates, const Double3 &cameraForward,
+	bool pixelPerfect, bool includeEntities, const EntityManager &entityManager,
+	const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
+	const Renderer &renderer, Physics::Hit &hit)
 {
 	constexpr double ceilingHeight = 1.0;
-	return Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight, cameraForward,
-		pixelPerfect, includeEntities, entityManager, voxelGrid, entityDefLibrary, renderer, hit);
+	return Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight, chasmStates,
+		cameraForward, pixelPerfect, includeEntities, entityManager, voxelGrid, entityDefLibrary,
+		renderer, hit);
 }

@@ -145,8 +145,9 @@ namespace
 
 				Physics::Hit hit;
 				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance,
-					ceilingHeight, cameraDirection, pixelPerfect, includeEntities, entityManager,
-					voxelGrid, game.getEntityDefinitionLibrary(), renderer, hit);
+					ceilingHeight, levelData.getChasmStates(), cameraDirection, pixelPerfect,
+					includeEntities, entityManager, voxelGrid, game.getEntityDefinitionLibrary(),
+					renderer, hit);
 
 				if (success)
 				{
@@ -217,9 +218,9 @@ namespace
 
 		Physics::Hit hit;
 		const bool success = Physics::rayCast(rayStart, rayDirection,
-			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), cameraDirection,
-			options.getInput_PixelPerfectSelection(), includeEntities, entityManager, voxelGrid,
-			game.getEntityDefinitionLibrary(), renderer, hit);
+			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), levelData.getChasmStates(),
+			cameraDirection, options.getInput_PixelPerfectSelection(), includeEntities, entityManager,
+			voxelGrid, game.getEntityDefinitionLibrary(), renderer, hit);
 
 		std::string text;
 		if (success)
@@ -1642,8 +1643,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
-		cameraDirection, pixelPerfectSelection, includeEntities, entityManager, voxelGrid,
-		game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
+		level.getChasmStates(), cameraDirection, pixelPerfectSelection, includeEntities,
+		entityManager, voxelGrid, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -3029,8 +3030,8 @@ void GameWorldPanel::render(Renderer &renderer)
 		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
 		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level.getOpenDoors(),
-		level.getFadingVoxels(), level.getVoxelGrid(), level.getEntityManager(),
-		game.getEntityDefinitionLibrary());
+		level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
+		level.getEntityManager(), game.getEntityDefinitionLibrary());
 
 	// Get texture IDs in advance of any texture references.
 	auto &textureManager = game.getTextureManager();

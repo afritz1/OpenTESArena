@@ -733,7 +733,8 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
 	bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	// The 3D renderer must be initialized.
@@ -753,8 +754,8 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
 		latitude, parallaxSky, nightLightsAreActive, isExterior, playerHasLight, chunkDistance,
-		ceilingHeight, openDoors, fadingVoxels, voxelGrid, entityManager, entityDefLibrary,
-		gameWorldPixels);
+		ceilingHeight, openDoors, fadingVoxels, chasmStates, voxelGrid, entityManager,
+		entityDefLibrary, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.

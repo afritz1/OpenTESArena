@@ -131,35 +131,7 @@ const double VoxelDefinition::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
 
 bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 {
-	return (this->id == other.id) && (this->north == other.north) && (this->east == other.east) &&
-		(this->south == other.south) && (this->west == other.west) && (this->type == other.type);
-}
-
-bool VoxelDefinition::ChasmData::faceIsVisible(VoxelFacing facing) const
-{
-	if (facing == VoxelFacing::PositiveX)
-	{
-		return this->south;
-	}
-	else if (facing == VoxelFacing::PositiveZ)
-	{
-		return this->west;
-	}
-	else if (facing == VoxelFacing::NegativeX)
-	{
-		return this->north;
-	}
-	else
-	{
-		return this->east;
-	}
-}
-
-int VoxelDefinition::ChasmData::getFaceCount() const
-{
-	// Assume chasms have floors.
-	return 1 + (this->north ? 1 : 0) + (this->east ? 1 : 0) +
-		(this->south ? 1 : 0) + (this->west ? 1 : 0);
+	return (this->id == other.id) && (this->type == other.type);
 }
 
 int VoxelDefinition::DoorData::getOpenSoundIndex() const
@@ -374,8 +346,7 @@ VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 	return data;
 }
 
-VoxelDefinition VoxelDefinition::makeChasm(int id, bool north, bool east, bool south, bool west,
-	ChasmData::Type type)
+VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 {
 	if (id >= VoxelDefinition::TOTAL_IDS)
 	{
@@ -387,10 +358,6 @@ VoxelDefinition VoxelDefinition::makeChasm(int id, bool north, bool east, bool s
 
 	VoxelDefinition::ChasmData &chasm = data.chasm;
 	chasm.id = id % VoxelDefinition::TOTAL_IDS;
-	chasm.north = north;
-	chasm.east = east;
-	chasm.south = south;
-	chasm.west = west;
 	chasm.type = type;
 
 	return data;
