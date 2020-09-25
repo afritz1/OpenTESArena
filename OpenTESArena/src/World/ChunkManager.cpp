@@ -20,7 +20,7 @@ void ChunkManager::init(int chunkDistance)
 	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance, &chunkCountX, &chunkCountZ);
 
 	const int totalChunkCount = chunkCountX * chunkCountZ;
-	this->chunkPool = std::vector<std::unique_ptr<Chunk>>(totalChunkCount);
+	this->chunkPool = std::vector<ChunkPtr>(totalChunkCount);
 }
 
 int ChunkManager::findChunkIndex(const ChunkInt2 &coord) const
@@ -28,8 +28,8 @@ int ChunkManager::findChunkIndex(const ChunkInt2 &coord) const
 	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
 	for (int i = 0; i < activeChunkCount; i++)
 	{
-		const std::unique_ptr<Chunk> &chunk = this->activeChunks[i];
-		if (chunk->getCoord() == coord)
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		if (chunkPtr->getCoord() == coord)
 		{
 			return i;
 		}
@@ -69,7 +69,7 @@ const Chunk *ChunkManager::getChunk(const ChunkInt2 &coord) const
 
 bool ChunkManager::tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType, Game &game)
 {
-	std::unique_ptr<Chunk> &chunk = [this, &coord]() -> std::unique_ptr<Chunk>&
+	ChunkPtr &chunkPtr = [this, &coord]() -> ChunkPtr&
 	{
 		int index = this->findChunkIndex(coord);
 		if (index == NO_INDEX)
@@ -121,14 +121,14 @@ bool ChunkManager::tryFreeChunk(const ChunkInt2 &coord, EntityManager &entityMan
 	}
 
 	DebugAssertIndex(this->activeChunks, index);
-	std::unique_ptr<Chunk> &chunk = this->activeChunks[index];
+	ChunkPtr &chunkPtr = this->activeChunks[index];
 
 	// Save chunk changes.
 	// @todo
 
 	// Move chunk back to chunk pool.
-	chunk->clear();
-	this->chunkPool.push_back(std::move(chunk));
+	chunkPtr->clear();
+	this->chunkPool.push_back(std::move(chunkPtr));
 	this->activeChunks.erase(this->activeChunks.begin() + index);
 
 	// Clear entities in the chunk.
@@ -143,8 +143,8 @@ void ChunkManager::clear(EntityManager &entityManager)
 	// Free all active chunks.
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
-		const std::unique_ptr<Chunk> &chunk = this->activeChunks[i];
-		if (!this->tryFreeChunk(chunk->getCoord(), entityManager))
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		if (!this->tryFreeChunk(chunkPtr->getCoord(), entityManager))
 		{
 			DebugLogError("Couldn't free chunk (" + std::to_string(i) + ").");
 		}

@@ -19,8 +19,10 @@ enum class WorldType;
 class ChunkManager
 {
 private:
-	std::vector<std::unique_ptr<Chunk>> chunkPool;
-	std::vector<std::unique_ptr<Chunk>> activeChunks;
+	using ChunkPtr = std::unique_ptr<Chunk>;
+
+	std::vector<ChunkPtr> chunkPool;
+	std::vector<ChunkPtr> activeChunks;
 
 	int findChunkIndex(const ChunkInt2 &coord) const;
 public:
