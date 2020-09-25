@@ -11,7 +11,7 @@ LevelInstance::LevelInstance()
 void LevelInstance::init(WorldType worldType, int chunkDistance)
 {
 	this->worldType = worldType;
-	this->chunkManager.init(chunkDistance);
+	this->chunkManager.init(worldType, chunkDistance);
 
 	// @todo: remove fixed-size grid dependency in entity manager.
 	DebugNotImplemented();

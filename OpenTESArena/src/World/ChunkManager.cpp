@@ -1,17 +1,21 @@
+#include <optional>
+
 #include "ChunkManager.h"
 #include "ChunkUtils.h"
 #include "WorldType.h"
 #include "../Entities/EntityManager.h"
+#include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 
-namespace
+ChunkManager::ChunkManager()
 {
-	constexpr int NO_INDEX = -1;
+	this->worldType = static_cast<WorldType>(-1);
+	this->chunkDistance = -1;
 }
 
-void ChunkManager::init(int chunkDistance)
+void ChunkManager::init(WorldType worldType, int chunkDistance)
 {
 	DebugAssertMsg(this->activeChunks.empty(), "Expected no active chunks.");
 
@@ -21,21 +25,32 @@ void ChunkManager::init(int chunkDistance)
 
 	const int totalChunkCount = chunkCountX * chunkCountZ;
 	this->chunkPool = std::vector<ChunkPtr>(totalChunkCount);
-}
 
-int ChunkManager::findChunkIndex(const ChunkInt2 &coord) const
-{
-	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
-	for (int i = 0; i < activeChunkCount; i++)
+	// Initialize chunk pool chunks to empty.
+	for (ChunkPtr &chunkPtr : this->chunkPool)
 	{
-		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		if (chunkPtr->getCoord() == coord)
-		{
-			return i;
-		}
+		chunkPtr = std::make_unique<Chunk>();
 	}
 
-	return NO_INDEX;
+	this->worldType = worldType;
+	this->chunkDistance = chunkDistance;
+}
+
+bool ChunkManager::isValidChunkID(ChunkID id) const
+{
+	return (id >= 0) && (id < static_cast<int>(this->activeChunks.size()));
+}
+
+ChunkManager::ChunkPtr &ChunkManager::getChunkPtr(ChunkID id)
+{
+	DebugAssertIndex(this->activeChunks, id);
+	return this->activeChunks[id];
+}
+
+const ChunkManager::ChunkPtr &ChunkManager::getChunkPtr(ChunkID id) const
+{
+	DebugAssertIndex(this->activeChunks, id);
+	return this->activeChunks[id];
 }
 
 int ChunkManager::getChunkCount() const
@@ -43,49 +58,90 @@ int ChunkManager::getChunkCount() const
 	return static_cast<int>(this->activeChunks.size());
 }
 
-Chunk &ChunkManager::getChunkAtIndex(int index)
+ChunkID ChunkManager::getChunkID(int index) const
 {
 	DebugAssertIndex(this->activeChunks, index);
-	return *this->activeChunks[index];
+	return static_cast<ChunkID>(index);
 }
 
-const Chunk &ChunkManager::getChunkAtIndex(int index) const
+bool ChunkManager::tryGetChunkID(const ChunkInt2 &coord, ChunkID *outID) const
 {
-	DebugAssertIndex(this->activeChunks, index);
-	return *this->activeChunks[index];
-}
-
-Chunk *ChunkManager::getChunk(const ChunkInt2 &coord)
-{
-	const int index = this->findChunkIndex(coord);
-	return (index != NO_INDEX) ? &this->getChunkAtIndex(index) : nullptr;
-}
-
-const Chunk *ChunkManager::getChunk(const ChunkInt2 &coord) const
-{
-	const int index = this->findChunkIndex(coord);
-	return (index != NO_INDEX) ? &this->getChunkAtIndex(index) : nullptr;
-}
-
-bool ChunkManager::tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType, Game &game)
-{
-	ChunkPtr &chunkPtr = [this, &coord]() -> ChunkPtr&
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
 	{
-		int index = this->findChunkIndex(coord);
-		if (index == NO_INDEX)
+		const ChunkPtr &chunkPtr = this->activeChunks[i];
+		if (chunkPtr->getCoord() == coord)
 		{
-			// Grab from pool.
-			DebugAssertMsg(this->chunkPool.size() > 0, "No chunks in pool for chunk (" + coord.toString() + ").");
-			this->activeChunks.push_back(std::move(this->chunkPool.back()));
-			this->chunkPool.pop_back();
-			index = static_cast<int>(this->activeChunks.size()) - 1;
+			*outID = this->getChunkID(i);
+			return true;
 		}
+	}
 
-		DebugAssertIndex(this->activeChunks, index);
-		return this->activeChunks[index];
-	}();
+	return false;
+}
 
-	// @todo: may need to allocate chunk in each worldType case if it is null.
+Chunk &ChunkManager::getChunk(ChunkID id)
+{
+	return *this->getChunkPtr(id);
+}
+
+const Chunk &ChunkManager::getChunk(ChunkID id) const
+{
+	return *this->getChunkPtr(id);
+}
+
+ChunkID ChunkManager::spawnChunk()
+{
+	DebugAssertMsg(this->chunkPool.size() > 0, "No more chunks allocated.");
+	ChunkPtr chunkPtr = std::move(this->chunkPool.back());
+	this->chunkPool.pop_back();
+
+	// Find open spot in active chunks list, or append new slot.
+	std::optional<int> existingIndex;
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
+	{
+		const ChunkPtr &activeChunkPtr = this->activeChunks[i];
+		if (activeChunkPtr == nullptr)
+		{
+			existingIndex = i;
+			break;
+		}
+	}
+
+	ChunkID id;
+	if (existingIndex.has_value())
+	{
+		this->activeChunks[*existingIndex] = std::move(chunkPtr);
+		id = this->getChunkID(*existingIndex);
+	}
+	else
+	{
+		this->activeChunks.emplace_back(std::move(chunkPtr));
+		id = this->getChunkID(static_cast<int>(this->activeChunks.size()) - 1);
+	}
+
+	return id;
+}
+
+void ChunkManager::recycleChunk(ChunkID id, EntityManager &entityManager)
+{
+	DebugAssert(this->isValidChunkID(id));
+	ChunkPtr &chunkPtr = this->getChunkPtr(id);
+	const ChunkInt2 chunkCoord = chunkPtr->getCoord();
+
+	// @todo: save chunk changes
+
+	// Move chunk back to chunk pool, leaving active chunk slot null.
+	chunkPtr->clear();
+	this->chunkPool.push_back(std::move(chunkPtr));
+
+	// Clear entities in the chunk (mark them for delete or however makes sense).
+	entityManager.clearChunk(chunkCoord);
+}
+
+bool ChunkManager::populateChunk(ChunkID id, WorldType worldType, EntityManager &entityManager)
+{
+	DebugAssert(this->isValidChunkID(id));
+	Chunk &chunk = this->getChunk(id);
 
 	if (worldType == WorldType::City)
 	{
@@ -106,47 +162,49 @@ bool ChunkManager::tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType,
 	else
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(worldType)));
-	}
-
-	return true;
-}
-
-bool ChunkManager::tryFreeChunk(const ChunkInt2 &coord, EntityManager &entityManager)
-{
-	const int index = this->findChunkIndex(coord);
-	if (index == NO_INDEX)
-	{
-		DebugLogWarning("Couldn't find chunk (" + coord.toString() + ") to free.");
 		return false;
 	}
 
-	DebugAssertIndex(this->activeChunks, index);
-	ChunkPtr &chunkPtr = this->activeChunks[index];
-
-	// Save chunk changes.
-	// @todo
-
-	// Move chunk back to chunk pool.
-	chunkPtr->clear();
-	this->chunkPool.push_back(std::move(chunkPtr));
-	this->activeChunks.erase(this->activeChunks.begin() + index);
-
-	// Clear entities in the chunk.
-	// @todo: actually mark for delete here? Or can the entity manager do it internally?
-	entityManager.clearChunk(coord);
-
 	return true;
 }
 
-void ChunkManager::clear(EntityManager &entityManager)
+void ChunkManager::update(const ChunkInt2 &playerChunk, WorldType worldType,
+	EntityManager &entityManager)
 {
-	// Free all active chunks.
-	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
+	// Free out-of-range chunks.
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		if (!this->tryFreeChunk(chunkPtr->getCoord(), entityManager))
+		if (chunkPtr != nullptr)
 		{
-			DebugLogError("Couldn't free chunk (" + std::to_string(i) + ").");
+			const ChunkInt2 &coord = chunkPtr->getCoord();
+			const bool shouldRemainActive = ChunkUtils::isWithinActiveRange(
+				playerChunk, coord, this->chunkDistance);
+
+			if (!shouldRemainActive)
+			{
+				const ChunkID chunkID = this->getChunkID(i);
+				this->recycleChunk(chunkID, entityManager);
+			}
+		}
+	}
+
+	// Add new chunks to take the place of the removed ones. Get all the surrounding chunk coords
+	// for the player chunk and see which ones aren't in active list.
+	ChunkInt2 minCoord, maxCoord;
+	ChunkUtils::getSurroundingChunks(playerChunk, this->chunkDistance, &minCoord, &maxCoord);
+
+	for (WEInt y = minCoord.y; y < maxCoord.y; y++)
+	{
+		for (SNInt x = minCoord.x; x < maxCoord.x; x++)
+		{
+			const ChunkInt2 coord(x, y);			
+			ChunkID chunkID;
+			if (!this->tryGetChunkID(coord, &chunkID))
+			{
+				chunkID = this->spawnChunk();
+				this->populateChunk(chunkID, this->worldType, entityManager);
+			}
 		}
 	}
 }
