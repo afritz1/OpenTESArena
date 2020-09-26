@@ -36,12 +36,6 @@ private:
 	bool isCity; // True if city, false if wilderness.
 
 	ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity);
-
-	// Generates the .INF name for a city given a climate and current weather.
-	static std::string generateCityInfName(ClimateType climateType, WeatherType weatherType);
-
-	// Generates the .INF name for the wilderness given a climate and current weather.
-	static std::string generateWildernessInfName(ClimateType climateType, WeatherType weatherType);
 public:
 	ExteriorWorldData(ExteriorWorldData&&) = default;
 	virtual ~ExteriorWorldData();

@@ -19,8 +19,6 @@ class ProvinceDefinition;
 class ExteriorLevelData : public LevelData
 {
 private:
-	using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
-
 	DistantSky distantSky;
 
 	// Mappings of voxel coordinates to *MENU display names.
@@ -28,13 +26,6 @@ private:
 
 	ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
-
-	// Writes city building data into the output buffers. The buffers should already be
-	// initialized with the city skeleton.
-	static void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
-		const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
-		ArenaRandom &random, const MiscAssets &miscAssets, Buffer2D<uint16_t> &dstFlor,
-		Buffer2D<uint16_t> &dstMap1, Buffer2D<uint16_t> &dstMap2);
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
@@ -44,33 +35,9 @@ private:
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	void generateWildChunkBuildingNames(const ExeData &exeData);
-
-	// This algorithm runs over the perimeter of a city map and changes palace graphics and
-	// their gates to the actual ones used in-game.
-	static void revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth);
-
-	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
-	static Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed,
-		const ExeData::Wilderness &wildData);
-
-	// Changes the default filler city skeleton to the one intended for the city.
-	static void reviseWildernessCity(const LocationDefinition &locationDef,
-		Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
-		const MiscAssets &miscAssets);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
-
-	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given
-	// position. This space always contains 4 wild chunks.
-	// @todo: when changing to chunks, probably use chunk X and Y here instead of absolute [0,4095],
-	// and return the chunk coordinate that contains the origin.
-	static OriginalInt2 getRelativeWildOrigin(const Int2 &voxel);
-
-	// A variation on getRelativeWildOrigin() -- determine which one is actually what we want for
-	// all cases, because getRelativeWildOrigin() apparently doesn't make the automap centered.
-	// Given coordinates are expected to be in original coordinate system.
-	static NewInt2 getCenteredWildOrigin(const NewInt2 &voxel);
 
 	// Exterior level with a pre-defined .INF file. If premade, this loads the premade city. Otherwise,
 	// this loads the skeleton of the level (city walls, etc.), and fills in the rest by generating

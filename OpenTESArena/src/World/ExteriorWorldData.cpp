@@ -1,11 +1,13 @@
+#include "CityWorldUtils.h"
 #include "ClimateType.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
 #include "LocationDefinition.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
-#include "WeatherType.h"
 #include "VoxelUtils.h"
+#include "WeatherType.h"
+#include "WildWorldUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/MiscAssets.h"
@@ -27,131 +29,13 @@ ExteriorWorldData::~ExteriorWorldData()
 
 }
 
-std::string ExteriorWorldData::generateCityInfName(ClimateType climateType, WeatherType weatherType)
-{
-	const std::string climateLetter = [climateType]()
-	{
-		if (climateType == ClimateType::Temperate)
-		{
-			return "T";
-		}
-		else if (climateType == ClimateType::Desert)
-		{
-			return "D";
-		}
-		else
-		{
-			return "M";
-		}
-	}();
-
-	// City/town/village letter. Wilderness is "W".
-	const std::string locationLetter = "C";
-
-	const std::string weatherLetter = [climateType, weatherType]()
-	{
-		if ((weatherType == WeatherType::Clear) ||
-			(weatherType == WeatherType::Overcast) ||
-			(weatherType == WeatherType::Overcast2))
-		{
-			return "N";
-		}
-		else if ((weatherType == WeatherType::Rain) ||
-			(weatherType == WeatherType::Rain2))
-		{
-			return "R";
-		}
-		else if ((weatherType == WeatherType::Snow) ||
-			(weatherType == WeatherType::SnowOvercast) ||
-			(weatherType == WeatherType::SnowOvercast2))
-		{
-			// Deserts can't have snow.
-			if (climateType != ClimateType::Desert)
-			{
-				return "S";
-			}
-			else
-			{
-				DebugLogWarning("Deserts do not have snow templates.");
-				return "N";
-			}
-		}
-		else
-		{
-			// Not sure what this letter represents.
-			return "W";
-		}
-	}();
-
-	return climateLetter + locationLetter + weatherLetter + ".INF";
-}
-
-std::string ExteriorWorldData::generateWildernessInfName(ClimateType climateType, WeatherType weatherType)
-{
-	const std::string climateLetter = [climateType]()
-	{
-		if (climateType == ClimateType::Temperate)
-		{
-			return "T";
-		}
-		else if (climateType == ClimateType::Desert)
-		{
-			return "D";
-		}
-		else
-		{
-			return "M";
-		}
-	}();
-
-	// Wilderness is "W".
-	const std::string locationLetter = "W";
-
-	const std::string weatherLetter = [climateType, weatherType]()
-	{
-		if ((weatherType == WeatherType::Clear) ||
-			(weatherType == WeatherType::Overcast) ||
-			(weatherType == WeatherType::Overcast2))
-		{
-			return "N";
-		}
-		else if ((weatherType == WeatherType::Rain) ||
-			(weatherType == WeatherType::Rain2))
-		{
-			return "R";
-		}
-		else if ((weatherType == WeatherType::Snow) ||
-			(weatherType == WeatherType::SnowOvercast) ||
-			(weatherType == WeatherType::SnowOvercast2))
-		{
-			// Deserts can't have snow.
-			if (climateType != ClimateType::Desert)
-			{
-				return "S";
-			}
-			else
-			{
-				DebugLogWarning("Deserts do not have snow templates.");
-				return "N";
-			}
-		}
-		else
-		{
-			// Not sure what this letter represents.
-			return "W";
-		}
-	}();
-
-	return climateLetter + locationLetter + weatherLetter + ".INF";
-}
-
 ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
 	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	const MIFFile::Level &level = mif.getLevels().front();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const std::string infName = ExteriorWorldData::generateCityInfName(cityDef.climateType, weatherType);
+	const std::string infName = CityWorldUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadCity(
@@ -179,8 +63,7 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 	const MiscAssets &miscAssets, TextureManager &textureManager)
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const std::string infName =
-		ExteriorWorldData::generateWildernessInfName(cityDef.climateType, weatherType);
+	const std::string infName = WildWorldUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Load wilderness data (no starting points to load).
 	ExteriorLevelData levelData = ExteriorLevelData::loadWilderness(

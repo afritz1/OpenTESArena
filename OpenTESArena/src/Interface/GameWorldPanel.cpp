@@ -61,6 +61,7 @@
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing.h"
 #include "../World/WeatherUtils.h"
+#include "../World/WildLevelUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -2192,7 +2193,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						// Get the door voxel using the relative wilderness origin near the player
 						// as the reference.
-						const OriginalInt2 relativeOrigin = ExteriorLevelData::getRelativeWildOrigin(originalVoxel);
+						const OriginalInt2 relativeOrigin = WildLevelUtils::getRelativeWildOrigin(originalVoxel);
 						const OriginalInt2 relativeVoxel = originalVoxel - relativeOrigin;
 						return relativeVoxel;
 					}
