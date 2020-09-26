@@ -7,6 +7,7 @@
 
 #include "DistantSky.h"
 #include "LevelData.h"
+#include "LevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
@@ -20,21 +21,10 @@ class ExteriorLevelData : public LevelData
 {
 private:
 	DistantSky distantSky;
-
-	// Mappings of voxel coordinates to *MENU display names.
-	std::vector<std::pair<NewInt2, std::string>> menuNames;
+	LevelUtils::MenuNamesList menuNames;
 
 	ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
-
-	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
-	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
-	void generateBuildingNames(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-		SNInt gridWidth, WEInt gridDepth, const MiscAssets &miscAssets);
-
-	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
-	void generateWildChunkBuildingNames(const ExeData &exeData);
 public:
 	ExteriorLevelData(ExteriorLevelData&&) = default;
 	virtual ~ExteriorLevelData();
@@ -55,7 +45,7 @@ public:
 		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
-	const std::vector<std::pair<NewInt2, std::string>> &getMenuNames() const;
+	const LevelUtils::MenuNamesList &getMenuNames() const;
 
 	// Exteriors are never outdoor dungeons (always false).
 	virtual bool isOutdoorDungeon() const override;

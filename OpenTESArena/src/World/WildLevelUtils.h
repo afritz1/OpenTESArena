@@ -1,6 +1,7 @@
 #ifndef WILD_LEVEL_UTILS_H
 #define WILD_LEVEL_UTILS_H
 
+#include "LevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MiscAssets.h"
@@ -8,6 +9,7 @@
 #include "components/utilities/Buffer2D.h"
 
 class LocationDefinition;
+class VoxelGrid;
 
 using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
 
@@ -20,6 +22,10 @@ namespace WildLevelUtils
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed,
 		const ExeData::Wilderness &wildData);
+
+	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
+	LevelUtils::MenuNamesList generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
+		const ExeData &exeData);
 
 	// Changes the default filler city skeleton to the one intended for the city.
 	void reviseWildernessCity(const LocationDefinition &locationDef, Buffer2D<uint16_t> &flor,

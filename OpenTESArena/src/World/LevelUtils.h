@@ -5,6 +5,7 @@
 #include <string>
 
 #include "LocationDefinition.h"
+#include "VoxelUtils.h"
 
 class ArenaRandom;
 class ExeData;
@@ -13,6 +14,9 @@ class ExeData;
 
 namespace LevelUtils
 {
+	// Display names for *MENU transition voxels.
+	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
+
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
 	uint16_t getDoorVoxelOffset(int x, int y);
