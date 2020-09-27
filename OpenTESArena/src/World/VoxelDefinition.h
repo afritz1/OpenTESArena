@@ -180,6 +180,9 @@ public:
 
 	// Gets the normal associated with a voxel facing.
 	static Double3 getNormal(VoxelFacing facing);
+
+	// Whether this voxel definition contributes to a chasm having a wall face.
+	bool allowsChasmFace() const;
 };
 
 #endif

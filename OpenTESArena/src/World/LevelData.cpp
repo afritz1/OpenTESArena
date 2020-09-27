@@ -377,11 +377,6 @@ void LevelData::addFlatInstance(int flatIndex, const NewInt2 &flatPosition)
 	}
 }
 
-bool LevelData::voxelDefAllowsChasmFace(const VoxelDefinition &voxelDef)
-{
-	return (voxelDef.dataType != VoxelDataType::None) && (voxelDef.dataType != VoxelDataType::Chasm);
-}
-
 void LevelData::setVoxel(SNInt x, int y, WEInt z, uint16_t id)
 {
 	this->voxelGrid.setVoxel(x, y, z, id);
@@ -592,10 +587,10 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
 			// Booleans for each face of the new chasm voxel.
-			const bool hasNorthFace = LevelData::voxelDefAllowsChasmFace(northDef);
-			const bool hasSouthFace = LevelData::voxelDefAllowsChasmFace(southDef);
-			const bool hasEastFace = LevelData::voxelDefAllowsChasmFace(eastDef);
-			const bool hasWestFace = LevelData::voxelDefAllowsChasmFace(westDef);
+			const bool hasNorthFace = northDef.allowsChasmFace();
+			const bool hasSouthFace = southDef.allowsChasmFace();
+			const bool hasEastFace = eastDef.allowsChasmFace();
+			const bool hasWestFace = westDef.allowsChasmFace();
 
 			// Add chasm state if it is different from the default 0 faces chasm (don't need to
 			// do update on existing chasms here because there should be no existing ones).
@@ -1217,10 +1212,10 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
 	// Booleans for each face of the new chasm voxel.
-	const bool hasNorthFace = LevelData::voxelDefAllowsChasmFace(northDef);
-	const bool hasSouthFace = LevelData::voxelDefAllowsChasmFace(southDef);
-	const bool hasEastFace = LevelData::voxelDefAllowsChasmFace(eastDef);
-	const bool hasWestFace = LevelData::voxelDefAllowsChasmFace(westDef);
+	const bool hasNorthFace = northDef.allowsChasmFace();
+	const bool hasSouthFace = southDef.allowsChasmFace();
+	const bool hasEastFace = eastDef.allowsChasmFace();
+	const bool hasWestFace = westDef.allowsChasmFace();
 
 	// Add/update chasm state.
 	// @todo: remove state if exists and should not add chasm state.
@@ -1267,10 +1262,10 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
 	// Booleans for each face of the new chasm voxel.
-	const bool hasNorthFace = LevelData::voxelDefAllowsChasmFace(northDef);
-	const bool hasSouthFace = LevelData::voxelDefAllowsChasmFace(southDef);
-	const bool hasEastFace = LevelData::voxelDefAllowsChasmFace(eastDef);
-	const bool hasWestFace = LevelData::voxelDefAllowsChasmFace(westDef);
+	const bool hasNorthFace = northDef.allowsChasmFace();
+	const bool hasSouthFace = southDef.allowsChasmFace();
+	const bool hasEastFace = eastDef.allowsChasmFace();
+	const bool hasWestFace = westDef.allowsChasmFace();
 
 	// Based on how the original game behaves, it seems to be the chasm type closest to the player,
 	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities

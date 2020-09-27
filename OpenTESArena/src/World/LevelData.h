@@ -183,9 +183,6 @@ protected:
 	LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
 
-	// Whether the given voxel definition contributes to a chasm having a wall face.
-	static bool voxelDefAllowsChasmFace(const VoxelDefinition &voxelDef);
-
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
 	void readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const INFFile &inf);
 	void readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const INFFile &inf,

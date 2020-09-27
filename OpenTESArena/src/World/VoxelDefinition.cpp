@@ -400,3 +400,8 @@ Double3 VoxelDefinition::getNormal(VoxelFacing facing)
 		return -Double3::UnitZ;
 	}
 }
+
+bool VoxelDefinition::allowsChasmFace() const
+{
+	return (this->dataType != VoxelDataType::None) && (this->dataType != VoxelDataType::Chasm);
+}

@@ -21,8 +21,7 @@ namespace LevelUtils
 	// (.MIF name, lock level).
 	uint16_t getDoorVoxelOffset(int x, int y);
 
-	// Gets the .MIF name for a door voxel in a city or the wilderness. 'palaceIsDungeon' is only
-	// true for the center province's city.
+	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(int x, int y, int menuID, uint32_t rulerSeed,
 		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
 		bool isCity, const ExeData &exeData);
