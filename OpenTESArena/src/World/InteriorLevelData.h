@@ -9,9 +9,6 @@
 class InteriorLevelData : public LevelData
 {
 private:
-	// All interiors have the same grid height.
-	static const int GRID_HEIGHT;
-
 	std::unordered_map<NewInt2, LevelData::TextTrigger> textTriggers;
 	std::unordered_map<NewInt2, std::string> soundTriggers;
 

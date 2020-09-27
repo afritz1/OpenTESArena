@@ -1,4 +1,6 @@
+#include "InteriorLevelUtils.h"
 #include "InteriorWorldData.h"
+#include "InteriorWorldUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 #include "../Math/Random.h"
@@ -58,17 +60,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	ArenaRandom random(seed);
 
 	// Number of levels in the dungeon.
-	const int levelCount = [isArtifactDungeon, &random]()
-	{
-		if (isArtifactDungeon)
-		{
-			return 4;
-		}
-		else
-		{
-			return 1 + (random.next() % 2);
-		}
-	}();
+	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
@@ -123,8 +115,8 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 
 	// The start point depends on where the level up voxel is on the first level.
 	// Convert it from the old coordinate system to the new one.
-	constexpr WEDouble chunkWidthReal = 32.0;
-	constexpr SNDouble chunkDepthReal = chunkWidthReal;
+	constexpr WEDouble chunkWidthReal = static_cast<WEDouble>(InteriorLevelUtils::DUNGEON_CHUNK_WIDTH);
+	constexpr SNDouble chunkDepthReal = static_cast<SNDouble>(InteriorLevelUtils::DUNGEON_CHUNK_DEPTH);
 	const WEDouble firstTransitionChunkX = static_cast<WEDouble>(transitions.front() % 10);
 	const SNDouble firstTransitionChunkZ = static_cast<SNDouble>(transitions.front() / 10);
 	const OriginalDouble2 startPoint(

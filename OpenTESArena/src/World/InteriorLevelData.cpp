@@ -1,4 +1,5 @@
 #include "InteriorLevelData.h"
+#include "InteriorLevelUtils.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
@@ -6,11 +7,9 @@
 
 #include "components/utilities/String.h"
 
-const int InteriorLevelData::GRID_HEIGHT = 3;
-
 InteriorLevelData::InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
-	: LevelData(gridWidth, InteriorLevelData::GRID_HEIGHT, gridDepth, infName, name) { }
+	: LevelData(gridWidth, InteriorLevelUtils::GRID_HEIGHT, gridDepth, infName, name) { }
 
 InteriorLevelData::~InteriorLevelData()
 {
@@ -71,17 +70,14 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 
 	std::vector<ArenaTypes::MIFLock> tempLocks;
 	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
-
-	constexpr WEInt chunkWidth = 32;
-	constexpr SNInt chunkDepth = chunkWidth;
 	const int tileSet = random.next() % 4;
 
 	for (SNInt row = 0; row < depthChunks; row++)
 	{
-		const SNInt zOffset = row * chunkDepth;
+		const SNInt zOffset = row * InteriorLevelUtils::DUNGEON_CHUNK_DEPTH;
 		for (WEInt column = 0; column < widthChunks; column++)
 		{
-			const WEInt xOffset = column * chunkWidth;
+			const WEInt xOffset = column * InteriorLevelUtils::DUNGEON_CHUNK_WIDTH;
 
 			// Get the selected level from the .MIF file.
 			const int blockIndex = (tileSet * 8) + (random.next() % 8);
@@ -90,9 +86,9 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 			const BufferView2D<const MIFFile::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 
 			// Copy block data to temp buffers.
-			for (SNInt z = 0; z < chunkDepth; z++)
+			for (SNInt z = 0; z < InteriorLevelUtils::DUNGEON_CHUNK_DEPTH; z++)
 			{
-				for (WEInt x = 0; x < chunkWidth; x++)
+				for (WEInt x = 0; x < InteriorLevelUtils::DUNGEON_CHUNK_WIDTH; x++)
 				{
 					const MIFFile::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
 					const MIFFile::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
@@ -157,15 +153,15 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// Put transition blocks, unless null. Unpack the level up/down block indices
 	// into X and Z chunk offsets.
 	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkWidth);
-	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDepth);
+	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * InteriorLevelUtils::DUNGEON_CHUNK_WIDTH);
+	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * InteriorLevelUtils::DUNGEON_CHUNK_DEPTH);
 	tempMap1.set(levelUpX, levelUpZ, (levelUpVoxelByte << 8) | levelUpVoxelByte);
 
 	if (levelDownBlock != nullptr)
 	{
 		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkWidth);
-		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDepth);
+		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * InteriorLevelUtils::DUNGEON_CHUNK_WIDTH);
+		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * InteriorLevelUtils::DUNGEON_CHUNK_DEPTH);
 		tempMap1.set(levelDownX, levelDownZ, (levelDownVoxelByte << 8) | levelDownVoxelByte);
 	}
 
