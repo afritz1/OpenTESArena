@@ -65,12 +65,12 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
 
-	// Determine transition blocks (*LEVELUP, *LEVELDOWN).
+	// Determine transition blocks (*LEVELUP/*LEVELDOWN) that will appear in the dungeon.
 	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
 	{
 		const SNInt tY = random.next() % depthChunks;
 		const WEInt tX = random.next() % widthChunks;
-		return (10 * tY) + tX;
+		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
 	};
 
 	// Packed coordinates for transition blocks.
@@ -115,13 +115,14 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 
 	// The start point depends on where the level up voxel is on the first level.
 	// Convert it from the old coordinate system to the new one.
-	constexpr WEDouble chunkWidthReal = static_cast<WEDouble>(InteriorLevelUtils::DUNGEON_CHUNK_WIDTH);
-	constexpr SNDouble chunkDepthReal = static_cast<SNDouble>(InteriorLevelUtils::DUNGEON_CHUNK_DEPTH);
-	const WEDouble firstTransitionChunkX = static_cast<WEDouble>(transitions.front() % 10);
-	const SNDouble firstTransitionChunkZ = static_cast<SNDouble>(transitions.front() / 10);
+	WEInt firstTransitionChunkX;
+	SNInt firstTransitionChunkZ;
+	InteriorLevelUtils::unpackLevelChangeVoxel(
+		transitions.front(), &firstTransitionChunkX, &firstTransitionChunkZ);
+
 	const OriginalDouble2 startPoint(
-		10.50 + (firstTransitionChunkX * chunkWidthReal),
-		10.50 + (firstTransitionChunkZ * chunkDepthReal));
+		0.50 + static_cast<WEDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX)),
+		0.50 + static_cast<SNDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ)));
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;
