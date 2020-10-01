@@ -1,8 +1,13 @@
 #include "LevelDefinition.h"
 
-void LevelDefinition::init(SNInt width, int height, WEInt depth)
+void LevelDefinition::init(const MIFFile::Level &level)
 {
-	this->voxels.init(width, height, depth);
+	DebugNotImplemented();
+}
+
+void LevelDefinition::init(const RMDFile &rmd)
+{
+	DebugNotImplemented();
 }
 
 SNInt LevelDefinition::getWidth() const

@@ -16,17 +16,12 @@ void MapDefinition::init(const MIFFile &mif)
 	DebugNotImplemented();
 }
 
-void MapDefinition::init(const RMDFile &rmd)
-{
-	DebugNotImplemented();
-}
-
-WEInt MapDefinition::getWidth() const
+SNInt MapDefinition::getWidth() const
 {
 	return this->width;
 }
 
-SNInt MapDefinition::getDepth() const
+WEInt MapDefinition::getDepth() const
 {
 	return this->depth;
 }

@@ -8,12 +8,15 @@
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/MIFFile.h"
 #include "../Entities/EntityDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
 // A single unbaked level of a map with voxels, entities, etc.. It can be an interior level,
 // whole city, or wilderness block.
+
+class RMDFile;
 
 class LevelDefinition
 {
@@ -36,7 +39,8 @@ private:
 public:
 	static constexpr VoxelID AIR = 0;
 
-	void init(SNInt width, int height, WEInt depth);
+	void init(const MIFFile::Level &level);
+	void init(const RMDFile &rmd);
 
 	// Width and depth are the same as the map the level is in.
 	SNInt getWidth() const;
