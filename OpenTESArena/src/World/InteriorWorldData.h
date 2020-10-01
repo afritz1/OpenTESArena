@@ -40,8 +40,6 @@ public:
 	// Gets the type of the interior (mostly needed for checking if it's a palace).
 	VoxelDefinition::WallData::MenuType getInteriorType() const;
 
-	virtual const std::string &getMifName() const override;
-
 	// Always interior for interior world data.
 	virtual WorldType getBaseWorldType() const override;
 	virtual WorldType getActiveWorldType() const override;

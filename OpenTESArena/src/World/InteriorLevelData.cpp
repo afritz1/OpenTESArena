@@ -58,8 +58,8 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 }
 
 InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
-	const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-	int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
+	const MIFFile &mif, int levelUpBlock, const int *levelDownBlock, int widthChunks,
+	int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 	const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
@@ -81,7 +81,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 
 			// Get the selected level from the .MIF file.
 			const int blockIndex = (tileSet * 8) + (random.next() % 8);
-			const auto &blockLevel = levels.at(blockIndex);
+			const auto &blockLevel = mif.getLevel(blockIndex);
 			const BufferView2D<const MIFFile::VoxelID> &blockFLOR = blockLevel.getFLOR();
 			const BufferView2D<const MIFFile::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 

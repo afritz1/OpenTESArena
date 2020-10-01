@@ -28,6 +28,8 @@ namespace WildLevelUtils
 		const ExeData &exeData);
 
 	// Changes the default filler city skeleton to the one intended for the city.
+	// @todo: maybe this should eventually take a bag of chunks w/ their coordinates
+	// and it would search for the wild chunks that were at the city coordinates.
 	void reviseWildernessCity(const LocationDefinition &locationDef, Buffer2D<uint16_t> &flor,
 		Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2, const MiscAssets &miscAssets);
 

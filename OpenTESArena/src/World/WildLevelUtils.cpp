@@ -248,7 +248,7 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 		return;
 	}
 
-	const MIFFile::Level &level = mif.getLevels().front();
+	const MIFFile::Level &level = mif.getLevel(0);
 	const BufferView2D<const MIFFile::VoxelID> levelFLOR = level.getFLOR();
 	const BufferView2D<const MIFFile::VoxelID> levelMAP1 = level.getMAP1();
 	const BufferView2D<const MIFFile::VoxelID> levelMAP2 = level.getMAP2();

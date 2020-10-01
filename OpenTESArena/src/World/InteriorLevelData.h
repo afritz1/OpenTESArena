@@ -32,10 +32,9 @@ public:
 
 	// Dungeon level. Each chunk is determined by an "inner seed" which depends on the
 	// dungeon level count being calculated beforehand.
-	static InteriorLevelData loadDungeon(ArenaRandom &random,
-		const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-		int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
-		const ExeData &exeData);
+	static InteriorLevelData loadDungeon(ArenaRandom &random, const MIFFile &mif,
+		int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
+		const std::string &infName, SNInt gridWidth, WEInt gridDepth, const ExeData &exeData);
 
 	// Returns a pointer to some trigger text if the given voxel has a text trigger, or
 	// null if it doesn't. Also returns a pointer to one-shot text triggers that have 

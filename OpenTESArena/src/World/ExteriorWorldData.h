@@ -53,8 +53,6 @@ public:
 	// Returns the current active interior (if any).
 	InteriorWorldData *getInterior() const;
 
-	virtual const std::string &getMifName() const override;
-
 	virtual WorldType getBaseWorldType() const override;
 	virtual WorldType getActiveWorldType() const override;
 

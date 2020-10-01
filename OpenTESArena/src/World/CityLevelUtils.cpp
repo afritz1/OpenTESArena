@@ -83,7 +83,7 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const MIFFile &blockMif = iter->second;
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
-			const auto &blockLevel = blockMif.getLevels().front();
+			const auto &blockLevel = blockMif.getLevel(0);
 			const BufferView2D<const MIFFile::VoxelID> blockFLOR = blockLevel.getFLOR();
 			const BufferView2D<const MIFFile::VoxelID> blockMAP1 = blockLevel.getMAP1();
 			const BufferView2D<const MIFFile::VoxelID> blockMAP2 = blockLevel.getMAP2();

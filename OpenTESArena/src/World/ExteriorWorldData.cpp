@@ -33,7 +33,7 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 	const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
 	int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager)
 {
-	const MIFFile::Level &level = mif.getLevels().front();
+	const MIFFile::Level &level = mif.getLevel(0);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string infName = CityWorldUtils::generateInfName(cityDef.climateType, weatherType);
 
@@ -52,8 +52,6 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
 		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPointReal));
 	}
-
-	worldData.mifName = mif.getName();
 
 	return worldData;
 }
@@ -74,20 +72,12 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 
 	// Generate world data from the wilderness data.
 	ExteriorWorldData worldData(std::move(levelData), isCity);
-	worldData.mifName = "WILD.MIF";
-
 	return worldData;
 }
 
 InteriorWorldData *ExteriorWorldData::getInterior() const
 {
 	return (this->interior.get() != nullptr) ? &this->interior->worldData : nullptr;
-}
-
-const std::string &ExteriorWorldData::getMifName() const
-{
-	return (this->interior.get() != nullptr) ?
-		this->interior->worldData.getMifName() : this->mifName;
 }
 
 WorldType ExteriorWorldData::getBaseWorldType() const

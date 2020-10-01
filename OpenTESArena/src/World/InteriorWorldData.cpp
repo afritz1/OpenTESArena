@@ -25,8 +25,9 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	InteriorWorldData worldData;
 
 	// Generate levels.
-	for (const auto &level : mif.getLevels())
+	for (int i = 0; i < mif.getLevelCount(); i++)
 	{
+		const MIFFile::Level &level = mif.getLevel(i);
 		worldData.levels.push_back(InteriorLevelData::loadInterior(
 			level, mif.getDepth(), mif.getWidth(), exeData));
 	}
@@ -40,7 +41,6 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 
 	worldData.levelIndex = mif.getStartingLevelIndex();
 	worldData.interiorType = interiorType;
-	worldData.mifName = mif.getName();
 
 	return worldData;
 }
@@ -93,7 +93,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	}
 
 	// .INF filename is the same for each level (RD1.INF).
-	const std::string infName = String::toUppercase(mif.getLevels().front().getInfo());
+	const std::string infName = String::toUppercase(mif.getLevel(0).getInfo());
 
 	InteriorWorldData worldData;
 	const SNInt gridWidth = mif.getDepth() * depthChunks;
@@ -109,8 +109,8 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 		const int *levelDownBlock = (i < (levelCount - 1)) ? &transitions.at(i + 1) : nullptr;
 
 		worldData.levels.push_back(InteriorLevelData::loadDungeon(
-			random, mif.getLevels(), levelUpBlock, levelDownBlock, widthChunks,
-			depthChunks, infName, gridWidth, gridDepth, exeData));
+			random, mif, levelUpBlock, levelDownBlock, widthChunks, depthChunks, infName,
+			gridWidth, gridDepth, exeData));
 	}
 
 	// The start point depends on where the level up voxel is on the first level.
@@ -127,7 +127,6 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 
 	worldData.levelIndex = 0;
 	worldData.interiorType = interiorType;
-	worldData.mifName = mif.getName();
 
 	return worldData;
 }
@@ -145,11 +144,6 @@ int InteriorWorldData::getLevelCount() const
 VoxelDefinition::WallData::MenuType InteriorWorldData::getInteriorType() const
 {
 	return this->interiorType;
-}
-
-const std::string &InteriorWorldData::getMifName() const
-{
-	return this->mifName;
 }
 
 WorldType InteriorWorldData::getBaseWorldType() const

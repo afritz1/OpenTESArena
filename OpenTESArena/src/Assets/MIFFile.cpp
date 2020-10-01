@@ -31,7 +31,7 @@ namespace
 	using LevelTagFuncTable = std::unordered_map<std::string, int(*)(MIFFile::Level&, const uint8_t*)>;
 	using LevelTagWithDimsFuncTable = std::unordered_map<std::string, int(*)(MIFFile::Level&, const uint8_t*, WEInt, SNInt)>;
 
-	const LevelTagFuncTable MIFLevelTags = 
+	const LevelTagFuncTable MIFLevelTags =
 	{
 		{ Tag_FLAT, MIFFile::Level::loadFLAT },
 		{ Tag_INFO, MIFFile::Level::loadINFO },
@@ -345,21 +345,6 @@ int MIFFile::Level::loadTRIG(MIFFile::Level &level, const uint8_t *tagStart)
 	return size + 6;
 }
 
-int MIFFile::Level::getHeight() const
-{
-	// If there is MAP2 data, then check through each voxel to find the highest point.
-	if ((this->map2.getWidth() > 0) && (this->map2.getHeight() > 0))
-	{
-		// @todo: look at MAP2 voxels and determine highest column.
-		return 6;
-	}
-	else
-	{
-		// Use the default height -- ground, main floor, and ceiling.
-		return 3;
-	}
-}
-
 const std::string &MIFFile::Level::getName() const
 {
 	return this->name;
@@ -476,18 +461,12 @@ bool MIFFile::init(const char *filename)
 	this->width = mifHeader.mapWidth;
 	this->depth = mifHeader.mapHeight;
 	this->startingLevelIndex = mifHeader.startingLevelIndex;
-	this->name = filename;
 	return true;
 }
 
 WEInt MIFFile::getWidth() const
 {
 	return this->width;
-}
-
-int MIFFile::getHeight(int levelIndex) const
-{
-	return this->levels.at(levelIndex).getHeight();
 }
 
 SNInt MIFFile::getDepth() const
@@ -500,17 +479,18 @@ int MIFFile::getStartingLevelIndex() const
 	return this->startingLevelIndex;
 }
 
-const std::string &MIFFile::getName() const
-{
-	return this->name;
-}
-
 const std::array<OriginalInt2, 4> &MIFFile::getStartPoints() const
 {
 	return this->startPoints;
 }
 
-const std::vector<MIFFile::Level> &MIFFile::getLevels() const
+int MIFFile::getLevelCount() const
 {
-	return this->levels;
+	return static_cast<int>(this->levels.size());
+}
+
+const MIFFile::Level &MIFFile::getLevel(int index) const
+{
+	DebugAssertIndex(this->levels, index);
+	return this->levels[index];
 }

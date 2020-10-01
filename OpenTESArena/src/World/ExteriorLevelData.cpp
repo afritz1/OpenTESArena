@@ -20,6 +20,12 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
+namespace
+{
+	// Max height of .MIF/.RMD with highest MAP2 extension.
+	constexpr int EXTERIOR_LEVEL_HEIGHT = 6;
+}
+
 ExteriorLevelData::ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth,
 	const std::string &infName, const std::string &name)
 	: LevelData(gridWidth, gridHeight, gridDepth, infName, name) { }
@@ -78,7 +84,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	CityLevelUtils::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
 
 	// Create the level for the voxel data to be written into.
-	ExteriorLevelData levelData(gridWidth, level.getHeight(), gridDepth, infName, level.getName());
+	ExteriorLevelData levelData(gridWidth, EXTERIOR_LEVEL_HEIGHT, gridDepth, infName, level.getName());
 
 	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
@@ -167,9 +173,8 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	WildLevelUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2, miscAssets);
 
 	// Create the level for the voxel data to be written into.
-	const int levelHeight = 6;
 	const std::string levelName = "WILD"; // Arbitrary
-	ExteriorLevelData levelData(tempFlor.getWidth(), levelHeight, tempFlor.getHeight(),
+	ExteriorLevelData levelData(tempFlor.getWidth(), EXTERIOR_LEVEL_HEIGHT, tempFlor.getHeight(),
 		infName, levelName);
 
 	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
