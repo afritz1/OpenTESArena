@@ -2,7 +2,7 @@
 
 #include "components/debug/Debug.h"
 
-void LockDefinition::LockDef::init(int lockLevel)
+void LockDefinition::LeveledLockDef::init(int lockLevel)
 {
 	this->lockLevel = lockLevel;
 }
@@ -20,11 +20,11 @@ void LockDefinition::init(WEInt x, int y, SNInt z, Type type)
 	this->type = type;
 }
 
-LockDefinition LockDefinition::makeLock(WEInt x, int y, SNInt z, int lockLevel)
+LockDefinition LockDefinition::makeLeveledLock(WEInt x, int y, SNInt z, int lockLevel)
 {
 	LockDefinition lockDef;
-	lockDef.init(x, y, z, Type::Lock);
-	lockDef.lock.init(lockLevel);
+	lockDef.init(x, y, z, Type::LeveledLock);
+	lockDef.leveledLock.init(lockLevel);
 	return lockDef;
 }
 
@@ -56,10 +56,10 @@ LockDefinition::Type LockDefinition::getType() const
 	return this->type;
 }
 
-const LockDefinition::LockDef &LockDefinition::getLockDef() const
+const LockDefinition::LeveledLockDef &LockDefinition::getLeveledLockDef() const
 {
-	DebugAssert(this->type == Type::Lock);
-	return this->lock;
+	DebugAssert(this->type == Type::LeveledLock);
+	return this->leveledLock;
 }
 
 const LockDefinition::KeyLockDef &LockDefinition::getKeyLockDef() const

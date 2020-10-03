@@ -8,9 +8,9 @@
 class LockDefinition
 {
 public:
-	enum class Type { Lock, KeyLock };
+	enum class Type { LeveledLock, KeyLock };
 
-	class LockDef
+	class LeveledLockDef
 	{
 	private:
 		int lockLevel;
@@ -33,20 +33,20 @@ private:
 
 	union
 	{
-		LockDef lock;
+		LeveledLockDef leveledLock;
 		KeyLockDef keyLock;
 	};
 
 	void init(WEInt x, int y, SNInt z, Type type);
 public:
-	static LockDefinition makeLock(WEInt x, int y, SNInt z, int lockLevel);
+	static LockDefinition makeLeveledLock(WEInt x, int y, SNInt z, int lockLevel);
 	static LockDefinition makeKeyLock(WEInt x, int y, SNInt z);
 
 	WEInt getX() const;
 	int getY() const;
 	SNInt getZ() const;
 	Type getType() const;
-	const LockDef &getLockDef() const;
+	const LeveledLockDef &getLeveledLockDef() const;
 	const KeyLockDef &getKeyLockDef() const;
 };
 
