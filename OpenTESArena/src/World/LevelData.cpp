@@ -1042,27 +1042,6 @@ void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const
 		return voxel;
 	};
 
-	// Lambda for getting the number of stories a MAP2 voxel takes up.
-	auto getMap2VoxelHeight = [](uint16_t map2Voxel)
-	{
-		if ((map2Voxel & 0x80) == 0x80)
-		{
-			return 2;
-		}
-		else if ((map2Voxel & 0x8000) == 0x8000)
-		{
-			return 3;
-		}
-		else if ((map2Voxel & 0x8080) == 0x8080)
-		{
-			return 4;
-		}
-		else
-		{
-			return 1;
-		}
-	};
-
 	// Lambda for obtaining the voxel data index for a MAP2 voxel.
 	auto getMap2DataIndex = [this, &inf](uint16_t map2Voxel)
 	{
@@ -1098,9 +1077,7 @@ void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const
 
 			if (map2Voxel != 0)
 			{
-				// Number of stories the MAP2 voxel occupies.
-				const int height = getMap2VoxelHeight(map2Voxel);
-
+				const int height = LevelUtils::getMap2VoxelHeight(map2Voxel);
 				const int dataIndex = getMap2DataIndex(map2Voxel);
 
 				for (int y = 2; y < (height + 2); y++)

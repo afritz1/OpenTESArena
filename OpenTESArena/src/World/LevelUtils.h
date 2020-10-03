@@ -6,6 +6,9 @@
 
 #include "LocationDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/MIFFile.h"
+
+#include "components/utilities/BufferView2D.h"
 
 class ArenaRandom;
 class ExeData;
@@ -16,6 +19,12 @@ namespace LevelUtils
 {
 	// Display names for *MENU transition voxels.
 	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
+
+	// Gets the number of voxels a MAP2 voxel occupies vertically (at least 1).
+	int getMap2VoxelHeight(uint16_t map2Voxel);
+
+	// Gets the max height from a set of MAP2 voxels.
+	int getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2);
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
