@@ -1,66 +1,67 @@
+#include <cstdio>
+
 #include "ClimateType.h"
 #include "WeatherType.h"
+#include "WeatherUtils.h"
 #include "WildWorldUtils.h"
 
 #include "components/debug/Debug.h"
 
-std::string WildWorldUtils::generateInfName(ClimateType climateType, WeatherType weatherType)
+DOSUtils::FilenameBuffer WildWorldUtils::generateInfName(ClimateType climateType,
+	WeatherType weatherType)
 {
-	// @todo: use DOSUtils::FilenameBuffer instead
-
-	const std::string climateLetter = [climateType]()
+	const char climateLetter = [climateType]()
 	{
 		if (climateType == ClimateType::Temperate)
 		{
-			return "T";
+			return 'T';
 		}
 		else if (climateType == ClimateType::Desert)
 		{
-			return "D";
+			return 'D';
 		}
 		else
 		{
-			return "M";
+			return 'M';
 		}
 	}();
 
 	// Wilderness is "W".
-	const std::string locationLetter = "W";
+	const char locationLetter = 'W';
 
-	const std::string weatherLetter = [climateType, weatherType]()
+	const char weatherLetter = [climateType, weatherType]()
 	{
-		if ((weatherType == WeatherType::Clear) ||
-			(weatherType == WeatherType::Overcast) ||
-			(weatherType == WeatherType::Overcast2))
+		if (WeatherUtils::isClear(weatherType) || WeatherUtils::isOvercast(weatherType))
 		{
-			return "N";
+			return 'N';
 		}
-		else if ((weatherType == WeatherType::Rain) ||
-			(weatherType == WeatherType::Rain2))
+		else if (WeatherUtils::isRain(weatherType))
 		{
-			return "R";
+			return 'R';
 		}
-		else if ((weatherType == WeatherType::Snow) ||
-			(weatherType == WeatherType::SnowOvercast) ||
-			(weatherType == WeatherType::SnowOvercast2))
+		else if (WeatherUtils::isSnow(weatherType))
 		{
 			// Deserts can't have snow.
 			if (climateType != ClimateType::Desert)
 			{
-				return "S";
+				return 'S';
 			}
 			else
 			{
 				DebugLogWarning("Deserts do not have snow templates.");
-				return "N";
+				return 'N';
 			}
 		}
 		else
 		{
-			// Not sure what this letter represents.
-			return "W";
+			// Not sure what this means.
+			return 'W';
 		}
 	}();
 
-	return climateLetter + locationLetter + weatherLetter + ".INF";
+	DOSUtils::FilenameBuffer buffer;
+	std::snprintf(buffer.data(), buffer.size(), "%C%C%C.INF",
+		climateLetter, locationLetter, weatherLetter);
+
+	return buffer;
 }
