@@ -98,7 +98,8 @@ public:
 	int getStartingLevelIndex() const;
 
 	// Starting points for the player in special 'centimeter-like' units.
-	const std::array<OriginalInt2, 4> &getStartPoints() const;
+	int getStartPointCount() const;
+	const OriginalInt2 &getStartPoint(int index) const;
 
 	// Get the levels associated with the .MIF file.
 	int getLevelCount() const;

@@ -33,8 +33,9 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	}
 
 	// Convert start points from the old coordinate system to the new one.
-	for (const OriginalInt2 &point : mif.getStartPoints())
+	for (int i = 0; i < mif.getStartPointCount(); i++)
 	{
+		const OriginalInt2 &point = mif.getStartPoint(i);
 		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
 		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPointReal));
 	}

@@ -479,9 +479,15 @@ int MIFFile::getStartingLevelIndex() const
 	return this->startingLevelIndex;
 }
 
-const std::array<OriginalInt2, 4> &MIFFile::getStartPoints() const
+int MIFFile::getStartPointCount() const
 {
-	return this->startPoints;
+	return static_cast<int>(this->startPoints.size());
+}
+
+const OriginalInt2 &MIFFile::getStartPoint(int index) const
+{
+	DebugAssertIndex(this->startPoints, index);
+	return this->startPoints[index];
 }
 
 int MIFFile::getLevelCount() const
