@@ -2,6 +2,7 @@
 #define VOXEL_UTILS_H
 
 #include "../Math/Vector2.h"
+#include "../Math/Vector3.h"
 
 // Aliases for various coordinate systems. All of these are from a top-down perspective.
 using OriginalInt2 = Int2; // +X west, +Y south (original game, origin at top right).
@@ -15,10 +16,16 @@ using NewDouble2 = Double2; // +X south, +Y west (DEPRECATE IN FAVOR OF VoxelDou
 using LevelDouble2 = Double2; // +X south, +Y west, used with level definitions (independent of chunks).
 using VoxelDouble2 = Double2; // +X south, +Y west, in the space of chunk voxels.
 
+using LevelInt3 = Int3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
+using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
+
+using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
+using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
+
 struct ChunkCoord
 {
 	ChunkInt2 chunk;
-	VoxelInt2 voxel;
+	VoxelInt2 voxel; // @todo: needs to be VoxelInt3; change all usages of Y component to Z.
 };
 
 // These are here out of desperation after many months of confusing myself.
