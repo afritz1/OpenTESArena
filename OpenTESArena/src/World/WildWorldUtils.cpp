@@ -20,9 +20,13 @@ DOSUtils::FilenameBuffer WildWorldUtils::generateInfName(ClimateType climateType
 		{
 			return 'D';
 		}
-		else
+		else if (climateType == ClimateType::Mountain)
 		{
 			return 'M';
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(climateType)));
 		}
 	}();
 
