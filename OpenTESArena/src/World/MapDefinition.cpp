@@ -6,24 +6,12 @@
 
 MapDefinition::MapDefinition()
 {
-	this->width = 0;
-	this->depth = 0;
 	this->startLevelIndex = -1;
 }
 
 void MapDefinition::init(const MIFFile &mif)
 {
 	DebugNotImplemented();
-}
-
-SNInt MapDefinition::getWidth() const
-{
-	return this->width;
-}
-
-WEInt MapDefinition::getDepth() const
-{
-	return this->depth;
 }
 
 int MapDefinition::getStartLevelIndex() const

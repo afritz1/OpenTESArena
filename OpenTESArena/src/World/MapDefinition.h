@@ -12,6 +12,8 @@
 // is defined and how it's represented in-engine, so that it doesn't care about things like
 // chunks.
 
+// Not retaining the original game's limitation of all of a map's levels being the same dimensions.
+
 class MIFFile;
 
 class MapDefinition
@@ -19,16 +21,12 @@ class MapDefinition
 private:
 	Buffer<LevelDefinition> levels;
 	std::vector<LevelDouble2> startPoints;
-	SNInt width;
-	WEInt depth;
 	int startLevelIndex;
 public:
 	MapDefinition();
 
 	void init(const MIFFile &mif);
 
-	SNInt getWidth() const;
-	WEInt getDepth() const;
 	int getStartLevelIndex() const;
 	int getLevelCount() const;
 	const LevelDefinition &getLevel(int index) const;
