@@ -1,8 +1,6 @@
 #ifndef LEVEL_INFO_DEFINITION_H
 #define LEVEL_INFO_DEFINITION_H
 
-#include <optional>
-#include <string>
 #include <vector>
 
 #include "LevelDefinition.h"

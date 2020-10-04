@@ -4,66 +4,74 @@
 #include <cstdint>
 #include <vector>
 
-#include "LockDefinition.h"
-#include "TriggerDefinition.h"
-#include "VoxelDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Entities/EntityDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
-// A single unbaked level of a map with voxels, entities, etc.. It can be an interior level,
-// whole city, or wilderness block.
+// A single unbaked level of a map with IDs pointing to voxels, entities, etc. defined in a level
+// info definition. This can be an interior level, whole city, or wilderness block.
 
 class RMDFile;
 
 class LevelDefinition
 {
 public:
-	// 2 bytes per voxel because the map might be bigger than a chunk.
-	using VoxelID = uint16_t;
-private:
+	// Points to various definitions in a level info definition.
+	using VoxelDefID = int;
+	using EntityDefID = int;
+	using LockDefID = int;
+	using TriggerDefID = int;
+
 	struct EntityPlacementDef
 	{
-		int defsIndex; // Index into entity definitions list.
-		std::vector<LevelDouble2> positions;
+		EntityDefID id;
+		std::vector<LevelDouble3> positions;
 	};
 
-	Buffer3D<VoxelID> voxels; // Points into voxel definitions list.
-	std::vector<VoxelDefinition> voxelDefs;
-	std::vector<EntityPlacementDef> entityPlacementDefs; // Points into entity definitions list.
-	std::vector<EntityDefinition> entityDefs;
-	std::vector<LockDefinition> lockDefs;
-	std::vector<TriggerDefinition> triggerDefs;
-public:
-	static constexpr VoxelID AIR = 0;
+	struct LockPlacementDef
+	{
+		LockDefID id;
+		std::vector<LevelInt3> positions;
+	};
 
-	void init(const MIFFile::Level &level);
+	struct TriggerPlacementDef
+	{
+		TriggerDefID id;
+		std::vector<LevelInt3> positions;
+	};
+private:
+	static constexpr VoxelDefID VOXEL_ID_AIR = 0;
+
+	Buffer3D<VoxelDefID> voxels;
+	std::vector<EntityPlacementDef> entityPlacementDefs;
+	std::vector<LockPlacementDef> lockPlacementDefs;
+	std::vector<TriggerPlacementDef> triggerPlacementDefs;
+public:
+	// Initializer for an interior level with optional ceiling data.
+	void init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
+		const INFFile::CeilingData *ceiling);
+
+	// Initializer for an exterior level.
+	void init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth);
+
+	// Initializer for a wilderness chunk.
 	void init(const RMDFile &rmd);
 
-	// Width and depth are the same as the map the level is in.
 	SNInt getWidth() const;
 	int getHeight() const;
 	WEInt getDepth() const;
 
-	int getVoxelDefCount() const;
-	const VoxelDefinition &getVoxelDef(VoxelID id) const;
+	VoxelDefID getVoxel(SNInt x, int y, WEInt z) const;
+	void setVoxel(SNInt x, int y, WEInt z, VoxelDefID voxel);
 
 	int getEntityPlacementDefCount() const;
 	const EntityPlacementDef &getEntityPlacementDef(int index) const;
-
-	int getEntityDefsCount() const;
-	const EntityDefinition &getEntityDef(int index) const;
-
-	int getLockDefsCount() const;
-	const LockDefinition &getLockDef(int index) const;
-
-	int getTriggerDefCount() const;
-	const TriggerDefinition &getTriggerDef(int index) const;
-
-	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
-	void setVoxel(SNInt x, int y, WEInt z, VoxelID voxel);
+	int getLockPlacementDefCount() const;
+	const LockPlacementDef &getLockPlacementDef(int index) const;
+	int getTriggerPlacementDefCount() const;
+	const TriggerPlacementDef &getTriggerPlacementDef(int index) const;
 };
 
 #endif

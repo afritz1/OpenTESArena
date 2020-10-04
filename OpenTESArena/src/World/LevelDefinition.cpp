@@ -1,8 +1,38 @@
-#include "LevelDefinition.h"
+#include <algorithm>
 
-void LevelDefinition::init(const MIFFile::Level &level)
+#include "LevelDefinition.h"
+#include "LevelUtils.h"
+
+void LevelDefinition::init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
+	const INFFile::CeilingData *ceiling)
 {
+	// Determine level height from voxel data.
+	const int height = [&level, mifWidth, mifDepth, ceiling]()
+	{
+		const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
+
+		if (map2.isValid())
+		{
+			return 2 + LevelUtils::getMap2Height(map2);
+		}
+		else
+		{
+			const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
+			return hasCeiling ? 3 : 2;
+		}
+	}();
+
+	this->voxels.init(mifDepth, height, mifWidth);
+	this->voxels.fill(LevelDefinition::VOXEL_ID_AIR);
+
+	// @todo: decode level voxels and put IDs/entities into buffers.
+	// - leaning towards having a helper function make map and map info at the same time.
 	DebugNotImplemented();
+}
+
+void LevelDefinition::init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth)
+{
+	this->init(level, mifWidth, mifDepth, nullptr);
 }
 
 void LevelDefinition::init(const RMDFile &rmd)
@@ -25,15 +55,14 @@ WEInt LevelDefinition::getDepth() const
 	return this->voxels.getDepth();
 }
 
-int LevelDefinition::getVoxelDefCount() const
+LevelDefinition::VoxelDefID LevelDefinition::getVoxel(SNInt x, int y, WEInt z) const
 {
-	return static_cast<int>(this->voxelDefs.size());
+	return this->voxels.get(x, y, z);
 }
 
-const VoxelDefinition &LevelDefinition::getVoxelDef(VoxelID id) const
+void LevelDefinition::setVoxel(SNInt x, int y, WEInt z, VoxelDefID voxel)
 {
-	DebugAssertIndex(this->voxelDefs, id);
-	return this->voxelDefs[id];
+	this->voxels.set(x, y, z, voxel);
 }
 
 int LevelDefinition::getEntityPlacementDefCount() const
@@ -47,45 +76,24 @@ const LevelDefinition::EntityPlacementDef &LevelDefinition::getEntityPlacementDe
 	return this->entityPlacementDefs[index];
 }
 
-int LevelDefinition::getEntityDefsCount() const
+int LevelDefinition::getLockPlacementDefCount() const
 {
-	return static_cast<int>(this->entityDefs.size());
+	return static_cast<int>(this->lockPlacementDefs.size());
 }
 
-const EntityDefinition &LevelDefinition::getEntityDef(int index) const
+const LevelDefinition::LockPlacementDef &LevelDefinition::getLockPlacementDef(int index) const
 {
-	DebugAssertIndex(this->entityDefs, index);
-	return this->entityDefs[index];
+	DebugAssertIndex(this->lockPlacementDefs, index);
+	return this->lockPlacementDefs[index];
 }
 
-int LevelDefinition::getLockDefsCount() const
+int LevelDefinition::getTriggerPlacementDefCount() const
 {
-	return static_cast<int>(this->lockDefs.size());
+	return static_cast<int>(this->triggerPlacementDefs.size());
 }
 
-const LockDefinition &LevelDefinition::getLockDef(int index) const
+const LevelDefinition::TriggerPlacementDef &LevelDefinition::getTriggerPlacementDef(int index) const
 {
-	DebugAssertIndex(this->lockDefs, index);
-	return this->lockDefs[index];
-}
-
-int LevelDefinition::getTriggerDefCount() const
-{
-	return static_cast<int>(this->triggerDefs.size());
-}
-
-const TriggerDefinition &LevelDefinition::getTriggerDef(int index) const
-{
-	DebugAssertIndex(this->triggerDefs, index);
-	return this->triggerDefs[index];
-}
-
-LevelDefinition::VoxelID LevelDefinition::getVoxel(SNInt x, int y, WEInt z) const
-{
-	return this->voxels.get(x, y, z);
-}
-
-void LevelDefinition::setVoxel(SNInt x, int y, WEInt z, VoxelID voxel)
-{
-	this->voxels.set(x, y, z, voxel);
+	DebugAssertIndex(this->triggerPlacementDefs, index);
+	return this->triggerPlacementDefs[index];
 }
