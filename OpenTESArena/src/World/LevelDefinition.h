@@ -13,6 +13,8 @@
 // A single unbaked level of a map with IDs pointing to voxels, entities, etc. defined in a level
 // info definition. This can be an interior level, whole city, or wilderness block.
 
+class ArenaRandom;
+class ExeData;
 class RMDFile;
 
 class LevelDefinition
@@ -41,6 +43,8 @@ public:
 		TriggerDefID id;
 		std::vector<LevelInt3> positions;
 	};
+
+	// @todo: interior/city/wild structs for special data like sky color, etc.
 private:
 	static constexpr VoxelDefID VOXEL_ID_AIR = 0;
 
@@ -50,14 +54,20 @@ private:
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
 public:
 	// Initializer for an interior level with optional ceiling data.
-	void init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
+	void initInterior(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
 		const INFFile::CeilingData *ceiling);
 
-	// Initializer for an exterior level.
-	void init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth);
+	// Initializer for a dungeon interior level with optional ceiling data. The dungeon
+	// level is pieced together by multiple chunks in the base .MIF file.
+	void initDungeon(ArenaRandom &random, const MIFFile &mif, int levelUpBlock,
+		const int *levelDownBlock, int widthChunks, int depthChunks, SNInt gridWidth,
+		WEInt gridDepth, const INFFile::CeilingData *ceiling, const ExeData &exeData);
+
+	// Initializer for an entire city.
+	void initCity(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth);
 
 	// Initializer for a wilderness chunk.
-	void init(const RMDFile &rmd);
+	void initWild(const RMDFile &rmd);
 
 	SNInt getWidth() const;
 	int getHeight() const;

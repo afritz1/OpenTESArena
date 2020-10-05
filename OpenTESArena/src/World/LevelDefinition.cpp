@@ -3,7 +3,7 @@
 #include "LevelDefinition.h"
 #include "LevelUtils.h"
 
-void LevelDefinition::init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
+void LevelDefinition::initInterior(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
 	const INFFile::CeilingData *ceiling)
 {
 	// Determine level height from voxel data.
@@ -30,12 +30,12 @@ void LevelDefinition::init(const MIFFile::Level &level, WEInt mifWidth, SNInt mi
 	DebugNotImplemented();
 }
 
-void LevelDefinition::init(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth)
+void LevelDefinition::initCity(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth)
 {
-	this->init(level, mifWidth, mifDepth, nullptr);
+	this->initInterior(level, mifWidth, mifDepth, nullptr);
 }
 
-void LevelDefinition::init(const RMDFile &rmd)
+void LevelDefinition::initWild(const RMDFile &rmd)
 {
 	DebugNotImplemented();
 }
