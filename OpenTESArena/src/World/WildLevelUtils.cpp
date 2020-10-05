@@ -249,27 +249,15 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	}
 
 	const MIFFile::Level &level = mif.getLevel(0);
-	const BufferView2D<const MIFFile::VoxelID> levelFLOR = level.getFLOR();
-	const BufferView2D<const MIFFile::VoxelID> levelMAP1 = level.getMAP1();
-	const BufferView2D<const MIFFile::VoxelID> levelMAP2 = level.getMAP2();
 
 	// Buffers for the city data. Copy the .MIF data into them.
 	Buffer2D<uint16_t> cityFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<uint16_t> cityMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<uint16_t> cityMap2(mif.getWidth(), mif.getDepth());
-
-	for (WEInt x = 0; x < mif.getWidth(); x++)
-	{
-		for (SNInt z = 0; z < mif.getDepth(); z++)
-		{
-			const MIFFile::VoxelID srcFlorVoxel = levelFLOR.get(x, z);
-			const MIFFile::VoxelID srcMap1Voxel = levelMAP1.get(x, z);
-			const MIFFile::VoxelID srcMap2Voxel = levelMAP2.get(x, z);
-			cityFlor.set(x, z, srcFlorVoxel);
-			cityMap1.set(x, z, srcMap1Voxel);
-			cityMap2.set(x, z, srcMap2Voxel);
-		}
-	}
+	CityLevelUtils::writeSkeleton(level,
+		BufferView2D(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight()),
+		BufferView2D(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight()),
+		BufferView2D(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight()));
 
 	// Run city generation if it's not a premade city. The center province's city does not have
 	// any special generation -- the .MIF buffers are simply used as-is (with some simple palace

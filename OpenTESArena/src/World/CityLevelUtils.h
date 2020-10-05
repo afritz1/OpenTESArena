@@ -6,8 +6,10 @@
 
 #include "LevelUtils.h"
 #include "VoxelUtils.h"
+#include "../Assets/MIFFile.h"
 
 #include "components/utilities/Buffer2D.h"
+#include "components/utilities/BufferView2D.h"
 
 class ArenaRandom;
 class LocationDefinition;
@@ -17,6 +19,10 @@ class VoxelGrid;
 
 namespace CityLevelUtils
 {
+	// Writes the barebones city layout (just ground and walls).
+	void writeSkeleton(const MIFFile::Level &level, BufferView2D<MIFFile::VoxelID> &dstFlor,
+		BufferView2D<MIFFile::VoxelID> &dstMap1, BufferView2D<MIFFile::VoxelID> &dstMap2);
+
 	// Writes generated city building data into the output buffers. The buffers should already
 	// be initialized with the city skeleton.
 	void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,

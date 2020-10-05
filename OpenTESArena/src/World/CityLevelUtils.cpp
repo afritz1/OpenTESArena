@@ -3,12 +3,35 @@
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
-#include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/MiscAssets.h"
 #include "../Math/Random.h"
 
 #include "components/utilities/String.h"
+
+void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
+	BufferView2D<MIFFile::VoxelID> &dstFlor, BufferView2D<MIFFile::VoxelID> &dstMap1,
+	BufferView2D<MIFFile::VoxelID> &dstMap2)
+{
+	const BufferView2D<const MIFFile::VoxelID> levelFLOR = level.getFLOR();
+	const BufferView2D<const MIFFile::VoxelID> levelMAP1 = level.getMAP1();
+	const BufferView2D<const MIFFile::VoxelID> levelMAP2 = level.getMAP2();
+	const WEInt levelWidth = levelFLOR.getWidth();
+	const SNInt levelDepth = levelFLOR.getHeight();
+
+	for (WEInt x = 0; x < levelWidth; x++)
+	{
+		for (SNInt z = 0; z < levelDepth; z++)
+		{
+			const MIFFile::VoxelID srcFlorVoxel = levelFLOR.get(x, z);
+			const MIFFile::VoxelID srcMap1Voxel = levelMAP1.get(x, z);
+			const MIFFile::VoxelID srcMap2Voxel = levelMAP2.get(x, z);
+			dstFlor.set(x, z, srcFlorVoxel);
+			dstMap1.set(x, z, srcMap1Voxel);
+			dstMap2.set(x, z, srcMap2Voxel);
+		}
+	}
+}
 
 void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 	const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
