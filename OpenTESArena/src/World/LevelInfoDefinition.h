@@ -33,6 +33,8 @@ private:
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
 public:
+	LevelInfoDefinition();
+
 	void init(const INFFile &inf);
 
 	bool tryGetVoxelDef(LevelDefinition::VoxelDefID id, const VoxelDefinition **outDef) const;

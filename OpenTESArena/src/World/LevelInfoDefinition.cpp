@@ -5,6 +5,11 @@
 
 #include "components/debug/Debug.h"
 
+LevelInfoDefinition::LevelInfoDefinition()
+{
+	this->ceilingScale = 0.0;
+}
+
 void LevelInfoDefinition::init(const INFFile &inf)
 {
 	DebugNotImplemented();
