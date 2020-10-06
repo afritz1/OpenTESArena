@@ -1684,15 +1684,20 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			for (const Int2 &position : flatDef.getPositions())
 			{
 				EntityRef entityRef = this->entityManager.makeEntity(entityType);
+
+				// Using raw entity pointer in this scope for performance due to it currently being
+				// impractical to use the ref wrapper when loading the entire wilderness.
+				Entity *entityPtr = entityRef.get();
+
 				if (entityType == EntityType::Static)
 				{
-					StaticEntity *staticEntity = entityRef.getDerived<StaticEntity>();
+					StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
 					staticEntity->initDoodad(entityDefID, entityAnimInst);
 				}
 				else if (entityType == EntityType::Dynamic)
 				{
 					// All dynamic entities in a level are creatures (never citizens).
-					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
+					DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
 					dynamicEntity->initCreature(entityDefID, entityAnimInst,
 						CardinalDirection::North, random);
 				}
@@ -1702,7 +1707,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 						std::to_string(static_cast<int>(entityType)) + "\".");
 				}
 
-				entityRef.get()->setRenderID(entityRenderID);
+				entityPtr->setRenderID(entityRenderID);
 
 				// Set default animation state.
 				int defaultStateIndex;
@@ -1730,13 +1735,15 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					}
 				}
 
+				EntityAnimationInstance &animInst = entityPtr->getAnimInstance();
+				animInst.setStateIndex(defaultStateIndex);
+
+				// Note: since the entity pointer is being used directly, update the position last
+				// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 				const NewDouble2 positionXZ(
 					static_cast<SNDouble>(position.x) + 0.50,
 					static_cast<WEDouble>(position.y) + 0.50);
-				entityRef.get()->setPosition(positionXZ, this->entityManager, this->voxelGrid);
-
-				EntityAnimationInstance &animInst = entityRef.get()->getAnimInstance();
-				animInst.setStateIndex(defaultStateIndex);
+				entityPtr->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 			}
 
 			// Palette for renderer textures.
