@@ -411,7 +411,7 @@ namespace
 }
 
 void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
-	const std::vector<LevelData::ChasmState> &chasmStates, int *outQuadCount)
+	const LevelData::ChasmStates &chasmStates, int *outQuadCount)
 {
 	auto maybeWrite = [outQuadCount](int quadCount)
 	{
@@ -453,13 +453,8 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
 		{
 			const NewInt2 voxelXZ(voxel.x, voxel.z);
-			const auto iter = std::find_if(chasmStates.begin(), chasmStates.end(),
-				[&voxelXZ](const LevelData::ChasmState &chasmState)
-			{
-				return chasmState.getVoxel() == voxelXZ;
-			});
-
-			return (iter != chasmStates.end()) ? &(*iter) : nullptr;
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
 		}();
 
 		const int faceCount = (chasmStatePtr != nullptr) ? chasmStatePtr->getFaceCount() : 0;
@@ -477,7 +472,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 }
 
 int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, double ceilingHeight,
-	const std::vector<LevelData::ChasmState> &chasmStates, Quad *outQuads, int bufferSize)
+	const LevelData::ChasmStates &chasmStates, Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))
 	{
@@ -532,13 +527,8 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
 		{
 			const NewInt2 voxelXZ(voxel.x, voxel.z);
-			const auto iter = std::find_if(chasmStates.begin(), chasmStates.end(),
-				[&voxelXZ](const LevelData::ChasmState &chasmState)
-			{
-				return chasmState.getVoxel() == voxelXZ;
-			});
-
-			return (iter != chasmStates.end()) ? &(*iter) : nullptr;
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
 		}();
 
 		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmStatePtr, quadView);

@@ -183,7 +183,7 @@ namespace Physics
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
 		const Int3 &voxel, VoxelFacing farFacing, const Double3 &farPoint, double ceilingHeight,
-		const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
+		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		Physics::Hit &hit)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -460,13 +460,8 @@ namespace Physics
 				const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
 				{
 					const NewInt2 voxelXZ(voxel.x, voxel.z);
-					const auto iter = std::find_if(chasmStates.begin(), chasmStates.end(),
-						[&voxelXZ](const LevelData::ChasmState &chasmState)
-					{
-						return chasmState.getVoxel() == voxelXZ;
-					});
-
-					return (iter != chasmStates.end()) ? &(*iter) : nullptr;
+					const auto iter = chasmStates.find(voxelXZ);
+					return (iter != chasmStates.end()) ? &iter->second : nullptr;
 				}();
 
 				// Above the floor. See which face the ray hits.
@@ -551,7 +546,7 @@ namespace Physics
 	// true if the ray hit something.
 	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection, const Int3 &voxel,
 		VoxelFacing nearFacing, const Double3 &nearPoint, const Double3 &farPoint,
-		double ceilingHeight, const std::vector<LevelData::ChasmState> &chasmStates,
+		double ceilingHeight, const LevelData::ChasmStates &chasmStates,
 		const VoxelGrid &voxelGrid, Physics::Hit &hit)
 	{
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -971,7 +966,7 @@ namespace Physics
 	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
 	void rayCastInternal(const Double3 &rayStart, const Double3 &rayDirection,
 		const Double3 &cameraForward, double ceilingHeight,
-		const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
+		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
 	{
@@ -1250,7 +1245,7 @@ void Physics::Hit::setT(double t)
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-	double ceilingHeight, const std::vector<LevelData::ChasmState> &chasmStates,
+	double ceilingHeight, const LevelData::ChasmStates &chasmStates,
 	const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 	const EntityManager &entityManager, const VoxelGrid &voxelGrid,
 	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
@@ -1345,7 +1340,7 @@ bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int 
 }
 
 bool Physics::rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-	const std::vector<LevelData::ChasmState> &chasmStates, const Double3 &cameraForward,
+	const LevelData::ChasmStates &chasmStates, const Double3 &cameraForward,
 	bool pixelPerfect, bool includeEntities, const EntityManager &entityManager,
 	const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
 	const Renderer &renderer, Physics::Hit &hit)

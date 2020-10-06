@@ -65,12 +65,12 @@ namespace Physics
 	// Casts a ray through the world and writes any intersection data into the output
 	// parameter. Returns true if the ray hit something.
 	bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-		double ceilingHeight, const std::vector<LevelData::ChasmState> &chasmStates,
+		double ceilingHeight, const LevelData::ChasmStates &chasmStates,
 		const Double3 &cameraForward, bool pixelPerfect, bool includeEntities,
 		const EntityManager &entityManager, const VoxelGrid &voxelGrid,
 		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit);
 	bool rayCast(const Double3 &rayStart, const Double3 &rayDirection, int chunkDistance,
-		const std::vector<LevelData::ChasmState> &chasmStates, const Double3 &cameraForward,
+		const LevelData::ChasmStates &chasmStates, const Double3 &cameraForward,
 		bool pixelPerfect, bool includeEntities, const EntityManager &entityManager,
 		const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
 		const Renderer &renderer, Physics::Hit &hit);

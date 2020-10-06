@@ -227,7 +227,7 @@ public:
 		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const std::vector<LevelData::ChasmState> &chasmStates, const VoxelGrid &voxelGrid,
+		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 

@@ -162,6 +162,8 @@ public:
 		bool faceIsVisible(VoxelFacing facing) const;
 		int getFaceCount() const;
 	};
+
+	using ChasmStates = std::unordered_map<NewInt2, ChasmState>; // @temp change to hash table for wilderness performance.
 private:
 	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
 	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
@@ -174,7 +176,7 @@ private:
 	std::unordered_map<NewInt2, Lock> locks;
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
-	std::vector<ChasmState> chasmStates;
+	ChasmStates chasmStates;
 	std::string name;
 
 	void addFlatInstance(int flatIndex, const NewInt2 &flatPosition);
@@ -216,8 +218,8 @@ public:
 	const std::vector<DoorState> &getOpenDoors() const;
 	std::vector<FadeState> &getFadingVoxels();
 	const std::vector<FadeState> &getFadingVoxels() const;
-	std::vector<ChasmState> &getChasmStates();
-	const std::vector<ChasmState> &getChasmStates() const;
+	ChasmStates &getChasmStates();
+	const ChasmStates &getChasmStates() const;
 	const INFFile &getInfFile() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;

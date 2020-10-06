@@ -314,12 +314,12 @@ const std::vector<LevelData::FadeState> &LevelData::getFadingVoxels() const
 	return this->fadingVoxels;
 }
 
-std::vector<LevelData::ChasmState> &LevelData::getChasmStates()
+LevelData::ChasmStates &LevelData::getChasmStates()
 {
 	return this->chasmStates;
 }
 
-const std::vector<LevelData::ChasmState> &LevelData::getChasmStates() const
+const LevelData::ChasmStates &LevelData::getChasmStates() const
 {
 	return this->chasmStates;
 }
@@ -599,7 +599,7 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			{
 				const NewInt2 voxelXZ(x, z);
 				ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-				this->chasmStates.emplace_back(std::move(newChasmState));
+				this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
 			}
 		}
 	}
@@ -1195,21 +1195,15 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const bool hasWestFace = westDef.allowsChasmFace();
 
 	// Add/update chasm state.
-	// @todo: remove state if exists and should not add chasm state.
 	const NewInt2 voxelXZ(voxel.x, voxel.z);
 	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-	const auto chasmStateIter = std::find_if(this->chasmStates.begin(), this->chasmStates.end(),
-		[&newChasmState](const ChasmState &chasmState)
-	{
-		return chasmState.getVoxel() == newChasmState.getVoxel();
-	});
-
+	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 	if (chasmStateIter != this->chasmStates.end())
 	{
 		if (shouldAddChasmState)
 		{
-			*chasmStateIter = std::move(newChasmState);
+			chasmStateIter->second = std::move(newChasmState);
 		}
 		else
 		{
@@ -1220,7 +1214,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->chasmStates.emplace_back(std::move(newChasmState));
+			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
 		}
 	}
 }
@@ -1303,18 +1297,13 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	// Add/update chasm state.
 	const NewInt2 voxelXZ(voxel.x, voxel.z);
 	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-	const auto chasmStateIter = std::find_if(this->chasmStates.begin(), this->chasmStates.end(),
-		[&newChasmState](const ChasmState &chasmState)
-	{
-		return chasmState.getVoxel() == newChasmState.getVoxel();
-	});
-
+	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 	if (chasmStateIter != this->chasmStates.end())
 	{
 		if (shouldAddChasmState)
 		{
-			*chasmStateIter = std::move(newChasmState);
+			chasmStateIter->second = std::move(newChasmState);
 		}
 		else
 		{
@@ -1325,7 +1314,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->chasmStates.emplace_back(std::move(newChasmState));
+			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
 		}
 	}
 
