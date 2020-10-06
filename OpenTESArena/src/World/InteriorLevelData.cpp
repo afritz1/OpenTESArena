@@ -1,4 +1,5 @@
 #include "InteriorLevelData.h"
+#include "InteriorLevelUtils.h"
 #include "WorldType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
@@ -6,11 +7,9 @@
 
 #include "components/utilities/String.h"
 
-const int InteriorLevelData::GRID_HEIGHT = 3;
-
 InteriorLevelData::InteriorLevelData(SNInt gridWidth, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
-	: LevelData(gridWidth, InteriorLevelData::GRID_HEIGHT, gridDepth, infName, name) { }
+	: LevelData(gridWidth, InteriorLevelUtils::GRID_HEIGHT, gridDepth, infName, name) { }
 
 InteriorLevelData::~InteriorLevelData()
 {
@@ -59,8 +58,8 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 }
 
 InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
-	const std::vector<MIFFile::Level> &levels, int levelUpBlock, const int *levelDownBlock,
-	int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
+	const MIFFile &mif, int levelUpBlock, const int *levelDownBlock, int widthChunks,
+	int depthChunks, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
 	const ExeData &exeData)
 {
 	// Create temp buffers for dungeon block data.
@@ -71,28 +70,25 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 
 	std::vector<ArenaTypes::MIFLock> tempLocks;
 	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
-
-	constexpr WEInt chunkWidth = 32;
-	constexpr SNInt chunkDepth = chunkWidth;
 	const int tileSet = random.next() % 4;
 
 	for (SNInt row = 0; row < depthChunks; row++)
 	{
-		const SNInt zOffset = row * chunkDepth;
+		const SNInt zOffset = row * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
 		for (WEInt column = 0; column < widthChunks; column++)
 		{
-			const WEInt xOffset = column * chunkWidth;
+			const WEInt xOffset = column * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
 
 			// Get the selected level from the .MIF file.
 			const int blockIndex = (tileSet * 8) + (random.next() % 8);
-			const auto &blockLevel = levels.at(blockIndex);
+			const auto &blockLevel = mif.getLevel(blockIndex);
 			const BufferView2D<const MIFFile::VoxelID> &blockFLOR = blockLevel.getFLOR();
 			const BufferView2D<const MIFFile::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 
 			// Copy block data to temp buffers.
-			for (SNInt z = 0; z < chunkDepth; z++)
+			for (SNInt z = 0; z < InteriorLevelUtils::DUNGEON_CHUNK_DIM; z++)
 			{
-				for (WEInt x = 0; x < chunkWidth; x++)
+				for (WEInt x = 0; x < InteriorLevelUtils::DUNGEON_CHUNK_DIM; x++)
 				{
 					const MIFFile::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
 					const MIFFile::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
@@ -154,19 +150,24 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 
 	const INFFile &inf = levelData.getInfFile();
 
-	// Put transition blocks, unless null. Unpack the level up/down block indices
-	// into X and Z chunk offsets.
+	// Put transition blocks, unless null.
 	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
-	const WEInt levelUpX = 10 + ((levelUpBlock % 10) * chunkWidth);
-	const SNInt levelUpZ = 10 + ((levelUpBlock / 10) * chunkDepth);
-	tempMap1.set(levelUpX, levelUpZ, (levelUpVoxelByte << 8) | levelUpVoxelByte);
+	WEInt levelUpX;
+	SNInt levelUpZ;
+	InteriorLevelUtils::unpackLevelChangeVoxel(levelUpBlock, &levelUpX, &levelUpZ);
+	tempMap1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelUpX),
+		InteriorLevelUtils::offsetLevelChangeVoxel(levelUpZ),
+		InteriorLevelUtils::convertLevelChangeVoxel(levelUpVoxelByte));
 
 	if (levelDownBlock != nullptr)
 	{
 		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
-		const WEInt levelDownX = 10 + ((*levelDownBlock % 10) * chunkWidth);
-		const SNInt levelDownZ = 10 + ((*levelDownBlock / 10) * chunkDepth);
-		tempMap1.set(levelDownX, levelDownZ, (levelDownVoxelByte << 8) | levelDownVoxelByte);
+		WEInt levelDownX;
+		SNInt levelDownZ;
+		InteriorLevelUtils::unpackLevelChangeVoxel(*levelDownBlock, &levelDownX, &levelDownZ);
+		tempMap1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelDownX),
+			InteriorLevelUtils::offsetLevelChangeVoxel(levelDownZ),
+			InteriorLevelUtils::convertLevelChangeVoxel(levelDownVoxelByte));
 	}
 
 	// Interior sky color (always black for dungeons).

@@ -34,6 +34,12 @@ ChunkCoord VoxelUtils::newVoxelToChunkVoxel(const NewInt2 &voxel)
 	return chunkCoord;
 }
 
+ChunkCoord VoxelUtils::levelVoxelToChunkVoxel(const LevelInt2 &voxel)
+{
+	// @todo: make sure it handles negative coordinates.
+	return VoxelUtils::newVoxelToChunkVoxel(voxel);
+}
+
 ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
 {
 	const ChunkCoord chunkCoord = VoxelUtils::newVoxelToChunkVoxel(voxel);

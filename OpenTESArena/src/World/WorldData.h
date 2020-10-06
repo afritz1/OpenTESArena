@@ -18,13 +18,10 @@ class WorldData
 {
 protected:
 	std::vector<NewDouble2> startPoints;
-	std::string mifName;
 
 	WorldData();
 public:
 	virtual ~WorldData();
-
-	virtual const std::string &getMifName() const = 0;
 
 	// Gets the start points within each level.
 	const std::vector<NewDouble2> &getStartPoints() const;

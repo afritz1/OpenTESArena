@@ -5,11 +5,54 @@
 #include "LocationUtils.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
+
+int LevelUtils::getMap2VoxelHeight(uint16_t map2Voxel)
+{
+	// Can use this function for either .MIF or .RMD voxel data.
+	static_assert(sizeof(map2Voxel) == sizeof(MIFFile::VoxelID));
+	static_assert(sizeof(map2Voxel) == sizeof(RMDFile::VoxelID));
+
+	if ((map2Voxel & 0x80) == 0x80)
+	{
+		return 2;
+	}
+	else if ((map2Voxel & 0x8000) == 0x8000)
+	{
+		return 3;
+	}
+	else if ((map2Voxel & 0x8080) == 0x8080)
+	{
+		return 4;
+	}
+	else
+	{
+		return 1;
+	}
+}
+
+int LevelUtils::getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2)
+{
+	DebugAssert(map2.isValid());
+
+	int currentMap2Height = 1;
+	for (SNInt z = 0; z < map2.getHeight(); z++)
+	{
+		for (WEInt x = 0; x < map2.getWidth(); x++)
+		{
+			const uint16_t map2Voxel = map2.get(x, z);
+			const int map2Height = LevelUtils::getMap2VoxelHeight(map2Voxel);
+			currentMap2Height = std::max(currentMap2Height, map2Height);
+		}
+	}
+
+	return currentMap2Height;
+}
 
 uint16_t LevelUtils::getDoorVoxelOffset(int x, int y)
 {

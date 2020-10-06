@@ -196,6 +196,65 @@ void LevelData::FadeState::update(double dt)
 	this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
 }
 
+LevelData::ChasmState::ChasmState(const NewInt2 &voxel, bool north, bool east, bool south, bool west)
+	: voxel(voxel)
+{
+	this->north = north;
+	this->east = east;
+	this->south = south;
+	this->west = west;
+}
+
+const NewInt2 &LevelData::ChasmState::getVoxel() const
+{
+	return this->voxel;
+}
+
+bool LevelData::ChasmState::getNorth() const
+{
+	return this->north;
+}
+
+bool LevelData::ChasmState::getEast() const
+{
+	return this->east;
+}
+
+bool LevelData::ChasmState::getSouth() const
+{
+	return this->south;
+}
+
+bool LevelData::ChasmState::getWest() const
+{
+	return this->west;
+}
+
+bool LevelData::ChasmState::faceIsVisible(VoxelFacing facing) const
+{
+	switch (facing)
+	{
+	case VoxelFacing::PositiveX:
+		return this->south;
+	case VoxelFacing::PositiveZ:
+		return this->west;
+	case VoxelFacing::NegativeX:
+		return this->north;
+	case VoxelFacing::NegativeZ:
+		return this->east;
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
+		return false;
+	}
+}
+
+int LevelData::ChasmState::getFaceCount() const
+{
+	// Add one for floor.
+	return 1 + (this->north ? 1 : 0) + (this->east ? 1 : 0) +
+		(this->south ? 1 : 0) + (this->west ? 1 : 0);
+}
+
 LevelData::LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
@@ -253,6 +312,16 @@ std::vector<LevelData::FadeState> &LevelData::getFadingVoxels()
 const std::vector<LevelData::FadeState> &LevelData::getFadingVoxels() const
 {
 	return this->fadingVoxels;
+}
+
+LevelData::ChasmStates &LevelData::getChasmStates()
+{
+	return this->chasmStates;
+}
+
+const LevelData::ChasmStates &LevelData::getChasmStates() const
+{
+	return this->chasmStates;
 }
 
 const INFFile &LevelData::getInfFile() const
@@ -349,34 +418,34 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 		}
 	};
 
-	using ChasmDataFunc = VoxelDefinition(*)(const INFFile &inf, const std::array<bool, 4>&);
+	using ChasmDataFunc = VoxelDefinition(*)(const INFFile &inf);
 
 	// Lambda for obtaining the voxel data index of a chasm voxel. The given function argument
 	// returns the created voxel data if there was no previous mapping.
-	auto getChasmDataIndex = [this, &inf](uint16_t florVoxel, ChasmDataFunc chasmFunc,
-		const std::array<bool, 4> &adjacentFaces)
+	auto getChasmDataIndex = [this, &inf](uint16_t florVoxel, ChasmDataFunc chasmFunc)
 	{
-		const auto chasmIter = std::find_if(
-			this->chasmDataMappings.begin(), this->chasmDataMappings.end(),
-			[florVoxel, &adjacentFaces](const auto &tuple)
+		const auto floorIter = std::find_if(
+			this->floorDataMappings.begin(), this->floorDataMappings.end(),
+			[florVoxel](const std::pair<uint16_t, int> &pair)
 		{
-			return (std::get<0>(tuple) == florVoxel) && (std::get<1>(tuple) == adjacentFaces);
+			return pair.first == florVoxel;
 		});
 
-		if (chasmIter != this->chasmDataMappings.end())
+		if (floorIter != this->floorDataMappings.end())
 		{
-			return std::get<2>(*chasmIter);
+			return floorIter->second;
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelDef(chasmFunc(inf, adjacentFaces));
-			this->chasmDataMappings.push_back(std::make_tuple(florVoxel, adjacentFaces, index));
+			// Insert new mapping.
+			const int index = this->voxelGrid.addVoxelDef(chasmFunc(inf));
+			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
 	};
 
 	// Helper lambdas for creating each type of chasm voxel data.
-	auto makeDryChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeDryChasmVoxelDef = [](const INFFile &inf)
 	{
 		const int dryChasmID = [&inf]()
 		{
@@ -392,13 +461,10 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			}
 		}();
 
-		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelDefinition::makeChasm(dryChasmID,
-			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelDefinition::ChasmData::Type::Dry);
+		return VoxelDefinition::makeChasm(dryChasmID, VoxelDefinition::ChasmData::Type::Dry);
 	};
 
-	auto makeLavaChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeLavaChasmVoxelDef = [](const INFFile &inf)
 	{
 		const int lavaChasmID = [&inf]()
 		{
@@ -414,13 +480,10 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			}
 		}();
 
-		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelDefinition::makeChasm(lavaChasmID,
-			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelDefinition::ChasmData::Type::Lava);
+		return VoxelDefinition::makeChasm(lavaChasmID, VoxelDefinition::ChasmData::Type::Lava);
 	};
 
-	auto makeWetChasmVoxelDef = [](const INFFile &inf, const std::array<bool, 4> &adjacentFaces)
+	auto makeWetChasmVoxelDef = [](const INFFile &inf)
 	{
 		const int wetChasmID = [&inf]()
 		{
@@ -436,10 +499,7 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			}
 		}();
 
-		DebugAssert(adjacentFaces.size() == 4);
-		return VoxelDefinition::makeChasm(wetChasmID,
-			adjacentFaces[0], adjacentFaces[1], adjacentFaces[2], adjacentFaces[3],
-			VoxelDefinition::ChasmData::Type::Wet);
+		return VoxelDefinition::makeChasm(wetChasmID, VoxelDefinition::ChasmData::Type::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -470,39 +530,27 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			}
 			else
 			{
-				// The voxel is a chasm. See which of its four faces are adjacent to
-				// a solid floor voxel.
-				const uint16_t northVoxel = getFlorVoxel(std::max(x - 1, 0), z);
-				const uint16_t eastVoxel = getFlorVoxel(x, std::max(z - 1, 0));
-				const uint16_t southVoxel = getFlorVoxel(std::min(x + 1, gridWidth - 1), z);
-				const uint16_t westVoxel = getFlorVoxel(x, std::min(z + 1, gridDepth - 1));
-
-				const std::array<bool, 4> adjacentFaces
-				{
-					!MIFUtils::isChasm(getFloorTextureID(northVoxel)), // North.
-					!MIFUtils::isChasm(getFloorTextureID(eastVoxel)), // East.
-					!MIFUtils::isChasm(getFloorTextureID(southVoxel)), // South.
-					!MIFUtils::isChasm(getFloorTextureID(westVoxel)) // West.
-				};
-
+				// Chasm of some type.
+				ChasmDataFunc chasmDataFunc;
 				if (floorTextureID == MIFUtils::DRY_CHASM)
 				{
-					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeDryChasmVoxelDef, adjacentFaces);
-					this->setVoxel(x, 0, z, dataIndex);
+					chasmDataFunc = makeDryChasmVoxelDef;
 				}
 				else if (floorTextureID == MIFUtils::LAVA_CHASM)
 				{
-					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeLavaChasmVoxelDef, adjacentFaces);
-					this->setVoxel(x, 0, z, dataIndex);
+					chasmDataFunc = makeLavaChasmVoxelDef;
 				}
 				else if (floorTextureID == MIFUtils::WET_CHASM)
 				{
-					const int dataIndex = getChasmDataIndex(
-						florVoxel, makeWetChasmVoxelDef, adjacentFaces);
-					this->setVoxel(x, 0, z, dataIndex);
+					chasmDataFunc = makeWetChasmVoxelDef;
 				}
+				else
+				{
+					DebugNotImplementedMsg(std::to_string(floorTextureID));
+				}
+
+				const int dataIndex = getChasmDataIndex(florVoxel, chasmDataFunc);
+				this->setVoxel(x, 0, z, dataIndex);
 			}
 
 			// See if the FLOR voxel contains a FLAT index (for raised platform flats).
@@ -510,6 +558,48 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 			if (flatIndex > 0)
 			{
 				this->addFlatInstance(flatIndex - 1, NewInt2(x, z));
+			}
+		}
+	}
+
+	// Set chasm faces based on adjacent voxels.
+	for (SNInt x = 0; x < gridWidth; x++)
+	{
+		for (WEInt z = 0; z < gridDepth; z++)
+		{
+			const Int3 voxel(x, 0, z);
+
+			// Ignore non-chasm voxels.
+			const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
+			if (voxelDef.dataType != VoxelDataType::Chasm)
+			{
+				continue;
+			}
+
+			// Query surrounding voxels to see which faces should be set.
+			uint16_t northID, southID, eastID, westID;
+			this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
+
+			const VoxelDefinition &northDef = this->voxelGrid.getVoxelDef(northID);
+			const VoxelDefinition &southDef = this->voxelGrid.getVoxelDef(southID);
+			const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
+			const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
+
+			// Booleans for each face of the new chasm voxel.
+			const bool hasNorthFace = northDef.allowsChasmFace();
+			const bool hasSouthFace = southDef.allowsChasmFace();
+			const bool hasEastFace = eastDef.allowsChasmFace();
+			const bool hasWestFace = westDef.allowsChasmFace();
+
+			// Add chasm state if it is different from the default 0 faces chasm (don't need to
+			// do update on existing chasms here because there should be no existing ones).
+			const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
+			if (shouldAddChasmState)
+			{
+				const NewInt2 voxelXZ(x, z);
+				ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+				this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
 			}
 		}
 	}
@@ -952,27 +1042,6 @@ void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const
 		return voxel;
 	};
 
-	// Lambda for getting the number of stories a MAP2 voxel takes up.
-	auto getMap2VoxelHeight = [](uint16_t map2Voxel)
-	{
-		if ((map2Voxel & 0x80) == 0x80)
-		{
-			return 2;
-		}
-		else if ((map2Voxel & 0x8000) == 0x8000)
-		{
-			return 3;
-		}
-		else if ((map2Voxel & 0x8080) == 0x8080)
-		{
-			return 4;
-		}
-		else
-		{
-			return 1;
-		}
-	};
-
 	// Lambda for obtaining the voxel data index for a MAP2 voxel.
 	auto getMap2DataIndex = [this, &inf](uint16_t map2Voxel)
 	{
@@ -1008,9 +1077,7 @@ void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const
 
 			if (map2Voxel != 0)
 			{
-				// Number of stories the MAP2 voxel occupies.
-				const int height = getMap2VoxelHeight(map2Voxel);
-
+				const int height = LevelUtils::getMap2VoxelHeight(map2Voxel);
 				const int dataIndex = getMap2DataIndex(map2Voxel);
 
 				for (int y = 2; y < (height + 2); y++)
@@ -1112,8 +1179,6 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 		return;
 	}
 
-	const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-
 	// Query surrounding voxels to see which faces should be set.
 	uint16_t northID, southID, eastID, westID;
 	this->getAdjacentVoxelIDs(voxel, &northID, &southID, &eastID, &westID);
@@ -1123,43 +1188,35 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
 	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
-	auto voxelDefIsChasm = [](const VoxelDefinition &voxelDef)
-	{
-		return voxelDef.dataType == VoxelDataType::Chasm;
-	};
-
 	// Booleans for each face of the new chasm voxel.
-	bool hasNorthFace = !voxelDefIsChasm(northDef);
-	bool hasSouthFace = !voxelDefIsChasm(southDef);
-	bool hasEastFace = !voxelDefIsChasm(eastDef);
-	bool hasWestFace = !voxelDefIsChasm(westDef);
+	const bool hasNorthFace = northDef.allowsChasmFace();
+	const bool hasSouthFace = southDef.allowsChasmFace();
+	const bool hasEastFace = eastDef.allowsChasmFace();
+	const bool hasWestFace = westDef.allowsChasmFace();
 
-	const VoxelDefinition newVoxelDef = VoxelDefinition::makeChasm(
-		chasmData.id, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, chasmData.type);
-
-	// Find chasm voxel data with the matching faces, adding if missing.
-	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
-		[&newVoxelDef](const VoxelDefinition &voxelDef)
+	// Add/update chasm state.
+	const NewInt2 voxelXZ(voxel.x, voxel.z);
+	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
+	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
+	if (chasmStateIter != this->chasmStates.end())
 	{
-		if (voxelDef.dataType == VoxelDataType::Chasm)
+		if (shouldAddChasmState)
 		{
-			DebugAssert(newVoxelDef.dataType == VoxelDataType::Chasm);
-			const VoxelDefinition::ChasmData &newChasmData = newVoxelDef.chasm;
-			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
-			return chasmData.matches(newChasmData);
+			chasmStateIter->second = std::move(newChasmState);
 		}
 		else
 		{
-			return false;
+			this->chasmStates.erase(chasmStateIter);
 		}
-	});
-
-	// Use the chasm ID if it exists, or add a new voxel data to the grid and use its ID.
-	const uint16_t actualChasmID = optChasmID.has_value() ?
-		*optChasmID : this->voxelGrid.addVoxelDef(newVoxelDef);
-
-	// Update the chasm's voxel ID in the grid.
-	this->voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, actualChasmID);
+	}
+	else
+	{
+		if (shouldAddChasmState)
+		{
+			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
+		}
+	}
 }
 
 uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
@@ -1175,16 +1232,11 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	const VoxelDefinition &eastDef = this->voxelGrid.getVoxelDef(eastID);
 	const VoxelDefinition &westDef = this->voxelGrid.getVoxelDef(westID);
 
-	auto voxelDataIsChasm = [](const VoxelDefinition &voxelDef)
-	{
-		return voxelDef.dataType == VoxelDataType::Chasm;
-	};
-
 	// Booleans for each face of the new chasm voxel.
-	bool hasNorthFace = !voxelDataIsChasm(northDef);
-	bool hasSouthFace = !voxelDataIsChasm(southDef);
-	bool hasEastFace = !voxelDataIsChasm(eastDef);
-	bool hasWestFace = !voxelDataIsChasm(westDef);
+	const bool hasNorthFace = northDef.allowsChasmFace();
+	const bool hasSouthFace = southDef.allowsChasmFace();
+	const bool hasEastFace = eastDef.allowsChasmFace();
+	const bool hasWestFace = westDef.allowsChasmFace();
 
 	// Based on how the original game behaves, it seems to be the chasm type closest to the player,
 	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities
@@ -1223,10 +1275,9 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		return (chasmIndexPtr != nullptr) ? *chasmIndexPtr : 0;
 	}();
 
-	const VoxelDefinition newDef = VoxelDefinition::makeChasm(
-		newTextureID, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace, newChasmType);
+	const VoxelDefinition newDef = VoxelDefinition::makeChasm(newTextureID, newChasmType);
 
-	// Find chasm voxel data with the matching faces, adding if missing.
+	// Find matching chasm voxel definition, adding if missing.
 	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
 		[&newDef](const VoxelDefinition &voxelDef)
 	{
@@ -1242,6 +1293,30 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 			return false;
 		}
 	});
+
+	// Add/update chasm state.
+	const NewInt2 voxelXZ(voxel.x, voxel.z);
+	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
+	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
+	if (chasmStateIter != this->chasmStates.end())
+	{
+		if (shouldAddChasmState)
+		{
+			chasmStateIter->second = std::move(newChasmState);
+		}
+		else
+		{
+			this->chasmStates.erase(chasmStateIter);
+		}
+	}
+	else
+	{
+		if (shouldAddChasmState)
+		{
+			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
+		}
+	}
 
 	if (optChasmID.has_value())
 	{
@@ -1598,15 +1673,20 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			for (const Int2 &position : flatDef.getPositions())
 			{
 				EntityRef entityRef = this->entityManager.makeEntity(entityType);
+
+				// Using raw entity pointer in this scope for performance due to it currently being
+				// impractical to use the ref wrapper when loading the entire wilderness.
+				Entity *entityPtr = entityRef.get();
+
 				if (entityType == EntityType::Static)
 				{
-					StaticEntity *staticEntity = entityRef.getDerived<StaticEntity>();
+					StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
 					staticEntity->initDoodad(entityDefID, entityAnimInst);
 				}
 				else if (entityType == EntityType::Dynamic)
 				{
 					// All dynamic entities in a level are creatures (never citizens).
-					DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
+					DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
 					dynamicEntity->initCreature(entityDefID, entityAnimInst,
 						CardinalDirection::North, random);
 				}
@@ -1616,7 +1696,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 						std::to_string(static_cast<int>(entityType)) + "\".");
 				}
 
-				entityRef.get()->setRenderID(entityRenderID);
+				entityPtr->setRenderID(entityRenderID);
 
 				// Set default animation state.
 				int defaultStateIndex;
@@ -1644,13 +1724,15 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 					}
 				}
 
+				EntityAnimationInstance &animInst = entityPtr->getAnimInstance();
+				animInst.setStateIndex(defaultStateIndex);
+
+				// Note: since the entity pointer is being used directly, update the position last
+				// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 				const NewDouble2 positionXZ(
 					static_cast<SNDouble>(position.x) + 0.50,
 					static_cast<WEDouble>(position.y) + 0.50);
-				entityRef.get()->setPosition(positionXZ, this->entityManager, this->voxelGrid);
-
-				EntityAnimationInstance &animInst = entityRef.get()->getAnimInstance();
-				animInst.setStateIndex(defaultStateIndex);
+				entityPtr->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 			}
 
 			// Palette for renderer textures.

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Chunk.h"
+#include "ChunkUtils.h"
 #include "VoxelUtils.h"
 
 // Handles active chunks and the voxels in them. Does not store any entities. When freeing a chunk,
@@ -19,31 +20,43 @@ enum class WorldType;
 class ChunkManager
 {
 private:
-	std::vector<std::unique_ptr<Chunk>> chunkPool;
-	std::vector<std::unique_ptr<Chunk>> activeChunks;
-	ChunkInt2 origin;
+	using ChunkPtr = std::unique_ptr<Chunk>;
 
-	int findChunkIndex(const ChunkInt2 &coord) const;
-public:
-	void init(int chunkDistance);
+	std::vector<ChunkPtr> chunkPool;
+	std::vector<ChunkPtr> activeChunks;
+	WorldType worldType;
+	int chunkDistance;
 
-	int getChunkCount() const;
-	Chunk &getChunkAtIndex(int index);
-	const Chunk &getChunkAtIndex(int index) const;
-	Chunk *getChunk(const ChunkInt2 &coord);
-	const Chunk *getChunk(const ChunkInt2 &coord) const;
+	// Returns whether the given chunk ID points to an active chunk. The chunk ID of a chunk can
+	// never change until it has returned to the chunk pool.
+	bool isValidChunkID(ChunkID id) const;
 
-	// Sets the chunk that all other active chunks are relative to.
-	void setOriginChunk(const ChunkInt2 &coord);
+	// Gets a pointer to the chunk associated with the ID if it is active.
+	ChunkPtr &getChunkPtr(ChunkID id);
+	const ChunkPtr &getChunkPtr(ChunkID id) const;
+
+	// Takes a chunk from the chunk pool and moves it to the active chunks.
+	ChunkID spawnChunk();
+
+	// Clears the chunk, including entities, and removes it from the active chunks.
+	void recycleChunk(ChunkID id, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	bool tryPopulateChunk(const ChunkInt2 &coord, WorldType worldType, Game &game);
+	bool populateChunk(ChunkID id, WorldType worldType, EntityManager &entityManager);
+public:
+	ChunkManager();
 
-	// Clears the chunk and removes it from the active chunks.
-	bool tryFreeChunk(const ChunkInt2 &coord, EntityManager &entityManager);
+	void init(WorldType worldType, int chunkDistance);
 
-	// Clears all voxels and entities in the active chunks.
-	void clear(EntityManager &entityManager);
+	int getChunkCount() const;
+	ChunkID getChunkID(int index) const;
+	bool tryGetChunkID(const ChunkInt2 &coord, ChunkID *outID) const;
+	Chunk &getChunk(ChunkID id);
+	const Chunk &getChunk(ChunkID id) const;
+
+	// Updates the chunk manager with the given chunk as the current center of the game world.
+	// This invalidates all existing chunk IDs.
+	void update(const ChunkInt2 &playerChunk, WorldType worldType, EntityManager &entityManager);
 };
 
 #endif

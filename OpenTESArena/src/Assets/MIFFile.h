@@ -14,11 +14,9 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 
-// A MIF file contains map information. It defines the dimensions of a particular area 
-// and which voxels have which IDs, as well as some other data. It is normally paired with 
-// an INF file that tells which textures to use, among other things.
-
-// It is composed of a map header and an array of levels.
+// A .MIF file contains a map header and an array of levels. It defines the dimensions of
+// a particular area and which voxels have which IDs, as well as some other data. It is normally
+// paired with an .INF file that tells which textures to use, among other things.
 
 class MIFFile
 {
@@ -28,7 +26,7 @@ public:
 	class Level
 	{
 	private:
-		std::string name, info; // Name of level and associated INF filename.
+		std::string name, info; // Name of level and associated .INF filename.
 		int numf; // Number of floor textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
@@ -66,10 +64,6 @@ public:
 		static int loadTARG(MIFFile::Level &level, const uint8_t *tagStart);
 		static int loadTRIG(MIFFile::Level &level, const uint8_t *tagStart);
 
-		// Gets the height of the level in voxels. This value depends on extended blocks
-		// in the MAP2 data, otherwise it drops back to a default value.
-		int getHeight() const;
-
 		const std::string &getName() const;
 		const std::string &getInfo() const;
 		int getNumf() const;
@@ -93,30 +87,23 @@ private:
 	int startingLevelIndex;
 	std::array<OriginalInt2, 4> startPoints; // Entrance locations for the level (not always full).
 	std::vector<MIFFile::Level> levels;
-	std::string name;
-	// Should a vector of levels be exposed, or does the caller want a nicer format?
-	// VoxelGrid? Array of VoxelData?
 public:
 	bool init(const char *filename);
 
-	// Gets the dimensions of the map. Width and depth are constant for all levels in a map,
-	// and the height depends on MAP2 data in each level (if any -- default otherwise).
+	// Gets the dimensions of all levels in the map.
 	WEInt getWidth() const;
-	int getHeight(int levelIndex) const;
 	SNInt getDepth() const;
 
 	// Gets the starting level when the player enters the area.
 	int getStartingLevelIndex() const;
 
-	// Gets the name of the .MIF file.
-	const std::string &getName() const;
-
 	// Starting points for the player in special 'centimeter-like' units.
-	const std::array<OriginalInt2, 4> &getStartPoints() const;
+	int getStartPointCount() const;
+	const OriginalInt2 &getStartPoint(int index) const;
 
-	// -- temp -- Get the levels associated with the .MIF file (I think we want the data 
-	// to be in a nicer format before handing it over to the rest of the program).
-	const std::vector<MIFFile::Level> &getLevels() const;
+	// Get the levels associated with the .MIF file.
+	int getLevelCount() const;
+	const MIFFile::Level &getLevel(int index) const;
 };
 
 #endif

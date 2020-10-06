@@ -898,6 +898,7 @@ void SoftwareRenderer::RenderThreadData::DistantSky::init(bool parallaxSky,
 void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates,
 	const std::vector<VisibleLight> &visLights,
 	const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &voxelTextures,
@@ -908,6 +909,7 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double 
 	this->ceilingHeight = ceilingHeight;
 	this->openDoors = &openDoors;
 	this->fadingVoxels = &fadingVoxels;
+	this->chasmStates = &chasmStates;
 	this->visLights = &visLights;
 	this->visLightLists = &visLightLists;
 	this->voxelGrid = &voxelGrid;
@@ -4607,9 +4609,10 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
-	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
+	const LevelData::ChasmStates &chasmStates, const BufferView<const VisibleLight> &visLights,
+	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -4853,6 +4856,13 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
+		const LevelData::ChasmState *chasmStatePtr = [voxelX, voxelZ, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxelX, voxelZ);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
 		// Find which far face on the chasm was intersected.
 		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
@@ -4888,7 +4898,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
-		if (chasmData.faceIsVisible(farFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing))
 		{
 			const double farU = [&farPoint, farFacing]()
 			{
@@ -5032,9 +5042,10 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
-	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
-	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
+	const LevelData::ChasmStates &chasmStates, const BufferView<const VisibleLight> &visLights,
+	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
+	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+	OcclusionData &occlusion, const FrameView &frame)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -5361,7 +5372,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
+	const LevelData::ChasmStates &chasmStates, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
@@ -5585,6 +5596,13 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
+		const LevelData::ChasmState *chasmStatePtr = [voxelX, voxelZ, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxelX, voxelZ);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
 		// Find which far face on the chasm was intersected.
 		const VoxelFacing farFacing = SoftwareRenderer::getInitialChasmFarFacing(
 			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
@@ -5620,7 +5638,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
-		if (chasmData.faceIsVisible(farFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing))
 		{
 			const double farU = [&farPoint, farFacing]()
 			{
@@ -5762,9 +5780,8 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
+	const std::vector<LevelData::DoorState> &openDoors, const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
@@ -5812,16 +5829,16 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ,
 	// Draw the player's current voxel first.
 	SoftwareRenderer::drawInitialVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray,
 		facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance,
-		ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, textures,
-		chasmTextureGroups, occlusion, frame);
+		ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid,
+		textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the player's voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawInitialVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray,
 			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo,
-			chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists,
-			voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
+			visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 
 	// Draw voxels above the player's voxel.
@@ -5829,8 +5846,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ,
 	{
 		SoftwareRenderer::drawInitialVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray,
 			facing, nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo,
-			chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists,
-			voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
+			visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
@@ -5838,11 +5855,10 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -6077,6 +6093,13 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
+		const LevelData::ChasmState *chasmStatePtr = [voxelX, voxelZ, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxelX, voxelZ);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
 		// Find which faces on the chasm were intersected.
 		const VoxelFacing nearFacing = facing;
 		const VoxelFacing farFacing = SoftwareRenderer::getChasmFarFacing(
@@ -6108,7 +6131,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			shadingInfo.chasmAnimPercent, &chasmTexture);
 
 		// Near (drawn separately from far + chasm floor).
-		if (chasmData.faceIsVisible(nearFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(nearFacing))
 		{
 			const double nearU = Constants::JustBelowOne - wallU;
 			const Double3 nearNormal = wallNormal;
@@ -6133,7 +6156,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
-		if (chasmData.faceIsVisible(farFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing))
 		{
 			const double farU = [&farPoint, farFacing]()
 			{
@@ -6276,11 +6299,10 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -6627,11 +6649,10 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -6872,6 +6893,13 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
+		const LevelData::ChasmState *chasmStatePtr = [voxelX, voxelZ, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxelX, voxelZ);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
 		// Wet chasms and lava chasms are unaffected by ceiling height.
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
 			voxelHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
@@ -6903,7 +6931,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			shadingInfo.chasmAnimPercent, &chasmTexture);
 
 		// Near (drawn separately from far + chasm floor).
-		if (chasmData.faceIsVisible(nearFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(nearFacing))
 		{
 			const double nearU = Constants::JustBelowOne - wallU;
 			const Double3 nearNormal = wallNormal;
@@ -6928,7 +6956,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			*chasmTexture, shadingInfo, occlusion, frame);
 
 		// Far.
-		if (chasmData.faceIsVisible(farFacing))
+		if ((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing))
 		{
 			const double farU = [&farPoint, farFacing]()
 			{
@@ -7071,11 +7099,10 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 	const Ray &ray, VoxelFacing facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
-	OcclusionData &occlusion, const FrameView &frame)
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const VoxelGrid &voxelGrid, const std::vector<VoxelTexture> &textures,
+	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
 	// there are a couple differences, like the horizontal texture coordinate being flipped,
@@ -7127,15 +7154,15 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 	// Draw voxel straight ahead first.
 	SoftwareRenderer::drawVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray, facing,
 		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance,
-		ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, textures,
-		chasmTextureGroups, occlusion, frame);
+		ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid,
+		textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
 			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
-			openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, textures,
+			openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid, textures,
 			chasmTextureGroups, occlusion, frame);
 	}
 
@@ -7144,7 +7171,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 	{
 		SoftwareRenderer::drawVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
 			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
-			openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, textures,
+			openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid, textures,
 			chasmTextureGroups, occlusion, frame);
 	}
 }
@@ -7344,6 +7371,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -7432,7 +7460,8 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE,
 			zDistance, shadingInfo, chunkDistance, ceilingHeight, openDoors, fadingVoxels,
-			visLights, visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
+			chasmStates, visLights, visLightLists, voxelGrid, textures, chasmTextureGroups,
+			occlusion, frame);
 	}
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
@@ -7504,9 +7533,9 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
-			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance,
-			ceilingHeight, openDoors, fadingVoxels, visLights, visLightLists, voxelGrid,
-			textures, chasmTextureGroups, occlusion, frame);
+			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance, ceilingHeight,
+			openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid, textures,
+			chasmTextureGroups, occlusion, frame);
 	}
 }
 
@@ -7514,6 +7543,7 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups, 
@@ -7529,13 +7559,13 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		if (nonNegativeDirZ)
 		{
 			SoftwareRenderer::rayCast2DInternal<true, true>(x, camera, ray, shadingInfo,
-				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
 				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 		}
 		else
 		{
 			SoftwareRenderer::rayCast2DInternal<true, false>(x, camera, ray, shadingInfo,
-				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
 				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 		}
 	}
@@ -7544,13 +7574,13 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray,
 		if (nonNegativeDirZ)
 		{
 			SoftwareRenderer::rayCast2DInternal<false, true>(x, camera, ray, shadingInfo,
-				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
 				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 		}
 		else
 		{
 			SoftwareRenderer::rayCast2DInternal<false, false>(x, camera, ray, shadingInfo,
-				chunkDistance, ceilingHeight, openDoors, fadingVoxels, visLights,
+				chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates, visLights,
 				visLightLists, voxelGrid, textures, chasmTextureGroups, occlusion, frame);
 		}
 	}
@@ -7736,6 +7766,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, bool parallaxSky,
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 	const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
@@ -7761,8 +7792,8 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera,
 
 		// Cast the 2D ray and fill in the column's pixels with color.
 		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, chunkDistance, ceilingHeight,
-			openDoors, fadingVoxels, visLights, visLightLists, voxelGrid, voxelTextures,
-			chasmTextureGroups, occlusion.get(x), frame);
+			openDoors, fadingVoxels, chasmStates, visLights, visLightLists, voxelGrid,
+			voxelTextures, chasmTextureGroups, occlusion.get(x), frame);
 	}
 }
 
@@ -7874,8 +7905,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		const BufferView2D<const VisibleLightList> voxelsVisLightListsView(voxels.visLightLists->get(),
 			voxels.visLightLists->getWidth(), voxels.visLightLists->getHeight());
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera, voxels.chunkDistance,
-			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, voxelsVisLightsView,
-			voxelsVisLightListsView, *voxels.voxelGrid, *voxels.voxelTextures,
+			voxels.ceilingHeight, *voxels.openDoors, *voxels.fadingVoxels, *voxels.chasmStates,
+			voxelsVisLightsView, voxelsVisLightListsView, *voxels.voxelGrid, *voxels.voxelTextures,
 			*voxels.chasmTextureGroups, *voxels.occlusion, *threadData.shadingInfo, *threadData.frame);
 
 		// Wait for other threads to finish voxels.
@@ -7906,7 +7937,8 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
 	bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 	int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::FadeState> &fadingVoxels,
+	const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
 	uint32_t *colorBuffer)
 {
@@ -7938,7 +7970,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	this->threadData.init(this->renderThreads.getCount(), camera, shadingInfo, frame);
 	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom, this->skyGradientRowCache);
 	this->threadData.distantSky.init(parallaxSky, this->visDistantObjs, this->skyTextures);
-	this->threadData.voxels.init(chunkDistance, ceilingHeight, openDoors, fadingVoxels,
+	this->threadData.voxels.init(chunkDistance, ceilingHeight, openDoors, fadingVoxels, chasmStates,
 		this->visibleLights, this->visLightLists, voxelGrid, this->voxelTextures,
 		this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights, this->visLightLists,

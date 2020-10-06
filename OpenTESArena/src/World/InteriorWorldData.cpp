@@ -1,4 +1,6 @@
+#include "InteriorLevelUtils.h"
 #include "InteriorWorldData.h"
+#include "InteriorWorldUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 #include "../Math/Random.h"
@@ -23,22 +25,23 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 	InteriorWorldData worldData;
 
 	// Generate levels.
-	for (const auto &level : mif.getLevels())
+	for (int i = 0; i < mif.getLevelCount(); i++)
 	{
+		const MIFFile::Level &level = mif.getLevel(i);
 		worldData.levels.push_back(InteriorLevelData::loadInterior(
 			level, mif.getDepth(), mif.getWidth(), exeData));
 	}
 
 	// Convert start points from the old coordinate system to the new one.
-	for (const OriginalInt2 &point : mif.getStartPoints())
+	for (int i = 0; i < mif.getStartPointCount(); i++)
 	{
+		const OriginalInt2 &point = mif.getStartPoint(i);
 		const Double2 startPointReal = MIFUtils::convertStartPointToReal(point);
 		worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPointReal));
 	}
 
 	worldData.levelIndex = mif.getStartingLevelIndex();
 	worldData.interiorType = interiorType;
-	worldData.mifName = mif.getName();
 
 	return worldData;
 }
@@ -58,27 +61,17 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	ArenaRandom random(seed);
 
 	// Number of levels in the dungeon.
-	const int levelCount = [isArtifactDungeon, &random]()
-	{
-		if (isArtifactDungeon)
-		{
-			return 4;
-		}
-		else
-		{
-			return 1 + (random.next() % 2);
-		}
-	}();
+	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
 
-	// Determine transition blocks (*LEVELUP, *LEVELDOWN).
+	// Determine transition blocks (*LEVELUP/*LEVELDOWN) that will appear in the dungeon.
 	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
 	{
 		const SNInt tY = random.next() % depthChunks;
 		const WEInt tX = random.next() % widthChunks;
-		return (10 * tY) + tX;
+		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
 	};
 
 	// Packed coordinates for transition blocks.
@@ -101,7 +94,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	}
 
 	// .INF filename is the same for each level (RD1.INF).
-	const std::string infName = String::toUppercase(mif.getLevels().front().getInfo());
+	const std::string infName = String::toUppercase(mif.getLevel(0).getInfo());
 
 	InteriorWorldData worldData;
 	const SNInt gridWidth = mif.getDepth() * depthChunks;
@@ -117,24 +110,24 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 		const int *levelDownBlock = (i < (levelCount - 1)) ? &transitions.at(i + 1) : nullptr;
 
 		worldData.levels.push_back(InteriorLevelData::loadDungeon(
-			random, mif.getLevels(), levelUpBlock, levelDownBlock, widthChunks,
-			depthChunks, infName, gridWidth, gridDepth, exeData));
+			random, mif, levelUpBlock, levelDownBlock, widthChunks, depthChunks, infName,
+			gridWidth, gridDepth, exeData));
 	}
 
 	// The start point depends on where the level up voxel is on the first level.
 	// Convert it from the old coordinate system to the new one.
-	constexpr WEDouble chunkWidthReal = 32.0;
-	constexpr SNDouble chunkDepthReal = chunkWidthReal;
-	const WEDouble firstTransitionChunkX = static_cast<WEDouble>(transitions.front() % 10);
-	const SNDouble firstTransitionChunkZ = static_cast<SNDouble>(transitions.front() / 10);
+	WEInt firstTransitionChunkX;
+	SNInt firstTransitionChunkZ;
+	InteriorLevelUtils::unpackLevelChangeVoxel(
+		transitions.front(), &firstTransitionChunkX, &firstTransitionChunkZ);
+
 	const OriginalDouble2 startPoint(
-		10.50 + (firstTransitionChunkX * chunkWidthReal),
-		10.50 + (firstTransitionChunkZ * chunkDepthReal));
+		0.50 + static_cast<WEDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX)),
+		0.50 + static_cast<SNDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ)));
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;
 	worldData.interiorType = interiorType;
-	worldData.mifName = mif.getName();
 
 	return worldData;
 }
@@ -152,11 +145,6 @@ int InteriorWorldData::getLevelCount() const
 VoxelDefinition::WallData::MenuType InteriorWorldData::getInteriorType() const
 {
 	return this->interiorType;
-}
-
-const std::string &InteriorWorldData::getMifName() const
-{
-	return this->mifName;
 }
 
 WorldType InteriorWorldData::getBaseWorldType() const

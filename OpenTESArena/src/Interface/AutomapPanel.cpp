@@ -26,11 +26,11 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Surface.h"
-#include "../World/ExteriorLevelData.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing.h"
 #include "../World/VoxelGrid.h"
+#include "../World/WildLevelUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -572,7 +572,7 @@ Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
 
 NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
 {
-	return ExteriorLevelData::getCenteredWildOrigin(voxel);
+	return WildLevelUtils::getCenteredWildOrigin(voxel);
 }
 
 Panel::CursorData AutomapPanel::getCurrentCursor() const

@@ -198,13 +198,15 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 			continue;
 		}
 
+		EntityAnimationInstance &animInst = dynamicEntity->getAnimInstance();
+		animInst.setStateIndex(defaultStateIndex);
+
+		// Note: since the entity pointer is being used directly, update the position last
+		// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 		const NewDouble2 positionXZ(
 			static_cast<SNDouble>(spawnPositionXZ.x) + 0.50,
 			static_cast<WEDouble>(spawnPositionXZ.y) + 0.50);
-		entityRef.get()->setPosition(positionXZ, entityManager, voxelGrid);
-
-		EntityAnimationInstance &animInst = entityRef.get()->getAnimInstance();
-		animInst.setStateIndex(defaultStateIndex);
+		dynamicEntity->setPosition(positionXZ, entityManager, voxelGrid);
 	}
 
 	// Initializes textures in the renderer for this citizen variation.

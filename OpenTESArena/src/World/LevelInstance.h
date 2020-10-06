@@ -1,48 +1,35 @@
 #ifndef LEVEL_INSTANCE_H
 #define LEVEL_INSTANCE_H
 
-#include <vector>
+#include "ChunkManager.h"
+#include "../Entities/EntityManager.h"
 
-#include "LevelDefinition.h"
-#include "VoxelInstance.h"
-#include "../Math/Vector3.h"
+// Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
+// and depends on one or more level definitions for its population.
 
-// Contains deltas and changed values for the associated level definition.
+enum class WorldType;
 
 class LevelInstance
 {
-public:
-	using ChangedVoxel = std::pair<Int3, LevelDefinition::VoxelID>;
 private:
-	std::vector<ChangedVoxel> changedVoxels;
-	std::vector<VoxelDefinition> voxelDefAdditions; // Voxel defs generated after the level definition's.
-	std::vector<VoxelInstance> voxelInsts;
+	ChunkManager chunkManager;
+	EntityManager entityManager;
+	WorldType worldType;
 
-	static Int3 makeVoxelCoord(WEInt x, int y, SNInt z);
-
-	ChangedVoxel *findVoxel(WEInt x, int y, SNInt z);
-	const ChangedVoxel *findVoxel(WEInt x, int y, SNInt z) const;
+	void init(WorldType worldType, int chunkDistance); // @todo: give WorldType?
+	// @todo: chunkDistance will need to be a set() function in ChunkManager so it can change the chunk pool at runtime after init.
 public:
-	void init();
+	LevelInstance();
 
-	int getChangedVoxelCount() const;
-	const ChangedVoxel &getChangedVoxel(int index) const;
+	void initInterior(int chunkDistance);
+	void initCity(int chunkDistance);
+	void initWilderness(int chunkDistance);
 
-	// Gets the voxel definition associated with an ID. The ID can be pointing to either a voxel
-	// definition in the level definition or a new voxel definition in this level instance.
-	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelID id, const LevelDefinition &levelDef) const;
+	ChunkManager &getChunkManager();
+	const ChunkManager &getChunkManager() const;
 
-	int getVoxelInstanceCount() const;
-	VoxelInstance &getVoxelInstance(int index);
-
-	// Checks the level instance for a changed voxel at the given coordinate, otherwise gets
-	// the voxel from the level definition.
-	LevelDefinition::VoxelID getVoxel(WEInt x, int y, SNInt z, const LevelDefinition &levelDef) const;
-
-	void setChangedVoxel(WEInt x, int y, SNInt z, LevelDefinition::VoxelID voxelID);
-
-	// Adds a voxel definition and returns its assigned ID.
-	LevelDefinition::VoxelID addVoxelDef(const VoxelDefinition &voxelDef);
+	EntityManager &getEntityManager();
+	const EntityManager &getEntityManager() const;
 
 	void update(double dt);
 };

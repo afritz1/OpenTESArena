@@ -5,12 +5,30 @@
 
 // Values for a voxel changing over time or being uniquely different in some way.
 
+enum class VoxelFacing;
+
 class VoxelInstance
 {
 public:
-	enum class Type { OpenDoor, Fading };
+	enum class Type { Chasm, OpenDoor, Fading };
 
 	// @todo: maybe a BashState?
+
+	class ChasmState
+	{
+	private:
+		// Visible chasm faces.
+		bool north, east, south, west;
+	public:
+		void init(bool north, bool east, bool south, bool west);
+
+		bool getNorth() const;
+		bool getEast() const;
+		bool getSouth() const;
+		bool getWest() const;
+		bool faceIsVisible(VoxelFacing facing) const;
+		int getFaceCount() const;
+	};
 
 	class DoorState
 	{
@@ -46,34 +64,40 @@ public:
 		void update(double dt);
 	};
 private:
-	WEInt x;
+	SNInt x;
 	int y;
-	SNInt z;
+	WEInt z;
 	Type type;
 
 	union
 	{
+		ChasmState chasm;
 		DoorState door;
 		FadeState fade;
 	};
 
-	void init(WEInt x, int y, SNInt z, Type type);
+	void init(SNInt x, int y, WEInt z, Type type);
 public:
-	static VoxelInstance makeDoor(WEInt x, int y, SNInt z, double speed, double percentOpen,
+	static VoxelInstance makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
+		bool south, bool west);
+
+	static VoxelInstance makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
 		DoorState::StateType stateType);
 	
 	// Default to opening (so it isn't cleared on the first frame).
-	static VoxelInstance makeDoor(WEInt x, int y, SNInt z, double speed);
+	static VoxelInstance makeDoor(SNInt x, int y, WEInt z, double speed);
 
-	static VoxelInstance makeFading(WEInt x, int y, SNInt z, double speed, double percentFaded);
+	static VoxelInstance makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded);
 
 	// Default to beginning fade.
-	static VoxelInstance makeFading(WEInt x, int y, SNInt z, double speed);
+	static VoxelInstance makeFading(SNInt x, int y, WEInt z, double speed);
 
-	WEInt getX() const;
+	SNInt getX() const;
 	int getY() const;
-	SNInt getZ() const;
+	WEInt getZ() const;
 	Type getType() const;
+	ChasmState &getChasmState();
+	const ChasmState &getChasmState() const;
 	DoorState &getDoorState();
 	const DoorState &getDoorState() const;
 	FadeState &getFadeState();

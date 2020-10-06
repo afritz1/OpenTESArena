@@ -483,6 +483,7 @@ private:
 			int threadsDone;
 			const std::vector<LevelData::DoorState> *openDoors;
 			const std::vector<LevelData::FadeState> *fadingVoxels;
+			const LevelData::ChasmStates *chasmStates;
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
 			const VoxelGrid *voxelGrid;
@@ -496,6 +497,7 @@ private:
 			void init(int chunkDistance, double ceilingHeight,
 				const std::vector<LevelData::DoorState> &openDoors,
 				const std::vector<LevelData::FadeState> &fadingVoxels,
+				const LevelData::ChasmStates &chasmStates,
 				const std::vector<VisibleLight> &visLights,
 				const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 				const std::vector<VoxelTexture> &voxelTextures,
@@ -824,6 +826,7 @@ private:
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -834,6 +837,7 @@ private:
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -844,6 +848,7 @@ private:
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -855,6 +860,7 @@ private:
 		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -866,6 +872,7 @@ private:
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -875,6 +882,7 @@ private:
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -884,6 +892,7 @@ private:
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -895,6 +904,7 @@ private:
 		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -915,6 +925,7 @@ private:
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -926,6 +937,7 @@ private:
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
@@ -949,6 +961,7 @@ private:
 	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
 		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
 		const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
@@ -1042,7 +1055,8 @@ public:
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
 		bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const VoxelGrid &voxelGrid,
+		const std::vector<LevelData::FadeState> &fadingVoxels,
+		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
 		uint32_t *colorBuffer);
 };

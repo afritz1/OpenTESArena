@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "VoxelDataType.h"
 #include "VoxelFacing.h"
 #include "VoxelGeometry.h"
@@ -289,7 +291,7 @@ namespace
 	}
 
 	void GenerateChasm(const VoxelDefinition::ChasmData &chasm, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingHeight, const LevelData::ChasmState *chasmState, BufferView<Quad> &outView)
 	{
 		// Depends on number of faces and chasm type.
 		const int faceCount = outView.getCount();
@@ -298,6 +300,11 @@ namespace
 		const double chasmDepth = (chasm.type == VoxelDefinition::ChasmData::Type::Dry) ?
 			ceilingHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
 		const Double3 chasmOrigin = origin + Double3(0.0, ceilingHeight - chasmDepth, 0.0);
+
+		const bool hasNorthFace = (chasmState != nullptr) && chasmState->getNorth();
+		const bool hasEastFace = (chasmState != nullptr) && chasmState->getEast();
+		const bool hasSouthFace = (chasmState != nullptr) && chasmState->getSouth();
+		const bool hasWestFace = (chasmState != nullptr) && chasmState->getWest();
 
 		const Double3 xVec = GetXVec();
 		const Double3 yVec = GetYVec(chasmDepth);
@@ -313,7 +320,7 @@ namespace
 
 		// Near X
 		int faceIndex = 1;
-		if (chasm.south)
+		if (hasSouthFace)
 		{
 			const Quad face(
 				chasmOrigin,
@@ -325,7 +332,7 @@ namespace
 		}
 
 		// Far X
-		if (chasm.north)
+		if (hasNorthFace)
 		{
 			const Quad face(
 				chasmOrigin + xVec + zVec,
@@ -337,7 +344,7 @@ namespace
 		}
 
 		// Near Z
-		if (chasm.west)
+		if (hasWestFace)
 		{
 			const Quad face(
 				chasmOrigin + xVec,
@@ -349,7 +356,7 @@ namespace
 		}
 
 		// Far Z
-		if (chasm.east)
+		if (hasEastFace)
 		{
 			const Quad face(
 				chasmOrigin + zVec,
@@ -403,7 +410,8 @@ namespace
 	}
 }
 
-void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, int *outQuadCount)
+void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
+	const LevelData::ChasmStates &chasmStates, int *outQuadCount)
 {
 	auto maybeWrite = [outQuadCount](int quadCount)
 	{
@@ -440,9 +448,19 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, int *outQuadCount)
 		maybeWrite(1);
 		break;
 	case VoxelDataType::Chasm:
+	{
 		// Depends on visible face count.
-		maybeWrite(voxelDef.chasm.getFaceCount());
+		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxel.x, voxel.z);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
+		const int faceCount = (chasmStatePtr != nullptr) ? chasmStatePtr->getFaceCount() : 0;
+		maybeWrite(faceCount);
 		break;
+	}
 	case VoxelDataType::Door:
 		// Doors are an unusual case. Just pretend they're closed here.
 		maybeWrite(4);
@@ -454,7 +472,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, int *outQuadCount)
 }
 
 int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, double ceilingHeight,
-	Quad *outQuads, int bufferSize)
+	const LevelData::ChasmStates &chasmStates, Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))
 	{
@@ -462,7 +480,7 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 	}
 
 	int quadCount;
-	VoxelGeometry::getInfo(voxelDef, &quadCount);
+	VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
 
 	// If there's nothing to write, or all the geometry data can't fit in the output buffer,
 	// then return failure.
@@ -504,8 +522,18 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 		GenerateEdge(voxelDef.edge, origin, ceilingHeight, quadView);
 		break;
 	case VoxelDataType::Chasm:
-		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, quadView);
+	{
+		// Need any existing state for this chasm.
+		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
+		{
+			const NewInt2 voxelXZ(voxel.x, voxel.z);
+			const auto iter = chasmStates.find(voxelXZ);
+			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+		}();
+
+		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmStatePtr, quadView);
 		break;
+	}
 	case VoxelDataType::Door:
 		GenerateDoor(voxelDef.door, origin, ceilingHeight, quadView);
 		break;
@@ -514,11 +542,4 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 	}
 
 	return quadCount;
-}
-
-int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, double ceilingHeight,
-	Quad *outQuads, int bufferSize)
-{
-	const Int3 voxel = Int3::Zero;
-	return VoxelGeometry::getQuads(voxelDef, voxel, ceilingHeight, outQuads, bufferSize);
 }

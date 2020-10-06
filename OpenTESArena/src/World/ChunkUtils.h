@@ -3,6 +3,9 @@
 
 #include "VoxelUtils.h"
 
+// Unique identifier for a chunk.
+using ChunkID = int;
+
 namespace ChunkUtils
 {
 	// Number of voxels per side on a chunk.
@@ -23,6 +26,9 @@ namespace ChunkUtils
 	// chunk in X or Z to reach (to obtain 3x3, 5x5, etc.).
 	void getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance, ChunkInt2 *outMinChunk,
 		ChunkInt2 *outMaxChunk);
+
+	// Returns whether the other chunk is close enough to the given chunk to be considered active.
+	bool isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &other, int chunkDistance);
 }
 
 #endif

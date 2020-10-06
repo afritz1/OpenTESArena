@@ -142,12 +142,32 @@ public:
 
 		void update(double dt);
 	};
+
+	class ChasmState
+	{
+	private:
+		NewInt2 voxel;
+
+		// Visible chasm faces. These were moved out of the voxel definition as it makes more sense
+		// that it's for the current state of the chasm and can change frequently in-game.
+		bool north, east, south, west;
+	public:
+		ChasmState(const NewInt2 &voxel, bool north, bool east, bool south, bool west);
+
+		const NewInt2 &getVoxel() const;
+		bool getNorth() const;
+		bool getEast() const;
+		bool getSouth() const;
+		bool getWest() const;
+		bool faceIsVisible(VoxelFacing facing) const;
+		int getFaceCount() const;
+	};
+
+	using ChasmStates = std::unordered_map<NewInt2, ChasmState>; // @temp change to hash table for wilderness performance.
 private:
-	// Mappings of IDs to voxel data indices. Chasms are treated separately since their voxel
-	// data index is also a function of the four adjacent voxels. These maps are stored here
-	// because they might be shared between multiple calls to read{FLOR,MAP1,MAP2}().
+	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
+	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
 	std::vector<std::pair<uint16_t, int>> wallDataMappings, floorDataMappings, map2DataMappings;
-	std::vector<std::tuple<uint16_t, std::array<bool, 4>, int>> chasmDataMappings;
 
 	VoxelGrid voxelGrid;
 	EntityManager entityManager;
@@ -156,6 +176,7 @@ private:
 	std::unordered_map<NewInt2, Lock> locks;
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
+	ChasmStates chasmStates;
 	std::string name;
 
 	void addFlatInstance(int flatIndex, const NewInt2 &flatPosition);
@@ -197,6 +218,8 @@ public:
 	const std::vector<DoorState> &getOpenDoors() const;
 	std::vector<FadeState> &getFadingVoxels();
 	const std::vector<FadeState> &getFadingVoxels() const;
+	ChasmStates &getChasmStates();
+	const ChasmStates &getChasmStates() const;
 	const INFFile &getInfFile() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;

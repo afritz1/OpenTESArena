@@ -1,8 +1,61 @@
 #include <algorithm>
 
+#include "VoxelFacing.h"
 #include "VoxelInstance.h"
 
 #include "components/debug/Debug.h"
+
+void VoxelInstance::ChasmState::init(bool north, bool east, bool south, bool west)
+{
+	this->north = north;
+	this->east = east;
+	this->south = south;
+	this->west = west;
+}
+
+bool VoxelInstance::ChasmState::getNorth() const
+{
+	return this->north;
+}
+
+bool VoxelInstance::ChasmState::getEast() const
+{
+	return this->east;
+}
+
+bool VoxelInstance::ChasmState::getSouth() const
+{
+	return this->south;
+}
+
+bool VoxelInstance::ChasmState::getWest() const
+{
+	return this->west;
+}
+
+bool VoxelInstance::ChasmState::faceIsVisible(VoxelFacing facing) const
+{
+	switch (facing)
+	{
+	case VoxelFacing::PositiveX:
+		return this->south;
+	case VoxelFacing::PositiveZ:
+		return this->west;
+	case VoxelFacing::NegativeX:
+		return this->north;
+	case VoxelFacing::NegativeZ:
+		return this->east;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(facing)));
+	}
+}
+
+int VoxelInstance::ChasmState::getFaceCount() const
+{
+	// Add one for floor.
+	return 1 + (this->north ? 1 : 0) + (this->east ? 1 : 0) +
+		(this->south ? 1 : 0) + (this->west ? 1 : 0);
+}
 
 void VoxelInstance::DoorState::init(double speed, double percentOpen, StateType stateType)
 {
@@ -103,7 +156,7 @@ void VoxelInstance::FadeState::update(double dt)
 	}
 }
 
-void VoxelInstance::init(WEInt x, int y, SNInt z, Type type)
+void VoxelInstance::init(SNInt x, int y, WEInt z, Type type)
 {
 	this->x = x;
 	this->y = y;
@@ -111,7 +164,19 @@ void VoxelInstance::init(WEInt x, int y, SNInt z, Type type)
 	this->type = type;
 }
 
-VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed, double percentOpen,
+VoxelInstance VoxelInstance::makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
+	bool south, bool west)
+{
+	// A chasm with no walls does not need a voxel instance.
+	DebugAssert(north || east || south || west);
+
+	VoxelInstance voxelInst;
+	voxelInst.init(x, y, z, Type::Chasm);
+	voxelInst.chasm.init(north, east, south, west);
+	return voxelInst;
+}
+
+VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed, double percentOpen,
 	DoorState::StateType stateType)
 {
 	VoxelInstance voxelInst;
@@ -120,14 +185,14 @@ VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed, dou
 	return voxelInst;
 }
 
-VoxelInstance VoxelInstance::makeDoor(WEInt x, int y, SNInt z, double speed)
+VoxelInstance VoxelInstance::makeDoor(SNInt x, int y, WEInt z, double speed)
 {
 	constexpr double percentOpen = 0.0;
 	constexpr DoorState::StateType stateType = DoorState::StateType::Opening;
 	return VoxelInstance::makeDoor(x, y, z, speed, percentOpen, stateType);
 }
 
-VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed, double percentFaded)
+VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed, double percentFaded)
 {
 	VoxelInstance voxelInst;
 	voxelInst.init(x, y, z, Type::Fading);
@@ -135,13 +200,13 @@ VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed, d
 	return voxelInst;
 }
 
-VoxelInstance VoxelInstance::makeFading(WEInt x, int y, SNInt z, double speed)
+VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed)
 {
 	constexpr double percentFaded = 0.0;
 	return VoxelInstance::makeFading(x, y, z, speed, percentFaded);
 }
 
-WEInt VoxelInstance::getX() const
+SNInt VoxelInstance::getX() const
 {
 	return this->x;
 }
@@ -151,7 +216,7 @@ int VoxelInstance::getY() const
 	return this->y;
 }
 
-SNInt VoxelInstance::getZ() const
+WEInt VoxelInstance::getZ() const
 {
 	return this->z;
 }
@@ -159,6 +224,18 @@ SNInt VoxelInstance::getZ() const
 VoxelInstance::Type VoxelInstance::getType() const
 {
 	return this->type;
+}
+
+VoxelInstance::ChasmState &VoxelInstance::getChasmState()
+{
+	DebugAssert(this->type == Type::Chasm);
+	return this->chasm;
+}
+
+const VoxelInstance::ChasmState &VoxelInstance::getChasmState() const
+{
+	DebugAssert(this->type == Type::Chasm);
+	return this->chasm;
 }
 
 VoxelInstance::DoorState &VoxelInstance::getDoorState()

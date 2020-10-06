@@ -53,11 +53,11 @@ public:
 	// Gets the voxel ID at the given coordinate.
 	VoxelID get(int x, int y, int z) const;
 
+	// Gets the number of active voxel definitions.
+	int getVoxelDefCount() const;
+
 	// Gets the voxel definition associated with a voxel ID.
 	const VoxelDefinition &getVoxelDef(Chunk::VoxelID id) const;
-
-	// Gets the number of active voxel definitions.
-	int debug_getVoxelDefCount() const;
 
 	// Sets the chunk's XY coordinate in the world.
 	void setCoord(const ChunkInt2 &coord);
@@ -65,8 +65,8 @@ public:
 	// Sets the voxel at the given coordinate.
 	void set(int x, int y, int z, VoxelID id);
 
-	// Adds a voxel definition and returns its assigned ID.
-	VoxelID addVoxelDef(VoxelDefinition &&voxelDef);
+	// Attempts to add a voxel definition and returns its assigned ID.
+	bool tryAddVoxelDef(VoxelDefinition &&voxelDef, VoxelID *outID);
 
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
 	void removeVoxelDef(VoxelID id);

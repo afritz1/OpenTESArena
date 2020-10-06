@@ -36,3 +36,12 @@ void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance,
 	*outMinChunk = ChunkInt2(chunk.x - chunkDistance, chunk.y - chunkDistance);
 	*outMaxChunk = ChunkInt2(chunk.x + chunkDistance, chunk.y + chunkDistance);
 }
+
+bool ChunkUtils::isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &other,
+	int chunkDistance)
+{
+	DebugAssert(chunkDistance >= 1);
+	const int xDiff = std::abs(other.x - chunk.x);
+	const int yDiff = std::abs(other.y - chunk.y);
+	return (xDiff <= chunkDistance) && (yDiff <= chunkDistance);
+}

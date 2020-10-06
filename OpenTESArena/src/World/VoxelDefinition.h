@@ -108,8 +108,8 @@ public:
 		VoxelFacing facing;
 	};
 
-	// Chasms have zero to four visible faces depending on adjacent floors. Each face is 
-	// front-facing and back-facing.
+	// Chasms have zero to four wall faces (stored with voxel instance) depending on adjacent
+	// floors. Each face is front-facing and back-facing.
 	struct ChasmData
 	{
 		enum class Type { Dry, Wet, Lava };
@@ -118,14 +118,9 @@ public:
 		static const double WET_LAVA_DEPTH;
 
 		int id;
-		bool north, east, south, west;
 		Type type;
 
 		bool matches(const ChasmData &other) const;
-		bool faceIsVisible(VoxelFacing facing) const;
-		
-		// Includes chasm floor.
-		int getFaceCount() const;
 	};
 
 	struct DoorData
@@ -180,12 +175,14 @@ public:
 	static VoxelDefinition makeDiagonal(int id, bool type1);
 	static VoxelDefinition makeTransparentWall(int id, bool collider);
 	static VoxelDefinition makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing);
-	static VoxelDefinition makeChasm(int id, bool north, bool east, bool south, bool west,
-		ChasmData::Type type);
+	static VoxelDefinition makeChasm(int id, ChasmData::Type type);
 	static VoxelDefinition makeDoor(int id, DoorData::Type type);
 
 	// Gets the normal associated with a voxel facing.
 	static Double3 getNormal(VoxelFacing facing);
+
+	// Whether this voxel definition contributes to a chasm having a wall face.
+	bool allowsChasmFace() const;
 };
 
 #endif

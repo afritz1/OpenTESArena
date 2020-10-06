@@ -22,7 +22,22 @@ namespace
 	};
 }
 
-bool WeatherUtils::isSnowType(WeatherType weatherType)
+bool WeatherUtils::isClear(WeatherType weatherType)
+{
+	return weatherType == WeatherType::Clear;
+}
+
+bool WeatherUtils::isOvercast(WeatherType weatherType)
+{
+	return (weatherType == WeatherType::Overcast) || (weatherType == WeatherType::Overcast2);
+}
+
+bool WeatherUtils::isRain(WeatherType weatherType)
+{
+	return (weatherType == WeatherType::Rain) || (weatherType == WeatherType::Rain2);
+}
+
+bool WeatherUtils::isSnow(WeatherType weatherType)
 {
 	return (weatherType == WeatherType::Snow) || (weatherType == WeatherType::SnowOvercast) ||
 		(weatherType == WeatherType::SnowOvercast2);
@@ -31,7 +46,7 @@ bool WeatherUtils::isSnowType(WeatherType weatherType)
 WeatherType WeatherUtils::getFilteredWeatherType(WeatherType weatherType, ClimateType climateType)
 {
 	// Snow in deserts is replaced by rain.
-	const bool isSnow = WeatherUtils::isSnowType(weatherType);
+	const bool isSnow = WeatherUtils::isSnow(weatherType);
 	return ((climateType == ClimateType::Desert) && isSnow) ? WeatherType::Rain : weatherType;
 }
 
