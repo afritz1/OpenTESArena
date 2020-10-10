@@ -23,13 +23,28 @@ IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
 
-    # Optimizations.
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+    # Keep debug info.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+
+    # Optimizations. These settings are meant to work with a variety of CPUs.
+    # Modify for your personal build if desired.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=full")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=fast")
+
+    # Sanitizers (some can affect performance).
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 ENDIF ()
 
 # We want RelWithDebInfo to actually include debug stuff (define _DEBUG
 # instead of NDEBUG)
-FOREACH(flag_var  CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+FOREACH(flag_var CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RELWITHDEBINFO)
     IF(${flag_var} MATCHES "-DNDEBUG")
         STRING(REGEX REPLACE "-DNDEBUG" "-D_DEBUG" ${flag_var} "${${flag_var}}")
     ENDIF()

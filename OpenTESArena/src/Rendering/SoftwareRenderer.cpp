@@ -4132,7 +4132,7 @@ void SoftwareRenderer::drawDistantPixels(int x, const DrawRange &drawRange, doub
 	}
 }
 
-void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, double u,
+/*void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, double u,
 	double vStart, double vEnd, const SkyTexture &texture, bool emissive,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
@@ -4276,7 +4276,7 @@ void SoftwareRenderer::drawDistantPixelsSSE(int x, const DrawRange &drawRange, d
 			}
 		}
 	}
-}
+}*/
 
 /*void SoftwareRenderer::drawDistantPixelsAVX(int x, const DrawRange &drawRange, double u,
 	double vStart, double vEnd, const SkyTexture &texture, bool emissive,

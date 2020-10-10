@@ -800,9 +800,9 @@ private:
 	static void drawDistantPixels(int x, const DrawRange &drawRange, double u, double vStart,
 		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
-	static void drawDistantPixelsSSE(int x, const DrawRange &drawRange, double u, double vStart,
+	/*static void drawDistantPixelsSSE(int x, const DrawRange &drawRange, double u, double vStart,
 		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+		const FrameView &frame);*/
 	/*static void drawDistantPixelsAVX(int x, const DrawRange &drawRange, double u, double vStart,
 		double vEnd, const SkyTexture &texture, bool emissive, const ShadingInfo &shadingInfo,
 		const FrameView &frame);*/
