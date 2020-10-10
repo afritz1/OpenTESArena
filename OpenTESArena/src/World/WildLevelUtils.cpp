@@ -254,10 +254,10 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	Buffer2D<uint16_t> cityFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<uint16_t> cityMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<uint16_t> cityMap2(mif.getWidth(), mif.getDepth());
-	CityLevelUtils::writeSkeleton(level,
-		BufferView2D(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight()),
-		BufferView2D(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight()),
-		BufferView2D(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight()));
+	BufferView2D<uint16_t> cityFlorView(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight());
+	BufferView2D<uint16_t> cityMap1View(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight());
+	BufferView2D<uint16_t> cityMap2View(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight());
+	CityLevelUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have
 	// any special generation -- the .MIF buffers are simply used as-is (with some simple palace

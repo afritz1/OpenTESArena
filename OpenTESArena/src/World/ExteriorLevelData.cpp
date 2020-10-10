@@ -45,10 +45,10 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	Buffer2D<uint16_t> tempFlor(gridDepth, gridWidth);
 	Buffer2D<uint16_t> tempMap1(gridDepth, gridWidth);
 	Buffer2D<uint16_t> tempMap2(gridDepth, gridWidth);
-	CityLevelUtils::writeSkeleton(level,
-		BufferView2D(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight()),
-		BufferView2D(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight()),
-		BufferView2D(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight()));
+	BufferView2D<uint16_t> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	BufferView2D<uint16_t> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	BufferView2D<uint16_t> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	CityLevelUtils::writeSkeleton(level, tempFlorView, tempMap1View, tempMap2View);
 
 	// Get the city's seed for random chunk generation. It is modified later during
 	// building name generation.
@@ -71,19 +71,19 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, EXTERIOR_LEVEL_HEIGHT, gridDepth, infName, level.getName());
 
-	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
+	const BufferView2D<const MIFFile::VoxelID> tempFlorConstView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap1View(
+	const BufferView2D<const MIFFile::VoxelID> tempMap1ConstView(
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap2View(
+	const BufferView2D<const MIFFile::VoxelID> tempMap2ConstView(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	const INFFile &inf = levelData.getInfFile();
 	const auto &exeData = miscAssets.getExeData();
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
-	levelData.readFLOR(tempFlorView, inf);
-	levelData.readMAP1(tempMap1View, inf, WorldType::City, exeData);
-	levelData.readMAP2(tempMap2View, inf);
+	levelData.readFLOR(tempFlorConstView, inf);
+	levelData.readMAP1(tempMap1ConstView, inf, WorldType::City, exeData);
+	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
 	const bool isCity = true;
