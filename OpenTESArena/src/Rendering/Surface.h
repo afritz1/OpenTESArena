@@ -30,7 +30,8 @@ public:
 	Surface &operator=(const Surface&) = delete;
 	Surface &operator=(Surface &&surface);
 
-	// Wrapper function for SDL_LoadBMP(). Also converts to the given pixel format.
+	// Wrapper function for SDL_LoadBMP(). Also converts to the given pixel format. Returns null
+	// on failure.
 	static Surface loadBMP(const char *filename, uint32_t format);
 
 	// Wrapper function for SDL_CreateRGBSurfaceWithFormat() in SDL 2.0.5.

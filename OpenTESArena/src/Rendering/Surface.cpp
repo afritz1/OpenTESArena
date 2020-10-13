@@ -4,6 +4,7 @@
 #include "../Math/Rect.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 Surface::Surface()
 {
@@ -48,10 +49,17 @@ Surface &Surface::operator=(Surface &&surface)
 
 Surface Surface::loadBMP(const char *filename, uint32_t format)
 {
-	DebugAssert(filename != nullptr);
+	if (String::isNullOrEmpty(filename))
+	{
+		return Surface();
+	}
 
 	SDL_Surface *surface = SDL_LoadBMP(filename);
-	DebugAssertMsg(surface != nullptr, "Could not find \"" + std::string(filename) + "\".");
+	if (surface == nullptr)
+	{
+		DebugLogWarning("Could not load .BMP \"" + std::string(filename) + "\".");
+		return Surface();
+	}
 
 	// Convert to the given pixel format.
 	SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, format, 0);
