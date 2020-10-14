@@ -4,6 +4,7 @@
 #include <deque>
 #include <type_traits>
 #include <unordered_map>
+#include <vector>
 
 // An infinite-sized heap that tells where to make allocations in an actual buffer. Only the
 // positions and sizes of imaginary blocks are stored.
