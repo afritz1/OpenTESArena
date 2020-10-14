@@ -4,7 +4,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "Clock.h"
@@ -56,8 +55,6 @@ private:
 
 	// Arbitrary value for interior fog distance (mostly for testing purposes).
 	static const double DEFAULT_INTERIOR_FOG_DIST;
-
-	std::unordered_map<Int2, std::string> textTriggers, soundTriggers;
 
 	// Game world interface display texts with their associated time remaining. These values 
 	// are stored here so they are not destroyed when switching away from the game world panel.
