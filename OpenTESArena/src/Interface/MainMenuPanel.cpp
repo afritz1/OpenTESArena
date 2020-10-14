@@ -15,7 +15,6 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Assets/MiscAssets.h"
 #include "../Assets/RMDFile.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -338,10 +337,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Game data instance, to be initialized further by one of the loading methods below.
 			// Create a player with random data for testing.
-			const auto &miscAssets = game.getMiscAssets();
+			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			auto gameData = std::make_unique<GameData>(Player::makeRandom(
-				game.getCharacterClassLibrary(), miscAssets.getExeData(), game.getRandom()),
-				miscAssets);
+				game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
+				binaryAssetLibrary);
 
 			const int starCount = DistantSky::getStarCountFromDensity(
 				options.getMisc_StarDensity());
@@ -380,9 +379,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}();
 
 					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
-						game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(),
-						renderer))
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -426,9 +425,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Load city into game data. Location data is loaded, too.
 					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
-						game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(),
-						renderer))
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
 					}
@@ -453,7 +452,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					if (testType == TestType_MainQuest)
 					{
 						// Fetch from a global function.
-						const auto &exeData = game.getMiscAssets().getExeData();
+						const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 						SpecialCaseType specialCaseType;
 						GetMainQuestLocationFromIndex(testIndex, exeData, &locationIndex, &provinceIndex, &specialCaseType);
 
@@ -503,7 +502,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const VoxelDefinition::WallData::MenuType interiorType = *optInteriorType;
 					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						miscAssets, game.getRandom(), game.getTextureManager(),
+						binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
 						game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
@@ -531,7 +530,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 						if (!gameData->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
 							interiorType, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							miscAssets, game.getRandom(), game.getTextureManager(),
+							binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
 							game.getTextureInstanceManager(), renderer))
 						{
 							DebugCrash("Couldn't load named dungeon \"" + locationDefPtr->getName() + "\".");
@@ -556,9 +555,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 						if (!gameData->loadWildernessDungeon(locationDef, provinceDef, wildBlockX,
-							wildBlockY, interiorType, miscAssets.getCityDataFile(),
+							wildBlockY, interiorType, binaryAssetLibrary.getCityDataFile(),
 							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							miscAssets, game.getRandom(), game.getTextureManager(),
+							binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
 							game.getTextureInstanceManager(), renderer))
 						{
 							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
@@ -591,7 +590,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const bool ignoreGatePos = true;
 				if (!gameData->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
 					filteredWeatherType, starCount, game.getEntityDefinitionLibrary(),
-					game.getCharacterClassLibrary(), miscAssets, game.getRandom(),
+					game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 					game.getTextureManager(), game.getTextureInstanceManager(), renderer))
 				{
 					DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
@@ -939,8 +938,8 @@ std::string MainMenuPanel::getSelectedTestName() const
 	if (this->testType == TestType_MainQuest)
 	{
 		auto &game = this->getGame();
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &exeData = miscAssets.getExeData();
+		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &exeData = binaryAssetLibrary.getExeData();
 
 		// Decide how to get the main quest dungeon name.
 		if (this->testIndex == 0)
@@ -963,7 +962,7 @@ std::string MainMenuPanel::getSelectedTestName() const
 			DebugAssert(specialCaseType == SpecialCaseType::None);
 
 			// Calculate the .MIF name from the dungeon seed.
-			const auto &cityData = miscAssets.getCityDataFile();
+			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const uint32_t dungeonSeed = [&cityData, locationID, provinceID]()
 			{
 				const auto &province = cityData.getProvinceData(provinceID);

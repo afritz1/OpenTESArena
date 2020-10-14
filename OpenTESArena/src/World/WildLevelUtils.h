@@ -4,10 +4,10 @@
 #include "LevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 
 #include "components/utilities/Buffer2D.h"
 
+class BinaryAssetLibrary;
 class LocationDefinition;
 class VoxelGrid;
 
@@ -31,7 +31,8 @@ namespace WildLevelUtils
 	// @todo: maybe this should eventually take a bag of chunks w/ their coordinates
 	// and it would search for the wild chunks that were at the city coordinates.
 	void reviseWildernessCity(const LocationDefinition &locationDef, Buffer2D<uint16_t> &flor,
-		Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2, const MiscAssets &miscAssets);
+		Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
+		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given
 	// position. This space always contains 4 wild chunks.

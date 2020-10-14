@@ -10,7 +10,6 @@
 #include "TextBox.h"
 #include "TextSubPanel.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -61,7 +60,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			MessageBoxSubPanel::Title messageBoxTitle;
 			messageBoxTitle.textBox = [&game, &renderer, &textColor]()
 			{
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				std::string text = exeData.charCreation.confirmRace;
 				text = String::replace(text, '\r', '\n');
 
@@ -161,7 +160,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 					const std::string text = [&game]()
 					{
-						const auto &exeData = game.getMiscAssets().getExeData();
+						const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 						std::string segment = exeData.charCreation.confirmedRace4;
 						segment = String::replace(segment, '\r', '\n');
 
@@ -202,8 +201,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 					const std::string text = [&game]()
 					{
-						const auto &miscAssets = game.getMiscAssets();
-						const auto &exeData = miscAssets.getExeData();
+						const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+						const auto &exeData = binaryAssetLibrary.getExeData();
 						std::string segment = exeData.charCreation.confirmedRace3;
 						segment = String::replace(segment, '\r', '\n');
 
@@ -261,7 +260,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 					const std::string text = [&game]()
 					{
-						const auto &exeData = game.getMiscAssets().getExeData();
+						const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 						std::string segment = exeData.charCreation.confirmedRace2;
 						segment = String::replace(segment, '\r', '\n');
 
@@ -269,7 +268,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						const int raceIndex = charCreationState.getRaceIndex();
 
 						// Get race description from TEMPLATE.DAT.
-						const auto &templateDat = game.getMiscAssets().getTemplateDat();
+						const auto &templateDat = game.getTextAssetLibrary().getTemplateDat();
 						constexpr std::array<int, 8> raceTemplateIDs =
 						{
 							1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
@@ -320,8 +319,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 					const std::string text = [&game]()
 					{
-						const auto &miscAssets = game.getMiscAssets();
-						const auto &exeData = miscAssets.getExeData();
+						const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+						const auto &exeData = binaryAssetLibrary.getExeData();
 						std::string segment = exeData.charCreation.confirmedRace1;
 						segment = String::replace(segment, '\r', '\n');
 
@@ -465,8 +464,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 
 	const std::string text = [&game]()
 	{
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &exeData = miscAssets.getExeData();
+		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &exeData = binaryAssetLibrary.getExeData();
 		std::string segment = exeData.charCreation.chooseRace;
 		segment = String::replace(segment, '\r', '\n');
 
@@ -514,7 +513,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 
 int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 {
-	const auto &worldMapMasks = this->getGame().getMiscAssets().getWorldMapMasks();
+	const auto &worldMapMasks = this->getGame().getBinaryAssetLibrary().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
 	{
@@ -581,7 +580,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	// Get the race name associated with the province.
-	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const auto &exeData = this->getGame().getBinaryAssetLibrary().getExeData();
 	const std::string &raceName = exeData.races.pluralNames.at(provinceID);
 
 	const Texture tooltip = Panel::createTooltip(

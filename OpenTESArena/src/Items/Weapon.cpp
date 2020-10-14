@@ -10,8 +10,8 @@
 
 #include "components/debug/Debug.h"
 
-// @todo: most of this class could be in MiscAssets as plain old data, and any instance-related
-// things (condition, artifact state, etc.) would be in this class.
+// @todo: most of this class could be in an asset library as plain old data, and any
+// instance-related things (condition, artifact state, etc.) would be in this class.
 
 namespace
 {

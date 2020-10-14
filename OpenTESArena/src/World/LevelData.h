@@ -34,6 +34,7 @@
 // Max (mapWidth - 1, mapDepth - 1)
 
 class ArenaRandom;
+class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class CitizenManager;
 class EntityDefinitionLibrary;
@@ -41,7 +42,6 @@ class ExeData;
 class Game;
 class ProvinceDefinition;
 class LocationDefinition;
-class MiscAssets;
 class Random;
 class Renderer;
 class TextureInstanceManager;
@@ -237,7 +237,7 @@ public:
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 		Renderer &renderer);
 

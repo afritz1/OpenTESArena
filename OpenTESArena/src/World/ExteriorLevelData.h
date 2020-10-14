@@ -9,13 +9,13 @@
 #include "LevelData.h"
 #include "LevelUtils.h"
 #include "VoxelUtils.h"
-#include "../Assets/MiscAssets.h"
 #include "../Math/Vector2.h"
 
 #include "components/utilities/Buffer2D.h"
 
 class LocationDefinition;
 class ProvinceDefinition;
+class TextAssetLibrary;
 
 class ExteriorLevelData : public LevelData
 {
@@ -35,13 +35,14 @@ public:
 	static ExteriorLevelData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
 		int currentDay, int starCount, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
-		const MiscAssets &miscAssets, TextureManager &textureManager);
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+		TextureManager &textureManager);
 
 	// Wilderness with a pre-defined .INF file. This loads the skeleton of the wilderness
 	// and fills in the rest by loading the required .RMD chunks.
 	static ExteriorLevelData loadWilderness(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay,
-		int starCount, const std::string &infName, const MiscAssets &miscAssets,
+		int starCount, const std::string &infName, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
@@ -54,7 +55,7 @@ public:
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 		Renderer &renderer) override;
 

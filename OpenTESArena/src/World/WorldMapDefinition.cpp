@@ -2,13 +2,13 @@
 
 #include "components/debug/Debug.h"
 
-void WorldMapDefinition::init(const MiscAssets &miscAssets)
+void WorldMapDefinition::init(const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	this->provinces.clear();
 	for (int i = 0; i < CityDataFile::PROVINCE_COUNT; i++)
 	{
 		ProvinceDefinition provinceDef;
-		provinceDef.init(i, miscAssets);
+		provinceDef.init(i, binaryAssetLibrary);
 		this->provinces.push_back(std::move(provinceDef));
 	}
 }

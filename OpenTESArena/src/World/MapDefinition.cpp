@@ -6,6 +6,7 @@
 #include "MapDefinition.h"
 #include "WorldType.h"
 #include "WildWorldUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
@@ -189,7 +190,7 @@ bool MapDefinition::initCity(const MIFFile::Level &level, ClimateType climateTyp
 }
 
 bool MapDefinition::initWild(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-	ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets)
+	ClimateType climateType, WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	this->init(WorldType::Wilderness);
 
@@ -221,9 +222,9 @@ bool MapDefinition::initWild(const BufferView2D<const WildBlockID> &wildBlockIDs
 		const WildBlockID blockID = pair.first;
 		const int levelDefIndex = pair.second;
 
-		const RMDFile &rmd = [&miscAssets, &wildBlockIDs, blockID]() -> const RMDFile&
+		const RMDFile &rmd = [&binaryAssetLibrary, &wildBlockIDs, blockID]() -> const RMDFile&
 		{
-			const auto &rmdFiles = miscAssets.getWildernessChunks();
+			const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
 			const int rmdIndex = DebugMakeIndex(rmdFiles, blockID - 1);
 			return rmdFiles[rmdIndex];
 		}();

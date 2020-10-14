@@ -14,10 +14,10 @@
 #include "../Media/Palette.h"
 
 class ArenaRandom;
+class BinaryAssetLibrary;
 class CFAFile;
 class CharacterClassLibrary;
 class ExeData;
-class MiscAssets;
 class TextureManager;
 
 enum class ClimateType;
@@ -168,14 +168,14 @@ namespace ArenaAnimUtils
 	// Writes out human enemy animation data to animation states.
 	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale,
 		const CharacterClassLibrary &charClassLibrary, const INFFile &inf,
-		const MiscAssets &miscAssets, TextureManager &textureManager,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
 	// entity type (creature, human, etc.) is unknown.
 	bool tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, TextureManager &textureManager,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
 	// Writes out citizen animation data to animation states.

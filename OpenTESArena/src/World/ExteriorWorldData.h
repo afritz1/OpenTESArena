@@ -11,11 +11,12 @@
 #include "../Assets/INFFile.h"
 #include "../Math/Vector2.h"
 
+class BinaryAssetLibrary;
 class ExeData;
 class LocationDefinition;
 class MIFFile;
-class MiscAssets;
 class ProvinceDefinition;
+class TextAssetLibrary;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -43,12 +44,14 @@ public:
 	// Loads an exterior city skeleton and its random .MIF chunks.
 	static ExteriorWorldData loadCity(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, const MIFFile &mif, WeatherType weatherType,
-		int currentDay, int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
+		int currentDay, int starCount, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager);
 
 	// Loads wilderness for a given city on the world map.
 	static ExteriorWorldData loadWilderness(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay,
-		int starCount, const MiscAssets &miscAssets, TextureManager &textureManager);
+		int starCount, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 
 	// Returns the current active interior (if any).
 	InteriorWorldData *getInterior() const;

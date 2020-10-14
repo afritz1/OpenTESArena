@@ -10,7 +10,6 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -58,7 +57,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 		const int x = 89;
 		const int y = 32;
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassList;
 
 		const auto &fontLibrary = game.getFontLibrary();
@@ -74,7 +73,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	this->classesListBox = [this, &game]()
 	{
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
 		const int x = classListRect.getLeft();
 		const int y = classListRect.getTop();
@@ -110,7 +109,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	this->upButton = [&game]
 	{
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const auto &chooseClassListUI = exeData.ui.chooseClassList;
 		const int x = chooseClassListUI.buttonUp.x;
 		const int y = chooseClassListUI.buttonUp.y;
@@ -129,7 +128,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 
 	this->downButton = [&game]
 	{
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const auto &chooseClassListUI = exeData.ui.chooseClassList;
 		const int x = chooseClassListUI.buttonDown.x;
 		const int y = chooseClassListUI.buttonDown.y;
@@ -195,7 +194,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 
 	// See if a class in the list was clicked, or if it is being scrolled. Use a custom
 	// width for the list box so it better fills the screen-space.
-	const auto &exeData = game.getMiscAssets().getExeData();
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
 	if (classListRect.contains(originalPoint))
 	{
@@ -346,7 +345,7 @@ std::string ChooseClassPanel::getClassShields(const CharacterClassDefinition &ch
 std::string ChooseClassPanel::getClassWeapons(const CharacterClassDefinition &charClassDef) const
 {
 	// Get weapon names from the executable.
-	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const auto &exeData = this->getGame().getBinaryAssetLibrary().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
 	std::vector<int> allowedWeapons(charClassDef.getAllowedWeaponCount());
@@ -493,7 +492,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
-	const auto &exeData = game.getMiscAssets().getExeData();
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	const Rect classListRect = ChooseClassPanel::getClassListRect(exeData);
 	if (classListRect.contains(originalPoint))
 	{

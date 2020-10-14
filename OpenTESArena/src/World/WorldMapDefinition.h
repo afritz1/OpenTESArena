@@ -5,7 +5,7 @@
 
 #include "ProvinceDefinition.h"
 
-class MiscAssets;
+class BinaryAssetLibrary;
 
 class WorldMapDefinition
 {
@@ -13,7 +13,7 @@ private:
 	std::vector<ProvinceDefinition> provinces;
 public:
 	// Initialize from original game data.
-	void init(const MiscAssets &miscAssets);
+	void init(const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom world maps.
 
 	// Gets the number of provinces in the world map.

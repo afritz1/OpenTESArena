@@ -161,7 +161,7 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 
 	// Decide how the game starts up. If only the floppy disk data is available,
 	// then go to the splash screen. Otherwise, load the intro book video.
-	const auto &exeData = game.getMiscAssets().getExeData();
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	const bool isFloppyVersion = exeData.isFloppyVersion();
 	if (!isFloppyVersion)
 	{

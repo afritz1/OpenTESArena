@@ -20,7 +20,6 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/MathUtils.h"
@@ -112,7 +111,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 			else
 			{
 				// Display error message about no selected destination.
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				const std::string errorText = [&exeData]()
 				{
 					std::string text = exeData.travel.noDestination;
@@ -176,7 +175,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
 	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 	const ProvinceDefinition &currentProvinceDef = gameData.getProvinceDefinition();
@@ -207,7 +206,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
 		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
 		const int travelDays = LocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
-			currentDate.getMonth(), gameData.getWeathersArray(), tempRandom, miscAssets);
+			currentDate.getMonth(), gameData.getWeathersArray(), tempRandom, binaryAssetLibrary);
 
 		this->travelData = std::make_unique<TravelData>(selectedLocationID, this->provinceID, travelDays);
 		this->blinkTimer = 0.0;
@@ -221,7 +220,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	else
 	{
 		// Cannot travel to the player's current location. Create an error pop-up.
-		const std::string errorText = [&gameData, &miscAssets, &currentLocationDef]()
+		const std::string errorText = [&gameData, &binaryAssetLibrary, &currentLocationDef]()
 		{
 			const std::string &currentLocationName = [&gameData, &currentLocationDef]() -> const std::string&
 			{
@@ -229,7 +228,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 				return currentLocationInst.getName(currentLocationDef);
 			}();
 
-			const auto &exeData = miscAssets.getExeData();
+			const auto &exeData = binaryAssetLibrary.getExeData();
 			std::string text = exeData.travel.alreadyAtDestination;
 
 			// Remove carriage return at end.
@@ -301,7 +300,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 std::string ProvinceMapPanel::getBackgroundFilename() const
 {
-	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const auto &exeData = this->getGame().getBinaryAssetLibrary().getExeData();
 	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
 	const std::string &filename = provinceImgFilenames.at(this->provinceID);
 
@@ -332,7 +331,7 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	int closestIndex = -1;
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
@@ -367,8 +366,8 @@ std::string ProvinceMapPanel::makeTravelText(const LocationDefinition &srcLocati
 {
 	auto &game = this->getGame();
 	auto &gameData = this->getGame().getGameData();
-	const auto &miscAssets = game.getMiscAssets();
-	const auto &exeData = miscAssets.getExeData();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const LocationInstance &dstLocationInst = dstProvinceInst.getLocationInstance(dstLocationIndex);
@@ -648,7 +647,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();

@@ -6,7 +6,6 @@
 #include "TextBox.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CIFFile.h"
-#include "../Assets/MiscAssets.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -86,7 +85,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 			.nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map and exit button.
-		const auto &worldMapMasks = this->getGame().getMiscAssets().getWorldMapMasks();
+		const auto &worldMapMasks = this->getGame().getBinaryAssetLibrary().getWorldMapMasks();
 		const int maskCount = static_cast<int>(worldMapMasks.size());
 		for (int maskID = 0; maskID < maskCount; maskID++)
 		{

@@ -5,6 +5,7 @@
 #include "ExteriorLevelData.h"
 #include "WildLevelUtils.h"
 #include "WorldType.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
@@ -38,7 +39,8 @@ ExteriorLevelData::~ExteriorLevelData()
 ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, const MIFFile::Level &level, WeatherType weatherType,
 	int currentDay, int starCount, const std::string &infName, SNInt gridWidth, WEInt gridDepth,
-	const MiscAssets &miscAssets, TextureManager &textureManager)
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+	TextureManager &textureManager)
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
@@ -61,8 +63,8 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 		// Generate procedural city data and write it into the temp buffers.
 		const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
-		CityLevelUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth,
-			reservedBlocks, blockStartPosition, random, miscAssets, tempFlor, tempMap1, tempMap2);
+		CityLevelUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth, reservedBlocks,
+			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);
 	}
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
@@ -78,7 +80,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	const BufferView2D<const MIFFile::VoxelID> tempMap2ConstView(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	const INFFile &inf = levelData.getInfFile();
-	const auto &exeData = miscAssets.getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlorConstView, inf);
@@ -88,7 +90,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	// Generate building names.
 	const bool isCity = true;
 	levelData.menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef, random,
-		isCity, levelData.getVoxelGrid(), miscAssets);
+		isCity, levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
@@ -99,11 +101,11 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 
 ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, WeatherType weatherType, int currentDay,
-	int starCount, const std::string &infName, const MiscAssets &miscAssets,
+	int starCount, const std::string &infName, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager)
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const ExeData::Wilderness &wildData = miscAssets.getExeData().wild;
+	const ExeData::Wilderness &wildData = binaryAssetLibrary.getExeData().wild;
 	const Buffer2D<WildBlockID> wildIndices =
 		WildLevelUtils::generateWildernessIndices(cityDef.wildSeed, wildData);
 
@@ -116,10 +118,10 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	tempMap1.fill(0);
 	tempMap2.fill(0);
 
-	auto writeRMD = [&miscAssets, &tempFlor, &tempMap1, &tempMap2](
+	auto writeRMD = [&binaryAssetLibrary, &tempFlor, &tempMap1, &tempMap2](
 		uint8_t rmdID, WEInt xOffset, SNInt zOffset)
 	{
-		const std::vector<RMDFile> &rmdFiles = miscAssets.getWildernessChunks();
+		const std::vector<RMDFile> &rmdFiles = binaryAssetLibrary.getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, rmdID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
 
@@ -155,7 +157,8 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	}
 
 	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
-	WildLevelUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2, miscAssets);
+	WildLevelUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2,
+		binaryAssetLibrary);
 
 	// Create the level for the voxel data to be written into.
 	const std::string levelName = "WILD"; // Arbitrary
@@ -169,7 +172,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	const BufferView2D<const MIFFile::VoxelID> tempMap2View(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	const INFFile &inf = levelData.getInfFile();
-	const auto &exeData = miscAssets.getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlorView, inf);
@@ -200,11 +203,12 @@ bool ExteriorLevelData::isOutdoorDungeon() const
 void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	LevelData::setActive(nightLightsAreActive, worldData, provinceDef, locationDef, entityDefLibrary,
-		charClassLibrary, miscAssets, random, citizenManager, textureManager, textureInstManager, renderer);
+		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, textureInstManager,
+		renderer);
 
 	// @todo: fetch this palette from somewhere better.
 	COLFile col;

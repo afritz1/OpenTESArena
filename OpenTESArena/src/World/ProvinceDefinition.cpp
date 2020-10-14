@@ -3,14 +3,14 @@
 
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
-#include "../Assets/MiscAssets.h"
+#include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
 
-void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
+void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	const ExeData &exeData = miscAssets.getExeData();
-	const CityDataFile &cityData = miscAssets.getCityDataFile();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const CityDataFile &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	this->name = provinceData.name;
 	this->globalX = provinceData.globalX;
@@ -27,7 +27,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		return true;
 	};
 
-	auto tryAddCity = [this, &miscAssets, &provinceData, &canAddLocation](int localCityID,
+	auto tryAddCity = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](int localCityID,
 		int provinceID, bool coastal, bool premade, LocationDefinition::CityDefinition::Type type)
 	{
 		const auto &locationData = provinceData.getLocationData(localCityID);
@@ -35,7 +35,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initCity(localCityID, provinceID, coastal, premade, type, miscAssets);
+			locationDef.initCity(localCityID, provinceID, coastal, premade, type, binaryAssetLibrary);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
@@ -51,7 +51,7 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		}
 	};
 
-	auto tryAddMainQuestDungeon = [this, &miscAssets, &provinceData, &canAddLocation](
+	auto tryAddMainQuestDungeon = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](
 		const std::optional<int> &optLocalDungeonID, int provinceID,
 		LocationDefinition::MainQuestDungeonDefinition::Type type,
 		const CityDataFile::ProvinceData::LocationData &locationData)
@@ -59,13 +59,13 @@ void ProvinceDefinition::init(int provinceID, const MiscAssets &miscAssets)
 		if (canAddLocation(locationData))
 		{
 			LocationDefinition locationDef;
-			locationDef.initMainQuestDungeon(optLocalDungeonID, provinceID, type, miscAssets);
+			locationDef.initMainQuestDungeon(optLocalDungeonID, provinceID, type, binaryAssetLibrary);
 			this->locations.push_back(std::move(locationDef));
 		}
 	};
 
 	const bool isCenterProvince = provinceID == LocationUtils::CENTER_PROVINCE_ID;
-	const ExeData::CityGeneration &cityGen = miscAssets.getExeData().cityGen;
+	const ExeData::CityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
 	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
 		const auto &locations, LocationDefinition::CityDefinition::Type type, int startID)

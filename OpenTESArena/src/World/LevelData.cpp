@@ -3,9 +3,11 @@
 #include <optional>
 
 #include "LevelData.h"
+#include "ProvinceDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/DFAFile.h"
@@ -13,7 +15,6 @@
 #include "../Assets/IMGFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
-#include "../Assets/MiscAssets.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Entities/CharacterClassLibrary.h"
@@ -1388,7 +1389,7 @@ void LevelData::updateFadingVoxels(double dt)
 void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-	const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
@@ -1491,8 +1492,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.
 	auto loadEntities = [this, nightLightsAreActive, &worldData, &provinceDef, &locationDef,
-		&entityDefLibrary, &charClassLibrary, &miscAssets, &random, &citizenManager, &textureManager,
-		&textureInstManager, &renderer, &palette]()
+		&entityDefLibrary, &charClassLibrary, &binaryAssetLibrary, &random, &citizenManager,
+		&textureManager, &textureInstManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
 		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
@@ -1540,7 +1541,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 		}();
 
-		const auto &exeData = miscAssets.getExeData();
+		const auto &exeData = binaryAssetLibrary.getExeData();
 		for (const auto &flatDef : this->flatsLists)
 		{
 			const int flatIndex = flatDef.getFlatIndex();
@@ -1588,7 +1589,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				const std::optional<bool> isMale = true;
 
 				if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, this->inf,
-					charClassLibrary, miscAssets, textureManager, &entityAnimDef, &entityAnimInst))
+					charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef,
+					&entityAnimInst))
 				{
 					DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
 						std::to_string(flatIndex) + "\".");
@@ -1759,7 +1761,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		if (isCity || isWild)
 		{
 			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,
-				entityDefLibrary, miscAssets, random, textureManager, textureInstManager, renderer);
+				entityDefLibrary, binaryAssetLibrary, random, textureManager, textureInstManager,
+				renderer);
 		}
 	};
 

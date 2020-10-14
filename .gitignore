@@ -44,8 +44,8 @@ ipch/
 x64*
 x86*
 bld*
-build*
-[Bb]in*
+[Bb]uild/*
+[Bb]in/*
 [Oo]bj*
 
 # Compressed files

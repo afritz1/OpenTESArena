@@ -88,8 +88,8 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 			Renderer::ORIGINAL_WIDTH / 2, 
 			Renderer::ORIGINAL_HEIGHT - 11);
 
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &templateDat = miscAssets.getTemplateDat();
+		const auto &textAssetLibrary = game.getTextAssetLibrary();
+		const auto &templateDat = textAssetLibrary.getTemplateDat();
 		const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
 		std::string cinematicText = templateDatEntry.values.front();
 		cinematicText.push_back('\n');
@@ -189,8 +189,8 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 bool TextCinematicPanel::shouldPlaySpeech() const
 {
 	auto &game = this->getGame();
-	const auto &miscAssets = game.getMiscAssets();
-	const auto &exeData = miscAssets.getExeData();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	return !exeData.isFloppyVersion();
 }
 

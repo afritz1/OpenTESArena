@@ -8,7 +8,6 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -35,7 +34,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 80);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		std::string text = exeData.charCreation.chooseClassCreation;
 		text = String::replace(text, '\r', '\n');
 
@@ -57,7 +56,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationGenerate;
 
 		const auto &fontLibrary = game.getFontLibrary();
@@ -75,7 +74,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	{
 		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationSelect;
 
 		const auto &fontLibrary = game.getFontLibrary();

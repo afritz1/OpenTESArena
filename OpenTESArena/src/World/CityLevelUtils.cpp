@@ -1,10 +1,12 @@
 #include "CityLevelUtils.h"
 #include "LocationUtils.h"
+#include "ProvinceDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
-#include "../Assets/MiscAssets.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Math/Random.h"
 
 #include "components/utilities/String.h"
@@ -35,7 +37,7 @@ void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
 
 void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 	const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
-	ArenaRandom &random, const MiscAssets &miscAssets, Buffer2D<uint16_t> &dstFlor,
+	ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary, Buffer2D<uint16_t> &dstFlor,
 	Buffer2D<uint16_t> &dstMap1, Buffer2D<uint16_t> &dstMap2)
 {
 	// Get the city's local X and Y, to be used later for building name generation.
@@ -96,7 +98,7 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const std::string blockMifName = MIFUtils::makeCityBlockMifName(block, random);
 
 			// Load the block's .MIF data into the level.
-			const auto &cityBlockMifs = miscAssets.getCityBlockMifs();
+			const auto &cityBlockMifs = binaryAssetLibrary.getCityBlockMifs();
 			const auto iter = cityBlockMifs.find(blockMifName);
 			if (iter == cityBlockMifs.end())
 			{
@@ -145,9 +147,10 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 
 LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-	const VoxelGrid &voxelGrid, const MiscAssets &miscAssets)
+	const VoxelGrid &voxelGrid, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary)
 {
-	const auto &exeData = miscAssets.getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
 	uint32_t citySeed = cityDef.citySeed;
@@ -157,7 +160,7 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [&provinceDef, &citySeed, &random, isCity, &voxelGrid, &miscAssets,
+	auto generateNames = [&provinceDef, &citySeed, &random, isCity, &voxelGrid, &textAssetLibrary,
 		&exeData, &cityDef, &localCityPoint, &menuNames](VoxelDefinition::WallData::MenuType menuType)
 	{
 		if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
@@ -182,7 +185,7 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
 		};
 
-		auto createEquipmentName = [&provinceDef, &random, &miscAssets, &exeData,
+		auto createEquipmentName = [&provinceDef, &random, &textAssetLibrary, &exeData,
 			&cityDef](int m, int n, SNInt x, WEInt z)
 		{
 			const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
@@ -207,9 +210,9 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 			{
 				ArenaRandom nameRandom((x << 16) + z);
 				const bool isMale = true;
-				const std::string maleFirstName = [&provinceDef, &miscAssets, isMale, &nameRandom]()
+				const std::string maleFirstName = [&provinceDef, &textAssetLibrary, isMale, &nameRandom]()
 				{
-					const std::string name = miscAssets.generateNpcName(
+					const std::string name = textAssetLibrary.generateNpcName(
 						provinceDef.getRaceID(), isMale, nameRandom);
 					const std::string firstName = String::split(name).front();
 					return firstName;
@@ -224,7 +227,7 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 			{
 				ArenaRandom nameRandom((z << 16) + x);
 				const bool isMale = true;
-				const std::string maleName = miscAssets.generateNpcName(
+				const std::string maleName = textAssetLibrary.generateNpcName(
 					provinceDef.getRaceID(), isMale, nameRandom);
 				str.replace(index, 2, maleName);
 			}

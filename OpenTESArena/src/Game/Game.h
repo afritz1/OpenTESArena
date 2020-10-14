@@ -9,7 +9,8 @@
 #include "CharacterCreationState.h"
 #include "GameData.h"
 #include "Options.h"
-#include "../Assets/MiscAssets.h"
+#include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
@@ -59,7 +60,8 @@ private:
 	Renderer renderer;
 	TextureManager textureManager;
 	TextureInstanceManager textureInstManager;
-	MiscAssets miscAssets;
+	BinaryAssetLibrary binaryAssetLibrary;
+	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
 	ScratchAllocator scratchAllocator;
 	Profiler profiler;
@@ -146,8 +148,9 @@ public:
 	// Gets the texture instance manager for generating textures in-engine.
 	TextureInstanceManager &getTextureInstanceManager();
 
-	// Gets the miscellaneous assets object for loading some Arena-related files.
-	MiscAssets &getMiscAssets();
+	// Gets various asset libraries for loading Arena-related files.
+	const BinaryAssetLibrary &getBinaryAssetLibrary() const;
+	const TextAssetLibrary &getTextAssetLibrary() const;
 
 	// Gets the global RNG initialized at program start.
 	Random &getRandom();

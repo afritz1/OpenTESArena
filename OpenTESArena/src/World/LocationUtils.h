@@ -9,7 +9,7 @@
 #include "../Math/Vector2.h"
 
 class ArenaRandom;
-class MiscAssets;
+class BinaryAssetLibrary;
 class Rect;
 
 enum class ClimateType;
@@ -44,8 +44,10 @@ namespace LocationUtils
 	LocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
-	ClimateType getCityClimateType(int localCityID, int provinceID, const MiscAssets &miscAssets);
-	ClimateType getDungeonClimateType(int localDungeonID, int provinceID, const MiscAssets &miscAssets);
+	ClimateType getCityClimateType(int localCityID, int provinceID,
+		const BinaryAssetLibrary &binaryAssetLibrary);
+	ClimateType getDungeonClimateType(int localDungeonID, int provinceID,
+		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	std::string getMainQuestDungeonMifName(uint32_t dungeonSeed);
@@ -74,7 +76,7 @@ namespace LocationUtils
 	// Gets the number of days required to travel from one province's local point to another.
 	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
 		int month, const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
-		const MiscAssets &miscAssets);
+		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.
 	uint32_t getCitySeed(int localCityID, const CityDataFile::ProvinceData &province);

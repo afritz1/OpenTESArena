@@ -8,7 +8,6 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -33,7 +32,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGender;
 
 		const auto &fontLibrary = game.getFontLibrary();
@@ -51,7 +50,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderMale;
 
 		const auto &fontLibrary = game.getFontLibrary();
@@ -69,7 +68,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	{
 		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderFemale;
 
 		const auto &fontLibrary = game.getFontLibrary();

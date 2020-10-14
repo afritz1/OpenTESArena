@@ -39,7 +39,7 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 		const int x = 30;
 		const int y = 89;
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.travel.searchTitleText;
 
 		const auto &fontLibrary = game.getFontLibrary();
@@ -265,7 +265,7 @@ std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 
 std::string ProvinceSearchSubPanel::getBackgroundFilename() const
 {
-	const auto &exeData = this->getGame().getMiscAssets().getExeData();
+	const auto &exeData = this->getGame().getBinaryAssetLibrary().getExeData();
 	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
 	const std::string &filename = provinceImgFilenames.at(this->provinceID);
 

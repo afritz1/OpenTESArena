@@ -6,7 +6,7 @@
 #include "LocationDefinition.h"
 #include "../Math/Rect.h"
 
-class MiscAssets;
+class BinaryAssetLibrary;
 
 class ProvinceDefinition
 {
@@ -18,7 +18,7 @@ private:
 	bool animatedDistantLand;
 public:
 	// Initialize from original game data.
-	void init(int provinceID, const MiscAssets &miscAssets);
+	void init(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom provinces.
 
 	// Gets the number of locations in the province.

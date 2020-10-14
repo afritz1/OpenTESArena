@@ -17,7 +17,7 @@ private:
 public:
 	WorldMapMask(std::vector<uint8_t> &&mask, const Rect &rect);
 
-	// This exists so MiscAssets can store a std::array of them.
+	// This exists so the user of the class can store a std::array of them.
 	WorldMapMask() = default;
 
 	// Gets the adjusted width for some rectangle width. This is used in calculating

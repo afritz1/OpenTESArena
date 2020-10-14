@@ -3,7 +3,6 @@
 
 #include "CityDataFile.h"
 #include "ExeData.h"
-#include "MiscAssets.h"
 #include "../Math/Random.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"

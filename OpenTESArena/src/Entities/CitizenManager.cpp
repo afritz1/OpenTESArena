@@ -56,7 +56,7 @@ const CitizenManager::GenerationEntry *CitizenManager::findGenerationEntry(bool 
 
 void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
-	const MiscAssets &miscAssets, Random &random, TextureManager &textureManager,
+	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Clear any previously-generated citizen tuples.
@@ -69,11 +69,11 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		return cityDef.climateType;
 	}();
 
-	auto tryMakeEntityAnimInst = [&levelData, &miscAssets, &textureManager, climateType](
+	auto tryMakeEntityAnimInst = [&levelData, &binaryAssetLibrary, &textureManager, climateType](
 		bool male, EntityAnimationInstance *outAnimInst)
 	{
 		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, miscAssets.getExeData(),
+		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, binaryAssetLibrary.getExeData(),
 			textureManager, &animDef, outAnimInst))
 		{
 			DebugLogWarning(std::string("Couldn't make citizen anims (male: ") + (male ? "yes" : "no") +
@@ -172,7 +172,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 
 		const uint16_t colorSeed = static_cast<uint16_t>(random.next());
 		const Palette generatedPalette = ArenaAnimUtils::transformCitizenColors(
-			raceID, colorSeed, basePalette, miscAssets.getExeData());
+			raceID, colorSeed, basePalette, binaryAssetLibrary.getExeData());
 		
 		// See if this combination has already been generated.
 		const GenerationEntry *generationEntryPtr = this->findGenerationEntry(male, generatedPalette);
@@ -273,13 +273,13 @@ void CitizenManager::tick(Game &game)
 			const auto &provinceDef = gameData.getProvinceDefinition();
 			const auto &locationDef = gameData.getLocationDefinition();
 			const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
-			const auto &miscAssets = game.getMiscAssets();
+			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
 			auto &textureInstManager = game.getTextureInstanceManager();
 			auto &renderer = game.getRenderer();
 			this->spawnCitizens(levelData, provinceDef.getRaceID(), locationDef, entityDefLibrary,
-				miscAssets, random, textureManager, textureInstManager, renderer);
+				binaryAssetLibrary, random, textureManager, textureInstManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
 		}

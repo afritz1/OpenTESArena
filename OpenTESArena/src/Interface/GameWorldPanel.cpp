@@ -13,10 +13,10 @@
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Entity.h"
@@ -243,7 +243,7 @@ namespace
 			case Physics::Hit::Type::Entity:
 			{
 				const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 
 				// Try inspecting the entity (can be from any distance). If they have a display name,
 				// then show it.
@@ -367,8 +367,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			const std::string text = [&game]()
 			{
 				auto &gameData = game.getGameData();
-				const auto &miscAssets = game.getMiscAssets();
-				const auto &exeData = miscAssets.getExeData();
+				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+				const auto &exeData = binaryAssetLibrary.getExeData();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationInst = gameData.getLocationInstance();
 				const std::string &locationName = locationInst.getName(locationDef);
@@ -579,11 +579,10 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			if (goToAutomap)
 			{
 				auto &gameData = game.getGameData();
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				const auto &worldData = gameData.getWorldData();
 				const auto &level = worldData.getActiveLevel();
 				const auto &player = gameData.getPlayer();
-				const auto &miscAssets = game.getMiscAssets();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationInst = gameData.getLocationInstance();
 				const Double3 &position = player.getPosition();
@@ -921,7 +920,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	{
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const auto &worldData = game.getGameData().getWorldData();
 
 		const std::string text = [&worldData, &player, &exeData]()
@@ -1800,8 +1799,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										// If no menu name was generated, then see if it's a mage's guild.
 										if (menuType == VoxelDefinition::WallData::MenuType::MagesGuild)
 										{
-											const auto &miscAssets = game.getMiscAssets();
-											const auto &exeData = miscAssets.getExeData();
+											const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+											const auto &exeData = binaryAssetLibrary.getExeData();
 											return exeData.cityGen.magesGuildMenuName;
 										}
 										else
@@ -1862,7 +1861,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		else if (hit.getType() == Physics::Hit::Type::Entity)
 		{
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
-			const auto &exeData = game.getMiscAssets().getExeData();
+			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 
 			if (primaryClick)
 			{
@@ -2108,9 +2107,10 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		}
 
 		// Leave the interior and go to the saved exterior.
-		const auto &miscAssets = game.getMiscAssets();
+		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 		gameData.leaveInterior(game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-			miscAssets, game.getRandom(), textureManager, game.getTextureInstanceManager(), renderer);
+			binaryAssetLibrary, game.getRandom(), textureManager, game.getTextureInstanceManager(),
+			renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2199,8 +2199,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 				}();
 
-				const auto &miscAssets = game.getMiscAssets();
-				const auto &exeData = miscAssets.getExeData();
+				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+				const auto &exeData = binaryAssetLibrary.getExeData();
 				const std::string mifName = LevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
 					menuID, cityDef.rulerSeed, cityDef.palaceIsMainQuestDungeon, cityDef.type,
 					isCity, exeData);
@@ -2252,9 +2252,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}
 
 					gameData.enterInterior(menuType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
-						game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(),
-						game.getRenderer());
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
+						game.getTextureInstanceManager(), game.getRenderer());
 
 					// Change to interior music.
 					const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2297,7 +2297,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			else
 			{
 				// City gate transition.
-				const auto &miscAssets = game.getMiscAssets();
+				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 				const ProvinceDefinition &provinceDef = gameData.getProvinceDefinition();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const int starCount = DistantSky::getStarCountFromDensity(
@@ -2339,8 +2339,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const bool ignoreGatePos = false;
 					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
 						ignoreGatePos, gameData.getWeatherType(), starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), miscAssets,
-						game.getRandom(), textureManager, game.getTextureInstanceManager(), renderer))
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getRandom(), textureManager,
+						game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
@@ -2350,8 +2351,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// From wilderness to city.
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
 						starCount, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						miscAssets, game.getRandom(), textureManager, game.getTextureInstanceManager(),
-						renderer))
+						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(), textureManager,
+						game.getTextureInstanceManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -2520,7 +2521,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
 				gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
 				game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-				game.getMiscAssets(), game.getRandom(), gameData.getCitizenManager(),
+				game.getBinaryAssetLibrary(), game.getRandom(), gameData.getCitizenManager(),
 				game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
 
 			// Move the player to where they should be in the new level.
@@ -3011,14 +3012,13 @@ void GameWorldPanel::render(Renderer &renderer)
 	// clearing the native buffer beforehand is still necessary.
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
 	auto &player = gameData.getPlayer();
 	const auto &worldData = gameData.getWorldData();
 	const auto &level = worldData.getActiveLevel();
 	const auto &options = game.getOptions();
 	const double ambientPercent = gameData.getAmbientPercent();
 
-	const double latitude = [&gameData, &miscAssets]()
+	const double latitude = [&gameData]()
 	{
 		const LocationDefinition &locationDef = gameData.getLocationDefinition();
 		return locationDef.getLatitude();

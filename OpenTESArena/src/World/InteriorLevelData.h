@@ -53,7 +53,7 @@ public:
 	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-		const MiscAssets &miscAssets, Random &random, CitizenManager &citizenManager,
+		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 		Renderer &renderer) override;
 };

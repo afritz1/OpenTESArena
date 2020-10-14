@@ -7,7 +7,6 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
@@ -31,7 +30,7 @@ LogbookPanel::LogbookPanel(Game &game)
 			Renderer::ORIGINAL_WIDTH / 2,
 			Renderer::ORIGINAL_HEIGHT / 2);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.logbook.isEmpty;
 
 		const auto &fontLibrary = game.getFontLibrary();

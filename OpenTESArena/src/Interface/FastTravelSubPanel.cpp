@@ -82,8 +82,8 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 	const std::string text = [this, &game]()
 	{
 		auto &gameData = game.getGameData();
-		const auto &miscAssets = game.getMiscAssets();
-		const auto &exeData = miscAssets.getExeData();
+		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+		const auto &exeData = binaryAssetLibrary.getExeData();
 
 		// @todo: change these to 'index' so it's clear they don't rely on original game's 0-32, etc..
 		const int provinceID = this->travelData.provinceID;
@@ -160,22 +160,22 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			return text;
 		}();
 
-		const std::string locationDescriptionString = [&game, &gameData, &exeData,
-			provinceID, localCityID, &locationDef]()
+		const auto &textAssetLibrary = game.getTextAssetLibrary();
+		const std::string locationDescriptionString = [&game, &gameData, &binaryAssetLibrary,
+			&textAssetLibrary, &exeData, provinceID, localCityID, &locationDef]()
 		{
-			const auto &miscAssets = game.getMiscAssets();
 			const LocationType locationType = LocationUtils::getCityType(localCityID);
 
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text
 			// directly.
-			const std::string description = [&gameData, &exeData, provinceID, localCityID,
-				&locationDef, locationType, &miscAssets]()
+			const std::string description = [&gameData, &binaryAssetLibrary, &textAssetLibrary,
+				&exeData, provinceID, localCityID, &locationDef, locationType]()
 			{
 				// City descriptions start at #0600. The three town descriptions are at #1422,
 				// and the three village descriptions are at #1423.
-				const std::vector<std::string> &templateDatTexts = [provinceID, localCityID,
-					locationType, &miscAssets]()
+				const std::vector<std::string> &templateDatTexts = [&binaryAssetLibrary,
+					&textAssetLibrary, provinceID, localCityID, locationType]()
 				{
 					// Get the key that maps into TEMPLATE.DAT.
 					const int key = [provinceID, localCityID, locationType]()
@@ -199,7 +199,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 						}
 					}();
 
-					const auto &templateDat = miscAssets.getTemplateDat();
+					const auto &templateDat = textAssetLibrary.getTemplateDat();
 					const auto &entry = templateDat.getEntry(key);
 					return entry.values;
 				}();
@@ -220,7 +220,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					size_t index = description.find("%cn");
 					description.replace(index, 3, locationDef.getName());
 
-					const auto &cityData = miscAssets.getCityDataFile();
+					const auto &cityData = binaryAssetLibrary.getCityDataFile();
 					const auto &province = cityData.getProvinceData(provinceID);
 					const uint32_t rulerSeed = [localCityID, &cityData, &province]()
 					{
@@ -236,7 +236,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					index = description.find("%t");
 					if (index != std::string::npos)
 					{
-						const std::string &rulerTitle = miscAssets.getRulerTitle(
+						const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(
 							provinceID, locationType, isMale, random);
 						description.replace(index, 2, rulerTitle);
 					}
@@ -247,10 +247,10 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 					index = description.find("%rf");
 					if (index != std::string::npos)
 					{
-						const std::string rulerFirstName = [&miscAssets, provinceID,
+						const std::string rulerFirstName = [&textAssetLibrary, provinceID,
 							&random, isMale]()
 						{
-							const std::string fullName = miscAssets.generateNpcName(
+							const std::string fullName = textAssetLibrary.generateNpcName(
 								provinceID, isMale, random);
 							const std::vector<std::string> tokens = String::split(fullName, ' ');
 							return tokens.front();
@@ -361,8 +361,8 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Handle fast travel behavior and decide which panel to switch to.
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	const auto &miscAssets = game.getMiscAssets();
-	const auto &exeData = miscAssets.getExeData();
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
 
 	// Update game clock.
@@ -391,14 +391,14 @@ void FastTravelSubPanel::switchToNextPanel()
 	{
 		// Get weather type from game data.
 		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const WeatherType weatherType = [this, &game, &gameData, &miscAssets,
+		const WeatherType weatherType = [this, &game, &gameData, &binaryAssetLibrary,
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
 			const Int2 globalPoint = LocationUtils::getGlobalPoint(
 				localPoint, travelProvinceDef.getGlobalRect());
 
-			const auto &cityData = miscAssets.getCityDataFile();
+			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const int globalQuarter = LocationUtils::getGlobalQuarter(globalPoint, cityData);
 
 			const auto &weathersArray = gameData.getWeathersArray();
@@ -411,9 +411,9 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Load the destination city.
 		if (!gameData.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
-			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), game.getMiscAssets(),
-			game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(),
-			game.getRenderer()))
+			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
+			game.getTextAssetLibrary(), game.getRandom(), game.getTextureManager(),
+			game.getTextureInstanceManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}
@@ -476,8 +476,8 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
 			VoxelDefinition::WallData::MenuType::Dungeon, game.getEntityDefinitionLibrary(),
-			game.getCharacterClassLibrary(), miscAssets, game.getRandom(), game.getTextureManager(),
-			game.getTextureInstanceManager(), game.getRenderer()))
+			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
+			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
 		}
@@ -513,8 +513,8 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
 			VoxelDefinition::WallData::MenuType::Dungeon, mif, game.getEntityDefinitionLibrary(),
-			game.getCharacterClassLibrary(), miscAssets, game.getRandom(), game.getTextureManager(),
-			game.getTextureInstanceManager(), game.getRenderer()))
+			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
+			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load interior \"" + travelLocationDef.getName() + "\".");
 		}

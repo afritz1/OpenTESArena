@@ -21,9 +21,9 @@
 // - City: 1 level, 1 level info
 // - Wild: N levels (one per chunk), 1 level info
 
+class BinaryAssetLibrary;
 class INFFile;
 class MIFFile;
-class MiscAssets;
 class RMDFile;
 
 enum class ClimateType;
@@ -80,7 +80,8 @@ public:
 
 	// Initializes from the given wild block IDs and fallback seed.
 	bool initWild(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-		ClimateType climateType, WeatherType weatherType, const MiscAssets &miscAssets);
+		ClimateType climateType, WeatherType weatherType,
+		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the initial level index for the map (if any).
 	const std::optional<int> &getStartLevelIndex() const;

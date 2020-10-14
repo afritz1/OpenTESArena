@@ -7,8 +7,8 @@
 #include "VoxelUtils.h"
 #include "../Assets/CityDataFile.h"
 
+class BinaryAssetLibrary;
 class ExeData;
-class MiscAssets;
 
 enum class ClimateType;
 
@@ -118,12 +118,12 @@ private:
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
-		CityDefinition::Type type, const MiscAssets &miscAssets);
+		CityDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary);
 	void initDungeon(int localDungeonID, int provinceID, 
 		const CityDataFile::ProvinceData::LocationData &locationData,
 		const CityDataFile::ProvinceData &provinceData);
 	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int provinceID,
-		MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets);
+		MainQuestDungeonDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary);
 	// @todo: eventually have init(const char *filename) for custom locations.
 
 	// Gets the display name of the location.

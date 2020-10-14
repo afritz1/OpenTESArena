@@ -11,7 +11,6 @@
 #include "TextBox.h"
 #include "TextEntry.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/CharacterCreationState.h"
@@ -47,7 +46,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 		const int charClassDefID = charCreationState.getClassDefID();
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		std::string text = exeData.charCreation.chooseName;
 		text = String::replace(text, "%s", charClassDef.getName());
 

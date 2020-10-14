@@ -12,13 +12,13 @@
 
 // @todo: not sure yet if this should be in the level or GameData or Game.
 
+class BinaryAssetLibrary;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
 class Game;
 class LevelData;
 class LocationDefinition;
-class MiscAssets;
 class Random;
 class Renderer;
 class TextureInstanceManager;
@@ -54,7 +54,7 @@ public:
 	CitizenManager();
 
 	void spawnCitizens(LevelData &levelData, int raceID, const LocationDefinition &locationDef,
-		const EntityDefinitionLibrary &entityDefLibrary, const MiscAssets &miscAssets,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 		Renderer &renderer);
 	void clearCitizens(Game &game);

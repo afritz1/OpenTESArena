@@ -12,10 +12,10 @@
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MIFFile.h"
-#include "../Assets/MiscAssets.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/GameData.h"
@@ -72,7 +72,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 		const int x = 10;
 		const int y = 17;
 
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const auto &singularNames = exeData.races.singularNames;
 		const int raceIndex = charCreationState.getRaceIndex();
 		DebugAssertIndex(singularNames, raceIndex);
@@ -134,7 +134,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			MessageBoxSubPanel::Title messageBoxTitle;
 			messageBoxTitle.textBox = [&game, &renderer]()
 			{
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				const std::string &text = exeData.charCreation.chooseAttributes;
 
 				const Color textColor(199, 199, 199);
@@ -172,7 +172,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			MessageBoxSubPanel::Element messageBoxSave;
 			messageBoxSave.textBox = [&game, &renderer, &buttonTextColor]()
 			{
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				std::string text = exeData.charCreation.chooseAttributesSave;
 
 				// @todo: use the formatting characters in the string for color.
@@ -212,7 +212,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 				const std::string text = [&game]()
 				{
-					const auto &exeData = game.getMiscAssets().getExeData();
+					const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 					std::string segment = exeData.charCreation.chooseAppearance;
 					segment = String::replace(segment, '\r', '\n');
 
@@ -248,19 +248,19 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						// Initialize 3D renderer.
 						auto &renderer = game.getRenderer();
 						const auto &options = game.getOptions();
-						const auto &miscAssets = game.getMiscAssets();
+						const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 						const bool fullGameWindow = options.getGraphics_ModernInterface();
 						renderer.initializeWorldRendering(
 							options.getGraphics_ResolutionScale(),
 							fullGameWindow,
 							options.getGraphics_RenderThreadsMode());
 
-						std::unique_ptr<GameData> gameData = [this, &game, &miscAssets]()
+						std::unique_ptr<GameData> gameData = [this, &game, &binaryAssetLibrary]()
 						{
-							const auto &exeData = miscAssets.getExeData();
+							const auto &exeData = binaryAssetLibrary.getExeData();
 
 							// Initialize player data (independent of the world).
-							Player player = [this, &game, &miscAssets, &exeData]()
+							Player player = [this, &game, &exeData]()
 							{
 								const Double3 dummyPosition = Double3::Zero;
 								const Double3 direction(
@@ -290,7 +290,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									exeData);
 							}();
 
-							return std::make_unique<GameData>(std::move(player), miscAssets);
+							return std::make_unique<GameData>(std::move(player), binaryAssetLibrary);
 						}();
 
 						// Find starting dungeon location definition.
@@ -331,7 +331,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
 							VoxelDefinition::WallData::MenuType::Dungeon, mif,
 							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							miscAssets, game.getRandom(), game.getTextureManager(),
+							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
 							game.getTextureInstanceManager(), renderer))
 						{
 							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
@@ -388,12 +388,11 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								const int starCount = DistantSky::getStarCountFromDensity(
 									game.getOptions().getMisc_StarDensity());
 
-								const auto &miscAssets = game.getMiscAssets();
 								auto &renderer = game.getRenderer();
 								if (!gameData.loadCity(locationDef, provinceDef, weatherType, starCount,
 									game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-									miscAssets, game.getRandom(), game.getTextureManager(),
-									game.getTextureInstanceManager(), renderer))
+									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getRandom(),
+									game.getTextureManager(), game.getTextureInstanceManager(), renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}
@@ -517,7 +516,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			MessageBoxSubPanel::Element messageBoxReroll;
 			messageBoxReroll.textBox = [&game, &renderer, &buttonTextColor]()
 			{
-				const auto &exeData = game.getMiscAssets().getExeData();
+				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 				std::string text = exeData.charCreation.chooseAttributesReroll;
 
 				// @todo: use the formatting characters in the string for color.
@@ -623,7 +622,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 		const std::string text = [&game]()
 		{
-			const auto &exeData = game.getMiscAssets().getExeData();
+			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 			std::string segment = exeData.charCreation.distributeClassPoints;
 			segment = String::replace(segment, '\r', '\n');
 			return segment;

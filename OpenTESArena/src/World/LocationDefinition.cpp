@@ -3,7 +3,7 @@
 #include "LocationDefinition.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
-#include "../Assets/MiscAssets.h"
+#include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -86,9 +86,9 @@ void LocationDefinition::init(LocationDefinition::Type type, const std::string &
 }
 
 void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal, bool premade,
-	CityDefinition::Type type, const MiscAssets &miscAssets)
+	CityDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 	const auto &locationData = provinceData.getLocationData(localCityID);
 	const Int2 localPoint(locationData.x, locationData.y);
@@ -102,7 +102,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	this->init(LocationDefinition::Type::City, locationData.name,
 		locationData.x, locationData.y, latitude);
 
-	const auto &exeData = miscAssets.getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	const std::string &typeDisplayName = [type, &exeData]() -> const std::string&
 	{
 		const int typeNameIndex = [type]()
@@ -173,8 +173,10 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t wildSeed = LocationUtils::getWildernessSeed(localCityID, provinceData);
 	const uint32_t provinceSeed = LocationUtils::getProvinceSeed(provinceID, provinceData);
 	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
-	const uint32_t distantSkySeed = LocationUtils::getDistantSkySeed(localPoint, provinceID, provinceRect);
-	const ClimateType climateType = LocationUtils::getCityClimateType(localCityID, provinceID, miscAssets);
+	const uint32_t distantSkySeed = LocationUtils::getDistantSkySeed(
+		localPoint, provinceID, provinceRect);
+	const ClimateType climateType = LocationUtils::getCityClimateType(
+		localCityID, provinceID, binaryAssetLibrary);
 
 	const auto &cityGen = exeData.cityGen;
 	const std::vector<uint8_t> *reservedBlocks = [coastal, templateID, &cityGen]()
@@ -256,16 +258,16 @@ void LocationDefinition::initDungeon(int localDungeonID, int provinceID,
 }
 
 void LocationDefinition::initMainQuestDungeon(const std::optional<int> &optLocalDungeonID,
-	int provinceID, MainQuestDungeonDefinition::Type type, const MiscAssets &miscAssets)
+	int provinceID, MainQuestDungeonDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	const auto &cityData = miscAssets.getCityDataFile();
+	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
 
 	// Start dungeon doesn't have a well-defined world map location in the original game,
 	// so need to carefully handle looking it up here.
 
 	// Start dungeon's display name is custom.
-	const auto &exeData = miscAssets.getExeData();
+	const auto &exeData = binaryAssetLibrary.getExeData();
 	std::string name = [type, &provinceData, &optLocalDungeonID, &exeData]()
 	{
 		switch (type)

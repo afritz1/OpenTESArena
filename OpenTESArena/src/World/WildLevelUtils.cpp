@@ -204,7 +204,7 @@ LevelUtils::MenuNamesList WildLevelUtils::generateWildChunkBuildingNames(
 
 void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
-	const MiscAssets &miscAssets)
+	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	// For now, assume the given buffers are for the entire 4096x4096 wilderness.
 	// @todo: change to only care about 128x128 layers.
@@ -273,7 +273,7 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 
 		// Write generated city data into the temp city buffers.
 		CityLevelUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
-			blockStartPosition, random, miscAssets, cityFlor, cityMap1, cityMap2);
+			blockStartPosition, random, binaryAssetLibrary, cityFlor, cityMap1, cityMap2);
 	}
 
 	// Transform city voxels based on the wilderness rules.

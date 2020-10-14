@@ -7,9 +7,9 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
-#include "../Assets/MiscAssets.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
@@ -55,7 +55,7 @@ CharacterPanel::CharacterPanel(Game &game)
 		const int y = 17;
 
 		const auto &player = game.getGameData().getPlayer();
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.races.singularNames.at(player.getRaceID());
 
 		const auto &fontLibrary = game.getFontLibrary();

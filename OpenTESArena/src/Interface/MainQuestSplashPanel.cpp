@@ -27,15 +27,17 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 	{
 		const std::string text = [&game, provinceID]()
 		{
-			const auto &miscAssets = game.getMiscAssets();
+			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+			const auto &textAssetLibrary = game.getTextAssetLibrary();
 
 			// @todo: maybe don't split these two strings in the first place. And convert
 			// the carriage return to a newline instead of removing it.
-			const std::pair<std::string, std::string> &pair = [provinceID, &miscAssets]()
+			const std::pair<std::string, std::string> &pair =
+				[provinceID, &binaryAssetLibrary, &textAssetLibrary]()
 			{
-				const auto &exeData = miscAssets.getExeData();
+				const auto &exeData = binaryAssetLibrary.getExeData();
 				const int index = exeData.travel.staffDungeonSplashIndices.at(provinceID);
-				return miscAssets.getDungeonTxtDungeons().at(index);
+				return textAssetLibrary.getDungeonTxtDungeons().at(index);
 			}();
 
 			return pair.first + '\n' + pair.second;
@@ -85,7 +87,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 	// Get the filename of the staff dungeon splash image.
 	this->splashFilename = [&game, provinceID]()
 	{
-		const auto &exeData = game.getMiscAssets().getExeData();
+		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const int index = exeData.travel.staffDungeonSplashIndices.at(provinceID);
 		return String::toUppercase(exeData.travel.staffDungeonSplashes.at(index));
 	}();

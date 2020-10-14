@@ -116,17 +116,22 @@ Game::Game()
 	// Load cinematic definitions.
 	this->cinematicLibrary.init();
 
-	// Load various miscellaneous assets.
-	if (!this->miscAssets.init(isFloppyVersion))
+	// Load various asset libraries.
+	if (!this->binaryAssetLibrary.init(isFloppyVersion))
 	{
-		DebugCrash("Couldn't init misc assets.");
+		DebugCrash("Couldn't init binary asset library.");
+	}
+
+	if (!this->textAssetLibrary.init())
+	{
+		DebugCrash("Couldn't init text asset library.");
 	}
 
 	// Load character classes (dependent on original game's data).
-	this->charClassLibrary.init(this->miscAssets.getExeData());
+	this->charClassLibrary.init(this->binaryAssetLibrary.getExeData());
 
 	// Load entity definitions (dependent on original game's data).
-	this->entityDefLibrary.init(this->miscAssets.getExeData(), this->textureManager);
+	this->entityDefLibrary.init(this->binaryAssetLibrary.getExeData(), this->textureManager);
 
 	// Load and set window icon.
 	const Surface icon = [this]()
@@ -273,9 +278,14 @@ TextureInstanceManager &Game::getTextureInstanceManager()
 	return this->textureInstManager;
 }
 
-MiscAssets &Game::getMiscAssets()
+const BinaryAssetLibrary &Game::getBinaryAssetLibrary() const
 {
-	return this->miscAssets;
+	return this->binaryAssetLibrary;
+}
+
+const TextAssetLibrary &Game::getTextAssetLibrary() const
+{
+	return this->textAssetLibrary;
 }
 
 Random &Game::getRandom()
