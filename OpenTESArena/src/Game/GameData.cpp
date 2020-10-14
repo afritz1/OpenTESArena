@@ -535,7 +535,7 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	return true;
 }
 
-const std::array<WeatherType, 36> &GameData::getWeathersArray() const
+const GameData::WeatherList &GameData::getWeathersArray() const
 {
 	return this->weathers;
 }

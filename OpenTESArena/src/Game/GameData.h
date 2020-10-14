@@ -45,6 +45,9 @@ enum class WorldType;
 
 class GameData
 {
+public:
+	// One weather for each of the 36 province quadrants (updated hourly).
+	using WeatherList = std::array<WeatherType, 36>;
 private:
 	// The time scale determines how long or short a real-time second is. If the time 
 	// scale is 5.0, then each real-time second is five game seconds, etc..
@@ -63,8 +66,7 @@ private:
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
 	TimedTextBox triggerText, actionText, effectText;
 
-	// One weather for each of the 36 province quadrants (updated hourly).
-	std::array<WeatherType, 36> weathers;
+	WeatherList weathers;
 
 	Player player;
 	std::unique_ptr<WorldData> worldData;
@@ -175,7 +177,7 @@ public:
 		const CharacterClassLibrary &charClassLibrary, const MiscAssets &miscAssets, Random &random,
 		TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer);
 
-	const std::array<WeatherType, 36> &getWeathersArray() const;
+	const WeatherList &getWeathersArray() const;
 
 	Player &getPlayer();
 	WorldData &getWorldData();
