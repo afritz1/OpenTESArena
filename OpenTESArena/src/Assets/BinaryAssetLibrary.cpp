@@ -1,5 +1,4 @@
-#include <iomanip>
-#include <sstream>
+#include <cstdio>
 
 #include "BinaryAssetLibrary.h"
 #include "MIFUtils.h"
@@ -9,6 +8,7 @@
 #include "../World/LocationUtils.h"
 
 #include "components/debug/Debug.h"
+#include "components/dos/DOSUtils.h"
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
@@ -244,22 +244,20 @@ bool BinaryAssetLibrary::initStandardSpells()
 
 bool BinaryAssetLibrary::initWildernessChunks()
 {
-	// The first four wilderness definitions are city blocks but they can be loaded anyway.
-	constexpr size_t wildChunkCount = 70;
-	this->wildernessChunks.reserve(wildChunkCount);
+	// The first four wilderness files are city blocks but they can be loaded anyway.
+	this->wildernessChunks.resize(70);
 
-	for (size_t i = 0; i < wildChunkCount; i++)
+	for (int i = 0; i < static_cast<int>(this->wildernessChunks.size()); i++)
 	{
-		// @todo: change to DOSUtils::FilenameBuffer and std::snprintf
-		std::stringstream ss;
-		ss << "WILD0";
-		ss << std::setw(2) << std::setfill('0');
-		ss << (i + 1);
-		ss << ".RMD";
+		const int rmdID = i + 1;
+		DOSUtils::FilenameBuffer rmdFilename;
+		std::snprintf(rmdFilename.data(), rmdFilename.size(), "WILD0%02d.RMD", rmdID);
 
-		RMDFile rmdFile;
-		rmdFile.init(ss.str().c_str());
-		this->wildernessChunks.push_back(std::move(rmdFile));
+		RMDFile &rmdFile = this->wildernessChunks[i];
+		if (!rmdFile.init(rmdFilename.data()))
+		{
+			DebugLogWarning("Couldn't init .RMD file \"" + std::string(rmdFilename.data()) + "\".");
+		}
 	}
 
 	return true;
