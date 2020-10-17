@@ -2,6 +2,7 @@
 #define MAP_DEFINITION_H
 
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "LevelDefinition.h"
@@ -16,15 +17,8 @@
 // is defined and how it's represented in-engine, so that it doesn't care about things like
 // chunks.
 
-// Estimated use cases:
-// - Interior: N levels, N level infos
-// - City: 1 level, 1 level info
-// - Wild: N levels (one per chunk), 1 level info
-
 class BinaryAssetLibrary;
-class INFFile;
 class MIFFile;
-class RMDFile;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -33,14 +27,62 @@ enum class WorldType;
 class MapDefinition
 {
 public:
-	struct Interior
+	// Data for generating an interior map definition; intended for city/wild building interiors.
+	// Input: N .MIF levels + N level-referenced .INFs
+	// Output: N LevelDefinition / LevelInfoDefinition pairs
+	struct InteriorGenerationInfo
 	{
-		// @todo: interior type (shop, mage's guild, dungeon, etc.)?
+		std::string mifName;
+
+		void init(std::string &&mifName);
 	};
 
-	struct City
+	// Data for generating a dungeon interior map definition.
+	// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
+	// Output: N LevelDefinitions + 1 LevelInfoDefinition
+	struct DungeonGenerationInfo
 	{
+		uint32_t dungeonSeed;
+		WEInt widthChunks;
+		SNInt depthChunks;
+		bool isArtifactDungeon;
 
+		void init(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
+	};
+
+	// Input: 1 .MIF + 1 weather .INF
+	// Output: 1 LevelDefinition + 1 LevelInfoDefinition
+	struct CityGenerationInfo
+	{
+		std::string mifName;
+	};
+
+	// Input: 70 .RMD files (from asset library) + 1 weather .INF
+	// Output: 70 LevelDefinitions + 1 LevelInfoDefinition
+	struct WildGenerationInfo
+	{
+		Buffer2D<WildBlockID> wildBlockIDs;
+		uint32_t fallbackSeed;
+	};
+
+	struct Interior
+	{
+		std::string displayName; // For building interior transitions (tavern, temple, etc.).
+
+		// @todo: interior type (shop, mage's guild, dungeon, etc.)?
+		// - InteriorDefinition? Contains isPalace, etc.?
+	};
+
+	class City
+	{
+	private:
+		// Generation infos for building interiors.
+		std::vector<InteriorGenerationInfo> interiorGenInfos;
+	public:
+		const InteriorGenerationInfo &getInteriorGenerationInfo(int index) const;
+
+		// The returned index should be assigned to the associated transition voxel definition.
+		int addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo);
 	};
 
 	class Wild
@@ -49,16 +91,27 @@ public:
 		// Each index is a wild chunk pointing into the map's level definitions.
 		Buffer2D<int> levelDefIndices;
 		uint32_t fallbackSeed; // I.e. the world map location seed.
+
+		std::vector<InteriorGenerationInfo> interiorGenInfos; // Building interiors.
+		std::vector<DungeonGenerationInfo> dungeonCreationInfos; // Wild den interiors.
+
+		// @todo: interior gen info (index?) for when player creates a wall on water.
 	public:
 		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed);
 
 		int getLevelDefIndex(const ChunkInt2 &chunk) const;
+		const InteriorGenerationInfo &getInteriorGenerationInfo(int index) const;
+		const DungeonGenerationInfo &getDungeonGenerationInfo(int index) const;
+
+		// The returned index should be assigned to the associated transition voxel definition.
+		int addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo);
+		int addDungeonGenerationInfo(DungeonGenerationInfo &&generationInfo);
 	};
 private:
 	Buffer<LevelDefinition> levels;
 	Buffer<LevelInfoDefinition> levelInfos; // Each can be used by one or more levels.
-	std::vector<int> levelInfoMappings; // Level info pointed to by each level.
-	std::vector<LevelDouble2> startPoints;
+	Buffer<int> levelInfoMappings; // Level info pointed to by each level.
+	Buffer<LevelDouble2> startPoints;
 	std::optional<int> startLevelIndex;
 
 	// World-type-specific data.
@@ -69,18 +122,10 @@ private:
 
 	void init(WorldType worldType);
 public:
-	// Initializes a set of interior levels from the given .MIF file and each level's .INF file.
-	bool initInterior(const MIFFile &mif);
-
-	// Initializes a set of interior levels from the given dungeon seed and related parameters.
-	bool initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
-
-	// Initializes from the given .MIF level and determines the .INF file to use.
-	bool initCity(const MIFFile::Level &level, ClimateType climateType, WeatherType weatherType);
-
-	// Initializes from the given wild block IDs and fallback seed.
-	bool initWild(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-		ClimateType climateType, WeatherType weatherType,
+	bool initInterior(const InteriorGenerationInfo &generationInfo);
+	bool initDungeon(const DungeonGenerationInfo &generationInfo);
+	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType);
+	bool initWild(const WildGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the initial level index for the map (if any).

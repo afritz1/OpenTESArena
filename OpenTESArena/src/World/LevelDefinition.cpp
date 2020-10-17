@@ -3,41 +3,27 @@
 #include "LevelDefinition.h"
 #include "LevelUtils.h"
 
-void LevelDefinition::initInterior(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
-	const INFFile::CeilingData *ceiling)
+LevelDefinition::EntityPlacementDef::EntityPlacementDef(EntityDefID id, std::vector<LevelDouble3> &&positions)
+	: positions(std::move(positions))
 {
-	// Determine level height from voxel data.
-	const int height = [&level, mifWidth, mifDepth, ceiling]()
-	{
-		const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
-
-		if (map2.isValid())
-		{
-			return 2 + LevelUtils::getMap2Height(map2);
-		}
-		else
-		{
-			const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
-			return hasCeiling ? 3 : 2;
-		}
-	}();
-
-	this->voxels.init(mifDepth, height, mifWidth);
-	this->voxels.fill(LevelDefinition::VOXEL_ID_AIR);
-
-	// @todo: decode level voxels and put IDs/entities into buffers.
-	// - leaning towards having a helper function make map and map info at the same time.
-	DebugNotImplemented();
+	this->id = id;
 }
 
-void LevelDefinition::initCity(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth)
+LevelDefinition::LockPlacementDef::LockPlacementDef(LockDefID id, std::vector<LevelInt3> &&positions)
+	: positions(std::move(positions))
 {
-	this->initInterior(level, mifWidth, mifDepth, nullptr);
+	this->id = id;
 }
 
-void LevelDefinition::initWild(const RMDFile &rmd)
+LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::vector<LevelInt3> &&positions)
+	: positions(std::move(positions))
 {
-	DebugNotImplemented();
+	this->id = id;
+}
+
+void LevelDefinition::init(SNInt width, int height, WEInt depth)
+{
+	this->voxels.init(width, height, depth);
 }
 
 SNInt LevelDefinition::getWidth() const
@@ -96,4 +82,61 @@ const LevelDefinition::TriggerPlacementDef &LevelDefinition::getTriggerPlacement
 {
 	DebugAssertIndex(this->triggerPlacementDefs, index);
 	return this->triggerPlacementDefs[index];
+}
+
+void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
+{
+	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
+		[id](const EntityPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->entityPlacementDefs.end())
+	{
+		std::vector<LevelDouble3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->entityPlacementDefs.emplace_back(id, std::vector<LevelDouble3> { position });
+	}
+}
+
+void LevelDefinition::addLock(LockDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->lockPlacementDefs.begin(), this->lockPlacementDefs.end(),
+		[id](const LockPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->lockPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->lockPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->triggerPlacementDefs.begin(), this->triggerPlacementDefs.end(),
+		[id](const TriggerPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->triggerPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->triggerPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
 }

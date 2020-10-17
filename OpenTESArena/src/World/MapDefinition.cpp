@@ -15,6 +15,32 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName)
+{
+	this->mifName = std::move(mifName);
+}
+
+void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widthChunks,
+	SNInt depthChunks, bool isArtifactDungeon)
+{
+	this->dungeonSeed = dungeonSeed;
+	this->widthChunks = widthChunks;
+	this->depthChunks = depthChunks;
+	this->isArtifactDungeon = isArtifactDungeon;
+}
+
+const MapDefinition::InteriorGenerationInfo &MapDefinition::City::getInteriorGenerationInfo(int index) const
+{
+	DebugAssertIndex(this->interiorGenInfos, index);
+	return this->interiorGenInfos[index];
+}
+
+int MapDefinition::City::addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo)
+{
+	this->interiorGenInfos.emplace_back(std::move(generationInfo));
+	return static_cast<int>(this->interiorGenInfos.size()) - 1;
+}
+
 void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed)
 {
 	this->levelDefIndices = std::move(levelDefIndices);
@@ -39,16 +65,68 @@ int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
 	}
 }
 
+const MapDefinition::InteriorGenerationInfo &MapDefinition::Wild::getInteriorGenerationInfo(int index) const
+{
+	DebugAssertIndex(this->interiorGenInfos, index);
+	return this->interiorGenInfos[index];
+}
+
+const MapDefinition::DungeonGenerationInfo &MapDefinition::Wild::getDungeonGenerationInfo(int index) const
+{
+	DebugAssertIndex(this->dungeonCreationInfos, index);
+	return this->dungeonCreationInfos[index];
+}
+
+int MapDefinition::Wild::addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo)
+{
+	this->interiorGenInfos.emplace_back(std::move(generationInfo));
+	return static_cast<int>(this->interiorGenInfos.size()) - 1;
+}
+
+int MapDefinition::Wild::addDungeonGenerationInfo(DungeonGenerationInfo &&generationInfo)
+{
+	this->dungeonCreationInfos.emplace_back(std::move(generationInfo));
+	return static_cast<int>(this->dungeonCreationInfos.size()) - 1;
+}
+
 void MapDefinition::init(WorldType worldType)
 {
 	this->worldType = worldType;
 }
 
-bool MapDefinition::initInterior(const MIFFile &mif)
+bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
 {
 	this->init(WorldType::Interior);
 
-	auto initLevelDef = [&mif](LevelDefinition &levelDef, const MIFFile::Level &level,
+	// Initializer for an interior level with optional ceiling data.
+	/*void LevelDefinition::initInterior(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
+	const INFFile::CeilingData *ceiling)
+	{
+		// Determine level height from voxel data.
+		const int height = [&level, mifWidth, mifDepth, ceiling]()
+		{
+			const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
+
+			if (map2.isValid())
+			{
+				return 2 + LevelUtils::getMap2Height(map2);
+			}
+			else
+			{
+				const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
+				return hasCeiling ? 3 : 2;
+			}
+		}();
+
+		this->voxels.init(mifDepth, height, mifWidth);
+		this->voxels.fill(LevelDefinition::VOXEL_ID_AIR);
+
+		// @todo: decode level voxels and put IDs/entities into buffers.
+		// - leaning towards having a helper function make map and map info at the same time.
+		DebugNotImplemented();
+	}*/
+
+	/*auto initLevelDef = [&mif](LevelDefinition &levelDef, const MIFFile::Level &level,
 		const INFFile &inf)
 	{
 		const WEInt mifWidth = mif.getWidth();
@@ -87,13 +165,21 @@ bool MapDefinition::initInterior(const MIFFile &mif)
 		this->startPoints.push_back(VoxelUtils::getTransformedVoxel(mifStartPointReal));
 	}
 
-	this->startLevelIndex = mif.getStartingLevelIndex();
+	this->startLevelIndex = mif.getStartingLevelIndex();*/
+
+	DebugNotImplemented();
 	return true;
 }
 
-bool MapDefinition::initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon)
+bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo)
 {
 	this->init(WorldType::Interior);
+
+	/*// Initializer for a dungeon interior level with optional ceiling data. The dungeon
+	// level is pieced together by multiple chunks in the base .MIF file.
+	void initDungeon(ArenaRandom &random, const MIFFile &mif, int levelUpBlock,
+		const int *levelDownBlock, int widthChunks, int depthChunks, SNInt gridWidth,
+		WEInt gridDepth, const INFFile::CeilingData *ceiling, const ExeData &exeData);*/
 
 	// @todo: .INF filename is the same for each level (RD1.INF), but don't have to make that assumption here.
 
@@ -180,21 +266,21 @@ bool MapDefinition::initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt d
 	return true;
 }
 
-bool MapDefinition::initCity(const MIFFile::Level &level, ClimateType climateType,
+bool MapDefinition::initCity(const CityGenerationInfo &generationInfo, ClimateType climateType,
 	WeatherType weatherType)
 {
 	this->init(WorldType::City);
-	const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(climateType, weatherType);
+	/*const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(climateType, weatherType);*/
 	DebugNotImplemented();
 	return true;
 }
 
-bool MapDefinition::initWild(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-	ClimateType climateType, WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary)
+bool MapDefinition::initWild(const WildGenerationInfo &generationInfo, ClimateType climateType,
+	WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	this->init(WorldType::Wilderness);
 
-	auto initLevelDef = [this](LevelDefinition &levelDef, const RMDFile &rmd)
+	/*auto initLevelDef = [this](LevelDefinition &levelDef, const RMDFile &rmd)
 	{
 		levelDef.initWild(rmd);
 	};
@@ -251,8 +337,9 @@ bool MapDefinition::initWild(const BufferView2D<const WildBlockID> &wildBlockIDs
 	{
 		const int levelInfoIndex = 0;
 		this->levelInfoMappings.push_back(levelInfoIndex);
-	}
+	}*/
 
+	DebugNotImplemented();
 	return true;
 }
 
@@ -263,13 +350,12 @@ const std::optional<int> &MapDefinition::getStartLevelIndex() const
 
 int MapDefinition::getStartPointCount() const
 {
-	return static_cast<int>(this->startPoints.size());
+	return this->startPoints.getCount();
 }
 
 const LevelDouble2 &MapDefinition::getStartPoint(int index) const
 {
-	DebugAssertIndex(this->startPoints, index);
-	return this->startPoints[index];
+	return this->startPoints.get(index);
 }
 
 int MapDefinition::getLevelCount() const
@@ -284,8 +370,7 @@ const LevelDefinition &MapDefinition::getLevel(int index) const
 
 const LevelInfoDefinition &MapDefinition::getLevelInfoForLevel(int levelIndex) const
 {
-	DebugAssertIndex(this->levelInfoMappings, levelIndex);
-	const int levelInfoIndex = this->levelInfoMappings[levelIndex];
+	const int levelInfoIndex = this->levelInfoMappings.get(levelIndex);
 	return this->levelInfos.get(levelInfoIndex);
 }
 
