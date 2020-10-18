@@ -54,6 +54,21 @@ int LevelUtils::getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2)
 	return currentMap2Height;
 }
 
+int LevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
+{
+	const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
+
+	if (map2.isValid())
+	{
+		return 2 + LevelUtils::getMap2Height(map2);
+	}
+	else
+	{
+		const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
+		return hasCeiling ? 3 : 2;
+	}
+}
+
 uint16_t LevelUtils::getDoorVoxelOffset(int x, int y)
 {
 	return (y << 8) + (x << 1);

@@ -6,6 +6,7 @@
 
 #include "LocationDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 
 #include "components/utilities/BufferView2D.h"
@@ -25,6 +26,9 @@ namespace LevelUtils
 
 	// Gets the max height from a set of MAP2 voxels.
 	int getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2);
+
+	// Gets the voxel height of a .MIF level with optional ceiling data.
+	int getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling);
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
