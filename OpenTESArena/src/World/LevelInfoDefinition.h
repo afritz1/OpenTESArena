@@ -14,34 +14,34 @@
 // level definition. This is intended to separate the level's IDs from what they're pointing to
 // so it's easier to change climates, etc..
 
-class INFFile;
-
 class LevelInfoDefinition
 {
 private:
-	template <typename T, typename U>
-	using DefinitionList = std::vector<std::pair<T, U>>;
-
 	// Definitions pointed to by a level definition.
 	// @todo: eventually want a strictly engine-independent representation for all of these,
 	// since currently voxel and entity definitions rely on runtime texture manager handles.
 	// - Consider using TextureDefinition for each voxel texture/animation frame.
-	DefinitionList<LevelDefinition::VoxelDefID, VoxelDefinition> voxelDefs;
-	DefinitionList<LevelDefinition::EntityDefID, EntityDefinition> entityDefs;
-	DefinitionList<LevelDefinition::LockDefID, LockDefinition> lockDefs;
-	DefinitionList<LevelDefinition::TriggerDefID, TriggerDefinition> triggerDefs;
+	std::vector<VoxelDefinition> voxelDefs;
+	std::vector<EntityDefinition> entityDefs;
+	std::vector<LockDefinition> lockDefs;
+	std::vector<TriggerDefinition> triggerDefs;
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
 public:
 	LevelInfoDefinition();
 
-	void init(const INFFile &inf);
+	void init(double ceilingScale);
 
-	bool tryGetVoxelDef(LevelDefinition::VoxelDefID id, const VoxelDefinition **outDef) const;
-	bool tryGetEntityDef(LevelDefinition::EntityDefID id, const EntityDefinition **outDef) const;
-	bool tryGetLockDef(LevelDefinition::LockDefID id, const LockDefinition **outDef) const;
-	bool tryGetTriggerDef(LevelDefinition::TriggerDefID id, const TriggerDefinition **outDef) const;
+	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
+	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
+	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
+	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
 	double getCeilingScale() const;
+
+	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
+	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
+	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
+	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
 };
 
 #endif

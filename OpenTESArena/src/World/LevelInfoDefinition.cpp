@@ -1,7 +1,4 @@
-#include <algorithm>
-
 #include "LevelInfoDefinition.h"
-#include "../Assets/INFFile.h"
 
 #include "components/debug/Debug.h"
 
@@ -10,92 +7,63 @@ LevelInfoDefinition::LevelInfoDefinition()
 	this->ceilingScale = 0.0;
 }
 
-void LevelInfoDefinition::init(const INFFile &inf)
+void LevelInfoDefinition::init(double ceilingScale)
 {
-	DebugNotImplemented();
+	this->ceilingScale = ceilingScale;
+	
+	// Add air voxel by default.
+	this->addVoxelDef(VoxelDefinition());
 }
 
-bool LevelInfoDefinition::tryGetVoxelDef(LevelDefinition::VoxelDefID id,
-	const VoxelDefinition **outDef) const
+const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDefID id) const
 {
-	const auto iter = std::find_if(this->voxelDefs.begin(), this->voxelDefs.end(),
-		[id](const auto &pair)
-	{
-		return pair.first == id;
-	});
-
-	if (iter != this->voxelDefs.end())
-	{
-		*outDef = &iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	DebugAssertIndex(this->voxelDefs, id);
+	return this->voxelDefs[id];
 }
 
-bool LevelInfoDefinition::tryGetEntityDef(LevelDefinition::EntityDefID id,
-	const EntityDefinition **outDef) const
+const EntityDefinition &LevelInfoDefinition::getEntityDef(LevelDefinition::EntityDefID id) const
 {
-	const auto iter = std::find_if(this->entityDefs.begin(), this->entityDefs.end(),
-		[id](const auto &pair)
-	{
-		return pair.first == id;
-	});
-
-	if (iter != this->entityDefs.end())
-	{
-		*outDef = &iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	DebugAssertIndex(this->entityDefs, id);
+	return this->entityDefs[id];
 }
 
-bool LevelInfoDefinition::tryGetLockDef(LevelDefinition::LockDefID id,
-	const LockDefinition **outDef) const
+const LockDefinition &LevelInfoDefinition::getLockDef(LevelDefinition::LockDefID id) const
 {
-	const auto iter = std::find_if(this->lockDefs.begin(), this->lockDefs.end(),
-		[id](const auto &pair)
-	{
-		return pair.first == id;
-	});
-
-	if (iter != this->lockDefs.end())
-	{
-		*outDef = &iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	DebugAssertIndex(this->lockDefs, id);
+	return this->lockDefs[id];
 }
 
-bool LevelInfoDefinition::tryGetTriggerDef(LevelDefinition::TriggerDefID id,
-	const TriggerDefinition **outDef) const
+const TriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::TriggerDefID id) const
 {
-	const auto iter = std::find_if(this->triggerDefs.begin(), this->triggerDefs.end(),
-		[id](const auto &pair)
-	{
-		return pair.first == id;
-	});
-
-	if (iter != this->triggerDefs.end())
-	{
-		*outDef = &iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	DebugAssertIndex(this->triggerDefs, id);
+	return this->triggerDefs[id];
 }
 
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
+}
+
+LevelDefinition::VoxelDefID LevelInfoDefinition::addVoxelDef(VoxelDefinition &&def)
+{
+	this->voxelDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::VoxelDefID>(this->voxelDefs.size()) - 1;
+}
+
+LevelDefinition::EntityDefID LevelInfoDefinition::addEntityDef(EntityDefinition &&def)
+{
+	this->entityDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::EntityDefID>(this->entityDefs.size()) - 1;
+}
+
+LevelDefinition::LockDefID LevelInfoDefinition::addLockDef(LockDefinition &&def)
+{
+	this->lockDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::LockDefID>(this->lockDefs.size()) - 1;
+}
+
+LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(TriggerDefinition &&def)
+{
+	this->triggerDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size()) - 1;
 }
