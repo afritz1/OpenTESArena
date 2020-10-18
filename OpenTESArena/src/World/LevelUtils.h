@@ -25,7 +25,7 @@ namespace LevelUtils
 	int getMap2VoxelHeight(uint16_t map2Voxel);
 
 	// Gets the max height from a set of MAP2 voxels.
-	int getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2);
+	int getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2);
 
 	// Gets the voxel height of a .MIF level with optional ceiling data.
 	int getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling);

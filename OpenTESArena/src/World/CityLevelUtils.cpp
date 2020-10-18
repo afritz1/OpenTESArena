@@ -12,12 +12,12 @@
 #include "components/utilities/String.h"
 
 void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
-	BufferView2D<MIFFile::VoxelID> &dstFlor, BufferView2D<MIFFile::VoxelID> &dstMap1,
-	BufferView2D<MIFFile::VoxelID> &dstMap2)
+	BufferView2D<ArenaTypes::VoxelID> &dstFlor, BufferView2D<ArenaTypes::VoxelID> &dstMap1,
+	BufferView2D<ArenaTypes::VoxelID> &dstMap2)
 {
-	const BufferView2D<const MIFFile::VoxelID> levelFLOR = level.getFLOR();
-	const BufferView2D<const MIFFile::VoxelID> levelMAP1 = level.getMAP1();
-	const BufferView2D<const MIFFile::VoxelID> levelMAP2 = level.getMAP2();
+	const BufferView2D<const ArenaTypes::VoxelID> levelFLOR = level.getFLOR();
+	const BufferView2D<const ArenaTypes::VoxelID> levelMAP1 = level.getMAP1();
+	const BufferView2D<const ArenaTypes::VoxelID> levelMAP2 = level.getMAP2();
 	const WEInt levelWidth = levelFLOR.getWidth();
 	const SNInt levelDepth = levelFLOR.getHeight();
 
@@ -25,9 +25,9 @@ void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
 	{
 		for (SNInt z = 0; z < levelDepth; z++)
 		{
-			const MIFFile::VoxelID srcFlorVoxel = levelFLOR.get(x, z);
-			const MIFFile::VoxelID srcMap1Voxel = levelMAP1.get(x, z);
-			const MIFFile::VoxelID srcMap2Voxel = levelMAP2.get(x, z);
+			const ArenaTypes::VoxelID srcFlorVoxel = levelFLOR.get(x, z);
+			const ArenaTypes::VoxelID srcMap1Voxel = levelMAP1.get(x, z);
+			const ArenaTypes::VoxelID srcMap2Voxel = levelMAP2.get(x, z);
 			dstFlor.set(x, z, srcFlorVoxel);
 			dstMap1.set(x, z, srcMap1Voxel);
 			dstMap2.set(x, z, srcMap2Voxel);
@@ -37,8 +37,9 @@ void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
 
 void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
 	const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
-	ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary, Buffer2D<uint16_t> &dstFlor,
-	Buffer2D<uint16_t> &dstMap1, Buffer2D<uint16_t> &dstMap2)
+	ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
+	Buffer2D<ArenaTypes::VoxelID> &dstFlor, Buffer2D<ArenaTypes::VoxelID> &dstMap1,
+	Buffer2D<ArenaTypes::VoxelID> &dstMap2)
 {
 	// Get the city's local X and Y, to be used later for building name generation.
 	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
@@ -109,9 +110,9 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
 			const auto &blockLevel = blockMif.getLevel(0);
-			const BufferView2D<const MIFFile::VoxelID> blockFLOR = blockLevel.getFLOR();
-			const BufferView2D<const MIFFile::VoxelID> blockMAP1 = blockLevel.getMAP1();
-			const BufferView2D<const MIFFile::VoxelID> blockMAP2 = blockLevel.getMAP2();
+			const BufferView2D<const ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
+			const BufferView2D<const ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
+			const BufferView2D<const ArenaTypes::VoxelID> blockMAP2 = blockLevel.getMAP2();
 
 			// Offset of the block in the voxel grid.
 			const WEInt xOffset = startPosition.x + (xDim * 20);
@@ -122,9 +123,9 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			{
 				for (WEInt x = 0; x < blockWidth; x++)
 				{
-					const MIFFile::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
-					const MIFFile::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
-					const MIFFile::VoxelID srcMap2Voxel = blockMAP2.get(x, z);
+					const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
+					const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+					const ArenaTypes::VoxelID srcMap2Voxel = blockMAP2.get(x, z);
 					const WEInt dstX = xOffset + x;
 					const SNInt dstZ = zOffset + z;
 					dstFlor.set(dstX, dstZ, srcFlorVoxel);
@@ -361,16 +362,17 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 	return menuNames;
 }
 
-void CityLevelUtils::revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWidth, WEInt gridDepth)
+void CityLevelUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
+	SNInt gridWidth, WEInt gridDepth)
 {
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		const uint16_t voxel = map1.get(z, x);
+		const ArenaTypes::VoxelID voxel = map1.get(z, x);
 		return voxel;
 	};
 
-	auto setMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z, uint16_t voxel)
+	auto setMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z, ArenaTypes::VoxelID voxel)
 	{
 		map1.set(z, x, voxel);
 	};
@@ -397,7 +399,7 @@ void CityLevelUtils::revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWi
 	{
 		auto isPalaceBlock = [&getMap1Voxel](SNInt x, WEInt z)
 		{
-			const uint16_t voxel = getMap1Voxel(x, z);
+			const ArenaTypes::VoxelID voxel = getMap1Voxel(x, z);
 			const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
 			return mostSigNibble == 0x9;
 		};
@@ -450,7 +452,7 @@ void CityLevelUtils::revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWi
 		{
 			auto isGateBlock = [&getMap1Voxel](SNInt x, WEInt z)
 			{
-				const uint16_t voxel = getMap1Voxel(x, z);
+				const ArenaTypes::VoxelID voxel = getMap1Voxel(x, z);
 				const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
 				return mostSigNibble == 0xA;
 			};
@@ -472,7 +474,7 @@ void CityLevelUtils::revisePalaceGraphics(Buffer2D<uint16_t> &map1, SNInt gridWi
 
 		// Set the positions of the two palace voxels and the two gate voxels.
 		NewInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
-		uint16_t firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
+		ArenaTypes::VoxelID firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
 		int gateDist;
 		if (result.side == SearchResult::Side::North)
 		{

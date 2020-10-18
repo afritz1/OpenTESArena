@@ -44,12 +44,12 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 {
 	// Create temp voxel data buffers and write the city skeleton data to them. Each city
 	// block will be written to them as well.
-	Buffer2D<uint16_t> tempFlor(gridDepth, gridWidth);
-	Buffer2D<uint16_t> tempMap1(gridDepth, gridWidth);
-	Buffer2D<uint16_t> tempMap2(gridDepth, gridWidth);
-	BufferView2D<uint16_t> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	BufferView2D<uint16_t> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	BufferView2D<uint16_t> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(gridDepth, gridWidth);
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(gridDepth, gridWidth);
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(gridDepth, gridWidth);
+	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	CityLevelUtils::writeSkeleton(level, tempFlorView, tempMap1View, tempMap2View);
 
 	// Get the city's seed for random chunk generation. It is modified later during
@@ -73,11 +73,11 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, EXTERIOR_LEVEL_HEIGHT, gridDepth, infName, level.getName());
 
-	const BufferView2D<const MIFFile::VoxelID> tempFlorConstView(
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap1ConstView(
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap2ConstView(
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	const INFFile &inf = levelData.getInfFile();
 	const auto &exeData = binaryAssetLibrary.getExeData();
@@ -110,10 +110,10 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 		WildLevelUtils::generateWildernessIndices(cityDef.wildSeed, wildData);
 
 	// Temp buffers for voxel data.
-	Buffer2D<uint16_t> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
 		RMDFile::WIDTH * wildIndices.getHeight());
-	Buffer2D<uint16_t> tempMap1(tempFlor.getWidth(), tempFlor.getHeight());
-	Buffer2D<uint16_t> tempMap2(tempFlor.getWidth(), tempFlor.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(tempFlor.getWidth(), tempFlor.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(tempFlor.getWidth(), tempFlor.getHeight());
 	tempFlor.fill(0);
 	tempMap1.fill(0);
 	tempMap2.fill(0);
@@ -126,17 +126,17 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 		const RMDFile &rmd = rmdFiles[rmdIndex];
 
 		// Copy .RMD voxel data to temp buffers.
-		const BufferView2D<const RMDFile::VoxelID> rmdFLOR = rmd.getFLOR();
-		const BufferView2D<const RMDFile::VoxelID> rmdMAP1 = rmd.getMAP1();
-		const BufferView2D<const RMDFile::VoxelID> rmdMAP2 = rmd.getMAP2();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
 
 		for (SNInt z = 0; z < RMDFile::DEPTH; z++)
 		{
 			for (WEInt x = 0; x < RMDFile::WIDTH; x++)
 			{
-				const RMDFile::VoxelID srcFlorVoxel = rmdFLOR.get(x, z);
-				const RMDFile::VoxelID srcMap1Voxel = rmdMAP1.get(x, z);
-				const RMDFile::VoxelID srcMap2Voxel = rmdMAP2.get(x, z);
+				const ArenaTypes::VoxelID srcFlorVoxel = rmdFLOR.get(x, z);
+				const ArenaTypes::VoxelID srcMap1Voxel = rmdMAP1.get(x, z);
+				const ArenaTypes::VoxelID srcMap2Voxel = rmdMAP2.get(x, z);
 				const WEInt dstX = xOffset + x;
 				const SNInt dstZ = zOffset + z;
 				tempFlor.set(dstX, dstZ, srcFlorVoxel);
@@ -165,11 +165,11 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	ExteriorLevelData levelData(tempFlor.getWidth(), EXTERIOR_LEVEL_HEIGHT, tempFlor.getHeight(),
 		infName, levelName);
 
-	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap1View(
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1View(
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap2View(
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2View(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 	const INFFile &inf = levelData.getInfFile();
 	const auto &exeData = binaryAssetLibrary.getExeData();

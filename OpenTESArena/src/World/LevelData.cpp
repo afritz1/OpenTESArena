@@ -383,7 +383,7 @@ void LevelData::setVoxel(SNInt x, int y, WEInt z, uint16_t id)
 	this->voxelGrid.setVoxel(x, y, z, id);
 }
 
-void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const INFFile &inf)
+void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf)
 {
 	const SNInt gridWidth = flor.getHeight();
 	const WEInt gridDepth = flor.getWidth();
@@ -606,7 +606,7 @@ void LevelData::readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const
 	}
 }
 
-void LevelData::readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const INFFile &inf,
+void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
 	WorldType worldType, const ExeData &exeData)
 {
 	const SNInt gridWidth = map1.getHeight();
@@ -1031,7 +1031,7 @@ void LevelData::readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const
 	}
 }
 
-void LevelData::readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const INFFile &inf)
+void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf)
 {
 	const SNInt gridWidth = map2.getHeight();
 	const WEInt gridDepth = map2.getWidth();

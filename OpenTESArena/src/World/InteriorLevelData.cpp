@@ -82,16 +82,16 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 			// Get the selected level from the .MIF file.
 			const int blockIndex = (tileSet * 8) + (random.next() % 8);
 			const auto &blockLevel = mif.getLevel(blockIndex);
-			const BufferView2D<const MIFFile::VoxelID> &blockFLOR = blockLevel.getFLOR();
-			const BufferView2D<const MIFFile::VoxelID> &blockMAP1 = blockLevel.getMAP1();
+			const BufferView2D<const ArenaTypes::VoxelID> &blockFLOR = blockLevel.getFLOR();
+			const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 
 			// Copy block data to temp buffers.
 			for (SNInt z = 0; z < InteriorLevelUtils::DUNGEON_CHUNK_DIM; z++)
 			{
 				for (WEInt x = 0; x < InteriorLevelUtils::DUNGEON_CHUNK_DIM; x++)
 				{
-					const MIFFile::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
-					const MIFFile::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+					const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
+					const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
 					const WEInt dstX = xOffset + x;
 					const SNInt dstZ = zOffset + z;
 					tempFlor.set(dstX, dstZ, srcFlorVoxel);
@@ -135,7 +135,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	levelData.outdoorDungeon = false;
 
 	// Draw perimeter blocks. First top and bottom, then right and left.
-	constexpr MIFFile::VoxelID perimeterVoxel = 0x7800;
+	constexpr ArenaTypes::VoxelID perimeterVoxel = 0x7800;
 	for (WEInt x = 0; x < tempMap1.getWidth(); x++)
 	{
 		tempMap1.set(x, 0, perimeterVoxel);
@@ -174,9 +174,9 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 	// @todo: use actual color from palette.
 	levelData.skyColor = Color::Black.toARGB();
 
-	const BufferView2D<const MIFFile::VoxelID> tempFlorView(
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const MIFFile::VoxelID> tempMap1View(
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1View(
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.

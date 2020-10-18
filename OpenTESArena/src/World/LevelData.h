@@ -186,10 +186,10 @@ protected:
 		const std::string &name);
 
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
-	void readFLOR(const BufferView2D<const MIFFile::VoxelID> &flor, const INFFile &inf);
-	void readMAP1(const BufferView2D<const MIFFile::VoxelID> &map1, const INFFile &inf,
+	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf);
+	void readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
 		WorldType worldType, const ExeData &exeData);
-	void readMAP2(const BufferView2D<const MIFFile::VoxelID> &map2, const INFFile &inf);
+	void readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf);
 	void readCeiling(const INFFile &inf);
 	void readLocks(const BufferView<const ArenaTypes::MIFLock> &locks);
 

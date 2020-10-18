@@ -21,8 +21,6 @@
 class MIFFile
 {
 public:
-	using VoxelID = uint16_t;
-
 	class Level
 	{
 	private:
@@ -30,7 +28,7 @@ public:
 		int numf; // Number of floor textures.
 
 		// Various data, not always present. FLOR and MAP1 are probably always present.
-		Buffer2D<VoxelID> flor, map1, map2;
+		Buffer2D<ArenaTypes::VoxelID> flor, map1, map2;
 		std::vector<uint8_t> flat, inns, loot, stor;
 		std::vector<ArenaTypes::MIFTarget> targ;
 		std::vector<ArenaTypes::MIFLock> lock;
@@ -68,9 +66,9 @@ public:
 		const std::string &getInfo() const;
 		int getNumf() const;
 
-		BufferView2D<const VoxelID> getFLOR() const;
-		BufferView2D<const VoxelID> getMAP1() const;
-		BufferView2D<const VoxelID> getMAP2() const;
+		BufferView2D<const ArenaTypes::VoxelID> getFLOR() const;
+		BufferView2D<const ArenaTypes::VoxelID> getMAP1() const;
+		BufferView2D<const ArenaTypes::VoxelID> getMAP2() const;
 
 		BufferView<const uint8_t> getFLAT() const;
 		BufferView<const uint8_t> getINNS() const;

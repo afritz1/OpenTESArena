@@ -15,8 +15,8 @@
 int LevelUtils::getMap2VoxelHeight(uint16_t map2Voxel)
 {
 	// Can use this function for either .MIF or .RMD voxel data.
-	static_assert(sizeof(map2Voxel) == sizeof(MIFFile::VoxelID));
-	static_assert(sizeof(map2Voxel) == sizeof(RMDFile::VoxelID));
+	static_assert(sizeof(map2Voxel) == sizeof(ArenaTypes::VoxelID));
+	static_assert(sizeof(map2Voxel) == sizeof(ArenaTypes::VoxelID));
 
 	if ((map2Voxel & 0x80) == 0x80)
 	{
@@ -36,7 +36,7 @@ int LevelUtils::getMap2VoxelHeight(uint16_t map2Voxel)
 	}
 }
 
-int LevelUtils::getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2)
+int LevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2)
 {
 	DebugAssert(map2.isValid());
 
@@ -56,7 +56,7 @@ int LevelUtils::getMap2Height(const BufferView2D<const MIFFile::VoxelID> &map2)
 
 int LevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
 {
-	const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
+	const BufferView2D<const ArenaTypes::VoxelID> map2 = level.getMAP2();
 
 	if (map2.isValid())
 	{
