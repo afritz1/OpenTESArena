@@ -15,9 +15,10 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName)
+void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::string &&displayName)
 {
 	this->mifName = std::move(mifName);
+	this->displayName = std::move(displayName);
 }
 
 void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widthChunks,
@@ -27,6 +28,22 @@ void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widt
 	this->widthChunks = widthChunks;
 	this->depthChunks = depthChunks;
 	this->isArtifactDungeon = isArtifactDungeon;
+}
+
+void MapDefinition::CityGenerationInfo::init(std::string &&mifName)
+{
+	this->mifName = std::move(mifName);
+}
+
+void MapDefinition::WildGenerationInfo::init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed)
+{
+	this->wildBlockIDs = std::move(wildBlockIDs);
+	this->fallbackSeed = fallbackSeed;
+}
+
+void MapDefinition::Interior::init()
+{
+	
 }
 
 const MapDefinition::InteriorGenerationInfo &MapDefinition::City::getInteriorGenerationInfo(int index) const
@@ -73,8 +90,8 @@ const MapDefinition::InteriorGenerationInfo &MapDefinition::Wild::getInteriorGen
 
 const MapDefinition::DungeonGenerationInfo &MapDefinition::Wild::getDungeonGenerationInfo(int index) const
 {
-	DebugAssertIndex(this->dungeonCreationInfos, index);
-	return this->dungeonCreationInfos[index];
+	DebugAssertIndex(this->dungeonGenInfos, index);
+	return this->dungeonGenInfos[index];
 }
 
 int MapDefinition::Wild::addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo)
@@ -85,8 +102,8 @@ int MapDefinition::Wild::addInteriorGenerationInfo(InteriorGenerationInfo &&gene
 
 int MapDefinition::Wild::addDungeonGenerationInfo(DungeonGenerationInfo &&generationInfo)
 {
-	this->dungeonCreationInfos.emplace_back(std::move(generationInfo));
-	return static_cast<int>(this->dungeonCreationInfos.size()) - 1;
+	this->dungeonGenInfos.emplace_back(std::move(generationInfo));
+	return static_cast<int>(this->dungeonGenInfos.size()) - 1;
 }
 
 void MapDefinition::init(WorldType worldType)
@@ -94,48 +111,37 @@ void MapDefinition::init(WorldType worldType)
 	this->worldType = worldType;
 }
 
-bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
+bool MapDefinition::initInteriorLevels(const MIFFile &mif)
 {
-	this->init(WorldType::Interior);
-
-	// Initializer for an interior level with optional ceiling data.
-	/*void LevelDefinition::initInterior(const MIFFile::Level &level, WEInt mifWidth, SNInt mifDepth,
-	const INFFile::CeilingData *ceiling)
-	{
-		// Determine level height from voxel data.
-		const int height = [&level, mifWidth, mifDepth, ceiling]()
-		{
-			const BufferView2D<const MIFFile::VoxelID> map2 = level.getMAP2();
-
-			if (map2.isValid())
-			{
-				return 2 + LevelUtils::getMap2Height(map2);
-			}
-			else
-			{
-				const bool hasCeiling = (ceiling != nullptr) && !ceiling->outdoorDungeon;
-				return hasCeiling ? 3 : 2;
-			}
-		}();
-
-		this->voxels.init(mifDepth, height, mifWidth);
-		this->voxels.fill(LevelDefinition::VOXEL_ID_AIR);
-
-		// @todo: decode level voxels and put IDs/entities into buffers.
-		// - leaning towards having a helper function make map and map info at the same time.
-		DebugNotImplemented();
-	}*/
-
-	/*auto initLevelDef = [&mif](LevelDefinition &levelDef, const MIFFile::Level &level,
-		const INFFile &inf)
-	{
-		const WEInt mifWidth = mif.getWidth();
-		const SNInt mifDepth = mif.getDepth();
-		levelDef.initInterior(level, mifWidth, mifDepth, &inf.getCeiling());
-	};
-
+	// N level + level info pairs.
 	this->levels.init(mif.getLevelCount());
 	this->levelInfos.init(mif.getLevelCount());
+	this->levelInfoMappings.init(mif.getLevelCount());
+
+	auto initLevelAndInfo = [this, &mif](int levelIndex, const MIFFile::Level &mifLevel,
+		const INFFile &inf) -> bool
+	{
+		LevelDefinition &levelDef = this->levels.get(levelIndex);
+		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
+
+		const INFFile::CeilingData &ceiling = inf.getCeiling();
+		const WEInt levelWidth = mif.getWidth();
+		const int levelHeight = LevelUtils::getMifLevelHeight(mifLevel, &ceiling);
+		const SNInt levelDepth = mif.getDepth();
+
+		// Transpose .MIF dimensions to new dimensions.
+		levelDef.init(levelDepth, levelHeight, levelWidth);
+
+		// @todo: set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together (due to ceiling, etc.).
+		// - probably going to have hash tables like LevelData voxel mappings; i.e. flat index -> EntityDefID.
+
+		// @todo: set LevelDefinition and LevelInfoDefinition locks
+		// @todo: set LevelDefinition and LevelInfoDefinition triggers
+		DebugNotImplemented();
+
+		return true;
+	};
+
 	for (int i = 0; i < mif.getLevelCount(); i++)
 	{
 		const MIFFile::Level &level = mif.getLevel(i);
@@ -143,31 +149,57 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
 		INFFile inf;
 		if (!inf.init(infName.c_str()))
 		{
-			DebugLogError("Couldn't init .INF file \"" + infName +
-				"\" for interior level " + std::to_string(i) + ".");
+			DebugLogError("Couldn't init .INF file \"" + infName + "\".");
 			return false;
 		}
 
-		LevelDefinition &levelDef = this->levels.get(i);
-		initLevelDef(levelDef, level, inf);
-
-		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(i);
-		levelInfoDef.init(inf);
-
-		// Pair level with its level info.
-		this->levelInfoMappings.push_back(i);
+		if (!initLevelAndInfo(i, level, inf))
+		{
+			DebugLogError("Couldn't init level and info with .INF file \"" + infName +
+				"\" for level " + std::to_string(i) + " \"" + level.getName() + "\".");
+			return false;
+		}
 	}
 
+	// Each interior level info maps to its parallel level.
+	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
+	{
+		this->levelInfoMappings.set(i, i);
+	}
+
+	return true;
+}
+
+void MapDefinition::initStartPoints(const MIFFile &mif)
+{
+	this->startPoints.init(mif.getStartPointCount());
 	for (int i = 0; i < mif.getStartPointCount(); i++)
 	{
-		const OriginalInt2 &mifStartPoint = mif.getStartPoint(i);		
+		const OriginalInt2 &mifStartPoint = mif.getStartPoint(i);
 		const Double2 mifStartPointReal = MIFUtils::convertStartPointToReal(mifStartPoint);
-		this->startPoints.push_back(VoxelUtils::getTransformedVoxel(mifStartPointReal));
+		this->startPoints.get(i) = VoxelUtils::getTransformedVoxel(mifStartPointReal);
+	}
+}
+
+void MapDefinition::initStartLevelIndex(const MIFFile &mif)
+{
+	this->startLevelIndex = mif.getStartingLevelIndex();
+}
+
+bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
+{
+	this->init(WorldType::Interior);
+
+	MIFFile mif;
+	if (!mif.init(generationInfo.mifName.c_str()))
+	{
+		DebugLogError("Couldn't init .MIF file \"" + generationInfo.mifName + "\".");
+		return false;
 	}
 
-	this->startLevelIndex = mif.getStartingLevelIndex();*/
-
-	DebugNotImplemented();
+	this->initInteriorLevels(mif);
+	this->initStartPoints(mif);
+	this->initStartLevelIndex(mif);
 	return true;
 }
 

@@ -18,7 +18,6 @@
 // chunks.
 
 class BinaryAssetLibrary;
-class MIFFile;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -33,8 +32,9 @@ public:
 	struct InteriorGenerationInfo
 	{
 		std::string mifName;
+		std::string displayName; // For building interior transitions (tavern, temple, etc.).
 
-		void init(std::string &&mifName);
+		void init(std::string &&mifName, std::string &&displayName);
 	};
 
 	// Data for generating a dungeon interior map definition.
@@ -55,6 +55,8 @@ public:
 	struct CityGenerationInfo
 	{
 		std::string mifName;
+		
+		void init(std::string &&mifName);
 	};
 
 	// Input: 70 .RMD files (from asset library) + 1 weather .INF
@@ -63,14 +65,17 @@ public:
 	{
 		Buffer2D<WildBlockID> wildBlockIDs;
 		uint32_t fallbackSeed;
+
+		void init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed);
 	};
 
-	struct Interior
+	class Interior
 	{
-		std::string displayName; // For building interior transitions (tavern, temple, etc.).
-
+	private:
 		// @todo: interior type (shop, mage's guild, dungeon, etc.)?
 		// - InteriorDefinition? Contains isPalace, etc.?
+	public:
+		void init();
 	};
 
 	class City
@@ -93,7 +98,7 @@ public:
 		uint32_t fallbackSeed; // I.e. the world map location seed.
 
 		std::vector<InteriorGenerationInfo> interiorGenInfos; // Building interiors.
-		std::vector<DungeonGenerationInfo> dungeonCreationInfos; // Wild den interiors.
+		std::vector<DungeonGenerationInfo> dungeonGenInfos; // Wild den interiors.
 
 		// @todo: interior gen info (index?) for when player creates a wall on water.
 	public:
@@ -121,6 +126,9 @@ private:
 	Wild wild;
 
 	void init(WorldType worldType);
+	bool initInteriorLevels(const MIFFile &mif);
+	void initStartPoints(const MIFFile &mif);
+	void initStartLevelIndex(const MIFFile &mif);
 public:
 	bool initInterior(const InteriorGenerationInfo &generationInfo);
 	bool initDungeon(const DungeonGenerationInfo &generationInfo);
