@@ -24,6 +24,7 @@ LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxels.init(width, height, depth);
+	this->voxels.fill(0);
 }
 
 SNInt LevelDefinition::getWidth() const
