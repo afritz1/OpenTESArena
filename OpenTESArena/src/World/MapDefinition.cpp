@@ -4,6 +4,7 @@
 #include "InteriorLevelUtils.h"
 #include "InteriorWorldUtils.h"
 #include "MapDefinition.h"
+#include "MapGeneration.h"
 #include "WorldType.h"
 #include "WildWorldUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -13,6 +14,7 @@
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
 void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::string &&displayName)
@@ -111,15 +113,19 @@ void MapDefinition::init(WorldType worldType)
 	this->worldType = worldType;
 }
 
-bool MapDefinition::initInteriorLevels(const MIFFile &mif)
+bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
+	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	// N level + level info pairs.
 	this->levels.init(mif.getLevelCount());
 	this->levelInfos.init(mif.getLevelCount());
 	this->levelInfoMappings.init(mif.getLevelCount());
 
-	auto initLevelAndInfo = [this, &mif](int levelIndex, const MIFFile::Level &mifLevel,
-		const INFFile &inf) -> bool
+	auto initLevelAndInfo = [this, &mif, isPalace, &rulerIsMale, &charClassLibrary, &entityDefLibrary,
+		&binaryAssetLibrary, &textureManager](int levelIndex, const MIFFile::Level &mifLevel,
+		const INFFile &inf)
 	{
 		LevelDefinition &levelDef = this->levels.get(levelIndex);
 		LevelInfoDefinition &levelInfoDef = this->levelInfos.get(levelIndex);
@@ -132,14 +138,18 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif)
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		// @todo: set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together (due to ceiling, etc.).
-		// - probably going to have hash tables like LevelData voxel mappings; i.e. flat index -> EntityDefID.
+		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
+		// (due to ceiling, etc.).
+		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
+		const WorldType worldType = WorldType::Interior;
+		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
+		MapGeneration::readMifVoxels(mifLevelView, worldType, isPalace, rulerIsMale, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
+		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
+		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
 
-		// @todo: set LevelDefinition and LevelInfoDefinition locks
-		// @todo: set LevelDefinition and LevelInfoDefinition triggers
-		DebugNotImplemented();
-
-		return true;
+		const double ceilingScale = static_cast<double>(ceiling.height) / MIFUtils::ARENA_UNITS;
+		levelInfoDef.init(ceilingScale);
 	};
 
 	for (int i = 0; i < mif.getLevelCount(); i++)
@@ -153,12 +163,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif)
 			return false;
 		}
 
-		if (!initLevelAndInfo(i, level, inf))
-		{
-			DebugLogError("Couldn't init level and info with .INF file \"" + infName +
-				"\" for level " + std::to_string(i) + " \"" + level.getName() + "\".");
-			return false;
-		}
+		initLevelAndInfo(i, level, inf);
 	}
 
 	// Each interior level info maps to its parallel level.
@@ -186,7 +191,10 @@ void MapDefinition::initStartLevelIndex(const MIFFile &mif)
 	this->startLevelIndex = mif.getStartingLevelIndex();
 }
 
-bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
+bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
+	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	this->init(WorldType::Interior);
 
@@ -197,7 +205,8 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo)
 		return false;
 	}
 
-	this->initInteriorLevels(mif);
+	this->initInteriorLevels(mif, isPalace, rulerIsMale, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->initStartLevelIndex(mif);
 	return true;

@@ -18,6 +18,9 @@
 // chunks.
 
 class BinaryAssetLibrary;
+class CharacterClassLibrary;
+class EntityDefinitionLibrary;
+class TextureManager;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -126,11 +129,16 @@ private:
 	Wild wild;
 
 	void init(WorldType worldType);
-	bool initInteriorLevels(const MIFFile &mif);
+	bool initInteriorLevels(const MIFFile &mif, bool isPalace, const std::optional<bool> &rulerIsMale,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 	void initStartLevelIndex(const MIFFile &mif);
 public:
-	bool initInterior(const InteriorGenerationInfo &generationInfo);
+	bool initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
+		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 	bool initDungeon(const DungeonGenerationInfo &generationInfo);
 	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType);
 	bool initWild(const WildGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
