@@ -1,59 +1,55 @@
 #ifndef TRIGGER_DEFINITION_H
 #define TRIGGER_DEFINITION_H
 
-#include <string_view>
+#include <string>
 
 #include "VoxelUtils.h"
+
+// Can have a sound and/or text definition.
 
 class TriggerDefinition
 {
 public:
-	enum class Type { Sound, Text };
-
 	class SoundDef
 	{
 	private:
-		char name[32];
+		std::string filename;
 	public:
-		void init(const char *name);
+		void init(std::string &&filename);
 
-		std::string_view getName() const;
+		const std::string &getFilename() const;
 	};
 
 	class TextDef
 	{
 	private:
-		int textID; // ID in map info text.
+		std::string text;
 		bool displayedOnce;
 	public:
-		void init(int textID, bool displayedOnce);
+		void init(std::string &&text, bool displayedOnce);
 
-		int getTextID() const;
+		const std::string &getText() const;
 		bool isDisplayedOnce() const;
 	};
 private:
-	WEInt x;
+	SoundDef sound;
+	TextDef text;
+	SNInt x;
 	int y;
-	SNInt z;
-	Type type;
-
-	union
-	{
-		SoundDef sound;
-		TextDef text;
-	};
-
-	void init(WEInt x, int y, SNInt z, Type type);
+	WEInt z;
 public:
-	static TriggerDefinition makeSound(WEInt x, int y, SNInt z, const char *name);
-	static TriggerDefinition makeText(WEInt x, int y, SNInt z, int textID, bool displayedOnce);
+	TriggerDefinition();
 
-	WEInt getX() const;
+	void init(SNInt x, int y, WEInt z);
+
+	SNInt getX() const;
 	int getY() const;
-	SNInt getZ() const;
-	Type getType() const;
+	WEInt getZ() const;
 	const SoundDef &getSoundDef() const;
 	const TextDef &getTextDef() const;
+
+	void setSoundDef(std::string &&filename);
+	void setTextDef(std::string &&text, bool displayedOnce);
 };
 
 #endif
