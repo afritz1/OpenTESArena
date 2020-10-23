@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <map>
 #include <unordered_map>
 
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LevelUtils.h"
+#include "LockDefinition.h"
 #include "MapGeneration.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing.h"
@@ -19,11 +21,22 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView2D.h"
 
+namespace std
+{
+	// std::map comparison for MIFLock.
+	bool operator<(const ArenaTypes::MIFLock &a, const ArenaTypes::MIFLock &b)
+	{
+		return (a.x < b.x) || ((a.x == b.x) && (a.y < b.y)) ||
+			((a.x == b.x) && (a.y == b.y) && (a.lockLevel < b.lockLevel));
+	}
+}
+
 namespace MapGeneration
 {
-	// Hash tables for caching mappings of .MIF/.RMD voxels to modern level info entries.
+	// Hash tables for caching mappings of .MIF/.RMD voxels, etc. to modern level info entries.
 	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::VoxelDefID>;
 	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
+	using ArenaLockMappingCache = std::map<ArenaTypes::MIFLock, LevelDefinition::LockDefID>;
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
 
@@ -500,6 +513,13 @@ namespace MapGeneration
 			VoxelDefinition::WallData::Type::Solid);
 	}
 
+	LockDefinition makeLockDefFromArenaLock(WEInt x, SNInt z, int lockLevel)
+	{
+		const OriginalInt2 lockPos(x, z);
+		const LevelInt2 newLockPos = VoxelUtils::originalVoxelToNewVoxel(lockPos);
+		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lockLevel);
+	}
+
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
 	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, WorldType worldType,
 		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
@@ -760,7 +780,41 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
-	DebugNotImplemented();
+	ArenaLockMappingCache lockMappings;
+
+	auto readMifLock = [&inf, outLevelInfoDef, &lockMappings](const ArenaTypes::MIFLock &lock,
+		LevelDefinition *outLevelDef)
+	{
+		// @todo: see if .INF file key data is relevant here.
+
+		// Get lock def ID from cache or create a new one.
+		LevelDefinition::LockDefID lockDefID;
+		const auto iter = lockMappings.find(lock);
+		if (iter != lockMappings.end())
+		{
+			lockDefID = iter->second;
+		}
+		else
+		{
+			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(
+				lock.x, lock.y, lock.lockLevel);
+			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
+			lockMappings.insert(std::make_pair(lock, lockDefID));
+		}
+	};
+
+	for (int i = 0; i < levels.getCount(); i++)
+	{
+		const MIFFile::Level &level = levels.get(i);
+		LevelDefinition &levelDef = outLevelDefs.get(i);
+		const BufferView<const ArenaTypes::MIFLock> locks = level.getLOCK();
+
+		for (int j = 0; j < locks.getCount(); j++)
+		{
+			const ArenaTypes::MIFLock &lock = locks.get(j);
+			readMifLock(lock, &levelDef);
+		}
+	}
 }
 
 void MapGeneration::readMifTriggers(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,

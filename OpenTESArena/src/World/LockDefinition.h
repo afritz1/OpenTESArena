@@ -26,9 +26,9 @@ public:
 		void init();
 	};
 private:
-	WEInt x;
+	SNInt x;
 	int y;
-	SNInt z;
+	WEInt z;
 	Type type;
 
 	union
@@ -37,14 +37,14 @@ private:
 		KeyLockDef keyLock;
 	};
 
-	void init(WEInt x, int y, SNInt z, Type type);
+	void init(SNInt x, int y, WEInt z, Type type);
 public:
-	static LockDefinition makeLeveledLock(WEInt x, int y, SNInt z, int lockLevel);
-	static LockDefinition makeKeyLock(WEInt x, int y, SNInt z);
+	static LockDefinition makeLeveledLock(SNInt x, int y, WEInt z, int lockLevel);
+	static LockDefinition makeKeyLock(SNInt x, int y, WEInt z);
 
-	WEInt getX() const;
+	SNInt getX() const;
 	int getY() const;
-	SNInt getZ() const;
+	WEInt getZ() const;
 	Type getType() const;
 	const LeveledLockDef &getLeveledLockDef() const;
 	const KeyLockDef &getKeyLockDef() const;

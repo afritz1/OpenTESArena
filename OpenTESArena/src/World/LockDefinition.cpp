@@ -12,7 +12,7 @@ void LockDefinition::KeyLockDef::init()
 	// Do nothing.
 }
 
-void LockDefinition::init(WEInt x, int y, SNInt z, Type type)
+void LockDefinition::init(SNInt x, int y, WEInt z, Type type)
 {
 	this->x = x;
 	this->y = y;
@@ -20,7 +20,7 @@ void LockDefinition::init(WEInt x, int y, SNInt z, Type type)
 	this->type = type;
 }
 
-LockDefinition LockDefinition::makeLeveledLock(WEInt x, int y, SNInt z, int lockLevel)
+LockDefinition LockDefinition::makeLeveledLock(SNInt x, int y, WEInt z, int lockLevel)
 {
 	LockDefinition lockDef;
 	lockDef.init(x, y, z, Type::LeveledLock);
@@ -28,7 +28,7 @@ LockDefinition LockDefinition::makeLeveledLock(WEInt x, int y, SNInt z, int lock
 	return lockDef;
 }
 
-LockDefinition LockDefinition::makeKeyLock(WEInt x, int y, SNInt z)
+LockDefinition LockDefinition::makeKeyLock(SNInt x, int y, WEInt z)
 {
 	LockDefinition lockDef;
 	lockDef.init(x, y, z, Type::KeyLock);
@@ -36,7 +36,7 @@ LockDefinition LockDefinition::makeKeyLock(WEInt x, int y, SNInt z)
 	return lockDef;
 }
 
-WEInt LockDefinition::getX() const
+SNInt LockDefinition::getX() const
 {
 	return this->x;
 }
@@ -46,7 +46,7 @@ int LockDefinition::getY() const
 	return this->y;
 }
 
-SNInt LockDefinition::getZ() const
+WEInt LockDefinition::getZ() const
 {
 	return this->z;
 }
