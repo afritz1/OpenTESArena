@@ -801,6 +801,12 @@ void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels,
 			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
 			lockMappings.insert(std::make_pair(lock, lockDefID));
 		}
+
+		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
+		const SNInt x = lockDef.getX();
+		const int y = lockDef.getY();
+		const WEInt z = lockDef.getZ();
+		outLevelDef->addLock(lockDefID, LevelInt3(x, y, z));
 	};
 
 	for (int i = 0; i < levels.getCount(); i++)
