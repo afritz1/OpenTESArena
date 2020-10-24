@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <map>
 #include <unordered_map>
 
 #include "InteriorLevelUtils.h"
@@ -25,31 +24,13 @@
 #include "components/utilities/BufferView2D.h"
 #include "components/utilities/String.h"
 
-namespace std
-{
-	// std::map comparison for MIFLock.
-	bool operator<(const ArenaTypes::MIFLock &a, const ArenaTypes::MIFLock &b)
-	{
-		return (a.x < b.x) || ((a.x == b.x) && (a.y < b.y)) ||
-			((a.x == b.x) && (a.y == b.y) && (a.lockLevel < b.lockLevel));
-	}
-
-	// std::map comparison for MIFTrigger.
-	bool operator<(const ArenaTypes::MIFTrigger &a, const ArenaTypes::MIFTrigger &b)
-	{
-		return (a.x < b.x) || ((a.x == b.x) && (a.y < b.y)) ||
-			((a.x == b.x) && (a.y == b.y) && (a.textIndex < b.textIndex)) ||
-			((a.x == b.x) && (a.y == b.y) && (a.textIndex == b.textIndex) && (a.soundIndex < b.soundIndex));
-	}
-}
-
 namespace MapGeneration
 {
 	// Mapping caches of .MIF/.RMD voxels, etc. to modern level info entries.
 	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::VoxelDefID>;
 	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
-	using ArenaLockMappingCache = std::map<ArenaTypes::MIFLock, LevelDefinition::LockDefID>;
-	using ArenaTriggerMappingCache = std::map<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>;
+	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID>>;
+	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
 
@@ -790,7 +771,13 @@ namespace MapGeneration
 
 		// Get lock def ID from cache or create a new one.
 		LevelDefinition::LockDefID lockDefID;
-		const auto iter = lockMappings->find(lock);
+		const auto iter = std::find_if(lockMappings->begin(), lockMappings->end(),
+			[&lock](const std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID> &pair)
+		{
+			const ArenaTypes::MIFLock &mifLock = pair.first;
+			return (mifLock.x == lock.x) && (mifLock.y == lock.y) && (mifLock.lockLevel == lock.lockLevel);
+		});
+
 		if (iter != lockMappings->end())
 		{
 			lockDefID = iter->second;
@@ -799,7 +786,7 @@ namespace MapGeneration
 		{
 			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(lock);
 			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
-			lockMappings->insert(std::make_pair(lock, lockDefID));
+			lockMappings->push_back(std::make_pair(lock, lockDefID));
 		}
 
 		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
@@ -815,7 +802,14 @@ namespace MapGeneration
 	{
 		// Get trigger def ID from cache or create a new one.
 		LevelDefinition::TriggerDefID triggerDefID;
-		const auto iter = triggerMappings->find(trigger);
+		const auto iter = std::find_if(triggerMappings->begin(), triggerMappings->end(),
+			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID> &pair)
+		{
+			const ArenaTypes::MIFTrigger &mifTrigger = pair.first;
+			return (mifTrigger.x == trigger.x) && (mifTrigger.y == trigger.y) &&
+				(mifTrigger.textIndex == trigger.textIndex) && (mifTrigger.soundIndex == trigger.soundIndex);
+		});
+
 		if (iter != triggerMappings->end())
 		{
 			triggerDefID = iter->second;
@@ -824,7 +818,7 @@ namespace MapGeneration
 		{
 			TriggerDefinition triggerDef = MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf);
 			triggerDefID = outLevelInfoDef->addTriggerDef(std::move(triggerDef));
-			triggerMappings->insert(std::make_pair(trigger, triggerDefID));
+			triggerMappings->push_back(std::make_pair(trigger, triggerDefID));
 		}
 
 		const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
