@@ -1,4 +1,5 @@
 #include "InteriorLevelUtils.h"
+#include "../Assets/MIFUtils.h"
 
 int InteriorLevelUtils::packLevelChangeVoxel(WEInt x, SNInt y)
 {
@@ -19,4 +20,9 @@ int InteriorLevelUtils::offsetLevelChangeVoxel(int coord)
 uint16_t InteriorLevelUtils::convertLevelChangeVoxel(uint8_t voxel)
 {
 	return (voxel << 8) | voxel;
+}
+
+double InteriorLevelUtils::convertArenaCeilingHeight(int ceilingHeight)
+{
+	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
 }

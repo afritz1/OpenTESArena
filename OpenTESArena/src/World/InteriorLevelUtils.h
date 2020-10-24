@@ -23,6 +23,9 @@ namespace InteriorLevelUtils
 
 	// Converts a level change voxel to an actual level voxel.
 	uint16_t convertLevelChangeVoxel(uint8_t voxel);
+
+	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 per voxel).
+	double convertArenaCeilingHeight(int ceilingHeight);
 }
 
 #endif

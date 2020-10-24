@@ -17,6 +17,7 @@
 // is defined and how it's represented in-engine, so that it doesn't care about things like
 // chunks.
 
+class ArenaRandom;
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class EntityDefinitionLibrary;
@@ -132,6 +133,10 @@ private:
 	bool initInteriorLevels(const MIFFile &mif, bool isPalace, const std::optional<bool> &rulerIsMale,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
+		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelInt2 *outStartPoint);
 	void initStartPoints(const MIFFile &mif);
 	void initStartLevelIndex(const MIFFile &mif);
 public:
@@ -139,7 +144,9 @@ public:
 		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
-	bool initDungeon(const DungeonGenerationInfo &generationInfo);
+	bool initDungeon(const DungeonGenerationInfo &generationInfo,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType);
 	bool initWild(const WildGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
 		const BinaryAssetLibrary &binaryAssetLibrary);

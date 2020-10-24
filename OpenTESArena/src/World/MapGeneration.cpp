@@ -2,6 +2,7 @@
 #include <map>
 #include <unordered_map>
 
+#include "InteriorLevelUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LevelUtils.h"
@@ -18,6 +19,7 @@
 #include "../Entities/EntityDefinition.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityType.h"
+#include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView2D.h"
@@ -780,6 +782,187 @@ namespace MapGeneration
 			}
 		}
 	}
+
+	void readArenaLock(const ArenaTypes::MIFLock &lock, const INFFile &inf, LevelDefinition *outLevelDef,
+		LevelInfoDefinition *outLevelInfoDef, ArenaLockMappingCache *lockMappings)
+	{
+		// @todo: see if .INF file key data is relevant here.
+
+		// Get lock def ID from cache or create a new one.
+		LevelDefinition::LockDefID lockDefID;
+		const auto iter = lockMappings->find(lock);
+		if (iter != lockMappings->end())
+		{
+			lockDefID = iter->second;
+		}
+		else
+		{
+			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(lock);
+			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
+			lockMappings->insert(std::make_pair(lock, lockDefID));
+		}
+
+		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
+		const SNInt x = lockDef.getX();
+		const int y = lockDef.getY();
+		const WEInt z = lockDef.getZ();
+		outLevelDef->addLock(lockDefID, LevelInt3(x, y, z));
+	}
+
+	void readArenaTrigger(const ArenaTypes::MIFTrigger &trigger, const INFFile &inf,
+		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		ArenaTriggerMappingCache *triggerMappings)
+	{
+		// Get trigger def ID from cache or create a new one.
+		LevelDefinition::TriggerDefID triggerDefID;
+		const auto iter = triggerMappings->find(trigger);
+		if (iter != triggerMappings->end())
+		{
+			triggerDefID = iter->second;
+		}
+		else
+		{
+			TriggerDefinition triggerDef = MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf);
+			triggerDefID = outLevelInfoDef->addTriggerDef(std::move(triggerDef));
+			triggerMappings->insert(std::make_pair(trigger, triggerDefID));
+		}
+
+		const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
+		const SNInt x = triggerDef.getX();
+		const int y = triggerDef.getY();
+		const WEInt z = triggerDef.getZ();
+		outLevelDef->addTrigger(triggerDefID, LevelInt3(x, y, z));
+	}
+
+	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
+		int levelUpBlock, const std::optional<int> &levelDownBlock, ArenaRandom &random,
+		WorldType worldType, bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		ArenaVoxelMappingCache *florMappings, ArenaVoxelMappingCache *map1Mappings,
+		ArenaEntityMappingCache *entityMappings, ArenaLockMappingCache *lockMappings,
+		ArenaTriggerMappingCache *triggerMappings)
+	{
+		// Create buffers for level blocks.
+		Buffer2D<ArenaTypes::VoxelID> levelFLOR(mif.getWidth() * widthChunks, mif.getDepth() * depthChunks);
+		Buffer2D<ArenaTypes::VoxelID> levelMAP1(levelFLOR.getWidth(), levelFLOR.getHeight());
+		levelFLOR.fill(0);
+		levelMAP1.fill(0);
+
+		const int tileSet = random.next() % 4;
+
+		for (SNInt row = 0; row < depthChunks; row++)
+		{
+			const SNInt zOffset = row * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
+			for (WEInt column = 0; column < widthChunks; column++)
+			{
+				const WEInt xOffset = column * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
+
+				// Get the selected level from the random chunks .MIF file.
+				const int blockIndex = (tileSet * 8) + (random.next() % 8);
+				const auto &blockLevel = mif.getLevel(blockIndex);
+				const BufferView2D<const ArenaTypes::VoxelID> &blockFLOR = blockLevel.getFLOR();
+				const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
+
+				// Copy block data to temp buffers.
+				for (SNInt z = 0; z < InteriorLevelUtils::DUNGEON_CHUNK_DIM; z++)
+				{
+					for (WEInt x = 0; x < InteriorLevelUtils::DUNGEON_CHUNK_DIM; x++)
+					{
+						const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
+						const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+						const WEInt dstX = xOffset + x;
+						const SNInt dstZ = zOffset + z;
+						levelFLOR.set(dstX, dstZ, srcFlorVoxel);
+						levelMAP1.set(dstX, dstZ, srcMap1Voxel);
+					}
+				}
+
+				// Assign locks to the current block.
+				const BufferView<const ArenaTypes::MIFLock> &blockLOCK = blockLevel.getLOCK();
+				for (int i = 0; i < blockLOCK.getCount(); i++)
+				{
+					const auto &lock = blockLOCK.get(i);
+
+					ArenaTypes::MIFLock tempLock;
+					tempLock.x = xOffset + lock.x;
+					tempLock.y = zOffset + lock.y;
+					tempLock.lockLevel = lock.lockLevel;
+
+					MapGeneration::readArenaLock(tempLock, inf, outLevelDef, outLevelInfoDef, lockMappings);
+				}
+
+				// Assign text/sound triggers to the current block.
+				const BufferView<const ArenaTypes::MIFTrigger> &blockTRIG = blockLevel.getTRIG();
+				for (int i = 0; i < blockTRIG.getCount(); i++)
+				{
+					const auto &trigger = blockTRIG.get(i);
+
+					ArenaTypes::MIFTrigger tempTrigger;
+					tempTrigger.x = xOffset + trigger.x;
+					tempTrigger.y = zOffset + trigger.y;
+					tempTrigger.textIndex = trigger.textIndex;
+					tempTrigger.soundIndex = trigger.soundIndex;
+
+					MapGeneration::readArenaTrigger(tempTrigger, inf, outLevelDef, outLevelInfoDef,
+						triggerMappings);
+				}
+			}
+		}
+
+		// Draw perimeter blocks. First top and bottom, then right and left.
+		constexpr ArenaTypes::VoxelID perimeterVoxel = 0x7800;
+		for (WEInt x = 0; x < levelMAP1.getWidth(); x++)
+		{
+			levelMAP1.set(x, 0, perimeterVoxel);
+			levelMAP1.set(x, levelMAP1.getHeight() - 1, perimeterVoxel);
+		}
+
+		for (SNInt z = 1; z < (levelMAP1.getHeight() - 1); z++)
+		{
+			levelMAP1.set(0, z, perimeterVoxel);
+			levelMAP1.set(levelMAP1.getWidth() - 1, z, perimeterVoxel);
+		}
+
+		// Put transition block(s).
+		const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
+		WEInt levelUpX;
+		SNInt levelUpZ;
+		InteriorLevelUtils::unpackLevelChangeVoxel(levelUpBlock, &levelUpX, &levelUpZ);
+		levelMAP1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelUpX),
+			InteriorLevelUtils::offsetLevelChangeVoxel(levelUpZ),
+			InteriorLevelUtils::convertLevelChangeVoxel(levelUpVoxelByte));
+
+		if (levelDownBlock.has_value())
+		{
+			const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
+			WEInt levelDownX;
+			SNInt levelDownZ;
+			InteriorLevelUtils::unpackLevelChangeVoxel(*levelDownBlock, &levelDownX, &levelDownZ);
+			levelMAP1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelDownX),
+				InteriorLevelUtils::offsetLevelChangeVoxel(levelDownZ),
+				InteriorLevelUtils::convertLevelChangeVoxel(levelDownVoxelByte));
+		}
+
+		// Convert temp voxel buffers to the modern format.
+		const BufferView2D<const ArenaTypes::VoxelID> levelFlorView(
+			levelFLOR.get(), levelFLOR.getWidth(), levelFLOR.getHeight());
+		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(
+			levelMAP1.get(), levelMAP1.getWidth(), levelMAP1.getHeight());
+		MapGeneration::readArenaFLOR(levelFlorView, worldType, isPalace, rulerIsMale, inf,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
+			outLevelInfoDef, florMappings, entityMappings);
+		MapGeneration::readArenaMAP1(levelMap1View, worldType, isPalace, rulerIsMale, inf,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
+			outLevelInfoDef, map1Mappings, entityMappings);
+
+		// Generate ceiling (if any).
+		if (!inf.getCeiling().outdoorDungeon)
+		{
+			MapGeneration::readArenaCeiling(inf, outLevelDef, outLevelInfoDef);
+		}
+	}
 }
 
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
@@ -817,36 +1000,96 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 	}
 }
 
+void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
+	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType, bool isPalace,
+	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+	LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint)
+{
+	ArenaVoxelMappingCache florMappings, map1Mappings;
+	ArenaEntityMappingCache entityMappings;
+	ArenaLockMappingCache lockMappings;
+	ArenaTriggerMappingCache triggerMappings;
+
+	// Store the seed for later, to be used with block selection.
+	const uint32_t seed2 = random.getSeed();
+
+	// Determine transition blocks (*LEVELUP/*LEVELDOWN) that will appear in the dungeon.
+	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
+	{
+		const SNInt tY = random.next() % depthChunks;
+		const WEInt tX = random.next() % widthChunks;
+		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
+	};
+
+	// Packed coordinates for transition blocks.
+	// @todo: maybe this could be an int pair so packing is not required.
+	std::vector<int> transitions;
+
+	// Handle initial case where transitions list is empty (for i == 0).
+	transitions.push_back(getNextTransBlock());
+
+	// Handle general case for transitions list additions.
+	for (int i = 1; i < levelCount; i++)
+	{
+		int transBlock;
+		do
+		{
+			transBlock = getNextTransBlock();
+		} while (transBlock == transitions.back());
+
+		transitions.push_back(transBlock);
+	}
+
+	// Generate each level, deciding which dungeon blocks to use.
+	for (int i = 0; i < levelCount; i++)
+	{
+		random.srand(seed2 + i);
+
+		// Determine level up/down blocks.
+		DebugAssertIndex(transitions, i);
+		const int levelUpBlock = transitions[i];
+		const std::optional<int> levelDownBlock = [&transitions, levelCount, i]() -> std::optional<int>
+		{
+			if (i < (levelCount - 1))
+			{
+				const int index = DebugMakeIndex(transitions, i + 1);
+				return transitions[index];
+			}
+			else
+			{
+				// No *LEVELDOWN block on the lowest level.
+				return std::nullopt;
+			}
+		}();
+
+		LevelDefinition &levelDef = outLevelDefs.get(i);
+		MapGeneration::generateArenaDungeonLevel(mif, widthChunks, depthChunks, levelUpBlock,
+			levelDownBlock, random, worldType, isPalace, rulerIsMale, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef,
+			&florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings);
+	}
+
+	// The start point depends on where the level up voxel is on the first level.
+	DebugAssertIndex(transitions, 0);
+	const int firstTransition = transitions[0];
+	WEInt firstTransitionChunkX;
+	SNInt firstTransitionChunkZ;
+	InteriorLevelUtils::unpackLevelChangeVoxel(
+		firstTransition, &firstTransitionChunkX, &firstTransitionChunkZ);
+
+	// Convert it from the old coordinate system to the new one.
+	const OriginalInt2 startPoint(
+		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX),
+		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ));
+	*outStartPoint = VoxelUtils::originalVoxelToNewVoxel(startPoint);
+}
+
 void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaLockMappingCache lockMappings;
-
-	auto readMifLock = [&inf, outLevelInfoDef, &lockMappings](const ArenaTypes::MIFLock &lock,
-		LevelDefinition *outLevelDef)
-	{
-		// @todo: see if .INF file key data is relevant here.
-
-		// Get lock def ID from cache or create a new one.
-		LevelDefinition::LockDefID lockDefID;
-		const auto iter = lockMappings.find(lock);
-		if (iter != lockMappings.end())
-		{
-			lockDefID = iter->second;
-		}
-		else
-		{
-			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(lock);
-			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
-			lockMappings.insert(std::make_pair(lock, lockDefID));
-		}
-
-		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
-		const SNInt x = lockDef.getX();
-		const int y = lockDef.getY();
-		const WEInt z = lockDef.getZ();
-		outLevelDef->addLock(lockDefID, LevelInt3(x, y, z));
-	};
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
@@ -857,7 +1100,7 @@ void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels,
 		for (int j = 0; j < locks.getCount(); j++)
 		{
 			const ArenaTypes::MIFLock &lock = locks.get(j);
-			readMifLock(lock, &levelDef);
+			MapGeneration::readArenaLock(lock, inf, &levelDef, outLevelInfoDef, &lockMappings);
 		}
 	}
 }
@@ -866,30 +1109,6 @@ void MapGeneration::readMifTriggers(const BufferView<const MIFFile::Level> &leve
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaTriggerMappingCache triggerMappings;
-
-	auto readMifTrigger = [&inf, outLevelInfoDef, &triggerMappings](
-		const ArenaTypes::MIFTrigger &trigger, LevelDefinition *outLevelDef)
-	{
-		// Get trigger def ID from cache or create a new one.
-		LevelDefinition::TriggerDefID triggerDefID;
-		const auto iter = triggerMappings.find(trigger);
-		if (iter != triggerMappings.end())
-		{
-			triggerDefID = iter->second;
-		}
-		else
-		{
-			TriggerDefinition triggerDef = MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf);
-			triggerDefID = outLevelInfoDef->addTriggerDef(std::move(triggerDef));
-			triggerMappings.insert(std::make_pair(trigger, triggerDefID));
-		}
-
-		const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
-		const SNInt x = triggerDef.getX();
-		const int y = triggerDef.getY();
-		const WEInt z = triggerDef.getZ();
-		outLevelDef->addTrigger(triggerDefID, LevelInt3(x, y, z));
-	};
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
@@ -900,7 +1119,7 @@ void MapGeneration::readMifTriggers(const BufferView<const MIFFile::Level> &leve
 		for (int j = 0; j < triggers.getCount(); j++)
 		{
 			const ArenaTypes::MIFTrigger &trigger = triggers.get(j);
-			readMifTrigger(trigger, &levelDef);
+			MapGeneration::readArenaTrigger(trigger, inf, &levelDef, outLevelInfoDef, &triggerMappings);
 		}
 	}
 }

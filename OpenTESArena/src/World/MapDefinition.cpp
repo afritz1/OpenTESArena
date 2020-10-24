@@ -138,6 +138,9 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
+		const double ceilingScale = InteriorLevelUtils::convertArenaCeilingHeight(ceiling.height);
+		levelInfoDef.init(ceilingScale);
+
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
 		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
@@ -147,9 +150,6 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
 		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
 		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
-
-		const double ceilingScale = static_cast<double>(ceiling.height) / MIFUtils::ARENA_UNITS;
-		levelInfoDef.init(ceilingScale);
 	};
 
 	for (int i = 0; i < mif.getLevelCount(); i++)
@@ -170,6 +170,61 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
 	{
 		this->levelInfoMappings.set(i, i);
+	}
+
+	return true;
+}
+
+bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
+	bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, LevelInt2 *outStartPoint)
+{
+	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
+
+	// N LevelDefinitions all pointing to one LevelInfoDefinition.
+	this->levels.init(levelCount);
+	this->levelInfos.init(1);
+	this->levelInfoMappings.init(levelCount);
+
+	// Use the .INF filename of the first level.
+	const MIFFile::Level &level = mif.getLevel(0);
+	const std::string infName = String::toUppercase(level.getInfo());
+	INFFile inf;
+	if (!inf.init(infName.c_str()))
+	{
+		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
+		return false;
+	}
+
+	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const WEInt levelWidth = mif.getWidth() * widthChunks;
+	const int levelHeight = ceiling.outdoorDungeon ? 2 : 3;
+	const SNInt levelDepth = mif.getDepth() * depthChunks;
+
+	for (int i = 0; i < this->levels.getCount(); i++)
+	{
+		// Transpose .MIF dimensions to new dimensions.
+		LevelDefinition &levelDef = this->levels.get(i);
+		levelDef.init(levelDepth, levelHeight, levelWidth);
+	}
+
+	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
+	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
+
+	const double ceilingScale = InteriorLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	levelInfoDef.init(ceilingScale);
+
+	constexpr bool isPalace = false;
+	constexpr std::optional<bool> rulerIsMale;
+	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
+		worldType, isPalace, rulerIsMale, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textureManager, levelDefView, &levelInfoDef, outStartPoint);
+
+	// Each dungeon level uses the same level info definition.
+	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
+	{
+		this->levelInfoMappings.set(i, 0);
 	}
 
 	return true;
@@ -212,20 +267,14 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, b
 	return true;
 }
 
-bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo)
+bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	this->init(WorldType::Interior);
-
-	/*// Initializer for a dungeon interior level with optional ceiling data. The dungeon
-	// level is pieced together by multiple chunks in the base .MIF file.
-	void initDungeon(ArenaRandom &random, const MIFFile &mif, int levelUpBlock,
-		const int *levelDownBlock, int widthChunks, int depthChunks, SNInt gridWidth,
-		WEInt gridDepth, const INFFile::CeilingData *ceiling, const ExeData &exeData);*/
-
-	// @todo: .INF filename is the same for each level (RD1.INF), but don't have to make that assumption here.
-
-	/*// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
-	const std::string mifName = "RANDOM1.MIF";
+	
+	// Dungeon .MIF file with chunks for random generation.
+	const std::string &mifName = InteriorWorldUtils::DUNGEON_MIF_NAME;
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
 	{
@@ -233,77 +282,21 @@ bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo)
 		return false;
 	}
 
-	ArenaRandom random(dungeonSeed);
+	ArenaRandom random(generationInfo.dungeonSeed);
 
-	// Number of levels in the dungeon.
-	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
+	// Generate dungeon levels and get the player start point.
+	LevelInt2 startPoint;
+	this->initDungeonLevels(mif, generationInfo.widthChunks, generationInfo.depthChunks,
+		generationInfo.isArtifactDungeon, random, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager, &startPoint);
 
-	// Store the seed for later, to be used with block selection.
-	const uint32_t seed2 = random.getSeed();
+	const LevelDouble2 startPointReal(
+		static_cast<SNDouble>(startPoint.x) + 0.50,
+		static_cast<WEDouble>(startPoint.y) + 0.50);
+	this->startPoints.init(1);
+	this->startPoints.set(0, startPointReal);
 
-	// Determine transition blocks (*LEVELUP/*LEVELDOWN) that will appear in the dungeon.
-	auto getNextTransBlock = [widthChunks, depthChunks, &random]()
-	{
-		const SNInt tY = random.next() % depthChunks;
-		const WEInt tX = random.next() % widthChunks;
-		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
-	};
-
-	// Packed coordinates for transition blocks.
-	// @todo: maybe this could be an int pair so packing is not required.
-	std::vector<int> transitions;
-
-	// Handle initial case where transitions list is empty (for i == 0).
-	transitions.push_back(getNextTransBlock());
-
-	// Handle general case for transitions list additions.
-	for (int i = 1; i < levelCount; i++)
-	{
-		int transBlock;
-		do
-		{
-			transBlock = getNextTransBlock();
-		} while (transBlock == transitions.back());
-
-		transitions.push_back(transBlock);
-	}
-
-	// .INF filename is the same for each level (RD1.INF).
-	const std::string infName = String::toUppercase(mif.getLevel(0).getInfo());
-
-	InteriorWorldData worldData;
-	const SNInt gridWidth = mif.getDepth() * depthChunks;
-	const WEInt gridDepth = mif.getWidth() * widthChunks;
-
-	// Generate each level, deciding which dungeon blocks to use.
-	for (int i = 0; i < levelCount; i++)
-	{
-		random.srand(seed2 + i);
-		const int levelUpBlock = transitions.at(i);
-
-		// No *LEVELDOWN block on the lowest level.
-		const int *levelDownBlock = (i < (levelCount - 1)) ? &transitions.at(i + 1) : nullptr;
-
-		worldData.levels.push_back(InteriorLevelData::loadDungeon(
-			random, mif, levelUpBlock, levelDownBlock, widthChunks, depthChunks, infName,
-			gridWidth, gridDepth, exeData));
-	}
-
-	// The start point depends on where the level up voxel is on the first level.
-	// Convert it from the old coordinate system to the new one.
-	WEInt firstTransitionChunkX;
-	SNInt firstTransitionChunkZ;
-	InteriorLevelUtils::unpackLevelChangeVoxel(
-		transitions.front(), &firstTransitionChunkX, &firstTransitionChunkZ);
-
-	const OriginalDouble2 startPoint(
-		0.50 + static_cast<WEDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX)),
-		0.50 + static_cast<SNDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ)));
-	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
-
-	worldData.levelIndex = 0;*/
-
-	DebugNotImplemented();
+	this->startLevelIndex = 0;
 	return true;
 }
 
