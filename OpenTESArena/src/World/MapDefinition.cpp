@@ -241,11 +241,6 @@ void MapDefinition::initStartPoints(const MIFFile &mif)
 	}
 }
 
-void MapDefinition::initStartLevelIndex(const MIFFile &mif)
-{
-	this->startLevelIndex = mif.getStartingLevelIndex();
-}
-
 bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
 	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -263,7 +258,7 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, b
 	this->initInteriorLevels(mif, isPalace, rulerIsMale, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textureManager);
 	this->initStartPoints(mif);
-	this->initStartLevelIndex(mif);
+	this->startLevelIndex = mif.getStartingLevelIndex();
 	return true;
 }
 

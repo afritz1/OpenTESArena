@@ -138,7 +138,6 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelInt2 *outStartPoint);
 	void initStartPoints(const MIFFile &mif);
-	void initStartLevelIndex(const MIFFile &mif);
 public:
 	bool initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
 		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
