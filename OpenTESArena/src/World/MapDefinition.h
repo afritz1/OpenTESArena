@@ -37,8 +37,11 @@ public:
 	{
 		std::string mifName;
 		std::string displayName; // For building interior transitions (tavern, temple, etc.).
+		bool isPalace; // @todo: eventually change to something that supports all Arena interiors.
+		std::optional<bool> rulerIsMale;
 
-		void init(std::string &&mifName, std::string &&displayName);
+		void init(std::string &&mifName, std::string &&displayName, bool isPalace,
+			const std::optional<bool> &rulerIsMale);
 	};
 
 	// Data for generating a dungeon interior map definition.
@@ -157,10 +160,9 @@ private:
 		TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
-	bool initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
-		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager);
+	bool initInterior(const InteriorGenerationInfo &generationInfo,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initDungeon(const DungeonGenerationInfo &generationInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);

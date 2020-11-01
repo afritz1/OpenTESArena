@@ -16,10 +16,13 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::string &&displayName)
+void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::string &&displayName,
+	bool isPalace, const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = std::move(mifName);
 	this->displayName = std::move(displayName);
+	this->isPalace = isPalace;
+	this->rulerIsMale = rulerIsMale;
 }
 
 void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widthChunks,
@@ -282,10 +285,9 @@ void MapDefinition::initStartPoints(const MIFFile &mif)
 	}
 }
 
-bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
-	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	this->init(WorldType::Interior);
 
@@ -296,8 +298,8 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo, b
 		return false;
 	}
 
-	this->initInteriorLevels(mif, isPalace, rulerIsMale, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager);
+	this->initInteriorLevels(mif, generationInfo.isPalace, generationInfo.rulerIsMale, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = mif.getStartingLevelIndex();
 	return true;
