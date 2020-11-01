@@ -5,6 +5,7 @@
 
 #include "LevelDefinition.h"
 #include "LockDefinition.h"
+#include "MapGeneration.h"
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
@@ -25,6 +26,8 @@ private:
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
+	std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
+	// @todo: interior gen info ID for when player creates a wall on water.
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
 public:
@@ -36,12 +39,14 @@ public:
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
+	const MapGeneration::InteriorGenInfo &getInteriorGenInfo(MapGeneration::InteriorGenInfoID id) const;
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
+	MapGeneration::InteriorGenInfoID addInteriorGenInfo(MapGeneration::InteriorGenInfo &&def);
 };
 
 #endif

@@ -16,23 +16,6 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::Interior::init()
-{
-	
-}
-
-const MapGeneration::InteriorGenInfo &MapDefinition::City::getInteriorGenerationInfo(int index) const
-{
-	DebugAssertIndex(this->interiorGenInfos, index);
-	return this->interiorGenInfos[index];
-}
-
-int MapDefinition::City::addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo)
-{
-	this->interiorGenInfos.emplace_back(std::move(generationInfo));
-	return static_cast<int>(this->interiorGenInfos.size()) - 1;
-}
-
 void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed)
 {
 	this->levelDefIndices = std::move(levelDefIndices);
@@ -55,18 +38,6 @@ int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
 		// without running random.next() some arbitrary number of times.
 		return 0;
 	}
-}
-
-const MapGeneration::InteriorGenInfo &MapDefinition::Wild::getInteriorGenerationInfo(int index) const
-{
-	DebugAssertIndex(this->interiorGenInfos, index);
-	return this->interiorGenInfos[index];
-}
-
-int MapDefinition::Wild::addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo)
-{
-	this->interiorGenInfos.emplace_back(std::move(generationInfo));
-	return static_cast<int>(this->interiorGenInfos.size()) - 1;
 }
 
 void MapDefinition::init(WorldType worldType)
@@ -440,12 +411,6 @@ const MapDefinition::Interior &MapDefinition::getInterior() const
 {
 	DebugAssert(this->worldType == WorldType::Interior);
 	return this->interior;
-}
-
-const MapDefinition::City &MapDefinition::getCity() const
-{
-	DebugAssert(this->worldType == WorldType::City);
-	return this->city;
 }
 
 const MapDefinition::Wild &MapDefinition::getWild() const

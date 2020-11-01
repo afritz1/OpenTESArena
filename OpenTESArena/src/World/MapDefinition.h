@@ -34,21 +34,10 @@ public:
 	{
 	private:
 		// @todo: interior type (shop, mage's guild, dungeon, etc.)?
-		// - InteriorDefinition? Contains isPalace, etc.?
+		// - InteriorDefinition?
+		// - probably store the music filename here, or make it retrievable by the interior type
 	public:
-		void init();
-	};
 
-	class City
-	{
-	private:
-		// Generation infos for building interiors.
-		std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
-	public:
-		const MapGeneration::InteriorGenInfo &getInteriorGenerationInfo(int index) const;
-
-		// The returned index should be assigned to the associated transition voxel definition.
-		int addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo);
 	};
 
 	class Wild
@@ -57,18 +46,10 @@ public:
 		// Each index is a wild chunk pointing into the map's level definitions.
 		Buffer2D<int> levelDefIndices;
 		uint32_t fallbackSeed; // I.e. the world map location seed.
-
-		std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos; // Building interiors and wild dens.
-
-		// @todo: interior gen info (index?) for when player creates a wall on water.
 	public:
 		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed);
 
 		int getLevelDefIndex(const ChunkInt2 &chunk) const;
-		const MapGeneration::InteriorGenInfo &getInteriorGenerationInfo(int index) const;
-
-		// The returned index should be assigned to the associated transition voxel definition.
-		int addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo);
 	};
 private:
 	Buffer<LevelDefinition> levels;
@@ -80,7 +61,6 @@ private:
 	// World-type-specific data.
 	WorldType worldType;
 	Interior interior;
-	City city;
 	Wild wild;
 
 	void init(WorldType worldType);
@@ -127,7 +107,6 @@ public:
 
 	WorldType getWorldType() const;
 	const Interior &getInterior() const;
-	const City &getCity() const;
 	const Wild &getWild() const;
 };
 

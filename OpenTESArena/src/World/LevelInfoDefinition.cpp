@@ -39,6 +39,13 @@ const TriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::Tri
 	return this->triggerDefs[id];
 }
 
+const MapGeneration::InteriorGenInfo &LevelInfoDefinition::getInteriorGenInfo(
+	MapGeneration::InteriorGenInfoID id) const
+{
+	DebugAssertIndex(this->interiorGenInfos, id);
+	return this->interiorGenInfos[id];
+}
+
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
@@ -66,4 +73,11 @@ LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(TriggerDefiniti
 {
 	this->triggerDefs.emplace_back(std::move(def));
 	return static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size()) - 1;
+}
+
+MapGeneration::InteriorGenInfoID LevelInfoDefinition::addInteriorGenInfo(
+	MapGeneration::InteriorGenInfo &&def)
+{
+	this->interiorGenInfos.emplace_back(std::move(def));
+	return static_cast<MapGeneration::InteriorGenInfoID>(this->interiorGenInfos.size()) - 1;
 }

@@ -9,7 +9,6 @@
 #include "WildLevelUtils.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Assets/RMDFile.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
@@ -29,6 +28,8 @@ enum class WorldType;
 
 namespace MapGeneration
 {
+	using InteriorGenInfoID = int;
+
 	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
 	class InteriorGenInfo
 	{
