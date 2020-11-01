@@ -1138,8 +1138,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool 
 		outLevelInfoDef, &map1Mappings, &entityMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
 
-	// @todo:: building names could either be in VoxelDefinition that point into LevelInfoDefinition,
-	// or mappings of LevelInt3 to string in MapDefinition::City.
+	// @todo: building names are now a part of MapDefinition::InteriorGenerationInfo.
 	// Generate building names.
 	/*const bool isCity = true;
 	LevelUtils::MenuNamesList menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef,
