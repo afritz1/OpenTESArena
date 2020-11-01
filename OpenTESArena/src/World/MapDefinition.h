@@ -7,8 +7,8 @@
 
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
+#include "MapGeneration.h"
 #include "VoxelUtils.h"
-#include "WildLevelUtils.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView2D.h"
@@ -30,86 +30,6 @@ enum class WorldType;
 class MapDefinition
 {
 public:
-	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
-	class InteriorGenerationInfo
-	{
-	public:
-		enum class Type { Interior, Dungeon };
-
-		// Input: N .MIF levels + N level-referenced .INFs
-		// Output: N LevelDefinition / LevelInfoDefinition pairs
-		struct Interior
-		{
-			std::string mifName;
-			std::string displayName; // For building interior transitions (tavern, temple, etc.).
-			bool isPalace; // @todo: eventually change to something that supports all Arena interiors.
-			std::optional<bool> rulerIsMale;
-
-			void init(std::string &&mifName, std::string &&displayName, bool isPalace,
-				const std::optional<bool> &rulerIsMale);
-		};
-
-		// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
-		// Output: N LevelDefinitions + 1 LevelInfoDefinition
-		struct Dungeon
-		{
-			uint32_t dungeonSeed;
-			WEInt widthChunks;
-			SNInt depthChunks;
-			bool isArtifactDungeon;
-
-			void init(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
-		};
-	private:
-		Type type;
-		Interior interior;
-		Dungeon dungeon;
-
-		void init(Type type);
-	public:
-		InteriorGenerationInfo();
-
-		void initInterior(std::string &&mifName, std::string &&displayName, bool isPalace,
-			const std::optional<bool> &rulerIsMale);
-		void initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
-
-		Type getType() const;
-		const Interior &getInterior() const;
-		const Dungeon &getDungeon() const;
-	};
-
-	// Input: 1 .MIF + 1 weather .INF
-	// Output: 1 LevelDefinition + 1 LevelInfoDefinition
-	struct CityGenerationInfo
-	{
-		std::string mifName;
-		uint32_t citySeed;
-		bool isPremade;
-
-		// Affects which types of city blocks are used at generation start.
-		Buffer<uint8_t> reservedBlocks;
-		
-		// Generation offset from city origin.
-		WEInt blockStartPosX;
-		SNInt blockStartPosY;
-
-		int cityBlocksPerSide;
-		
-		void init(std::string &&mifName, uint32_t citySeed, bool isPremade,
-			Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-			int cityBlocksPerSide);
-	};
-
-	// Input: 70 .RMD files (from asset library) + 1 weather .INF
-	// Output: 70 LevelDefinitions + 1 LevelInfoDefinition
-	struct WildGenerationInfo
-	{
-		Buffer2D<WildBlockID> wildBlockIDs;
-		uint32_t fallbackSeed;
-
-		void init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed);
-	};
-
 	class Interior
 	{
 	private:
@@ -123,12 +43,12 @@ public:
 	{
 	private:
 		// Generation infos for building interiors.
-		std::vector<InteriorGenerationInfo> interiorGenInfos;
+		std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
 	public:
-		const InteriorGenerationInfo &getInteriorGenerationInfo(int index) const;
+		const MapGeneration::InteriorGenInfo &getInteriorGenerationInfo(int index) const;
 
 		// The returned index should be assigned to the associated transition voxel definition.
-		int addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo);
+		int addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo);
 	};
 
 	class Wild
@@ -138,17 +58,17 @@ public:
 		Buffer2D<int> levelDefIndices;
 		uint32_t fallbackSeed; // I.e. the world map location seed.
 
-		std::vector<InteriorGenerationInfo> interiorGenInfos; // Building interiors and wild dens.
+		std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos; // Building interiors and wild dens.
 
 		// @todo: interior gen info (index?) for when player creates a wall on water.
 	public:
 		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed);
 
 		int getLevelDefIndex(const ChunkInt2 &chunk) const;
-		const InteriorGenerationInfo &getInteriorGenerationInfo(int index) const;
+		const MapGeneration::InteriorGenInfo &getInteriorGenerationInfo(int index) const;
 
 		// The returned index should be assigned to the associated transition voxel definition.
-		int addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo);
+		int addInteriorGenerationInfo(MapGeneration::InteriorGenInfo &&generationInfo);
 	};
 private:
 	Buffer<LevelDefinition> levels;
@@ -178,14 +98,15 @@ private:
 		TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
-	bool initInterior(const InteriorGenerationInfo &generationInfo,
+	bool initInterior(const MapGeneration::InteriorGenInfo &generationInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initWild(const WildGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
-		const BinaryAssetLibrary &binaryAssetLibrary);
+	bool initCity(const MapGeneration::CityGenInfo &generationInfo, ClimateType climateType,
+		WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
+	bool initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
+		WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the initial level index for the map (if any).
 	const std::optional<int> &getStartLevelIndex() const;

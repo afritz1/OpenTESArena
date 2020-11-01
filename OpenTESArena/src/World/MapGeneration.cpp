@@ -961,6 +961,84 @@ namespace MapGeneration
 	}
 }
 
+void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, std::string &&displayName,
+	bool isPalace, const std::optional<bool> &rulerIsMale)
+{
+	this->mifName = std::move(mifName);
+	this->displayName = std::move(displayName);
+	this->isPalace = isPalace;
+	this->rulerIsMale = rulerIsMale;
+}
+
+void MapGeneration::InteriorGenInfo::Dungeon::init(uint32_t dungeonSeed, WEInt widthChunks,
+	SNInt depthChunks, bool isArtifactDungeon)
+{
+	this->dungeonSeed = dungeonSeed;
+	this->widthChunks = widthChunks;
+	this->depthChunks = depthChunks;
+	this->isArtifactDungeon = isArtifactDungeon;
+}
+
+MapGeneration::InteriorGenInfo::InteriorGenInfo()
+{
+	this->type = static_cast<InteriorGenInfo::Type>(-1);
+}
+
+void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
+{
+	this->type = type;
+}
+
+void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, std::string &&displayName,
+	bool isPalace, const std::optional<bool> &rulerIsMale)
+{
+	this->init(InteriorGenInfo::Type::Prefab);
+	this->prefab.init(std::move(mifName), std::move(displayName), isPalace, rulerIsMale);
+}
+
+void MapGeneration::InteriorGenInfo::initDungeon(uint32_t dungeonSeed, WEInt widthChunks,
+	SNInt depthChunks, bool isArtifactDungeon)
+{
+	this->init(InteriorGenInfo::Type::Dungeon);
+	this->dungeon.init(dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+}
+
+MapGeneration::InteriorGenInfo::Type MapGeneration::InteriorGenInfo::getType() const
+{
+	return this->type;
+}
+
+const MapGeneration::InteriorGenInfo::Prefab &MapGeneration::InteriorGenInfo::getPrefab() const
+{
+	DebugAssert(this->type == InteriorGenInfo::Type::Prefab);
+	return this->prefab;
+}
+
+const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::getDungeon() const
+{
+	DebugAssert(this->type == InteriorGenInfo::Type::Dungeon);
+	return this->dungeon;
+}
+
+void MapGeneration::CityGenInfo::init(std::string &&mifName, uint32_t citySeed, bool isPremade,
+	Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	int cityBlocksPerSide)
+{
+	this->mifName = std::move(mifName);
+	this->citySeed = citySeed;
+	this->isPremade = isPremade;
+	this->reservedBlocks = std::move(reservedBlocks);
+	this->blockStartPosX = blockStartPosX;
+	this->blockStartPosY = blockStartPosY;
+	this->cityBlocksPerSide = cityBlocksPerSide;
+}
+
+void MapGeneration::WildGenInfo::init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed)
+{
+	this->wildBlockIDs = std::move(wildBlockIDs);
+	this->fallbackSeed = fallbackSeed;
+}
+
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
 	bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -1086,8 +1164,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool 
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
-	MapDefinition::City *outCity)
+	TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
