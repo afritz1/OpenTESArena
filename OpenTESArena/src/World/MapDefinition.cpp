@@ -16,7 +16,7 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::string &&displayName,
+void MapDefinition::InteriorGenerationInfo::Interior::init(std::string &&mifName, std::string &&displayName,
 	bool isPalace, const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = std::move(mifName);
@@ -25,13 +25,54 @@ void MapDefinition::InteriorGenerationInfo::init(std::string &&mifName, std::str
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widthChunks,
+void MapDefinition::InteriorGenerationInfo::Dungeon::init(uint32_t dungeonSeed, WEInt widthChunks,
 	SNInt depthChunks, bool isArtifactDungeon)
 {
 	this->dungeonSeed = dungeonSeed;
 	this->widthChunks = widthChunks;
 	this->depthChunks = depthChunks;
 	this->isArtifactDungeon = isArtifactDungeon;
+}
+
+MapDefinition::InteriorGenerationInfo::InteriorGenerationInfo()
+{
+	this->type = static_cast<InteriorGenerationInfo::Type>(-1);
+}
+
+void MapDefinition::InteriorGenerationInfo::init(Type type)
+{
+	this->type = type;
+}
+
+void MapDefinition::InteriorGenerationInfo::initInterior(std::string &&mifName, std::string &&displayName,
+	bool isPalace, const std::optional<bool> &rulerIsMale)
+{
+	this->init(InteriorGenerationInfo::Type::Interior);
+	this->interior.init(std::move(mifName), std::move(displayName), isPalace, rulerIsMale);
+}
+
+void MapDefinition::InteriorGenerationInfo::initDungeon(uint32_t dungeonSeed, WEInt widthChunks,
+	SNInt depthChunks, bool isArtifactDungeon)
+{
+	this->init(InteriorGenerationInfo::Type::Dungeon);
+	this->dungeon.init(dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+}
+
+MapDefinition::InteriorGenerationInfo::Type MapDefinition::InteriorGenerationInfo::getType() const
+{
+	return this->type;
+}
+
+const MapDefinition::InteriorGenerationInfo::Interior &MapDefinition::InteriorGenerationInfo::getInterior() const
+{
+	DebugAssert(this->type == InteriorGenerationInfo::Type::Interior);
+	return this->interior;
+}
+
+const MapDefinition::InteriorGenerationInfo::Dungeon &MapDefinition::InteriorGenerationInfo::getDungeon() const
+{
+	DebugAssert(this->type == InteriorGenerationInfo::Type::Dungeon);
+	return this->dungeon;
 }
 
 void MapDefinition::CityGenerationInfo::init(std::string &&mifName, uint32_t citySeed, bool isPremade,
@@ -100,22 +141,10 @@ const MapDefinition::InteriorGenerationInfo &MapDefinition::Wild::getInteriorGen
 	return this->interiorGenInfos[index];
 }
 
-const MapDefinition::DungeonGenerationInfo &MapDefinition::Wild::getDungeonGenerationInfo(int index) const
-{
-	DebugAssertIndex(this->dungeonGenInfos, index);
-	return this->dungeonGenInfos[index];
-}
-
 int MapDefinition::Wild::addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo)
 {
 	this->interiorGenInfos.emplace_back(std::move(generationInfo));
 	return static_cast<int>(this->interiorGenInfos.size()) - 1;
-}
-
-int MapDefinition::Wild::addDungeonGenerationInfo(DungeonGenerationInfo &&generationInfo)
-{
-	this->dungeonGenInfos.emplace_back(std::move(generationInfo));
-	return static_cast<int>(this->dungeonGenInfos.size()) - 1;
 }
 
 void MapDefinition::init(WorldType worldType)
@@ -291,50 +320,56 @@ bool MapDefinition::initInterior(const InteriorGenerationInfo &generationInfo,
 {
 	this->init(WorldType::Interior);
 
-	MIFFile mif;
-	if (!mif.init(generationInfo.mifName.c_str()))
+	const InteriorGenerationInfo::Type interiorType = generationInfo.getType();
+	if (interiorType == InteriorGenerationInfo::Type::Interior)
 	{
-		DebugLogError("Couldn't init .MIF file \"" + generationInfo.mifName + "\".");
-		return false;
+		const InteriorGenerationInfo::Interior &interiorGenInfo = generationInfo.getInterior();
+		MIFFile mif;
+		if (!mif.init(interiorGenInfo.mifName.c_str()))
+		{
+			DebugLogError("Couldn't init .MIF file \"" + interiorGenInfo.mifName + "\".");
+			return false;
+		}
+
+		this->initInteriorLevels(mif, interiorGenInfo.isPalace, interiorGenInfo.rulerIsMale,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
+		this->initStartPoints(mif);
+		this->startLevelIndex = mif.getStartingLevelIndex();
 	}
+	else if (interiorType == InteriorGenerationInfo::Type::Dungeon)
+	{
+		const InteriorGenerationInfo::Dungeon &dungeonGenInfo = generationInfo.getDungeon();
 
-	this->initInteriorLevels(mif, generationInfo.isPalace, generationInfo.rulerIsMale, charClassLibrary,
-		entityDefLibrary, binaryAssetLibrary, textureManager);
-	this->initStartPoints(mif);
-	this->startLevelIndex = mif.getStartingLevelIndex();
-	return true;
-}
+		// Dungeon .MIF file with chunks for random generation.
+		const std::string &mifName = InteriorWorldUtils::DUNGEON_MIF_NAME;
+		MIFFile mif;
+		if (!mif.init(mifName.c_str()))
+		{
+			DebugLogError("Couldn't init .MIF file \"" + mifName + "\".");
+			return false;
+		}
 
-bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
-{
-	this->init(WorldType::Interior);
+		ArenaRandom random(dungeonGenInfo.dungeonSeed);
+
+		// Generate dungeon levels and get the player start point.
+		LevelInt2 startPoint;
+		this->initDungeonLevels(mif, dungeonGenInfo.widthChunks, dungeonGenInfo.depthChunks,
+			dungeonGenInfo.isArtifactDungeon, random, charClassLibrary, entityDefLibrary,
+			binaryAssetLibrary, textureManager, &startPoint);
+
+		const LevelDouble2 startPointReal(
+			static_cast<SNDouble>(startPoint.x) + 0.50,
+			static_cast<WEDouble>(startPoint.y) + 0.50);
+		this->startPoints.init(1);
+		this->startPoints.set(0, startPointReal);
+		this->startLevelIndex = 0;
+	}
+	else
+	{
+		DebugCrash("Unrecognized interior generation type \"" +
+			std::to_string(static_cast<int>(interiorType)) + "\".");
+	}
 	
-	// Dungeon .MIF file with chunks for random generation.
-	const std::string &mifName = InteriorWorldUtils::DUNGEON_MIF_NAME;
-	MIFFile mif;
-	if (!mif.init(mifName.c_str()))
-	{
-		DebugLogError("Couldn't init .MIF file \"" + mifName + "\".");
-		return false;
-	}
-
-	ArenaRandom random(generationInfo.dungeonSeed);
-
-	// Generate dungeon levels and get the player start point.
-	LevelInt2 startPoint;
-	this->initDungeonLevels(mif, generationInfo.widthChunks, generationInfo.depthChunks,
-		generationInfo.isArtifactDungeon, random, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, &startPoint);
-
-	const LevelDouble2 startPointReal(
-		static_cast<SNDouble>(startPoint.x) + 0.50,
-		static_cast<WEDouble>(startPoint.y) + 0.50);
-	this->startPoints.init(1);
-	this->startPoints.set(0, startPointReal);
-
-	this->startLevelIndex = 0;
 	return true;
 }
 
@@ -377,6 +412,8 @@ bool MapDefinition::initWild(const WildGenerationInfo &generationInfo, ClimateTy
 	WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	this->init(WorldType::Wilderness);
+
+	// @todo: 70 level definitions, 1 level info definition. Map all of them to 0
 
 	/*auto initLevelDef = [this](LevelDefinition &levelDef, const RMDFile &rmd)
 	{

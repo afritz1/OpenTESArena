@@ -30,31 +30,52 @@ enum class WorldType;
 class MapDefinition
 {
 public:
-	// Data for generating an interior map definition; intended for city/wild building interiors.
-	// Input: N .MIF levels + N level-referenced .INFs
-	// Output: N LevelDefinition / LevelInfoDefinition pairs
-	struct InteriorGenerationInfo
+	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
+	class InteriorGenerationInfo
 	{
-		std::string mifName;
-		std::string displayName; // For building interior transitions (tavern, temple, etc.).
-		bool isPalace; // @todo: eventually change to something that supports all Arena interiors.
-		std::optional<bool> rulerIsMale;
+	public:
+		enum class Type { Interior, Dungeon };
 
-		void init(std::string &&mifName, std::string &&displayName, bool isPalace,
+		// Input: N .MIF levels + N level-referenced .INFs
+		// Output: N LevelDefinition / LevelInfoDefinition pairs
+		struct Interior
+		{
+			std::string mifName;
+			std::string displayName; // For building interior transitions (tavern, temple, etc.).
+			bool isPalace; // @todo: eventually change to something that supports all Arena interiors.
+			std::optional<bool> rulerIsMale;
+
+			void init(std::string &&mifName, std::string &&displayName, bool isPalace,
+				const std::optional<bool> &rulerIsMale);
+		};
+
+		// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
+		// Output: N LevelDefinitions + 1 LevelInfoDefinition
+		struct Dungeon
+		{
+			uint32_t dungeonSeed;
+			WEInt widthChunks;
+			SNInt depthChunks;
+			bool isArtifactDungeon;
+
+			void init(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
+		};
+	private:
+		Type type;
+		Interior interior;
+		Dungeon dungeon;
+
+		void init(Type type);
+	public:
+		InteriorGenerationInfo();
+
+		void initInterior(std::string &&mifName, std::string &&displayName, bool isPalace,
 			const std::optional<bool> &rulerIsMale);
-	};
+		void initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
 
-	// Data for generating a dungeon interior map definition.
-	// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
-	// Output: N LevelDefinitions + 1 LevelInfoDefinition
-	struct DungeonGenerationInfo
-	{
-		uint32_t dungeonSeed;
-		WEInt widthChunks;
-		SNInt depthChunks;
-		bool isArtifactDungeon;
-
-		void init(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
+		Type getType() const;
+		const Interior &getInterior() const;
+		const Dungeon &getDungeon() const;
 	};
 
 	// Input: 1 .MIF + 1 weather .INF
@@ -117,8 +138,7 @@ public:
 		Buffer2D<int> levelDefIndices;
 		uint32_t fallbackSeed; // I.e. the world map location seed.
 
-		std::vector<InteriorGenerationInfo> interiorGenInfos; // Building interiors.
-		std::vector<DungeonGenerationInfo> dungeonGenInfos; // Wild den interiors.
+		std::vector<InteriorGenerationInfo> interiorGenInfos; // Building interiors and wild dens.
 
 		// @todo: interior gen info (index?) for when player creates a wall on water.
 	public:
@@ -126,11 +146,9 @@ public:
 
 		int getLevelDefIndex(const ChunkInt2 &chunk) const;
 		const InteriorGenerationInfo &getInteriorGenerationInfo(int index) const;
-		const DungeonGenerationInfo &getDungeonGenerationInfo(int index) const;
 
 		// The returned index should be assigned to the associated transition voxel definition.
 		int addInteriorGenerationInfo(InteriorGenerationInfo &&generationInfo);
-		int addDungeonGenerationInfo(DungeonGenerationInfo &&generationInfo);
 	};
 private:
 	Buffer<LevelDefinition> levels;
@@ -161,9 +179,6 @@ private:
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const InteriorGenerationInfo &generationInfo,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initDungeon(const DungeonGenerationInfo &generationInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
