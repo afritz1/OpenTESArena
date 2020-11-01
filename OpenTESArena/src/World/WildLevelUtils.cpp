@@ -266,7 +266,8 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	if (!isPremadeCity)
 	{
 		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
-		const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
+		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;
 		ArenaRandom random(citySeed);

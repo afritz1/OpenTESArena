@@ -1,6 +1,7 @@
 #ifndef MAP_GENERATION_H
 #define MAP_GENERATION_H
 
+#include <cstdint>
 #include <optional>
 
 #include "VoxelUtils.h"
@@ -17,6 +18,7 @@ class EntityDefinitionLibrary;
 class ExeData;
 class LevelDefinition;
 class LevelInfoDefinition;
+class LocationDefinition;
 class TextureManager;
 
 enum class WorldType;
@@ -38,6 +40,15 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint);
+
+	// Generates a level from the city .MIF file, optionally generating random city blocks if it
+	// is not a premade city, and converts the level to the modern format.
+	void generateMifCity(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		MapDefinition::City *outCity);
 
 	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);

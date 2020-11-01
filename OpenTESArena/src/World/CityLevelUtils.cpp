@@ -36,7 +36,7 @@ void CityLevelUtils::writeSkeleton(const MIFFile::Level &level,
 }
 
 void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth,
-	const std::vector<uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
+	const BufferView<const uint8_t> &reservedBlocks, const OriginalInt2 &startPosition,
 	ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 	Buffer2D<ArenaTypes::VoxelID> &dstFlor, Buffer2D<ArenaTypes::VoxelID> &dstMap1,
 	Buffer2D<ArenaTypes::VoxelID> &dstMap2)
@@ -60,8 +60,10 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 	};
 
 	// Set reserved blocks.
-	for (const uint8_t block : reservedBlocks)
+	for (int i = 0; i < reservedBlocks.getCount(); i++)
 	{
+		const uint8_t block = reservedBlocks.get(i);
+
 		// The original engine uses a fixed array so all block indices always fall within the
 		// plan, but since a dynamic array is used here, it has to ignore out-of-bounds blocks
 		// explicitly.
@@ -365,6 +367,8 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 void CityLevelUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 	SNInt gridWidth, WEInt gridDepth)
 {
+	// @todo: this should be in Arena coordinates, don't use gridWidth/Depth.
+
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{

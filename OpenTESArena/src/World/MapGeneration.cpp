@@ -1,11 +1,13 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "CityLevelUtils.h"
 #include "InteriorLevelUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LevelUtils.h"
 #include "LockDefinition.h"
+#include "MapDefinition.h"
 #include "MapGeneration.h"
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
@@ -1078,6 +1080,75 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX),
 		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ));
 	*outStartPoint = VoxelUtils::originalVoxelToNewVoxel(startPoint);
+}
+
+void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+	MapDefinition::City *outCity)
+{
+	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
+	ArenaEntityMappingCache entityMappings;
+
+	// Only one level in a city .MIF.
+	const MIFFile::Level &mifLevel = mif.getLevel(0);
+
+	// Create temp voxel data buffers and write the city skeleton data to them.
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(mif.getWidth(), mif.getDepth());
+	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	CityLevelUtils::writeSkeleton(mifLevel, tempFlorView, tempMap1View, tempMap2View);
+
+	// Use the city's seed for random chunk generation. It is modified later during building
+	// name generation.
+	ArenaRandom random(citySeed);
+
+	if (!isPremade)
+	{
+		// Generate procedural city data and write it into the temp buffers.
+		const OriginalInt2 blockStartPosition(blockStartPosX, blockStartPosY);
+		CityLevelUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
+			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);
+	}
+
+	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
+	CityLevelUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
+
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
+		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
+		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
+		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+
+	constexpr WorldType worldType = WorldType::City;
+	constexpr bool isPalace = false;
+	constexpr std::optional<bool> rulerIsMale; // Not necessary for city.
+
+	MapGeneration::readArenaFLOR(tempFlorConstView, worldType, isPalace, rulerIsMale, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
+		outLevelInfoDef, &florMappings, &entityMappings);
+	MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
+		outLevelInfoDef, &map1Mappings, &entityMappings);
+	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
+
+	// @todo:: building names could either be in VoxelDefinition that point into LevelInfoDefinition,
+	// or mappings of LevelInt3 to string in MapDefinition::City.
+	// Generate building names.
+	/*const bool isCity = true;
+	LevelUtils::MenuNamesList menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef,
+		random, isCity, levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);*/
+
+	// @todo: distant sky should be in MapDefinition::City
+	// Generate distant sky.
+	/*levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);*/
 }
 
 void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,

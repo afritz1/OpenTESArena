@@ -5,12 +5,18 @@
 #include "LocationUtils.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
+
+double LevelUtils::convertArenaCeilingHeight(int ceilingHeight)
+{
+	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
+}
 
 int LevelUtils::getMap2VoxelHeight(uint16_t map2Voxel)
 {

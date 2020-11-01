@@ -1,7 +1,6 @@
 #include <unordered_map>
 
 #include "CityWorldUtils.h"
-#include "InteriorLevelUtils.h"
 #include "InteriorWorldUtils.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
@@ -32,9 +31,17 @@ void MapDefinition::DungeonGenerationInfo::init(uint32_t dungeonSeed, WEInt widt
 	this->isArtifactDungeon = isArtifactDungeon;
 }
 
-void MapDefinition::CityGenerationInfo::init(std::string &&mifName)
+void MapDefinition::CityGenerationInfo::init(std::string &&mifName, uint32_t citySeed, bool isPremade,
+	Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	int cityBlocksPerSide)
 {
 	this->mifName = std::move(mifName);
+	this->citySeed = citySeed;
+	this->isPremade = isPremade;
+	this->reservedBlocks = std::move(reservedBlocks);
+	this->blockStartPosX = blockStartPosX;
+	this->blockStartPosY = blockStartPosY;
+	this->cityBlocksPerSide = cityBlocksPerSide;
 }
 
 void MapDefinition::WildGenerationInfo::init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed)
@@ -138,7 +145,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		const double ceilingScale = InteriorLevelUtils::convertArenaCeilingHeight(ceiling.height);
+		const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
 		levelInfoDef.init(ceilingScale);
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
@@ -212,7 +219,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
-	const double ceilingScale = InteriorLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	constexpr bool isPalace = false;
@@ -227,6 +234,40 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		this->levelInfoMappings.set(i, 0);
 	}
 
+	return true;
+}
+
+bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
+{
+	// 1 LevelDefinition and 1 LevelInfoDefinition.
+	this->levels.init(1);
+	this->levelInfos.init(1);
+	this->levelInfoMappings.init(1);
+
+	const WEInt levelWidth = mif.getWidth();
+	const int levelHeight =  6;
+	const SNInt levelDepth = mif.getDepth();
+
+	// Transpose .MIF dimensions to new dimensions.
+	LevelDefinition &levelDef = this->levels.get(0);
+	levelDef.init(levelDepth, levelHeight, levelWidth);
+
+	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
+	levelInfoDef.init(ceilingScale);
+
+	MapGeneration::generateMifCity(mif, citySeed, isPremade, reservedBlocks, blockStartPosX,
+		blockStartPosY, cityBlocksPerSide, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textureManager, &levelDef, &levelInfoDef, &this->city);
+
+	// Only one level info to use.
+	this->levelInfoMappings.set(0, 0);
+	
 	return true;
 }
 
@@ -296,11 +337,37 @@ bool MapDefinition::initDungeon(const DungeonGenerationInfo &generationInfo,
 }
 
 bool MapDefinition::initCity(const CityGenerationInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType)
+	WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	this->init(WorldType::City);
-	/*const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(climateType, weatherType);*/
-	DebugNotImplemented();
+
+	const std::string &mifName = generationInfo.mifName;
+	MIFFile mif;
+	if (!mif.init(mifName.c_str()))
+	{
+		DebugLogError("Couldn't init .MIF file \"" + mifName + "\".");
+		return false;
+	}
+
+	const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(climateType, weatherType);
+	INFFile inf;
+	if (!inf.init(infName.data()))
+	{
+		DebugLogError("Couldn't init .INF file \"" + std::string(infName.data()) + "\".");
+		return false;
+	}
+
+	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
+		generationInfo.reservedBlocks.getCount());
+
+	// Generate city level (optionally generating random city blocks if not premade).
+	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.isPremade, reservedBlocks,
+		generationInfo.blockStartPosX, generationInfo.blockStartPosY, generationInfo.cityBlocksPerSide,
+		inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
+	this->initStartPoints(mif);
+	this->startLevelIndex = 0;
 	return true;
 }
 

@@ -61,7 +61,8 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	if (!cityDef.premade)
 	{
 		// Generate procedural city data and write it into the temp buffers.
-		const std::vector<uint8_t> &reservedBlocks = *cityDef.reservedBlocks;
+		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		CityLevelUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth, reservedBlocks,
 			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);

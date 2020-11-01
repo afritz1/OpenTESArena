@@ -59,8 +59,21 @@ public:
 	struct CityGenerationInfo
 	{
 		std::string mifName;
+		uint32_t citySeed;
+		bool isPremade;
+
+		// Affects which types of city blocks are used at generation start.
+		Buffer<uint8_t> reservedBlocks;
 		
-		void init(std::string &&mifName);
+		// Generation offset from city origin.
+		WEInt blockStartPosX;
+		SNInt blockStartPosY;
+
+		int cityBlocksPerSide;
+		
+		void init(std::string &&mifName, uint32_t citySeed, bool isPremade,
+			Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+			int cityBlocksPerSide);
 	};
 
 	// Input: 70 .RMD files (from asset library) + 1 weather .INF
@@ -137,6 +150,11 @@ private:
 		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelInt2 *outStartPoint);
+	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const InteriorGenerationInfo &generationInfo, bool isPalace,
@@ -146,7 +164,9 @@ public:
 	bool initDungeon(const DungeonGenerationInfo &generationInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType);
+	bool initCity(const CityGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initWild(const WildGenerationInfo &generationInfo, ClimateType climateType, WeatherType weatherType,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
