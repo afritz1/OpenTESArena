@@ -45,7 +45,7 @@ public:
 			this->count = count;
 		}
 
-		IdGroup() = default;
+		IdGroup() : IdGroup(-1, -1) { }
 
 		int getCount() const
 		{
