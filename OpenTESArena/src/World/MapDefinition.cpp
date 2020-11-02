@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <unordered_map>
 
+#include "ChunkUtils.h"
 #include "CityWorldUtils.h"
 #include "InteriorWorldUtils.h"
 #include "MapDefinition.h"
@@ -196,6 +198,73 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 	return true;
 }
 
+bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs,
+	uint32_t fallbackSeed, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
+{
+	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
+	// of a wild block ID is its level definition index.
+	std::vector<WildBlockID> uniqueWildBlockIDs;
+	Buffer2D<int> levelDefIndices(wildBlockIDs.getWidth(), wildBlockIDs.getHeight());
+	for (int y = 0; y < wildBlockIDs.getHeight(); y++)
+	{
+		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
+		{
+			const WildBlockID blockID = wildBlockIDs.get(x, y);
+			const auto iter = std::find(uniqueWildBlockIDs.begin(), uniqueWildBlockIDs.end(), blockID);
+
+			int levelDefIndex;
+			if (iter != uniqueWildBlockIDs.end())
+			{
+				levelDefIndex = static_cast<int>(std::distance(uniqueWildBlockIDs.begin(), iter));
+			}
+			else
+			{
+				uniqueWildBlockIDs.push_back(blockID);
+				levelDefIndex = static_cast<int>(uniqueWildBlockIDs.size()) - 1;
+			}
+
+			levelDefIndices.set(x, y, levelDefIndex);
+		}
+	}
+
+	// N LevelDefinitions (for chunks) and 1 LevelInfoDefinition.
+	this->levels.init(static_cast<int>(uniqueWildBlockIDs.size()));
+	this->levelInfos.init(1);
+	this->levelInfoMappings.init(this->levels.getCount());
+
+	for (int i = 0; i < this->levels.getCount(); i++)
+	{
+		// Each .RMD file should be one chunk's width and depth.
+		constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+		LevelDefinition &levelDef = this->levels.get(i);
+		levelDef.init(chunkDim, 6, chunkDim);
+	}
+
+	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
+	const INFFile::CeilingData &ceiling = inf.getCeiling();
+	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+	levelInfoDef.init(ceilingScale);
+
+	const BufferView<const WildBlockID> uniqueWildBlockIdsConstView(
+		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
+	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
+	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, inf, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef);
+
+	// Every wild chunk level definition uses the same level info definition.
+	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
+	{
+		this->levelInfoMappings.set(i, 0);
+	}
+
+	// Populate wild chunk look-up values.
+	this->wild.init(std::move(levelDefIndices), fallbackSeed);
+
+	return true;
+}
+
 void MapDefinition::initStartPoints(const MIFFile &mif)
 {
 	this->startPoints.init(mif.getStartPointCount());
@@ -302,50 +371,11 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, C
 }
 
 bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary)
+	WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	this->init(WorldType::Wilderness);
-
-	// @todo: 70 level definitions, 1 level info definition. Map all of them to 0
-
-	/*auto initLevelDef = [this](LevelDefinition &levelDef, const RMDFile &rmd)
-	{
-		levelDef.initWild(rmd);
-	};
-
-	// Generate a level definition index for each unique wild block ID.
-	std::unordered_map<WildBlockID, int> blockLevelDefMappings;
-	for (int y = 0; y < wildBlockIDs.getHeight(); y++)
-	{
-		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
-		{
-			const WildBlockID blockID = wildBlockIDs.get(x, y);
-			const auto iter = blockLevelDefMappings.find(blockID);
-			if (iter == blockLevelDefMappings.end())
-			{
-				const int levelDefIndex = static_cast<int>(blockLevelDefMappings.size());
-				blockLevelDefMappings.emplace(blockID, levelDefIndex);
-			}
-		}
-	}
-
-	const int levelDefCount = static_cast<int>(blockLevelDefMappings.size());
-	this->levels.init(levelDefCount);
-	for (const auto &pair : blockLevelDefMappings)
-	{
-		const WildBlockID blockID = pair.first;
-		const int levelDefIndex = pair.second;
-
-		const RMDFile &rmd = [&binaryAssetLibrary, &wildBlockIDs, blockID]() -> const RMDFile&
-		{
-			const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
-			const int rmdIndex = DebugMakeIndex(rmdFiles, blockID - 1);
-			return rmdFiles[rmdIndex];
-		}();
-
-		LevelDefinition &levelDef = this->levels.get(levelDefIndex);
-		initLevelDef(levelDef, rmd);
-	}
 
 	const DOSUtils::FilenameBuffer infName = WildWorldUtils::generateInfName(climateType, weatherType);
 	INFFile inf;
@@ -354,20 +384,15 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, C
 		DebugLogError("Couldn't init .INF file \"" + std::string(infName.data()) + "\".");
 		return false;
 	}
+	
+	const BufferView2D<const WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
+		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
 
-	// Add level info pointed to by all wild chunks.
-	LevelInfoDefinition levelInfoDef;
-	levelInfoDef.init(inf);
-	this->levelInfos.init(1);
-	this->levelInfos.set(0, std::move(levelInfoDef));
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, inf, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager);
 
-	for (int i = 0; i < this->levels.getCount(); i++)
-	{
-		const int levelInfoIndex = 0;
-		this->levelInfoMappings.push_back(levelInfoIndex);
-	}*/
-
-	DebugNotImplemented();
+	// No start level index and no start points in the wilderness due to the nature of chunks.
+	this->startLevelIndex = std::nullopt;
 	return true;
 }
 

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "ChunkUtils.h"
 #include "CityLevelUtils.h"
 #include "InteriorLevelUtils.h"
 #include "LevelDefinition.h"
@@ -1225,6 +1226,88 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool 
 	// Generate distant sky.
 	/*levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
 		starCount, exeData, textureManager);*/
+}
+
+void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &uniqueWildBlockIDs,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+	LevelInfoDefinition *outLevelInfoDef)
+{
+	DebugAssert(uniqueWildBlockIDs.getCount() == outLevelDefs.getCount());
+
+	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
+	ArenaEntityMappingCache entityMappings;
+
+	// Create temp voxel data buffers to be used by each wilderness chunk.
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(chunkDim, chunkDim);
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(chunkDim, chunkDim);
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(chunkDim, chunkDim);
+
+	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
+	{
+		const WildBlockID wildBlockID = uniqueWildBlockIDs.get(i);
+		const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
+		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
+		const RMDFile &rmd = rmdFiles[rmdIndex];
+		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
+
+		// Copy .RMD voxels into temp buffers.
+		for (int y = 0; y < tempFlor.getHeight(); y++)
+		{
+			for (int x = 0; x < tempFlor.getWidth(); x++)
+			{
+				const ArenaTypes::VoxelID rmdFlorID = rmdFLOR.get(x, y);
+				const ArenaTypes::VoxelID rmdMap1ID = rmdMAP1.get(x, y);
+				const ArenaTypes::VoxelID rmdMap2ID = rmdMAP2.get(x, y);
+				tempFlor.set(x, y, rmdFlorID);
+				tempMap1.set(x, y, rmdMap1ID);
+				tempMap2.set(x, y, rmdMap2ID);
+			}
+		}
+
+		const bool isCityBlockID = (wildBlockID >= 1) && (wildBlockID <= 4);
+		if (isCityBlockID)
+		{
+			// Change the placeholder WILD00{1..4}.RMD block to the one for the given city.
+			BufferView2D<ArenaTypes::VoxelID> tempFlorView(
+				tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+			BufferView2D<ArenaTypes::VoxelID> tempMap1View(
+				tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+			BufferView2D<ArenaTypes::VoxelID> tempMap2View(
+				tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+
+			// @todo: change this to take wild block ID instead of assuming it's the whole wilderness
+			// and rename to reviseWildCityBlock() maybe.
+			/*WildLevelUtils::reviseWildernessCity(locationDef, tempFlorView, tempMap1View,
+				tempMap2View, binaryAssetLibrary);*/
+			DebugNotImplemented();
+		}
+
+		LevelDefinition &levelDef = outLevelDefs.get(i);
+
+		const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
+			tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+		const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
+			tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+		const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
+			tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+
+		constexpr WorldType worldType = WorldType::Wilderness;
+		constexpr bool isPalace = false;
+		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
+
+		MapGeneration::readArenaFLOR(tempFlorConstView, worldType, isPalace, rulerIsMale, inf,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
+			outLevelInfoDef, &florMappings, &entityMappings);
+		MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
+			outLevelInfoDef, &map1Mappings, &entityMappings);
+		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
+	}
 }
 
 void MapGeneration::readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,

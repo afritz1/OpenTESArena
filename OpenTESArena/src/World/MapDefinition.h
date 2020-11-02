@@ -76,6 +76,10 @@ private:
 		int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
+	bool initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const MapGeneration::InteriorGenInfo &generationInfo,
@@ -86,7 +90,9 @@ public:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
 	bool initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
-		WeatherType weatherType, const BinaryAssetLibrary &binaryAssetLibrary);
+		WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 
 	// Gets the initial level index for the map (if any).
 	const std::optional<int> &getStartLevelIndex() const;

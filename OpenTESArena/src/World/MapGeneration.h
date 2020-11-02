@@ -134,6 +134,14 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
 
+	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
+	// level definition at the same index.
+	void generateRmdWilderness(const BufferView<const WildBlockID> &uniqueWildBlockIDs,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+
 	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 	void readMifTriggers(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
