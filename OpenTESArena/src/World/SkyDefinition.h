@@ -9,10 +9,15 @@
 #include "components/utilities/BufferView.h"
 
 // Contains a location's distant sky values and objects (mountains, clouds, stars, etc.).
+// Similar to LevelDefinition where it defines where various sky objects will be once they
+// are instanced.
 
 class SkyDefinition
 {
 private:
+	// @todo: want to change to be like LevelDefinition; land/air/star placement defs for
+	// definitions stored in SkyInfoDefinition.
+
 	std::vector<SkyObjectDefinition> objects;
 	Buffer<Color> skyColors; // Colors for an entire day.
 public:

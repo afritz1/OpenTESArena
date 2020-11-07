@@ -6,6 +6,9 @@
 #include "../Math/Vector3.h"
 #include "../Media/TextureUtils.h"
 
+// @todo: simplify a lot of this so a sky object instance is basically ONLY its animation progress
+// and calculated 3D direction for rendering.
+
 class SkyObjectDefinition;
 
 class SkyObjectInstance

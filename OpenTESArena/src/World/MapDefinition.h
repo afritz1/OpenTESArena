@@ -8,6 +8,7 @@
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "MapGeneration.h"
+#include "SkyDefinition.h"
 #include "VoxelUtils.h"
 
 #include "components/utilities/Buffer.h"
@@ -54,7 +55,9 @@ public:
 private:
 	Buffer<LevelDefinition> levels;
 	Buffer<LevelInfoDefinition> levelInfos; // Each can be used by one or more levels.
+	Buffer<SkyDefinition> skyDefinitions; // Each can be used by one or more levels.
 	Buffer<int> levelInfoMappings; // Level info pointed to by each level.
+	Buffer<int> skyDefinitionMappings; // Sky definitions pointed to by each level.
 	Buffer<LevelDouble2> startPoints;
 	std::optional<int> startLevelIndex;
 
@@ -73,11 +76,11 @@ private:
 		TextureManager &textureManager, LevelInt2 *outStartPoint);
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
 		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager);
+		int cityBlocksPerSide, Buffer<Color> &&skyColors, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		Buffer<Color> &&skyColors, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
@@ -109,7 +112,9 @@ public:
 	// the level associated with a wild chunk whose index is acquired by querying some wild chunk
 	// coordinate.
 	const LevelDefinition &getLevel(int index) const;
+
 	const LevelInfoDefinition &getLevelInfoForLevel(int levelIndex) const;
+	const SkyDefinition &getSkyForLevel(int levelIndex) const;
 
 	WorldType getWorldType() const;
 	const Interior &getInterior() const;
