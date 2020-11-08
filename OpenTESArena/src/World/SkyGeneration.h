@@ -8,6 +8,7 @@
 class BinaryAssetLibrary;
 class SkyDefinition;
 class SkyInfoDefinition;
+class TextureManager;
 
 enum class ClimateType;
 enum class WeatherType;
@@ -35,11 +36,11 @@ namespace SkyGeneration
 			uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
 	};
 
-	void generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, SkyDefinition *outSkyDef,
-		SkyInfoDefinition *outSkyInfoDef);
+	void generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef);
 	void generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
-		const BinaryAssetLibrary &binaryAssetLibrary, SkyDefinition *outSkyDef,
-		SkyInfoDefinition *outSkyInfoDef);
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef);
 }
 
 #endif

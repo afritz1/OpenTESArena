@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <optional>
@@ -15,6 +16,8 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
+#include "../Media/PaletteFile.h"
+#include "../Media/PaletteName.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -66,20 +69,65 @@ namespace SkyGeneration
 		return iter->second;
 	}
 
-	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon)
+	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
 	{
-		DebugNotImplemented();
+		// Interior sky color comes from the darkest row of an .LGT light palette.
+		const char *lightPaletteName = outdoorDungeon ? "FOG.LGT" : "NORMAL.LGT";
+
+		TextureManager::IdGroup<ImageID> imageIDs;
+		if (!textureManager.tryGetImageIDs(lightPaletteName, &imageIDs))
+		{
+			DebugLogWarning("Couldn't get .LGT image for \"" + std::string(lightPaletteName) + "\".");
+			return Buffer<Color>();
+		}
+
+		// Get darkest light palette and a suitable color for 'dark'.
+		const Image &lightPalette = textureManager.getImageHandle(imageIDs.getID(imageIDs.getCount() - 1));
+		const uint8_t lightColor = lightPalette.getPixel(16, 0);
+
+		const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
+		PaletteID paletteID;
+		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		{
+			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
+			return Buffer<Color>();
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		DebugAssertIndex(palette, lightColor);
+		const Color &paletteColor = palette[lightColor];
+
 		Buffer<Color> skyColors(1);
-		skyColors.set(0, outdoorDungeon ? Color::Gray : Color::Black); // @todo: use palette instead
+		skyColors.set(0, paletteColor);
 		return skyColors;
 	}
 
-	Buffer<Color> makeExteriorSkyColors(WeatherType weatherType)
+	Buffer<Color> makeExteriorSkyColors(WeatherType weatherType, TextureManager &textureManager)
 	{
-		DebugNotImplemented();
-		Buffer<Color> skyColors(1);
-		skyColors.set(0, Color::Cyan); // @todo: load weather-based palette (.COL file?)
-		return skyColors;
+		// Get the palette name for the given weather.
+		const std::string &paletteName = PaletteFile::fromName(
+			(weatherType == WeatherType::Clear) ? PaletteName::Daytime : PaletteName::Dreary);
+
+		// The palettes in the data files only cover half of the day, so some added darkness is
+		// needed for the other half.
+		PaletteID paletteID;
+		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		{
+			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
+			return Buffer<Color>();
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+
+		// Fill sky palette with darkness. The first color in the palette is the closest to night.
+		const Color &darkness = palette[0];
+		Buffer<Color> fullPalette(static_cast<int>(palette.size()) * 2);
+		fullPalette.fill(darkness);
+
+		// Copy the sky palette over the center of the full palette.
+		std::copy(palette.begin(), palette.end(), fullPalette.get() + (fullPalette.getCount() / 4));
+
+		return fullPalette;
 	}
 }
 
@@ -100,17 +148,17 @@ void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, WeatherTyp
 	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
 }
 
-void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, SkyDefinition *outSkyDef,
-	SkyInfoDefinition *outSkyInfoDef)
+void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
+	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
 	// Only worry about sky color for interior skies.
-	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon);
+	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
 	outSkyDef->init(std::move(skyColors));
 }
 
 void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
-	const BinaryAssetLibrary &binaryAssetLibrary, SkyDefinition *outSkyDef,
-	SkyInfoDefinition *outSkyInfoDef)
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
 	DebugNotImplemented();
 	/*// Add mountains and clouds first. Get the land traits associated with the given climate type.

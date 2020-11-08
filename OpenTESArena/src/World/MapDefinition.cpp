@@ -97,7 +97,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 
 		SkyDefinition &skyDef = this->skies.get(levelIndex);
 		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(levelIndex);
-		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, &skyDef, &skyInfoDef);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef, &skyInfoDef);
 	};
 
 	for (int i = 0; i < mif.getLevelCount(); i++)
@@ -191,7 +191,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 
 		SkyDefinition &skyDef = this->skies.get(i);
 		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(i);
-		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, &skyDef, &skyInfoDef);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, textureManager, &skyDef, &skyInfoDef);
 	}
 
 	// Each dungeon level uses the same level info definition.
@@ -247,7 +247,8 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, &skyDef, &skyInfoDef);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager,
+		&skyDef, &skyInfoDef);
 
 	// Only one level info and sky to use.
 	this->levelInfoMappings.set(0, 0);
@@ -319,7 +320,8 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, &skyDef, &skyInfoDef);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager,
+		&skyDef, &skyInfoDef);
 
 	// Every wild chunk level definition uses the same level info definition.
 	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
