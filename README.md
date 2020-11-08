@@ -1,6 +1,6 @@
 # OpenTESArena
 
-This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" by Bethesda Softworks. It is written in C++17 and uses SDL2 for cross-platform video, WildMIDI for music, and OpenAL Soft for sound and mixing. There is currently support for Windows, Linux, and macOS.
+This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" from 1994 by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
 
 - Version: 0.12.0
 - License: MIT
@@ -8,18 +8,10 @@ This open-source project aims to be a modern engine re-implementation for "The E
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
-No actual gameplay yet, but all cities, main quest dungeons, random dungeons, interior locations, and wilderness can be accessed from test options on the main menu.
+No actual gameplay yet, but all locations and interiors can be accessed for testing. Citizens wander around cities and the wilderness but cannot be interacted with. Fast traveling works and you can go to any city or dungeon on the world map. Collision detection is barebones (just enough for playtesting) and needs work. Character creation works but character questions and player attributes are not implemented. Some of the in-game interface icons work; for example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
-Doors and transition blocks can be interacted with, and you can enter and exit buildings.
-
-Fast traveling works and you can go to any city or main quest dungeon on the world map.
-
-Collision detection is partially implemented (you can't jump or fall yet).
-
-A few menus work, including some of character creation, and some of the game interface icons work, too. For example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
-
-Here are some keys in the game world:
-- WASD - move and turn. Hold LCtrl to strafe with A and D.
+Controls:
+- WASD - move and turn. Hold LCtrl to strafe.
 - Esc - pause menu
 - Tab - character sheet
 - F - draw/sheathe weapon
@@ -39,11 +31,11 @@ Here are some keys in the game world:
 
 ## Project Details
 
-The concept began after I saw the success of other open-source projects like [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/). It really started out more as an experiment than a remake, but now the project is steadily inching closer to something akin to the original.
+Inspired by [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
 
-Note that there are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is just an engine and does not contain any content.
+There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
 
-OpenTESArena is licensed under the MIT license. See [LICENSE.txt](LICENSE.txt) for details.
+OpenTESArena is [MIT-licensed](LICENSE.txt).
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
@@ -53,15 +45,15 @@ If you would like music played in-game, see **Music setup** below. The engine us
 
 ### Windows
 - Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
-- [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
+- [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website, or get the CD version from somewhere such as [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena).
 - Extract Arena106Setup.zip and run Arena106.exe.
-- Pick a destination folder anywhere and install.
-- Point `ArenaPath` in the options file to the `ARENA` folder.
+- Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
+- Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
 - Run OpenTESArena.exe.
 
-If you receive an error about missing MSVCP141.dll, you will need to download and run the Visual C++ 2017 Redistributable installer from [here](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll for Visual C++ 2015 is available [here](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
+If you receive an error about missing MSVCP141.dll, you will need to download and run the [Visual C++ 2017 Redistributable installer](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll is in the [Visual C++ 2015 Redistributable installer](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
 
-If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the OpenAL 1.1 Windows Installer from [here](https://www.openal.org/downloads/) and run oalinst.exe.
+If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the [OpenAL 1.1 Windows Installer](https://www.openal.org/downloads/) and run oalinst.exe.
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
@@ -102,9 +94,9 @@ cd ..
 ### Music setup
 Arena uses MIDI files for music, so the user must have MIDI sound patches in order to have music play in-game.
 
-The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into your `data` folder.
+The easiest way is to download one of the eawpats packages ([zip](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip), [tar.gz](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)) and place the extracted eawpats folder into the OpenTESArena `data` folder.
 
-If you would like to use a different sound patches library (like OPL3), simply edit `MidiConfig` in the options file to point to another MIDI `.cfg` file.
+If you would like to use a different sound patches library like OPL3, edit `MidiConfig` in the options file to point to the MIDI `.cfg` file for that library.
 
 ## Building from source
 
@@ -125,7 +117,7 @@ make -j4
 - Other user-specific parameters may be necessary for CMake depending on your IDE.
 
 ### Running the executable
-- Verify that the `data` and `options` folders are in the same folder as the executable.
+- Verify that the `data` and `options` folders are in the same folder as the executable. If not, then copy them from the project's root folder.
 - Make sure that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If you struggle, here are some more detailed guides:
@@ -136,6 +128,6 @@ If there is a bug or technical problem in the program, check out the issues tab!
 
 ## Resources
 
-The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for finding information all about Arena. There are [various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) available such as WinArena and BSATool for browsing Arena's content, and there is a very detailed manual as well, so you'll probably want to take a look at a copy from [here](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities). I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay. 
+The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for information all about Arena. [Various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool allow for browsing Arena's content, and there is a very detailed [manual](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay.
 
-YouTube channel: https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw
+Project YouTube channel: https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw
