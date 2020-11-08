@@ -4,7 +4,9 @@
 
 #include "ClimateType.h"
 #include "LocationUtils.h"
+#include "SkyDefinition.h"
 #include "SkyGeneration.h"
+#include "SkyInfoDefinition.h"
 #include "SkyObjectDefinition.h"
 #include "WeatherType.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -12,24 +14,27 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
+#include "../Media/Color.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
 namespace SkyGeneration
 {
+	// Original game values.
 	constexpr int UNIQUE_ANGLES = 512;
 	constexpr double IDENTITY_DIM = 320.0;
 	constexpr Radians IDENTITY_ANGLE = 90.0 * Constants::DegToRad;
 
-	struct LandTraits
+	// Helper struct for original game's distant land.
+	struct ArenaLandTraits
 	{
 		int filenameIndex; // Index into ExeData mountain filenames.
 		int position;
 		int variation;
 		int maxDigits; // Max number of digits in the filename for the variation.
 
-		LandTraits(int filenameIndex, int position, int variation, int maxDigits)
+		ArenaLandTraits(int filenameIndex, int position, int variation, int maxDigits)
 		{
 			this->filenameIndex = filenameIndex;
 			this->position = position;
@@ -38,32 +43,53 @@ namespace SkyGeneration
 		}
 	};
 
-	const std::array<std::pair<ClimateType, LandTraits>, 3> LandTraitsMappings =
+	const std::array<std::pair<ClimateType, ArenaLandTraits>, 3> ArenaLandTraitsMappings =
 	{
 		{
-			{ ClimateType::Temperate, LandTraits(2, 4, 10, 2) },
-			{ ClimateType::Desert, LandTraits(1, 6, 4, 1) },
-			{ ClimateType::Mountain, LandTraits(0, 6, 11, 2) }
+			{ ClimateType::Temperate, ArenaLandTraits(2, 4, 10, 2) },
+			{ ClimateType::Desert, ArenaLandTraits(1, 6, 4, 1) },
+			{ ClimateType::Mountain, ArenaLandTraits(0, 6, 11, 2) }
 		}
 	};
 
-	const LandTraits &GetLandTraits(ClimateType climateType)
+	const ArenaLandTraits &getArenaLandTraits(ClimateType climateType)
 	{
-		const auto iter = std::find_if(LandTraitsMappings.begin(), LandTraitsMappings.end(),
+		const auto iter = std::find_if(ArenaLandTraitsMappings.begin(), ArenaLandTraitsMappings.end(),
 			[climateType](const auto &pair)
 		{
 			return pair.first == climateType;
 		});
 
-		DebugAssertMsg(iter != LandTraitsMappings.end(), "Invalid climate type \"" +
+		DebugAssertMsg(iter != ArenaLandTraitsMappings.end(), "Invalid climate type \"" +
 			std::to_string(static_cast<int>(climateType)) + "\".");
 
 		return iter->second;
 	}
+
+	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon)
+	{
+		DebugNotImplemented();
+		Buffer<Color> skyColors(1);
+		skyColors.set(0, outdoorDungeon ? Color::Gray : Color::Black); // @todo: use palette instead
+		return skyColors;
+	}
+
+	Buffer<Color> makeExteriorSkyColors(WeatherType weatherType)
+	{
+		DebugNotImplemented();
+		Buffer<Color> skyColors(1);
+		skyColors.set(0, Color::Cyan); // @todo: load weather-based palette (.COL file?)
+		return skyColors;
+	}
 }
 
-void SkyGeneration::SkyGenInfo::init(WeatherType weatherType, ClimateType climateType, int currentDay,
-	int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
+void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
+{
+	this->outdoorDungeon = outdoorDungeon;
+}
+
+void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, WeatherType weatherType,
+	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->weatherType = weatherType;
 	this->climateType = climateType;
@@ -74,8 +100,17 @@ void SkyGeneration::SkyGenInfo::init(WeatherType weatherType, ClimateType climat
 	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
 }
 
-void SkyGeneration::generateSky(const SkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
-	SkyDefinition *outSkyDef, SkyInstance *outSkyInst)
+void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, SkyDefinition *outSkyDef,
+	SkyInfoDefinition *outSkyInfoDef)
+{
+	// Only worry about sky color for interior skies.
+	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon);
+	outSkyDef->init(std::move(skyColors));
+}
+
+void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
+	const BinaryAssetLibrary &binaryAssetLibrary, SkyDefinition *outSkyDef,
+	SkyInfoDefinition *outSkyInfoDef)
 {
 	DebugNotImplemented();
 	/*// Add mountains and clouds first. Get the land traits associated with the given climate type.
@@ -512,18 +547,4 @@ void SkyGeneration::generateSky(const SkyGenInfo &skyGenInfo, const BinaryAssetL
 
 		this->sunEntryIndex = *sunTextureIndex;
 	}*/
-}
-
-Buffer<Color> SkyGeneration::makeInteriorSkyColors(bool isOutdoorDungeon)
-{
-	Buffer<Color> skyColors(1);
-	skyColors.set(0, isOutdoorDungeon ? Color::Gray : Color::Black); // @todo: use palette instead
-	return skyColors;
-}
-
-Buffer<Color> SkyGeneration::makeExteriorSkyColors(WeatherType weatherType)
-{
-	Buffer<Color> skyColors(1);
-	skyColors.set(0, Color::Cyan); // @todo: load weather-based palette (.COL file?)
-	return skyColors;
 }

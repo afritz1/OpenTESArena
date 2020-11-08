@@ -54,11 +54,14 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 	TextureManager &textureManager)
 {
 	// N level + level info pairs.
-	this->levels.init(mif.getLevelCount());
-	this->levelInfos.init(mif.getLevelCount());
-	this->levelInfoMappings.init(mif.getLevelCount());
-	this->skyDefinitions.init(mif.getLevelCount());
-	this->skyDefinitionMappings.init(mif.getLevelCount());
+	const int levelCount = mif.getLevelCount();
+	this->levels.init(levelCount);
+	this->levelInfos.init(levelCount);
+	this->levelInfoMappings.init(levelCount);
+	this->skies.init(levelCount);
+	this->skyMappings.init(levelCount);
+	this->skyInfos.init(levelCount);
+	this->skyInfoMappings.init(levelCount);
 
 	auto initLevelAndInfo = [this, &mif, isPalace, &rulerIsMale, &charClassLibrary, &entityDefLibrary,
 		&binaryAssetLibrary, &textureManager](int levelIndex, const MIFFile::Level &mifLevel,
@@ -78,8 +81,6 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 		const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
 		levelInfoDef.init(ceilingScale);
 
-		// @todo: init sky definition
-
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
 		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
@@ -89,6 +90,14 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
 		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
 		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
+
+		// Generate interior sky.
+		SkyGeneration::InteriorSkyGenInfo interiorSkyGenInfo;
+		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
+
+		SkyDefinition &skyDef = this->skies.get(levelIndex);
+		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(levelIndex);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, &skyDef, &skyInfoDef);
 	};
 
 	for (int i = 0; i < mif.getLevelCount(); i++)
@@ -111,9 +120,14 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, bool isPalace,
 		this->levelInfoMappings.set(i, i);
 	}
 
-	for (int i = 0; i < this->skyDefinitionMappings.getCount(); i++)
+	for (int i = 0; i < this->skyMappings.getCount(); i++)
 	{
-		this->skyDefinitionMappings.set(i, i);
+		this->skyMappings.set(i, i);
+	}
+
+	for (int i = 0; i < this->skyInfoMappings.getCount(); i++)
+	{
+		this->skyInfoMappings.set(i, i);
 	}
 
 	return true;
@@ -130,8 +144,10 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	this->levels.init(levelCount);
 	this->levelInfos.init(1);
 	this->levelInfoMappings.init(levelCount);
-	this->skyDefinitions.init(levelCount);
-	this->skyDefinitionMappings.init(levelCount);
+	this->skies.init(levelCount);
+	this->skyMappings.init(levelCount);
+	this->skyInfos.init(levelCount);
+	this->skyInfoMappings.init(levelCount);
 
 	// Use the .INF filename of the first level.
 	const MIFFile::Level &level = mif.getLevel(0);
@@ -161,13 +177,22 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	// @todo: init sky definitions
-
 	constexpr bool isPalace = false;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
 		worldType, isPalace, rulerIsMale, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
 		textureManager, levelDefView, &levelInfoDef, outStartPoint);
+
+	// Generate sky for each dungeon level.
+	for (int i = 0; i < levelCount; i++)
+	{
+		SkyGeneration::InteriorSkyGenInfo interiorSkyGenInfo;
+		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
+
+		SkyDefinition &skyDef = this->skies.get(i);
+		SkyInfoDefinition &skyInfoDef = this->skyInfos.get(i);
+		SkyGeneration::generateInteriorSky(interiorSkyGenInfo, &skyDef, &skyInfoDef);
+	}
 
 	// Each dungeon level uses the same level info definition.
 	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
@@ -175,9 +200,14 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		this->levelInfoMappings.set(i, 0);
 	}
 
-	for (int i = 0; i < this->skyDefinitionMappings.getCount(); i++)
+	for (int i = 0; i < this->skyMappings.getCount(); i++)
 	{
-		this->skyDefinitionMappings.set(i, i);
+		this->skyMappings.set(i, i);
+	}
+
+	for (int i = 0; i < this->skyInfoMappings.getCount(); i++)
+	{
+		this->skyInfoMappings.set(i, i);
 	}
 
 	return true;
@@ -185,7 +215,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	int cityBlocksPerSide, Buffer<Color> &&skyColors, const INFFile &inf,
+	int cityBlocksPerSide, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
@@ -193,8 +223,10 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 	this->levels.init(1);
 	this->levelInfos.init(1);
 	this->levelInfoMappings.init(1);
-	this->skyDefinitions.init(1);
-	this->skyDefinitionMappings.init(1);
+	this->skies.init(1);
+	this->skyMappings.init(1);
+	this->skyInfos.init(1);
+	this->skyInfoMappings.init(1);
 
 	const WEInt levelWidth = mif.getWidth();
 	const int levelHeight =  6;
@@ -209,23 +241,27 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
-	// @todo: init sky definition
-
 	MapGeneration::generateMifCity(mif, citySeed, isPremade, reservedBlocks, blockStartPosX,
 		blockStartPosY, cityBlocksPerSide, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
 		textureManager, &levelDef, &levelInfoDef);
 
+	SkyDefinition &skyDef = this->skies.get(0);
+	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, &skyDef, &skyInfoDef);
+
 	// Only one level info and sky to use.
 	this->levelInfoMappings.set(0, 0);
-	this->skyDefinitionMappings.set(0, 0);
+	this->skyMappings.set(0, 0);
+	this->skyInfoMappings.set(0, 0);
 	
 	return true;
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs,
-	uint32_t fallbackSeed, Buffer<Color> &&skyColors, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+	uint32_t fallbackSeed, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
@@ -257,8 +293,10 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 	this->levels.init(static_cast<int>(uniqueWildBlockIDs.size()));
 	this->levelInfos.init(1);
 	this->levelInfoMappings.init(this->levels.getCount());
-	this->skyDefinitions.init(1);
-	this->skyDefinitionMappings.init(1);
+	this->skies.init(1);
+	this->skyMappings.init(this->levels.getCount()); // Unnecessary but convenient for API.
+	this->skyInfos.init(1);
+	this->skyInfoMappings.init(1);
 
 	for (int i = 0; i < this->levels.getCount(); i++)
 	{
@@ -273,13 +311,15 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	// @todo: init sky definition
-
 	const BufferView<const WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
 	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, inf, charClassLibrary,
 		entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef);
+
+	SkyDefinition &skyDef = this->skies.get(0);
+	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
+	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, &skyDef, &skyInfoDef);
 
 	// Every wild chunk level definition uses the same level info definition.
 	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
@@ -287,7 +327,12 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 		this->levelInfoMappings.set(i, 0);
 	}
 
-	this->skyDefinitionMappings.set(0, 0);
+	for (int i = 0; i < this->skyMappings.getCount(); i++)
+	{
+		this->skyMappings.set(i, 0);
+	}
+
+	this->skyInfoMappings.set(0, 0);
 
 	// Populate wild chunk look-up values.
 	this->wild.init(std::move(levelDefIndices), fallbackSeed);
@@ -366,9 +411,9 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 }
 
 bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	this->init(WorldType::City);
 
@@ -394,17 +439,16 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, C
 	// Generate city level (optionally generating random city blocks if not premade).
 	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.isPremade, reservedBlocks,
 		generationInfo.blockStartPosX, generationInfo.blockStartPosY, generationInfo.cityBlocksPerSide,
-		SkyGeneration::makeExteriorSkyColors(weatherType), inf, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager);
+		exteriorSkyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
 	return true;
 }
 
 bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	this->init(WorldType::Wilderness);
 
@@ -419,9 +463,8 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, C
 	const BufferView2D<const WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
 
-	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed,
-		SkyGeneration::makeExteriorSkyColors(weatherType), inf, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager);
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, exteriorSkyGenInfo, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	// No start level index and no start points in the wilderness due to the nature of chunks.
 	this->startLevelIndex = std::nullopt;
@@ -459,10 +502,20 @@ const LevelInfoDefinition &MapDefinition::getLevelInfoForLevel(int levelIndex) c
 	return this->levelInfos.get(levelInfoIndex);
 }
 
-const SkyDefinition &MapDefinition::getSkyForLevel(int levelIndex) const
+int MapDefinition::getSkyIndexForLevel(int levelIndex) const
 {
-	const int skyIndex = this->skyDefinitionMappings.get(levelIndex);
-	return this->skyDefinitions.get(skyIndex);
+	return this->skyMappings.get(levelIndex);
+}
+
+const SkyDefinition &MapDefinition::getSky(int index) const
+{
+	return this->skies.get(index);
+}
+
+const SkyInfoDefinition &MapDefinition::getSkyInfoForSky(int skyIndex) const
+{
+	const int skyInfoIndex = this->skyInfoMappings.get(skyIndex);
+	return this->skyInfos.get(skyInfoIndex);
 }
 
 WorldType MapDefinition::getWorldType() const
