@@ -13,6 +13,7 @@
 #include "../Assets/DFAFile.h"
 #include "../Assets/FLCFile.h"
 #include "../Assets/IMGFile.h"
+#include "../Assets/LGTFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
 #include "../Math/Vector2.h"
@@ -32,6 +33,7 @@ namespace
 	constexpr const char *EXTENSION_DFA = "DFA";
 	constexpr const char *EXTENSION_FLC = "FLC";
 	constexpr const char *EXTENSION_IMG = "IMG";
+	constexpr const char *EXTENSION_LGT = "LGT";
 	constexpr const char *EXTENSION_MNU = "MNU";
 	constexpr const char *EXTENSION_RCI = "RCI";
 	constexpr const char *EXTENSION_SET = "SET";
@@ -255,6 +257,23 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 		Image image = makeImage(img.getWidth(), img.getHeight(), img.getPixels());
 		outImages->init(1);
 		outImages->set(0, std::move(image));
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_LGT))
+	{
+		LGTFile lgt;
+		if (!lgt.init(filename))
+		{
+			DebugLogWarning("Couldn't init .LGT file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outImages->init(LGTFile::PALETTE_COUNT);
+		for (int i = 0; i < outImages->getCount(); i++)
+		{
+			const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+			Image image = makeImage(lightPalette.getCount(), 1, lightPalette.get());
+			outImages->set(i, std::move(image));
+		}
 	}
 	else if (TextureManager::matchesExtension(filename, EXTENSION_RCI))
 	{

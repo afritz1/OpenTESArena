@@ -4,23 +4,23 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer2D.h"
+#include "components/utilities/BufferView.h"
 
 // Light level file, contains 13 light palettes for shading/transparencies.
 
-// In some foggy dungeons, the game seems to use fog distance for determining
-// light level (FOG.LGT).
+// In some foggy dungeons, the game seems to use fog distance for determining light level (FOG.LGT).
 
 class LGTFile
 {
 private:
 	Buffer2D<uint8_t> palettes;
 public:
-	static const int PALETTE_COUNT;
-	static const int ELEMENTS_PER_PALETTE;
+	static constexpr int PALETTE_COUNT = 13;
+	static constexpr int ELEMENTS_PER_PALETTE = 256;
 
 	bool init(const char *filename);
 
-	const uint8_t *getPalette(int index) const;
+	BufferView<const uint8_t> getLightPalette(int index) const;
 };
 
 #endif

@@ -5,9 +5,6 @@
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
-const int LGTFile::PALETTE_COUNT = 13;
-const int LGTFile::ELEMENTS_PER_PALETTE = 256;
-
 bool LGTFile::init(const char *filename)
 {
 	Buffer<std::byte> src;
@@ -29,8 +26,9 @@ bool LGTFile::init(const char *filename)
 	return true;
 }
 
-const uint8_t *LGTFile::getPalette(int index) const
+BufferView<const uint8_t> LGTFile::getLightPalette(int index) const
 {
 	DebugAssert(index < LGTFile::PALETTE_COUNT);
-	return this->palettes.get() + (index * LGTFile::ELEMENTS_PER_PALETTE);
+	const uint8_t *ptr = this->palettes.get() + (index * this->palettes.getWidth());
+	return BufferView(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }
