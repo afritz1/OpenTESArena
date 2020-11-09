@@ -8,7 +8,6 @@
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
-#include "SkyObjectDefinition.h"
 #include "WeatherType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
