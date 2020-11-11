@@ -45,6 +45,21 @@ namespace
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
+
+	bool IsGhostTexel(uint8_t texel)
+	{
+		return (texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST);
+	}
+
+	bool IsPuddleTexel(uint8_t texel)
+	{
+		return (texel == PALETTE_INDEX_PUDDLE_EVEN_ROW) || (texel == PALETTE_INDEX_PUDDLE_ODD_ROW);
+	}
+
+	bool IsCloudTexel(uint8_t texel)
+	{
+		return (texel >= PALETTE_INDEX_SKY_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_SKY_LEVEL_HIGHEST);
+	}
 }
 
 void SoftwareRenderer::VoxelTexel::init(double r, double g, double b, double emission,
@@ -184,8 +199,7 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 			// Determine how to interpret the source texel. Palette indices 1-13 are used for
 			// light level diminishing in the original game. These texels do not have any color
 			// and are purely for manipulating the previously rendered color in the frame buffer.
-			if ((srcTexel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST &&
-				(srcTexel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST)))
+			if (IsGhostTexel(srcTexel))
 			{
 				// Ghost texel.
 				constexpr double r = 0.0;
@@ -196,8 +210,7 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 				constexpr uint8_t reflection = 0;
 				dstTexel.init(r, g, b, a, reflection);
 			}
-			else if (reflective && ((srcTexel == PALETTE_INDEX_PUDDLE_EVEN_ROW) ||
-				(srcTexel == PALETTE_INDEX_PUDDLE_ODD_ROW)))
+			else if (reflective && IsPuddleTexel(srcTexel))
 			{
 				// Puddle texel. The shader needs to know which reflection type it is.
 				constexpr double r = 0.0;
@@ -253,8 +266,7 @@ void SoftwareRenderer::SkyTexture::init(int width, int height, const uint8_t *sr
 			SkyTexel &dstTexel = this->texels[index];
 
 			// Same as flat texels but for sky objects and without some hardcoded indices.
-			if ((srcTexel >= PALETTE_INDEX_SKY_LEVEL_LOWEST) &&
-				(srcTexel <= PALETTE_INDEX_SKY_LEVEL_HIGHEST))
+			if (IsCloudTexel(srcTexel))
 			{
 				// Transparency for clouds.
 				constexpr double r = 0.0;
