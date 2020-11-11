@@ -2,11 +2,6 @@
 
 #include "components/debug/Debug.h"
 
-namespace
-{
-	constexpr double NO_ANIMATION_SECONDS = 0.0;
-}
-
 void LandObjectDefinition::init(Radians angle, const TextureManager::IdGroup<ImageID> &imageIDs,
 	double animSeconds)
 {
@@ -18,7 +13,8 @@ void LandObjectDefinition::init(Radians angle, const TextureManager::IdGroup<Ima
 void LandObjectDefinition::init(Radians angle, ImageID imageID)
 {
 	TextureManager::IdGroup<ImageID> imageIDs(imageID, 1);
-	this->init(angle, imageIDs, NO_ANIMATION_SECONDS);
+	constexpr double animSeconds = 0.0;
+	this->init(angle, imageIDs, animSeconds);
 }
 
 Radians LandObjectDefinition::getAngle() const
@@ -38,7 +34,7 @@ ImageID LandObjectDefinition::getImageID(int index) const
 
 bool LandObjectDefinition::hasAnimation() const
 {
-	return this->animSeconds >= NO_ANIMATION_SECONDS;
+	return imageIDs.getCount() > 1;
 }
 
 double LandObjectDefinition::getAnimationSeconds() const
