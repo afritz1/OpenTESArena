@@ -143,7 +143,6 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Graphics, TargetFPS)
 	OPTION_DOUBLE(Graphics, ResolutionScale)
 	OPTION_DOUBLE(Graphics, VerticalFOV)
-	OPTION_BOOL(Graphics, ParallaxSky)
 	OPTION_INT(Graphics, LetterboxMode)
 	OPTION_DOUBLE(Graphics, CursorScale)
 	OPTION_BOOL(Graphics, ModernInterface)

@@ -374,29 +374,12 @@ private:
 	// A distant object that has been projected on-screen and is at least partially visible.
 	struct VisDistantObject
 	{
-		struct ParallaxData
-		{
-			// Visible angles (in radians) are the object's angle range clamped within the camera's
-			// angle range.
-			double xVisAngleStart, xVisAngleEnd;
-			double uStart, uEnd;
-
-			ParallaxData();
-			ParallaxData(double xVisAngleStart, double xVisAngleEnd, double uStart, double uEnd);
-		};
-
 		const SkyTexture *texture;
 		DrawRange drawRange;
-		ParallaxData parallax;
 		double xProjStart, xProjEnd; // Projected screen coordinates.
 		int xStart, xEnd; // Pixel coordinates.
 		bool emissive; // Only animated lands (i.e., volcanoes) are emissive.
 
-		// Parallax constructor.
-		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, ParallaxData &&parallax,
-			double xProjStart, double xProjEnd, int xStart, int xEnd, bool emissive);
-
-		// Non-parallax constructor.
 		VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange, double xProjStart,
 			double xProjEnd, int xStart, int xEnd, bool emissive);
 	};
@@ -471,10 +454,9 @@ private:
 			int threadsDone;
 			const VisDistantObjects *visDistantObjs;
 			const std::vector<SkyTexture> *skyTextures;
-			bool parallaxSky;
 			bool doneVisTesting; // True when render threads can start rendering distant sky.
 
-			void init(bool parallaxSky, const VisDistantObjects &visDistantObjs,
+			void init(const VisDistantObjects &visDistantObjs,
 				const std::vector<SkyTexture> &skyTextures);
 		};
 
@@ -589,8 +571,8 @@ private:
 	void resetRenderThreads();
 
 	// Refreshes the list of distant objects to be drawn.
-	void updateVisibleDistantObjects(bool parallaxSky, const ShadingInfo &shadingInfo,
-		const Camera &camera, const FrameView &frame);
+	void updateVisibleDistantObjects(const ShadingInfo &shadingInfo, const Camera &camera,
+		const FrameView &frame);
 
 	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
 	// calculation).
@@ -952,10 +934,9 @@ private:
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.
-	static void drawDistantSky(int startX, int endX, bool parallaxSky,
-		const VisDistantObjects &visDistantObjs, const std::vector<SkyTexture> &skyTextures,
-		const Buffer<Double3> &skyGradientRowCache, bool shouldDrawStars,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+	static void drawDistantSky(int startX, int endX, const VisDistantObjects &visDistantObjs,
+		const std::vector<SkyTexture> &skyTextures, const Buffer<Double3> &skyGradientRowCache,
+		bool shouldDrawStars, const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
@@ -1053,8 +1034,8 @@ public:
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	void render(const Double3 &eye, const Double3 &direction, Degrees fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-		bool parallaxSky, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
+		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,

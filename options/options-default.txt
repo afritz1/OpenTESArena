@@ -22,8 +22,6 @@ TargetFPS=60
 ResolutionScale=0.50
 VerticalFOV=60.0
 
-ParallaxSky=false
-
 # Each letterbox mode defines a particular aspect ratio for the game UI.
 # 0: 16:10 (default), 1: 4:3, 2: stretch to fill
 LetterboxMode=0

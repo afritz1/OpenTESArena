@@ -3028,10 +3028,9 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
-		gameData.getChasmAnimPercent(), latitude, options.getGraphics_ParallaxSky(),
-		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
-		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level.getOpenDoors(),
-		level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
+		gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(), isExterior,
+		options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
+		level.getOpenDoors(), level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
 		level.getEntityManager(), game.getEntityDefinitionLibrary());
 
 	// Get texture IDs in advance of any texture references.

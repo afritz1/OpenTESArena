@@ -223,9 +223,9 @@ public:
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
-		double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
-		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
+		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight,
+		const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary);

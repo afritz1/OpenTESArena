@@ -730,9 +730,9 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
-	double daytimePercent, double chasmAnimPercent, double latitude, bool parallaxSky,
-	bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
-	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
+	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight,
+	const std::vector<LevelData::DoorState> &openDoors,
 	const std::vector<LevelData::FadeState> &fadingVoxels,
 	const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
@@ -753,9 +753,8 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->softwareRenderer.render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
-		latitude, parallaxSky, nightLightsAreActive, isExterior, playerHasLight, chunkDistance,
-		ceilingHeight, openDoors, fadingVoxels, chasmStates, voxelGrid, entityManager,
-		entityDefLibrary, gameWorldPixels);
+		latitude, nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight,
+		openDoors, fadingVoxels, chasmStates, voxelGrid, entityManager, entityDefLibrary, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.
