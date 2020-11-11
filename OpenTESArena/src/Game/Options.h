@@ -57,36 +57,36 @@ public:
 	static const std::string SECTION_MISC;
 
 	// Min/max/allowed values for the application.
-	static const int MIN_FPS;
-	static const int MIN_WINDOW_MODE;
-	static const int MAX_WINDOW_MODE;
-	static const double MIN_RESOLUTION_SCALE;
-	static const double MAX_RESOLUTION_SCALE;
-	static const double MIN_VERTICAL_FOV;
-	static const double MAX_VERTICAL_FOV;
-	static const double MIN_CURSOR_SCALE;
-	static const double MAX_CURSOR_SCALE;
-	static const int MIN_LETTERBOX_MODE;
-	static const int MAX_LETTERBOX_MODE;
-	static const int MIN_RENDER_THREADS_MODE;
-	static const int MAX_RENDER_THREADS_MODE;
-	static const double MIN_HORIZONTAL_SENSITIVITY;
-	static const double MAX_HORIZONTAL_SENSITIVITY;
-	static const double MIN_VERTICAL_SENSITIVITY;
-	static const double MAX_VERTICAL_SENSITIVITY;
-	static const double MIN_CAMERA_PITCH_LIMIT;
-	static const double MAX_CAMERA_PITCH_LIMIT;
-	static const double MIN_VOLUME;
-	static const double MAX_VOLUME;
-	static const int MIN_SOUND_CHANNELS;
-	static const int RESAMPLING_OPTION_COUNT;
-	static const double MIN_TIME_SCALE;
-	static const double MAX_TIME_SCALE;
-	static const int MIN_CHUNK_DISTANCE;
-	static const int MIN_STAR_DENSITY_MODE;
-	static const int MAX_STAR_DENSITY_MODE;
-	static const int MIN_PROFILER_LEVEL;
-	static const int MAX_PROFILER_LEVEL;
+	static constexpr int MIN_FPS = 15;
+	static constexpr int MIN_WINDOW_MODE = 0;
+	static constexpr int MAX_WINDOW_MODE = 1;
+	static constexpr double MIN_RESOLUTION_SCALE = 0.10;
+	static constexpr double MAX_RESOLUTION_SCALE = 1.0;
+	static constexpr double MIN_VERTICAL_FOV = 40.0;
+	static constexpr double MAX_VERTICAL_FOV = 150.0;
+	static constexpr double MIN_CURSOR_SCALE = 0.50;
+	static constexpr double MAX_CURSOR_SCALE = 8.0;
+	static constexpr int MIN_LETTERBOX_MODE = 0;
+	static constexpr int MAX_LETTERBOX_MODE = 2;
+	static constexpr int MIN_RENDER_THREADS_MODE = 0;
+	static constexpr int MAX_RENDER_THREADS_MODE = 5;
+	static constexpr double MIN_HORIZONTAL_SENSITIVITY = 0.50;
+	static constexpr double MAX_HORIZONTAL_SENSITIVITY = 50.0;
+	static constexpr double MIN_VERTICAL_SENSITIVITY = 0.50;
+	static constexpr double MAX_VERTICAL_SENSITIVITY = 50.0;
+	static constexpr double MIN_CAMERA_PITCH_LIMIT = 0.0;
+	static constexpr double MAX_CAMERA_PITCH_LIMIT = 85.0;
+	static constexpr double MIN_VOLUME = 0.0;
+	static constexpr double MAX_VOLUME = 1.0;
+	static constexpr int MIN_SOUND_CHANNELS = 1;
+	static constexpr int RESAMPLING_OPTION_COUNT = 4;
+	static constexpr double MIN_TIME_SCALE = 0.50;
+	static constexpr double MAX_TIME_SCALE = 1.0;
+	static constexpr int MIN_CHUNK_DISTANCE = 1;
+	static constexpr int MIN_STAR_DENSITY_MODE = 0;
+	static constexpr int MAX_STAR_DENSITY_MODE = 2;
+	static constexpr int MIN_PROFILER_LEVEL = 0;
+	static constexpr int MAX_PROFILER_LEVEL = 3;
 
 #define OPTION_BOOL(section, name) \
 bool get##section##_##name() const \

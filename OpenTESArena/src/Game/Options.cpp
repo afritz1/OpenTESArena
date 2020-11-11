@@ -76,37 +76,6 @@ const std::string Options::SECTION_INPUT = "Input";
 const std::string Options::SECTION_AUDIO = "Audio";
 const std::string Options::SECTION_MISC = "Misc";
 
-const int Options::MIN_FPS = 15;
-const int Options::MIN_WINDOW_MODE = 0;
-const int Options::MAX_WINDOW_MODE = 1;
-const double Options::MIN_RESOLUTION_SCALE = 0.10;
-const double Options::MAX_RESOLUTION_SCALE = 1.0;
-const double Options::MIN_VERTICAL_FOV = 40.0;
-const double Options::MAX_VERTICAL_FOV = 150.0;
-const double Options::MIN_CURSOR_SCALE = 0.50;
-const double Options::MAX_CURSOR_SCALE = 8.0;
-const int Options::MIN_LETTERBOX_MODE = 0;
-const int Options::MAX_LETTERBOX_MODE = 2;
-const int Options::MIN_RENDER_THREADS_MODE = 0;
-const int Options::MAX_RENDER_THREADS_MODE = 5;
-const double Options::MIN_HORIZONTAL_SENSITIVITY = 0.50;
-const double Options::MAX_HORIZONTAL_SENSITIVITY = 50.0;
-const double Options::MIN_VERTICAL_SENSITIVITY = 0.50;
-const double Options::MAX_VERTICAL_SENSITIVITY = 50.0;
-const double Options::MIN_CAMERA_PITCH_LIMIT = 0.0;
-const double Options::MAX_CAMERA_PITCH_LIMIT = 85.0;
-const double Options::MIN_VOLUME = 0.0;
-const double Options::MAX_VOLUME = 1.0;
-const int Options::MIN_SOUND_CHANNELS = 1;
-const int Options::RESAMPLING_OPTION_COUNT = 4;
-const double Options::MIN_TIME_SCALE = 0.50;
-const double Options::MAX_TIME_SCALE = 1.0;
-const int Options::MIN_CHUNK_DISTANCE = 1;
-const int Options::MIN_STAR_DENSITY_MODE = 0;
-const int Options::MAX_STAR_DENSITY_MODE = 2;
-const int Options::MIN_PROFILER_LEVEL = 0;
-const int Options::MAX_PROFILER_LEVEL = 3;
-
 void Options::load(const char *filename,
 	std::unordered_map<std::string, Options::MapGroup> &maps)
 {
