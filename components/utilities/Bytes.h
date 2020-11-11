@@ -31,14 +31,6 @@ namespace Bytes
 		return setBitCount;
 	}
 
-	// Returns whether the given integer is a power of 2.
-	template <typename T>
-	bool isPowerOf2(T value)
-	{
-		static_assert(std::is_integral_v<T>);
-		return Bytes::getSetBitCount(value) == 1;
-	}
-
 	// Circular rotation of an integer to the right.
 	template <typename T>
 	T ror(T value, unsigned int count)

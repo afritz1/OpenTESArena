@@ -24,7 +24,6 @@
 #include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/Bytes.h"
 
 namespace
 {
@@ -94,8 +93,8 @@ void SoftwareRenderer::VoxelTexture::init(int width, int height, const uint8_t *
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
 	DebugAssert(width == height); // Must be square.
-	DebugAssert(Bytes::isPowerOf2(width)); // Must be power-of-two dimensions for mipmaps.
-	DebugAssert(Bytes::isPowerOf2(height));
+	DebugAssert(MathUtils::isPowerOf2(width)); // Must be power-of-two dimensions for mipmaps.
+	DebugAssert(MathUtils::isPowerOf2(height));
 	DebugAssert(srcTexels != nullptr);
 
 	this->texels.resize(width * height);

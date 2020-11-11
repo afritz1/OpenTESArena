@@ -9,6 +9,8 @@
 #include "../Math/Vector3.h"
 #include "../World/VoxelUtils.h"
 
+#include "components/utilities/Bytes.h"
+
 using Radians = double;
 using Degrees = double;
 
@@ -26,6 +28,14 @@ namespace MathUtils
 	{
 		static_assert(std::is_floating_point_v<T>);
 		return !std::isnan(value);
+	}
+
+	// Returns whether the given integer is a power of 2.
+	template <typename T>
+	bool isPowerOf2(T value)
+	{
+		static_assert(std::is_integral_v<T>);
+		return Bytes::getSetBitCount(value) == 1;
 	}
 
 	// Gets a real (not integer) index in an array from the given percent.
