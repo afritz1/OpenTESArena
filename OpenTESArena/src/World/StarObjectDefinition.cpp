@@ -2,9 +2,9 @@
 
 #include "components/debug/Debug.h"
 
-void StarObjectDefinition::SmallStar::init(uint32_t colorARGB)
+void StarObjectDefinition::SmallStar::init(uint8_t paletteIndex)
 {
-	this->colorARGB = colorARGB;
+	this->paletteIndex = paletteIndex;
 }
 
 void StarObjectDefinition::LargeStar::init(ImageID imageID)
@@ -12,33 +12,21 @@ void StarObjectDefinition::LargeStar::init(ImageID imageID)
 	this->imageID = imageID;
 }
 
-void StarObjectDefinition::init(Type type, Radians angleX, Radians angleY)
+void StarObjectDefinition::init(Type type)
 {
 	this->type = type;
-	this->angleX = angleX;
-	this->angleY = angleY;
 }
 
-void StarObjectDefinition::initSmall(Radians angleX, Radians angleY, uint32_t colorARGB)
+void StarObjectDefinition::initSmall(uint8_t paletteIndex)
 {
-	this->init(Type::Small, angleX, angleY);
-	this->smallStar.init(colorARGB);
+	this->init(Type::Small);
+	this->smallStar.init(paletteIndex);
 }
 
-void StarObjectDefinition::initLarge(Radians angleX, Radians angleY, ImageID imageID)
+void StarObjectDefinition::initLarge(ImageID imageID)
 {
-	this->init(Type::Large, angleX, angleY);
+	this->init(Type::Large);
 	this->largeStar.init(imageID);
-}
-
-Radians StarObjectDefinition::getAngleX() const
-{
-	return this->angleX;
-}
-
-Radians StarObjectDefinition::getAngleY() const
-{
-	return this->angleY;
 }
 
 StarObjectDefinition::Type StarObjectDefinition::getType() const

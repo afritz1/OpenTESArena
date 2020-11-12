@@ -1,36 +1,16 @@
 #include "MoonObjectDefinition.h"
 
-void MoonObjectDefinition::init(const Double3 &baseDir, double bonusLatitude, int phaseCount,
-	int phaseIndexDayOffset, ImageID imageID)
+void MoonObjectDefinition::init(const TextureManager::IdGroup<ImageID> &imageIDs)
 {
-	this->baseDir = baseDir;
-	this->bonusLatitude = bonusLatitude;
-	this->phaseCount = phaseCount;
-	this->phaseIndexDayOffset = phaseIndexDayOffset;
-	this->imageID = imageID;
+	this->imageIDs = imageIDs;
 }
 
-const Double3 &MoonObjectDefinition::getBaseDirection() const
+int MoonObjectDefinition::getImageIdCount() const
 {
-	return this->baseDir;
+	return this->imageIDs.getCount();
 }
 
-double MoonObjectDefinition::getBonusLatitude() const
+ImageID MoonObjectDefinition::getImageID(int index) const
 {
-	return this->bonusLatitude;
-}
-
-int MoonObjectDefinition::getPhaseCount() const
-{
-	return this->phaseCount;
-}
-
-int MoonObjectDefinition::getPhaseIndexDayOffset() const
-{
-	return this->phaseIndexDayOffset;
-}
-
-ImageID MoonObjectDefinition::getImageID() const
-{
-	return this->imageID;
+	return this->imageIDs.getID(index);
 }

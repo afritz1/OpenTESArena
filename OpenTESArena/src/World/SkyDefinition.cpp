@@ -17,8 +17,7 @@ SkyDefinition::AirPlacementDef::AirPlacementDef(AirDefID id,
 	this->positions = std::move(positions);
 }
 
-SkyDefinition::StarPlacementDef::StarPlacementDef(StarDefID id,
-	std::vector<std::pair<Radians, Radians>> &&positions)
+SkyDefinition::StarPlacementDef::StarPlacementDef(StarDefID id, std::vector<Double3> &&positions)
 {
 	this->id = id;
 	this->positions = std::move(positions);
@@ -139,7 +138,7 @@ void SkyDefinition::addAir(AirDefID id, Radians angleX, Radians angleY)
 	}
 }
 
-void SkyDefinition::addStar(StarDefID id, Radians angleX, Radians angleY)
+void SkyDefinition::addStar(StarDefID id, const Double3 &direction)
 {
 	const auto iter = std::find_if(this->starPlacementDefs.begin(), this->starPlacementDefs.end(),
 		[id](const StarPlacementDef &def)
@@ -149,13 +148,12 @@ void SkyDefinition::addStar(StarDefID id, Radians angleX, Radians angleY)
 
 	if (iter != this->starPlacementDefs.end())
 	{
-		std::vector<std::pair<Radians, Radians>> &positions = iter->positions;
-		positions.emplace_back(angleX, angleY);
+		std::vector<Double3> &positions = iter->positions;
+		positions.emplace_back(direction);
 	}
 	else
 	{
-		this->starPlacementDefs.emplace_back(id,
-			std::vector<std::pair<Radians, Radians>> { std::make_pair(angleX, angleY) });
+		this->starPlacementDefs.emplace_back(id, std::vector<Double3> { direction });
 	}
 }
 
@@ -176,4 +174,11 @@ void SkyDefinition::addSun(SunDefID id, double bonusLatitude)
 	{
 		this->sunPlacementDefs.emplace_back(id, std::vector<double> { bonusLatitude });
 	}
+}
+
+void SkyDefinition::addMoon(MoonDefID id, int imageIndex, double bonusLatitude,
+	double phasePercent)
+{
+	// @todo: not done designing parameters yet
+	DebugNotImplemented();
 }

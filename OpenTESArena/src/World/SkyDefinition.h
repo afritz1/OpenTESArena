@@ -24,7 +24,7 @@ public:
 
 	struct LandPlacementDef
 	{
-		LandDefID id; // @todo: remove angle from LandObjectDefinition
+		LandDefID id;
 		std::vector<Radians> positions;
 
 		LandPlacementDef(LandDefID id, std::vector<Radians> &&positions);
@@ -32,7 +32,7 @@ public:
 
 	struct AirPlacementDef
 	{
-		AirDefID id; // @todo: remove angles from AirObjectDefinition
+		AirDefID id;
 		std::vector<std::pair<Radians, Radians>> positions;
 
 		AirPlacementDef(AirDefID id, std::vector<std::pair<Radians, Radians>> &&positions);
@@ -40,10 +40,10 @@ public:
 
 	struct StarPlacementDef
 	{
-		StarDefID id; // @todo: remove angles from StarObjectDefinition
-		std::vector<std::pair<Radians, Radians>> positions;
+		StarDefID id;
+		std::vector<Double3> positions;
 
-		StarPlacementDef(StarDefID id, std::vector<std::pair<Radians, Radians>> &&positions);
+		StarPlacementDef(StarDefID id, std::vector<Double3> &&positions);
 	};
 
 	struct SunPlacementDef
@@ -59,10 +59,20 @@ public:
 	struct MoonPlacementDef
 	{
 		MoonDefID id;
+		int imageIndex; // Index in moon definition phase images (full/half/new/etc.).
 		// @todo: given the situation this placement def is in, maybe want the MoonObjectDefinition to support
 		// all image IDs and then some phasePercent here would tell the moon instance which imageID to use.
 
 		// @todo: phase day offset maybe?
+
+		/*// Base position in the sky before latitude and time-of-day adjustments.
+		Double3 baseDir;
+
+		// Added to location latitude to get 'moon latitude'.
+		double bonusLatitude;
+
+		int phaseCount; // Number of days in period.
+		int phaseIndexDayOffset; // Bias to phase start.*/
 
 		//MoonPlacementDef(MoonDefID id);
 	};
@@ -92,9 +102,9 @@ public:
 
 	void addLand(LandDefID id, Radians angle);
 	void addAir(AirDefID id, Radians angleX, Radians angleY);
-	void addStar(StarDefID id, Radians angleX, Radians angleY);
+	void addStar(StarDefID id, const Double3 &direction);
 	void addSun(SunDefID id, double bonusLatitude);
-	//void addMoon(MoonDefID id, double bonusLatitude); // @todo: decide parameters
+	void addMoon(MoonDefID id, int imageIndex, double bonusLatitude, double phasePercent);
 };
 
 #endif

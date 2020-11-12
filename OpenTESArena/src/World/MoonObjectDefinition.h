@@ -1,31 +1,17 @@
 #ifndef MOON_OBJECT_DEFINITION_H
 #define MOON_OBJECT_DEFINITION_H
 
-#include "../Math/Vector3.h"
-#include "../Media/TextureUtils.h"
+#include "../Media/TextureManager.h"
 
 class MoonObjectDefinition
 {
 private:
-	// Base position in the sky before latitude and time-of-day adjustments.
-	Double3 baseDir;
-
-	// Added to location latitude to get 'moon latitude'.
-	double bonusLatitude;
-
-	int phaseCount; // Number of days in period.
-	int phaseIndexDayOffset; // Bias to phase start.
-
-	ImageID imageID;
+	TextureManager::IdGroup<ImageID> imageIDs;
 public:
-	void init(const Double3 &baseDir, double bonusLatitude, int phaseCount,
-		int phaseIndexDayOffset, ImageID imageID);
+	void init(const TextureManager::IdGroup<ImageID> &imageIDs);
 
-	const Double3 &getBaseDirection() const;
-	double getBonusLatitude() const;
-	int getPhaseCount() const;
-	int getPhaseIndexDayOffset() const;
-	ImageID getImageID() const;
+	int getImageIdCount() const;
+	ImageID getImageID(int index) const;
 };
 
 #endif

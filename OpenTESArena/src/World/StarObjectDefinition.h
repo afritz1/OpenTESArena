@@ -17,9 +17,9 @@ public:
 
 	struct SmallStar
 	{
-		uint32_t colorARGB;
+		uint8_t paletteIndex;
 
-		void init(uint32_t colorARGB);
+		void init(uint8_t paletteIndex);
 	};
 
 	struct LargeStar
@@ -29,8 +29,6 @@ public:
 		void init(ImageID imageID);
 	};
 private:
-	Radians angleX, angleY;
-
 	Type type;
 
 	union
@@ -39,13 +37,10 @@ private:
 		LargeStar largeStar;
 	};
 
-	void init(Type type, Radians angleX, Radians angleY);
+	void init(Type type);
 public:
-	void initSmall(Radians angleX, Radians angleY, uint32_t colorARGB);
-	void initLarge(Radians angleX, Radians angleY, ImageID imageID);
-
-	Radians getAngleX() const;
-	Radians getAngleY() const;
+	void initSmall(uint8_t paletteIndex);
+	void initLarge(ImageID imageID);
 	
 	Type getType() const;
 	const SmallStar &getSmallStar() const;

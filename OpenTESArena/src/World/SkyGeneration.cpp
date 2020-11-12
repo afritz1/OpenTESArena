@@ -2,6 +2,7 @@
 #include <array>
 #include <cmath>
 #include <optional>
+#include <type_traits>
 
 #include "ClimateType.h"
 #include "LocationUtils.h"
@@ -9,11 +10,14 @@
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
 #include "WeatherType.h"
+#include "WeatherUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
+#include "../Math/Matrix4.h"
 #include "../Math/Random.h"
+#include "../Math/Vector4.h"
 #include "../Media/Color.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -23,10 +27,23 @@
 
 namespace SkyGeneration
 {
+	// Mapping caches of Arena sky objects to modern sky info entries. Don't need caches for sun
+	// and moons since they're not spawned in bulk.
+	using ArenaLandMappingCache = std::unordered_map<ImageID, SkyDefinition::LandDefID>;
+	using ArenaAirMappingCache = std::unordered_map<ImageID, SkyDefinition::AirDefID>;
+	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
+	using ArenaLargeStarMappingCache = std::unordered_map<ImageID, SkyDefinition::StarDefID>;
+
 	// Original game values.
 	constexpr int UNIQUE_ANGLES = 512;
 	constexpr double IDENTITY_DIM = 320.0;
 	constexpr Radians IDENTITY_ANGLE = 90.0 * Constants::DegToRad;
+	constexpr double ANIMATED_LAND_SECONDS_PER_FRAME = 1.0 / 18.0;
+	
+	// Sun/moon latitudes, divide by 100.0 for modern latitude.
+	constexpr double SUN_BONUS_LATITUDE = 13.0;
+	constexpr double MOON_1_BONUS_LATITUDE = 15.0;
+	constexpr double MOON_2_BONUS_LATITUDE = 30.0;
 
 	// Helper struct for original game's distant land.
 	struct ArenaLandTraits
@@ -66,6 +83,17 @@ namespace SkyGeneration
 			std::to_string(static_cast<int>(climateType)) + "\".");
 
 		return iter->second;
+	}
+
+	// Converts an Arena angle to an actual angle in radians.
+	Radians arenaAngleToRadians(int arenaAngle)
+	{
+		// Arena angles: 0 = south, 128 = west, 256 = north, 384 = east.
+		// Change from clockwise to counter-clockwise and move 0 to east (the origin).
+		const Radians arenaRadians = Constants::TwoPi *
+			(static_cast<double>(arenaAngle) / static_cast<double>(SkyGeneration::UNIQUE_ANGLES));
+		const Radians flippedArenaRadians = Constants::TwoPi - arenaRadians;
+		return flippedArenaRadians - Constants::HalfPi;
 	}
 
 	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
@@ -128,185 +156,176 @@ namespace SkyGeneration
 
 		return fullPalette;
 	}
-}
 
-void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
-{
-	this->outdoorDungeon = outdoorDungeon;
-}
-
-void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, WeatherType weatherType,
-	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
-{
-	this->weatherType = weatherType;
-	this->climateType = climateType;
-	this->currentDay = currentDay;
-	this->starCount = starCount;
-	this->citySeed = citySeed;
-	this->skySeed = skySeed;
-	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
-}
-
-void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
-	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
-{
-	// Only worry about sky color for interior skies.
-	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
-	outSkyDef->init(std::move(skyColors));
-}
-
-void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
-{
-	DebugNotImplemented();
-	/*// Add mountains and clouds first. Get the land traits associated with the given climate type.
-	const LandTraits &landTraits = GetLandTraits(skyGenInfo.climateType);
-
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const auto &landFilenames = exeData.locations.distantMountainFilenames;
-	DebugAssertIndex(landFilenames, landTraits.filenameIndex);
-	const std::string &baseFilename = landFilenames[landTraits.filenameIndex];
-
-	ArenaRandom random(skyGenInfo.skySeed);
-	const int count = (random.next() % 4) + 2;
-
-	// Converts an Arena angle to an actual angle in radians.
-	auto arenaAngleToRadians = [](int arenaAngle)
+	// Used with mountains and clouds.
+	template <bool IsLandObject>
+	bool tryGenerateArenaStaticObject(const std::string &baseFilename, int position, int variation,
+		int maxDigits, ArenaRandom &random, TextureManager &textureManager, SkyDefinition *outSkyDef,
+		SkyInfoDefinition *outSkyInfoDef, ArenaLandMappingCache *landCache, ArenaAirMappingCache *airCache)
 	{
-		// Arena angles: 0 = south, 128 = west, 256 = north, 384 = east.
-		// Change from clockwise to counter-clockwise and move 0 to east.
-		const Radians arenaRadians = Constants::TwoPi *
-			(static_cast<double>(arenaAngle) / static_cast<double>(SkyGeneration::UNIQUE_ANGLES));
-		const Radians flippedArenaRadians = Constants::TwoPi - arenaRadians;
-		return flippedArenaRadians - Constants::HalfPi;
-	};
-
-	// Lambda for creating images with certain sky parameters.
-	auto placeStaticObjects = [&random, &arenaAngleToRadians](int count, const std::string &baseFilename,
-		int pos, int var, int maxDigits, bool randomHeight)
-	{
-		for (int i = 0; i < count; i++)
+		// Digits for the filename variant. Allowed up to two digits.
+		const std::string digits = [&random, variation]()
 		{
-			// Digits for the filename variant. Allowed up to two digits.
-			const std::string digits = [&random, var]()
+			const int randVal = random.next() % variation;
+			return std::to_string((randVal == 0) ? variation : randVal);
+		}();
+
+		DebugAssert(digits.size() <= maxDigits);
+
+		// @todo: consider DOSUtils::FilenameBuffer
+		std::string imageFilename = [&baseFilename, position, maxDigits, &digits]()
+		{
+			std::string name = baseFilename;
+			const int digitCount = static_cast<int>(digits.size());
+
+			// Push the starting position right depending on the max digits.
+			const int offset = maxDigits - digitCount;
+
+			for (int digitIndex = 0; digitIndex < digitCount; digitIndex++)
 			{
-				const int randVal = random.next() % var;
-				return std::to_string((randVal == 0) ? var : randVal);
-			}();
+				const int nameIndex = position + offset + digitIndex;
+				DebugAssertIndex(name, nameIndex);
+				name[nameIndex] = digits[digitIndex];
+			}
 
-			DebugAssert(digits.size() <= maxDigits);
+			return String::toUppercase(name);
+		}();
 
-			// Actual filename for the image.
-			std::string filename = [&baseFilename, pos, maxDigits, &digits]()
+		// Convert from Arena units to radians.
+		const int arenaAngle = random.next() % SkyGeneration::UNIQUE_ANGLES;
+		const Radians angleX = arenaAngleToRadians(arenaAngle);
+
+		// Get the object's image ID.
+		ImageID imageID;
+		if (!textureManager.tryGetImageID(imageFilename.c_str(), &imageID))
+		{
+			DebugLogWarning("Couldn't load sky static object image \"" + imageFilename + "\".");
+			return false;
+		}
+
+		// The object is either a mountain or cloud.
+		if constexpr (IsLandObject)
+		{
+			SkyDefinition::LandDefID landDefID;
+			const auto iter = landCache->find(imageID);
+			if (iter != landCache->end())
 			{
-				std::string name = baseFilename;
-				const int digitCount = static_cast<int>(digits.size());
-
-				// Push the starting position right depending on the max digits.
-				const int offset = maxDigits - digitCount;
-
-				for (size_t index = 0; index < digitCount; index++)
-				{
-					name.at(pos + offset + index) = digits.at(index);
-				}
-
-				return String::toUppercase(name);
-			}();
-
-
-
-
-
-			// @todo: decide if std::optional is necessary; also see if ImageIDs should be obtained here (probably;
-			// make it like map definition creation you know?).
-			// @todo: continue SkyObjectDefinition init methods.
-			DebugNotImplemented();
-
-
-
-			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
-			auto fixEntryIndexIfMissing = [this, &textureManager, &filename, &entryIndex]()
-			{
-				if (!entryIndex.has_value())
-				{
-					ImageID imageID;
-					if (!textureManager.tryGetImageID(filename.c_str(), &imageID))
-					{
-						DebugCrash("Couldn't get image ID for \"" + filename + "\".");
-					}
-
-					TextureEntry textureEntry(std::move(filename), imageID);
-					this->textures.push_back(std::move(textureEntry));
-					entryIndex = static_cast<int>(this->textures.size()) - 1;
-				}
-			};
-
-			// The yPos parameter is optional, and is assigned depending on whether the object
-			// is in the air.
-			constexpr int yPosLimit = 64;
-			const int yPos = randomHeight ? (random.next() % yPosLimit) : 0;
-
-			// Convert from Arena units to radians.
-			const int arenaAngle = random.next() % SkyGeneration::UNIQUE_ANGLES;
-			const Radians angle = arenaAngleToRadians(arenaAngle);
-
-			// The object is either land or a cloud, currently determined by 'randomHeight' as
-			// a shortcut. Land objects have no height. I'm doing it this way because LandObject
-			// and AirObject are two different types.
-			const bool isLand = !randomHeight;
-
-			SkyObjectDefinition skyObjectDef;
-			if (isLand)
-			{
-				fixEntryIndexIfMissing();
-				this->landObjects.push_back(LandObject(*entryIndex, angle));
+				landDefID = iter->second;
 			}
 			else
 			{
-				fixEntryIndexIfMissing();
-				const double height = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-				this->airObjects.push_back(AirObject(*entryIndex, angle, height));
+				LandObjectDefinition landObject;
+				landObject.init(imageID);
+				landDefID = outSkyInfoDef->addLand(std::move(landObject));
+				landCache->emplace(imageID, landDefID);
 			}
+
+			outSkyDef->addLand(landDefID, angleX);
 		}
-	};
+		else
+		{
+			const Radians angleY = [&random]()
+			{
+				constexpr int yPosLimit = 64;
+				const int yPos = random.next() % yPosLimit;
+				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
 
-	// Initial set of statics based on the climate.
-	placeStaticObjects(count, baseFilename, landTraits.position, landTraits.variation,
-		landTraits.maxDigits, false);
+				// @todo: convert to Y angle properly.
+				const Radians angleLimit = 60.0 * Constants::DegToRad;
+				return heightPercent * angleLimit;
+			}();
 
-	// Add clouds if the weather conditions are permitting.
-	const bool hasClouds = skyGenInfo.weatherType == WeatherType::Clear;
-	if (hasClouds)
-	{
-		const uint32_t cloudSeed = random.getSeed() + (skyGenInfo.currentDay % 32);
-		random.srand(cloudSeed);
+			SkyDefinition::AirDefID airDefID;
+			const auto iter = airCache->find(imageID);
+			if (iter != airCache->end())
+			{
+				airDefID = iter->second;
+			}
+			else
+			{
+				AirObjectDefinition airObject;
+				airObject.init(imageID);
+				airDefID = outSkyInfoDef->addAir(std::move(airObject));
+				airCache->emplace(imageID, airDefID);
+			}
 
-		constexpr int cloudCount = 7;
-		const std::string &cloudFilename = exeData.locations.cloudFilename;
-		constexpr int cloudPos = 5;
-		constexpr int cloudVar = 17;
-		constexpr int cloudMaxDigits = 2;
-		placeStaticObjects(cloudCount, cloudFilename, cloudPos, cloudVar, cloudMaxDigits, true);
+			outSkyDef->addAir(airDefID, angleX, angleY);
+		}
+
+		return true;
 	}
 
-	// Initialize animated lands (if any).
-	if (skyGenInfo.provinceHasAnimatedLand)
+	// Includes distant mountains and clouds.
+	void generateArenaStatics(ClimateType climateType, WeatherType weatherType, int currentDay,
+		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+	{
+		ArenaRandom random(skySeed);
+
+		// Mountain generation.
+		const ArenaLandTraits &landTraits = SkyGeneration::getArenaLandTraits(climateType);
+		const auto &landFilenames = exeData.locations.distantMountainFilenames;
+		DebugAssertIndex(landFilenames, landTraits.filenameIndex);
+		const std::string &landFilename = landFilenames[landTraits.filenameIndex];
+
+		ArenaLandMappingCache landCache;
+		const int landStaticsCount = (random.next() % 4) + 2;
+		for (int i = 0; i < landStaticsCount; i++)
+		{
+			const int position = landTraits.position;
+			const int variation = landTraits.variation;
+			const int maxDigits = landTraits.maxDigits;
+			if (!SkyGeneration::tryGenerateArenaStaticObject<true>(landFilename, position, variation,
+				maxDigits, random, textureManager, outSkyDef, outSkyInfoDef, &landCache, nullptr))
+			{
+				DebugLogWarning("Couldn't generate sky static land \"" + landFilename + "\" (position: " +
+					std::to_string(position) + ", variation: " + std::to_string(variation) + ", max digits: " +
+					std::to_string(maxDigits) + ").");
+			}
+		}
+
+		// Cloud generation, only if the sky is clear.
+		if (WeatherUtils::isClear(weatherType))
+		{
+			const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
+			random.srand(cloudSeed);
+
+			constexpr int cloudCount = 7;
+			const std::string &cloudFilename = exeData.locations.cloudFilename;
+
+			ArenaAirMappingCache airCache;
+			for (int i = 0; i < cloudCount; i++)
+			{
+				constexpr int cloudPosition = 5;
+				constexpr int cloudVariation = 17;
+				constexpr int cloudMaxDigits = 2;
+				constexpr bool randomHeight = true;
+				if (!SkyGeneration::tryGenerateArenaStaticObject<false>(cloudFilename, cloudPosition,
+					cloudVariation, cloudMaxDigits, random, textureManager, outSkyDef, outSkyInfoDef,
+					nullptr, &airCache))
+				{
+					DebugLogWarning("Couldn't generate sky static air \"" + cloudFilename + "\" (position: " +
+						std::to_string(cloudPosition) + ", variation: " +
+						std::to_string(cloudVariation) + ", max digits: " +
+						std::to_string(cloudMaxDigits) + ").");
+				}
+			}
+		}
+	}
+
+	// Assumes that animated land can only appear in the one hardcoded province.
+	void generateArenaAnimatedLand(uint32_t citySeed, const ExeData &exeData,
+		TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
 		// Position of animated land on province map; determines where it is on the horizon
 		// for each location.
 		const Int2 animLandGlobalPos(132, 52);
-		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(skyGenInfo.citySeed);
+		const Int2 locationGlobalPos = LocationUtils::getLocalCityPoint(citySeed);
 
 		// Distance on province map from current location to the animated land.
 		const int dist = LocationUtils::getMapDistance(locationGlobalPos, animLandGlobalPos);
 
-		// Position of the animated land on the horizon.
-		const Radians angle = std::atan2(
-			static_cast<double>(locationGlobalPos.y - animLandGlobalPos.y),
-			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
-
-		// Use different animations based on the map distance.
+		// Use a different animation based on world map distance.
 		const int animIndex = [dist]()
 		{
 			if (dist < 80)
@@ -325,86 +344,33 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 
 		const auto &animFilenames = exeData.locations.animDistantMountainFilenames;
 		DebugAssertIndex(animFilenames, animIndex);
-		std::string animFilename = String::toUppercase(animFilenames[animIndex]);
+		const std::string animFilename = String::toUppercase(animFilenames[animIndex]);
 
-		// See if there's an existing texture set entry. If not, make one.
-		std::optional<int> setEntryIndex = this->getTextureSetEntryIndex(animFilename);
-
-		if (!setEntryIndex.has_value())
+		// Determine which frames the animation will have. .DFAs have multiple frames while
+		// .IMGs do not, although we can use the same texture manager function for both.
+		TextureManager::IdGroup<ImageID> imageIDs;
+		if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
 		{
-			// Determine which frames the animation will have. .DFAs have multiple frames while
-			// .IMGs do not, although we can use the same texture manager function for both.
-			TextureManager::IdGroup<ImageID> imageIDs;
-			if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
-			{
-				DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
-			}
-
-			TextureSetEntry textureSetEntry(std::move(animFilename), std::move(imageIDs));
-			this->textureSets.push_back(std::move(textureSetEntry));
-			setEntryIndex = static_cast<int>(this->textureSets.size()) - 1;
+			DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
 		}
 
-		AnimatedLandObject animLandObj(*setEntryIndex, angle);
-		this->animLandObjects.push_back(std::move(animLandObj));
+		// Position on the horizon.
+		const Radians angleX = std::atan2(
+			static_cast<double>(locationGlobalPos.y - animLandGlobalPos.y),
+			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
+
+		const double animSeconds = ANIMATED_LAND_SECONDS_PER_FRAME *
+			static_cast<double>(imageIDs.getCount());
+
+		LandObjectDefinition landObject;
+		landObject.init(imageIDs, animSeconds);
+		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(landObject));
+		outSkyDef->addLand(landDefID, angleX);
 	}
 
-	// Add space objects if the weather conditions are permitting.
-	const bool hasSpaceObjects = weatherType == WeatherType::Clear;
-
-	if (hasSpaceObjects)
+	void generateArenaStars(int starCount, const ExeData &exeData, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
-		// Initialize moons.
-		auto makeMoon = [this, currentDay, &textureManager, &exeData](MoonObject::Type type)
-		{
-			const int phaseCount = 32;
-			const int phaseIndex = [currentDay, type, phaseCount]()
-			{
-				if (type == MoonObject::Type::First)
-				{
-					return currentDay % phaseCount;
-				}
-				else if (type == MoonObject::Type::Second)
-				{
-					return (currentDay + 14) % phaseCount;
-				}
-				else
-				{
-					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
-				}
-			}();
-
-			const int moonIndex = static_cast<int>(type);
-			const auto &moonFilenames = exeData.locations.moonFilenames;
-			DebugAssertIndex(moonFilenames, moonIndex);
-			std::string filename = String::toUppercase(moonFilenames[moonIndex]);
-
-			// See if there's an existing texture entry. If not, make one for the moon phase.
-			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
-			if (!entryIndex.has_value())
-			{
-				TextureManager::IdGroup<ImageID> imageIDs;
-				if (!textureManager.tryGetImageIDs(filename.c_str(), &imageIDs))
-				{
-					DebugCrash("Couldn't get image IDs for \"" + filename + "\".");
-				}
-
-				const ImageID imageID = imageIDs.getID(phaseIndex);
-				TextureEntry textureEntry(std::move(filename), imageID);
-				this->textures.push_back(std::move(textureEntry));
-				entryIndex = static_cast<int>(this->textures.size()) - 1;
-			}
-
-			const double phasePercent = static_cast<double>(phaseIndex) /
-				static_cast<double>(phaseCount);
-
-			return MoonObject(*entryIndex, phasePercent, type);
-		};
-
-		this->moonObjects.push_back(makeMoon(MoonObject::Type::First));
-		this->moonObjects.push_back(makeMoon(MoonObject::Type::Second));
-
-		// Initialize stars.
 		struct SubStar
 		{
 			int8_t dx, dy;
@@ -418,18 +384,17 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			int8_t type;
 		};
 
-		const int8_t NO_STAR_TYPE = -1;
+		constexpr int8_t NO_STAR_TYPE = -1;
 
+		std::vector<Star> stars;
+		std::array<bool, 3> planets = { false, false, false };
+
+		ArenaRandom random(0x12345679);
 		auto getRndCoord = [&random]()
 		{
 			const int16_t d = (0x800 + random.next()) & 0x0FFF;
 			return ((d & 2) == 0) ? d : -d;
 		};
-
-		std::vector<Star> stars;
-		std::array<bool, 3> planets = { false, false, false };
-
-		random.srand(0x12345679);
 
 		// The original game is hardcoded to 40 stars but it doesn't seem like very many, so
 		// it is now a variable.
@@ -486,18 +451,8 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			return a.type < b.type;
 		});
 
-		// Palette used to obtain colors for small stars in constellations.
-		const Palette palette = []()
-		{
-			const std::string &colName = PaletteFile::fromName(PaletteName::Default);
-			COLFile colFile;
-			if (!colFile.init(colName.c_str()))
-			{
-				DebugCrash("Could not init .COL file \"" + colName + "\".");
-			}
-
-			return colFile.getPalette();
-		}();
+		ArenaSmallStarMappingCache smallStarCache;
+		ArenaLargeStarMappingCache largeStarCache;
 
 		// Convert stars to modern representation.
 		for (const auto &star : stars)
@@ -510,14 +465,10 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			const bool isSmallStar = star.type == -1;
 			if (isSmallStar)
 			{
+				// Group of small stars around the primary direction.
 				for (const auto &subStar : star.subList)
 				{
-					const uint32_t color = [&palette, &subStar]()
-					{
-						DebugAssertIndex(palette, subStar.color);
-						const Color &paletteColor = palette[subStar.color];
-						return paletteColor.toARGB();
-					}();
+					const uint8_t paletteIndex = subStar.color;
 
 					// Delta X and Y are applied after world-to-pixel projection of the base
 					// direction in the original game, but we're doing angle calculations here
@@ -525,13 +476,13 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 					const Double3 subDirection = [&direction, &subStar]()
 					{
 						// Convert delta X and Y to percentages of the identity dimension (320px).
-						const double dxPercent = static_cast<double>(subStar.dx) / DistantSky::IDENTITY_DIM;
-						const double dyPercent = static_cast<double>(subStar.dy) / DistantSky::IDENTITY_DIM;
+						const double dxPercent = static_cast<double>(subStar.dx) / SkyGeneration::IDENTITY_DIM;
+						const double dyPercent = static_cast<double>(subStar.dy) / SkyGeneration::IDENTITY_DIM;
 
 						// Convert percentages to radians. Positive X is counter-clockwise, positive
 						// Y is up.
-						const Radians dxRadians = dxPercent * DistantSky::IDENTITY_ANGLE;
-						const Radians dyRadians = dyPercent * DistantSky::IDENTITY_ANGLE;
+						const Radians dxRadians = dxPercent * SkyGeneration::IDENTITY_ANGLE;
+						const Radians dyRadians = dyPercent * SkyGeneration::IDENTITY_ANGLE;
 
 						// Apply rotations to base direction.
 						const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);
@@ -541,12 +492,27 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 						return Double3(newDir.x, newDir.y, newDir.z);
 					}();
 
-					this->starObjects.push_back(StarObject::makeSmall(color, subDirection));
+					SkyDefinition::StarDefID starDefID;
+					const auto iter = smallStarCache.find(paletteIndex);
+					if (iter != smallStarCache.end())
+					{
+						starDefID = iter->second;
+					}
+					else
+					{
+						StarObjectDefinition starObject;
+						starObject.initSmall(paletteIndex);
+						starDefID = outSkyInfoDef->addStar(std::move(starObject));
+						smallStarCache.emplace(paletteIndex, starDefID);
+					}
+
+					outSkyDef->addStar(starDefID, subDirection);
 				}
 			}
 			else
 			{
-				std::string starFilename = [&exeData, &star]()
+				// Large star.
+				const std::string starFilename = [&exeData, &star]()
 				{
 					const std::string typeStr = std::to_string(star.type + 1);
 					std::string filename = exeData.locations.starFilename;
@@ -557,41 +523,142 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 					return String::toUppercase(filename);
 				}();
 
-				// See if there's an existing texture entry. If not, make one.
-				std::optional<int> entryIndex = this->getTextureEntryIndex(starFilename);
-				if (!entryIndex.has_value())
+				ImageID imageID;
+				if (!textureManager.tryGetImageID(starFilename.c_str(), &imageID))
 				{
-					ImageID imageID;
-					if (!textureManager.tryGetImageID(starFilename.c_str(), &imageID))
-					{
-						DebugCrash("Couldn't get image ID for \"" + starFilename + "\".");
-					}
-
-					TextureEntry textureEntry(std::move(starFilename), imageID);
-					this->textures.push_back(std::move(textureEntry));
-					entryIndex = static_cast<int>(this->textures.size()) - 1;
+					DebugCrash("Couldn't get image ID for \"" + starFilename + "\".");
 				}
 
-				this->starObjects.push_back(StarObject::makeLarge(*entryIndex, direction));
+				SkyDefinition::StarDefID starDefID;
+				const auto iter = largeStarCache.find(imageID);
+				if (iter != largeStarCache.end())
+				{
+					starDefID = iter->second;
+				}
+				else
+				{
+					StarObjectDefinition starObject;
+					starObject.initLarge(imageID);
+					starDefID = outSkyInfoDef->addStar(std::move(starObject));
+					largeStarCache.emplace(imageID, starDefID);
+				}
+
+				outSkyDef->addStar(starDefID, direction);
 			}
 		}
+	}
 
-		// Initialize sun texture index.
-		std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
-		std::optional<int> sunTextureIndex = this->getTextureEntryIndex(sunFilename);
-		if (!sunTextureIndex.has_value())
+	void generateArenaSun(const ExeData &exeData, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+	{
+		const std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);		
+		ImageID imageID;
+		if (!textureManager.tryGetImageID(sunFilename.c_str(), &imageID))
 		{
-			ImageID imageID;
-			if (!textureManager.tryGetImageID(sunFilename.c_str(), &imageID))
-			{
-				DebugCrash("Couldn't get image ID for \"" + sunFilename + "\".");
-			}
-
-			TextureEntry textureEntry(std::move(sunFilename), imageID);
-			this->textures.push_back(std::move(textureEntry));
-			sunTextureIndex = static_cast<int>(this->textures.size()) - 1;
+			DebugCrash("Couldn't get image ID for \"" + sunFilename + "\".");
 		}
 
-		this->sunEntryIndex = *sunTextureIndex;
-	}*/
+		SunObjectDefinition sunObject;
+		sunObject.init(imageID);
+		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(sunObject));
+		outSkyDef->addSun(sunDefID, SUN_BONUS_LATITUDE);
+	}
+
+	void generateArenaMoons(int currentDay, const ExeData &exeData, TextureManager &textureManager,
+		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+	{
+		auto generateMoon = [currentDay, &exeData, &textureManager, outSkyDef,
+			outSkyInfoDef](bool isFirstMoon)
+		{
+			constexpr int phaseCount = 32;
+			const int phaseIndex = [currentDay, isFirstMoon, phaseCount]()
+			{
+				if (isFirstMoon)
+				{
+					return currentDay % phaseCount;
+				}
+				else
+				{
+					return (currentDay + 14) % phaseCount;
+				}
+			}();
+
+			const int moonIndex = isFirstMoon ? 0 : 1;
+			const auto &moonFilenames = exeData.locations.moonFilenames;
+			DebugAssertIndex(moonFilenames, moonIndex);
+			const std::string moonFilename = String::toUppercase(moonFilenames[moonIndex]);
+
+			TextureManager::IdGroup<ImageID> imageIDs;
+			if (!textureManager.tryGetImageIDs(moonFilename.c_str(), &imageIDs))
+			{
+				DebugCrash("Couldn't get image IDs for \"" + moonFilename + "\".");
+			}
+
+			// Phase percent is used for calculating progress through orbit.
+			// @todo: maybe should be called orbit percent?
+			const double phasePercent = static_cast<double>(phaseIndex) / static_cast<double>(phaseCount);
+			const double bonusLatitude = isFirstMoon ? MOON_1_BONUS_LATITUDE : MOON_2_BONUS_LATITUDE;
+
+			MoonObjectDefinition moonObject;
+			moonObject.init(imageIDs);
+			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(moonObject));
+			outSkyDef->addMoon(moonDefID, phaseIndex, bonusLatitude, phasePercent);
+		};
+
+		generateMoon(true);
+		generateMoon(false);
+	}
+}
+
+void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
+{
+	this->outdoorDungeon = outdoorDungeon;
+}
+
+void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, WeatherType weatherType,
+	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
+{
+	this->weatherType = weatherType;
+	this->climateType = climateType;
+	this->currentDay = currentDay;
+	this->starCount = starCount;
+	this->citySeed = citySeed;
+	this->skySeed = skySeed;
+	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
+}
+
+void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
+	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+{
+	// Only worry about sky color for interior skies.
+	Buffer<Color> skyColors = SkyGeneration::makeInteriorSkyColors(skyGenInfo.outdoorDungeon, textureManager);
+	outSkyDef->init(std::move(skyColors));
+}
+
+void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+{
+	const auto &exeData = binaryAssetLibrary.getExeData();
+
+	// Generate static land and air objects.
+	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherType,
+		skyGenInfo.currentDay, skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
+
+	// Generate animated land if the province has it.
+	if (skyGenInfo.provinceHasAnimatedLand)
+	{
+		SkyGeneration::generateArenaAnimatedLand(skyGenInfo.citySeed, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
+	}
+
+	// Add space objects if the weather permits it.
+	if (WeatherUtils::isClear(skyGenInfo.weatherType))
+	{
+		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager,
+			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
+	}
 }
