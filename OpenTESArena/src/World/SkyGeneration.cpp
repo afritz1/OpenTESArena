@@ -215,7 +215,7 @@ namespace SkyGeneration
 			else
 			{
 				LandObjectDefinition landObject;
-				landObject.init(imageID);
+				landObject.init(imageID, LandObjectDefinition::ShadingType::Ambient);
 				landDefID = outSkyInfoDef->addLand(std::move(landObject));
 				landCache->emplace(imageID, landDefID);
 			}
@@ -363,7 +363,7 @@ namespace SkyGeneration
 			static_cast<double>(imageIDs.getCount());
 
 		LandObjectDefinition landObject;
-		landObject.init(imageIDs, animSeconds);
+		landObject.init(imageIDs, animSeconds, LandObjectDefinition::ShadingType::Bright);
 		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(landObject));
 		outSkyDef->addLand(landDefID, angleX);
 	}
