@@ -89,9 +89,8 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
-	const bool isCity = true;
 	levelData.menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef, random,
-		isCity, levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);
+		levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,

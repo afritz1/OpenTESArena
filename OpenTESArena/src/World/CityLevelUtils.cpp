@@ -149,9 +149,8 @@ void CityLevelUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 }
 
 LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-	const VoxelGrid &voxelGrid, const BinaryAssetLibrary &binaryAssetLibrary,
-	const TextAssetLibrary &textAssetLibrary)
+	const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary)
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
@@ -163,8 +162,8 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [&provinceDef, &citySeed, &random, isCity, &voxelGrid, &textAssetLibrary,
-		&exeData, &cityDef, &localCityPoint, &menuNames](VoxelDefinition::WallData::MenuType menuType)
+	auto generateNames = [&provinceDef, &citySeed, &random, &voxelGrid, &textAssetLibrary, &exeData,
+		&cityDef, &localCityPoint, &menuNames](VoxelDefinition::WallData::MenuType menuType)
 	{
 		if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
 			(menuType == VoxelDefinition::WallData::MenuType::Temple))
@@ -267,14 +266,15 @@ LevelUtils::MenuNamesList CityLevelUtils::generateBuildingNames(const LocationDe
 		};
 
 		// The lambda called for each main-floor voxel in the area.
-		auto tryGenerateBlockName = [menuType, &random, isCity, &voxelGrid, &menuNames, &seen,
-			&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+		auto tryGenerateBlockName = [menuType, &random, &voxelGrid, &menuNames, &seen, &hashInSeen,
+			&createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 		{
 			// See if the current voxel is a *MENU block and matches the target menu type.
-			const bool matchesTargetType = [x, z, menuType, isCity, &voxelGrid]()
+			const bool matchesTargetType = [x, z, menuType, &voxelGrid]()
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				constexpr bool isCity = true;
 				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
 					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
 			}();

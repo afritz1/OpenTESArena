@@ -35,9 +35,8 @@ namespace CityLevelUtils
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	LevelUtils::MenuNamesList generateBuildingNames(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, ArenaRandom &random, bool isCity,
-		const VoxelGrid &voxelGrid, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary);
+		const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary);
 
 	// Iterates over the perimeter of a city map and changes palace graphics and their gates to the
 	// actual ones used in-game.
