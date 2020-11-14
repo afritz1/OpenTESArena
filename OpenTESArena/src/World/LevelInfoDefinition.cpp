@@ -46,6 +46,12 @@ const MapGeneration::InteriorGenInfo &LevelInfoDefinition::getInteriorGenInfo(
 	return this->interiorGenInfos[id];
 }
 
+const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::BuildingNameID id) const
+{
+	DebugAssertIndex(this->buildingNames, id);
+	return this->buildingNames[id];
+}
+
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
@@ -80,4 +86,10 @@ MapGeneration::InteriorGenInfoID LevelInfoDefinition::addInteriorGenInfo(
 {
 	this->interiorGenInfos.emplace_back(std::move(def));
 	return static_cast<MapGeneration::InteriorGenInfoID>(this->interiorGenInfos.size()) - 1;
+}
+
+LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string &&name)
+{
+	this->buildingNames.emplace_back(std::move(name));
+	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
 }

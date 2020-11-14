@@ -962,11 +962,10 @@ namespace MapGeneration
 	}
 }
 
-void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, std::string &&displayName,
-	bool isPalace, const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, bool isPalace,
+	const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = std::move(mifName);
-	this->displayName = std::move(displayName);
 	this->isPalace = isPalace;
 	this->rulerIsMale = rulerIsMale;
 }
@@ -990,11 +989,11 @@ void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
 	this->type = type;
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, std::string &&displayName,
-	bool isPalace, const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, bool isPalace,
+	const std::optional<bool> &rulerIsMale)
 {
 	this->init(InteriorGenInfo::Type::Prefab);
-	this->prefab.init(std::move(mifName), std::move(displayName), isPalace, rulerIsMale);
+	this->prefab.init(std::move(mifName), isPalace, rulerIsMale);
 }
 
 void MapGeneration::InteriorGenInfo::initDungeon(uint32_t dungeonSeed, WEInt widthChunks,

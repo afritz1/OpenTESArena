@@ -41,12 +41,10 @@ namespace MapGeneration
 		struct Prefab
 		{
 			std::string mifName;
-			std::string displayName; // For building interior transitions (tavern, temple, etc.).
 			bool isPalace; // @todo: eventually change to something that supports all Arena interiors.
 			std::optional<bool> rulerIsMale;
 
-			void init(std::string &&mifName, std::string &&displayName, bool isPalace,
-				const std::optional<bool> &rulerIsMale);
+			void init(std::string &&mifName, bool isPalace, const std::optional<bool> &rulerIsMale);
 		};
 
 		// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
@@ -69,8 +67,7 @@ namespace MapGeneration
 	public:
 		InteriorGenInfo();
 
-		void initPrefab(std::string &&mifName, std::string &&displayName, bool isPalace,
-			const std::optional<bool> &rulerIsMale);
+		void initPrefab(std::string &&mifName, bool isPalace, const std::optional<bool> &rulerIsMale);
 		void initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
 
 		Type getType() const;

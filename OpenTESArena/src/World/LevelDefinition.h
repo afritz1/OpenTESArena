@@ -21,6 +21,7 @@ public:
 	using EntityDefID = int;
 	using LockDefID = int;
 	using TriggerDefID = int;
+	using BuildingNameID = int;
 
 	struct EntityPlacementDef
 	{
@@ -45,11 +46,20 @@ public:
 
 		TriggerPlacementDef(TriggerDefID id, std::vector<LevelInt3> &&positions);
 	};
+
+	struct BuildingNamePlacementDef
+	{
+		BuildingNameID id;
+		std::vector<LevelInt3> positions;
+
+		BuildingNamePlacementDef(BuildingNameID id, std::vector<LevelInt3> &&positions);
+	};
 private:
 	Buffer3D<VoxelDefID> voxels;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
 	std::vector<LockPlacementDef> lockPlacementDefs;
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
+	std::vector<BuildingNamePlacementDef> buildingNamePlacementDefs;
 public:
 	void init(SNInt width, int height, WEInt depth);
 
@@ -66,10 +76,13 @@ public:
 	const LockPlacementDef &getLockPlacementDef(int index) const;
 	int getTriggerPlacementDefCount() const;
 	const TriggerPlacementDef &getTriggerPlacementDef(int index) const;
+	int getBuildingNamePlacementDefCount() const;
+	const BuildingNamePlacementDef &getBuildingNamePlacementDef(int index) const;
 
 	void addEntity(EntityDefID id, const LevelDouble3 &position);
 	void addLock(LockDefID id, const LevelInt3 &position);
 	void addTrigger(TriggerDefID id, const LevelInt3 &position);
+	void addBuildingName(BuildingNameID id, const LevelInt3 &position);
 };
 
 #endif

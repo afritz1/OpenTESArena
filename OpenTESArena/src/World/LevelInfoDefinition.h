@@ -1,6 +1,7 @@
 #ifndef LEVEL_INFO_DEFINITION_H
 #define LEVEL_INFO_DEFINITION_H
 
+#include <string>
 #include <vector>
 
 #include "LevelDefinition.h"
@@ -27,6 +28,7 @@ private:
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
 	std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
+	std::vector<std::string> buildingNames;
 	// @todo: interior gen info ID for when player creates a wall on water.
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
@@ -40,6 +42,7 @@ public:
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
 	const MapGeneration::InteriorGenInfo &getInteriorGenInfo(MapGeneration::InteriorGenInfoID id) const;
+	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
@@ -47,6 +50,7 @@ public:
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
 	MapGeneration::InteriorGenInfoID addInteriorGenInfo(MapGeneration::InteriorGenInfo &&def);
+	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
 };
 
 #endif

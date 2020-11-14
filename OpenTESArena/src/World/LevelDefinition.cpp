@@ -21,6 +21,13 @@ LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::
 	this->id = id;
 }
 
+LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(BuildingNameID id,
+	std::vector<LevelInt3> &&positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
+}
+
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxels.init(width, height, depth);
@@ -85,6 +92,17 @@ const LevelDefinition::TriggerPlacementDef &LevelDefinition::getTriggerPlacement
 	return this->triggerPlacementDefs[index];
 }
 
+int LevelDefinition::getBuildingNamePlacementDefCount() const
+{
+	return static_cast<int>(this->buildingNamePlacementDefs.size());
+}
+
+const LevelDefinition::BuildingNamePlacementDef &LevelDefinition::getBuildingNamePlacementDef(int index) const
+{
+	DebugAssertIndex(this->buildingNamePlacementDefs, index);
+	return this->buildingNamePlacementDefs[index];
+}
+
 void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
 {
 	const auto iter = std::find_if(this->entityPlacementDefs.begin(), this->entityPlacementDefs.end(),
@@ -139,5 +157,24 @@ void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
 	else
 	{
 		this->triggerPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addBuildingName(BuildingNameID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->buildingNamePlacementDefs.begin(),
+		this->buildingNamePlacementDefs.end(), [id](const BuildingNamePlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->buildingNamePlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->buildingNamePlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
 	}
 }
