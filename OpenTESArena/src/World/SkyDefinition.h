@@ -48,7 +48,7 @@ public:
 
 	struct SunPlacementDef
 	{
-		SunDefID id; // @todo: remove bonus latitude from SunObjectDefinition
+		SunDefID id;
 		std::vector<double> positions; // Bonus latitudes to combine with location latitude.
 		// @todo: make no assumptions about the sun being at the horizon at 6am and just define like
 		// an arbitrary star?
@@ -58,23 +58,27 @@ public:
 
 	struct MoonPlacementDef
 	{
+		struct Position
+		{
+			// Base position in the sky before adjustments.
+			Double3 baseDir;
+
+			// Percent through orbit, affects position in sky.
+			double orbitPercent;
+
+			// Added to location latitude to get 'moon latitude'.
+			double bonusLatitude;
+
+			// Index in moon definition phase images (full/half/new/etc.).
+			int imageIndex;
+
+			Position(const Double3 &baseDir, double orbitPercent, double bonusLatitude, int imageIndex);
+		};
+
 		MoonDefID id;
-		int imageIndex; // Index in moon definition phase images (full/half/new/etc.).
-		// @todo: given the situation this placement def is in, maybe want the MoonObjectDefinition to support
-		// all image IDs and then some phasePercent here would tell the moon instance which imageID to use.
-
-		// @todo: phase day offset maybe?
-
-		/*// Base position in the sky before latitude and time-of-day adjustments.
-		Double3 baseDir;
-
-		// Added to location latitude to get 'moon latitude'.
-		double bonusLatitude;
-
-		int phaseCount; // Number of days in period.
-		int phaseIndexDayOffset; // Bias to phase start.*/
-
-		//MoonPlacementDef(MoonDefID id);
+		std::vector<MoonPlacementDef::Position> positions;
+		
+		MoonPlacementDef(MoonDefID id, std::vector<MoonPlacementDef::Position> &&positions);
 	};
 private:
 	std::vector<LandPlacementDef> landPlacementDefs;
@@ -104,7 +108,8 @@ public:
 	void addAir(AirDefID id, Radians angleX, Radians angleY);
 	void addStar(StarDefID id, const Double3 &direction);
 	void addSun(SunDefID id, double bonusLatitude);
-	void addMoon(MoonDefID id, int imageIndex, double bonusLatitude, double phasePercent);
+	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude,
+		int imageIndex);
 };
 
 #endif

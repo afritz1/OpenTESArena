@@ -571,22 +571,12 @@ namespace SkyGeneration
 			outSkyInfoDef](bool isFirstMoon)
 		{
 			constexpr int phaseCount = 32;
-			const int phaseIndex = [currentDay, isFirstMoon, phaseCount]()
-			{
-				if (isFirstMoon)
-				{
-					return currentDay % phaseCount;
-				}
-				else
-				{
-					return (currentDay + 14) % phaseCount;
-				}
-			}();
+			const int phaseIndex = (currentDay + (isFirstMoon ? 0 : 14)) % phaseCount;
 
-			const int moonIndex = isFirstMoon ? 0 : 1;
+			const int moonFilenameIndex = isFirstMoon ? 0 : 1;
 			const auto &moonFilenames = exeData.locations.moonFilenames;
-			DebugAssertIndex(moonFilenames, moonIndex);
-			const std::string moonFilename = String::toUppercase(moonFilenames[moonIndex]);
+			DebugAssertIndex(moonFilenames, moonFilenameIndex);
+			const std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
 
 			TextureManager::IdGroup<ImageID> imageIDs;
 			if (!textureManager.tryGetImageIDs(moonFilename.c_str(), &imageIDs))
@@ -594,15 +584,17 @@ namespace SkyGeneration
 				DebugCrash("Couldn't get image IDs for \"" + moonFilename + "\".");
 			}
 
-			// Phase percent is used for calculating progress through orbit.
-			// @todo: maybe should be called orbit percent?
-			const double phasePercent = static_cast<double>(phaseIndex) / static_cast<double>(phaseCount);
+			// Base direction from original game values.
+			const Double3 baseDir = (isFirstMoon ?
+				Double3(0.0, -57536.0, 0.0) : Double3(-3000.0, -53536.0, 0.0)).normalized();
+
+			const double orbitPercent = static_cast<double>(phaseIndex) / static_cast<double>(phaseCount);
 			const double bonusLatitude = isFirstMoon ? MOON_1_BONUS_LATITUDE : MOON_2_BONUS_LATITUDE;
 
 			MoonObjectDefinition moonObject;
 			moonObject.init(imageIDs);
 			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(moonObject));
-			outSkyDef->addMoon(moonDefID, phaseIndex, bonusLatitude, phasePercent);
+			outSkyDef->addMoon(moonDefID, baseDir, orbitPercent, bonusLatitude, phaseIndex);
 		};
 
 		generateMoon(true);

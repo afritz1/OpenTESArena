@@ -5,28 +5,44 @@
 #include "components/debug/Debug.h"
 
 SkyDefinition::LandPlacementDef::LandPlacementDef(LandDefID id, std::vector<Radians> &&positions)
+	: positions(std::move(positions))
 {
 	this->id = id;
-	this->positions = std::move(positions);
 }
 
 SkyDefinition::AirPlacementDef::AirPlacementDef(AirDefID id,
 	std::vector<std::pair<Radians, Radians>> &&positions)
+	: positions(std::move(positions))
 {
 	this->id = id;
-	this->positions = std::move(positions);
 }
 
 SkyDefinition::StarPlacementDef::StarPlacementDef(StarDefID id, std::vector<Double3> &&positions)
+	: positions(std::move(positions))
 {
 	this->id = id;
-	this->positions = std::move(positions);
 }
 
 SkyDefinition::SunPlacementDef::SunPlacementDef(SunDefID id, std::vector<double> &&positions)
+	: positions(std::move(positions))
 {
 	this->id = id;
-	this->positions = std::move(positions);
+}
+
+SkyDefinition::MoonPlacementDef::Position::Position(const Double3 &baseDir, double orbitPercent,
+	double bonusLatitude, int imageIndex)
+	: baseDir(baseDir)
+{
+	this->orbitPercent = orbitPercent;
+	this->bonusLatitude = bonusLatitude;
+	this->imageIndex = imageIndex;
+}
+
+SkyDefinition::MoonPlacementDef::MoonPlacementDef(MoonDefID id,
+	std::vector<MoonPlacementDef::Position> &&positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
 }
 
 void SkyDefinition::init(Buffer<Color> &&skyColors)
@@ -176,9 +192,24 @@ void SkyDefinition::addSun(SunDefID id, double bonusLatitude)
 	}
 }
 
-void SkyDefinition::addMoon(MoonDefID id, int imageIndex, double bonusLatitude,
-	double phasePercent)
+void SkyDefinition::addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent,
+	double bonusLatitude, int imageIndex)
 {
-	// @todo: not done designing parameters yet
-	DebugNotImplemented();
+	const auto iter = std::find_if(this->moonPlacementDefs.begin(), this->moonPlacementDefs.end(),
+		[id](const MoonPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->moonPlacementDefs.end())
+	{
+		std::vector<MoonPlacementDef::Position> &positions = iter->positions;
+		positions.emplace_back(baseDir, orbitPercent, bonusLatitude, imageIndex);
+	}
+	else
+	{
+		std::vector<MoonPlacementDef::Position> positions;
+		positions.emplace_back(baseDir, orbitPercent, bonusLatitude, imageIndex);
+		this->moonPlacementDefs.emplace_back(id, std::move(positions));
+	}
 }
