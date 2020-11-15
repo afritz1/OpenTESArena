@@ -2,6 +2,7 @@
 #define LEVEL_INFO_DEFINITION_H
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "LevelDefinition.h"
@@ -29,6 +30,7 @@ private:
 	std::vector<TriggerDefinition> triggerDefs;
 	std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
 	std::vector<std::string> buildingNames;
+	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
 	// @todo: interior gen info ID for when player creates a wall on water.
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
@@ -51,6 +53,9 @@ public:
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
 	MapGeneration::InteriorGenInfoID addInteriorGenInfo(MapGeneration::InteriorGenInfo &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
+
+	// Handles some special cases in main quest cities.
+	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);
 };
 
 #endif

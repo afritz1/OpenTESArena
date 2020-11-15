@@ -48,8 +48,16 @@ const MapGeneration::InteriorGenInfo &LevelInfoDefinition::getInteriorGenInfo(
 
 const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::BuildingNameID id) const
 {
-	DebugAssertIndex(this->buildingNames, id);
-	return this->buildingNames[id];
+	const auto iter = this->buildingNameOverrides.find(id);
+	if (iter != this->buildingNameOverrides.end())
+	{
+		return iter->second;
+	}
+	else
+	{
+		DebugAssertIndex(this->buildingNames, id);
+		return this->buildingNames[id];
+	}
 }
 
 double LevelInfoDefinition::getCeilingScale() const
@@ -92,4 +100,17 @@ LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string
 {
 	this->buildingNames.emplace_back(std::move(name));
 	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
+}
+
+void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)
+{
+	const auto iter = this->buildingNameOverrides.find(id);
+	if (iter != this->buildingNameOverrides.end())
+	{
+		iter->second = std::move(name);
+	}
+	else
+	{
+		this->buildingNameOverrides.emplace(id, std::move(name));
+	}
 }
