@@ -19,10 +19,12 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed)
+void MapDefinition::Wild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
+	std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos)
 {
 	this->levelDefIndices = std::move(levelDefIndices);
 	this->fallbackSeed = fallbackSeed;
+	this->buildingNameInfos = std::move(buildingNameInfos);
 }
 
 int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
@@ -41,6 +43,17 @@ int MapDefinition::Wild::getLevelDefIndex(const ChunkInt2 &chunk) const
 		// without running random.next() some arbitrary number of times.
 		return 0;
 	}
+}
+
+const MapGeneration::WildChunkBuildingNameInfo *MapDefinition::Wild::getBuildingNameInfo(const ChunkInt2 &chunk) const
+{
+	const auto iter = std::find_if(this->buildingNameInfos.begin(), this->buildingNameInfos.end(),
+		[&chunk](const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo)
+	{
+		return buildingNameInfo.getChunk() == chunk;
+	});
+
+	return (iter != this->buildingNameInfos.end()) ? &(*iter) : nullptr;
 }
 
 void MapDefinition::init(WorldType worldType)
@@ -213,11 +226,14 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	return true;
 }
 
-bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, int raceID, bool isPremade,
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	int cityBlocksPerSide, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+	int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, 
+	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+	TextureManager &textureManager)
 {
 	// 1 LevelDefinition and 1 LevelInfoDefinition.
 	this->levels.init(1);
@@ -241,8 +257,8 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
-	MapGeneration::generateMifCity(mif, citySeed, isPremade, reservedBlocks, blockStartPosX,
-		blockStartPosY, cityBlocksPerSide, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+	MapGeneration::generateMifCity(mif, citySeed, raceID, isPremade, reservedBlocks, blockStartPosX,
+		blockStartPosY, cityBlocksPerSide, coastal, cityTypeName, mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
 		textureManager, &levelDef, &levelInfoDef);
 
 	SkyDefinition &skyDef = this->skies.get(0);
@@ -259,10 +275,9 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, bool is
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs,
-	uint32_t fallbackSeed, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	uint32_t fallbackSeed, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
@@ -314,14 +329,17 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 
 	const BufferView<const WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
+	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(),
+		levelDefIndices.getWidth(), levelDefIndices.getHeight());
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
-	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, inf, charClassLibrary,
-		entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef);
+	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
+	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView,
+		&levelInfoDef, &buildingNameInfos);
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
-	SkyGeneration::generateExteriorSky(exteriorSkyGenInfo, binaryAssetLibrary, textureManager,
-		&skyDef, &skyInfoDef);
+	SkyGeneration::generateExteriorSky(skyGenInfo, binaryAssetLibrary, textureManager, &skyDef, &skyInfoDef);
 
 	// Every wild chunk level definition uses the same level info definition.
 	for (int i = 0; i < this->levelInfoMappings.getCount(); i++)
@@ -337,7 +355,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 	this->skyInfoMappings.set(0, 0);
 
 	// Populate wild chunk look-up values.
-	this->wild.init(std::move(levelDefIndices), fallbackSeed);
+	this->wild.init(std::move(levelDefIndices), fallbackSeed, std::move(buildingNameInfos));
 
 	return true;
 }
@@ -412,10 +430,10 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	return true;
 }
 
-bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
 	this->init(WorldType::City);
 
@@ -427,7 +445,8 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, C
 		return false;
 	}
 
-	const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(climateType, weatherType);
+	const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(
+		skyGenInfo.climateType, skyGenInfo.weatherType);
 	INFFile inf;
 	if (!inf.init(infName.data()))
 	{
@@ -437,11 +456,15 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo, C
 
 	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
 		generationInfo.reservedBlocks.getCount());
+	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
+		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
 	// Generate city level (optionally generating random city blocks if not premade).
-	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.isPremade, reservedBlocks,
-		generationInfo.blockStartPosX, generationInfo.blockStartPosY, generationInfo.cityBlocksPerSide,
-		exteriorSkyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
+	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.raceID, generationInfo.isPremade,
+		reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
+		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.cityTypeName,
+		mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
 	return true;

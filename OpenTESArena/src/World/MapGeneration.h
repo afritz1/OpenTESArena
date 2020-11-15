@@ -4,7 +4,10 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 
+#include "LocationDefinition.h"
+#include "VoxelDefinition.h"
 #include "VoxelUtils.h"
 #include "WildLevelUtils.h"
 #include "../Assets/INFFile.h"
@@ -22,6 +25,7 @@ class ExeData;
 class LevelDefinition;
 class LevelInfoDefinition;
 class LocationDefinition;
+class TextAssetLibrary;
 class TextureManager;
 
 enum class WorldType;
@@ -80,11 +84,16 @@ namespace MapGeneration
 	struct CityGenInfo
 	{
 		std::string mifName;
+		std::string cityTypeName;
 		uint32_t citySeed;
+		int raceID;
 		bool isPremade;
+		bool coastal;
 
 		// Affects which types of city blocks are used at generation start.
 		Buffer<uint8_t> reservedBlocks;
+
+		std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride;
 
 		// Generation offset from city origin.
 		WEInt blockStartPosX;
@@ -92,9 +101,10 @@ namespace MapGeneration
 
 		int cityBlocksPerSide;
 
-		void init(std::string &&mifName, uint32_t citySeed, bool isPremade,
-			Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-			int cityBlocksPerSide);
+		void init(std::string &&mifName, std::string &&cityTypeName, uint32_t citySeed, int raceID,
+			bool isPremade, bool coastal, Buffer<uint8_t> &&reservedBlocks,
+			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> *mainQuestTempleOverride,
+			WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 	};
 
 	// Input: 70 .RMD files (from asset library) + 1 weather .INF
@@ -105,6 +115,21 @@ namespace MapGeneration
 		uint32_t fallbackSeed;
 
 		void init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed);
+	};
+
+	// Building names in the wild are shared per-chunk.
+	class WildChunkBuildingNameInfo
+	{
+	private:
+		ChunkInt2 chunk;
+		std::unordered_map<VoxelDefinition::WallData::MenuType, LevelDefinition::BuildingNameID> ids;
+	public:
+		void init(const ChunkInt2 &chunk);
+
+		const ChunkInt2 &getChunk() const;
+		bool hasBuildingNames() const;
+		bool tryGetBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID *outID) const;
+		void setBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID id);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
@@ -125,19 +150,23 @@ namespace MapGeneration
 
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.
-	void generateMifCity(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+	void generateMifCity(const MIFFile &mif, uint32_t citySeed, int raceID, bool isPremade,
 		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
+		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(const BufferView<const WildBlockID> &uniqueWildBlockIDs,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary,
+		const BufferView2D<const int> &levelDefIndices, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
 
 	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,
 		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);

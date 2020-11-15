@@ -3,10 +3,12 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
+#include "LocationDefinition.h"
 #include "MapGeneration.h"
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
@@ -24,6 +26,7 @@ class ArenaRandom;
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class EntityDefinitionLibrary;
+class TextAssetLibrary;
 class TextureManager;
 
 enum class ClimateType;
@@ -49,10 +52,15 @@ public:
 		// Each index is a wild chunk pointing into the map's level definitions.
 		Buffer2D<int> levelDefIndices;
 		uint32_t fallbackSeed; // I.e. the world map location seed.
+
+		// Building name infos for each chunk.
+		std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
 	public:
-		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed);
+		void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
+			std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos);
 
 		int getLevelDefIndex(const ChunkInt2 &chunk) const;
+		const MapGeneration::WildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
 	};
 private:
 	Buffer<LevelDefinition> levels;
@@ -78,14 +86,16 @@ private:
 		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelInt2 *outStartPoint);
-	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, int raceID, bool isPremade,
 		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		int cityBlocksPerSide, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
 	bool initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
@@ -93,10 +103,10 @@ public:
 	bool initInterior(const MapGeneration::InteriorGenInfo &generationInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initCity(const MapGeneration::CityGenInfo &generationInfo, ClimateType climateType,
-		WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+	bool initCity(const MapGeneration::CityGenInfo &generationInfo,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager);
 	bool initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
 		WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

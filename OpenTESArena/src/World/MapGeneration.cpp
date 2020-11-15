@@ -7,17 +7,21 @@
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LevelUtils.h"
+#include "LocationUtils.h"
 #include "LockDefinition.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
 #include "TriggerDefinition.h"
+#include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing.h"
+#include "WildLevelUtils.h"
 #include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Entities/EntityDefinition.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityType.h"
@@ -34,6 +38,7 @@ namespace MapGeneration
 	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
 	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID>>;
 	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
+	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
 
@@ -960,6 +965,362 @@ namespace MapGeneration
 			MapGeneration::readArenaCeiling(inf, outLevelDef, outLevelInfoDef);
 		}
 	}
+
+	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal,
+		const std::string_view &cityTypeName,
+		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
+		LevelInfoDefinition *outLevelInfoDef)
+	{
+		const auto &exeData = binaryAssetLibrary.getExeData();
+		const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
+
+		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
+		// match the given menu type.
+		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
+			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint](
+				VoxelDefinition::WallData::MenuType menuType)
+		{
+			if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
+				(menuType == VoxelDefinition::WallData::MenuType::Temple))
+			{
+				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
+				random.srand(citySeed);
+			}
+
+			std::vector<int> seen;
+			auto hashInSeen = [&seen](int hash)
+			{
+				return std::find(seen.begin(), seen.end(), hash) != seen.end();
+			};
+
+			// Lambdas for creating tavern, equipment store, and temple building names.
+			auto createTavernName = [coastal, &exeData](int prefixIndex, int suffixIndex)
+			{
+				const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+				const auto &tavernSuffixes = coastal ?
+					exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
+				DebugAssertIndex(tavernPrefixes, prefixIndex);
+				DebugAssertIndex(tavernSuffixes, suffixIndex);
+				return tavernPrefixes[prefixIndex] + ' ' + tavernSuffixes[suffixIndex];
+			};
+
+			auto createEquipmentName = [raceID, &cityTypeName, &random, &textAssetLibrary, &exeData](
+				int prefixIndex, int suffixIndex, SNInt x, WEInt z)
+			{
+				const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
+				const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
+
+				// Equipment store names can have variables in them.
+				DebugAssertIndex(equipmentPrefixes, prefixIndex);
+				DebugAssertIndex(equipmentSuffixes, suffixIndex);
+				std::string str = equipmentPrefixes[prefixIndex] + ' ' + equipmentSuffixes[suffixIndex];
+
+				// Replace %ct with city type name.
+				size_t index = str.find("%ct");
+				if (index != std::string::npos)
+				{
+					str.replace(index, 3, cityTypeName);
+				}
+
+				// Replace %ef with generated male first name from (y<<16)+x seed. Use a local RNG for
+				// modifications to building names. Swap and reverse the XZ dimensions so they fit the
+				// original XY values in Arena.
+				index = str.find("%ef");
+				if (index != std::string::npos)
+				{
+					ArenaRandom nameRandom((x << 16) + z);
+					const std::string maleFirstName = [raceID, &textAssetLibrary, &nameRandom]()
+					{
+						constexpr bool isMale = true;
+						const std::string name = textAssetLibrary.generateNpcName(raceID, isMale, nameRandom);
+						const std::string firstName = String::split(name).front();
+						return firstName;
+					}();
+
+					str.replace(index, 3, maleFirstName);
+				}
+
+				// Replace %n with generated male name from (x<<16)+y seed.
+				index = str.find("%n");
+				if (index != std::string::npos)
+				{
+					ArenaRandom nameRandom((z << 16) + x);
+					constexpr bool isMale = true;
+					const std::string maleName = textAssetLibrary.generateNpcName(raceID, isMale, nameRandom);
+					str.replace(index, 2, maleName);
+				}
+
+				return str;
+			};
+
+			auto createTempleName = [&exeData](int model, int suffixIndex)
+			{
+				const auto &templePrefixes = exeData.cityGen.templePrefixes;
+				const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+				const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+				const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+				const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes, &temple3Suffixes,
+					model, suffixIndex]() -> const std::string&
+				{
+					if (model == 0)
+					{
+						DebugAssertIndex(temple1Suffixes, suffixIndex);
+						return temple1Suffixes[suffixIndex];
+					}
+					else if (model == 1)
+					{
+						DebugAssertIndex(temple2Suffixes, suffixIndex);
+						return temple2Suffixes[suffixIndex];
+					}
+					else
+					{
+						DebugAssertIndex(temple3Suffixes, suffixIndex);
+						return temple3Suffixes[suffixIndex];
+					}
+				}();
+
+				DebugAssertIndex(templePrefixes, model);
+				return templePrefixes[model] + templeSuffix;
+			};
+
+			// The lambda called for each main-floor voxel in the area.
+			auto tryGenerateBlockName = [menuType, &random, outLevelDef, outLevelInfoDef, &seen, &hashInSeen,
+				&createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+			{
+				// See if the current voxel is a *MENU block and matches the target menu type.
+				const bool matchesTargetType = [x, z, menuType, outLevelDef, outLevelInfoDef]()
+				{
+					const LevelDefinition::VoxelDefID voxelDefID = outLevelDef->getVoxel(x, 1, z);
+					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
+					constexpr bool isCity = true;
+					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
+				}();
+
+				if (matchesTargetType)
+				{
+					// Get the *MENU block's display name.
+					int hash;
+					std::string name;
+
+					if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+					{
+						// Tavern.
+						int prefixIndex, suffixIndex;
+						do
+						{
+							prefixIndex = random.next() % 23;
+							suffixIndex = random.next() % 23;
+							hash = (prefixIndex << 8) + suffixIndex;
+						} while (hashInSeen(hash));
+
+						name = createTavernName(prefixIndex, suffixIndex);
+					}
+					else if (menuType == VoxelDefinition::WallData::MenuType::Equipment)
+					{
+						// Equipment store.
+						int prefixIndex, suffixIndex;
+						do
+						{
+							prefixIndex = random.next() % 20;
+							suffixIndex = random.next() % 10;
+							hash = (prefixIndex << 8) + suffixIndex;
+						} while (hashInSeen(hash));
+
+						name = createEquipmentName(prefixIndex, suffixIndex, x, z);
+					}
+					else
+					{
+						// Temple.
+						int model, suffixIndex;
+						do
+						{
+							model = random.next() % 3;
+							const std::array<int, 3> ModelVars = { 5, 9, 10 };
+							const int vars = ModelVars.at(model);
+							suffixIndex = random.next() % vars;
+							hash = (model << 8) + suffixIndex;
+						} while (hashInSeen(hash));
+
+						name = createTempleName(model, suffixIndex);
+					}
+
+					const LevelDefinition::BuildingNameID buildingNameID =
+						outLevelInfoDef->addBuildingName(std::move(name));
+					outLevelDef->addBuildingName(buildingNameID, LevelInt3(x, 1, z));
+					seen.push_back(hash);
+				}
+			};
+
+			// Start at the top-right corner of the map, running right to left and top to bottom.
+			for (SNInt x = 0; x < outLevelDef->getWidth(); x++)
+			{
+				for (WEInt z = 0; z < outLevelDef->getDepth(); z++)
+				{
+					tryGenerateBlockName(x, z);
+				}
+			}
+
+			// Fix some edge cases with main quest cities.
+			if ((menuType == VoxelDefinition::WallData::MenuType::Temple) &&
+				(mainQuestTempleOverride != nullptr))
+			{
+				const int modelIndex = mainQuestTempleOverride->modelIndex;
+				const int suffixIndex = mainQuestTempleOverride->suffixIndex;
+
+				// Added an index variable in this solution since the original game seems to store
+				// its building names in a way other than with a vector.
+				const LevelDefinition::BuildingNameID buildingNameID =
+					mainQuestTempleOverride->menuNamesIndex;
+
+				std::string buildingName = createTempleName(modelIndex, suffixIndex);
+				outLevelInfoDef->setBuildingNameOverride(buildingNameID, std::move(buildingName));
+			}
+		};
+
+		generateNames(VoxelDefinition::WallData::MenuType::Tavern);
+		generateNames(VoxelDefinition::WallData::MenuType::Equipment);
+		generateNames(VoxelDefinition::WallData::MenuType::Temple);
+	}
+
+	// Using a separate building name info struct because the same level definition might be
+	// used in multiple places in the wild, so it can't store the building name IDs.
+	void generateArenaWildChunkBuildingNames(uint32_t wildChunkSeed, const LevelDefinition &levelDef,
+		const BinaryAssetLibrary &binaryAssetLibrary,
+		MapGeneration::WildChunkBuildingNameInfo *outBuildingNameInfo,
+		LevelInfoDefinition *outLevelInfoDef, ArenaBuildingNameMappingCache *buildingNameMappings)
+	{
+		const auto &exeData = binaryAssetLibrary.getExeData();
+
+		// Lambda for searching for a *MENU voxel of the given type in the chunk and generating
+		// a name for it if found.
+		auto tryGenerateChunkBuildingName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
+			outLevelInfoDef, buildingNameMappings, &exeData](VoxelDefinition::WallData::MenuType menuType)
+		{
+			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
+			{
+				const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+				const auto &tavernSuffixes = exeData.cityGen.tavernSuffixes;
+				DebugAssertIndex(tavernPrefixes, prefixIndex);
+				DebugAssertIndex(tavernSuffixes, suffixIndex);
+				return tavernPrefixes[prefixIndex] + ' ' + tavernSuffixes[suffixIndex];
+			};
+
+			auto createTempleName = [&exeData](int model, int suffixIndex)
+			{
+				const auto &templePrefixes = exeData.cityGen.templePrefixes;
+				const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+				const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+				const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+				const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
+					&temple3Suffixes, model, suffixIndex]() -> const std::string&
+				{
+					if (model == 0)
+					{
+						DebugAssertIndex(temple1Suffixes, suffixIndex);
+						return temple1Suffixes[suffixIndex];
+					}
+					else if (model == 1)
+					{
+						DebugAssertIndex(temple2Suffixes, suffixIndex);
+						return temple2Suffixes[suffixIndex];
+					}
+					else
+					{
+						DebugAssertIndex(temple3Suffixes, suffixIndex);
+						return temple3Suffixes[suffixIndex];
+					}
+				}();
+
+				DebugAssertIndex(templePrefixes, model);
+				return templePrefixes[model] + templeSuffix;
+			};
+
+			// The lambda called for each main-floor voxel in the chunk.
+			auto tryGenerateBlockName = [wildChunkSeed, &levelDef, outBuildingNameInfo, outLevelInfoDef,
+				buildingNameMappings, menuType, &createTavernName, &createTempleName](SNInt x, WEInt z) -> bool
+			{
+				ArenaRandom random(wildChunkSeed);
+
+				// See if the current voxel is a *MENU block and matches the target menu type.
+				const bool matchesTargetType = [&levelDef, outLevelInfoDef, menuType, x, z]()
+				{
+					const LevelDefinition::VoxelDefID voxelDefID = levelDef.getVoxel(x, 1, z);
+					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
+					constexpr bool isCity = false; // Wilderness only.
+					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
+				}();
+
+				if (matchesTargetType)
+				{
+					// Get the *MENU block's display name.
+					std::string name = [menuType, &random, &createTavernName, &createTempleName]()
+					{
+						if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+						{
+							const int prefixIndex = random.next() % 23;
+							const int suffixIndex = random.next() % 23;
+							return createTavernName(prefixIndex, suffixIndex);
+						}
+						else if (menuType == VoxelDefinition::WallData::MenuType::Temple)
+						{
+							const int model = random.next() % 3;
+							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
+							DebugAssertIndex(ModelVars, model);
+							const int vars = ModelVars[model];
+							const int suffixIndex = random.next() % vars;
+							return createTempleName(model, suffixIndex);
+						}
+						else
+						{
+							DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(menuType)));
+						}
+					}();
+					
+					// Set building name info for the given menu type.
+					const auto iter = buildingNameMappings->find(name);
+					if (iter != buildingNameMappings->end())
+					{
+						outBuildingNameInfo->setBuildingNameID(menuType, iter->second);
+					}
+					else
+					{
+						const LevelDefinition::BuildingNameID buildingNameID =
+							outLevelInfoDef->addBuildingName(std::string(name));
+						outBuildingNameInfo->setBuildingNameID(menuType, buildingNameID);
+						buildingNameMappings->emplace(std::move(name), buildingNameID);
+					}
+
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			};
+
+			// Iterate blocks in the chunk in any order and stop once a relevant voxel for
+			// generating the name has been found.
+			for (SNInt x = 0; x < RMDFile::DEPTH; x++)
+			{
+				for (WEInt z = 0; z < RMDFile::WIDTH; z++)
+				{
+					if (tryGenerateBlockName(x, z))
+					{
+						break;
+					}
+				}
+			}
+		};
+
+		tryGenerateChunkBuildingName(VoxelDefinition::WallData::MenuType::Tavern);
+		tryGenerateChunkBuildingName(VoxelDefinition::WallData::MenuType::Temple);
+	}
 }
 
 void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, bool isPalace,
@@ -1020,14 +1381,19 @@ const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::g
 	return this->dungeon;
 }
 
-void MapGeneration::CityGenInfo::init(std::string &&mifName, uint32_t citySeed, bool isPremade,
-	Buffer<uint8_t> &&reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	int cityBlocksPerSide)
+void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName,
+	uint32_t citySeed, int raceID, bool isPremade, bool coastal, Buffer<uint8_t> &&reservedBlocks,
+	const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> *mainQuestTempleOverride,
+	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
 	this->mifName = std::move(mifName);
+	this->cityTypeName = std::move(cityTypeName);
 	this->citySeed = citySeed;
+	this->raceID = raceID;
 	this->isPremade = isPremade;
+	this->coastal = coastal;
 	this->reservedBlocks = std::move(reservedBlocks);
+	this->mainQuestTempleOverride = (mainQuestTempleOverride != nullptr) ? *mainQuestTempleOverride : std::nullopt;
 	this->blockStartPosX = blockStartPosX;
 	this->blockStartPosY = blockStartPosY;
 	this->cityBlocksPerSide = cityBlocksPerSide;
@@ -1037,6 +1403,50 @@ void MapGeneration::WildGenInfo::init(Buffer2D<WildBlockID> &&wildBlockIDs, uint
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
 	this->fallbackSeed = fallbackSeed;
+}
+
+void MapGeneration::WildChunkBuildingNameInfo::init(const ChunkInt2 &chunk)
+{
+	this->chunk = chunk;
+}
+
+const ChunkInt2 &MapGeneration::WildChunkBuildingNameInfo::getChunk() const
+{
+	return this->chunk;
+}
+
+bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
+{
+	return this->ids.size() > 0;
+}
+
+bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
+	VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID *outID) const
+{
+	const auto iter = this->ids.find(menuType);
+	if (iter != this->ids.end())
+	{
+		*outID = iter->second;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
+	VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID id)
+{
+	const auto iter = this->ids.find(menuType);
+	if (iter != this->ids.end())
+	{
+		iter->second = id;
+	}
+	else
+	{
+		this->ids.emplace(menuType, id);
+	}
 }
 
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
@@ -1160,11 +1570,14 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	*outStartPoint = VoxelUtils::originalVoxelToNewVoxel(startPoint);
 }
 
-void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool isPremade,
+void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int raceID, bool isPremade,
 	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	int cityBlocksPerSide, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
+	LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
@@ -1214,29 +1627,23 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, bool 
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 		outLevelInfoDef, &map1Mappings, &entityMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
-
-	// @todo: building names are now a part of MapDefinition::InteriorGenerationInfo.
-	// Generate building names.
-	/*const bool isCity = true;
-	LevelUtils::MenuNamesList menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef,
-		random, isCity, levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);*/
-
-	// @todo: distant sky should be in MapDefinition::City
-	// Generate distant sky.
-	/*levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
-		starCount, exeData, textureManager);*/
+	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
+		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
+		outLevelInfoDef);
 }
 
 void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &uniqueWildBlockIDs,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
-	LevelInfoDefinition *outLevelInfoDef)
+	const BufferView2D<const int> &levelDefIndices, const INFFile &inf,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+	std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos)
 {
 	DebugAssert(uniqueWildBlockIDs.getCount() == outLevelDefs.getCount());
 
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
+	ArenaBuildingNameMappingCache buildingNameMappings;
 
 	// Create temp voxel data buffers to be used by each wilderness chunk.
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
@@ -1306,6 +1713,29 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &map1Mappings, &entityMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
+	}
+
+	// Generate chunk-wise building names for the wilderness.
+	for (SNInt x = 0; x < levelDefIndices.getWidth(); x++)
+	{
+		for (WEInt z = 0; x < levelDefIndices.getHeight(); x++)
+		{
+			const int levelDefIndex = levelDefIndices.get(x, z);
+			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
+			const ChunkInt2 chunk(x, z); // @todo: verify
+			const uint32_t chunkSeed = WildLevelUtils::makeWildChunkSeed(chunk.x, chunk.y);
+			MapGeneration::WildChunkBuildingNameInfo buildingNameInfo;
+			buildingNameInfo.init(chunk);
+
+			MapGeneration::generateArenaWildChunkBuildingNames(chunkSeed, levelDef, binaryAssetLibrary,
+				&buildingNameInfo, outLevelInfoDef, &buildingNameMappings);
+
+			// Register the chunk if it has any buildings with names.
+			if (buildingNameInfo.hasBuildingNames())
+			{
+				outBuildingNameInfos->emplace_back(std::move(buildingNameInfo));
+			}
+		}
 	}
 }
 
