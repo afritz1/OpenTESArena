@@ -1716,9 +1716,9 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 	}
 
 	// Generate chunk-wise building names for the wilderness.
-	for (SNInt x = 0; x < levelDefIndices.getWidth(); x++)
+	for (WEInt z = 0; z < levelDefIndices.getHeight(); z++)
 	{
-		for (WEInt z = 0; x < levelDefIndices.getHeight(); x++)
+		for (SNInt x = 0; x < levelDefIndices.getWidth(); x++)
 		{
 			const int levelDefIndex = levelDefIndices.get(x, z);
 			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
