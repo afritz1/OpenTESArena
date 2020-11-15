@@ -8,6 +8,11 @@
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
+uint32_t WildLevelUtils::makeWildChunkSeed(int wildX, int wildY)
+{
+	return (wildY << 16) + wildX;
+}
+
 Buffer2D<WildBlockID> WildLevelUtils::generateWildernessIndices(uint32_t wildSeed,
 	const ExeData::Wilderness &wildData)
 {
@@ -88,7 +93,7 @@ LevelUtils::MenuNamesList WildLevelUtils::generateWildChunkBuildingNames(
 	auto generateNames = [&voxelGrid, &exeData, &menuNames](int wildX, int wildY,
 		VoxelDefinition::WallData::MenuType menuType)
 	{
-		const uint32_t wildChunkSeed = (wildY << 16) + wildX;
+		const uint32_t wildChunkSeed = WildLevelUtils::makeWildChunkSeed(wildX, wildY);
 
 		// Don't need hashInSeen() for the wilderness.
 

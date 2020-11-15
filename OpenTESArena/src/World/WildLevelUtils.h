@@ -1,6 +1,8 @@
 #ifndef WILD_LEVEL_UTILS_H
 #define WILD_LEVEL_UTILS_H
 
+#include <cstdint>
+
 #include "LevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
@@ -18,6 +20,9 @@ namespace WildLevelUtils
 	// Chunk counts across wilderness width and height.
 	constexpr int WILD_WIDTH = 64;
 	constexpr int WILD_HEIGHT = WILD_WIDTH;
+
+	// Makes a 32-bit seed for a wilderness chunk. Intended for building names.
+	uint32_t makeWildChunkSeed(int wildX, int wildY);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
 	Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed,
