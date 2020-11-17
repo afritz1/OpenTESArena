@@ -22,6 +22,7 @@ public:
 	using LockDefID = int;
 	using TriggerDefID = int;
 	using BuildingNameID = int;
+	using TransitionDefID = int;
 
 	struct EntityPlacementDef
 	{
