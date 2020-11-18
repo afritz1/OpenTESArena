@@ -2,10 +2,16 @@
 
 #include "components/debug/Debug.h"
 
-void ChunkRenderDefinition::init(SNInt width, int height, WEInt depth)
+void ChunkRenderDefinition::init(SNInt width, int height, WEInt depth, const ChunkInt2 &coord)
 {
 	this->voxelRenderDefIDs.init(width, height, depth);
 	this->voxelRenderDefIDs.fill(ChunkRenderDefinition::NO_VOXEL_ID);
+	this->coord = coord;
+}
+
+const ChunkInt2 &ChunkRenderDefinition::getCoord() const
+{
+	return this->coord;
 }
 
 const VoxelRenderDefinition &ChunkRenderDefinition::getVoxelRenderDef(VoxelRenderDefID id) const
