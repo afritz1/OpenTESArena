@@ -9,6 +9,7 @@
 #include "MainMenuPanel.h"
 #include "Panel.h"
 #include "RichTextString.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Game/Game.h"
@@ -24,7 +25,6 @@
 #include "../Media/TextureName.h"
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 
 #include "components/vfs/manager.hpp"
 

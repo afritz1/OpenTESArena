@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
-#include "../Rendering/Texture.h"
+#include "Texture.h"
 
 class TextBox;
 

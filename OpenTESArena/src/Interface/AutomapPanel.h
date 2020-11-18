@@ -5,9 +5,9 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureUtils.h"
-#include "../Rendering/Texture.h"
 #include "../World/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel

@@ -4,6 +4,7 @@
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
 #include "TextBox.h"
+#include "Texture.h"
 #include "WorldMapPanel.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/WorldMapMask.h"
@@ -17,7 +18,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
 

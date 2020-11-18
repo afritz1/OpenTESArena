@@ -5,8 +5,8 @@
 #include <string>
 
 #include "Panel.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
-#include "../Rendering/Texture.h"
 
 // A simple sub-panel for displaying a text pop-up on-screen.
 

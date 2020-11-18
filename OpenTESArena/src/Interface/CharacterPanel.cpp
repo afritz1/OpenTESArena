@@ -7,6 +7,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "Texture.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
@@ -26,7 +27,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
 

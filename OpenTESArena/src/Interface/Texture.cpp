@@ -1,12 +1,12 @@
 #include "SDL.h"
 
+#include "Surface.h"
 #include "Texture.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 
 #include "components/debug/Debug.h"
 

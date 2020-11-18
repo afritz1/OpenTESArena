@@ -7,6 +7,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
+#include "Texture.h"
 #include "../Assets/ArenaSave.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -20,7 +21,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"

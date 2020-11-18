@@ -7,11 +7,11 @@
 
 #include "RendererUtils.h"
 #include "SoftwareRenderer.h"
-#include "Surface.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Entities/EntityType.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Options.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Media/Color.h"

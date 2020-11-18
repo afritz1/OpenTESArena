@@ -4,6 +4,7 @@
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
 #include "TextAlignment.h"
+#include "Texture.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -16,7 +17,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/utilities/String.h"
 

@@ -3,6 +3,7 @@
 #include "SDL.h"
 
 #include "ImageSequencePanel.h"
+#include "Texture.h"
 #include "../Game/Game.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
@@ -10,7 +11,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
 

@@ -5,10 +5,10 @@
 #include <string>
 #include <vector>
 
+#include "Surface.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 
 // This class defines a list of displayed text boxes. The index of a clicked text 
 // box can be obtained, and the list can be scrolled up and down. A list box is

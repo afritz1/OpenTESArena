@@ -6,9 +6,9 @@
 #include "SDL.h"
 
 #include "Renderer.h"
-#include "Surface.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Interface/CursorAlignment.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"

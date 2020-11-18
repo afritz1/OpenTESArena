@@ -10,8 +10,8 @@
 #include "Image.h"
 #include "Palette.h"
 #include "TextureUtils.h"
-#include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
+#include "../Interface/Surface.h"
+#include "../Interface/Texture.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferRef.h"

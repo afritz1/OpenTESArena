@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "SoftwareRenderer.h"
-#include "Texture.h"
+#include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/LevelData.h"

@@ -1,10 +1,10 @@
 #include "SDL.h"
 
 #include "CinematicPanel.h"
+#include "Texture.h"
 #include "../Game/Game.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 CinematicPanel::CinematicPanel(Game &game,
 	const std::string &paletteName, const std::string &sequenceName,

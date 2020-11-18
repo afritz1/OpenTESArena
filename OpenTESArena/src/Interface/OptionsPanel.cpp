@@ -9,6 +9,7 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "Texture.h"
 #include "../Entities/Player.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -24,7 +25,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

@@ -5,7 +5,7 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Rendering/Texture.h"
+#include "Texture.h"
 
 // This panel is for the "How do you wish to select your class?" screen.
 

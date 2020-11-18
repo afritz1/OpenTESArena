@@ -5,10 +5,10 @@
 #include <vector>
 
 #include "RichTextString.h"
+#include "Surface.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Rendering/Surface.h"
-#include "../Rendering/Texture.h"
 
 // Redesigned for use with the font system using Arena assets.
 

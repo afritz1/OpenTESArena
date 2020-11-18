@@ -5,6 +5,7 @@
 #include "ChooseRacePanel.h"
 #include "CursorAlignment.h"
 #include "RichTextString.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Assets/ExeData.h"
@@ -20,7 +21,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game)

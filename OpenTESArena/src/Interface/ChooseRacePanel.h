@@ -5,8 +5,8 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "Texture.h"
 #include "../Math/Vector2.h"
-#include "../Rendering/Texture.h"
 
 class Renderer;
 

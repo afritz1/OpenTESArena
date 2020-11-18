@@ -5,7 +5,7 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Rendering/Texture.h"
+#include "Texture.h"
 
 // If Escape is pressed here, just go to the class list (even if the user went
 // the answer questions path instead).

@@ -9,6 +9,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextCinematicPanel.h"
+#include "Texture.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
@@ -19,7 +20,6 @@
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Texture.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"

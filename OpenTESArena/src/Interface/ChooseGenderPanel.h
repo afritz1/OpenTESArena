@@ -5,7 +5,7 @@
 
 #include "Button.h"
 #include "Panel.h"
-#include "../Rendering/Texture.h"
+#include "Texture.h"
 
 class Renderer;
 class TextBox;

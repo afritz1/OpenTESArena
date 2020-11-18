@@ -13,9 +13,9 @@
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
 #include "../Interface/Panel.h"
+#include "../Interface/Surface.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"

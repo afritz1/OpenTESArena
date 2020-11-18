@@ -6,6 +6,7 @@
 #include "CursorAlignment.h"
 #include "MessageBoxSubPanel.h"
 #include "RichTextString.h"
+#include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
@@ -23,7 +24,6 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/Surface.h"
 #include "../World/LocationUtils.h"
 
 #include "components/utilities/String.h"

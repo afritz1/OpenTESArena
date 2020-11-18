@@ -10,6 +10,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/ExeData.h"
+#include "../Interface/Surface.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -17,7 +18,6 @@
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
-#include "../Rendering/Surface.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
