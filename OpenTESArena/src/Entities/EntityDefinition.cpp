@@ -215,12 +215,12 @@ void EntityDefinition::ProjectileDefinition::init(bool hasGravity)
 
 EntityDefinition::TransitionDefinition::TransitionDefinition()
 {
-	// Do nothing.
+	this->transitionDefID = -1;
 }
 
-void EntityDefinition::TransitionDefinition::init()
+void EntityDefinition::TransitionDefinition::init(LevelDefinition::TransitionDefID transitionDefID)
 {
-	// Do nothing.
+	this->transitionDefID = transitionDefID;
 }
 
 EntityDefinition::DoodadDefinition::DoodadDefinition()
@@ -380,10 +380,11 @@ void EntityDefinition::initProjectile(bool hasGravity, EntityAnimationDefinition
 	this->projectile.init(hasGravity);
 }
 
-void EntityDefinition::initTransition(EntityAnimationDefinition &&animDef)
+void EntityDefinition::initTransition(LevelDefinition::TransitionDefID defID,
+	EntityAnimationDefinition &&animDef)
 {
 	this->init(Type::Transition, std::move(animDef));
-	this->transition.init();
+	this->transition.init(defID);
 }
 
 void EntityDefinition::initDoodad(int yOffset, double scale, bool collider, bool transparent,

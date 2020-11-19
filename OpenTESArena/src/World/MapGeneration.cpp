@@ -11,6 +11,7 @@
 #include "LockDefinition.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
+#include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
@@ -38,6 +39,7 @@ namespace MapGeneration
 	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
 	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID>>;
 	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
+	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
@@ -46,11 +48,15 @@ namespace MapGeneration
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
 	bool tryMakeEntityDefFromArenaFlat(int flatIndex, WorldType worldType, bool isPalace,
-		const std::optional<bool> &rulerIsMale, const INFFile &inf,
+		const std::optional<bool> &rulerIsMale,
+		const std::optional<LevelDefinition::TransitionDefID> &transitionDefID, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityDefinition *outDef)
 	{
+		// @todo: use transitionDefID parameter for transition entities (dens).
+		DebugNotImplemented();
+
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, inf);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
@@ -551,6 +557,43 @@ namespace MapGeneration
 		return triggerDef;
 	}
 
+	// Whether the MAP1 voxel has voxel/entity transition data for the given world type.
+	bool isMap1Transition(ArenaTypes::VoxelID map1Voxel, WorldType worldType)
+	{
+		DebugNotImplemented();
+		return false;
+	}
+
+	TransitionDefinition makeTransitionDefFromMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble,
+		WorldType worldType, const INFFile &inf)
+	{
+		// @todo
+		DebugNotImplemented();
+
+		TransitionDefinition transitionDef;
+		if (worldType == WorldType::City)
+		{
+			/*transitionDef.initCityGate();
+			transitionDef.initInteriorEntrance();*/
+		}
+		else if (worldType == WorldType::Interior)
+		{
+			/*transitionDef.initInteriorExit();
+			transitionDef.initLevelChange();*/
+		}
+		else if (worldType == WorldType::Wilderness)
+		{
+			/*transitionDef.initCityGate();
+			transitionDef.initInteriorEntrance();*/
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(worldType)));
+		}
+
+		return transitionDef;
+	}
+
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
 	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, WorldType worldType,
 		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
@@ -598,10 +641,14 @@ namespace MapGeneration
 					else
 					{
 						const int flatIndex = floorFlatID - 1;
+
+						// No transitions allowed for FLOR voxels.
+						constexpr std::optional<LevelDefinition::TransitionDefID> transitionDefID = std::nullopt;
+
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
-							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-							textureManager, &entityDef))
+							rulerIsMale, transitionDefID, inf, charClassLibrary, entityDefLibrary,
+							binaryAssetLibrary, textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
@@ -628,7 +675,8 @@ namespace MapGeneration
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
-		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache)
+		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
+		ArenaTransitionMappingCache *transitionCache)
 	{
 		for (SNInt map1Z = 0; map1Z < map1.getHeight(); map1Z++)
 		{
@@ -642,13 +690,35 @@ namespace MapGeneration
 					continue;
 				}
 
-				// Determine if this MAP1 voxel is for a voxel or entity.
-				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
-				const bool isVoxel = mostSigNibble != 0x8;
-
 				const SNInt levelX = map1Z;
 				const int levelY = 1;
 				const WEInt levelZ = map1X;
+
+				// Determine if this MAP1 voxel is for a voxel or entity.
+				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
+				const bool isVoxel = mostSigNibble != 0x8;
+				
+				// If it's a transition voxel/entity, get the transition def ID from cache or create
+				// a new one.
+				std::optional<LevelDefinition::TransitionDefID> transitionDefID;
+				if (MapGeneration::isMap1Transition(map1Voxel, worldType))
+				{
+					const auto iter = transitionCache->find(map1Voxel);
+					if (iter != transitionCache->end())
+					{
+						transitionDefID = iter->second;
+					}
+					else
+					{
+						TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMAP1(
+							map1Voxel, mostSigNibble, worldType, inf);
+						transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
+						transitionCache->insert(std::make_pair(map1Voxel, *transitionDefID));
+					}
+
+					const LevelInt3 transitionPos(levelX, levelY, levelZ);
+					outLevelDef->addTransition(*transitionDefID, transitionPos);
+				}
 
 				if (isVoxel)
 				{
@@ -682,8 +752,8 @@ namespace MapGeneration
 					{
 						const int flatIndex = map1Voxel & 0x00FF;
 						EntityDefinition entityDef;
-						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType,
-							isPalace, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
+						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
+							rulerIsMale, transitionDefID, inf, charClassLibrary, entityDefLibrary,
 							binaryAssetLibrary, textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
@@ -844,7 +914,7 @@ namespace MapGeneration
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *florMappings, ArenaVoxelMappingCache *map1Mappings,
 		ArenaEntityMappingCache *entityMappings, ArenaLockMappingCache *lockMappings,
-		ArenaTriggerMappingCache *triggerMappings)
+		ArenaTriggerMappingCache *triggerMappings, ArenaTransitionMappingCache *transitionMappings)
 	{
 		// Create buffers for level blocks.
 		Buffer2D<ArenaTypes::VoxelID> levelFLOR(mif.getWidth() * widthChunks, mif.getDepth() * depthChunks);
@@ -957,7 +1027,7 @@ namespace MapGeneration
 			outLevelInfoDef, florMappings, entityMappings);
 		MapGeneration::readArenaMAP1(levelMap1View, worldType, isPalace, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
-			outLevelInfoDef, map1Mappings, entityMappings);
+			outLevelInfoDef, map1Mappings, entityMappings, transitionMappings);
 
 		// Generate ceiling (if any).
 		if (!inf.getCeiling().outdoorDungeon)
@@ -1459,6 +1529,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 	// previously-added definitions in the level info def.
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
+	ArenaTransitionMappingCache transitionMappings;
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
@@ -1469,7 +1540,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 			outLevelInfoDef, &florMappings, &entityMappings);
 		MapGeneration::readArenaMAP1(level.getMAP1(), worldType, isPalace, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
-			outLevelInfoDef, &map1Mappings, &entityMappings);
+			outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 
 		// If there is MAP2 data, use it for the ceiling layer, otherwise replicate a single ceiling
 		// block across the whole ceiling if not in an outdoor dungeon.
@@ -1495,6 +1566,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	ArenaEntityMappingCache entityMappings;
 	ArenaLockMappingCache lockMappings;
 	ArenaTriggerMappingCache triggerMappings;
+	ArenaTransitionMappingCache transitionMappings;
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
@@ -1552,7 +1624,8 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 		MapGeneration::generateArenaDungeonLevel(mif, widthChunks, depthChunks, levelUpBlock,
 			levelDownBlock, random, worldType, isPalace, rulerIsMale, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef,
-			&florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings);
+			&florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings,
+			&transitionMappings);
 	}
 
 	// The start point depends on where the level up voxel is on the first level.
@@ -1581,6 +1654,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
+	ArenaTransitionMappingCache transitionMappings;
 
 	// Only one level in a city .MIF.
 	const MIFFile::Level &mifLevel = mif.getLevel(0);
@@ -1625,7 +1699,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 		outLevelInfoDef, &florMappings, &entityMappings);
 	MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
-		outLevelInfoDef, &map1Mappings, &entityMappings);
+		outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
 	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
 		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
@@ -1643,6 +1717,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 
 	ArenaVoxelMappingCache florMappings, map1Mappings, map2Mappings;
 	ArenaEntityMappingCache entityMappings;
+	ArenaTransitionMappingCache transitionMappings;
 	ArenaBuildingNameMappingCache buildingNameMappings;
 
 	// Create temp voxel data buffers to be used by each wilderness chunk.
@@ -1711,7 +1786,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 			outLevelInfoDef, &florMappings, &entityMappings);
 		MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
-			outLevelInfoDef, &map1Mappings, &entityMappings);
+			outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
 	}
 

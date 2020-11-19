@@ -39,11 +39,10 @@ const TriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::Tri
 	return this->triggerDefs[id];
 }
 
-const MapGeneration::InteriorGenInfo &LevelInfoDefinition::getInteriorGenInfo(
-	MapGeneration::InteriorGenInfoID id) const
+const TransitionDefinition &LevelInfoDefinition::getTransitionDef(LevelDefinition::TransitionDefID id) const
 {
-	DebugAssertIndex(this->interiorGenInfos, id);
-	return this->interiorGenInfos[id];
+	DebugAssertIndex(this->transitionDefs, id);
+	return this->transitionDefs[id];
 }
 
 const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::BuildingNameID id) const
@@ -89,11 +88,10 @@ LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(TriggerDefiniti
 	return static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size()) - 1;
 }
 
-MapGeneration::InteriorGenInfoID LevelInfoDefinition::addInteriorGenInfo(
-	MapGeneration::InteriorGenInfo &&def)
+LevelDefinition::TransitionDefID LevelInfoDefinition::addTransitionDef(TransitionDefinition &&def)
 {
-	this->interiorGenInfos.emplace_back(std::move(def));
-	return static_cast<MapGeneration::InteriorGenInfoID>(this->interiorGenInfos.size()) - 1;
+	this->transitionDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::TransitionDefID>(this->transitionDefs.size()) - 1;
 }
 
 LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string &&name)

@@ -8,6 +8,7 @@
 #include "LevelDefinition.h"
 #include "LockDefinition.h"
 #include "MapGeneration.h"
+#include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
@@ -28,7 +29,7 @@ private:
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<TriggerDefinition> triggerDefs;
-	std::vector<MapGeneration::InteriorGenInfo> interiorGenInfos;
+	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<std::string> buildingNames;
 	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
 	// @todo: interior gen info ID for when player creates a wall on water.
@@ -43,7 +44,7 @@ public:
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
-	const MapGeneration::InteriorGenInfo &getInteriorGenInfo(MapGeneration::InteriorGenInfoID id) const;
+	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
 	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
 	double getCeilingScale() const;
 
@@ -51,7 +52,7 @@ public:
 	LevelDefinition::EntityDefID addEntityDef(EntityDefinition &&def);
 	LevelDefinition::LockDefID addLockDef(LockDefinition &&def);
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
-	MapGeneration::InteriorGenInfoID addInteriorGenInfo(MapGeneration::InteriorGenInfo &&def);
+	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
 
 	// Handles some special cases in main quest cities.

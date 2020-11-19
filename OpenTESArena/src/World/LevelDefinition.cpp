@@ -21,6 +21,13 @@ LevelDefinition::TriggerPlacementDef::TriggerPlacementDef(TriggerDefID id, std::
 	this->id = id;
 }
 
+LevelDefinition::TransitionPlacementDef::TransitionPlacementDef(TransitionDefID id,
+	std::vector<LevelInt3> &&positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
+}
+
 LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(BuildingNameID id,
 	std::vector<LevelInt3> &&positions)
 	: positions(std::move(positions))
@@ -92,6 +99,17 @@ const LevelDefinition::TriggerPlacementDef &LevelDefinition::getTriggerPlacement
 	return this->triggerPlacementDefs[index];
 }
 
+int LevelDefinition::getTransitionPlacementDefCount() const
+{
+	return static_cast<int>(this->transitionPlacementDefs.size());
+}
+
+const LevelDefinition::TransitionPlacementDef &LevelDefinition::getTransitionPlacementDef(int index) const
+{
+	DebugAssertIndex(this->transitionPlacementDefs, index);
+	return this->transitionPlacementDefs[index];
+}
+
 int LevelDefinition::getBuildingNamePlacementDefCount() const
 {
 	return static_cast<int>(this->buildingNamePlacementDefs.size());
@@ -157,6 +175,25 @@ void LevelDefinition::addTrigger(TriggerDefID id, const LevelInt3 &position)
 	else
 	{
 		this->triggerPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addTransition(TransitionDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->transitionPlacementDefs.begin(), this->transitionPlacementDefs.end(),
+		[id](const TransitionPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->transitionPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->transitionPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
 	}
 }
 

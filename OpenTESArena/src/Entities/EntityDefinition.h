@@ -7,6 +7,7 @@
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationUtils.h"
 #include "../Assets/ExeData.h"
+#include "../World/LevelDefinition.h"
 
 enum class ClimateType;
 
@@ -233,11 +234,14 @@ public:
 
 	struct TransitionDefinition
 	{
-		// @todo: destination info (type of level, level count, etc.)
+		// Should be fine to store this ID that points into a LevelInfoDefinition since transition
+		// entities should only exist on the level they're spawned and wouldn't be globally reusable
+		// like some entity definitions.
+		LevelDefinition::TransitionDefID transitionDefID;
 
 		TransitionDefinition();
 
-		void init();
+		void init(LevelDefinition::TransitionDefID transitionDefID);
 	};
 
 	struct DoodadDefinition
@@ -313,7 +317,7 @@ public:
 	void initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef);
 
 	// Transition.
-	void initTransition(EntityAnimationDefinition &&animDef);
+	void initTransition(LevelDefinition::TransitionDefID defID, EntityAnimationDefinition &&animDef);
 
 	// Doodad.
 	void initDoodad(int yOffset, double scale, bool collider, bool transparent, bool ceiling,
