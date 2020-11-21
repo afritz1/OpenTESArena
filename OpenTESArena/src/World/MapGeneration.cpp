@@ -48,15 +48,11 @@ namespace MapGeneration
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
 	bool tryMakeEntityDefFromArenaFlat(int flatIndex, WorldType worldType, bool isPalace,
-		const std::optional<bool> &rulerIsMale,
-		const std::optional<LevelDefinition::TransitionDefID> &transitionDefID, const INFFile &inf,
+		const std::optional<bool> &rulerIsMale, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityDefinition *outDef)
 	{
-		// @todo: use transitionDefID parameter for transition entities (dens).
-		DebugNotImplemented();
-
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, inf);
 		const std::optional<int> &optItemIndex = flatData.itemIndex;
@@ -173,6 +169,9 @@ namespace MapGeneration
 			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
 			const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 			const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
+
+			// @todo: TransitionDefID from flatIndex -- use MapGeneration::isMap1TransitionEntity().
+			DebugNotImplemented();
 
 			outDef->initDoodad(flatData.yOffset, scale, flatData.collider,
 				flatData.transparent, flatData.ceiling, streetLight, flatData.puddle,
@@ -557,9 +556,22 @@ namespace MapGeneration
 		return triggerDef;
 	}
 
-	// Whether the MAP1 voxel has voxel/entity transition data for the given world type.
-	bool isMap1Transition(ArenaTypes::VoxelID map1Voxel, WorldType worldType)
+	// Whether the MAP1 voxel has transition data for the given world type.
+	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType)
 	{
+		DebugNotImplemented();
+		return false;
+	}
+
+	// Whether the MAP1 entity has transition data for the given world type.
+	bool isMap1TransitionEntity(int flatIndex, WorldType worldType)
+	{
+		// Only wild dens are entities with transition data.
+		if (worldType != WorldType::Wilderness)
+		{
+			return false;
+		}
+
 		DebugNotImplemented();
 		return false;
 	}
@@ -641,14 +653,10 @@ namespace MapGeneration
 					else
 					{
 						const int flatIndex = floorFlatID - 1;
-
-						// No transitions allowed for FLOR voxels.
-						constexpr std::optional<LevelDefinition::TransitionDefID> transitionDefID = std::nullopt;
-
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
-							rulerIsMale, transitionDefID, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, &entityDef))
+							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+							textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
@@ -698,28 +706,6 @@ namespace MapGeneration
 				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
 				const bool isVoxel = mostSigNibble != 0x8;
 				
-				// If it's a transition voxel/entity, get the transition def ID from cache or create
-				// a new one.
-				std::optional<LevelDefinition::TransitionDefID> transitionDefID;
-				if (MapGeneration::isMap1Transition(map1Voxel, worldType))
-				{
-					const auto iter = transitionCache->find(map1Voxel);
-					if (iter != transitionCache->end())
-					{
-						transitionDefID = iter->second;
-					}
-					else
-					{
-						TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMAP1(
-							map1Voxel, mostSigNibble, worldType, inf);
-						transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
-						transitionCache->insert(std::make_pair(map1Voxel, *transitionDefID));
-					}
-
-					const LevelInt3 transitionPos(levelX, levelY, levelZ);
-					outLevelDef->addTransition(*transitionDefID, transitionPos);
-				}
-
 				if (isVoxel)
 				{
 					// Get voxel def ID from cache or create a new one.
@@ -738,6 +724,27 @@ namespace MapGeneration
 					}
 
 					outLevelDef->setVoxel(levelX, levelY, levelZ, voxelDefID);
+
+					LevelDefinition::TransitionDefID transitionDefID;
+					if (MapGeneration::isMap1TransitionVoxel(map1Voxel, worldType))
+					{
+						// Get transition def ID from cache or create a new one.
+						const auto iter = transitionCache->find(map1Voxel);
+						if (iter != transitionCache->end())
+						{
+							transitionDefID = iter->second;
+						}
+						else
+						{
+							TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMAP1(
+								map1Voxel, mostSigNibble, worldType, inf);
+							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
+							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
+						}
+
+						const LevelInt3 transitionPos(levelX, levelY, levelZ);
+						outLevelDef->addTransition(transitionDefID, transitionPos);
+					}
 				}
 				else
 				{
@@ -753,8 +760,8 @@ namespace MapGeneration
 						const int flatIndex = map1Voxel & 0x00FF;
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
-							rulerIsMale, transitionDefID, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, &entityDef))
+							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+							textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
