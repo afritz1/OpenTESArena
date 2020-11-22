@@ -23,6 +23,8 @@ class TextureManager;
 
 enum class ClimateType;
 enum class EntityType;
+enum class InteriorType;
+enum class WorldType;
 
 // Helper values for working with the original animations. These may or may not be directly
 // referencing original values and may only exist for convenience in the new engine.
@@ -35,14 +37,6 @@ namespace ArenaAnimUtils
 	// First flipped animation ID that requires a mapping to a non-flipped ID for use
 	// with a creature .CFA file.
 	constexpr int FirstFlippedAnimID = 6;
-
-	// Various special case conditions for generating static animations.
-	enum class StaticAnimCondition
-	{
-		None,
-		IsCity,
-		IsPalace
-	};
 
 	// Animation values for static .DFA files.
 	constexpr double StaticIdleSecondsPerFrame = 1.0 / 12.0;
@@ -119,12 +113,12 @@ namespace ArenaAnimUtils
 	// game give them a light source and toggle them between on and off states.
 	ArenaTypes::FlatIndex getStreetLightActiveIndex();
 	ArenaTypes::FlatIndex getStreetLightInactiveIndex();
-	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isCity);
+	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, WorldType worldType);
 
 	// Ruler flats are either a king or queen.
 	ArenaTypes::FlatIndex getRulerKingIndex();
 	ArenaTypes::FlatIndex getRulerQueenIndex();
-	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isPalace);
+	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, InteriorType interiorType);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -157,9 +151,10 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Writes out static entity animation data to animation states.
-	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, StaticAnimCondition condition,
-		const std::optional<bool> &rulerIsMale, const INFFile &inf, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
+		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+		EntityAnimationInstance *outAnimInst);
 
 	// Writes out creature animation data to animation states.
 	bool tryMakeDynamicEntityCreatureAnims(int creatureID, const ExeData &exeData,

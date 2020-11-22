@@ -2,6 +2,7 @@
 #include <functional>
 #include <optional>
 
+#include "InteriorUtils.h"
 #include "LevelData.h"
 #include "ProvinceDefinition.h"
 #include "VoxelDataType.h"
@@ -1498,7 +1499,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		&textureManager, &textureInstManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
-		const std::optional<bool> optRulerIsMale = [&locationDef]() -> std::optional<bool>
+		const std::optional<bool> rulerIsMale = [&locationDef]() -> std::optional<bool>
 		{
 			if (locationDef.getType() == LocationDefinition::Type::City)
 			{
@@ -1511,35 +1512,18 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 		}();
 
-		const bool isCity = worldData.getActiveWorldType() == WorldType::City;
-		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [&worldData, isCity]()
+		const WorldType worldType = worldData.getActiveWorldType();
+		const std::optional<InteriorType> interiorType = [&worldData]() -> std::optional<InteriorType>
 		{
-			const bool isPalace = [&worldData]()
+			if (worldData.getBaseWorldType() == WorldType::Interior)
 			{
-				const bool isInterior = worldData.getBaseWorldType() == WorldType::Interior;
-				if (isInterior)
-				{
-					const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
-					const VoxelDefinition::WallData::MenuType interiorType = interior.getInteriorType();
-					return interiorType == VoxelDefinition::WallData::MenuType::Palace;
-				}
-				else
-				{
-					return false;
-				}
-			}();
-
-			if (isCity)
-			{
-				return ArenaAnimUtils::StaticAnimCondition::IsCity;
-			}
-			else if (isPalace)
-			{
-				return ArenaAnimUtils::StaticAnimCondition::IsPalace;
+				const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
+				const VoxelDefinition::WallData::MenuType interiorMenuType = interior.getInteriorType();
+				return InteriorUtils::menuTypeToInteriorType(interiorMenuType);
 			}
 			else
 			{
-				return ArenaAnimUtils::StaticAnimCondition::None;
+				return std::nullopt;
 			}
 		}();
 
@@ -1568,8 +1552,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			EntityAnimationInstance entityAnimInst;
 			if (entityType == EntityType::Static)
 			{
-				if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, staticAnimCondition,
-					optRulerIsMale, this->inf, textureManager, &entityAnimDef, &entityAnimInst))
+				if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, worldType, interiorType,
+					rulerIsMale, this->inf, textureManager, &entityAnimDef, &entityAnimInst))
 				{
 					DebugLogWarning("Couldn't make static entity anims for flat \"" +
 						std::to_string(flatIndex) + "\".");
@@ -1649,7 +1633,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			else // @todo: handle other entity definition types.
 			{
 				// Doodad.
-				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
+				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, worldType);
 				const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 				const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
 
@@ -1759,7 +1743,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		}
 
 		// Spawn citizens at level start if the conditions are met for the new level.
-		const bool isWild = worldData.getActiveWorldType() == WorldType::Wilderness;
+		const bool isCity = worldType == WorldType::City;
+		const bool isWild = worldType == WorldType::Wilderness;
 		if (isCity || isWild)
 		{
 			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,

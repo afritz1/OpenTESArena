@@ -13,6 +13,8 @@
 #include "../Items/ArmorMaterialType.h"
 #include "../Media/TextureManager.h"
 #include "../World/ClimateType.h"
+#include "../World/InteriorType.h"
+#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -724,10 +726,10 @@ ArenaTypes::FlatIndex ArenaAnimUtils::getStreetLightInactiveIndex()
 	return 30;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isCity)
+bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, WorldType worldType)
 {
 	// Wilderness and interiors do not have streetlights.
-	if (!isCity)
+	if (worldType != WorldType::City)
 	{
 		return false;
 	}
@@ -746,9 +748,9 @@ ArenaTypes::FlatIndex ArenaAnimUtils::getRulerQueenIndex()
 	return 1;
 }
 
-bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isPalace)
+bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, InteriorType interiorType)
 {
-	if (!isPalace)
+	if (interiorType != InteriorType::Palace)
 	{
 		return false;
 	}
@@ -940,9 +942,9 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
-	StaticAnimCondition condition, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
+	const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 	EntityAnimationInstance *outAnimInst)
 {
 	DebugAssert(outAnimDef != nullptr);
@@ -965,7 +967,9 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
 	// Generate animation states based on what the entity needs. The animations to load depend on
 	// the flat index. The wilderness does not have any streetlights (there is no ID for them).
 	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
-	if (ArenaAnimUtils::isRulerFlatIndex(flatIndex, condition == StaticAnimCondition::IsPalace))
+	const bool isRuler = interiorType.has_value() && ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
+	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, worldType);
+	if (isRuler)
 	{
 		DebugAssert(rulerIsMale.has_value());
 		const ArenaTypes::FlatIndex rulerFlatIndex = *rulerIsMale ?
@@ -984,9 +988,8 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
 
 		addStateIfNotEmpty(outAnimDef, defIdleState);
 		addStateIfNotEmpty(outAnimInst, instIdleState);
-		return true;
 	}
-	else if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, condition == StaticAnimCondition::IsCity))
+	else if (isStreetlight)
 	{
 		const ArenaTypes::FlatIndex idleFlatIndex = ArenaAnimUtils::getStreetLightInactiveIndex();
 		EntityAnimationDefinition::State defIdleState;
@@ -1016,7 +1019,6 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
 		addStateIfNotEmpty(outAnimDef, defActivatedState);
 		addStateIfNotEmpty(outAnimInst, instIdleState);
 		addStateIfNotEmpty(outAnimInst, instActivatedState);
-		return true;
 	}
 	else
 	{
@@ -1034,8 +1036,9 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
 
 		addStateIfNotEmpty(outAnimDef, defIdleState);
 		addStateIfNotEmpty(outAnimInst, instIdleState);
-		return true;
 	}
+
+	return true;
 }
 
 bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const ExeData &exeData,

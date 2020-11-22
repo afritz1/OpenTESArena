@@ -48,10 +48,10 @@ namespace MapGeneration
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
 	bool tryMakeEntityDefFromArenaFlat(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
-		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		EntityDefinition *outDef)
+		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, EntityDefinition *outDef)
 	{
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, inf);
@@ -63,23 +63,6 @@ namespace MapGeneration
 		const bool isHumanEnemy = optItemIndex.has_value() &&
 			ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
 
-		const bool isCity = worldType == WorldType::City;
-		const ArenaAnimUtils::StaticAnimCondition staticAnimCondition = [isCity, isPalace]()
-		{
-			if (isPalace)
-			{
-				return ArenaAnimUtils::StaticAnimCondition::IsPalace;
-			}
-			else if (isCity)
-			{
-				return ArenaAnimUtils::StaticAnimCondition::IsCity;
-			}
-			else
-			{
-				return ArenaAnimUtils::StaticAnimCondition::None;
-			}
-		}();
-
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
 		//auto &entityAnimData = newEntityDef.getAnimationData();
@@ -87,7 +70,7 @@ namespace MapGeneration
 		EntityAnimationInstance entityAnimInst;
 		if (entityType == EntityType::Static)
 		{
-			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, staticAnimCondition,
+			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, worldType, interiorType,
 				rulerIsMale, inf, textureManager, &entityAnimDef, &entityAnimInst))
 			{
 				DebugLogWarning("Couldn't make static entity anims for flat \"" +
@@ -166,7 +149,7 @@ namespace MapGeneration
 		else // @todo: handle other entity definition types.
 		{
 			// Doodad.
-			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, isCity);
+			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, worldType);
 			const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 			const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
 
@@ -608,10 +591,10 @@ namespace MapGeneration
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
 	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, WorldType worldType,
-		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache)
 	{
 		for (SNInt florZ = 0; florZ < flor.getHeight(); florZ++)
@@ -654,9 +637,9 @@ namespace MapGeneration
 					{
 						const ArenaTypes::FlatIndex flatIndex = floorFlatID - 1;
 						EntityDefinition entityDef;
-						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
-							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-							textureManager, &entityDef))
+						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType,
+							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
+							binaryAssetLibrary, textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
@@ -679,10 +662,10 @@ namespace MapGeneration
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
 	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, WorldType worldType,
-		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
 		ArenaTransitionMappingCache *transitionCache)
 	{
@@ -759,9 +742,9 @@ namespace MapGeneration
 					{
 						const ArenaTypes::FlatIndex flatIndex = map1Voxel & 0x00FF;
 						EntityDefinition entityDef;
-						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
-							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-							textureManager, &entityDef))
+						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType,
+							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
+							binaryAssetLibrary, textureManager, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
@@ -915,10 +898,10 @@ namespace MapGeneration
 
 	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		int levelUpBlock, const std::optional<int> &levelDownBlock, ArenaRandom &random,
-		WorldType worldType, bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		WorldType worldType, InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *florMappings, ArenaVoxelMappingCache *map1Mappings,
 		ArenaEntityMappingCache *entityMappings, ArenaLockMappingCache *lockMappings,
 		ArenaTriggerMappingCache *triggerMappings, ArenaTransitionMappingCache *transitionMappings)
@@ -1029,10 +1012,10 @@ namespace MapGeneration
 			levelFLOR.get(), levelFLOR.getWidth(), levelFLOR.getHeight());
 		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(
 			levelMAP1.get(), levelMAP1.getWidth(), levelMAP1.getHeight());
-		MapGeneration::readArenaFLOR(levelFlorView, worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(levelFlorView, worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 			outLevelInfoDef, florMappings, entityMappings);
-		MapGeneration::readArenaMAP1(levelMap1View, worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaMAP1(levelMap1View, worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 			outLevelInfoDef, map1Mappings, entityMappings, transitionMappings);
 
@@ -1400,11 +1383,11 @@ namespace MapGeneration
 	}
 }
 
-void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, bool isPalace,
+void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, InteriorType interiorType,
 	const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = std::move(mifName);
-	this->isPalace = isPalace;
+	this->interiorType = interiorType;
 	this->rulerIsMale = rulerIsMale;
 }
 
@@ -1427,11 +1410,11 @@ void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
 	this->type = type;
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, bool isPalace,
+void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, InteriorType interiorType,
 	const std::optional<bool> &rulerIsMale)
 {
 	this->init(InteriorGenInfo::Type::Prefab);
-	this->prefab.init(std::move(mifName), isPalace, rulerIsMale);
+	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
 }
 
 void MapGeneration::InteriorGenInfo::initDungeon(uint32_t dungeonSeed, WEInt widthChunks,
@@ -1527,10 +1510,11 @@ void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
 }
 
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
-	bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
+	const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+	LevelInfoDefinition *outLevelInfoDef)
 {
 	// Each .MIF level voxel is unpacked into either a voxel or entity. These caches point to
 	// previously-added definitions in the level info def.
@@ -1542,10 +1526,10 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 	{
 		const MIFFile::Level &level = levels.get(i);
 		LevelDefinition &levelDef = outLevelDefs.get(i);
-		MapGeneration::readArenaFLOR(level.getFLOR(), worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(level.getFLOR(), worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
-		MapGeneration::readArenaMAP1(level.getMAP1(), worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaMAP1(level.getMAP1(), worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 
@@ -1563,11 +1547,12 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 }
 
 void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
-	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType, bool isPalace,
-	const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
-	LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint)
+	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType,
+	InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+	LevelInt2 *outStartPoint)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings;
 	ArenaEntityMappingCache entityMappings;
@@ -1629,7 +1614,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		MapGeneration::generateArenaDungeonLevel(mif, widthChunks, depthChunks, levelUpBlock,
-			levelDownBlock, random, worldType, isPalace, rulerIsMale, inf, charClassLibrary,
+			levelDownBlock, random, worldType, interiorType, rulerIsMale, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef,
 			&florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings,
 			&transitionMappings);
@@ -1698,13 +1683,13 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 	constexpr WorldType worldType = WorldType::City;
-	constexpr bool isPalace = false;
+	constexpr std::optional<InteriorType> interiorType; // City is not an interior.
 	constexpr std::optional<bool> rulerIsMale; // Not necessary for city.
 
-	MapGeneration::readArenaFLOR(tempFlorConstView, worldType, isPalace, rulerIsMale, inf,
+	MapGeneration::readArenaFLOR(tempFlorConstView, worldType, interiorType, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 		outLevelInfoDef, &florMappings, &entityMappings);
-	MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
+	MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, interiorType, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 		outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
@@ -1785,13 +1770,13 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 			tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 		constexpr WorldType worldType = WorldType::Wilderness;
-		constexpr bool isPalace = false;
+		constexpr std::optional<InteriorType> interiorType; // Wilderness is not an interior.
 		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
 
-		MapGeneration::readArenaFLOR(tempFlorConstView, worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(tempFlorConstView, worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
-		MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, isPalace, rulerIsMale, inf,
+		MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);

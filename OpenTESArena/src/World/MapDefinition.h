@@ -30,6 +30,7 @@ class TextAssetLibrary;
 class TextureManager;
 
 enum class ClimateType;
+enum class InteriorType;
 enum class WeatherType;
 enum class WorldType;
 
@@ -39,11 +40,13 @@ public:
 	class Interior
 	{
 	private:
-		// @todo: interior type (shop, mage's guild, dungeon, etc.)?
+		InteriorType interiorType;
 		// - InteriorDefinition?
 		// - probably store the music filename here, or make it retrievable by the interior type
 	public:
+		void init(InteriorType interiorType);
 
+		InteriorType getInteriorType() const;
 	};
 
 	class Wild
@@ -79,9 +82,10 @@ private:
 	Wild wild;
 
 	void init(WorldType worldType);
-	bool initInteriorLevels(const MIFFile &mif, bool isPalace, const std::optional<bool> &rulerIsMale,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+	bool initInteriorLevels(const MIFFile &mif, InteriorType interiorType,
+		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
