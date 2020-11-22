@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ArenaTypes.h"
+
 #include "components/dos/DOSUtils.h"
 
 // An .INF file contains definitions of what the IDs in a .MIF file point to. These 
@@ -65,7 +67,7 @@ public:
 		// *ITEM value, if any. *ITEM 32 should be associated with rats, the first
 		// creature type. The highest *ITEM number is 95, although some of them past
 		// 63 might not be used (character class names, lore names, etc.).
-		std::optional<int> itemIndex;
+		std::optional<ArenaTypes::ItemIndex> itemIndex;
 
 		int yOffset; // Offsets the flat some number of pixels. Negative goes up.
 		int health; // Number of hit points.
@@ -159,7 +161,7 @@ public:
 	const int *getMenu(int index) const;
 	int getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
-	const FlatData *getFlatWithItemIndex(int itemIndex) const;
+	const FlatData *getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
 	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

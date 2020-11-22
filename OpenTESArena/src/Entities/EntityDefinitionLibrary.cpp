@@ -1,5 +1,6 @@
 #include "EntityDefinitionLibrary.h"
 #include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../World/ClimateType.h"
 #include "../World/ClimateUtils.h"
@@ -168,7 +169,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		const int creatureCount = static_cast<int>(exeData.entities.creatureNames.size());
 		for (int i = 0; i < creatureCount; i++)
 		{
-			const int itemIndex = ArenaAnimUtils::getFirstCreatureItemIndex() + i;
+			const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::getFirstCreatureItemIndex() + i;
 			const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			addCreatureDef(creatureID, false);
 		}

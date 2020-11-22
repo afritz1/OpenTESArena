@@ -532,7 +532,7 @@ namespace ArenaAnimUtils
 		// Humans use a single dead body image.
 		const std::string animName = [&inf]()
 		{
-			constexpr int corpseItemIndex = 2;
+			constexpr ArenaTypes::ItemIndex corpseItemIndex = 2;
 			const INFFile::FlatData *corpseFlat = inf.getFlatWithItemIndex(corpseItemIndex);
 			DebugAssertMsg(corpseFlat != nullptr, "Missing human corpse flat.");
 			const int corpseFlatTextureIndex = corpseFlat->textureIndex;
@@ -652,19 +652,19 @@ namespace ArenaAnimUtils
 	}
 }
 
-bool ArenaAnimUtils::isFinalBossIndex(int itemIndex)
+bool ArenaAnimUtils::isFinalBossIndex(ArenaTypes::ItemIndex itemIndex)
 {
 	return itemIndex == 73;
 }
 
-bool ArenaAnimUtils::isCreatureIndex(int itemIndex, bool *outIsFinalBoss)
+bool ArenaAnimUtils::isCreatureIndex(ArenaTypes::ItemIndex itemIndex, bool *outIsFinalBoss)
 {
 	const bool isFinalBoss = ArenaAnimUtils::isFinalBossIndex(itemIndex);
 	*outIsFinalBoss = isFinalBoss;
 	return (itemIndex >= 32 && itemIndex <= 54) || isFinalBoss;
 }
 
-bool ArenaAnimUtils::isHumanEnemyIndex(int itemIndex)
+bool ArenaAnimUtils::isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex)
 {
 	return itemIndex >= 55 && itemIndex <= 72;
 }
@@ -674,7 +674,7 @@ EntityType ArenaAnimUtils::getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex
 	const auto &flatData = inf.getFlat(flatIndex);
 	if (flatData.itemIndex.has_value())
 	{
-		const int itemIndex = flatData.itemIndex.value();
+		const ArenaTypes::ItemIndex itemIndex = flatData.itemIndex.value();
 
 		// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
 		// are higher.
@@ -688,12 +688,12 @@ EntityType ArenaAnimUtils::getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex
 	}
 }
 
-int ArenaAnimUtils::getFirstCreatureItemIndex()
+ArenaTypes::ItemIndex ArenaAnimUtils::getFirstCreatureItemIndex()
 {
 	return 32;
 }
 
-int ArenaAnimUtils::getCreatureIDFromItemIndex(int itemIndex)
+int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex)
 {
 	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ?
 		ArenaAnimUtils::getFinalBossCreatureID() : (itemIndex - 31);
@@ -709,7 +709,7 @@ int ArenaAnimUtils::getCreatureIndexFromID(int creatureID)
 	return creatureID - 1;
 }
 
-int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(int itemIndex)
+int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(ArenaTypes::ItemIndex itemIndex)
 {
 	return itemIndex - 55;
 }
@@ -1185,7 +1185,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex,
 
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
-	const std::optional<int> &optItemIndex = flatData.itemIndex;
+	const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 	if (!optItemIndex.has_value())
 	{
 		DebugLogWarning("Can't make dynamic entity anim states for flat \"" +
@@ -1193,7 +1193,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex,
 		return false;
 	}
 
-	const int itemIndex = *optItemIndex;
+	const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
 
 	bool isFinalBoss;
 	const bool isCreature = ArenaAnimUtils::isCreatureIndex(itemIndex, &isFinalBoss);

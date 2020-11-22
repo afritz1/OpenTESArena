@@ -89,22 +89,22 @@ namespace ArenaAnimUtils
 
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
-	bool isFinalBossIndex(int itemIndex);
+	bool isFinalBossIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// *ITEM 32 to 54 are creatures (rat, goblin, etc.). The final boss is a special case.
-	bool isCreatureIndex(int itemIndex, bool *outIsFinalBoss);
+	bool isCreatureIndex(ArenaTypes::ItemIndex itemIndex, bool *outIsFinalBoss);
 
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
-	bool isHumanEnemyIndex(int itemIndex);
+	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
 	EntityType getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
 	// Gets the first creature's *ITEM index (rat).
-	int getFirstCreatureItemIndex();
+	ArenaTypes::ItemIndex getFirstCreatureItemIndex();
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
-	int getCreatureIDFromItemIndex(int itemIndex);
+	int getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
 	int getFinalBossCreatureID();
@@ -113,7 +113,7 @@ namespace ArenaAnimUtils
 	int getCreatureIndexFromID(int creatureID);
 
 	// Character classes (mage, warrior, etc.) used by human enemies.
-	int getCharacterClassIndexFromItemIndex(int itemIndex);
+	int getCharacterClassIndexFromItemIndex(ArenaTypes::ItemIndex itemIndex);
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.

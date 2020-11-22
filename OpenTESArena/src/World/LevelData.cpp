@@ -7,6 +7,7 @@
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/COLFile.h"
@@ -1548,7 +1549,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			const ArenaTypes::FlatIndex flatIndex = flatDef.getFlatIndex();
 			const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
 			const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
-			const std::optional<int> &optItemIndex = flatData.itemIndex;
+			const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
 			bool isFinalBoss;
 			const bool isCreature = optItemIndex.has_value() &&
@@ -1618,7 +1619,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			EntityDefinition newEntityDef;
 			if (isCreature)
 			{
-				const int itemIndex = *optItemIndex;
+				const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
 				const int creatureID = isFinalBoss ?
 					ArenaAnimUtils::getFinalBossCreatureID() :
 					ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);

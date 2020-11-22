@@ -18,6 +18,9 @@ namespace ArenaTypes
 	// Flat entries can be in .MIF and .RMD FLOR/MAP1 voxels.
 	using FlatIndex = uint16_t;
 
+	// *ITEM indices are used for entities; some values are reserved for creatures, humans, etc..
+	using ItemIndex = uint16_t;
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

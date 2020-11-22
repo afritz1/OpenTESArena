@@ -55,7 +55,7 @@ namespace MapGeneration
 	{
 		const INFFile::FlatData &flatData = inf.getFlat(flatIndex);
 		const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, inf);
-		const std::optional<int> &optItemIndex = flatData.itemIndex;
+		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
 		bool isFinalBoss;
 		const bool isCreature = optItemIndex.has_value() &&
@@ -136,7 +136,7 @@ namespace MapGeneration
 		// - Most likely also need location type, etc. because flatIndex is level-dependent.
 		if (isCreature)
 		{
-			const int itemIndex = *optItemIndex;
+			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isFinalBoss ?
 				ArenaAnimUtils::getFinalBossCreatureID() :
 				ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);

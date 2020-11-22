@@ -1045,7 +1045,7 @@ const INFFile::FlatData &INFFile::getFlat(int index) const
 	return this->flats[index];
 }
 
-const INFFile::FlatData *INFFile::getFlatWithItemIndex(int itemIndex) const
+const INFFile::FlatData *INFFile::getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
 {
 	const auto iter = std::find_if(this->flats.begin(), this->flats.end(),
 		[itemIndex](const FlatData &flat)
