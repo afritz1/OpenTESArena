@@ -56,12 +56,12 @@ public:
 	class FlatDef
 	{
 	private:
-		int flatIndex; // Index in .INF file flats and flat textures.
+		ArenaTypes::FlatIndex flatIndex; // Index in .INF file flats and flat textures.
 		std::vector<NewInt2> positions;
 	public:
-		FlatDef(int flatIndex);
+		FlatDef(ArenaTypes::FlatIndex flatIndex);
 
-		int getFlatIndex() const;
+		ArenaTypes::FlatIndex getFlatIndex() const;
 		const std::vector<NewInt2> &getPositions() const;
 
 		void addPosition(const NewInt2 &position);
@@ -179,7 +179,7 @@ private:
 	ChasmStates chasmStates;
 	std::string name;
 
-	void addFlatInstance(int flatIndex, const NewInt2 &flatPosition);
+	void addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition);
 protected:
 	// Used by derived LevelData load methods.
 	LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,

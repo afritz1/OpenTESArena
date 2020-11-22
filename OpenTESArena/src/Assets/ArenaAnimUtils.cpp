@@ -80,8 +80,8 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
-	bool tryMakeStaticEntityAnimState(int flatIndex, const char *stateName, double secondsPerFrame,
-		bool looping, const INFFile &inf, TextureManager &textureManager,
+	bool tryMakeStaticEntityAnimState(ArenaTypes::FlatIndex flatIndex, const char *stateName,
+		double secondsPerFrame, bool looping, const INFFile &inf, TextureManager &textureManager,
 		EntityAnimationDefinition::State *outDefState,
 		EntityAnimationInstance::State *outInstState)
 	{
@@ -669,7 +669,7 @@ bool ArenaAnimUtils::isHumanEnemyIndex(int itemIndex)
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
-EntityType ArenaAnimUtils::getEntityTypeFromFlat(int flatIndex, const INFFile &inf)
+EntityType ArenaAnimUtils::getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
 {
 	const auto &flatData = inf.getFlat(flatIndex);
 	if (flatData.itemIndex.has_value())
@@ -714,17 +714,17 @@ int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(int itemIndex)
 	return itemIndex - 55;
 }
 
-int ArenaAnimUtils::getStreetLightActiveIndex()
+ArenaTypes::FlatIndex ArenaAnimUtils::getStreetLightActiveIndex()
 {
 	return 29;
 }
 
-int ArenaAnimUtils::getStreetLightInactiveIndex()
+ArenaTypes::FlatIndex ArenaAnimUtils::getStreetLightInactiveIndex()
 {
 	return 30;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex, bool isCity)
+bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isCity)
 {
 	// Wilderness and interiors do not have streetlights.
 	if (!isCity)
@@ -736,17 +736,17 @@ bool ArenaAnimUtils::isStreetLightFlatIndex(int flatIndex, bool isCity)
 		(flatIndex == ArenaAnimUtils::getStreetLightInactiveIndex());
 }
 
-int ArenaAnimUtils::getRulerKingIndex()
+ArenaTypes::FlatIndex ArenaAnimUtils::getRulerKingIndex()
 {
 	return 0;
 }
 
-int ArenaAnimUtils::getRulerQueenIndex()
+ArenaTypes::FlatIndex ArenaAnimUtils::getRulerQueenIndex()
 {
 	return 1;
 }
 
-bool ArenaAnimUtils::isRulerFlatIndex(int flatIndex, bool isPalace)
+bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isPalace)
 {
 	if (!isPalace)
 	{
@@ -940,9 +940,10 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-bool ArenaAnimUtils::tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition condition,
-	const std::optional<bool> &rulerIsMale, const INFFile &inf, TextureManager &textureManager,
-	EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst)
+bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex,
+	StaticAnimCondition condition, const std::optional<bool> &rulerIsMale, const INFFile &inf,
+	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
+	EntityAnimationInstance *outAnimInst)
 {
 	DebugAssert(outAnimDef != nullptr);
 	DebugAssert(outAnimInst != nullptr);
@@ -967,7 +968,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition
 	if (ArenaAnimUtils::isRulerFlatIndex(flatIndex, condition == StaticAnimCondition::IsPalace))
 	{
 		DebugAssert(rulerIsMale.has_value());
-		const int rulerFlatIndex = *rulerIsMale ?
+		const ArenaTypes::FlatIndex rulerFlatIndex = *rulerIsMale ?
 			ArenaAnimUtils::getRulerKingIndex() : ArenaAnimUtils::getRulerQueenIndex();
 
 		EntityAnimationDefinition::State defIdleState;
@@ -987,7 +988,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition
 	}
 	else if (ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, condition == StaticAnimCondition::IsCity))
 	{
-		const int idleFlatIndex = ArenaAnimUtils::getStreetLightInactiveIndex();
+		const ArenaTypes::FlatIndex idleFlatIndex = ArenaAnimUtils::getStreetLightInactiveIndex();
 		EntityAnimationDefinition::State defIdleState;
 		EntityAnimationInstance::State instIdleState;
 		if (!ArenaAnimUtils::tryMakeStaticEntityAnimState(idleFlatIndex,
@@ -999,7 +1000,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition
 			return false;
 		}
 
-		const int activeFlatIndex = ArenaAnimUtils::getStreetLightActiveIndex();
+		const ArenaTypes::FlatIndex activeFlatIndex = ArenaAnimUtils::getStreetLightActiveIndex();
 		EntityAnimationDefinition::State defActivatedState;
 		EntityAnimationInstance::State instActivatedState;
 		if (!ArenaAnimUtils::tryMakeStaticEntityAnimState(activeFlatIndex,
@@ -1174,8 +1175,8 @@ bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isM
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex,
+	const std::optional<bool> &isMale, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 	EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst)
 {

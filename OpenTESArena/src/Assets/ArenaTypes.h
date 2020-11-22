@@ -15,6 +15,9 @@ namespace ArenaTypes
 	// For .MIF and .RMD FLOR/MAP1/MAP2 voxels.
 	using VoxelID = uint16_t;
 
+	// Flat entries can be in .MIF and .RMD FLOR/MAP1 voxels.
+	using FlatIndex = uint16_t;
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

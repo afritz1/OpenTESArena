@@ -42,12 +42,12 @@
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 
-LevelData::FlatDef::FlatDef(int flatIndex)
+LevelData::FlatDef::FlatDef(ArenaTypes::FlatIndex flatIndex)
 {
 	this->flatIndex = flatIndex;
 }
 
-int LevelData::FlatDef::getFlatIndex() const
+ArenaTypes::FlatIndex LevelData::FlatDef::getFlatIndex() const
 {
 	return this->flatIndex;
 }
@@ -356,7 +356,7 @@ const LevelData::Lock *LevelData::getLock(const NewInt2 &voxel) const
 	return (lockIter != this->locks.end()) ? &lockIter->second : nullptr;
 }
 
-void LevelData::addFlatInstance(int flatIndex, const NewInt2 &flatPosition)
+void LevelData::addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition)
 {
 	// Add position to instance list if the flat def has already been created.
 	const auto iter = std::find_if(this->flatsLists.begin(), this->flatsLists.end(),
@@ -513,7 +513,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 				return (voxel & 0xFF00) >> 8;
 			};
 
-			auto getFlatIndex = [](uint16_t voxel)
+			auto getFloorFlatID = [](uint16_t voxel)
 			{
 				return voxel & 0x00FF;
 			};
@@ -555,10 +555,11 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 
 			// See if the FLOR voxel contains a FLAT index (for raised platform flats).
-			const int flatIndex = getFlatIndex(florVoxel);
-			if (flatIndex > 0)
+			const int floorFlatID = getFloorFlatID(florVoxel);
+			if (floorFlatID > 0)
 			{
-				this->addFlatInstance(flatIndex - 1, NewInt2(x, z));
+				const ArenaTypes::FlatIndex flatIndex = floorFlatID - 1;
+				this->addFlatInstance(flatIndex, NewInt2(x, z));
 			}
 		}
 	}
@@ -984,7 +985,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				if (mostSigNibble == 0x8)
 				{
 					// The lower byte determines the index of a FLAT for an object.
-					const uint8_t flatIndex = map1Voxel & 0x00FF;
+					const ArenaTypes::FlatIndex flatIndex = map1Voxel & 0x00FF;
 					this->addFlatInstance(flatIndex, NewInt2(x, z));
 				}
 				else if (mostSigNibble == 0x9)
@@ -1544,7 +1545,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		for (const auto &flatDef : this->flatsLists)
 		{
-			const int flatIndex = flatDef.getFlatIndex();
+			const ArenaTypes::FlatIndex flatIndex = flatDef.getFlatIndex();
 			const INFFile::FlatData &flatData = this->inf.getFlat(flatIndex);
 			const EntityType entityType = ArenaAnimUtils::getEntityTypeFromFlat(flatIndex, this->inf);
 			const std::optional<int> &optItemIndex = flatData.itemIndex;

@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ArenaTypes.h"
 #include "INFFile.h"
 #include "../Entities/EntityAnimationDefinition.h"
 #include "../Entities/EntityAnimationInstance.h"
@@ -97,7 +98,7 @@ namespace ArenaAnimUtils
 	bool isHumanEnemyIndex(int itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
-	EntityType getEntityTypeFromFlat(int flatIndex, const INFFile &inf);
+	EntityType getEntityTypeFromFlat(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 
 	// Gets the first creature's *ITEM index (rat).
 	int getFirstCreatureItemIndex();
@@ -116,14 +117,14 @@ namespace ArenaAnimUtils
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
-	int getStreetLightActiveIndex();
-	int getStreetLightInactiveIndex();
-	bool isStreetLightFlatIndex(int flatIndex, bool isCity);
+	ArenaTypes::FlatIndex getStreetLightActiveIndex();
+	ArenaTypes::FlatIndex getStreetLightInactiveIndex();
+	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isCity);
 
 	// Ruler flats are either a king or queen.
-	int getRulerKingIndex();
-	int getRulerQueenIndex();
-	bool isRulerFlatIndex(int flatIndex, bool isPalace);
+	ArenaTypes::FlatIndex getRulerKingIndex();
+	ArenaTypes::FlatIndex getRulerQueenIndex();
+	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, bool isPalace);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -156,7 +157,7 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Writes out static entity animation data to animation states.
-	bool tryMakeStaticEntityAnims(int flatIndex, StaticAnimCondition condition,
+	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, StaticAnimCondition condition,
 		const std::optional<bool> &rulerIsMale, const INFFile &inf, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
 
@@ -173,7 +174,7 @@ namespace ArenaAnimUtils
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
 	// entity type (creature, human, etc.) is unknown.
-	bool tryMakeDynamicEntityAnims(int flatIndex, const std::optional<bool> &isMale,
+	bool tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, const std::optional<bool> &isMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);

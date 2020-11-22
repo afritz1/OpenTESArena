@@ -47,8 +47,8 @@ namespace MapGeneration
 	// Makes a modern entity definition from the given Arena FLAT index.
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
-	bool tryMakeEntityDefFromArenaFlat(int flatIndex, WorldType worldType, bool isPalace,
-		const std::optional<bool> &rulerIsMale, const INFFile &inf,
+	bool tryMakeEntityDefFromArenaFlat(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
+		bool isPalace, const std::optional<bool> &rulerIsMale, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityDefinition *outDef)
@@ -564,7 +564,7 @@ namespace MapGeneration
 	}
 
 	// Whether the MAP1 entity has transition data for the given world type.
-	bool isMap1TransitionEntity(int flatIndex, WorldType worldType)
+	bool isMap1TransitionEntity(ArenaTypes::FlatIndex flatIndex, WorldType worldType)
 	{
 		// Only wild dens are entities with transition data.
 		if (worldType != WorldType::Wilderness)
@@ -652,7 +652,7 @@ namespace MapGeneration
 					}
 					else
 					{
-						const int flatIndex = floorFlatID - 1;
+						const ArenaTypes::FlatIndex flatIndex = floorFlatID - 1;
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
 							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
@@ -757,7 +757,7 @@ namespace MapGeneration
 					}
 					else
 					{
-						const int flatIndex = map1Voxel & 0x00FF;
+						const ArenaTypes::FlatIndex flatIndex = map1Voxel & 0x00FF;
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, worldType, isPalace,
 							rulerIsMale, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
