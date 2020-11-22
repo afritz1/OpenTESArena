@@ -705,7 +705,7 @@ namespace MapGeneration
 				// Determine if this MAP1 voxel is for a voxel or entity.
 				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
 				const bool isVoxel = mostSigNibble != 0x8;
-				
+
 				if (isVoxel)
 				{
 					// Get voxel def ID from cache or create a new one.
@@ -725,10 +725,10 @@ namespace MapGeneration
 
 					outLevelDef->setVoxel(levelX, levelY, levelZ, voxelDefID);
 
-					LevelDefinition::TransitionDefID transitionDefID;
 					if (MapGeneration::isMap1TransitionVoxel(map1Voxel, worldType))
 					{
 						// Get transition def ID from cache or create a new one.
+						LevelDefinition::TransitionDefID transitionDefID;
 						const auto iter = transitionCache->find(map1Voxel);
 						if (iter != transitionCache->end())
 						{
@@ -1358,7 +1358,7 @@ namespace MapGeneration
 							DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(menuType)));
 						}
 					}();
-					
+
 					// Set building name info for the given menu type.
 					const auto iter = buildingNameMappings->find(name);
 					if (iter != buildingNameMappings->end())
