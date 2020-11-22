@@ -275,7 +275,7 @@ TextureID Panel::getTextureID(TextureName textureName, PaletteName paletteName) 
 	return this->getTextureID(textureFilename, paletteFilename);
 }
 
-TextureManager::IdGroup<TextureID> Panel::getTextureIDs(const std::string &textureName,
+TextureUtils::TextureIdGroup Panel::getTextureIDs(const std::string &textureName,
 	const std::string &paletteName) const
 {
 	auto &textureManager = game.getTextureManager();
@@ -290,7 +290,7 @@ TextureManager::IdGroup<TextureID> Panel::getTextureIDs(const std::string &textu
 		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
 	}
 
-	TextureManager::IdGroup<TextureID> textureIDs;
+	TextureUtils::TextureIdGroup textureIDs;
 	if (!textureManager.tryGetTextureIDs(textureName.c_str(), paletteID, renderer, &textureIDs))
 	{
 		DebugCrash("Couldn't get texture IDs for \"" + textureName + "\".");
@@ -299,7 +299,7 @@ TextureManager::IdGroup<TextureID> Panel::getTextureIDs(const std::string &textu
 	return textureIDs;
 }
 
-TextureManager::IdGroup<TextureID> Panel::getTextureIDs(TextureName textureName,
+TextureUtils::TextureIdGroup Panel::getTextureIDs(TextureName textureName,
 	PaletteName paletteName) const
 {
 	const std::string &textureFilename = TextureFile::fromName(textureName);

@@ -69,7 +69,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		}
 
 		const std::string &tilesFilename = TextureFile::fromName(TextureName::Parchment);
-		TextureManager::IdGroup<SurfaceID> tileIDs;
+		TextureUtils::SurfaceIdGroup tileIDs;
 		if (!textureManager.tryGetSurfaceIDs(tilesFilename.c_str(), tilesPaletteID, &tileIDs))
 		{
 			DebugCrash("Couldn't get surface IDs for \"" + tilesFilename + "\".");

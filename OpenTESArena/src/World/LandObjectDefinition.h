@@ -12,12 +12,12 @@ public:
 		Bright // Max brightness.
 	};
 private:
-	TextureManager::IdGroup<ImageID> imageIDs;
+	TextureUtils::ImageIdGroup imageIDs;
 	double animSeconds;
 	ShadingType shadingType;
 public:
 	// Initializer for an animated land.
-	void init(const TextureManager::IdGroup<ImageID> &imageIDs, double animSeconds,
+	void init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
 		ShadingType shadingType);
 
 	// Initializer for a non-animated land.

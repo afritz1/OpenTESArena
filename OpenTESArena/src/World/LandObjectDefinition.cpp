@@ -2,7 +2,7 @@
 
 #include "components/debug/Debug.h"
 
-void LandObjectDefinition::init(const TextureManager::IdGroup<ImageID> &imageIDs, double animSeconds,
+void LandObjectDefinition::init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
 	ShadingType shadingType)
 {
 	this->imageIDs = imageIDs;
@@ -12,7 +12,7 @@ void LandObjectDefinition::init(const TextureManager::IdGroup<ImageID> &imageIDs
 
 void LandObjectDefinition::init(ImageID imageID, ShadingType shadingType)
 {
-	TextureManager::IdGroup<ImageID> imageIDs(imageID, 1);
+	TextureUtils::ImageIdGroup imageIDs(imageID, 1);
 	constexpr double animSeconds = 0.0;
 	this->init(imageIDs, animSeconds, shadingType);
 }

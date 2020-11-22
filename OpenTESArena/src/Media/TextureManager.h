@@ -28,45 +28,14 @@ using TextureRef = BufferRef2D<const std::vector<Texture>, const Texture>;
 
 class TextureManager
 {
-public:
-	// Defines a contiguous group of texture IDs in the texture manager.
-	template <typename T>
-	struct IdGroup
-	{
-	private:
-		static_assert(std::is_integral_v<T>);
-
-		T startID;
-		int count;
-	public:
-		IdGroup(T startID, int count)
-		{
-			this->startID = startID;
-			this->count = count;
-		}
-
-		IdGroup() : IdGroup(-1, -1) { }
-
-		int getCount() const
-		{
-			return this->count;
-		}
-
-		T getID(int index) const
-		{
-			DebugAssert(index >= 0);
-			DebugAssert(index < count);
-			return this->startID + index;
-		}
-	};
 private:
 	// Mappings of texture filenames to their ID(s). 32-bit texture functions need to accept a
 	// palette ID and append it to the texture name behind the scenes so the same texture filename
 	// can map to different instances depending on the palette.
-	std::unordered_map<std::string, IdGroup<PaletteID>> paletteIDs;
-	std::unordered_map<std::string, IdGroup<ImageID>> imageIDs;
-	std::unordered_map<std::string, IdGroup<SurfaceID>> surfaceIDs;
-	std::unordered_map<std::string, IdGroup<TextureID>> textureIDs;
+	std::unordered_map<std::string, TextureUtils::PaletteIdGroup> paletteIDs;
+	std::unordered_map<std::string, TextureUtils::ImageIdGroup> imageIDs;
+	std::unordered_map<std::string, TextureUtils::SurfaceIdGroup> surfaceIDs;
+	std::unordered_map<std::string, TextureUtils::TextureIdGroup> textureIDs;
 
 	// Texture data for each texture type. Any groups of textures from the same filename are
 	// stored contiguously.
@@ -109,12 +78,12 @@ public:
 	// functions. If the requested file has multiple images but the caller requested only one, the
 	// returned ID will be for the first image. Similarly, if the file has a single image but the
 	// caller expected several, the returned ID group will have only one ID.
-	bool tryGetPaletteIDs(const char *filename, IdGroup<PaletteID> *outIDs);
-	bool tryGetImageIDs(const char *filename, const PaletteID *paletteID, IdGroup<ImageID> *outIDs);
-	bool tryGetImageIDs(const char *filename, IdGroup<ImageID> *outIDs);
-	bool tryGetSurfaceIDs(const char *filename, PaletteID paletteID, IdGroup<SurfaceID> *outIDs);
+	bool tryGetPaletteIDs(const char *filename, TextureUtils::PaletteIdGroup *outIDs);
+	bool tryGetImageIDs(const char *filename, const PaletteID *paletteID, TextureUtils::ImageIdGroup *outIDs);
+	bool tryGetImageIDs(const char *filename, TextureUtils::ImageIdGroup *outIDs);
+	bool tryGetSurfaceIDs(const char *filename, PaletteID paletteID, TextureUtils::SurfaceIdGroup *outIDs);
 	bool tryGetTextureIDs(const char *filename, PaletteID paletteID, Renderer &renderer,
-		IdGroup<TextureID> *outIDs);
+		TextureUtils::TextureIdGroup *outIDs);
 	bool tryGetPaletteID(const char *filename, PaletteID *outID);
 	bool tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID);
 	bool tryGetImageID(const char *filename, ImageID *outID);

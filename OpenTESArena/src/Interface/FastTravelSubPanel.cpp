@@ -46,7 +46,7 @@ const std::string &FastTravelSubPanel::getBackgroundFilename() const
 	return TextureFile::fromName(TextureName::WorldMap);
 }
 
-TextureManager::IdGroup<TextureID> FastTravelSubPanel::getAnimationTextureIDs() const
+TextureUtils::TextureIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
 {
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
@@ -60,7 +60,7 @@ TextureManager::IdGroup<TextureID> FastTravelSubPanel::getAnimationTextureIDs() 
 	}
 
 	const std::string &textureFilename = TextureFile::fromName(TextureName::FastTravel);
-	TextureManager::IdGroup<TextureID> textureIDs;
+	TextureUtils::TextureIdGroup textureIDs;
 	if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID, renderer, &textureIDs))
 	{
 		DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
@@ -575,7 +575,7 @@ void FastTravelSubPanel::render(Renderer &renderer)
 {
 	// Draw horse animation.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureManager::IdGroup<TextureID> animationTextureIDs = this->getAnimationTextureIDs();
+	const TextureUtils::TextureIdGroup animationTextureIDs = this->getAnimationTextureIDs();
 	const TextureID animationTextureID = animationTextureIDs.getID(static_cast<int>(this->frameIndex));
 	const TextureRef animFrame = textureManager.getTextureRef(animationTextureID);
 

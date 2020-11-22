@@ -27,7 +27,7 @@ private:
 	const std::string &getBackgroundFilename() const;
 
 	// Gets the animation texture IDs for display.
-	TextureManager::IdGroup<TextureID> getAnimationTextureIDs() const;
+	TextureUtils::TextureIdGroup getAnimationTextureIDs() const;
 
 	// Creates a text sub-panel for display when the player arrives at a city.
 	// - @todo: holiday pop-up function.

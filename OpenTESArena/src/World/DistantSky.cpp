@@ -229,7 +229,7 @@ DistantSky::TextureEntry::TextureEntry(std::string &&filename, ImageID imageID)
 }
 
 DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename,
-	TextureManager::IdGroup<ImageID> &&imageIDs)
+	TextureUtils::ImageIdGroup &&imageIDs)
 	: filename(std::move(filename)), imageIDs(std::move(imageIDs)) { }
 
 const int DistantSky::UNIQUE_ANGLES = 512;
@@ -454,7 +454,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		{
 			// Determine which frames the animation will have. .DFAs have multiple frames while
 			// .IMGs do not, although we can use the same texture manager function for both.
-			TextureManager::IdGroup<ImageID> imageIDs;
+			TextureUtils::ImageIdGroup imageIDs;
 			if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
 			{
 				DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
@@ -503,7 +503,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
 			if (!entryIndex.has_value())
 			{
-				TextureManager::IdGroup<ImageID> imageIDs;
+				TextureUtils::ImageIdGroup imageIDs;
 				if (!textureManager.tryGetImageIDs(filename.c_str(), &imageIDs))
 				{
 					DebugCrash("Couldn't get image IDs for \"" + filename + "\".");
@@ -800,7 +800,7 @@ ImageID DistantSky::getTextureSetImageID(int index, int elementIndex) const
 {
 	DebugAssertIndex(this->textureSets, index);
 	const TextureSetEntry &entry = this->textureSets[index];
-	const TextureManager::IdGroup<ImageID> &imageIDs = entry.imageIDs;
+	const TextureUtils::ImageIdGroup &imageIDs = entry.imageIDs;
 	const ImageID imageID = imageIDs.getID(elementIndex);
 	return imageID;
 }

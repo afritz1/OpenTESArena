@@ -64,9 +64,9 @@ protected:
 	// textures exist.
 	TextureID getTextureID(const std::string &textureName, const std::string &paletteName) const;
 	TextureID getTextureID(TextureName textureName, PaletteName paletteName) const;
-	TextureManager::IdGroup<TextureID> getTextureIDs(const std::string &textureName,
+	TextureUtils::TextureIdGroup getTextureIDs(const std::string &textureName,
 		const std::string &paletteName) const;
-	TextureManager::IdGroup<TextureID> getTextureIDs(TextureName textureName,
+	TextureUtils::TextureIdGroup getTextureIDs(TextureName textureName,
 		PaletteName paletteName) const;
 public:
 	Panel(Game &game);

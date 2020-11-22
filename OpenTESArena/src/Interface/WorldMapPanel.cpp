@@ -131,7 +131,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	const int provinceID = gameData.getProvinceDefinition().getRaceID();
 	const TextureID provinceTextTextureID = [this, provinceID]()
 	{
-		const TextureManager::IdGroup<TextureID> provinceTextTextureIDs = this->getTextureIDs(
+		const TextureUtils::TextureIdGroup provinceTextTextureIDs = this->getTextureIDs(
 			TextureFile::fromName(TextureName::ProvinceNames),
 			TextureFile::fromName(TextureName::WorldMap));
 		return provinceTextTextureIDs.getID(provinceID);

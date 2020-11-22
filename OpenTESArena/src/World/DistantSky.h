@@ -150,9 +150,9 @@ private:
 	struct TextureSetEntry
 	{
 		std::string filename;
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 
-		TextureSetEntry(std::string &&filename, TextureManager::IdGroup<ImageID> &&imageIDs);
+		TextureSetEntry(std::string &&filename, TextureUtils::ImageIdGroup &&imageIDs);
 	};
 
 	// Each object's texture index points into here.

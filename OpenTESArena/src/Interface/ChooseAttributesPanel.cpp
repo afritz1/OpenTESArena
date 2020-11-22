@@ -736,7 +736,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const Int2 &headOffset = this->headOffsets.at(portraitIndex);
 	const TextureRef headTexture = [this, &textureManager, portraitIndex, &headsFilename]() -> TextureRef
 	{
-		const TextureManager::IdGroup<TextureID> headTextureIDs =
+		const TextureUtils::TextureIdGroup headTextureIDs =
 			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
 		const TextureID headTextureID = headTextureIDs.getID(portraitIndex);
 		return textureManager.getTextureRef(headTextureID);

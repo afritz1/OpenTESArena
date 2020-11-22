@@ -685,7 +685,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 			{
-				const TextureManager::IdGroup<TextureID> staffDungeonIconTextureIDs = this->getTextureIDs(
+				const TextureUtils::TextureIdGroup staffDungeonIconTextureIDs = this->getTextureIDs(
 					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename);
 				const TextureID staffDungeonIconTextureID = staffDungeonIconTextureIDs.getID(this->provinceID);
 				return staffDungeonIconTextureID;
@@ -737,7 +737,7 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
 		TextureName::MapIconOutlines : TextureName::MapIconOutlinesBlinking);
 
-	const TextureManager::IdGroup<TextureID> highlightTextureIDs =
+	const TextureUtils::TextureIdGroup highlightTextureIDs =
 		this->getTextureIDs(outlinesFilename, backgroundFilename);
 
 	auto handleCityHighlight = [&textureManager, &renderer, &locationDef,

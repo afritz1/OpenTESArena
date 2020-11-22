@@ -51,7 +51,7 @@ void CinematicPanel::tick(double dt)
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
-	const TextureManager::IdGroup<TextureID> textureIDs =
+	const TextureUtils::TextureIdGroup textureIDs =
 		this->getTextureIDs(this->sequenceName, this->paletteName);
 
 	// If at the end, then prepare for the next panel.
@@ -68,7 +68,7 @@ void CinematicPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Get texture IDs in advance of any texture references.
-	const TextureManager::IdGroup<TextureID> textureIDs =
+	const TextureUtils::TextureIdGroup textureIDs =
 		this->getTextureIDs(this->sequenceName, this->paletteName);
 	const TextureID textureID = textureIDs.getID(this->imageIndex);
 

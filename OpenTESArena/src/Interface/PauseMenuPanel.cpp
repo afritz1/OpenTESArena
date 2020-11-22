@@ -413,7 +413,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		player.isMale(), player.getRaceID(), true);
 	const TextureRef portraitTexture = [this, &textureManager, &headsFilename, &player]() -> TextureRef
 	{
-		const TextureManager::IdGroup<TextureID> portraitTextureIDs = this->getTextureIDs(
+		const TextureUtils::TextureIdGroup portraitTextureIDs = this->getTextureIDs(
 			headsFilename, PaletteFile::fromName(PaletteName::Default));
 		const TextureID portraitTextureID = portraitTextureIDs.getID(player.getPortraitID());
 		return textureManager.getTextureRef(portraitTextureID);
@@ -421,7 +421,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	const TextureRef statusTexture = [this, &textureManager]() -> TextureRef
 	{
-		const TextureManager::IdGroup<TextureID> statusTextureIDs = this->getTextureIDs(
+		const TextureUtils::TextureIdGroup statusTextureIDs = this->getTextureIDs(
 			TextureFile::fromName(TextureName::StatusGradients),
 			PaletteFile::fromName(PaletteName::Default));
 		const TextureID statusTextureID = statusTextureIDs.getID(0);

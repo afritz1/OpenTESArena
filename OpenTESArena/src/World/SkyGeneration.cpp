@@ -101,7 +101,7 @@ namespace SkyGeneration
 		// Interior sky color comes from the darkest row of an .LGT light palette.
 		const char *lightPaletteName = outdoorDungeon ? "FOG.LGT" : "NORMAL.LGT";
 
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(lightPaletteName, &imageIDs))
 		{
 			DebugLogWarning("Couldn't get .LGT image for \"" + std::string(lightPaletteName) + "\".");
@@ -348,7 +348,7 @@ namespace SkyGeneration
 
 		// Determine which frames the animation will have. .DFAs have multiple frames while
 		// .IMGs do not, although we can use the same texture manager function for both.
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
 		{
 			DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
@@ -578,7 +578,7 @@ namespace SkyGeneration
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
 			const std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
 
-			TextureManager::IdGroup<ImageID> imageIDs;
+			TextureUtils::ImageIdGroup imageIDs;
 			if (!textureManager.tryGetImageIDs(moonFilename.c_str(), &imageIDs))
 			{
 				DebugCrash("Couldn't get image IDs for \"" + moonFilename + "\".");

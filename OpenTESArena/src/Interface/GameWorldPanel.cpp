@@ -717,7 +717,7 @@ Panel::CursorData GameWorldPanel::getCurrentCursor() const
 				}
 
 				const std::string &textureFilename = TextureFile::fromName(TextureName::ArrowCursors);
-				TextureManager::IdGroup<TextureID> textureIDs;
+				TextureUtils::TextureIdGroup textureIDs;
 				if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID,
 					renderer, &textureIDs))
 				{
@@ -768,7 +768,7 @@ TextureID GameWorldPanel::getCompassSliderTextureID() const
 TextureID GameWorldPanel::getPlayerPortraitTextureID(
 	const std::string &portraitsFilename, int portraitID) const
 {
-	const TextureManager::IdGroup<TextureID> textureIDs =
+	const TextureUtils::TextureIdGroup textureIDs =
 		this->getTextureIDs(portraitsFilename, PaletteFile::fromName(PaletteName::Default));
 	const TextureID textureID = textureIDs.getID(portraitID);
 	return textureID;
@@ -776,7 +776,7 @@ TextureID GameWorldPanel::getPlayerPortraitTextureID(
 
 TextureID GameWorldPanel::getStatusGradientTextureID(int gradientID) const
 {
-	const TextureManager::IdGroup<TextureID> textureIDs =
+	const TextureUtils::TextureIdGroup textureIDs =
 		this->getTextureIDs(TextureName::StatusGradients, PaletteName::Default);
 	const TextureID textureID = textureIDs.getID(gradientID);
 	return textureID;
@@ -789,7 +789,7 @@ TextureID GameWorldPanel::getNoSpellTextureID() const
 
 TextureID GameWorldPanel::getWeaponTextureID(const std::string &weaponFilename, int index) const
 {
-	const TextureManager::IdGroup<TextureID> textureIDs =
+	const TextureUtils::TextureIdGroup textureIDs =
 		this->getTextureIDs(weaponFilename, PaletteFile::fromName(PaletteName::Default));
 	const TextureID textureID = textureIDs.getID(index);
 	return textureID;

@@ -103,7 +103,7 @@ namespace ArenaAnimUtils
 
 		const double dimensionModifier = ArenaAnimUtils::getDimensionModifier(flatData);
 
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(flatTextureName, &imageIDs))
 		{
 			DebugLogWarning("Couldn't get static anim image IDs for \"" +
@@ -167,7 +167,7 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			TextureManager::IdGroup<ImageID> imageIDs;
+			TextureUtils::ImageIdGroup imageIDs;
 			if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
 			{
 				DebugLogWarning("Couldn't get creature anim image IDs for \"" + creatureFilename + "\".");
@@ -283,7 +283,7 @@ namespace ArenaAnimUtils
 
 			// Not all permutations of human filenames exist. If a series is missing,
 			// then probably need to have special behavior.
-			TextureManager::IdGroup<ImageID> imageIDs;
+			TextureUtils::ImageIdGroup imageIDs;
 			if (!textureManager.tryGetImageIDs(animName.c_str(), &imageIDs))
 			{
 				DebugLogWarning("Couldn't get human anim image IDs for \"" + animName + "\".");
@@ -356,7 +356,7 @@ namespace ArenaAnimUtils
 			return false;
 		}
 
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
 		{
 			DebugLogWarning("Couldn't get creature attack image IDs for \"" + creatureFilename + "\".");
@@ -437,7 +437,7 @@ namespace ArenaAnimUtils
 		}
 
 		animName = String::toUppercase(animName);
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(animName.c_str(), &imageIDs))
 		{
 			DebugLogWarning("Couldn't get human attack image IDs for \"" + animName + "\".");
@@ -490,7 +490,7 @@ namespace ArenaAnimUtils
 			return false;
 		}
 
-		TextureManager::IdGroup<ImageID> imageIDs;
+		TextureUtils::ImageIdGroup imageIDs;
 		if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
 		{
 			DebugLogWarning("Couldn't get creature death image IDs for \"" + creatureFilename + "\".");
@@ -596,7 +596,7 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			TextureManager::IdGroup<ImageID> imageIDs;
+			TextureUtils::ImageIdGroup imageIDs;
 			if (!textureManager.tryGetImageIDs(citizenFilename.c_str(), &imageIDs))
 			{
 				DebugLogWarning("Couldn't get citizen anim image IDs for \"" + citizenFilename + "\".");

@@ -201,7 +201,7 @@ void CharacterPanel::render(Renderer &renderer)
 	// Get all texture IDs in advance of any texture references.
 	const TextureID headTextureID = [this, &headsFilename, &player]()
 	{
-		const TextureManager::IdGroup<TextureID> headTextureIDs =
+		const TextureUtils::TextureIdGroup headTextureIDs =
 			this->getTextureIDs(headsFilename, PaletteFile::fromName(PaletteName::CharSheet));
 		return headTextureIDs.getID(player.getPortraitID());
 	}();

@@ -1,6 +1,6 @@
 #include "MoonObjectDefinition.h"
 
-void MoonObjectDefinition::init(const TextureManager::IdGroup<ImageID> &imageIDs)
+void MoonObjectDefinition::init(const TextureUtils::ImageIdGroup &imageIDs)
 {
 	this->imageIDs = imageIDs;
 }
