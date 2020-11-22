@@ -6,6 +6,7 @@
 
 #include "LocationDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 
@@ -25,7 +26,7 @@ namespace LevelUtils
 	double convertArenaCeilingHeight(int ceilingHeight);
 
 	// Gets the number of voxels a MAP2 voxel occupies vertically (at least 1).
-	int getMap2VoxelHeight(uint16_t map2Voxel);
+	int getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel);
 
 	// Gets the max height from a set of MAP2 voxels.
 	int getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2);

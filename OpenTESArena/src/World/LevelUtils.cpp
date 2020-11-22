@@ -18,12 +18,8 @@ double LevelUtils::convertArenaCeilingHeight(int ceilingHeight)
 	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
 }
 
-int LevelUtils::getMap2VoxelHeight(uint16_t map2Voxel)
+int LevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
 {
-	// Can use this function for either .MIF or .RMD voxel data.
-	static_assert(sizeof(map2Voxel) == sizeof(ArenaTypes::VoxelID));
-	static_assert(sizeof(map2Voxel) == sizeof(ArenaTypes::VoxelID));
-
 	if ((map2Voxel & 0x80) == 0x80)
 	{
 		return 2;
