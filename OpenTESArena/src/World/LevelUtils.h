@@ -36,18 +36,18 @@ namespace LevelUtils
 
 	// Gets the offset value of a door voxel in the world. Used with various calculations
 	// (.MIF name, lock level).
-	uint16_t getDoorVoxelOffset(int x, int y);
+	uint16_t getDoorVoxelOffset(WEInt x, SNInt y);
 
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
-	std::string getDoorVoxelMifName(int x, int y, int menuID, uint32_t rulerSeed,
+	std::string getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
 		bool isCity, const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
-	int getDoorVoxelLockLevel(int x, int y, ArenaRandom &random);
+	int getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random);
 
 	// Gets the '#' number used in IN#.0x and RE#.0x save files.
-	int getServiceSaveFileNumber(int doorX, int doorY);
+	int getServiceSaveFileNumber(WEInt doorX, SNInt doorY);
 	int getWildernessServiceSaveFileNumber(int wildX, int wildY);
 }
 

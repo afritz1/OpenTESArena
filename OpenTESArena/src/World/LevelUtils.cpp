@@ -71,12 +71,12 @@ int LevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::Ce
 	}
 }
 
-uint16_t LevelUtils::getDoorVoxelOffset(int x, int y)
+uint16_t LevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 {
 	return (y << 8) + (x << 1);
 }
 
-std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, uint32_t rulerSeed,
+std::string LevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 	bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
 	bool isCity, const ExeData &exeData)
 {
@@ -214,7 +214,7 @@ std::string LevelUtils::getDoorVoxelMifName(int x, int y, int menuID, uint32_t r
 	}
 }
 
-int LevelUtils::getDoorVoxelLockLevel(int x, int y, ArenaRandom &random)
+int LevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random)
 {
 	const uint16_t offset = LevelUtils::getDoorVoxelOffset(x, y);
 	const uint32_t seed = offset + (offset << 16);
@@ -222,7 +222,7 @@ int LevelUtils::getDoorVoxelLockLevel(int x, int y, ArenaRandom &random)
 	return (random.next() % 10) + 1; // 0..9 + 1.
 }
 
-int LevelUtils::getServiceSaveFileNumber(int doorX, int doorY)
+int LevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)
 {
 	return (doorY << 8) + doorX;
 }
