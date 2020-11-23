@@ -179,8 +179,8 @@ namespace MapGeneration
 			VoxelDefinition::ChasmData::Type chasmType;
 			if (textureID == MIFUtils::DRY_CHASM)
 			{
-				const int *dryChasmIndex = inf.getDryChasmIndex();
-				if (dryChasmIndex != nullptr)
+				const std::optional<int> &dryChasmIndex = inf.getDryChasmIndex();
+				if (dryChasmIndex.has_value())
 				{
 					chasmID = *dryChasmIndex;
 				}
@@ -194,8 +194,8 @@ namespace MapGeneration
 			}
 			else if (textureID == MIFUtils::LAVA_CHASM)
 			{
-				const int *lavaChasmIndex = inf.getLavaChasmIndex();
-				if (lavaChasmIndex != nullptr)
+				const std::optional<int> &lavaChasmIndex = inf.getLavaChasmIndex();
+				if (lavaChasmIndex.has_value())
 				{
 					chasmID = *lavaChasmIndex;
 				}
@@ -209,8 +209,8 @@ namespace MapGeneration
 			}
 			else if (textureID == MIFUtils::WET_CHASM)
 			{
-				const int *wetChasmIndex = inf.getWetChasmIndex();
-				if (wetChasmIndex != nullptr)
+				const std::optional<int> &wetChasmIndex = inf.getWetChasmIndex();
+				if (wetChasmIndex.has_value())
 				{
 					chasmID = *wetChasmIndex;
 				}
@@ -250,17 +250,17 @@ namespace MapGeneration
 				const int textureIndex = mostSigByte - 1;
 
 				// Menu index if the voxel has the *MENU tag, or -1 if it is not a *MENU voxel.
-				const int menuIndex = inf.getMenuIndex(textureIndex);
-				const bool isMenu = menuIndex != -1;
+				const std::optional<int> &menuIndex = inf.getMenuIndex(textureIndex);
+				const bool isMenu = menuIndex.has_value();
 
 				// Determine what the type of the wall is (level up/down, menu, or just plain solid).
 				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
 				{
 					// Returns whether the given index pointer is non-null and matches the current
 					// texture index.
-					auto matchesIndex = [textureIndex](const int *index)
+					auto matchesIndex = [textureIndex](const std::optional<int> &index)
 					{
-						return (index != nullptr) && (*index == textureIndex);
+						return index.has_value() && (*index == textureIndex);
 					};
 
 					if (matchesIndex(inf.getLevelUpIndex()))
@@ -282,7 +282,7 @@ namespace MapGeneration
 				}();
 
 				return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex,
-					isMenu ? &menuIndex : nullptr, type);
+					menuIndex, type);
 			}
 			else
 			{
@@ -292,10 +292,10 @@ namespace MapGeneration
 
 				const int sideID = [&inf, wallTextureID]()
 				{
-					const int *ptr = inf.getBoxSide(wallTextureID);
-					if (ptr != nullptr)
+					const std::optional<int> &id = inf.getBoxSide(wallTextureID);
+					if (id.has_value())
 					{
-						return *ptr;
+						return *id;
 					}
 					else
 					{
@@ -321,10 +321,10 @@ namespace MapGeneration
 
 				const int ceilingID = [&inf, capTextureID]()
 				{
-					const int *ptr = inf.getBoxCap(capTextureID);
-					if (ptr != nullptr)
+					const std::optional<int> &id = inf.getBoxCap(capTextureID);
+					if (id.has_value())
 					{
-						return *ptr;
+						return *id;
 					}
 					else
 					{
@@ -498,7 +498,7 @@ namespace MapGeneration
 	VoxelDefinition makeVoxelDefFromMAP2(ArenaTypes::VoxelID map2Voxel)
 	{
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
-		const int *menuID = nullptr;
+		constexpr std::optional<int> menuID; // MAP2 cannot have a *MENU ID.
 		return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex, menuID,
 			VoxelDefinition::WallData::Type::Solid);
 	}
@@ -542,8 +542,27 @@ namespace MapGeneration
 	// Whether the MAP1 voxel has transition data for the given world type.
 	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType)
 	{
+		// @todo:
+		// - cities/wilderness: city gates, interior entrance
+		// - interior: interior exit, level up, level down
+
 		DebugNotImplemented();
-		return false;
+		if (worldType == WorldType::Interior)
+		{
+			return false;
+		}
+		else if (worldType == WorldType::City)
+		{
+			return false;
+		}
+		else if (worldType == WorldType::Wilderness)
+		{
+			return false;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(worldType)));
+		}
 	}
 
 	// Whether the MAP1 entity has transition data for the given world type.
@@ -555,6 +574,7 @@ namespace MapGeneration
 			return false;
 		}
 
+		// @todo: this could probably just be hardcoded to a single number for wild dens
 		DebugNotImplemented();
 		return false;
 	}

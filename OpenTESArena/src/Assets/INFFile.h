@@ -156,10 +156,10 @@ public:
 
 	const std::vector<VoxelTextureData> &getVoxelTextures() const;
 	const std::vector<FlatTextureData> &getFlatTextures() const;
-	const int *getBoxCap(int index) const;
-	const int *getBoxSide(int index) const;
-	const int *getMenu(int index) const;
-	int getMenuIndex(int textureID) const; // Temporary hack?
+	const std::optional<int> &getBoxCap(int index) const;
+	const std::optional<int> &getBoxSide(int index) const;
+	const std::optional<int> &getMenu(int index) const;
+	std::optional<int> getMenuIndex(int textureID) const; // Temporary hack?
 	const FlatData &getFlat(int index) const;
 	const FlatData *getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
 	const char *getSound(int index) const;
@@ -170,11 +170,11 @@ public:
 	const RiddleData &getRiddle(int index) const;
 	const TextData &getText(int index) const;
 	const char *getName() const;
-	const int *getDryChasmIndex() const;
-	const int *getLavaChasmIndex() const;
-	const int *getLevelDownIndex() const;
-	const int *getLevelUpIndex() const;
-	const int *getWetChasmIndex() const;
+	const std::optional<int> &getDryChasmIndex() const;
+	const std::optional<int> &getLavaChasmIndex() const;
+	const std::optional<int> &getLevelDownIndex() const;
+	const std::optional<int> &getLevelUpIndex() const;
+	const std::optional<int> &getWetChasmIndex() const;
 	const CeilingData &getCeiling() const;
 };
 

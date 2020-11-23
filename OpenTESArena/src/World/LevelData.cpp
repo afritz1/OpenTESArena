@@ -452,10 +452,10 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	{
 		const int dryChasmID = [&inf]()
 		{
-			const int *ptr = inf.getDryChasmIndex();
-			if (ptr != nullptr)
+			const std::optional<int> &index = inf.getDryChasmIndex();
+			if (index.has_value())
 			{
-				return *ptr;
+				return *index;
 			}
 			else
 			{
@@ -471,10 +471,10 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	{
 		const int lavaChasmID = [&inf]()
 		{
-			const int *ptr = inf.getLavaChasmIndex();
-			if (ptr != nullptr)
+			const std::optional<int> &index = inf.getLavaChasmIndex();
+			if (index.has_value())
 			{
-				return *ptr;
+				return *index;
 			}
 			else
 			{
@@ -490,10 +490,10 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	{
 		const int wetChasmID = [&inf]()
 		{
-			const int *ptr = inf.getWetChasmIndex();
-			if (ptr != nullptr)
+			const std::optional<int> &index = inf.getWetChasmIndex();
+			if (index.has_value())
 			{
-				return *ptr;
+				return *index;
 			}
 			else
 			{
@@ -665,20 +665,19 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 			{
 				const int textureIndex = mostSigByte - 1;
 
-				// Menu index if the voxel has the *MENU tag, or -1 if it is
-				// not a *MENU voxel.
-				const int menuIndex = inf.getMenuIndex(textureIndex);
-				const bool isMenu = menuIndex != -1;
+				// Menu index if the voxel has the *MENU tag, or empty if it is not a *MENU voxel.
+				const std::optional<int> &menuIndex = inf.getMenuIndex(textureIndex);
+				const bool isMenu = menuIndex.has_value();
 
 				// Determine what the type of the wall is (level up/down, menu, 
 				// or just plain solid).
 				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
 				{
-					// Returns whether the given index pointer is non-null and
-					// matches the current texture index.
-					auto matchesIndex = [textureIndex](const int *index)
+					// Returns whether the given index pointer is non-null and matches the
+					// current texture index.
+					auto matchesIndex = [textureIndex](const std::optional<int> &index)
 					{
-						return (index != nullptr) && (*index == textureIndex);
+						return index.has_value() && (*index == textureIndex);
 					};
 
 					if (matchesIndex(inf.getLevelUpIndex()))
@@ -700,13 +699,13 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				}();
 
 				VoxelDefinition voxelDef = VoxelDefinition::makeWall(
-					textureIndex, textureIndex, textureIndex, (isMenu ? &menuIndex : nullptr), type);
+					textureIndex, textureIndex, textureIndex, menuIndex, type);
 
 				// Set the *MENU index if it's a menu voxel.
 				if (isMenu)
 				{
 					VoxelDefinition::WallData &wallData = voxelDef.wall;
-					wallData.menuID = menuIndex;
+					wallData.menuID = *menuIndex;
 				}
 
 				return voxelDef;
@@ -737,10 +736,10 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 
 				const int sideID = [&inf, wallTextureID]()
 				{
-					const int *ptr = inf.getBoxSide(wallTextureID);
-					if (ptr != nullptr)
+					const std::optional<int> &id = inf.getBoxSide(wallTextureID);
+					if (id.has_value())
 					{
-						return *ptr;
+						return *id;
 					}
 					else
 					{
@@ -768,10 +767,10 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 
 				const int ceilingID = [&inf, capTextureID]()
 				{
-					const int *ptr = inf.getBoxCap(capTextureID);
-					if (ptr != nullptr)
+					const std::optional<int> &id = inf.getBoxCap(capTextureID);
+					if (id.has_value())
 					{
-						return *ptr;
+						return *id;
 					}
 					else
 					{
@@ -1063,7 +1062,7 @@ void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, co
 		else
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
-			const int *menuID = nullptr;
+			constexpr std::optional<int> menuID; // MAP2 cannot have a *MENU ID.
 			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
 				textureIndex, textureIndex, textureIndex, menuID,
 				VoxelDefinition::WallData::Type::Solid));
@@ -1256,27 +1255,26 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 
 	const int newTextureID = [this, newChasmType]()
 	{
-		const int *chasmIndexPtr = nullptr;
+		std::optional<int> chasmIndex;
 
-		// Ask the .INF file what the chasm texture is.
 		switch (newChasmType)
 		{
 		case VoxelDefinition::ChasmData::Type::Dry:
-			chasmIndexPtr = this->inf.getDryChasmIndex();
+			chasmIndex = this->inf.getDryChasmIndex();
 			break;
 		case VoxelDefinition::ChasmData::Type::Wet:
-			chasmIndexPtr = this->inf.getWetChasmIndex();
+			chasmIndex = this->inf.getWetChasmIndex();
 			break;
 		case VoxelDefinition::ChasmData::Type::Lava:
-			chasmIndexPtr = this->inf.getLavaChasmIndex();
+			chasmIndex = this->inf.getLavaChasmIndex();
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(newChasmType)));
 			break;
 		}
 
-		// Default to whatever the first texture is if one is not found.
-		return (chasmIndexPtr != nullptr) ? *chasmIndexPtr : 0;
+		// Default to the first texture if one is not found.
+		return chasmIndex.has_value() ? *chasmIndex : 0;
 	}();
 
 	const VoxelDefinition newDef = VoxelDefinition::makeChasm(newTextureID, newChasmType);

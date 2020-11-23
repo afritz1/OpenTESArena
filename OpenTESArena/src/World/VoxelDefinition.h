@@ -1,6 +1,8 @@
 #ifndef VOXEL_DEFINITION_H
 #define VOXEL_DEFINITION_H
 
+#include <optional>
+
 #include "../Math/Vector3.h"
 
 // The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
@@ -166,8 +168,8 @@ public:
 
 	VoxelDefinition();
 
-	static VoxelDefinition makeWall(int sideID, int floorID, int ceilingID, const int *menuID,
-		WallData::Type type);
+	static VoxelDefinition makeWall(int sideID, int floorID, int ceilingID,
+		const std::optional<int> &menuID, WallData::Type type);
 	static VoxelDefinition makeFloor(int id);
 	static VoxelDefinition makeCeiling(int id);
 	static VoxelDefinition makeRaised(int sideID, int floorID, int ceilingID, double yOffset,

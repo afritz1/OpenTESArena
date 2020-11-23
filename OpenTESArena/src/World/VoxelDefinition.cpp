@@ -184,7 +184,7 @@ VoxelDefinition::VoxelDefinition()
 }
 
 VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID,
-	const int *menuID, WallData::Type type)
+	const std::optional<int> &menuID, WallData::Type type)
 {
 	if (sideID >= VoxelDefinition::TOTAL_IDS)
 	{
@@ -210,7 +210,7 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 	wall.ceilingID = ceilingID % VoxelDefinition::TOTAL_IDS;
 
 	// If the menu ID parameter is given, use it.
-	if (menuID != nullptr)
+	if (menuID.has_value())
 	{
 		DebugAssert(type == WallData::Type::Menu);
 		wall.menuID = *menuID;

@@ -996,47 +996,48 @@ const std::vector<INFFile::FlatTextureData> &INFFile::getFlatTextures() const
 	return this->flatTextures;
 }
 
-const int *INFFile::getBoxCap(int index) const
+const std::optional<int> &INFFile::getBoxCap(int index) const
 {
 	DebugAssertIndex(this->boxCaps, index);
-	const auto &opt = this->boxCaps[index];
-	return opt.has_value() ? &opt.value() : nullptr;
+	return this->boxCaps[index];
 }
 
-const int *INFFile::getBoxSide(int index) const
+const std::optional<int> &INFFile::getBoxSide(int index) const
 {
 	DebugAssertIndex(this->boxSides, index);
-	const auto &opt = this->boxSides[index];
+	const std::optional<int> &opt = this->boxSides[index];
 
-	// Some null pointers were being returned here, and they appear to be errors within
-	// the Arena data (i.e., the initial level in some noble houses asks for wall texture 
-	// #14, which doesn't exist in NOBLE1.INF), so maybe it should resort to a default 
-	// index instead.
+	// This needs to handle errors in the Arena data (i.e., the initial level in some noble houses
+	// asks for wall texture #14, which doesn't exist in NOBLE1.INF).
 	if (opt.has_value())
 	{
-		return &opt.value();
+		return opt;
 	}
 	else
 	{
 		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
 		DebugAssert(this->boxSides.size() > 0);
-		return &this->boxSides[0].value();
+		return this->boxSides[0];
 	}
 }
 
-const int *INFFile::getMenu(int index) const
+const std::optional<int> &INFFile::getMenu(int index) const
 {
 	DebugAssertIndex(this->menus, index);
-	const auto &opt = this->menus[index];
-	return opt.has_value() ? &opt.value() : nullptr;
+	return this->menus[index];
 }
 
-int INFFile::getMenuIndex(int textureID) const
+std::optional<int> INFFile::getMenuIndex(int textureID) const
 {
-	// Returns the index of the texture ID in the menus array, or -1 if not found.
 	const auto iter = std::find(this->menus.begin(), this->menus.end(), textureID);
-	return (iter != this->menus.end()) ? 
-		static_cast<int>(std::distance(this->menus.begin(), iter)) : -1;
+	if (iter != this->menus.end())
+	{
+		return static_cast<int>(std::distance(this->menus.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
 }
 
 const INFFile::FlatData &INFFile::getFlat(int index) const
@@ -1109,29 +1110,29 @@ const char *INFFile::getName() const
 	return this->name.data();
 }
 
-const int *INFFile::getDryChasmIndex() const
+const std::optional<int> &INFFile::getDryChasmIndex() const
 {
-	return this->dryChasmIndex.has_value() ? &this->dryChasmIndex.value() : nullptr;
+	return this->dryChasmIndex;
 }
 
-const int *INFFile::getLavaChasmIndex() const
+const std::optional<int> &INFFile::getLavaChasmIndex() const
 {
-	return this->lavaChasmIndex.has_value() ? &this->lavaChasmIndex.value() : nullptr;
+	return this->lavaChasmIndex;
 }
 
-const int *INFFile::getLevelDownIndex() const
+const std::optional<int> &INFFile::getLevelDownIndex() const
 {
-	return this->levelDownIndex.has_value() ? &this->levelDownIndex.value() : nullptr;
+	return this->levelDownIndex;
 }
 
-const int *INFFile::getLevelUpIndex() const
+const std::optional<int> &INFFile::getLevelUpIndex() const
 {
-	return this->levelUpIndex.has_value() ? &this->levelUpIndex.value() : nullptr;
+	return this->levelUpIndex;
 }
 
-const int *INFFile::getWetChasmIndex() const
+const std::optional<int> &INFFile::getWetChasmIndex() const
 {
-	return this->wetChasmIndex.has_value() ? &this->wetChasmIndex.value() : nullptr;
+	return this->wetChasmIndex;
 }
 
 const INFFile::CeilingData &INFFile::getCeiling() const
