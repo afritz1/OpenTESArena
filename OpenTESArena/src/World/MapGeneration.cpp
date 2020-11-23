@@ -44,6 +44,9 @@ namespace MapGeneration
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
 
+	// .INF flat index for determining if a flat is a transition to a wild dungeon.
+	constexpr ArenaTypes::FlatIndex WildDenFlatIndex = 37;
+
 	// Makes a modern entity definition from the given Arena FLAT index.
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
@@ -574,9 +577,7 @@ namespace MapGeneration
 			return false;
 		}
 
-		// @todo: this could probably just be hardcoded to a single number for wild dens
-		DebugNotImplemented();
-		return false;
+		return flatIndex == MapGeneration::WildDenFlatIndex;
 	}
 
 	TransitionDefinition makeTransitionDefFromMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble,
