@@ -543,24 +543,35 @@ namespace MapGeneration
 	}
 
 	// Whether the MAP1 voxel has transition data for the given world type.
-	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType)
+	// @todo: maybe remake this to like some std::optional<TransitionGenInfo> so it can reuse some
+	// work between this and actually making the transition def. The gen info would have interior type,
+	// coordinates, etc..
+	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType,
+		const INFFile &inf)
 	{
-		// @todo:
-		// - cities/wilderness: city gates, interior entrance
-		// - interior: interior exit, level up, level down
+		const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
+		const uint8_t leastSigByte = map1Voxel & 0x007F;
+		const bool isWall = mostSigByte == leastSigByte;
+		if (!isWall)
+		{
+			// Raised platforms cannot be transitions.
+			return false;
+		}
 
-		DebugNotImplemented();
+		const int textureIndex = mostSigByte - 1;
+		const std::optional<int> menuIndex = inf.getMenuIndex(textureIndex);
+
 		if (worldType == WorldType::Interior)
 		{
-			return false;
+			const std::optional<int> &levelUpIndex = inf.getLevelUpIndex();
+			const std::optional<int> &levelDownIndex = inf.getLevelDownIndex();
+			return (levelUpIndex.has_value() && (*levelUpIndex == textureIndex)) ||
+				(levelDownIndex.has_value() && (*levelDownIndex == textureIndex)) ||
+				menuIndex.has_value();
 		}
-		else if (worldType == WorldType::City)
+		else if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 		{
-			return false;
-		}
-		else if (worldType == WorldType::Wilderness)
-		{
-			return false;
+			return menuIndex.has_value();
 		}
 		else
 		{
@@ -580,10 +591,10 @@ namespace MapGeneration
 		return flatIndex == MapGeneration::WildDenFlatIndex;
 	}
 
-	TransitionDefinition makeTransitionDefFromMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble,
-		WorldType worldType, const INFFile &inf)
+	TransitionDefinition makeTransitionDefFromMap1Voxel(ArenaTypes::VoxelID map1Voxel,
+		uint8_t mostSigNibble, WorldType worldType, const INFFile &inf)
 	{
-		// @todo
+		// @todo: probably need to get menuID from map1Voxel then LevelUtils::getDoorVoxelMifName()
 		DebugNotImplemented();
 
 		TransitionDefinition transitionDef;
@@ -729,7 +740,7 @@ namespace MapGeneration
 
 					outLevelDef->setVoxel(levelX, levelY, levelZ, voxelDefID);
 
-					if (MapGeneration::isMap1TransitionVoxel(map1Voxel, worldType))
+					if (MapGeneration::isMap1TransitionVoxel(map1Voxel, worldType, inf))
 					{
 						// Get transition def ID from cache or create a new one.
 						LevelDefinition::TransitionDefID transitionDefID;
@@ -740,7 +751,7 @@ namespace MapGeneration
 						}
 						else
 						{
-							TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMAP1(
+							TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMap1Voxel(
 								map1Voxel, mostSigNibble, worldType, inf);
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
