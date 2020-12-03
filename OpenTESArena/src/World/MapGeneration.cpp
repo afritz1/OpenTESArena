@@ -47,6 +47,16 @@ namespace MapGeneration
 	// .INF flat index for determining if a flat is a transition to a wild dungeon.
 	constexpr ArenaTypes::FlatIndex WildDenFlatIndex = 37;
 
+	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID)
+	{
+		return (voxelID & 0x7F00) >> 8;
+	}
+
+	uint8_t getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID)
+	{
+		return voxelID & 0x007F;
+	}
+
 	// Makes a modern entity definition from the given Arena FLAT index.
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
@@ -243,8 +253,8 @@ namespace MapGeneration
 		if ((map1Voxel & 0x8000) == 0)
 		{
 			// A voxel of some kind.
-			const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
-			const uint8_t leastSigByte = map1Voxel & 0x007F;
+			const uint8_t mostSigByte = MapGeneration::getVoxelMostSigByte(map1Voxel);
+			const uint8_t leastSigByte = MapGeneration::getVoxelLeastSigByte(map1Voxel);
 			const bool voxelIsSolid = mostSigByte == leastSigByte;
 
 			if (voxelIsSolid)
@@ -549,8 +559,8 @@ namespace MapGeneration
 	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType,
 		const INFFile &inf)
 	{
-		const uint8_t mostSigByte = (map1Voxel & 0x7F00) >> 8;
-		const uint8_t leastSigByte = map1Voxel & 0x007F;
+		const uint8_t mostSigByte = MapGeneration::getVoxelMostSigByte(map1Voxel);
+		const uint8_t leastSigByte = MapGeneration::getVoxelLeastSigByte(map1Voxel);
 		const bool isWall = mostSigByte == leastSigByte;
 		if (!isWall)
 		{
