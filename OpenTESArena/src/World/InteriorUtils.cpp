@@ -34,3 +34,17 @@ std::optional<InteriorType> InteriorUtils::menuTypeToInteriorType(VoxelDefinitio
 			DebugUnhandledReturnMsg(std::optional<InteriorType>, std::to_string(static_cast<int>(menuType)));
 	};
 }
+
+bool InteriorUtils::isPrefabInterior(InteriorType interiorType)
+{
+	return (interiorType == InteriorType::Crypt) || (interiorType == InteriorType::Equipment) ||
+		(interiorType == InteriorType::House) || (interiorType == InteriorType::MagesGuild) ||
+		(interiorType == InteriorType::Noble) || (interiorType == InteriorType::Palace) ||
+		(interiorType == InteriorType::Tavern) || (interiorType == InteriorType::Temple) ||
+		(interiorType == InteriorType::Tower);
+}
+
+bool InteriorUtils::isProceduralInterior(InteriorType interiorType)
+{
+	return interiorType == InteriorType::Dungeon;
+}

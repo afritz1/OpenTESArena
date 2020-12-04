@@ -4,6 +4,8 @@
 #include "ChunkUtils.h"
 #include "CityLevelUtils.h"
 #include "InteriorLevelUtils.h"
+#include "InteriorType.h"
+#include "InteriorUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LevelUtils.h"
@@ -55,6 +57,138 @@ namespace MapGeneration
 	uint8_t getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID)
 	{
 		return voxelID & 0x007F;
+	}
+
+	// Whether the Arena *MENU ID is for a city gate voxel.
+	bool isCityGateMenuIndex(int menuIndex, WorldType worldType)
+	{
+		// Hardcoded values in the original game for city gate left/right blocks.
+		if (worldType == WorldType::City)
+		{
+			return (menuIndex == 7) || (menuIndex == 8);
+		}
+		else if (worldType == WorldType::Wilderness)
+		{
+			return (menuIndex == 6) || (menuIndex == 7);
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(worldType)));
+		}
+	}
+
+	// Converts the given Arena *MENU ID to a modern interior type, if any.
+	std::optional<InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, WorldType worldType)
+	{
+		if (worldType == WorldType::City)
+		{
+			// Mappings of Arena city *MENU IDs to interiors.
+			constexpr std::array<std::pair<int, InteriorType>, 11> CityMenuMappings =
+			{
+				{
+					{ 0, InteriorType::Equipment },
+					{ 1, InteriorType::Tavern },
+					{ 2, InteriorType::MagesGuild },
+					{ 3, InteriorType::Temple },
+					{ 4, InteriorType::House },
+					{ 5, InteriorType::House },
+					{ 6, InteriorType::House },
+					// 7 - city gate
+					// 8 - city gate
+					{ 9, InteriorType::Noble },
+					// 10 - none
+					{ 11, InteriorType::Palace },
+					{ 12, InteriorType::Palace },
+					{ 13, InteriorType::Palace }
+				}
+			};
+
+			const auto iter = std::find_if(CityMenuMappings.begin(), CityMenuMappings.end(),
+				[menuIndex](const auto &pair)
+			{
+				return pair.first == menuIndex;
+			});
+
+			if (iter != CityMenuMappings.end())
+			{
+				return iter->second;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}
+		else if (worldType == WorldType::Wilderness)
+		{
+			// Mappings of Arena wilderness *MENU IDs to interiors.
+			constexpr std::array<std::pair<int, InteriorType>, 7> WildMenuMappings =
+			{
+				{
+					// 0 - none
+					{ 1, InteriorType::Crypt },
+					{ 2, InteriorType::House },
+					{ 3, InteriorType::Tavern },
+					{ 4, InteriorType::Temple },
+					{ 5, InteriorType::Tower },
+					// 6 - city gate
+					// 7 - city gate
+					{ 8, InteriorType::Dungeon },
+					{ 9, InteriorType::Dungeon }
+				}
+			};
+
+			const auto iter = std::find_if(WildMenuMappings.begin(), WildMenuMappings.end(),
+				[menuIndex](const auto &pair)
+			{
+				return pair.first == menuIndex;
+			});
+
+			if (iter != WildMenuMappings.end())
+			{
+				return iter->second;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(std::optional<InteriorType>, std::to_string(static_cast<int>(worldType)));
+		}
+	}
+
+	MapGeneration::InteriorGenInfo makeInteriorGenInfo(const MapGeneration::TransitionGenInfo &transitionGenInfo,
+		const std::optional<bool> &rulerIsMale)
+	{
+		DebugAssert(transitionGenInfo.interiorType.has_value());
+		const InteriorType interiorType = *transitionGenInfo.interiorType;
+
+		// @todo: probably need to have LevelInt3 or similar in TransitionGenInfo so this can properly
+		// make the menuID and .MIF name w/ LevelUtils::getDoorVoxelMifName() for the InteriorGenInfo.
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+
+		if (InteriorUtils::isPrefabInterior(interiorType))
+		{
+			std::string mifName; // @todo: get from LevelUtils::getDoorVoxelMifName()
+			DebugNotImplemented();
+			interiorGenInfo.initPrefab(std::move(mifName), interiorType, rulerIsMale);
+		}
+		else if (InteriorUtils::isProceduralInterior(interiorType))
+		{
+			const uint32_t dungeonSeed = -1; // @todo: see existing InteriorLevelData functions I think?
+			const WEInt widthChunks = -1; // @todo
+			const SNInt depthChunks = -1; // @todo
+			const bool isArtifactDungeon = false; // Can't have wild den artifact dungeons.
+			DebugNotImplemented();
+			interiorGenInfo.initDungeon(dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(interiorType)));
+		}
+
+		return interiorGenInfo;
 	}
 
 	// Makes a modern entity definition from the given Arena FLAT index.
@@ -552,20 +686,17 @@ namespace MapGeneration
 		return triggerDef;
 	}
 
-	// Whether the MAP1 voxel has transition data for the given world type.
-	// @todo: maybe remake this to like some std::optional<TransitionGenInfo> so it can reuse some
-	// work between this and actually making the transition def. The gen info would have interior type,
-	// coordinates, etc..
-	bool isMap1TransitionVoxel(ArenaTypes::VoxelID map1Voxel, WorldType worldType,
-		const INFFile &inf)
+	std::optional<MapGeneration::TransitionGenInfo> tryMakeVoxelTransitionGenInfo(
+		ArenaTypes::VoxelID map1Voxel, WorldType worldType, const INFFile &inf)
 	{
+		// @todo: needs to handle palace voxel too here (type 0xA voxel, menuID 11?).
 		const uint8_t mostSigByte = MapGeneration::getVoxelMostSigByte(map1Voxel);
 		const uint8_t leastSigByte = MapGeneration::getVoxelLeastSigByte(map1Voxel);
 		const bool isWall = mostSigByte == leastSigByte;
 		if (!isWall)
 		{
 			// Raised platforms cannot be transitions.
-			return false;
+			return std::nullopt;
 		}
 
 		const int textureIndex = mostSigByte - 1;
@@ -575,57 +706,134 @@ namespace MapGeneration
 		{
 			const std::optional<int> &levelUpIndex = inf.getLevelUpIndex();
 			const std::optional<int> &levelDownIndex = inf.getLevelDownIndex();
-			return (levelUpIndex.has_value() && (*levelUpIndex == textureIndex)) ||
-				(levelDownIndex.has_value() && (*levelDownIndex == textureIndex)) ||
-				menuIndex.has_value();
+			const bool isLevelUp = levelUpIndex.has_value() && (*levelUpIndex == textureIndex);
+			const bool isLevelDown = levelDownIndex.has_value() && (*levelDownIndex == textureIndex);
+			const bool isMenu = menuIndex.has_value();
+			const bool isValid = isLevelUp || isLevelDown || isMenu;
+
+			if (isValid)
+			{
+				const bool isLevelChange = isLevelUp || isLevelDown;
+				const TransitionType transitionType = isLevelChange ?
+					TransitionType::LevelChange : TransitionType::ExitInterior;
+
+				constexpr std::optional<InteriorType> interiorType; // Can't have interiors in interiors.
+				const std::optional<bool> isLevelUp = isLevelChange ? isLevelUp : std::nullopt;
+
+				MapGeneration::TransitionGenInfo transitionGenInfo;
+				transitionGenInfo.init(transitionType, interiorType, isLevelUp);
+				return transitionGenInfo;
+			}
+			else
+			{
+				return std::nullopt;
+			}
 		}
 		else if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 		{
-			return menuIndex.has_value();
+			const bool isValid = menuIndex.has_value();
+
+			if (isValid)
+			{
+				// Either city gates or an interior entrance.
+				const bool isCityGate = MapGeneration::isCityGateMenuIndex(*menuIndex, worldType);
+
+				// Can't guarantee that an Arena *MENU block that isn't a city gate is a valid transition?
+				// I thought there were some wild dungeon voxels that resulted in bad values or something.
+				const std::optional<InteriorType> interiorType =
+					MapGeneration::tryGetInteriorTypeFromMenuIndex(*menuIndex, worldType);
+
+				// This is optional because of the interior type issue above.
+				const std::optional<TransitionType> transitionType = [isCityGate, &interiorType]()
+					-> std::optional<TransitionType>
+				{
+					if (isCityGate)
+					{
+						return TransitionType::CityGate;
+					}
+					else if (interiorType.has_value())
+					{
+						return TransitionType::EnterInterior;
+					}
+					else
+					{
+						return std::nullopt;
+					}
+				}();
+
+				if (transitionType.has_value())
+				{
+					constexpr std::optional<bool> isLevelUp; // No level changes outside of interiors.
+
+					MapGeneration::TransitionGenInfo transitionGenInfo;
+					transitionGenInfo.init(*transitionType, interiorType, isLevelUp);
+					return transitionGenInfo;
+				}
+				else
+				{
+					return std::nullopt;
+				}
+			}
+			else
+			{
+				return std::nullopt;
+			}
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(worldType)));
+			DebugUnhandledReturnMsg(std::optional<MapGeneration::TransitionGenInfo>,
+				std::to_string(static_cast<int>(worldType)));
 		}
 	}
 
-	// Whether the MAP1 entity has transition data for the given world type.
-	bool isMap1TransitionEntity(ArenaTypes::FlatIndex flatIndex, WorldType worldType)
+	// Returns transition gen info if the MAP1 flat index is a transition entity for the given world type.
+	std::optional<MapGeneration::TransitionGenInfo> tryMakeEntityTransitionGenInfo(
+		ArenaTypes::FlatIndex flatIndex, WorldType worldType)
 	{
 		// Only wild dens are entities with transition data.
 		if (worldType != WorldType::Wilderness)
 		{
-			return false;
+			return std::nullopt;
 		}
 
-		return flatIndex == MapGeneration::WildDenFlatIndex;
+		const bool isWildDen = flatIndex == MapGeneration::WildDenFlatIndex;
+		if (!isWildDen)
+		{
+			return std::nullopt;
+		}
+
+		MapGeneration::TransitionGenInfo transitionGenInfo;
+		transitionGenInfo.init(TransitionType::EnterInterior, InteriorType::Dungeon, std::nullopt);
+		return transitionGenInfo;
 	}
 
-	TransitionDefinition makeTransitionDefFromMap1Voxel(ArenaTypes::VoxelID map1Voxel,
-		uint8_t mostSigNibble, WorldType worldType, const INFFile &inf)
+	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionGenInfo &transitionGenInfo,
+		const std::optional<bool> &rulerIsMale)
 	{
-		// @todo: probably need to get menuID from map1Voxel then LevelUtils::getDoorVoxelMifName()
-		DebugNotImplemented();
-
 		TransitionDefinition transitionDef;
-		if (worldType == WorldType::City)
+
+		if (transitionGenInfo.transitionType == TransitionType::CityGate)
 		{
-			/*transitionDef.initCityGate();
-			transitionDef.initInteriorEntrance();*/
+			transitionDef.initCityGate();
 		}
-		else if (worldType == WorldType::Interior)
+		else if (transitionGenInfo.transitionType == TransitionType::EnterInterior)
 		{
-			/*transitionDef.initInteriorExit();
-			transitionDef.initLevelChange();*/
+			MapGeneration::InteriorGenInfo interiorGenInfo =
+				MapGeneration::makeInteriorGenInfo(transitionGenInfo, rulerIsMale);
+			transitionDef.initInteriorEntrance(std::move(interiorGenInfo));
 		}
-		else if (worldType == WorldType::Wilderness)
+		else if (transitionGenInfo.transitionType == TransitionType::ExitInterior)
 		{
-			/*transitionDef.initCityGate();
-			transitionDef.initInteriorEntrance();*/
+			transitionDef.initInteriorExit();
+		}
+		else if (transitionGenInfo.transitionType == TransitionType::LevelChange)
+		{
+			DebugAssert(transitionGenInfo.isLevelUp.has_value());
+			transitionDef.initLevelChange(*transitionGenInfo.isLevelUp);
 		}
 		else
 		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(worldType)));
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(transitionGenInfo.transitionType)));
 		}
 
 		return transitionDef;
@@ -750,7 +958,11 @@ namespace MapGeneration
 
 					outLevelDef->setVoxel(levelX, levelY, levelZ, voxelDefID);
 
-					if (MapGeneration::isMap1TransitionVoxel(map1Voxel, worldType, inf))
+					// Try to make transition info if this MAP1 voxel is a transition.
+					const std::optional<MapGeneration::TransitionGenInfo> transitionGenInfo =
+						MapGeneration::tryMakeVoxelTransitionGenInfo(map1Voxel, worldType, inf);
+
+					if (transitionGenInfo.has_value())
 					{
 						// Get transition def ID from cache or create a new one.
 						LevelDefinition::TransitionDefID transitionDefID;
@@ -761,8 +973,8 @@ namespace MapGeneration
 						}
 						else
 						{
-							TransitionDefinition transitionDef = MapGeneration::makeTransitionDefFromMap1Voxel(
-								map1Voxel, mostSigNibble, worldType, inf);
+							TransitionDefinition transitionDef =
+								MapGeneration::makeTransitionDef(*transitionGenInfo, rulerIsMale);
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
 						}
@@ -1549,6 +1761,14 @@ void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
 	{
 		this->ids.emplace(menuType, id);
 	}
+}
+
+void MapGeneration::TransitionGenInfo::init(TransitionType transitionType,
+	const std::optional<InteriorType> &interiorType, const std::optional<bool> &isLevelUp)
+{
+	this->transitionType = transitionType;
+	this->interiorType = interiorType;
+	this->isLevelUp = isLevelUp;
 }
 
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,

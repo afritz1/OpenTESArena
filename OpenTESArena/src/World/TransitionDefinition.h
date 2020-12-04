@@ -1,18 +1,20 @@
 #ifndef TRANSITION_DEFINITION_H
 #define TRANSITION_DEFINITION_H
 
+#include "MapGeneration.h"
+#include "TransitionType.h"
+
 // @todo: share with both voxels and entities; probably delete EntityDefinition
 // variant of this class.
 
 class TransitionDefinition
 {
 public:
-	enum class Type
+	struct InteriorEntranceDef
 	{
-		CityGate, // Swaps to city or wilderness, whichever is inactive.
-		EnterInterior,
-		ExitInterior,
-		LevelChange
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+
+		void init(MapGeneration::InteriorGenInfo &&interiorGenInfo);
 	};
 
 	struct LevelChangeDef
@@ -22,23 +24,21 @@ public:
 		void init(bool isLevelUp);
 	};
 private:
-	Type type;
+	TransitionType type;
+	InteriorEntranceDef interiorEntrance;
+	LevelChangeDef levelChange;
 
-	union
-	{
-		LevelChangeDef levelChange;
-	};
-
-	void init(Type type);
+	void init(TransitionType type);
 public:
 	TransitionDefinition();
 
 	void initCityGate();
-	void initInteriorEntrance();
+	void initInteriorEntrance(MapGeneration::InteriorGenInfo &&interiorGenInfo);
 	void initInteriorExit();
 	void initLevelChange(bool isLevelUp);
 
-	Type getType() const;
+	TransitionType getType() const;
+	const InteriorEntranceDef &getInteriorEntrance() const;
 	const LevelChangeDef &getLevelChange() const;
 };
 

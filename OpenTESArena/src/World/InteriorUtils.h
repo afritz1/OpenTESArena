@@ -11,6 +11,9 @@ namespace InteriorUtils
 {
 	// Helper function while transitioning to using InteriorType completely.
 	std::optional<InteriorType> menuTypeToInteriorType(VoxelDefinition::WallData::MenuType menuType);
+
+	bool isPrefabInterior(InteriorType interiorType);
+	bool isProceduralInterior(InteriorType interiorType);
 }
 
 #endif

@@ -6,7 +6,9 @@
 #include <string>
 #include <string_view>
 
+#include "LevelDefinition.h"
 #include "LocationDefinition.h"
+#include "TransitionType.h"
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
 #include "WildLevelUtils.h"
@@ -125,6 +127,7 @@ namespace MapGeneration
 	{
 	private:
 		ChunkInt2 chunk;
+		// @todo: could this use InteriorType instead of MenuType now?
 		std::unordered_map<VoxelDefinition::WallData::MenuType, LevelDefinition::BuildingNameID> ids;
 	public:
 		void init(const ChunkInt2 &chunk);
@@ -133,6 +136,17 @@ namespace MapGeneration
 		bool hasBuildingNames() const;
 		bool tryGetBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID *outID) const;
 		void setBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID id);
+	};
+
+	// Data that can be used when creating an actual transition definition.
+	struct TransitionGenInfo
+	{
+		TransitionType transitionType;
+		std::optional<InteriorType> interiorType;
+		std::optional<bool> isLevelUp; // Stairs direction for interior level changes.
+
+		void init(TransitionType transitionType, const std::optional<InteriorType> &interiorType,
+			const std::optional<bool> &isLevelUp);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
