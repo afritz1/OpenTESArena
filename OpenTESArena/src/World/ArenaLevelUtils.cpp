@@ -81,13 +81,13 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 	bool isCity, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
-	const VoxelDefinition::WallData::MenuType menuType =
+	const ArenaTypes::MenuType menuType =
 		VoxelDefinition::WallData::getMenuType(menuID, isCity);
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
 	const bool isFinalDungeonEntrance = palaceIsMainQuestDungeon &&
-		(menuType == VoxelDefinition::WallData::MenuType::Palace);
+		(menuType == ArenaTypes::MenuType::Palace);
 
 	if (isFinalDungeonEntrance)
 	{
@@ -103,27 +103,27 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
 			// since the palace type can be deduced from the current city type.
 			const int NO_INDEX = -1;
-			const std::array<std::pair<VoxelDefinition::WallData::MenuType, int>, 12> MenuMifMappings =
+			const std::array<std::pair<ArenaTypes::MenuType, int>, 12> MenuMifMappings =
 			{
 				{
-					{ VoxelDefinition::WallData::MenuType::CityGates, NO_INDEX },
-					{ VoxelDefinition::WallData::MenuType::Crypt, 7 },
-					{ VoxelDefinition::WallData::MenuType::Dungeon, NO_INDEX },
-					{ VoxelDefinition::WallData::MenuType::Equipment, 5 },
-					{ VoxelDefinition::WallData::MenuType::House, 1 },
-					{ VoxelDefinition::WallData::MenuType::MagesGuild, 6 },
-					{ VoxelDefinition::WallData::MenuType::Noble, 2 },
-					{ VoxelDefinition::WallData::MenuType::None, NO_INDEX },
-					{ VoxelDefinition::WallData::MenuType::Palace, 0 },
-					{ VoxelDefinition::WallData::MenuType::Tavern, 3 },
-					{ VoxelDefinition::WallData::MenuType::Temple, 4 },
-					{ VoxelDefinition::WallData::MenuType::Tower, 10 }
+					{ ArenaTypes::MenuType::CityGates, NO_INDEX },
+					{ ArenaTypes::MenuType::Crypt, 7 },
+					{ ArenaTypes::MenuType::Dungeon, NO_INDEX },
+					{ ArenaTypes::MenuType::Equipment, 5 },
+					{ ArenaTypes::MenuType::House, 1 },
+					{ ArenaTypes::MenuType::MagesGuild, 6 },
+					{ ArenaTypes::MenuType::Noble, 2 },
+					{ ArenaTypes::MenuType::None, NO_INDEX },
+					{ ArenaTypes::MenuType::Palace, 0 },
+					{ ArenaTypes::MenuType::Tavern, 3 },
+					{ ArenaTypes::MenuType::Temple, 4 },
+					{ ArenaTypes::MenuType::Tower, 10 }
 				}
 			};
 
 			// See if the given menu type has a .MIF prefix mapping.
 			const auto iter = std::find_if(MenuMifMappings.begin(), MenuMifMappings.end(),
-				[menuType](const std::pair<VoxelDefinition::WallData::MenuType, int> &pair)
+				[menuType](const std::pair<ArenaTypes::MenuType, int> &pair)
 			{
 				return pair.first == menuType;
 			});
@@ -138,7 +138,7 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 					// prefix to use based on the location type.
 					const int menuMifIndex = [locationType, menuType, index]()
 					{
-						if (menuType == VoxelDefinition::WallData::MenuType::Palace)
+						if (menuType == ArenaTypes::MenuType::Palace)
 						{
 							if (locationType == LocationDefinition::CityDefinition::Type::CityState)
 							{
@@ -203,7 +203,7 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 			// Palaces have fewer .MIF files to choose from, and their variant depends
 			// on the ruler seed. Although there are five city-state palace .MIF files,
 			// only three of them are used.
-			const bool isPalace = menuType == VoxelDefinition::WallData::MenuType::Palace;
+			const bool isPalace = menuType == ArenaTypes::MenuType::Palace;
 			const int palaceCount = 3;
 			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % palaceCount) :
 				((Bytes::ror(offset, 4) ^ offset) % 8);

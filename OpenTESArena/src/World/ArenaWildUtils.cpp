@@ -160,7 +160,7 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
 	auto generateNames = [&voxelGrid, &exeData, &menuNames](int wildX, int wildY,
-		VoxelDefinition::WallData::MenuType menuType)
+		ArenaTypes::MenuType menuType)
 	{
 		const uint32_t wildChunkSeed = ArenaWildUtils::makeWildChunkSeed(wildX, wildY);
 
@@ -231,7 +231,7 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 				// Get the *MENU block's display name.
 				const std::string name = [menuType, &random, &createTavernName, &createTempleName]()
 				{
-					if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+					if (menuType == ArenaTypes::MenuType::Tavern)
 					{
 						// Tavern.
 						const int m = random.next() % 23;
@@ -268,8 +268,8 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 	{
 		for (int x = 0; x < ArenaWildUtils::WILD_WIDTH; x++)
 		{
-			generateNames(x, y, VoxelDefinition::WallData::MenuType::Tavern);
-			generateNames(x, y, VoxelDefinition::WallData::MenuType::Temple);
+			generateNames(x, y, ArenaTypes::MenuType::Tavern);
+			generateNames(x, y, ArenaTypes::MenuType::Temple);
 		}
 	}
 

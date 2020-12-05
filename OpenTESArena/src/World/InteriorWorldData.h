@@ -15,7 +15,7 @@ class InteriorWorldData : public WorldData
 {
 private:
 	std::vector<InteriorLevelData> levels;
-	VoxelDefinition::WallData::MenuType interiorType;
+	ArenaTypes::MenuType interiorType;
 	int levelIndex;
 
 	InteriorWorldData();
@@ -25,10 +25,10 @@ public:
 
 	InteriorWorldData &operator=(InteriorWorldData&&) = default;
 
-	static InteriorWorldData loadInterior(VoxelDefinition::WallData::MenuType interiorType,
+	static InteriorWorldData loadInterior(ArenaTypes::MenuType interiorType,
 		const MIFFile &mif, const ExeData &exeData);
 	static InteriorWorldData loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
-		bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
+		bool isArtifactDungeon, ArenaTypes::MenuType interiorType,
 		const ExeData &exeData);
 
 	// Gets the currently selected level's index.
@@ -38,7 +38,7 @@ public:
 	int getLevelCount() const;
 
 	// Gets the type of the interior (mostly needed for checking if it's a palace).
-	VoxelDefinition::WallData::MenuType getInteriorType() const;
+	ArenaTypes::MenuType getInteriorType() const;
 
 	// Always interior for interior world data.
 	virtual WorldType getBaseWorldType() const override;

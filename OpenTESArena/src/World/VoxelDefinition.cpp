@@ -23,58 +23,58 @@ bool VoxelDefinition::WallData::isMenu() const
 	}
 }
 
-VoxelDefinition::WallData::MenuType VoxelDefinition::WallData::getMenuType(int menuID, bool isCity)
+ArenaTypes::MenuType VoxelDefinition::WallData::getMenuType(int menuID, bool isCity)
 {
 	if (menuID != -1)
 	{
 		// Mappings of *MENU IDs to city menu types.
-		const std::array<std::pair<int, VoxelDefinition::WallData::MenuType>, 14> CityMenuMappings =
+		constexpr std::array<std::pair<int, ArenaTypes::MenuType>, 14> CityMenuMappings =
 		{
 			{
-				{ 0, VoxelDefinition::WallData::MenuType::Equipment },
-				{ 1, VoxelDefinition::WallData::MenuType::Tavern },
-				{ 2, VoxelDefinition::WallData::MenuType::MagesGuild },
-				{ 3, VoxelDefinition::WallData::MenuType::Temple },
-				{ 4, VoxelDefinition::WallData::MenuType::House },
-				{ 5, VoxelDefinition::WallData::MenuType::House },
-				{ 6, VoxelDefinition::WallData::MenuType::House },
-				{ 7, VoxelDefinition::WallData::MenuType::CityGates },
-				{ 8, VoxelDefinition::WallData::MenuType::CityGates },
-				{ 9, VoxelDefinition::WallData::MenuType::Noble },
-				{ 10, VoxelDefinition::WallData::MenuType::None },
-				{ 11, VoxelDefinition::WallData::MenuType::Palace },
-				{ 12, VoxelDefinition::WallData::MenuType::Palace },
-				{ 13, VoxelDefinition::WallData::MenuType::Palace }
+				{ 0, ArenaTypes::MenuType::Equipment },
+				{ 1, ArenaTypes::MenuType::Tavern },
+				{ 2, ArenaTypes::MenuType::MagesGuild },
+				{ 3, ArenaTypes::MenuType::Temple },
+				{ 4, ArenaTypes::MenuType::House },
+				{ 5, ArenaTypes::MenuType::House },
+				{ 6, ArenaTypes::MenuType::House },
+				{ 7, ArenaTypes::MenuType::CityGates },
+				{ 8, ArenaTypes::MenuType::CityGates },
+				{ 9, ArenaTypes::MenuType::Noble },
+				{ 10, ArenaTypes::MenuType::None },
+				{ 11, ArenaTypes::MenuType::Palace },
+				{ 12, ArenaTypes::MenuType::Palace },
+				{ 13, ArenaTypes::MenuType::Palace }
 			}
 		};
 
 		// Mappings of *MENU IDs to wilderness menu types.
-		const std::array<std::pair<int, VoxelDefinition::WallData::MenuType>, 10> WildMenuMappings =
+		constexpr std::array<std::pair<int, ArenaTypes::MenuType>, 10> WildMenuMappings =
 		{
 			{
-				{ 0, VoxelDefinition::WallData::MenuType::None },
-				{ 1, VoxelDefinition::WallData::MenuType::Crypt },
-				{ 2, VoxelDefinition::WallData::MenuType::House },
-				{ 3, VoxelDefinition::WallData::MenuType::Tavern },
-				{ 4, VoxelDefinition::WallData::MenuType::Temple },
-				{ 5, VoxelDefinition::WallData::MenuType::Tower },
-				{ 6, VoxelDefinition::WallData::MenuType::CityGates },
-				{ 7, VoxelDefinition::WallData::MenuType::CityGates },
-				{ 8, VoxelDefinition::WallData::MenuType::Dungeon },
-				{ 9, VoxelDefinition::WallData::MenuType::Dungeon }
+				{ 0, ArenaTypes::MenuType::None },
+				{ 1, ArenaTypes::MenuType::Crypt },
+				{ 2, ArenaTypes::MenuType::House },
+				{ 3, ArenaTypes::MenuType::Tavern },
+				{ 4, ArenaTypes::MenuType::Temple },
+				{ 5, ArenaTypes::MenuType::Tower },
+				{ 6, ArenaTypes::MenuType::CityGates },
+				{ 7, ArenaTypes::MenuType::CityGates },
+				{ 8, ArenaTypes::MenuType::Dungeon },
+				{ 9, ArenaTypes::MenuType::Dungeon }
 			}
 		};
 
 		// Get the menu type associated with the *MENU ID and city boolean, or null if there
 		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
 		// to their std::array size.
-		const VoxelDefinition::WallData::MenuType *typePtr = [menuID, isCity, &CityMenuMappings,
+		const ArenaTypes::MenuType *typePtr = [menuID, isCity, &CityMenuMappings,
 			&WildMenuMappings]()
 		{
 			auto getPtr = [menuID](const auto &arr)
 			{
 				const auto iter = std::find_if(arr.begin(), arr.end(),
-					[menuID](const std::pair<int, VoxelDefinition::WallData::MenuType> &pair)
+					[menuID](const std::pair<int, ArenaTypes::MenuType> &pair)
 				{
 					return pair.first == menuID;
 				});
@@ -94,36 +94,36 @@ VoxelDefinition::WallData::MenuType VoxelDefinition::WallData::getMenuType(int m
 		else
 		{
 			DebugLogWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
-			return VoxelDefinition::WallData::MenuType::None;
+			return ArenaTypes::MenuType::None;
 		}
 	}
 	else
 	{
 		// Not a *MENU block.
-		return VoxelDefinition::WallData::MenuType::None;
+		return ArenaTypes::MenuType::None;
 	}
 }
 
-bool VoxelDefinition::WallData::menuLeadsToInterior(MenuType menuType)
+bool VoxelDefinition::WallData::menuLeadsToInterior(ArenaTypes::MenuType menuType)
 {
-	return (menuType == VoxelDefinition::WallData::MenuType::Crypt) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Dungeon) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
-		(menuType == VoxelDefinition::WallData::MenuType::House) ||
-		(menuType == VoxelDefinition::WallData::MenuType::MagesGuild) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Noble) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Palace) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Tavern) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Temple) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Tower);
+	return (menuType == ArenaTypes::MenuType::Crypt) ||
+		(menuType == ArenaTypes::MenuType::Dungeon) ||
+		(menuType == ArenaTypes::MenuType::Equipment) ||
+		(menuType == ArenaTypes::MenuType::House) ||
+		(menuType == ArenaTypes::MenuType::MagesGuild) ||
+		(menuType == ArenaTypes::MenuType::Noble) ||
+		(menuType == ArenaTypes::MenuType::Palace) ||
+		(menuType == ArenaTypes::MenuType::Tavern) ||
+		(menuType == ArenaTypes::MenuType::Temple) ||
+		(menuType == ArenaTypes::MenuType::Tower);
 }
 
-bool VoxelDefinition::WallData::menuHasDisplayName(MenuType menuType)
+bool VoxelDefinition::WallData::menuHasDisplayName(ArenaTypes::MenuType menuType)
 {
-	return (menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
-		(menuType == VoxelDefinition::WallData::MenuType::MagesGuild) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Tavern) ||
-		(menuType == VoxelDefinition::WallData::MenuType::Temple);
+	return (menuType == ArenaTypes::MenuType::Equipment) ||
+		(menuType == ArenaTypes::MenuType::MagesGuild) ||
+		(menuType == ArenaTypes::MenuType::Tavern) ||
+		(menuType == ArenaTypes::MenuType::Temple);
 }
 
 const double VoxelDefinition::ChasmData::WET_LAVA_DEPTH = static_cast<double>(

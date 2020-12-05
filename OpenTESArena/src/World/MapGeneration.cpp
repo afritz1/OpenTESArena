@@ -1304,10 +1304,10 @@ namespace MapGeneration
 		// match the given menu type.
 		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
 			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint](
-				VoxelDefinition::WallData::MenuType menuType)
+				ArenaTypes::MenuType menuType)
 		{
-			if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
-				(menuType == VoxelDefinition::WallData::MenuType::Temple))
+			if ((menuType == ArenaTypes::MenuType::Equipment) ||
+				(menuType == ArenaTypes::MenuType::Temple))
 			{
 				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 				random.srand(citySeed);
@@ -1430,7 +1430,7 @@ namespace MapGeneration
 					int hash;
 					std::string name;
 
-					if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+					if (menuType == ArenaTypes::MenuType::Tavern)
 					{
 						// Tavern.
 						int prefixIndex, suffixIndex;
@@ -1443,7 +1443,7 @@ namespace MapGeneration
 
 						name = createTavernName(prefixIndex, suffixIndex);
 					}
-					else if (menuType == VoxelDefinition::WallData::MenuType::Equipment)
+					else if (menuType == ArenaTypes::MenuType::Equipment)
 					{
 						// Equipment store.
 						int prefixIndex, suffixIndex;
@@ -1489,7 +1489,7 @@ namespace MapGeneration
 			}
 
 			// Fix some edge cases with main quest cities.
-			if ((menuType == VoxelDefinition::WallData::MenuType::Temple) &&
+			if ((menuType == ArenaTypes::MenuType::Temple) &&
 				(mainQuestTempleOverride != nullptr))
 			{
 				const int modelIndex = mainQuestTempleOverride->modelIndex;
@@ -1505,9 +1505,9 @@ namespace MapGeneration
 			}
 		};
 
-		generateNames(VoxelDefinition::WallData::MenuType::Tavern);
-		generateNames(VoxelDefinition::WallData::MenuType::Equipment);
-		generateNames(VoxelDefinition::WallData::MenuType::Temple);
+		generateNames(ArenaTypes::MenuType::Tavern);
+		generateNames(ArenaTypes::MenuType::Equipment);
+		generateNames(ArenaTypes::MenuType::Temple);
 	}
 
 	// Using a separate building name info struct because the same level definition might be
@@ -1522,7 +1522,7 @@ namespace MapGeneration
 		// Lambda for searching for a *MENU voxel of the given type in the chunk and generating
 		// a name for it if found.
 		auto tryGenerateChunkBuildingName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
-			outLevelInfoDef, buildingNameMappings, &exeData](VoxelDefinition::WallData::MenuType menuType)
+			outLevelInfoDef, buildingNameMappings, &exeData](ArenaTypes::MenuType menuType)
 		{
 			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
 			{
@@ -1585,13 +1585,13 @@ namespace MapGeneration
 					// Get the *MENU block's display name.
 					std::string name = [menuType, &random, &createTavernName, &createTempleName]()
 					{
-						if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+						if (menuType == ArenaTypes::MenuType::Tavern)
 						{
 							const int prefixIndex = random.next() % 23;
 							const int suffixIndex = random.next() % 23;
 							return createTavernName(prefixIndex, suffixIndex);
 						}
-						else if (menuType == VoxelDefinition::WallData::MenuType::Temple)
+						else if (menuType == ArenaTypes::MenuType::Temple)
 						{
 							const int model = random.next() % 3;
 							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
@@ -1642,8 +1642,8 @@ namespace MapGeneration
 			}
 		};
 
-		tryGenerateChunkBuildingName(VoxelDefinition::WallData::MenuType::Tavern);
-		tryGenerateChunkBuildingName(VoxelDefinition::WallData::MenuType::Temple);
+		tryGenerateChunkBuildingName(ArenaTypes::MenuType::Tavern);
+		tryGenerateChunkBuildingName(ArenaTypes::MenuType::Temple);
 	}
 }
 
@@ -1746,7 +1746,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID *outID) const
+	ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID *outID) const
 {
 	const auto iter = this->ids.find(menuType);
 	if (iter != this->ids.end())
@@ -1761,7 +1761,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID id)
+	ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID id)
 {
 	const auto iter = this->ids.find(menuType);
 	if (iter != this->ids.end())

@@ -173,7 +173,7 @@ bool GameData::nightLightsAreActive() const
 }
 
 bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+	ArenaTypes::MenuType interiorType, const MIFFile &mif,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	TextureInstanceManager &textureInstManager, Renderer &renderer)
@@ -218,7 +218,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	return true;
 }
 
-void GameData::enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+void GameData::enterInterior(ArenaTypes::MenuType interiorType, const MIFFile &mif,
 	const Int2 &returnVoxel, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
@@ -298,7 +298,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 
 bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, bool isArtifactDungeon,
-	VoxelDefinition::WallData::MenuType interiorType, const EntityDefinitionLibrary &entityDefLibrary, 
+	ArenaTypes::MenuType interiorType, const EntityDefinitionLibrary &entityDefLibrary, 
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 	Renderer &renderer)
@@ -350,7 +350,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
 
 bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
-	VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+	ArenaTypes::MenuType interiorType, const CityDataFile &cityData,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	TextureInstanceManager &textureInstManager, Renderer &renderer)

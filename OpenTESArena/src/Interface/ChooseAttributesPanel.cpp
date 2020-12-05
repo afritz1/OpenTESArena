@@ -329,7 +329,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						}
 
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
-							VoxelDefinition::WallData::MenuType::Dungeon, mif,
+							ArenaTypes::MenuType::Dungeon, mif,
 							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
 							game.getTextureInstanceManager(), renderer))

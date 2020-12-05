@@ -131,14 +131,14 @@ public:
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
 	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+		ArenaTypes::MenuType interiorType, const MIFFile &mif,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 		TextureInstanceManager &textureInstManager, Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(VoxelDefinition::WallData::MenuType interiorType, const MIFFile &mif,
+	void enterInterior(ArenaTypes::MenuType interiorType, const MIFFile &mif,
 		const Int2 &returnVoxel, const EntityDefinitionLibrary &entityDefLibrary,
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
@@ -154,7 +154,7 @@ public:
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
 	// to the game data. This modifies the current map location.
 	bool loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
+		bool isArtifactDungeon, ArenaTypes::MenuType interiorType,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 		TextureInstanceManager &textureInstManager, Renderer &renderer);
@@ -163,7 +163,7 @@ public:
 	// game data. This does not modify the current map location.
 	bool loadWildernessDungeon(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
-		VoxelDefinition::WallData::MenuType interiorType, const CityDataFile &cityData,
+		ArenaTypes::MenuType interiorType, const CityDataFile &cityData,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 		TextureInstanceManager &textureInstManager, Renderer &renderer);

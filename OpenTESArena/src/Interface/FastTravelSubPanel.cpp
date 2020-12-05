@@ -475,7 +475,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
 		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
-			VoxelDefinition::WallData::MenuType::Dungeon, game.getEntityDefinitionLibrary(),
+			ArenaTypes::MenuType::Dungeon, game.getEntityDefinitionLibrary(),
 			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{
@@ -512,7 +512,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
-			VoxelDefinition::WallData::MenuType::Dungeon, mif, game.getEntityDefinitionLibrary(),
+			ArenaTypes::MenuType::Dungeon, mif, game.getEntityDefinitionLibrary(),
 			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{

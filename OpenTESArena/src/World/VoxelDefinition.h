@@ -3,6 +3,7 @@
 
 #include <optional>
 
+#include "../Assets/ArenaTypes.h"
 #include "../Math/Vector3.h"
 
 // The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
@@ -26,24 +27,6 @@ public:
 	{
 		enum class Type { Solid, LevelUp, LevelDown, Menu };
 
-		// Maps one or more *MENU IDs to a type of menu voxel, for city and wilderness menus.
-		// Cities and the wilderness interpret the ID differently.
-		enum class MenuType
-		{
-			None,
-			CityGates,
-			Crypt, // WCRYPT
-			Dungeon, // DUNGEON
-			Equipment, // EQUIP
-			House, // BS
-			MagesGuild, // MAGE
-			Noble, // NOBLE
-			Palace, // PALACE
-			Tavern, // TAVERN
-			Temple, // TEMPLE
-			Tower // TOWER
-		};
-
 		int sideID, floorID, ceilingID, menuID;
 		Type type;
 
@@ -51,14 +34,14 @@ public:
 		bool isMenu() const;
 
 		// Gets exterior menu type from *MENU ID and city boolean, or "none" if no mapping exists.
-		static MenuType getMenuType(int menuID, bool isCity);
+		static ArenaTypes::MenuType getMenuType(int menuID, bool isCity);
 
 		// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
 		// else (like city gates).
-		static bool menuLeadsToInterior(MenuType menuType);
+		static bool menuLeadsToInterior(ArenaTypes::MenuType menuType);
 
 		// Returns whether the menu type displays text on-screen when the player right clicks it.
-		static bool menuHasDisplayName(MenuType menuType);
+		static bool menuHasDisplayName(ArenaTypes::MenuType menuType);
 	};
 
 	// Floors only have their top rendered.

@@ -1517,7 +1517,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			if (worldData.getBaseWorldType() == WorldType::Interior)
 			{
 				const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
-				const VoxelDefinition::WallData::MenuType interiorMenuType = interior.getInteriorType();
+				const ArenaTypes::MenuType interiorMenuType = interior.getInteriorType();
 				return InteriorUtils::menuTypeToInteriorType(interiorMenuType);
 			}
 			else

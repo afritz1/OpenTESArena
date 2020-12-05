@@ -128,14 +128,14 @@ namespace MapGeneration
 	private:
 		ChunkInt2 chunk;
 		// @todo: could this use InteriorType instead of MenuType now?
-		std::unordered_map<VoxelDefinition::WallData::MenuType, LevelDefinition::BuildingNameID> ids;
+		std::unordered_map<ArenaTypes::MenuType, LevelDefinition::BuildingNameID> ids;
 	public:
 		void init(const ChunkInt2 &chunk);
 
 		const ChunkInt2 &getChunk() const;
 		bool hasBuildingNames() const;
-		bool tryGetBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID *outID) const;
-		void setBuildingNameID(VoxelDefinition::WallData::MenuType menuType, LevelDefinition::BuildingNameID id);
+		bool tryGetBuildingNameID(ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID *outID) const;
+		void setBuildingNameID(ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID id);
 	};
 
 	// Data that can be used when creating an actual transition definition.

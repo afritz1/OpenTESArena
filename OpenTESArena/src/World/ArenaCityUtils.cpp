@@ -414,10 +414,10 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
 	auto generateNames = [&provinceDef, &citySeed, &random, &voxelGrid, &textAssetLibrary, &exeData,
-		&cityDef, &localCityPoint, &menuNames](VoxelDefinition::WallData::MenuType menuType)
+		&cityDef, &localCityPoint, &menuNames](ArenaTypes::MenuType menuType)
 	{
-		if ((menuType == VoxelDefinition::WallData::MenuType::Equipment) ||
-			(menuType == VoxelDefinition::WallData::MenuType::Temple))
+		if ((menuType == ArenaTypes::MenuType::Equipment) ||
+			(menuType == ArenaTypes::MenuType::Temple))
 		{
 			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 			random.srand(citySeed);
@@ -536,7 +536,7 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 				int hash;
 				std::string name;
 
-				if (menuType == VoxelDefinition::WallData::MenuType::Tavern)
+				if (menuType == ArenaTypes::MenuType::Tavern)
 				{
 					// Tavern.
 					int m, n;
@@ -549,7 +549,7 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 
 					name = createTavernName(m, n);
 				}
-				else if (menuType == VoxelDefinition::WallData::MenuType::Equipment)
+				else if (menuType == ArenaTypes::MenuType::Equipment)
 				{
 					// Equipment store.
 					int m, n;
@@ -593,7 +593,7 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 		}
 
 		// Fix some edge cases used with the main quest.
-		if ((menuType == VoxelDefinition::WallData::MenuType::Temple) &&
+		if ((menuType == ArenaTypes::MenuType::Temple) &&
 			cityDef.hasMainQuestTempleOverride)
 		{
 			const auto &mainQuestTempleOverride = cityDef.mainQuestTempleOverride;
@@ -609,8 +609,8 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 		}
 	};
 
-	generateNames(VoxelDefinition::WallData::MenuType::Tavern);
-	generateNames(VoxelDefinition::WallData::MenuType::Equipment);
-	generateNames(VoxelDefinition::WallData::MenuType::Temple);
+	generateNames(ArenaTypes::MenuType::Tavern);
+	generateNames(ArenaTypes::MenuType::Equipment);
+	generateNames(ArenaTypes::MenuType::Temple);
 	return menuNames;
 }

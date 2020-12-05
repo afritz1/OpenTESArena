@@ -1797,7 +1797,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 									else
 									{
 										// If no menu name was generated, then see if it's a mage's guild.
-										if (menuType == VoxelDefinition::WallData::MenuType::MagesGuild)
+										if (menuType == ArenaTypes::MenuType::MagesGuild)
 										{
 											const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 											const auto &exeData = binaryAssetLibrary.getExeData();
@@ -2169,9 +2169,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
 		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
 		const bool isCity = activeWorldType == WorldType::City;
-		const VoxelDefinition::WallData::MenuType menuType =
+		const ArenaTypes::MenuType menuType =
 			VoxelDefinition::WallData::getMenuType(menuID, isCity);
-		const bool isTransitionVoxel = menuType != VoxelDefinition::WallData::MenuType::None;
+		const bool isTransitionVoxel = menuType != ArenaTypes::MenuType::None;
 
 		// Make sure the voxel will actually lead somewhere first.
 		if (isTransitionVoxel)

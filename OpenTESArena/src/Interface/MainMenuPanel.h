@@ -18,7 +18,7 @@ class MainMenuPanel : public Panel
 private:
 	Button<Game&> loadButton, newButton;
 	Button<Game&, int, int, const std::string&,
-		const std::optional<VoxelDefinition::WallData::MenuType>&, WeatherType, WorldType> quickStartButton;
+		const std::optional<ArenaTypes::MenuType>&, WeatherType, WorldType> quickStartButton;
 	Button<> exitButton;
 	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
 		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testWeatherUpButton,
@@ -26,7 +26,7 @@ private:
 	int testType, testIndex, testIndex2, testWeather; // Test values for quickstart.
 
 	std::string getSelectedTestName() const;
-	std::optional<VoxelDefinition::WallData::MenuType> getSelectedTestInteriorType() const;
+	std::optional<ArenaTypes::MenuType> getSelectedTestInteriorType() const;
 	WeatherType getSelectedTestWeatherType() const;
 	WorldType getSelectedTestWorldType() const;
 public:

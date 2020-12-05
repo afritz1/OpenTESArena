@@ -9,7 +9,7 @@
 
 InteriorWorldData::InteriorWorldData()
 {
-	this->interiorType = VoxelDefinition::WallData::MenuType::None;
+	this->interiorType = ArenaTypes::MenuType::None;
 	this->levelIndex = 0;
 }
 
@@ -18,7 +18,7 @@ InteriorWorldData::~InteriorWorldData()
 
 }
 
-InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::MenuType interiorType,
+InteriorWorldData InteriorWorldData::loadInterior(ArenaTypes::MenuType interiorType,
 	const MIFFile &mif, const ExeData &exeData)
 {
 	InteriorWorldData worldData;
@@ -46,7 +46,7 @@ InteriorWorldData InteriorWorldData::loadInterior(VoxelDefinition::WallData::Men
 }
 
 InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
-	bool isArtifactDungeon, VoxelDefinition::WallData::MenuType interiorType,
+	bool isArtifactDungeon, ArenaTypes::MenuType interiorType,
 	const ExeData &exeData)
 {
 	// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
@@ -141,7 +141,7 @@ int InteriorWorldData::getLevelCount() const
 	return static_cast<int>(this->levels.size());
 }
 
-VoxelDefinition::WallData::MenuType InteriorWorldData::getInteriorType() const
+ArenaTypes::MenuType InteriorWorldData::getInteriorType() const
 {
 	return this->interiorType;
 }

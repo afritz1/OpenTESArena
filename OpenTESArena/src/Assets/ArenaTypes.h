@@ -21,6 +21,24 @@ namespace ArenaTypes
 	// *ITEM indices are used for entities; some values are reserved for creatures, humans, etc..
 	using ItemIndex = uint16_t;
 
+	// Maps one or more *MENU IDs to a type of transition voxel. Cities and the wilderness interpret
+	// IDs differently.
+	enum class MenuType
+	{
+		None,
+		CityGates, // Transition between city and wilderness.
+		Crypt, // WCRYPT
+		Dungeon, // DUNGEON
+		Equipment, // EQUIP
+		House, // BS
+		MagesGuild, // MAGE
+		Noble, // NOBLE
+		Palace, // PALACE
+		Tavern, // TAVERN
+		Temple, // TEMPLE
+		Tower // TOWER
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;
