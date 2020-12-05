@@ -346,94 +346,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				options.getMisc_StarDensity());
 
 			// Load the selected level based on world type (writing into active game data).
-			if (worldType == WorldType::City)
-			{
-				// There is only one "premade" city (used by the center province). All others
-				// are randomly generated.
-				if (mifName == ImperialMIF)
-				{
-					// Load city into game data.
-					const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-					const LocationDefinition &locationDef = [&mifName, &provinceDef]()
-					{
-						int locationIndex = -1;
-						for (int i = 0; i < provinceDef.getLocationCount(); i++)
-						{
-							const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
-							if (curLocationDef.getType() == LocationDefinition::Type::City)
-							{
-								const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
-								if ((cityDef.type == LocationDefinition::CityDefinition::Type::CityState) &&
-									cityDef.premade && cityDef.palaceIsMainQuestDungeon)
-								{
-									locationIndex = i;
-									break;
-								}
-							}
-						}
-
-						DebugAssertMsg(locationIndex != -1, "Couldn't find location for \"" + mifName + "\".");
-						return provinceDef.getLocationDef(locationIndex);
-					}();
-
-					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
-						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
-					{
-						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
-					}
-				}
-				else
-				{
-					// Pick a random location based on the .MIF name, excluding the center province.
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
-					{
-						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
-						return worldMapDef.getProvinceDef(provinceIndex);
-					}();
-
-					const LocationDefinition::CityDefinition::Type targetCityType = [&mifName]()
-					{
-						if (mifName == RandomCity)
-						{
-							return LocationDefinition::CityDefinition::Type::CityState;
-						}
-						else if (mifName == RandomTown)
-						{
-							return LocationDefinition::CityDefinition::Type::Town;
-						}
-						else if (mifName == RandomVillage)
-						{
-							return LocationDefinition::CityDefinition::Type::Village;
-						}
-						else
-						{
-							DebugUnhandledReturnMsg(LocationDefinition::CityDefinition::Type, mifName);
-						}
-					}();
-
-					const LocationDefinition *locationDefPtr = GetRandomCityLocationDefinitionIfType(provinceDef, targetCityType);
-					DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find city for \"" + mifName + "\".");
-
-					const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
-					const WeatherType filteredWeatherType =
-						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
-
-					// Load city into game data. Location data is loaded, too.
-					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
-						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
-					{
-						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
-					}
-				}
-			}
-			else if (worldType == WorldType::Interior)
+			if (worldType == WorldType::Interior)
 			{
 				if (testType != TestType_Dungeon)
 				{
@@ -566,6 +479,93 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					else
 					{
 						DebugCrash("Unrecognized dungeon type \"" + mifName + "\".");
+					}
+				}
+			}
+			else if (worldType == WorldType::City)
+			{
+				// There is only one "premade" city (used by the center province). All others
+				// are randomly generated.
+				if (mifName == ImperialMIF)
+				{
+					// Load city into game data.
+					const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+					const LocationDefinition &locationDef = [&mifName, &provinceDef]()
+					{
+						int locationIndex = -1;
+						for (int i = 0; i < provinceDef.getLocationCount(); i++)
+						{
+							const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
+							if (curLocationDef.getType() == LocationDefinition::Type::City)
+							{
+								const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
+								if ((cityDef.type == LocationDefinition::CityDefinition::Type::CityState) &&
+									cityDef.premade && cityDef.palaceIsMainQuestDungeon)
+								{
+									locationIndex = i;
+									break;
+								}
+							}
+						}
+
+						DebugAssertMsg(locationIndex != -1, "Couldn't find location for \"" + mifName + "\".");
+						return provinceDef.getLocationDef(locationIndex);
+					}();
+
+					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount,
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
+					{
+						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
+					}
+				}
+				else
+				{
+					// Pick a random location based on the .MIF name, excluding the center province.
+					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
+					{
+						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+						return worldMapDef.getProvinceDef(provinceIndex);
+					}();
+
+					const LocationDefinition::CityDefinition::Type targetCityType = [&mifName]()
+					{
+						if (mifName == RandomCity)
+						{
+							return LocationDefinition::CityDefinition::Type::CityState;
+						}
+						else if (mifName == RandomTown)
+						{
+							return LocationDefinition::CityDefinition::Type::Town;
+						}
+						else if (mifName == RandomVillage)
+						{
+							return LocationDefinition::CityDefinition::Type::Village;
+						}
+						else
+						{
+							DebugUnhandledReturnMsg(LocationDefinition::CityDefinition::Type, mifName);
+						}
+					}();
+
+					const LocationDefinition *locationDefPtr = GetRandomCityLocationDefinitionIfType(provinceDef, targetCityType);
+					DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find city for \"" + mifName + "\".");
+
+					const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+					const WeatherType filteredWeatherType =
+						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+
+					// Load city into game data. Location data is loaded, too.
+					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
+						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+						game.getTextureManager(), game.getTextureInstanceManager(), renderer))
+					{
+						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
 					}
 				}
 			}

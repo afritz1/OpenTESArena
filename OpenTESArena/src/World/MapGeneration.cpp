@@ -486,12 +486,7 @@ namespace MapGeneration
 				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
 
 				int baseOffset, baseSize;
-				if (worldType == WorldType::City)
-				{
-					baseOffset = wallHeightTables.box1b.at(heightIndex);
-					baseSize = wallHeightTables.box2b.at(thicknessIndex);
-				}
-				else if (worldType == WorldType::Interior)
+				if (worldType == WorldType::Interior)
 				{
 					baseOffset = wallHeightTables.box1a.at(heightIndex);
 
@@ -499,6 +494,11 @@ namespace MapGeneration
 					const auto &boxScale = inf.getCeiling().boxScale;
 					baseSize = boxScale.has_value() ?
 						((boxSize * (*boxScale)) / 256) : boxSize;
+				}
+				else if (worldType == WorldType::City)
+				{
+					baseOffset = wallHeightTables.box1b.at(heightIndex);
+					baseSize = wallHeightTables.box2b.at(thicknessIndex);
 				}
 				else if (worldType == WorldType::Wilderness)
 				{

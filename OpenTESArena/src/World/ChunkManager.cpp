@@ -143,16 +143,16 @@ bool ChunkManager::populateChunk(ChunkID id, WorldType worldType, EntityManager 
 	DebugAssert(this->isValidChunkID(id));
 	Chunk &chunk = this->getChunk(id);
 
-	if (worldType == WorldType::City)
-	{
-		// @todo
-		// Same as interior, except chunks outside the level are wrapped with only floor voxels.
-	}
-	else if (worldType == WorldType::Interior)
+	if (worldType == WorldType::Interior)
 	{
 		// @todo
 		// Needs to know if the chunk coordinate intersects the level dimensions, so it knows
 		// to grab voxel data from the level definition. Otherwise, default empty chunk.
+	}
+	else if (worldType == WorldType::City)
+	{
+		// @todo
+		// Same as interior, except chunks outside the level are wrapped with only floor voxels.
 	}
 	else if (worldType == WorldType::Wilderness)
 	{

@@ -784,13 +784,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				const int heightIndex = mostSigByte & 0x07;
 				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
 				int baseOffset, baseSize;
-
-				if (worldType == WorldType::City)
-				{
-					baseOffset = wallHeightTables.box1b.at(heightIndex);
-					baseSize = wallHeightTables.box2b.at(thicknessIndex);
-				}
-				else if (worldType == WorldType::Interior)
+				
+				if (worldType == WorldType::Interior)
 				{
 					baseOffset = wallHeightTables.box1a.at(heightIndex);
 
@@ -798,6 +793,11 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					const auto &boxScale = inf.getCeiling().boxScale;
 					baseSize = boxScale.has_value() ?
 						((boxSize * (*boxScale)) / 256) : boxSize;
+				}
+				else if (worldType == WorldType::City)
+				{
+					baseOffset = wallHeightTables.box1b.at(heightIndex);
+					baseSize = wallHeightTables.box2b.at(thicknessIndex);
 				}
 				else if (worldType == WorldType::Wilderness)
 				{
