@@ -98,8 +98,8 @@ private:
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs, uint32_t fallbackSeed,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
+		uint32_t fallbackSeed, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);

@@ -1,22 +1,91 @@
 #include <algorithm>
 
-#include "CityLevelUtils.h"
+#include "ArenaCityUtils.h"
+#include "ArenaWildUtils.h"
+#include "ClimateType.h"
+#include "LocationDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
-#include "WildLevelUtils.h"
+#include "WeatherUtils.h"
+#include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
-uint32_t WildLevelUtils::makeWildChunkSeed(int wildX, int wildY)
+#include "components/debug/Debug.h"
+
+DOSUtils::FilenameBuffer ArenaWildUtils::generateInfName(ClimateType climateType,
+	WeatherType weatherType)
+{
+	const char climateLetter = [climateType]()
+	{
+		if (climateType == ClimateType::Temperate)
+		{
+			return 'T';
+		}
+		else if (climateType == ClimateType::Desert)
+		{
+			return 'D';
+		}
+		else if (climateType == ClimateType::Mountain)
+		{
+			return 'M';
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(climateType)));
+		}
+	}();
+
+	// Wilderness is "W".
+	const char locationLetter = 'W';
+
+	const char weatherLetter = [climateType, weatherType]()
+	{
+		if (WeatherUtils::isClear(weatherType) || WeatherUtils::isOvercast(weatherType))
+		{
+			return 'N';
+		}
+		else if (WeatherUtils::isRain(weatherType))
+		{
+			return 'R';
+		}
+		else if (WeatherUtils::isSnow(weatherType))
+		{
+			// Deserts can't have snow.
+			if (climateType != ClimateType::Desert)
+			{
+				return 'S';
+			}
+			else
+			{
+				DebugLogWarning("Deserts do not have snow templates.");
+				return 'N';
+			}
+		}
+		else
+		{
+			// Not sure what this means.
+			return 'W';
+		}
+	}();
+
+	DOSUtils::FilenameBuffer buffer;
+	std::snprintf(buffer.data(), buffer.size(), "%C%C%C.INF",
+		climateLetter, locationLetter, weatherLetter);
+
+	return buffer;
+}
+
+uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
 {
 	return (wildY << 16) + wildX;
 }
 
-Buffer2D<WildBlockID> WildLevelUtils::generateWildernessIndices(uint32_t wildSeed,
+Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed,
 	const ExeData::Wilderness &wildData)
 {
-	Buffer2D<WildBlockID> indices(WildLevelUtils::WILD_WIDTH, WildLevelUtils::WILD_HEIGHT);
+	Buffer2D<ArenaWildUtils::WildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
 	ArenaRandom random(wildSeed);
 
 	// Generate a random wilderness .MIF index for each wilderness chunk.
@@ -71,10 +140,10 @@ Buffer2D<WildBlockID> WildLevelUtils::generateWildernessIndices(uint32_t wildSee
 	});
 
 	// City indices in the center of the wilderness (WILD001.MIF, etc.).
-	static_assert(WildLevelUtils::WILD_WIDTH >= 2, "Can't fit city tiles in wild width.");
-	static_assert(WildLevelUtils::WILD_HEIGHT >= 2, "Can't fit city tiles in wild height.");
-	constexpr WEInt cityX = (WildLevelUtils::WILD_WIDTH / 2) - 1;
-	constexpr SNInt cityY = (WildLevelUtils::WILD_HEIGHT / 2) - 1;
+	static_assert(ArenaWildUtils::WILD_WIDTH >= 2, "Can't fit city tiles in wild width.");
+	static_assert(ArenaWildUtils::WILD_HEIGHT >= 2, "Can't fit city tiles in wild height.");
+	constexpr WEInt cityX = (ArenaWildUtils::WILD_WIDTH / 2) - 1;
+	constexpr SNInt cityY = (ArenaWildUtils::WILD_HEIGHT / 2) - 1;
 	indices.set(cityX, cityY, 1);
 	indices.set(cityX + 1, cityY, 2);
 	indices.set(cityX, cityY + 1, 3);
@@ -83,17 +152,17 @@ Buffer2D<WildBlockID> WildLevelUtils::generateWildernessIndices(uint32_t wildSee
 	return indices;
 }
 
-LevelUtils::MenuNamesList WildLevelUtils::generateWildChunkBuildingNames(
+ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 	const VoxelGrid &voxelGrid, const ExeData &exeData)
 {
-	LevelUtils::MenuNamesList menuNames;
+	ArenaLevelUtils::MenuNamesList menuNames;
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
 	auto generateNames = [&voxelGrid, &exeData, &menuNames](int wildX, int wildY,
 		VoxelDefinition::WallData::MenuType menuType)
 	{
-		const uint32_t wildChunkSeed = WildLevelUtils::makeWildChunkSeed(wildX, wildY);
+		const uint32_t wildChunkSeed = ArenaWildUtils::makeWildChunkSeed(wildX, wildY);
 
 		// Don't need hashInSeen() for the wilderness.
 
@@ -195,9 +264,9 @@ LevelUtils::MenuNamesList WildLevelUtils::generateWildChunkBuildingNames(
 	};
 
 	// Iterate over each wild chunk.
-	for (int y = 0; y < WildLevelUtils::WILD_HEIGHT; y++)
+	for (int y = 0; y < ArenaWildUtils::WILD_HEIGHT; y++)
 	{
-		for (int x = 0; x < WildLevelUtils::WILD_WIDTH; x++)
+		for (int x = 0; x < ArenaWildUtils::WILD_WIDTH; x++)
 		{
 			generateNames(x, y, VoxelDefinition::WallData::MenuType::Tavern);
 			generateNames(x, y, VoxelDefinition::WallData::MenuType::Temple);
@@ -207,13 +276,13 @@ LevelUtils::MenuNamesList WildLevelUtils::generateWildChunkBuildingNames(
 	return menuNames;
 }
 
-void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
+void ArenaWildUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	// For now, assume the given buffers are for the entire 4096x4096 wilderness.
 	// @todo: change to only care about 128x128 layers.
-	DebugAssert(flor.getWidth() == (WildLevelUtils::WILD_WIDTH * RMDFile::WIDTH));
+	DebugAssert(flor.getWidth() == (ArenaWildUtils::WILD_WIDTH * RMDFile::WIDTH));
 	DebugAssert(flor.getWidth() == flor.getHeight());
 	DebugAssert(flor.getWidth() == map1.getWidth());
 	DebugAssert(flor.getWidth() == map2.getWidth());
@@ -262,7 +331,7 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	BufferView2D<uint16_t> cityFlorView(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight());
 	BufferView2D<uint16_t> cityMap1View(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight());
 	BufferView2D<uint16_t> cityMap2View(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight());
-	CityLevelUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
+	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have
 	// any special generation -- the .MIF buffers are simply used as-is (with some simple palace
@@ -278,7 +347,7 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 		ArenaRandom random(citySeed);
 
 		// Write generated city data into the temp city buffers.
-		CityLevelUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
+		ArenaCityUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
 			blockStartPosition, random, binaryAssetLibrary, cityFlor, cityMap1, cityMap2);
 	}
 
@@ -342,14 +411,14 @@ void WildLevelUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	}
 }
 
-OriginalInt2 WildLevelUtils::getRelativeWildOrigin(const Int2 &voxel)
+OriginalInt2 ArenaWildUtils::getRelativeWildOrigin(const Int2 &voxel)
 {
 	return OriginalInt2(
 		voxel.x - (voxel.x % (RMDFile::WIDTH * 2)),
 		voxel.y - (voxel.y % (RMDFile::DEPTH * 2)));
 }
 
-NewInt2 WildLevelUtils::getCenteredWildOrigin(const NewInt2 &voxel)
+NewInt2 ArenaWildUtils::getCenteredWildOrigin(const NewInt2 &voxel)
 {
 	return NewInt2(
 		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,

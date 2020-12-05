@@ -1,9 +1,10 @@
 #include <algorithm>
 #include <iomanip>
 
-#include "CityLevelUtils.h"
+#include "ArenaCityUtils.h"
+#include "ArenaWildUtils.h"
 #include "ExteriorLevelData.h"
-#include "WildLevelUtils.h"
+#include "LocationDefinition.h"
 #include "WorldType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/COLFile.h"
@@ -50,7 +51,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
 	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
 	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
-	CityLevelUtils::writeSkeleton(level, tempFlorView, tempMap1View, tempMap2View);
+	ArenaCityUtils::writeSkeleton(level, tempFlorView, tempMap1View, tempMap2View);
 
 	// Get the city's seed for random chunk generation. It is modified later during
 	// building name generation.
@@ -64,12 +65,12 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
 			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
-		CityLevelUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth, reservedBlocks,
+		ArenaCityUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth, reservedBlocks,
 			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);
 	}
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
-	CityLevelUtils::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
+	ArenaCityUtils::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
 
 	// Create the level for the voxel data to be written into.
 	ExteriorLevelData levelData(gridWidth, EXTERIOR_LEVEL_HEIGHT, gridDepth, infName, level.getName());
@@ -89,7 +90,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
-	levelData.menuNames = CityLevelUtils::generateBuildingNames(locationDef, provinceDef, random,
+	levelData.menuNames = ArenaCityUtils::generateBuildingNames(locationDef, provinceDef, random,
 		levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);
 
 	// Generate distant sky.
@@ -106,8 +107,8 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const ExeData::Wilderness &wildData = binaryAssetLibrary.getExeData().wild;
-	const Buffer2D<WildBlockID> wildIndices =
-		WildLevelUtils::generateWildernessIndices(cityDef.wildSeed, wildData);
+	const Buffer2D<ArenaWildUtils::WildBlockID> wildIndices =
+		ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, wildData);
 
 	// Temp buffers for voxel data.
 	Buffer2D<ArenaTypes::VoxelID> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
@@ -157,8 +158,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	}
 
 	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
-	WildLevelUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2,
-		binaryAssetLibrary);
+	ArenaWildUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2, binaryAssetLibrary);
 
 	// Create the level for the voxel data to be written into.
 	const std::string levelName = "WILD"; // Arbitrary
@@ -180,7 +180,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	levelData.readMAP2(tempMap2View, inf);
 
 	// Generate wilderness building names.
-	levelData.menuNames = WildLevelUtils::generateWildChunkBuildingNames(
+	levelData.menuNames = ArenaWildUtils::generateWildChunkBuildingNames(
 		levelData.getVoxelGrid(), exeData);
 
 	// Generate distant sky.
@@ -190,7 +190,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	return levelData;
 }
 
-const LevelUtils::MenuNamesList &ExteriorLevelData::getMenuNames() const
+const ArenaLevelUtils::MenuNamesList &ExteriorLevelData::getMenuNames() const
 {
 	return this->menuNames;
 }

@@ -1,6 +1,5 @@
-#include "InteriorLevelUtils.h"
+#include "ArenaInteriorUtils.h"
 #include "InteriorWorldData.h"
-#include "InteriorWorldUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 #include "../Math/Random.h"
@@ -61,7 +60,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	ArenaRandom random(seed);
 
 	// Number of levels in the dungeon.
-	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
+	const int levelCount = ArenaInteriorUtils::generateDungeonLevelCount(isArtifactDungeon, random);
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
@@ -71,7 +70,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	{
 		const SNInt tY = random.next() % depthChunks;
 		const WEInt tX = random.next() % widthChunks;
-		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
+		return ArenaInteriorUtils::packLevelChangeVoxel(tX, tY);
 	};
 
 	// Packed coordinates for transition blocks.
@@ -118,12 +117,12 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	// Convert it from the old coordinate system to the new one.
 	WEInt firstTransitionChunkX;
 	SNInt firstTransitionChunkZ;
-	InteriorLevelUtils::unpackLevelChangeVoxel(
+	ArenaInteriorUtils::unpackLevelChangeVoxel(
 		transitions.front(), &firstTransitionChunkX, &firstTransitionChunkZ);
 
 	const OriginalDouble2 startPoint(
-		0.50 + static_cast<WEDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX)),
-		0.50 + static_cast<SNDouble>(InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ)));
+		0.50 + static_cast<WEDouble>(ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkX)),
+		0.50 + static_cast<SNDouble>(ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkZ)));
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;

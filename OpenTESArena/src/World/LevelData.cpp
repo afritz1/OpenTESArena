@@ -2,11 +2,18 @@
 #include <functional>
 #include <optional>
 
+#include "ArenaLevelUtils.h"
+#include "ExteriorWorldData.h"
+#include "InteriorWorldData.h"
 #include "InteriorUtils.h"
 #include "LevelData.h"
+#include "LocationUtils.h"
 #include "ProvinceDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
+#include "VoxelFacing3D.h"
+#include "WorldData.h"
+#include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -32,12 +39,6 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../World/ExteriorWorldData.h"
-#include "../World/InteriorWorldData.h"
-#include "../World/LocationUtils.h"
-#include "../World/VoxelFacing3D.h"
-#include "../World/WorldData.h"
-#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -1080,7 +1081,7 @@ void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, co
 
 			if (map2Voxel != 0)
 			{
-				const int height = LevelUtils::getMap2VoxelHeight(map2Voxel);
+				const int height = ArenaLevelUtils::getMap2VoxelHeight(map2Voxel);
 				const int dataIndex = getMap2DataIndex(map2Voxel);
 
 				for (int y = 2; y < (height + 2); y++)

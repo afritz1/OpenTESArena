@@ -1,8 +1,9 @@
-#ifndef LEVEL_UTILS_H
-#define LEVEL_UTILS_H
+#ifndef ARENA_LEVEL_UTILS_H
+#define ARENA_LEVEL_UTILS_H
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "LocationDefinition.h"
 #include "VoxelUtils.h"
@@ -15,11 +16,11 @@
 class ArenaRandom;
 class ExeData;
 
-// Various functions for working with Arena's level data.
+// Various functions for working with Arena level data, shared between world types.
 
-namespace LevelUtils
+namespace ArenaLevelUtils
 {
-	// Display names for *MENU transition voxels.
+	// Display names for *MENU transition voxels in cities and the wilderness.
 	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
 
 	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 per voxel).

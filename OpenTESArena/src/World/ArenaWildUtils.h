@@ -1,25 +1,32 @@
-#ifndef WILD_LEVEL_UTILS_H
-#define WILD_LEVEL_UTILS_H
+#ifndef ARENA_WILD_UTILS_H
+#define ARENA_WILD_UTILS_H
 
 #include <cstdint>
 
-#include "LevelUtils.h"
+#include "ArenaLevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
 
+#include "components/dos/DOSUtils.h"
 #include "components/utilities/Buffer2D.h"
 
 class BinaryAssetLibrary;
 class LocationDefinition;
 class VoxelGrid;
 
-using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
+enum class ClimateType;
+enum class WeatherType;
 
-namespace WildLevelUtils
+namespace ArenaWildUtils
 {
+	using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
+
 	// Chunk counts across wilderness width and height.
 	constexpr int WILD_WIDTH = 64;
 	constexpr int WILD_HEIGHT = WILD_WIDTH;
+
+	// Generates the .INF name for the wilderness given a climate and current weather.
+	DOSUtils::FilenameBuffer generateInfName(ClimateType climateType, WeatherType weatherType);
 
 	// Makes a 32-bit seed for a wilderness chunk. Intended for building names.
 	uint32_t makeWildChunkSeed(int wildX, int wildY);
@@ -29,7 +36,7 @@ namespace WildLevelUtils
 		const ExeData::Wilderness &wildData);
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
-	LevelUtils::MenuNamesList generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
+	ArenaLevelUtils::MenuNamesList generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
 		const ExeData &exeData);
 
 	// Changes the default filler city skeleton to the one intended for the city.

@@ -1,14 +1,15 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "ArenaCityUtils.h"
+#include "ArenaInteriorUtils.h"
+#include "ArenaLevelUtils.h"
+#include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "CityLevelUtils.h"
-#include "InteriorLevelUtils.h"
 #include "InteriorType.h"
 #include "InteriorUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
-#include "LevelUtils.h"
 #include "LocationUtils.h"
 #include "LockDefinition.h"
 #include "MapDefinition.h"
@@ -18,7 +19,6 @@
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing3D.h"
-#include "WildLevelUtils.h"
 #include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -1052,7 +1052,7 @@ namespace MapGeneration
 
 				// Duplicate voxels upward based on calculated height.
 				const int yStart = 2;
-				const int yEnd = yStart + LevelUtils::getMap2VoxelHeight(map2Voxel);
+				const int yEnd = yStart + ArenaLevelUtils::getMap2VoxelHeight(map2Voxel);
 				for (int y = yStart; y < yEnd; y++)
 				{
 					const SNInt levelX = map2Z;
@@ -1170,10 +1170,10 @@ namespace MapGeneration
 
 		for (SNInt row = 0; row < depthChunks; row++)
 		{
-			const SNInt zOffset = row * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
+			const SNInt zOffset = row * ArenaInteriorUtils::DUNGEON_CHUNK_DIM;
 			for (WEInt column = 0; column < widthChunks; column++)
 			{
-				const WEInt xOffset = column * InteriorLevelUtils::DUNGEON_CHUNK_DIM;
+				const WEInt xOffset = column * ArenaInteriorUtils::DUNGEON_CHUNK_DIM;
 
 				// Get the selected level from the random chunks .MIF file.
 				const int blockIndex = (tileSet * 8) + (random.next() % 8);
@@ -1182,9 +1182,9 @@ namespace MapGeneration
 				const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
 
 				// Copy block data to temp buffers.
-				for (SNInt z = 0; z < InteriorLevelUtils::DUNGEON_CHUNK_DIM; z++)
+				for (SNInt z = 0; z < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; z++)
 				{
-					for (WEInt x = 0; x < InteriorLevelUtils::DUNGEON_CHUNK_DIM; x++)
+					for (WEInt x = 0; x < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; x++)
 					{
 						const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
 						const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
@@ -1245,20 +1245,20 @@ namespace MapGeneration
 		const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
 		WEInt levelUpX;
 		SNInt levelUpZ;
-		InteriorLevelUtils::unpackLevelChangeVoxel(levelUpBlock, &levelUpX, &levelUpZ);
-		levelMAP1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelUpX),
-			InteriorLevelUtils::offsetLevelChangeVoxel(levelUpZ),
-			InteriorLevelUtils::convertLevelChangeVoxel(levelUpVoxelByte));
+		ArenaInteriorUtils::unpackLevelChangeVoxel(levelUpBlock, &levelUpX, &levelUpZ);
+		levelMAP1.set(ArenaInteriorUtils::offsetLevelChangeVoxel(levelUpX),
+			ArenaInteriorUtils::offsetLevelChangeVoxel(levelUpZ),
+			ArenaInteriorUtils::convertLevelChangeVoxel(levelUpVoxelByte));
 
 		if (levelDownBlock.has_value())
 		{
 			const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
 			WEInt levelDownX;
 			SNInt levelDownZ;
-			InteriorLevelUtils::unpackLevelChangeVoxel(*levelDownBlock, &levelDownX, &levelDownZ);
-			levelMAP1.set(InteriorLevelUtils::offsetLevelChangeVoxel(levelDownX),
-				InteriorLevelUtils::offsetLevelChangeVoxel(levelDownZ),
-				InteriorLevelUtils::convertLevelChangeVoxel(levelDownVoxelByte));
+			ArenaInteriorUtils::unpackLevelChangeVoxel(*levelDownBlock, &levelDownX, &levelDownZ);
+			levelMAP1.set(ArenaInteriorUtils::offsetLevelChangeVoxel(levelDownX),
+				ArenaInteriorUtils::offsetLevelChangeVoxel(levelDownZ),
+				ArenaInteriorUtils::convertLevelChangeVoxel(levelDownVoxelByte));
 		}
 
 		// Convert temp voxel buffers to the modern format.
@@ -1713,7 +1713,8 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 	this->cityBlocksPerSide = cityBlocksPerSide;
 }
 
-void MapGeneration::WildGenInfo::init(Buffer2D<WildBlockID> &&wildBlockIDs, uint32_t fallbackSeed)
+void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
+	uint32_t fallbackSeed)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
 	this->fallbackSeed = fallbackSeed;
@@ -1830,7 +1831,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	{
 		const SNInt tY = random.next() % depthChunks;
 		const WEInt tX = random.next() % widthChunks;
-		return InteriorLevelUtils::packLevelChangeVoxel(tX, tY);
+		return ArenaInteriorUtils::packLevelChangeVoxel(tX, tY);
 	};
 
 	// Packed coordinates for transition blocks.
@@ -1887,13 +1888,13 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 	const int firstTransition = transitions[0];
 	WEInt firstTransitionChunkX;
 	SNInt firstTransitionChunkZ;
-	InteriorLevelUtils::unpackLevelChangeVoxel(
+	ArenaInteriorUtils::unpackLevelChangeVoxel(
 		firstTransition, &firstTransitionChunkX, &firstTransitionChunkZ);
 
 	// Convert it from the old coordinate system to the new one.
 	const OriginalInt2 startPoint(
-		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkX),
-		InteriorLevelUtils::offsetLevelChangeVoxel(firstTransitionChunkZ));
+		ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkX),
+		ArenaInteriorUtils::offsetLevelChangeVoxel(firstTransitionChunkZ));
 	*outStartPoint = VoxelUtils::originalVoxelToNewVoxel(startPoint);
 }
 
@@ -1920,7 +1921,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
 	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
 	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
-	CityLevelUtils::writeSkeleton(mifLevel, tempFlorView, tempMap1View, tempMap2View);
+	ArenaCityUtils::writeSkeleton(mifLevel, tempFlorView, tempMap1View, tempMap2View);
 
 	// Use the city's seed for random chunk generation. It is modified later during building
 	// name generation.
@@ -1930,12 +1931,12 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 	{
 		// Generate procedural city data and write it into the temp buffers.
 		const OriginalInt2 blockStartPosition(blockStartPosX, blockStartPosY);
-		CityLevelUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
+		ArenaCityUtils::generateCity(citySeed, cityBlocksPerSide, mif.getWidth(), reservedBlocks,
 			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);
 	}
 
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
-	CityLevelUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
+	ArenaCityUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
 
 	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
@@ -1960,7 +1961,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, int r
 		outLevelInfoDef);
 }
 
-void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &uniqueWildBlockIDs,
+void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
 	const BufferView2D<const int> &levelDefIndices, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -1982,7 +1983,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
-		const WildBlockID wildBlockID = uniqueWildBlockIDs.get(i);
+		const ArenaWildUtils::WildBlockID wildBlockID = uniqueWildBlockIDs.get(i);
 		const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
@@ -2052,7 +2053,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const WildBlockID> &u
 			const int levelDefIndex = levelDefIndices.get(x, z);
 			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
 			const ChunkInt2 chunk(x, z); // @todo: verify
-			const uint32_t chunkSeed = WildLevelUtils::makeWildChunkSeed(chunk.x, chunk.y);
+			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.x, chunk.y);
 			MapGeneration::WildChunkBuildingNameInfo buildingNameInfo;
 			buildingNameInfo.init(chunk);
 

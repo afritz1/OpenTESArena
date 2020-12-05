@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "LevelDefinition.h"
-#include "LevelUtils.h"
 
 LevelDefinition::EntityPlacementDef::EntityPlacementDef(EntityDefID id, std::vector<LevelDouble3> &&positions)
 	: positions(std::move(positions))

@@ -1,15 +1,16 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "ArenaCityUtils.h"
+#include "ArenaLevelUtils.h"
+#include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "CityWorldUtils.h"
 #include "InteriorType.h"
-#include "InteriorWorldUtils.h"
+#include "ArenaInteriorUtils.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
 #include "SkyGeneration.h"
 #include "WorldType.h"
-#include "WildWorldUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -96,13 +97,13 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, InteriorType interior
 
 		const INFFile::CeilingData &ceiling = inf.getCeiling();
 		const WEInt levelWidth = mif.getWidth();
-		const int levelHeight = LevelUtils::getMifLevelHeight(mifLevel, &ceiling);
+		const int levelHeight = ArenaLevelUtils::getMifLevelHeight(mifLevel, &ceiling);
 		const SNInt levelDepth = mif.getDepth();
 
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+		const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
 		levelInfoDef.init(ceilingScale);
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
@@ -165,7 +166,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, LevelInt2 *outStartPoint)
 {
-	const int levelCount = InteriorWorldUtils::generateDungeonLevelCount(isArtifactDungeon, random);
+	const int levelCount = ArenaInteriorUtils::generateDungeonLevelCount(isArtifactDungeon, random);
 
 	// N LevelDefinitions all pointing to one LevelInfoDefinition.
 	this->levels.init(levelCount);
@@ -201,7 +202,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
-	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	constexpr InteriorType interiorType = InteriorType::Dungeon;
@@ -269,7 +270,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, int rac
 	levelDef.init(levelDepth, levelHeight, levelWidth);
 
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
@@ -290,20 +291,20 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, int rac
 	return true;
 }
 
-bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBlockIDs,
+bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
 	uint32_t fallbackSeed, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
-	std::vector<WildBlockID> uniqueWildBlockIDs;
+	std::vector<ArenaWildUtils::WildBlockID> uniqueWildBlockIDs;
 	Buffer2D<int> levelDefIndices(wildBlockIDs.getWidth(), wildBlockIDs.getHeight());
 	for (int y = 0; y < wildBlockIDs.getHeight(); y++)
 	{
 		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
 		{
-			const WildBlockID blockID = wildBlockIDs.get(x, y);
+			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(x, y);
 			const auto iter = std::find(uniqueWildBlockIDs.begin(), uniqueWildBlockIDs.end(), blockID);
 
 			int levelDefIndex;
@@ -340,10 +341,10 @@ bool MapDefinition::initWildLevels(const BufferView2D<const WildBlockID> &wildBl
 
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = LevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	const BufferView<const WildBlockID> uniqueWildBlockIdsConstView(
+	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
 	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(),
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
@@ -414,7 +415,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 		const MapGeneration::InteriorGenInfo::Dungeon &dungeonGenInfo = generationInfo.getDungeon();
 
 		// Dungeon .MIF file with chunks for random generation.
-		const std::string &mifName = InteriorWorldUtils::DUNGEON_MIF_NAME;
+		const std::string &mifName = ArenaInteriorUtils::DUNGEON_MIF_NAME;
 		MIFFile mif;
 		if (!mif.init(mifName.c_str()))
 		{
@@ -461,7 +462,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const DOSUtils::FilenameBuffer infName = CityWorldUtils::generateInfName(
+	const DOSUtils::FilenameBuffer infName = ArenaCityUtils::generateInfName(
 		skyGenInfo.climateType, skyGenInfo.weatherType);
 	INFFile inf;
 	if (!inf.init(infName.data()))
@@ -493,7 +494,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, C
 {
 	this->init(WorldType::Wilderness);
 
-	const DOSUtils::FilenameBuffer infName = WildWorldUtils::generateInfName(climateType, weatherType);
+	const DOSUtils::FilenameBuffer infName = ArenaWildUtils::generateInfName(climateType, weatherType);
 	INFFile inf;
 	if (!inf.init(infName.data()))
 	{
@@ -501,7 +502,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, C
 		return false;
 	}
 	
-	const BufferView2D<const WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
+	const BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
 
 	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, exteriorSkyGenInfo, inf,

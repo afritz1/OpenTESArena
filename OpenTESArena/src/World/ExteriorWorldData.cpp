@@ -1,4 +1,5 @@
-#include "CityWorldUtils.h"
+#include "ArenaCityUtils.h"
+#include "ArenaWildUtils.h"
 #include "ClimateType.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
@@ -7,7 +8,6 @@
 #include "LocationUtils.h"
 #include "VoxelUtils.h"
 #include "WeatherType.h"
-#include "WildWorldUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 
@@ -36,7 +36,7 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 	const MIFFile::Level &level = mif.getLevel(0);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const DOSUtils::FilenameBuffer infName =
-		CityWorldUtils::generateInfName(cityDef.climateType, weatherType);
+		ArenaCityUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadCity(
@@ -65,7 +65,7 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const DOSUtils::FilenameBuffer infName =
-		WildWorldUtils::generateInfName(cityDef.climateType, weatherType);
+		ArenaWildUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Load wilderness data (no starting points to load).
 	ExteriorLevelData levelData = ExteriorLevelData::loadWilderness(

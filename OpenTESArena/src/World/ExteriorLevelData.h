@@ -5,9 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "ArenaLevelUtils.h"
 #include "DistantSky.h"
 #include "LevelData.h"
-#include "LevelUtils.h"
 #include "VoxelUtils.h"
 #include "../Math/Vector2.h"
 
@@ -21,7 +21,7 @@ class ExteriorLevelData : public LevelData
 {
 private:
 	DistantSky distantSky;
-	LevelUtils::MenuNamesList menuNames;
+	ArenaLevelUtils::MenuNamesList menuNames;
 
 	ExteriorLevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 		const std::string &name);
@@ -46,7 +46,7 @@ public:
 		TextureManager &textureManager);
 
 	// Gets the mappings of voxel coordinates to *MENU display names.
-	const LevelUtils::MenuNamesList &getMenuNames() const;
+	const ArenaLevelUtils::MenuNamesList &getMenuNames() const;
 
 	// Exteriors are never outdoor dungeons (always false).
 	virtual bool isOutdoorDungeon() const override;

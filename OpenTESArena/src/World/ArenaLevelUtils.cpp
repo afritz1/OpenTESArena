@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "LevelUtils.h"
+#include "ArenaLevelUtils.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "VoxelDefinition.h"
@@ -13,12 +13,12 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
-double LevelUtils::convertArenaCeilingHeight(int ceilingHeight)
+double ArenaLevelUtils::convertArenaCeilingHeight(int ceilingHeight)
 {
 	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
 }
 
-int LevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
+int ArenaLevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
 {
 	if ((map2Voxel & 0x80) == 0x80)
 	{
@@ -38,7 +38,7 @@ int LevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
 	}
 }
 
-int LevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2)
+int ArenaLevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map2)
 {
 	DebugAssert(map2.isValid());
 
@@ -48,7 +48,7 @@ int LevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map
 		for (WEInt x = 0; x < map2.getWidth(); x++)
 		{
 			const uint16_t map2Voxel = map2.get(x, z);
-			const int map2Height = LevelUtils::getMap2VoxelHeight(map2Voxel);
+			const int map2Height = ArenaLevelUtils::getMap2VoxelHeight(map2Voxel);
 			currentMap2Height = std::max(currentMap2Height, map2Height);
 		}
 	}
@@ -56,13 +56,13 @@ int LevelUtils::getMap2Height(const BufferView2D<const ArenaTypes::VoxelID> &map
 	return currentMap2Height;
 }
 
-int LevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
+int ArenaLevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::CeilingData *ceiling)
 {
 	const BufferView2D<const ArenaTypes::VoxelID> map2 = level.getMAP2();
 
 	if (map2.isValid())
 	{
-		return 2 + LevelUtils::getMap2Height(map2);
+		return 2 + ArenaLevelUtils::getMap2Height(map2);
 	}
 	else
 	{
@@ -71,12 +71,12 @@ int LevelUtils::getMifLevelHeight(const MIFFile::Level &level, const INFFile::Ce
 	}
 }
 
-uint16_t LevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
+uint16_t ArenaLevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 {
 	return (y << 8) + (x << 1);
 }
 
-std::string LevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
+std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 	bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
 	bool isCity, const ExeData &exeData)
 {
@@ -195,7 +195,7 @@ std::string LevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32
 	else
 	{
 		// Offset is based on X and Y position in world; used with variant calculation.
-		const uint16_t offset = LevelUtils::getDoorVoxelOffset(x, y);
+		const uint16_t offset = ArenaLevelUtils::getDoorVoxelOffset(x, y);
 
 		// Decide which variant of the interior to use.
 		const int variantID = [rulerSeed, offset, menuType]()
@@ -214,20 +214,20 @@ std::string LevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32
 	}
 }
 
-int LevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random)
+int ArenaLevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random)
 {
-	const uint16_t offset = LevelUtils::getDoorVoxelOffset(x, y);
+	const uint16_t offset = ArenaLevelUtils::getDoorVoxelOffset(x, y);
 	const uint32_t seed = offset + (offset << 16);
 	random.srand(seed);
 	return (random.next() % 10) + 1; // 0..9 + 1.
 }
 
-int LevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)
+int ArenaLevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)
 {
 	return (doorY << 8) + doorX;
 }
 
-int LevelUtils::getWildernessServiceSaveFileNumber(int wildX, int wildY)
+int ArenaLevelUtils::getWildernessServiceSaveFileNumber(int wildX, int wildY)
 {
 	return (wildY << 16) + wildX;
 }

@@ -51,17 +51,17 @@
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
+#include "../World/ArenaLevelUtils.h"
+#include "../World/ArenaWildUtils.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
-#include "../World/LevelUtils.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing3D.h"
 #include "../World/WeatherUtils.h"
-#include "../World/WildLevelUtils.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -2193,7 +2193,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						// Get the door voxel using the relative wilderness origin near the player
 						// as the reference.
-						const OriginalInt2 relativeOrigin = WildLevelUtils::getRelativeWildOrigin(originalVoxel);
+						const OriginalInt2 relativeOrigin = ArenaWildUtils::getRelativeWildOrigin(originalVoxel);
 						const OriginalInt2 relativeVoxel = originalVoxel - relativeOrigin;
 						return relativeVoxel;
 					}
@@ -2201,7 +2201,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 				const auto &exeData = binaryAssetLibrary.getExeData();
-				const std::string mifName = LevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
+				const std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
 					menuID, cityDef.rulerSeed, cityDef.palaceIsMainQuestDungeon, cityDef.type,
 					isCity, exeData);
 
