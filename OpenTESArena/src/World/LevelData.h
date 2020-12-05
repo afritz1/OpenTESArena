@@ -40,8 +40,8 @@ class CitizenManager;
 class EntityDefinitionLibrary;
 class ExeData;
 class Game;
-class ProvinceDefinition;
 class LocationDefinition;
+class ProvinceDefinition;
 class Random;
 class Renderer;
 class TextureInstanceManager;
@@ -159,7 +159,7 @@ public:
 		bool getEast() const;
 		bool getSouth() const;
 		bool getWest() const;
-		bool faceIsVisible(VoxelFacing facing) const;
+		bool faceIsVisible(VoxelFacing3D facing) const;
 		int getFaceCount() const;
 	};
 

@@ -4,7 +4,7 @@
 
 #include "VoxelDefinition.h"
 #include "VoxelDataType.h"
-#include "VoxelFacing.h"
+#include "VoxelFacing3D.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
 
@@ -326,7 +326,7 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 }
 
 VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
-	bool flipped, VoxelFacing facing)
+	bool flipped, VoxelFacing3D facing)
 {
 	if (id >= VoxelDefinition::TOTAL_IDS)
 	{
@@ -380,18 +380,18 @@ VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 	return data;
 }
 
-Double3 VoxelDefinition::getNormal(VoxelFacing facing)
+Double3 VoxelDefinition::getNormal(VoxelFacing3D facing)
 {
 	// Decide what the normal is, based on the facing.
-	if (facing == VoxelFacing::PositiveX)
+	if (facing == VoxelFacing3D::PositiveX)
 	{
 		return Double3::UnitX;
 	}
-	else if (facing == VoxelFacing::NegativeX)
+	else if (facing == VoxelFacing3D::NegativeX)
 	{
 		return -Double3::UnitX;
 	}
-	else if (facing == VoxelFacing::PositiveZ)
+	else if (facing == VoxelFacing3D::PositiveZ)
 	{
 		return Double3::UnitZ;
 	}

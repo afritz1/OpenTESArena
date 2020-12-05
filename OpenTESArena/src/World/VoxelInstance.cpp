@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "VoxelFacing.h"
+#include "VoxelFacing3D.h"
 #include "VoxelInstance.h"
 
 #include "components/debug/Debug.h"
@@ -33,17 +33,17 @@ bool VoxelInstance::ChasmState::getWest() const
 	return this->west;
 }
 
-bool VoxelInstance::ChasmState::faceIsVisible(VoxelFacing facing) const
+bool VoxelInstance::ChasmState::faceIsVisible(VoxelFacing3D facing) const
 {
 	switch (facing)
 	{
-	case VoxelFacing::PositiveX:
+	case VoxelFacing3D::PositiveX:
 		return this->south;
-	case VoxelFacing::PositiveZ:
+	case VoxelFacing3D::PositiveZ:
 		return this->west;
-	case VoxelFacing::NegativeX:
+	case VoxelFacing3D::NegativeX:
 		return this->north;
-	case VoxelFacing::NegativeZ:
+	case VoxelFacing3D::NegativeZ:
 		return this->east;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(facing)));

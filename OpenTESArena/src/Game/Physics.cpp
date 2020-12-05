@@ -11,7 +11,7 @@
 #include "../World/ChunkUtils.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDataType.h"
-#include "../World/VoxelFacing.h"
+#include "../World/VoxelFacing3D.h"
 #include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
 
@@ -25,7 +25,7 @@ namespace Physics
 
 	// Converts the normal to the associated voxel facing on success. Not all conversions
 	// exist, for example, diagonals have normals but do not have a voxel facing.
-	bool TryGetFacingFromNormal(const Double3 &normal, VoxelFacing *outFacing)
+	bool TryGetFacingFromNormal(const Double3 &normal, VoxelFacing3D *outFacing)
 	{
 		DebugAssert(outFacing != nullptr);
 
@@ -34,27 +34,27 @@ namespace Physics
 		bool success = true;
 		if (normal.dot(Double3::UnitX) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::PositiveX;
+			*outFacing = VoxelFacing3D::PositiveX;
 		}
 		else if (normal.dot(-Double3::UnitX) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::NegativeX;
+			*outFacing = VoxelFacing3D::NegativeX;
 		}
 		else if (normal.dot(Double3::UnitY) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::PositiveY;
+			*outFacing = VoxelFacing3D::PositiveY;
 		}
 		else if (normal.dot(-Double3::UnitY) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::NegativeY;
+			*outFacing = VoxelFacing3D::NegativeY;
 		}
 		else if (normal.dot(Double3::UnitZ) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::PositiveZ;
+			*outFacing = VoxelFacing3D::PositiveZ;
 		}
 		else if (normal.dot(-Double3::UnitZ) > oneMinusEpsilon)
 		{
-			*outFacing = VoxelFacing::NegativeZ;
+			*outFacing = VoxelFacing3D::NegativeZ;
 		}
 		else
 		{
@@ -182,7 +182,7 @@ namespace Physics
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-		const Int3 &voxel, VoxelFacing farFacing, const Double3 &farPoint, double ceilingHeight,
+		const Int3 &voxel, VoxelFacing3D farFacing, const Double3 &farPoint, double ceilingHeight,
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		Physics::Hit &hit)
 	{
@@ -209,7 +209,7 @@ namespace Physics
 		else if (voxelDataType == VoxelDataType::Floor)
 		{
 			// Check if the ray hits the top of the voxel.
-			if (farFacing == VoxelFacing::PositiveY)
+			if (farFacing == VoxelFacing3D::PositiveY)
 			{
 				const double t = (farPoint - rayStart).length();
 				const Double3 hitPoint = farPoint;
@@ -224,7 +224,7 @@ namespace Physics
 		else if (voxelDataType == VoxelDataType::Ceiling)
 		{
 			// Check if the ray hits the bottom of the voxel.
-			if (farFacing == VoxelFacing::NegativeY)
+			if (farFacing == VoxelFacing3D::NegativeY)
 			{
 				const double t = (farPoint - rayStart).length();
 				const Double3 hitPoint = farPoint;
@@ -261,7 +261,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::NegativeY;
+					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
@@ -281,7 +281,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::PositiveY;
+					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
@@ -313,7 +313,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::PositiveY;
+					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
@@ -341,7 +341,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::NegativeY;
+					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
@@ -418,7 +418,7 @@ namespace Physics
 			// See if the intersected facing and the edge's facing are the same, and only
 			// consider edges with collision.
 			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-			const VoxelFacing edgeFacing = edge.facing;
+			const VoxelFacing3D edgeFacing = edge.facing;
 
 			if ((edgeFacing == farFacing) && edge.collider)
 			{
@@ -465,7 +465,7 @@ namespace Physics
 				}();
 
 				// Above the floor. See which face the ray hits.
-				if ((farFacing == VoxelFacing::NegativeY) || (farPoint.y < chasmYBottom))
+				if ((farFacing == VoxelFacing3D::NegativeY) || (farPoint.y < chasmYBottom))
 				{
 					// Hits the floor somewhere.
 					const Double3 planeOrigin(
@@ -481,11 +481,11 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::NegativeY;
+					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
-				else if ((farFacing != VoxelFacing::PositiveY) &&
+				else if ((farFacing != VoxelFacing3D::PositiveY) &&
 					((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing)))
 				{
 					// Hits a side wall.
@@ -519,7 +519,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const VoxelFacing facing = VoxelFacing::NegativeY;
+					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
@@ -545,7 +545,7 @@ namespace Physics
 	// Checks a voxel for ray hits and writes them into the output parameter. Returns
 	// true if the ray hit something.
 	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection, const Int3 &voxel,
-		VoxelFacing nearFacing, const Double3 &nearPoint, const Double3 &farPoint,
+		VoxelFacing3D nearFacing, const Double3 &nearPoint, const Double3 &farPoint,
 		double ceilingHeight, const LevelData::ChasmStates &chasmStates,
 		const VoxelGrid &voxelGrid, Physics::Hit &hit)
 	{
@@ -587,7 +587,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const VoxelFacing facing = VoxelFacing::PositiveY;
+				const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 				return true;
 			}
@@ -611,7 +611,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const VoxelFacing facing = VoxelFacing::NegativeY;
+				const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 				hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 				return true;
 			}
@@ -659,7 +659,7 @@ namespace Physics
 			{
 				const Quad &closestQuad = quads[closestIndex];
 				const Double3 normal = closestQuad.getNormal();
-				VoxelFacing facing;
+				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
 				{
 					hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
@@ -738,7 +738,7 @@ namespace Physics
 			{
 				const Quad &closestQuad = quads[closestIndex];
 				const Double3 normal = closestQuad.getNormal();
-				VoxelFacing facing;
+				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
 				{
 					hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
@@ -826,7 +826,7 @@ namespace Physics
 			{
 				const Quad &closestQuad = quads[closestIndex];
 				const Double3 normal = closestQuad.getNormal();
-				VoxelFacing facing;
+				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
 				{
 					hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
@@ -886,7 +886,7 @@ namespace Physics
 			{
 				const Quad &closestQuad = quads[closestIndex];
 				const Double3 normal = closestQuad.getNormal();
-				VoxelFacing facing;
+				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
 				{
 					hit.initVoxel(closestT, closestHitPoint, voxelID, voxel, &facing);
@@ -1036,16 +1036,16 @@ namespace Physics
 
 		// The visible voxel facings for each axis depending on ray direction. The facing is opposite
 		// to the direction (i.e. negative Y face if stepping upward).
-		constexpr std::array<VoxelFacing, 3> visibleWallFacings =
+		constexpr std::array<VoxelFacing3D, 3> visibleWallFacings =
 		{
-			NonNegativeDirX ? VoxelFacing::NegativeX : VoxelFacing::PositiveX,
-			NonNegativeDirY ? VoxelFacing::NegativeY : VoxelFacing::PositiveY,
-			NonNegativeDirZ ? VoxelFacing::NegativeZ : VoxelFacing::PositiveZ,
+			NonNegativeDirX ? VoxelFacing3D::NegativeX : VoxelFacing3D::PositiveX,
+			NonNegativeDirY ? VoxelFacing3D::NegativeY : VoxelFacing3D::PositiveY,
+			NonNegativeDirZ ? VoxelFacing3D::NegativeZ : VoxelFacing3D::PositiveZ,
 		};
 
 		// The ray distance and intersected face of the voxel.
 		double rayDistance;
-		VoxelFacing facing;
+		VoxelFacing3D facing;
 
 		// Verify that the initial voxel coordinate is within the world bounds.
 		bool voxelIsValid = (rayStartVoxel.x >= 0) && (rayStartVoxel.y >= 0) &&
@@ -1150,7 +1150,7 @@ namespace Physics
 			// Store part of the current DDA state. The loop needs to do another DDA step to calculate
 			// the point on the far side of this voxel.
 			const Int3 savedVoxel = currentVoxel;
-			const VoxelFacing savedFacing = facing;
+			const VoxelFacing3D savedFacing = facing;
 			const double savedDistance = rayDistance;
 
 			// Decide which voxel to step to next, and update the ray distance.
@@ -1180,7 +1180,7 @@ namespace Physics
 const double Physics::Hit::MAX_T = std::numeric_limits<double>::infinity();
 
 void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
-	const VoxelFacing *facing)
+	const VoxelFacing3D *facing)
 {
 	this->t = t;
 	this->point = point;

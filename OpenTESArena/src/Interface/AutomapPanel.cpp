@@ -28,7 +28,7 @@
 #include "../Rendering/Renderer.h"
 #include "../World/VoxelDataType.h"
 #include "../World/VoxelDefinition.h"
-#include "../World/VoxelFacing.h"
+#include "../World/VoxelFacing3D.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WildLevelUtils.h"
 #include "../World/WorldType.h"
@@ -378,9 +378,9 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 			const VoxelDefinition::EdgeData &edgeData = wallDef.edge;
 
 			// For some reason, most edges are hidden.
-			const bool isHiddenEdge = (edgeData.facing == VoxelFacing::PositiveX) ||
-				(edgeData.facing == VoxelFacing::NegativeX) ||
-				(edgeData.facing == VoxelFacing::NegativeZ);
+			const bool isHiddenEdge = (edgeData.facing == VoxelFacing3D::PositiveX) ||
+				(edgeData.facing == VoxelFacing3D::NegativeX) ||
+				(edgeData.facing == VoxelFacing3D::NegativeZ);
 
 			if (isHiddenEdge)
 			{

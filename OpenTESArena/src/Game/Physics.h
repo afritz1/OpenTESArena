@@ -27,7 +27,7 @@ namespace Physics
 		{
 			uint16_t id;
 			Int3 voxel;
-			std::optional<VoxelFacing> facing;
+			std::optional<VoxelFacing3D> facing;
 		};
 
 		struct EntityHit
@@ -47,7 +47,7 @@ namespace Physics
 		static const double MAX_T;
 
 		void initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
-			const VoxelFacing *facing);
+			const VoxelFacing3D *facing);
 		void initEntity(double t, const Double3 &point, EntityID id, EntityType type);
 
 		double getT() const;

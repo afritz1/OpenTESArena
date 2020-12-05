@@ -59,7 +59,7 @@
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/VoxelDataType.h"
-#include "../World/VoxelFacing.h"
+#include "../World/VoxelFacing3D.h"
 #include "../World/WeatherUtils.h"
 #include "../World/WildLevelUtils.h"
 #include "../World/WorldType.h"
@@ -2214,21 +2214,21 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						// Assuming this is a wall voxel.
 						DebugAssert(voxelHit.facing.has_value());
-						const VoxelFacing facing = *voxelHit.facing;
+						const VoxelFacing3D facing = *voxelHit.facing;
 
-						if (facing == VoxelFacing::PositiveX)
+						if (facing == VoxelFacing3D::PositiveX)
 						{
 							return Int3(1, 0, 0);
 						}
-						else if (facing == VoxelFacing::NegativeX)
+						else if (facing == VoxelFacing3D::NegativeX)
 						{
 							return Int3(-1, 0, 0);
 						}
-						else if (facing == VoxelFacing::PositiveZ)
+						else if (facing == VoxelFacing3D::PositiveZ)
 						{
 							return Int3(0, 0, 1);
 						}
-						else if (facing == VoxelFacing::NegativeZ)
+						else if (facing == VoxelFacing3D::NegativeZ)
 						{
 							return Int3(0, 0, -1);
 						}
@@ -2312,21 +2312,21 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						// Assuming this is a wall voxel.
 						DebugAssert(voxelHit.facing.has_value());
-						const VoxelFacing facing = *voxelHit.facing;
+						const VoxelFacing3D facing = *voxelHit.facing;
 
-						if (facing == VoxelFacing::PositiveX)
+						if (facing == VoxelFacing3D::PositiveX)
 						{
 							return VoxelUtils::North;
 						}
-						else if (facing == VoxelFacing::NegativeX)
+						else if (facing == VoxelFacing3D::NegativeX)
 						{
 							return VoxelUtils::South;
 						}
-						else if (facing == VoxelFacing::PositiveZ)
+						else if (facing == VoxelFacing3D::PositiveZ)
 						{
 							return VoxelUtils::East;
 						}
-						else if (facing == VoxelFacing::NegativeZ)
+						else if (facing == VoxelFacing3D::NegativeZ)
 						{
 							return VoxelUtils::West;
 						}

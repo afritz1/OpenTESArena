@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "VoxelDataType.h"
-#include "VoxelFacing.h"
+#include "VoxelFacing3D.h"
 #include "VoxelGeometry.h"
 
 #include "components/debug/Debug.h"
@@ -256,21 +256,21 @@ namespace
 		const Quad face = [&edge, &edgeOrigin, &xVec, &yVec, &zVec]()
 		{
 			// Geometry depends on orientation.
-			if (edge.facing == VoxelFacing::PositiveX)
+			if (edge.facing == VoxelFacing3D::PositiveX)
 			{
 				return Quad(
 					edgeOrigin + xVec + zVec,
 					edgeOrigin + xVec,
 					edgeOrigin + xVec + yVec);
 			}
-			else if (edge.facing == VoxelFacing::NegativeX)
+			else if (edge.facing == VoxelFacing3D::NegativeX)
 			{
 				return Quad(
 					edgeOrigin,
 					edgeOrigin + zVec,
 					edgeOrigin + yVec + zVec);
 			}
-			else if (edge.facing == VoxelFacing::PositiveZ)
+			else if (edge.facing == VoxelFacing3D::PositiveZ)
 			{
 				return Quad(
 					edgeOrigin + zVec,
@@ -279,7 +279,7 @@ namespace
 			}
 			else
 			{
-				DebugAssert(edge.facing == VoxelFacing::NegativeZ);
+				DebugAssert(edge.facing == VoxelFacing3D::NegativeZ);
 				return Quad(
 					edgeOrigin + xVec,
 					edgeOrigin,

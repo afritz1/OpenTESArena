@@ -12,7 +12,7 @@
 // and color-coding on the automap.
 
 enum class VoxelDataType;
-enum class VoxelFacing;
+enum class VoxelFacing3D;
 
 class VoxelDefinition
 {
@@ -107,7 +107,7 @@ public:
 		// i.e., both palace graphics and store signs.
 		bool flipped;
 
-		VoxelFacing facing;
+		VoxelFacing3D facing;
 	};
 
 	// Chasms have zero to four wall faces (stored with voxel instance) depending on adjacent
@@ -176,12 +176,12 @@ public:
 		double ySize, double vTop, double vBottom);
 	static VoxelDefinition makeDiagonal(int id, bool type1);
 	static VoxelDefinition makeTransparentWall(int id, bool collider);
-	static VoxelDefinition makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing facing);
+	static VoxelDefinition makeEdge(int id, double yOffset, bool collider, bool flipped, VoxelFacing3D facing);
 	static VoxelDefinition makeChasm(int id, ChasmData::Type type);
 	static VoxelDefinition makeDoor(int id, DoorData::Type type);
 
 	// Gets the normal associated with a voxel facing.
-	static Double3 getNormal(VoxelFacing facing);
+	static Double3 getNormal(VoxelFacing3D facing);
 
 	// Whether this voxel definition contributes to a chasm having a wall face.
 	bool allowsChasmFace() const;

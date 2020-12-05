@@ -5,7 +5,7 @@
 
 // Values for a voxel changing over time or being uniquely different in some way.
 
-enum class VoxelFacing;
+enum class VoxelFacing3D;
 
 class VoxelInstance
 {
@@ -26,7 +26,7 @@ public:
 		bool getEast() const;
 		bool getSouth() const;
 		bool getWest() const;
-		bool faceIsVisible(VoxelFacing facing) const;
+		bool faceIsVisible(VoxelFacing3D facing) const;
 		int getFaceCount() const;
 	};
 
