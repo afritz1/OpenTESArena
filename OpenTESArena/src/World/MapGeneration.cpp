@@ -706,19 +706,29 @@ namespace MapGeneration
 		{
 			const std::optional<int> &levelUpIndex = inf.getLevelUpIndex();
 			const std::optional<int> &levelDownIndex = inf.getLevelDownIndex();
-			const bool isLevelUp = levelUpIndex.has_value() && (*levelUpIndex == textureIndex);
-			const bool isLevelDown = levelDownIndex.has_value() && (*levelDownIndex == textureIndex);
+			const bool matchesLevelUp = levelUpIndex.has_value() && (*levelUpIndex == textureIndex);
+			const bool matchesLevelDown = levelDownIndex.has_value() && (*levelDownIndex == textureIndex);
 			const bool isMenu = menuIndex.has_value();
-			const bool isValid = isLevelUp || isLevelDown || isMenu;
+			const bool isValid = matchesLevelUp || matchesLevelDown || isMenu;
 
 			if (isValid)
 			{
-				const bool isLevelChange = isLevelUp || isLevelDown;
+				const bool isLevelChange = matchesLevelUp || matchesLevelDown;
 				const TransitionType transitionType = isLevelChange ?
 					TransitionType::LevelChange : TransitionType::ExitInterior;
 
 				constexpr std::optional<InteriorType> interiorType; // Can't have interiors in interiors.
-				const std::optional<bool> isLevelUp = isLevelChange ? isLevelUp : std::nullopt;
+				const std::optional<bool> isLevelUp = [matchesLevelUp, isLevelChange]() -> std::optional<bool>
+				{
+					if (isLevelChange)
+					{
+						return matchesLevelUp;
+					}
+					else
+					{
+						return std::nullopt;
+					}
+				}();
 
 				MapGeneration::TransitionGenInfo transitionGenInfo;
 				transitionGenInfo.init(transitionType, interiorType, isLevelUp);
