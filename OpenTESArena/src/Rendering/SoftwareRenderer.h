@@ -32,6 +32,8 @@
 class Entity;
 class VoxelGrid;
 
+enum class VoxelFacing2D;
+
 class SoftwareRenderer
 {
 public:
@@ -590,10 +592,10 @@ private:
 		const VoxelGrid &voxelGrid);
 	
 	// Gets the facing value for the far side of a chasm.
-	static VoxelFacing3D getInitialChasmFarFacing(SNInt voxelX, WEInt voxelZ,
+	static VoxelFacing2D getInitialChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 		const NewDouble2 &eye, const Ray &ray);
-	static VoxelFacing3D getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
-		VoxelFacing3D nearFacing, const Camera &camera, const Ray &ray);
+	static VoxelFacing2D getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
+		VoxelFacing2D nearFacing, const Camera &camera, const Ray &ray);
 
 	// Tries to convert the chasm animation percent to the associated texture within the chasm
 	// texture group for the given chasm type.
@@ -654,15 +656,15 @@ private:
 
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
-	static bool findInitialEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing3D edgeFacing,
+	static bool findInitialEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing2D edgeFacing,
 		bool flipped, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
-	static bool findEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing3D edgeFacing,
-		bool flipped, VoxelFacing3D nearFacing, const NewDouble2 &nearPoint,
+	static bool findEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing2D edgeFacing,
+		bool flipped, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
@@ -679,14 +681,14 @@ private:
 
 	// Helper method for findDoorIntersection() for swinging doors.
 	static bool findSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ, double percentOpen,
-		VoxelFacing3D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
 	static bool findDoorIntersection(SNInt voxelX, WEInt voxelZ,
-		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing3D nearFacing,
+		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing2D nearFacing,
 		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.
@@ -803,7 +805,7 @@ private:
 
 	// Helper functions for drawing the initial voxel column.
 	static void drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
-		const Camera &camera, const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint,
+		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
@@ -814,7 +816,7 @@ private:
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
-		const Camera &camera, const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint,
+		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
@@ -825,7 +827,7 @@ private:
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
-		const Camera &camera, const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint,
+		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
 		const std::vector<LevelData::DoorState> &openDoors,
@@ -838,7 +840,7 @@ private:
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint,
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -850,7 +852,7 @@ private:
 
 	// Helper functions for drawing a voxel column.
 	static void drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -860,7 +862,7 @@ private:
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -870,7 +872,7 @@ private:
 		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,
@@ -882,7 +884,7 @@ private:
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing3D facing, const NewDouble2 &nearPoint,
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
 		const std::vector<LevelData::FadeState> &fadingVoxels,

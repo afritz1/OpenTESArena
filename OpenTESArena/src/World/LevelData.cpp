@@ -11,7 +11,7 @@
 #include "ProvinceDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing2D.h"
 #include "WorldData.h"
 #include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
@@ -234,17 +234,17 @@ bool LevelData::ChasmState::getWest() const
 	return this->west;
 }
 
-bool LevelData::ChasmState::faceIsVisible(VoxelFacing3D facing) const
+bool LevelData::ChasmState::faceIsVisible(VoxelFacing2D facing) const
 {
 	switch (facing)
 	{
-	case VoxelFacing3D::PositiveX:
+	case VoxelFacing2D::PositiveX:
 		return this->south;
-	case VoxelFacing3D::PositiveZ:
+	case VoxelFacing2D::PositiveZ:
 		return this->west;
-	case VoxelFacing3D::NegativeX:
+	case VoxelFacing2D::NegativeX:
 		return this->north;
-	case VoxelFacing3D::NegativeZ:
+	case VoxelFacing2D::NegativeZ:
 		return this->east;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
@@ -875,26 +875,26 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				// graphics and gates are type 0xA colliders, I believe.
 				const bool flipped = collider;
 
-				const VoxelFacing3D facing = [map1Voxel]()
+				const VoxelFacing2D facing = [map1Voxel]()
 				{
 					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
 					// and C is east. It is stored in two bits above the texture index.
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelFacing3D::NegativeX;
+						return VoxelFacing2D::NegativeX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelFacing3D::PositiveZ;
+						return VoxelFacing2D::PositiveZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelFacing3D::PositiveX;
+						return VoxelFacing2D::PositiveX;
 					}
 					else
 					{
-						return VoxelFacing3D::NegativeZ;
+						return VoxelFacing2D::NegativeZ;
 					}
 				}();
 

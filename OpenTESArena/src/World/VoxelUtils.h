@@ -1,6 +1,8 @@
 #ifndef VOXEL_UTILS_H
 #define VOXEL_UTILS_H
 
+#include <optional>
+
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
@@ -38,6 +40,9 @@ using SNDouble = double; // + south, - north
 //using EWDouble = double; // + east, - west
 using WEDouble = double; // + west, - east
 
+enum class VoxelFacing2D;
+enum class VoxelFacing3D;
+
 namespace VoxelUtils
 {
 	const NewInt2 North(-1, 0);
@@ -66,6 +71,13 @@ namespace VoxelUtils
 
 	// Wraps a voxel coordinate so it stays within the chunk range.
 	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);
+
+	// Gets the normal associated with a voxel facing.
+	Double3 getNormal(VoxelFacing2D facing);
+
+	// Converts between 2D and 3D specializations of voxel facings.
+	VoxelFacing3D convertFaceTo3D(VoxelFacing2D facing);
+	std::optional<VoxelFacing2D> tryConvertFaceTo2D(VoxelFacing3D facing);
 }
 
 #endif

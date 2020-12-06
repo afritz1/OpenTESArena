@@ -159,7 +159,7 @@ public:
 		bool getEast() const;
 		bool getSouth() const;
 		bool getWest() const;
-		bool faceIsVisible(VoxelFacing3D facing) const;
+		bool faceIsVisible(VoxelFacing2D facing) const;
 		int getFaceCount() const;
 	};
 

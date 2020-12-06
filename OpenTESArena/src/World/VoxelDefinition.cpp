@@ -4,7 +4,7 @@
 
 #include "VoxelDefinition.h"
 #include "VoxelDataType.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing2D.h"
 #include "WorldType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -224,7 +224,7 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 }
 
 VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
-	bool flipped, VoxelFacing3D facing)
+	bool flipped, VoxelFacing2D facing)
 {
 	if (id >= VoxelDefinition::TOTAL_IDS)
 	{
@@ -276,27 +276,6 @@ VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 	door.type = type;
 
 	return data;
-}
-
-Double3 VoxelDefinition::getNormal(VoxelFacing3D facing)
-{
-	// Decide what the normal is, based on the facing.
-	if (facing == VoxelFacing3D::PositiveX)
-	{
-		return Double3::UnitX;
-	}
-	else if (facing == VoxelFacing3D::NegativeX)
-	{
-		return -Double3::UnitX;
-	}
-	else if (facing == VoxelFacing3D::PositiveZ)
-	{
-		return Double3::UnitZ;
-	}
-	else
-	{
-		return -Double3::UnitZ;
-	}
 }
 
 bool VoxelDefinition::allowsChasmFace() const

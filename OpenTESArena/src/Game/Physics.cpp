@@ -418,9 +418,10 @@ namespace Physics
 			// See if the intersected facing and the edge's facing are the same, and only
 			// consider edges with collision.
 			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
-			const VoxelFacing3D edgeFacing = edge.facing;
+			const VoxelFacing2D edgeFacing = edge.facing;
+			const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(edgeFacing);
 
-			if ((edgeFacing == farFacing) && edge.collider)
+			if ((edgeFacing3D == farFacing) && edge.collider)
 			{
 				// See if the ray hits within the edge with its Y offset.
 				const double edgeYBottom = (static_cast<double>(voxel.y) + edge.yOffset) * ceilingHeight;
@@ -485,8 +486,8 @@ namespace Physics
 					hit.initVoxel(t, hitPoint, voxelID, voxel, &facing);
 					return true;
 				}
-				else if ((farFacing != VoxelFacing3D::PositiveY) &&
-					((chasmStatePtr != nullptr) && chasmStatePtr->faceIsVisible(farFacing)))
+				else if ((farFacing != VoxelFacing3D::PositiveY) && ((chasmStatePtr != nullptr) &&
+					chasmStatePtr->faceIsVisible(*VoxelUtils::tryConvertFaceTo2D(farFacing))))
 				{
 					// Hits a side wall.
 					const double t = (farPoint - rayStart).length();
@@ -774,7 +775,8 @@ namespace Physics
 				if (success)
 				{
 					const double t = (hitPoint - rayStart).length();
-					hit.initVoxel(t, hitPoint, voxelID, voxel, &edge.facing);
+					const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(edge.facing);
+					hit.initVoxel(t, hitPoint, voxelID, voxel, &edgeFacing3D);
 					return true;
 				}
 				else

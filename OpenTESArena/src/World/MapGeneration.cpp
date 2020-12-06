@@ -19,7 +19,7 @@
 #include "TriggerDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelDefinition.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing2D.h"
 #include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -569,28 +569,29 @@ namespace MapGeneration
 				// graphics and gates are type 0xA colliders, I believe.
 				const bool flipped = collider;
 
-				const VoxelFacing3D facing = [map1Voxel]()
+				const VoxelFacing2D facing = [map1Voxel]()
 				{
 					// Orientation is a multiple of 4 (0, 4, 8, C), where 0 is north
 					// and C is east. It is stored in two bits above the texture index.
 					const int orientation = (map1Voxel & 0x00C0) >> 4;
 					if (orientation == 0x0)
 					{
-						return VoxelFacing3D::NegativeX;
+						return VoxelFacing2D::NegativeX;
 					}
 					else if (orientation == 0x4)
 					{
-						return VoxelFacing3D::PositiveZ;
+						return VoxelFacing2D::PositiveZ;
 					}
 					else if (orientation == 0x8)
 					{
-						return VoxelFacing3D::PositiveX;
+						return VoxelFacing2D::PositiveX;
 					}
 					else
 					{
-						return VoxelFacing3D::NegativeZ;
+						return VoxelFacing2D::NegativeZ;
 					}
 				}();
+
 
 				return VoxelDefinition::makeEdge(textureIndex, yOffset, collider, flipped, facing);
 			}
