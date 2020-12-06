@@ -60,11 +60,15 @@ namespace MapGeneration
 		return voxelID & 0x007F;
 	}
 
-	// Whether the Arena *MENU ID is for a city gate voxel.
+	// Whether the Arena *MENU ID is for a city gate left/right voxel.
 	bool isCityGateMenuIndex(int menuIndex, WorldType worldType)
 	{
-		// Hardcoded values in the original game for city gate left/right blocks.
-		if (worldType == WorldType::City)
+		if (worldType == WorldType::Interior)
+		{
+			// No city gates in interiors.
+			return false;
+		}
+		else if (worldType == WorldType::City)
 		{
 			return (menuIndex == 7) || (menuIndex == 8);
 		}
