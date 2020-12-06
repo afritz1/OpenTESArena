@@ -1419,9 +1419,9 @@ namespace MapGeneration
 				{
 					const LevelDefinition::VoxelDefID voxelDefID = outLevelDef->getVoxel(x, 1, z);
 					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
-					constexpr bool isCity = true;
+					constexpr WorldType worldType = WorldType::City;
 					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
+						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 				}();
 
 				if (matchesTargetType)
@@ -1575,9 +1575,9 @@ namespace MapGeneration
 				{
 					const LevelDefinition::VoxelDefID voxelDefID = levelDef.getVoxel(x, 1, z);
 					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
-					constexpr bool isCity = false; // Wilderness only.
+					constexpr WorldType worldType = WorldType::Wilderness;
 					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
+						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 				}();
 
 				if (matchesTargetType)

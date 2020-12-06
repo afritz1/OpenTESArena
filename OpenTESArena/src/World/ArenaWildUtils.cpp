@@ -8,6 +8,7 @@
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
 #include "WeatherUtils.h"
+#include "WorldType.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
@@ -219,11 +220,11 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 			// See if the current voxel is a *MENU block and matches the target menu type.
 			const bool matchesTargetType = [&voxelGrid, menuType, &dstPoint]()
 			{
-				const bool isCity = false; // Wilderness only.
 				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				constexpr WorldType worldType = WorldType::Wilderness;
 				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, isCity) == menuType);
+					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 			}();
 
 			if (matchesTargetType)

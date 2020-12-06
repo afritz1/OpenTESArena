@@ -78,11 +78,10 @@ uint16_t ArenaLevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 
 std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 	bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
-	bool isCity, const ExeData &exeData)
+	WorldType worldType, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
-	const ArenaTypes::MenuType menuType =
-		VoxelDefinition::WallData::getMenuType(menuID, isCity);
+	const ArenaTypes::MenuType menuType = VoxelDefinition::WallData::getMenuType(menuID, worldType);
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.

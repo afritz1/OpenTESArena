@@ -16,6 +16,8 @@
 class ArenaRandom;
 class ExeData;
 
+enum class WorldType;
+
 // Various functions for working with Arena level data, shared between world types.
 
 namespace ArenaLevelUtils
@@ -42,7 +44,7 @@ namespace ArenaLevelUtils
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
 		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
-		bool isCity, const ExeData &exeData);
+		WorldType worldType, const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	int getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random);

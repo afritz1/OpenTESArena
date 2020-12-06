@@ -1766,19 +1766,19 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					// Print interior display name if *MENU block is clicked in an exterior.
 					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 					{
-						const bool isCity = worldData.getActiveWorldType() == WorldType::City;
-						const auto menuType = VoxelDefinition::WallData::getMenuType(wallData.menuID, isCity);
+						const WorldType worldType = worldData.getActiveWorldType();
+						const auto menuType = VoxelDefinition::WallData::getMenuType(wallData.menuID, worldType);
 
 						if (VoxelDefinition::WallData::menuHasDisplayName(menuType))
 						{
 							const auto &exterior = static_cast<ExteriorLevelData&>(level);
 
 							// Get interior name from the clicked voxel.
-							const std::string menuName = [&game, &voxel, isCity, menuType, &exterior]()
+							const std::string menuName = [&game, &voxel, worldType, menuType, &exterior]()
 							{
 								const NewInt2 voxelXZ(voxel.x, voxel.z);
 
-								if (isCity)
+								if (worldType == WorldType::City)
 								{
 									// City interior name.
 									const auto &menuNames = exterior.getMenuNames();
@@ -1813,7 +1813,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										}
 									}
 								}
-								else
+								else if (worldType == WorldType::Wilderness)
 								{
 									// Wilderness interior name.
 
@@ -1848,6 +1848,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 											", " + std::to_string(voxelXZ.y) + ").");
 										return std::string();
 									}
+								}
+								else
+								{
+									DebugUnhandledReturnMsg(std::string,
+										std::to_string(static_cast<int>(worldType)));
 								}
 							}();
 
@@ -2168,9 +2173,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	{
 		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
 		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
-		const bool isCity = activeWorldType == WorldType::City;
-		const ArenaTypes::MenuType menuType =
-			VoxelDefinition::WallData::getMenuType(menuID, isCity);
+		const ArenaTypes::MenuType menuType = VoxelDefinition::WallData::getMenuType(menuID, activeWorldType);
 		const bool isTransitionVoxel = menuType != ArenaTypes::MenuType::None;
 
 		// Make sure the voxel will actually lead somewhere first.
@@ -2183,13 +2186,13 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			if (isTransitionToInterior)
 			{
 				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel);
-				const OriginalInt2 doorVoxel = [isCity, &originalVoxel]()
+				const OriginalInt2 doorVoxel = [activeWorldType, &originalVoxel]()
 				{
-					if (isCity)
+					if (activeWorldType == WorldType::City)
 					{
 						return originalVoxel;
 					}
-					else
+					else if (activeWorldType == WorldType::Wilderness)
 					{
 						// Get the door voxel using the relative wilderness origin near the player
 						// as the reference.
@@ -2197,13 +2200,17 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						const OriginalInt2 relativeVoxel = originalVoxel - relativeOrigin;
 						return relativeVoxel;
 					}
+					else
+					{
+						DebugUnhandledReturnMsg(OriginalInt2, std::to_string(static_cast<int>(activeWorldType)));
+					}
 				}();
 
 				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 				const auto &exeData = binaryAssetLibrary.getExeData();
 				const std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
 					menuID, cityDef.rulerSeed, cityDef.palaceIsMainQuestDungeon, cityDef.type,
-					isCity, exeData);
+					activeWorldType, exeData);
 
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
@@ -2303,7 +2310,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				const int starCount = DistantSky::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
 
-				if (isCity)
+				if (activeWorldType == WorldType::City)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
@@ -2346,7 +2353,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
 				}
-				else
+				else if (activeWorldType == WorldType::Wilderness)
 				{
 					// From wilderness to city.
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
@@ -2356,6 +2363,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
+				}
+				else
+				{
+					DebugLogError("World type \"" + std::to_string(static_cast<int>(activeWorldType)) +
+						"\" does not support city gate transitions.");
+					return;
 				}
 
 				// Reset the current music (even if it's the same one).
@@ -2391,7 +2404,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 				// Only play jingle when going wilderness to city.
 				const MusicDefinition *jingleMusicDef = nullptr;
-				if (!isCity)
+				if (activeWorldType == WorldType::Wilderness)
 				{
 					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 						game.getRandom(), [&cityDef](const MusicDefinition &def)

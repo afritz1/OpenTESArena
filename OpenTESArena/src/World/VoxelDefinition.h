@@ -14,6 +14,7 @@
 
 enum class VoxelDataType;
 enum class VoxelFacing3D;
+enum class WorldType;
 
 class VoxelDefinition
 {
@@ -33,8 +34,8 @@ public:
 		// Returns whether the wall data is for a *MENU block.
 		bool isMenu() const;
 
-		// Gets exterior menu type from *MENU ID and city boolean, or "none" if no mapping exists.
-		static ArenaTypes::MenuType getMenuType(int menuID, bool isCity);
+		// Gets exterior menu type from *MENU ID and world type, or "none" if no mapping exists.
+		static ArenaTypes::MenuType getMenuType(int menuID, WorldType worldType);
 
 		// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
 		// else (like city gates).

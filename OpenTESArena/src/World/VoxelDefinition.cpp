@@ -5,6 +5,7 @@
 #include "VoxelDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelFacing3D.h"
+#include "WorldType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
 
@@ -23,7 +24,7 @@ bool VoxelDefinition::WallData::isMenu() const
 	}
 }
 
-ArenaTypes::MenuType VoxelDefinition::WallData::getMenuType(int menuID, bool isCity)
+ArenaTypes::MenuType VoxelDefinition::WallData::getMenuType(int menuID, WorldType worldType)
 {
 	if (menuID != -1)
 	{
@@ -65,10 +66,10 @@ ArenaTypes::MenuType VoxelDefinition::WallData::getMenuType(int menuID, bool isC
 			}
 		};
 
-		// Get the menu type associated with the *MENU ID and city boolean, or null if there
+		// Get the menu type associated with the *MENU ID and world type, or null if there
 		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
 		// to their std::array size.
-		const ArenaTypes::MenuType *typePtr = [menuID, isCity, &CityMenuMappings,
+		const ArenaTypes::MenuType *typePtr = [menuID, worldType, &CityMenuMappings,
 			&WildMenuMappings]()
 		{
 			auto getPtr = [menuID](const auto &arr)
@@ -83,7 +84,21 @@ ArenaTypes::MenuType VoxelDefinition::WallData::getMenuType(int menuID, bool isC
 			};
 
 			// Interpretation of *MENU ID depends on whether it's a city or wilderness.
-			return isCity ? getPtr(CityMenuMappings) : getPtr(WildMenuMappings);
+			if (worldType == WorldType::City)
+			{
+				return getPtr(CityMenuMappings);
+			}
+			else if (worldType == WorldType::Wilderness)
+			{
+				return getPtr(WildMenuMappings);
+			}
+			else
+			{
+				// @todo: try to replace getPtr() with getIndex() for each world type branch, or
+				// just return None menu type.
+				throw DebugException("Invalid world type \"" +
+					std::to_string(static_cast<int>(worldType)) + "\".");
+			}
 		}();
 
 		// See if the array contains the associated *MENU ID.
