@@ -35,8 +35,6 @@ enum class WorldType;
 
 namespace MapGeneration
 {
-	using InteriorGenInfoID = int;
-
 	// Data for generating an interior map (building interior, wild den, world map dungeon, etc.).
 	class InteriorGenInfo
 	{
