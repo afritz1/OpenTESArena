@@ -139,7 +139,7 @@ namespace MapGeneration
 	};
 
 	// Data that can be used when creating an actual transition definition.
-	struct TransitionGenInfo
+	struct TransitionDefGenInfo
 	{
 		TransitionType transitionType;
 		std::optional<InteriorType> interiorType;

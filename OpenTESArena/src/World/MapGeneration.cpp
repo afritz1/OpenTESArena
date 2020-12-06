@@ -159,12 +159,9 @@ namespace MapGeneration
 		}
 	}
 
-	MapGeneration::InteriorGenInfo makeInteriorGenInfo(const MapGeneration::TransitionGenInfo &transitionGenInfo,
+	MapGeneration::InteriorGenInfo makeInteriorGenInfo(InteriorType interiorType,
 		const std::optional<bool> &rulerIsMale)
 	{
-		DebugAssert(transitionGenInfo.interiorType.has_value());
-		const InteriorType interiorType = *transitionGenInfo.interiorType;
-
 		// @todo: probably need to have LevelInt3 or similar in TransitionGenInfo so this can properly
 		// make the menuID and .MIF name w/ LevelUtils::getDoorVoxelMifName() for the InteriorGenInfo.
 		MapGeneration::InteriorGenInfo interiorGenInfo;
@@ -687,7 +684,7 @@ namespace MapGeneration
 		return triggerDef;
 	}
 
-	std::optional<MapGeneration::TransitionGenInfo> tryMakeVoxelTransitionGenInfo(
+	std::optional<MapGeneration::TransitionDefGenInfo> tryMakeVoxelTransitionDefGenInfo(
 		ArenaTypes::VoxelID map1Voxel, WorldType worldType, const INFFile &inf)
 	{
 		// @todo: needs to handle palace voxel too here (type 0xA voxel, menuID 11?).
@@ -731,9 +728,9 @@ namespace MapGeneration
 					}
 				}();
 
-				MapGeneration::TransitionGenInfo transitionGenInfo;
-				transitionGenInfo.init(transitionType, interiorType, isLevelUp);
-				return transitionGenInfo;
+				MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
+				transitionDefGenInfo.init(transitionType, interiorType, isLevelUp);
+				return transitionDefGenInfo;
 			}
 			else
 			{
@@ -776,9 +773,9 @@ namespace MapGeneration
 				{
 					constexpr std::optional<bool> isLevelUp; // No level changes outside of interiors.
 
-					MapGeneration::TransitionGenInfo transitionGenInfo;
-					transitionGenInfo.init(*transitionType, interiorType, isLevelUp);
-					return transitionGenInfo;
+					MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
+					transitionDefGenInfo.init(*transitionType, interiorType, isLevelUp);
+					return transitionDefGenInfo;
 				}
 				else
 				{
@@ -792,13 +789,13 @@ namespace MapGeneration
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(std::optional<MapGeneration::TransitionGenInfo>,
+			DebugUnhandledReturnMsg(std::optional<MapGeneration::TransitionDefGenInfo>,
 				std::to_string(static_cast<int>(worldType)));
 		}
 	}
 
 	// Returns transition gen info if the MAP1 flat index is a transition entity for the given world type.
-	std::optional<MapGeneration::TransitionGenInfo> tryMakeEntityTransitionGenInfo(
+	std::optional<MapGeneration::TransitionDefGenInfo> tryMakeEntityTransitionGenInfo(
 		ArenaTypes::FlatIndex flatIndex, WorldType worldType)
 	{
 		// Only wild dens are entities with transition data.
@@ -813,38 +810,41 @@ namespace MapGeneration
 			return std::nullopt;
 		}
 
-		MapGeneration::TransitionGenInfo transitionGenInfo;
-		transitionGenInfo.init(TransitionType::EnterInterior, InteriorType::Dungeon, std::nullopt);
-		return transitionGenInfo;
+		MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
+		transitionDefGenInfo.init(TransitionType::EnterInterior, InteriorType::Dungeon, std::nullopt);
+		return transitionDefGenInfo;
 	}
 
-	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionGenInfo &transitionGenInfo,
+	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
 		const std::optional<bool> &rulerIsMale)
 	{
 		TransitionDefinition transitionDef;
 
-		if (transitionGenInfo.transitionType == TransitionType::CityGate)
+		if (transitionDefGenInfo.transitionType == TransitionType::CityGate)
 		{
 			transitionDef.initCityGate();
 		}
-		else if (transitionGenInfo.transitionType == TransitionType::EnterInterior)
+		else if (transitionDefGenInfo.transitionType == TransitionType::EnterInterior)
 		{
+			DebugAssert(transitionDefGenInfo.interiorType.has_value());
+			const InteriorType interiorType = *transitionDefGenInfo.interiorType;
 			MapGeneration::InteriorGenInfo interiorGenInfo =
-				MapGeneration::makeInteriorGenInfo(transitionGenInfo, rulerIsMale);
+				MapGeneration::makeInteriorGenInfo(interiorType, rulerIsMale);
 			transitionDef.initInteriorEntrance(std::move(interiorGenInfo));
 		}
-		else if (transitionGenInfo.transitionType == TransitionType::ExitInterior)
+		else if (transitionDefGenInfo.transitionType == TransitionType::ExitInterior)
 		{
 			transitionDef.initInteriorExit();
 		}
-		else if (transitionGenInfo.transitionType == TransitionType::LevelChange)
+		else if (transitionDefGenInfo.transitionType == TransitionType::LevelChange)
 		{
-			DebugAssert(transitionGenInfo.isLevelUp.has_value());
-			transitionDef.initLevelChange(*transitionGenInfo.isLevelUp);
+			DebugAssert(transitionDefGenInfo.isLevelUp.has_value());
+			transitionDef.initLevelChange(*transitionDefGenInfo.isLevelUp);
 		}
 		else
 		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(transitionGenInfo.transitionType)));
+			DebugNotImplementedMsg(std::to_string(
+				static_cast<int>(transitionDefGenInfo.transitionType)));
 		}
 
 		return transitionDef;
@@ -970,10 +970,10 @@ namespace MapGeneration
 					outLevelDef->setVoxel(levelX, levelY, levelZ, voxelDefID);
 
 					// Try to make transition info if this MAP1 voxel is a transition.
-					const std::optional<MapGeneration::TransitionGenInfo> transitionGenInfo =
-						MapGeneration::tryMakeVoxelTransitionGenInfo(map1Voxel, worldType, inf);
+					const std::optional<MapGeneration::TransitionDefGenInfo> transitionDefGenInfo =
+						MapGeneration::tryMakeVoxelTransitionDefGenInfo(map1Voxel, worldType, inf);
 
-					if (transitionGenInfo.has_value())
+					if (transitionDefGenInfo.has_value())
 					{
 						// Get transition def ID from cache or create a new one.
 						LevelDefinition::TransitionDefID transitionDefID;
@@ -985,7 +985,7 @@ namespace MapGeneration
 						else
 						{
 							TransitionDefinition transitionDef =
-								MapGeneration::makeTransitionDef(*transitionGenInfo, rulerIsMale);
+								MapGeneration::makeTransitionDef(*transitionDefGenInfo, rulerIsMale);
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
 						}
@@ -1775,7 +1775,7 @@ void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
 	}
 }
 
-void MapGeneration::TransitionGenInfo::init(TransitionType transitionType,
+void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 	const std::optional<InteriorType> &interiorType, const std::optional<bool> &isLevelUp)
 {
 	this->transitionType = transitionType;
