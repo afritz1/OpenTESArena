@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "ArenaLevelUtils.h"
+#include "ArenaVoxelUtils.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
 #include "VoxelDefinition.h"
@@ -81,7 +82,7 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 	WorldType worldType, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
-	const ArenaTypes::MenuType menuType = VoxelDefinition::WallData::getMenuType(menuID, worldType);
+	const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, worldType);
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.

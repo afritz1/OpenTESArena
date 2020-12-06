@@ -4,6 +4,7 @@
 #include "ArenaCityUtils.h"
 #include "ArenaInteriorUtils.h"
 #include "ArenaLevelUtils.h"
+#include "ArenaVoxelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
 #include "InteriorType.h"
@@ -1421,7 +1422,7 @@ namespace MapGeneration
 					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
 					constexpr WorldType worldType = WorldType::City;
 					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+						(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 				}();
 
 				if (matchesTargetType)
@@ -1577,7 +1578,7 @@ namespace MapGeneration
 					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
 					constexpr WorldType worldType = WorldType::Wilderness;
 					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+						(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 				}();
 
 				if (matchesTargetType)

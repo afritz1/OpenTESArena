@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "ArenaCityUtils.h"
+#include "ArenaVoxelUtils.h"
 #include "ClimateType.h"
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
@@ -528,7 +529,7 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				constexpr WorldType worldType = WorldType::City;
 				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-					(VoxelDefinition::WallData::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 			}();
 
 			if (matchesTargetType)

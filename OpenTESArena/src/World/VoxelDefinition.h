@@ -3,7 +3,6 @@
 
 #include <optional>
 
-#include "../Assets/ArenaTypes.h"
 #include "../Math/Vector3.h"
 
 // The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
@@ -33,16 +32,6 @@ public:
 
 		// Returns whether the wall data is for a *MENU block.
 		bool isMenu() const;
-
-		// Gets exterior menu type from *MENU ID and world type, or "none" if no mapping exists.
-		static ArenaTypes::MenuType getMenuType(int menuID, WorldType worldType);
-
-		// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
-		// else (like city gates).
-		static bool menuLeadsToInterior(ArenaTypes::MenuType menuType);
-
-		// Returns whether the menu type displays text on-screen when the player right clicks it.
-		static bool menuHasDisplayName(ArenaTypes::MenuType menuType);
 	};
 
 	// Floors only have their top rendered.

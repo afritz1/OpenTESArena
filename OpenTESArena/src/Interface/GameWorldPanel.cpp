@@ -52,6 +52,7 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaLevelUtils.h"
+#include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
@@ -1767,9 +1768,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
 					{
 						const WorldType worldType = worldData.getActiveWorldType();
-						const auto menuType = VoxelDefinition::WallData::getMenuType(wallData.menuID, worldType);
+						const auto menuType = ArenaVoxelUtils::getMenuType(wallData.menuID, worldType);
 
-						if (VoxelDefinition::WallData::menuHasDisplayName(menuType))
+						if (ArenaVoxelUtils::menuHasDisplayName(menuType))
 						{
 							const auto &exterior = static_cast<ExteriorLevelData&>(level);
 
@@ -2173,7 +2174,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	{
 		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
 		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
-		const ArenaTypes::MenuType menuType = VoxelDefinition::WallData::getMenuType(menuID, activeWorldType);
+		const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, activeWorldType);
 		const bool isTransitionVoxel = menuType != ArenaTypes::MenuType::None;
 
 		// Make sure the voxel will actually lead somewhere first.
@@ -2181,7 +2182,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		{
 			auto &voxelGrid = activeLevel.getVoxelGrid();
 			const NewInt2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
-			const bool isTransitionToInterior = VoxelDefinition::WallData::menuLeadsToInterior(menuType);
+			const bool isTransitionToInterior = ArenaVoxelUtils::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
 			{

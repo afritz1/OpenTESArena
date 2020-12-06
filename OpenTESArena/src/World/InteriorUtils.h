@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "VoxelDefinition.h"
+#include "../Assets/ArenaTypes.h"
 
 enum class InteriorType;
 

@@ -6,6 +6,7 @@
 
 #include "Button.h"
 #include "Panel.h"
+#include "../Assets/ArenaTypes.h"
 #include "../World/VoxelDefinition.h"
 
 class Renderer;
