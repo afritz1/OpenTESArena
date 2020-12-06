@@ -28,6 +28,7 @@
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
+#include "../Game/ClockLibrary.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -388,14 +389,14 @@ GameWorldPanel::GameWorldPanel(Game &game)
 						// uniformly distributed -- midnight and noon are only one minute.
 						const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
 						{
-							std::make_pair(GameData::Midnight, 6),
-							std::make_pair(GameData::Night1, 5),
-							std::make_pair(GameData::EarlyMorning, 0),
-							std::make_pair(GameData::Morning, 1),
-							std::make_pair(GameData::Noon, 2),
-							std::make_pair(GameData::Afternoon, 3),
-							std::make_pair(GameData::Evening, 4),
-							std::make_pair(GameData::Night2, 5)
+							std::make_pair(ClockLibrary::Midnight, 6),
+							std::make_pair(ClockLibrary::Night1, 5),
+							std::make_pair(ClockLibrary::EarlyMorning, 0),
+							std::make_pair(ClockLibrary::Morning, 1),
+							std::make_pair(ClockLibrary::Noon, 2),
+							std::make_pair(ClockLibrary::Afternoon, 3),
+							std::make_pair(ClockLibrary::Evening, 4),
+							std::make_pair(ClockLibrary::Night2, 5)
 						};
 
 						const Clock &presentClock = gameData.getClock();
@@ -2895,8 +2896,8 @@ void GameWorldPanel::tick(double dt)
 	// See if the clock passed the boundary between night and day, and vice versa.
 	const double oldClockTime = oldClock.getPreciseTotalSeconds();
 	const double newClockTime = newClock.getPreciseTotalSeconds();
-	const double lamppostActivateTime = GameData::LamppostActivate.getPreciseTotalSeconds();
-	const double lamppostDeactivateTime = GameData::LamppostDeactivate.getPreciseTotalSeconds();
+	const double lamppostActivateTime = ClockLibrary::LamppostActivate.getPreciseTotalSeconds();
+	const double lamppostDeactivateTime = ClockLibrary::LamppostDeactivate.getPreciseTotalSeconds();
 	const bool activateNightLights =
 		(oldClockTime < lamppostActivateTime) &&
 		(newClockTime >= lamppostActivateTime);
@@ -2919,8 +2920,8 @@ void GameWorldPanel::tick(double dt)
 	// Check for changes in exterior music depending on the time.
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
 	{
-		const double dayMusicStartTime = GameData::MusicSwitchToDay.getPreciseTotalSeconds();
-		const double nightMusicStartTime = GameData::MusicSwitchToNight.getPreciseTotalSeconds();
+		const double dayMusicStartTime = ClockLibrary::MusicSwitchToDay.getPreciseTotalSeconds();
+		const double nightMusicStartTime = ClockLibrary::MusicSwitchToNight.getPreciseTotalSeconds();
 		const bool changeToDayMusic =
 			(oldClockTime < dayMusicStartTime) &&
 			(newClockTime >= dayMusicStartTime);

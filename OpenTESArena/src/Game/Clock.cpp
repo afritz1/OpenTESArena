@@ -2,8 +2,6 @@
 
 #include "components/debug/Debug.h"
 
-const int Clock::SECONDS_IN_A_DAY = 86400;
-
 Clock::Clock(int hours, int minutes, int seconds, double currentSecond)
 {
 	// Make sure each value is in a valid range.

@@ -5,6 +5,7 @@
 
 #include "SDL.h"
 
+#include "ClockLibrary.h"
 #include "Game.h"
 #include "GameData.h"
 #include "../Assets/ExeData.h"
@@ -52,26 +53,6 @@ const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY)
 
 const double GameData::CHASM_ANIM_PERIOD = 1.0 / 2.0;
 const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
-
-const Clock GameData::Midnight(0, 0, 0);
-const Clock GameData::Night1(0, 1, 0);
-const Clock GameData::EarlyMorning(3, 0, 0);
-const Clock GameData::Morning(6, 0, 0);
-const Clock GameData::Noon(12, 0, 0);
-const Clock GameData::Afternoon(12, 1, 0);
-const Clock GameData::Evening(18, 0, 0);
-const Clock GameData::Night2(21, 0, 0);
-
-const Clock GameData::AmbientStartBrightening(6, 0, 0);
-const Clock GameData::AmbientEndBrightening(6, 15, 0);
-const Clock GameData::AmbientStartDimming(17, 45, 0);
-const Clock GameData::AmbientEndDimming(18, 0, 0);
-
-const Clock GameData::LamppostActivate(17, 45, 0);
-const Clock GameData::LamppostDeactivate(6, 15, 0);
-
-const Clock GameData::MusicSwitchToDay(6, 19, 0);
-const Clock GameData::MusicSwitchToNight(17, 45, 0);
 
 GameData::GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
 	: player(std::move(player))
@@ -155,20 +136,16 @@ std::string GameData::getDateString(const Date &date, const ExeData &exeData)
 bool GameData::nightMusicIsActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange =
-		clockTime < GameData::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange =
-		clockTime >= GameData::MusicSwitchToNight.getPreciseTotalSeconds();
+	const bool beforeDayMusicChange = clockTime < ClockLibrary::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange = clockTime >= ClockLibrary::MusicSwitchToNight.getPreciseTotalSeconds();
 	return beforeDayMusicChange || afterNightMusicChange;
 }
 
 bool GameData::nightLightsAreActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate =
-		clockTime < GameData::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate =
-		clockTime >= GameData::LamppostActivate.getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate = clockTime < ClockLibrary::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate = clockTime >= ClockLibrary::LamppostActivate.getPreciseTotalSeconds();
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
@@ -644,15 +621,15 @@ double GameData::getAmbientPercent() const
 
 		// Time ranges where the ambient light changes. The start times are inclusive,
 		// and the end times are exclusive.
-		const double startBrighteningTime = GameData::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime = GameData::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime = GameData::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime = GameData::AmbientEndDimming.getPreciseTotalSeconds();
+		const double startBrighteningTime = ClockLibrary::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime = ClockLibrary::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime = ClockLibrary::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime = ClockLibrary::AmbientEndDimming.getPreciseTotalSeconds();
 
 		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
 		// some values here that make testing easier.
-		const double minAmbient = 0.15;
-		const double maxAmbient = 1.0;
+		constexpr double minAmbient = 0.15;
+		constexpr double maxAmbient = 1.0;
 
 		if ((clockPreciseSeconds >= endBrighteningTime) &&
 			(clockPreciseSeconds < startDimmingTime))

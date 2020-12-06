@@ -91,30 +91,6 @@ private:
 	// behavior is to decrement the world's level index.
 	std::function<void(Game&)> onLevelUpVoxelEnter;
 public:
-	// Clock times for when each time range begins.
-	static const Clock Midnight;
-	static const Clock Night1;
-	static const Clock EarlyMorning;
-	static const Clock Morning;
-	static const Clock Noon;
-	static const Clock Afternoon;
-	static const Clock Evening;
-	static const Clock Night2;
-
-	// Clock times for changes in ambient lighting.
-	static const Clock AmbientStartBrightening;
-	static const Clock AmbientEndBrightening;
-	static const Clock AmbientStartDimming;
-	static const Clock AmbientEndDimming;
-
-	// Clock times for lamppost activation.
-	static const Clock LamppostActivate;
-	static const Clock LamppostDeactivate;
-
-	// Clock times for changes in music.
-	static const Clock MusicSwitchToDay;
-	static const Clock MusicSwitchToNight;
-
 	// Creates incomplete game data with no active world, to be further initialized later.
 	GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
 	GameData(GameData&&) = default;

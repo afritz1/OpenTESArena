@@ -17,6 +17,8 @@ private:
 	// Current fraction of a second (0->1).
 	double currentSecond;
 public:
+	static constexpr int SECONDS_IN_A_DAY = 86400;
+
 	// Starts at some time of day with the current fraction of a second for precise 
 	// time definition.
 	Clock(int hours, int minutes, int seconds, double currentSecond);
@@ -26,8 +28,6 @@ public:
 
 	// Starts at midnight.
 	Clock();
-
-	static const int SECONDS_IN_A_DAY;
 
 	// Gets the current hours in 24-hour format.
 	int getHours24() const;
