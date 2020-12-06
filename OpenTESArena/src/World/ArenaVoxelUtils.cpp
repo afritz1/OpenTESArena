@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ArenaVoxelUtils.h"
 #include "WorldType.h"
 

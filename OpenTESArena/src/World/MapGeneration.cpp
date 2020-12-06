@@ -592,7 +592,6 @@ namespace MapGeneration
 					}
 				}();
 
-
 				return VoxelDefinition::makeEdge(textureIndex, yOffset, collider, flipped, facing);
 			}
 			else if (mostSigNibble == 0xB)
