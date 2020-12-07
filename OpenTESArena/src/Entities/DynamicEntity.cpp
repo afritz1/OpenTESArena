@@ -240,7 +240,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	auto &gameData = game.getGameData();
 	auto &random = game.getRandom();
 	const auto &player = gameData.getPlayer();
-	const auto &worldData = gameData.getWorldData();
+	const auto &worldData = gameData.getActiveWorld();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const auto &entityManager = levelData.getEntityManager();
@@ -312,7 +312,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 void DynamicEntity::updateCreatureState(Game &game, double dt)
 {
 	auto &gameData = game.getGameData();
-	const auto &worldData = gameData.getWorldData();
+	const auto &worldData = gameData.getActiveWorld();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &entityManager = levelData.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -502,7 +502,7 @@ void DynamicEntity::tick(Game &game, double dt)
 
 	// Update physics/pathfinding/etc..
 	// @todo: add a check here if updating the entity state has put them in a non-physics state.
-	const auto &worldData = game.getGameData().getWorldData();
+	const auto &worldData = game.getGameData().getActiveWorld();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 	this->updatePhysics(worldData, entityDefLibrary, game.getRandom(), dt);
 }

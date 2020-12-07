@@ -13,10 +13,6 @@
 
 #include "components/debug/Debug.h"
 
-ExteriorWorldData::InteriorState::InteriorState(InteriorWorldData &&worldData,
-	const Int2 &returnVoxel)
-	: worldData(std::move(worldData)), returnVoxel(returnVoxel) { }
-
 ExteriorWorldData::ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity)
 	: levelData(std::move(levelData))
 {
@@ -79,48 +75,17 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 	return worldData;
 }
 
-InteriorWorldData *ExteriorWorldData::getInterior() const
-{
-	return (this->interior.get() != nullptr) ? &this->interior->worldData : nullptr;
-}
-
-WorldType ExteriorWorldData::getBaseWorldType() const
+WorldType ExteriorWorldData::getWorldType() const
 {
 	return this->isCity ? WorldType::City : WorldType::Wilderness;
 }
 
-WorldType ExteriorWorldData::getActiveWorldType() const
-{
-	return (this->interior.get() != nullptr) ?
-		WorldType::Interior : this->getBaseWorldType();
-}
-
 LevelData &ExteriorWorldData::getActiveLevel()
 {
-	return (this->interior.get() != nullptr) ?
-		this->interior->worldData.getActiveLevel() :
-		static_cast<LevelData&>(this->levelData);
+	return static_cast<LevelData&>(this->levelData);
 }
 
 const LevelData &ExteriorWorldData::getActiveLevel() const
 {
-	return (this->interior.get() != nullptr) ?
-		this->interior->worldData.getActiveLevel() :
-		static_cast<const LevelData&>(this->levelData);
-}
-
-void ExteriorWorldData::enterInterior(InteriorWorldData &&interior, const Int2 &returnVoxel)
-{
-	DebugAssert(this->interior.get() == nullptr);
-	this->interior = std::make_unique<InteriorState>(std::move(interior), returnVoxel);
-}
-
-Int2 ExteriorWorldData::leaveInterior()
-{
-	DebugAssert(this->interior.get() != nullptr);
-
-	const Int2 returnVoxel = this->interior->returnVoxel;
-	this->interior = nullptr;
-
-	return returnVoxel;
+	return static_cast<const LevelData&>(this->levelData);
 }

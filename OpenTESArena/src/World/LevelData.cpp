@@ -1511,10 +1511,11 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 		}();
 
-		const WorldType worldType = worldData.getActiveWorldType();
-		const std::optional<InteriorType> interiorType = [&worldData]() -> std::optional<InteriorType>
+		const WorldType worldType = worldData.getWorldType();
+		const std::optional<InteriorType> interiorType = [&worldData, worldType]()
+			-> std::optional<InteriorType>
 		{
-			if (worldData.getBaseWorldType() == WorldType::Interior)
+			if (worldType == WorldType::Interior)
 			{
 				const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
 				const ArenaTypes::MenuType interiorMenuType = interior.getInteriorType();

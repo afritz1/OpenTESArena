@@ -124,8 +124,8 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 	const bool isWild = [&game]()
 	{
-		const auto &worldData = game.getGameData().getWorldData();
-		return worldData.getActiveWorldType() == WorldType::Wilderness;
+		const auto &worldData = game.getGameData().getActiveWorld();
+		return worldData.getWorldType() == WorldType::Wilderness;
 	}();
 
 	this->mapTexture = [&game, &playerDirection, &voxelGrid, &playerVoxel, isWild]()

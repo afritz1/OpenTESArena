@@ -444,7 +444,7 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	const WorldData &worldData = game.getGameData().getWorldData();
+	const WorldData &worldData = game.getGameData().getActiveWorld();
 	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
 
 	// Tick weapon animation.

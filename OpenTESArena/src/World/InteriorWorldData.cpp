@@ -146,12 +146,7 @@ ArenaTypes::MenuType InteriorWorldData::getInteriorType() const
 	return this->interiorType;
 }
 
-WorldType InteriorWorldData::getBaseWorldType() const
-{
-	return WorldType::Interior;
-}
-
-WorldType InteriorWorldData::getActiveWorldType() const
+WorldType InteriorWorldData::getWorldType() const
 {
 	return WorldType::Interior;
 }

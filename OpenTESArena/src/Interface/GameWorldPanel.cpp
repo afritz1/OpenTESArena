@@ -127,7 +127,7 @@ namespace
 		const int viewHeight = renderer.getViewHeight();
 		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
 
-		const auto &worldData = gameData.getWorldData();
+		const auto &worldData = gameData.getActiveWorld();
 		const auto &levelData = worldData.getActiveLevel();
 		const auto &entityManager = levelData.getEntityManager();
 		const auto &voxelGrid = levelData.getVoxelGrid();
@@ -214,7 +214,7 @@ namespace
 				options.getGraphics_VerticalFOV(), viewAspectRatio);
 		}();
 
-		const auto &worldData = gameData.getWorldData();
+		const auto &worldData = gameData.getActiveWorld();
 		const auto &levelData = worldData.getActiveLevel();
 		const auto &entityManager = levelData.getEntityManager();
 		const auto &voxelGrid = levelData.getVoxelGrid();
@@ -582,7 +582,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 			{
 				auto &gameData = game.getGameData();
 				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-				const auto &worldData = gameData.getWorldData();
+				const auto &worldData = gameData.getActiveWorld();
 				const auto &level = worldData.getActiveLevel();
 				const auto &player = gameData.getPlayer();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
@@ -923,7 +923,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const auto &worldData = game.getGameData().getWorldData();
+		const auto &worldData = game.getGameData().getActiveWorld();
 
 		const std::string text = [&worldData, &player, &exeData]()
 		{
@@ -937,7 +937,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 				// The displayed coordinates in the wilderness behave differently in the original
 				// game due to how the 128x128 grid shifts to keep the player roughly centered.
-				if (worldData.getActiveWorldType() != WorldType::Wilderness)
+				if (worldData.getWorldType() != WorldType::Wilderness)
 				{
 					return originalVoxel;
 				}
@@ -1234,7 +1234,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
 
-	const auto &worldData = game.getGameData().getWorldData();
+	const auto &worldData = game.getGameData().getActiveWorld();
 
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
@@ -1609,7 +1609,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const auto &options = game.getOptions();
 	auto &player = gameData.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
 	const auto &entityManager = level.getEntityManager();
@@ -1766,9 +1766,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
 					// Print interior display name if *MENU block is clicked in an exterior.
-					if (wallData.isMenu() && (worldData.getActiveWorldType() != WorldType::Interior))
+					if (wallData.isMenu() && (worldData.getWorldType() != WorldType::Interior))
 					{
-						const WorldType worldType = worldData.getActiveWorldType();
+						const WorldType worldType = worldData.getWorldType();
 						const auto menuType = ArenaVoxelUtils::getMenuType(wallData.menuID, worldType);
 
 						if (ArenaVoxelUtils::menuHasDisplayName(menuType))
@@ -1923,7 +1923,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	auto &levelData = worldData.getActiveLevel();
 	auto &entityManager = levelData.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -1964,10 +1964,10 @@ void GameWorldPanel::handleNightLightChange(bool active)
 void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 {
 	auto &game = this->getGame();
-	auto &worldData = game.getGameData().getWorldData();
+	auto &worldData = game.getGameData().getActiveWorld();
 
 	// Only interior levels have triggers.
-	if (worldData.getActiveWorldType() == WorldType::Interior)
+	if (worldData.getWorldType() == WorldType::Interior)
 	{
 		auto &level = static_cast<InteriorLevelData&>(worldData.getActiveLevel());
 
@@ -2010,7 +2010,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 {
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	auto &activeLevel = worldData.getActiveLevel();
 	auto &openDoors = activeLevel.getOpenDoors();
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
@@ -2095,9 +2095,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	auto &gameData = game.getGameData();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	auto &activeLevel = worldData.getActiveLevel();
-	const WorldType activeWorldType = worldData.getActiveWorldType();
+	const WorldType activeWorldType = worldData.getWorldType();
 
 	const LocationDefinition &locationDef = gameData.getLocationDefinition();
 	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
@@ -2107,7 +2107,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	if (activeWorldType == WorldType::Interior)
 	{
 		// @temp: temporary condition while test interiors are allowed on the main menu.
-		if (worldData.getBaseWorldType() == WorldType::Interior)
+		if (!gameData.isActiveWorldNested())
 		{
 			DebugLogWarning("Test interiors have no exterior.");
 			return;
@@ -2151,7 +2151,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Only play jingle if the exterior is inside the city.
 		const MusicDefinition *jingleMusicDef = nullptr;
-		if (worldData.getBaseWorldType() == WorldType::City)
+		if (gameData.getActiveWorld().getWorldType() == WorldType::City)
 		{
 			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
@@ -2438,20 +2438,9 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	// Level transitions are always between interiors.
 	auto &interior = [&gameData]() -> InteriorWorldData&
 	{
-		auto &worldData = gameData.getWorldData();
-		DebugAssert(worldData.getActiveWorldType() == WorldType::Interior);
-
-		if (worldData.getBaseWorldType() != WorldType::Interior)
-		{
-			auto &exterior = static_cast<ExteriorWorldData&>(worldData);
-			auto *interiorPtr = exterior.getInterior();
-			DebugAssert(interiorPtr != nullptr);
-			return *interiorPtr;
-		}
-		else
-		{
-			return static_cast<InteriorWorldData&>(worldData);
-		}
+		auto &worldData = gameData.getActiveWorld();
+		DebugAssert(worldData.getWorldType() == WorldType::Interior);
+		return static_cast<InteriorWorldData&>(worldData);
 	}();
 
 	const auto &level = interior.getActiveLevel();
@@ -2730,8 +2719,8 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
 		// Add any wilderness-specific info.
-		const auto &worldData = game.getGameData().getWorldData();
-		const WorldType worldType = worldData.getActiveWorldType();
+		const auto &worldData = game.getGameData().getActiveWorld();
+		const WorldType worldType = worldData.getWorldType();
 		if (worldType == WorldType::Wilderness)
 		{
 			const auto &activeLevel = static_cast<const ExteriorLevelData&>(worldData.getActiveLevel());
@@ -2914,8 +2903,8 @@ void GameWorldPanel::tick(double dt)
 		this->handleNightLightChange(false);
 	}
 
-	auto &worldData = gameData.getWorldData();
-	const WorldType worldType = worldData.getActiveWorldType();
+	auto &worldData = gameData.getActiveWorld();
+	const WorldType worldType = worldData.getWorldType();
 
 	// Check for changes in exterior music depending on the time.
 	if ((worldType == WorldType::City) || (worldType == WorldType::Wilderness))
@@ -3004,7 +2993,7 @@ void GameWorldPanel::tick(double dt)
 				(newPlayerVoxelXZ.y >= 0) && (newPlayerVoxelXZ.y < voxelGrid.getDepth());
 		}();
 
-		if (inVoxelGrid && (worldData.getActiveWorldType() == WorldType::Interior))
+		if (inVoxelGrid && (worldData.getWorldType() == WorldType::Interior))
 		{
 			this->handleTriggers(newPlayerVoxelXZ);
 
@@ -3028,7 +3017,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 	auto &player = gameData.getPlayer();
-	const auto &worldData = gameData.getWorldData();
+	const auto &worldData = gameData.getActiveWorld();
 	const auto &level = worldData.getActiveLevel();
 	const auto &options = game.getOptions();
 	const double ambientPercent = gameData.getAmbientPercent();
@@ -3039,7 +3028,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		return locationDef.getLatitude();
 	}();
 
-	const bool isExterior = worldData.getActiveWorldType() != WorldType::Interior;
+	const bool isExterior = worldData.getWorldType() != WorldType::Interior;
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(),
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),

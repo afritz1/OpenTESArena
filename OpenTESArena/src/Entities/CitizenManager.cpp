@@ -37,7 +37,7 @@ bool CitizenManager::shouldSpawn(Game &game) const
 	// Only worry about tick-related spawning; spawning at level start is handled by level loading.
 	return false;
 	/*auto &gameData = game.getGameData();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	const WorldType activeWorldType = worldData.getActiveWorldType();
 	return (activeWorldType == WorldType::City) || (activeWorldType == WorldType::Wilderness);*/
 }
@@ -235,7 +235,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 void CitizenManager::clearCitizens(Game &game)
 {
 	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getWorldData();
+	auto &worldData = gameData.getActiveWorld();
 	auto &levelData = worldData.getActiveLevel();
 	auto &entityManager = levelData.getEntityManager();
 
@@ -268,7 +268,7 @@ void CitizenManager::tick(Game &game)
 		if (this->shouldSpawn(game))
 		{
 			auto &gameData = game.getGameData();
-			auto &worldData = gameData.getWorldData();
+			auto &worldData = gameData.getActiveWorld();
 			auto &levelData = worldData.getActiveLevel();
 			const auto &provinceDef = gameData.getProvinceDefinition();
 			const auto &locationDef = gameData.getLocationDefinition();

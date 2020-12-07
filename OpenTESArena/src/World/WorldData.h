@@ -26,12 +26,8 @@ public:
 	// Gets the start points within each level.
 	const std::vector<NewDouble2> &getStartPoints() const;
 	
-	// Gets the root type of the world (unaffected by the active level).
-	virtual WorldType getBaseWorldType() const = 0;
-
-	// Gets the active type of the world (city, interior, wilderness). This is useful
-	// since an interior world can be nested inside an exterior world.
-	virtual WorldType getActiveWorldType() const = 0;
+	// Gets the type of the world (interior, city, wilderness).
+	virtual WorldType getWorldType() const = 0;
 
 	// Gets a reference to the active level data (a polymorphic type).
 	virtual LevelData &getActiveLevel() = 0;

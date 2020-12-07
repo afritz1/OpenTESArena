@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -65,7 +66,12 @@ private:
 	WeatherList weathers;
 
 	Player player;
-	std::unique_ptr<WorldData> worldData;
+
+	// Stack of world data instances. Multiple ones can exist at the same time when the player is inside
+	// an interior in a city or wilderness, but ultimately the size should never exceed 2.
+	std::stack<std::unique_ptr<WorldData>> worldDatas;
+	std::optional<NewInt2> returnVoxel; // Available if in an interior that's in an exterior.
+
 	CitizenManager citizenManager; // Tracks active citizens and spawning.
 	
 	// Player's current world map location data.
@@ -84,6 +90,8 @@ private:
 	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
 	// behavior is to decrement the world's level index.
 	std::function<void(Game&)> onLevelUpVoxelEnter;
+
+	void clearWorldDatas();
 public:
 	// Creates incomplete game data with no active world, to be further initialized later.
 	GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
@@ -153,7 +161,8 @@ public:
 	const WeatherList &getWeathersArray() const;
 
 	Player &getPlayer();
-	WorldData &getWorldData();
+	WorldData &getActiveWorld(); // @todo: this is bad practice since leaveInterior() can delete the active world.
+	bool isActiveWorldNested() const; // True if the active interior is inside an exterior.
 	CitizenManager &getCitizenManager();
 	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;

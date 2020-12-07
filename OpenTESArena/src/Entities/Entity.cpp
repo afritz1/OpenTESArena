@@ -81,7 +81,7 @@ void Entity::tick(Game &game, double dt)
 {
 	const EntityAnimationDefinition &animDef = [this, &game]() -> const EntityAnimationDefinition&
 	{
-		const WorldData &worldData = game.getGameData().getWorldData();
+		const WorldData &worldData = game.getGameData().getActiveWorld();
 		const LevelData &levelData = worldData.getActiveLevel();
 		const EntityManager &entityManager = levelData.getEntityManager();
 		const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();

@@ -41,8 +41,7 @@ public:
 	ArenaTypes::MenuType getInteriorType() const;
 
 	// Always interior for interior world data.
-	virtual WorldType getBaseWorldType() const override;
-	virtual WorldType getActiveWorldType() const override;
+	virtual WorldType getWorldType() const override;
 
 	virtual LevelData &getActiveLevel() override;
 	virtual const LevelData &getActiveLevel() const override;
