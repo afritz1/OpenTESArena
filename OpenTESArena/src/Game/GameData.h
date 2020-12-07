@@ -96,9 +96,6 @@ public:
 	GameData(GameData&&) = default;
 	~GameData();
 
-	// Gets the date string for a given date, using strings from the executable data.
-	static std::string getDateString(const Date &date, const ExeData &exeData);
-
 	// Returns whether the current music should be for day or night.
 	bool nightMusicIsActive() const;
 

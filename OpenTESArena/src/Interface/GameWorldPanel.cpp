@@ -29,6 +29,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/ClockLibrary.h"
+#include "../Game/DateUtils.h"
 #include "../Game/GameData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -435,8 +436,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				std::string dateString = GameData::getDateString(
-					gameData.getDate(), exeData);
+				std::string dateString = DateUtils::getDateString(gameData.getDate(), exeData);
 				dateString.back() = '\n'; // Replace \r with \n.
 
 				index = baseText.find("%s", index);
