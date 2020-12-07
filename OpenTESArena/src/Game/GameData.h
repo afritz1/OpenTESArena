@@ -51,15 +51,9 @@ public:
 	// One weather for each of the 36 province quadrants (updated hourly).
 	using WeatherList = std::array<WeatherType, 36>;
 private:
-	// The time scale determines how long or short a real-time second is. If the time 
-	// scale is 5.0, then each real-time second is five game seconds, etc..
-	static const double TIME_SCALE;
-
-	// Seconds per chasm animation loop.
-	static const double CHASM_ANIM_PERIOD;
-
-	// Arbitrary value for interior fog distance (mostly for testing purposes).
-	static const double DEFAULT_INTERIOR_FOG_DIST;
+	// Determines length of a real-time second in-game. For the original game, one real
+	// second is twenty in-game seconds.
+	static constexpr double TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
 	// Game world interface display texts with their associated time remaining. These values 
 	// are stored here so they are not destroyed when switching away from the game world panel.

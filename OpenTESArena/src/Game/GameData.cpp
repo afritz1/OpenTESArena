@@ -48,12 +48,6 @@ namespace
 	const Color EffectTextShadowColor(190, 113, 0);
 }
 
-// One real second = twenty game seconds.
-const double GameData::TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
-
-const double GameData::CHASM_ANIM_PERIOD = 1.0 / 2.0;
-const double GameData::DEFAULT_INTERIOR_FOG_DIST = 25.0;
-
 GameData::GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
 	: player(std::move(player))
 {
@@ -159,7 +153,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
-	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -199,7 +193,7 @@ void GameData::enterInterior(ArenaTypes::MenuType interiorType, const MIFFile &m
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior fog. Do not change weather (@todo: save it maybe?).
-	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 }
@@ -289,7 +283,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
-	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -343,7 +337,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
-	const double fogDistance = GameData::DEFAULT_INTERIOR_FOG_DIST;
+	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
 	this->weatherType = WeatherType::Clear;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
@@ -564,7 +558,7 @@ double GameData::getDaytimePercent() const
 
 double GameData::getChasmAnimPercent() const
 {
-	const double percent = this->chasmAnimSeconds / GameData::CHASM_ANIM_PERIOD;
+	const double percent = this->chasmAnimSeconds / VoxelDefinition::ChasmData::ANIM_SECONDS;
 	return std::clamp(percent, 0.0, Constants::JustBelowOne);
 }
 
@@ -828,9 +822,9 @@ void GameData::tick(double dt, Game &game)
 
 	// Tick chasm animation.
 	this->chasmAnimSeconds += dt;
-	if (this->chasmAnimSeconds >= GameData::CHASM_ANIM_PERIOD)
+	if (this->chasmAnimSeconds >= VoxelDefinition::ChasmData::ANIM_SECONDS)
 	{
-		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, GameData::CHASM_ANIM_PERIOD);
+		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, VoxelDefinition::ChasmData::ANIM_SECONDS);
 	}
 
 	// Tick on-screen text messages.

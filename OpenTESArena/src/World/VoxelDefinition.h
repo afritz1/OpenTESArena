@@ -92,6 +92,9 @@ public:
 		// The sizes of wet chasms and lava chasms are unaffected by ceiling height.
 		static const double WET_LAVA_DEPTH;
 
+		// Seconds per chasm animation loop.
+		static constexpr double ANIM_SECONDS = 1.0 / 2.0; // Arbitrary.
+
 		int id;
 		Type type;
 

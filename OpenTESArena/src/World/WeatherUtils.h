@@ -14,6 +14,8 @@ enum class WeatherType;
 
 namespace WeatherUtils
 {
+	constexpr double DEFAULT_INTERIOR_FOG_DIST = 25.0; // Arbitrary.
+
 	// Helper functions for determining what category a weather type falls into.
 	bool isClear(WeatherType weatherType);
 	bool isOvercast(WeatherType weatherType);
