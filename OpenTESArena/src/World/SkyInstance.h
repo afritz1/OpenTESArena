@@ -10,15 +10,15 @@
 // as well.
 
 class SkyDefinition;
+class SkyInfoDefinition;
 
 class SkyInstance
 {
 private:
-	// @todo: wondering if this is just going to have Double3's for all sky definition objects and it'll be
-	// closer to MapInstance chunk voxels than I thought (where all of the instances in here are because of
-	// instantiating SkyDefinition placement defs).
-
+	
 public:
+	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition);
+
 	/*int getObjectCount() const;
 	const SkyObjectInstance &getObject(int index) const;
 
