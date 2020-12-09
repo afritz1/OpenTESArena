@@ -4,6 +4,7 @@
 #include <optional>
 #include <type_traits>
 
+#include "ArenaSkyUtils.h"
 #include "ClimateType.h"
 #include "LocationUtils.h"
 #include "SkyDefinition.h"
@@ -33,68 +34,6 @@ namespace SkyGeneration
 	using ArenaAirMappingCache = std::unordered_map<ImageID, SkyDefinition::AirDefID>;
 	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
 	using ArenaLargeStarMappingCache = std::unordered_map<ImageID, SkyDefinition::StarDefID>;
-
-	// Original game values.
-	constexpr int UNIQUE_ANGLES = 512;
-	constexpr double IDENTITY_DIM = 320.0;
-	constexpr Radians IDENTITY_ANGLE = 90.0 * Constants::DegToRad;
-	constexpr double ANIMATED_LAND_SECONDS_PER_FRAME = 1.0 / 18.0;
-	
-	// Sun/moon latitudes, divide by 100.0 for modern latitude.
-	constexpr double SUN_BONUS_LATITUDE = 13.0;
-	constexpr double MOON_1_BONUS_LATITUDE = 15.0;
-	constexpr double MOON_2_BONUS_LATITUDE = 30.0;
-
-	// Helper struct for original game's distant land.
-	struct ArenaLandTraits
-	{
-		int filenameIndex; // Index into ExeData mountain filenames.
-		int position;
-		int variation;
-		int maxDigits; // Max number of digits in the filename for the variation.
-
-		ArenaLandTraits(int filenameIndex, int position, int variation, int maxDigits)
-		{
-			this->filenameIndex = filenameIndex;
-			this->position = position;
-			this->variation = variation;
-			this->maxDigits = maxDigits;
-		}
-	};
-
-	const std::array<std::pair<ClimateType, ArenaLandTraits>, 3> ArenaLandTraitsMappings =
-	{
-		{
-			{ ClimateType::Temperate, ArenaLandTraits(2, 4, 10, 2) },
-			{ ClimateType::Desert, ArenaLandTraits(1, 6, 4, 1) },
-			{ ClimateType::Mountain, ArenaLandTraits(0, 6, 11, 2) }
-		}
-	};
-
-	const ArenaLandTraits &getArenaLandTraits(ClimateType climateType)
-	{
-		const auto iter = std::find_if(ArenaLandTraitsMappings.begin(), ArenaLandTraitsMappings.end(),
-			[climateType](const auto &pair)
-		{
-			return pair.first == climateType;
-		});
-
-		DebugAssertMsg(iter != ArenaLandTraitsMappings.end(), "Invalid climate type \"" +
-			std::to_string(static_cast<int>(climateType)) + "\".");
-
-		return iter->second;
-	}
-
-	// Converts an Arena angle to an actual angle in radians.
-	Radians arenaAngleToRadians(int arenaAngle)
-	{
-		// Arena angles: 0 = south, 128 = west, 256 = north, 384 = east.
-		// Change from clockwise to counter-clockwise and move 0 to east (the origin).
-		const Radians arenaRadians = Constants::TwoPi *
-			(static_cast<double>(arenaAngle) / static_cast<double>(SkyGeneration::UNIQUE_ANGLES));
-		const Radians flippedArenaRadians = Constants::TwoPi - arenaRadians;
-		return flippedArenaRadians - Constants::HalfPi;
-	}
 
 	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
 	{
@@ -192,8 +131,8 @@ namespace SkyGeneration
 		}();
 
 		// Convert from Arena units to radians.
-		const int arenaAngle = random.next() % SkyGeneration::UNIQUE_ANGLES;
-		const Radians angleX = arenaAngleToRadians(arenaAngle);
+		const int arenaAngle = random.next() % ArenaSkyUtils::UNIQUE_ANGLES;
+		const Radians angleX = ArenaSkyUtils::arenaAngleToRadians(arenaAngle);
 
 		// Get the object's image ID.
 		ImageID imageID;
@@ -263,7 +202,7 @@ namespace SkyGeneration
 		ArenaRandom random(skySeed);
 
 		// Mountain generation.
-		const ArenaLandTraits &landTraits = SkyGeneration::getArenaLandTraits(climateType);
+		const ArenaSkyUtils::LandTraits &landTraits = ArenaSkyUtils::getLandTraits(climateType);
 		const auto &landFilenames = exeData.locations.distantMountainFilenames;
 		DebugAssertIndex(landFilenames, landTraits.filenameIndex);
 		const std::string &landFilename = landFilenames[landTraits.filenameIndex];
@@ -359,7 +298,7 @@ namespace SkyGeneration
 			static_cast<double>(locationGlobalPos.y - animLandGlobalPos.y),
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
-		const double animSeconds = ANIMATED_LAND_SECONDS_PER_FRAME *
+		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
 			static_cast<double>(imageIDs.getCount());
 
 		LandObjectDefinition landObject;
@@ -476,13 +415,13 @@ namespace SkyGeneration
 					const Double3 subDirection = [&direction, &subStar]()
 					{
 						// Convert delta X and Y to percentages of the identity dimension (320px).
-						const double dxPercent = static_cast<double>(subStar.dx) / SkyGeneration::IDENTITY_DIM;
-						const double dyPercent = static_cast<double>(subStar.dy) / SkyGeneration::IDENTITY_DIM;
+						const double dxPercent = static_cast<double>(subStar.dx) / ArenaSkyUtils::IDENTITY_DIM;
+						const double dyPercent = static_cast<double>(subStar.dy) / ArenaSkyUtils::IDENTITY_DIM;
 
 						// Convert percentages to radians. Positive X is counter-clockwise, positive
 						// Y is up.
-						const Radians dxRadians = dxPercent * SkyGeneration::IDENTITY_ANGLE;
-						const Radians dyRadians = dyPercent * SkyGeneration::IDENTITY_ANGLE;
+						const Radians dxRadians = dxPercent * ArenaSkyUtils::IDENTITY_ANGLE;
+						const Radians dyRadians = dyPercent * ArenaSkyUtils::IDENTITY_ANGLE;
 
 						// Apply rotations to base direction.
 						const Matrix4d xRotation = Matrix4d::xRotation(dxRadians);
@@ -561,7 +500,7 @@ namespace SkyGeneration
 		SunObjectDefinition sunObject;
 		sunObject.init(imageID);
 		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(sunObject));
-		outSkyDef->addSun(sunDefID, SUN_BONUS_LATITUDE);
+		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE);
 	}
 
 	void generateArenaMoons(int currentDay, const ExeData &exeData, TextureManager &textureManager,
@@ -589,7 +528,8 @@ namespace SkyGeneration
 				Double3(0.0, -57536.0, 0.0) : Double3(-3000.0, -53536.0, 0.0)).normalized();
 
 			const double orbitPercent = static_cast<double>(phaseIndex) / static_cast<double>(phaseCount);
-			const double bonusLatitude = isFirstMoon ? MOON_1_BONUS_LATITUDE : MOON_2_BONUS_LATITUDE;
+			const double bonusLatitude = isFirstMoon ?
+				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
 			MoonObjectDefinition moonObject;
 			moonObject.init(imageIDs);
