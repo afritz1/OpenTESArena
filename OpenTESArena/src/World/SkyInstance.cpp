@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "AirObjectDefinition.h"
 #include "LandObjectDefinition.h"
 #include "MoonObjectDefinition.h"
@@ -9,8 +11,38 @@
 
 #include "components/debug/Debug.h"
 
+SkyInstance::ObjectInstance::ObjectInstance(const Double3 &baseDirection, ImageID imageID, double width,
+	double height)
+	: baseDirection(baseDirection)
+{
+	this->imageID = imageID;
+	this->width = width;
+	this->height = height;
+}
+
+SkyInstance::AnimInstance::AnimInstance()
+{
+	this->objectIndex = -1;
+	this->targetSeconds = 0.0;
+	this->currentSeconds = 0.0;
+}
+
+void SkyInstance::AnimInstance::init(int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
+	double targetSeconds)
+{
+	this->objectIndex = objectIndex;
+	this->imageIDs = imageIDs;
+	this->targetSeconds = targetSeconds;
+	this->currentSeconds = 0.0;
+}
+
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition)
 {
+	auto addObjectInst = [this](const Double3 &baseDirection, ImageID imageID, double width, double height)
+	{
+		this->objectInsts.emplace_back(baseDirection, imageID, width, height);
+	};
+
 	// Spawn all sky objects from the ready-to-bake format.
 	for (int i = 0; i < skyDefinition.getLandPlacementDefCount(); i++)
 	{
@@ -25,6 +57,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		}
 	}
 
+	this->landStart = 0;
+	this->landEnd = this->landStart + skyDefinition.getLandPlacementDefCount();
+
 	for (int i = 0; i < skyDefinition.getAirPlacementDefCount(); i++)
 	{
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
@@ -37,6 +72,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			DebugNotImplemented();
 		}
 	}
+
+	this->airStart = this->landEnd;
+	this->airEnd = this->airStart + skyDefinition.getAirPlacementDefCount();
 
 	for (int i = 0; i < skyDefinition.getStarPlacementDefCount(); i++)
 	{
@@ -51,6 +89,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		}
 	}
 
+	this->starStart = this->airEnd;
+	this->starEnd = this->starStart + skyDefinition.getStarPlacementDefCount();
+
 	for (int i = 0; i < skyDefinition.getSunPlacementDefCount(); i++)
 	{
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
@@ -64,6 +105,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		}
 	}
 
+	this->sunStart = this->starEnd;
+	this->sunEnd = this->sunStart + skyDefinition.getSunPlacementDefCount();
+
 	for (int i = 0; i < skyDefinition.getMoonPlacementDefCount(); i++)
 	{
 		const SkyDefinition::MoonPlacementDef &placementDef = skyDefinition.getMoonPlacementDef(i);
@@ -75,5 +119,109 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert moon position to direction.
 			DebugNotImplemented();
 		}
+	}
+
+	this->moonStart = this->sunEnd;
+	this->moonEnd = this->moonStart + skyDefinition.getMoonPlacementDefCount();
+}
+
+int SkyInstance::getLandStartIndex() const
+{
+	return this->landStart;
+}
+
+int SkyInstance::getLandEndIndex() const
+{
+	return this->landEnd;
+}
+
+int SkyInstance::getAirStartIndex() const
+{
+	return this->airStart;
+}
+
+int SkyInstance::getAirEndIndex() const
+{
+	return this->airEnd;
+}
+
+int SkyInstance::getStarStartIndex() const
+{
+	return this->starStart;
+}
+
+int SkyInstance::getStarEndIndex() const
+{
+	return this->starEnd;
+}
+
+int SkyInstance::getSunStartIndex() const
+{
+	return this->sunStart;
+}
+
+int SkyInstance::getSunEndIndex() const
+{
+	return this->sunEnd;
+}
+
+int SkyInstance::getMoonStartIndex() const
+{
+	return this->moonStart;
+}
+
+int SkyInstance::getMoonEndIndex() const
+{
+	return this->moonEnd;
+}
+
+void SkyInstance::getObject(int index, Double3 *outDirection, ImageID *outImageID, double *outWidth,
+	double *outHeight) const
+{
+	DebugAssertIndex(this->objectInsts, index);
+	const ObjectInstance &objectInst = this->objectInsts[index];
+	*outDirection = objectInst.transformedDirection;
+	*outImageID = objectInst.imageID;
+	*outWidth = objectInst.width;
+	*outHeight = objectInst.height;
+}
+
+void SkyInstance::update(double dt, double latitude, double daytimePercent)
+{
+	// Update animations.
+	const int animInstCount = static_cast<int>(this->animInsts.size());
+	for (int i = 0; i < animInstCount; i++)
+	{
+		AnimInstance &animInst = this->animInsts[i];
+		animInst.currentSeconds += dt;
+		if (animInst.currentSeconds >= animInst.targetSeconds)
+		{
+			animInst.currentSeconds = std::fmod(animInst.currentSeconds, animInst.targetSeconds);
+		}
+
+		const int imageCount = animInst.imageIDs.getCount();
+		const double animPercent = std::clamp(animInst.currentSeconds / animInst.targetSeconds, 0.0, 1.0);
+		const int animIndex = static_cast<int>(static_cast<double>(imageCount) * animPercent);
+		const ImageID newImageID = animInst.imageIDs.getID(animIndex);
+		
+		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
+		ObjectInstance &objectInst = this->objectInsts[animInst.objectIndex];
+		objectInst.imageID = newImageID;
+	}
+
+	// Update transformed sky position of stars, suns, and moons.
+	for (int i = this->starStart; i < this->starEnd; i++)
+	{
+		DebugNotImplemented();
+	}
+
+	for (int i = this->sunStart; i < this->sunEnd; i++)
+	{
+		DebugNotImplemented();
+	}
+
+	for (int i = this->moonStart; i < this->moonEnd; i++)
+	{
+		DebugNotImplemented();
 	}
 }
