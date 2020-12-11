@@ -44,6 +44,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	};
 
 	// Spawn all sky objects from the ready-to-bake format.
+	int landInstCount = 0;
 	for (int i = 0; i < skyDefinition.getLandPlacementDefCount(); i++)
 	{
 		const SkyDefinition::LandPlacementDef &placementDef = skyDefinition.getLandPlacementDef(i);
@@ -55,11 +56,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert radians to direction.
 			DebugNotImplemented();
 		}
+
+		landInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
 	this->landStart = 0;
-	this->landEnd = this->landStart + skyDefinition.getLandPlacementDefCount();
+	this->landEnd = this->landStart + landInstCount;
 
+	int airInstCount = 0;
 	for (int i = 0; i < skyDefinition.getAirPlacementDefCount(); i++)
 	{
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
@@ -71,11 +75,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert X and Y radians to direction.
 			DebugNotImplemented();
 		}
+
+		airInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
 	this->airStart = this->landEnd;
-	this->airEnd = this->airStart + skyDefinition.getAirPlacementDefCount();
+	this->airEnd = this->airStart + airInstCount;
 
+	int starInstCount = 0;
 	for (int i = 0; i < skyDefinition.getStarPlacementDefCount(); i++)
 	{
 		const SkyDefinition::StarPlacementDef &placementDef = skyDefinition.getStarPlacementDef(i);
@@ -87,11 +94,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Use star direction directly.
 			DebugNotImplemented();
 		}
+
+		starInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
 	this->starStart = this->airEnd;
-	this->starEnd = this->starStart + skyDefinition.getStarPlacementDefCount();
+	this->starEnd = this->starStart + starInstCount;
 
+	int sunInstCount = 0;
 	for (int i = 0; i < skyDefinition.getSunPlacementDefCount(); i++)
 	{
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
@@ -103,11 +113,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert starting sun latitude to direction.
 			DebugNotImplemented();
 		}
+
+		sunInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
 	this->sunStart = this->starEnd;
-	this->sunEnd = this->sunStart + skyDefinition.getSunPlacementDefCount();
+	this->sunEnd = this->sunStart + sunInstCount;
 
+	int moonInstCount = 0;
 	for (int i = 0; i < skyDefinition.getMoonPlacementDefCount(); i++)
 	{
 		const SkyDefinition::MoonPlacementDef &placementDef = skyDefinition.getMoonPlacementDef(i);
@@ -119,10 +132,12 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert moon position to direction.
 			DebugNotImplemented();
 		}
+
+		moonInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
 	this->moonStart = this->sunEnd;
-	this->moonEnd = this->moonStart + skyDefinition.getMoonPlacementDefCount();
+	this->moonEnd = this->moonStart + moonInstCount;
 }
 
 int SkyInstance::getLandStartIndex() const
