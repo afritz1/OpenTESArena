@@ -80,6 +80,7 @@ namespace MapGeneration
 		Type getType() const;
 		const Prefab &getPrefab() const;
 		const Dungeon &getDungeon() const;
+		InteriorType getInteriorType() const;
 	};
 
 	// Input: 1 .MIF + 1 weather .INF

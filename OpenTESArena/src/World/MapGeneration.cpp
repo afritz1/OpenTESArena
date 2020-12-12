@@ -1579,32 +1579,43 @@ namespace MapGeneration
 				// See if the current voxel is an interior transition block and matches the target type.
 				const bool matchesTargetType = [&levelDef, outLevelInfoDef, interiorType, x, z]()
 				{
-					const LevelDefinition::VoxelDefID voxelDefID = levelDef.getVoxel(x, 1, z);
-					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
-					const VoxelDataType voxelDataType = voxelDef.dataType;
-					if (voxelDataType != VoxelDataType::Wall)
+					// Find the associated transition for this voxel (if any).
+					const std::optional<LevelDefinition::TransitionDefID> transitionDefID =
+						[&levelDef, x, z]() -> std::optional<LevelDefinition::TransitionDefID>
 					{
+						const LevelInt3 voxel(x, 1, z);
+						for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
+						{
+							const auto &placementDef = levelDef.getTransitionPlacementDef(i);
+							for (const LevelInt3 &position : placementDef.positions)
+							{
+								if (position == voxel)
+								{
+									return placementDef.id;
+								}
+							}
+						}
+
+						return std::nullopt;
+					}();
+
+					if (!transitionDefID.has_value())
+					{
+						// No transition at this voxel.
 						return false;
 					}
 
-					const VoxelDefinition::WallData &wallData = voxelDef.wall;
-					if (!wallData.isMenu())
+					const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
+					const TransitionType transitionType = transitionDef.getType();
+					if (transitionType != TransitionType::EnterInterior)
 					{
-						// The voxel is not a *MENU.
+						// Not a transition to an interior.
 						return false;
 					}
 
-					const int menuID = wallData.menuID;
-					constexpr WorldType worldType = WorldType::Wilderness;
-					const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, worldType);
-					const std::optional<InteriorType> menuInteriorType = InteriorUtils::menuTypeToInteriorType(menuType);
-					if (!menuInteriorType.has_value())
-					{
-						// The *MENU type is not for an interior.
-						return false;
-					}
-
-					return *menuInteriorType == interiorType;
+					const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+					const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+					return interiorGenInfo.getInteriorType() == interiorType;
 				}();
 
 				if (matchesTargetType)
@@ -1730,6 +1741,22 @@ const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::g
 {
 	DebugAssert(this->type == InteriorGenInfo::Type::Dungeon);
 	return this->dungeon;
+}
+
+InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
+{
+	if (this->type == InteriorGenInfo::Type::Prefab)
+	{
+		return this->prefab.interiorType;
+	}
+	else if (this->type == InteriorGenInfo::Type::Dungeon)
+	{
+		return InteriorType::Dungeon;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(InteriorType, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName,
