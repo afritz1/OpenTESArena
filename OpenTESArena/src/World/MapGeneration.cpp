@@ -1308,11 +1308,10 @@ namespace MapGeneration
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 		// match the given menu type.
 		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
-			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint](
-				ArenaTypes::MenuType menuType)
+			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData,
+			&localCityPoint](InteriorType interiorType)
 		{
-			if ((menuType == ArenaTypes::MenuType::Equipment) ||
-				(menuType == ArenaTypes::MenuType::Temple))
+			if ((interiorType == InteriorType::Equipment) || (interiorType == InteriorType::Temple))
 			{
 				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 				random.srand(citySeed);
@@ -1416,17 +1415,49 @@ namespace MapGeneration
 			};
 
 			// The lambda called for each main-floor voxel in the area.
-			auto tryGenerateBlockName = [menuType, &random, outLevelDef, outLevelInfoDef, &seen, &hashInSeen,
-				&createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+			auto tryGenerateBlockName = [interiorType, &random, outLevelDef, outLevelInfoDef, &seen,
+				&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 			{
 				// See if the current voxel is a *MENU block and matches the target menu type.
-				const bool matchesTargetType = [x, z, menuType, outLevelDef, outLevelInfoDef]()
+				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef]()
 				{
-					const LevelDefinition::VoxelDefID voxelDefID = outLevelDef->getVoxel(x, 1, z);
-					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
-					constexpr WorldType worldType = WorldType::City;
-					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+					// Find the associated transition for this voxel (if any).
+					const std::optional<LevelDefinition::TransitionDefID> transitionDefID =
+						[outLevelDef, x, z]() -> std::optional<LevelDefinition::TransitionDefID>
+					{
+						const LevelInt3 voxel(x, 1, z);
+						for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
+						{
+							const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
+							for (const LevelInt3 &position : placementDef.positions)
+							{
+								if (position == voxel)
+								{
+									return placementDef.id;
+								}
+							}
+						}
+
+						return std::nullopt;
+					}();
+
+					if (!transitionDefID.has_value())
+					{
+						// No transition at this voxel.
+						return false;
+					}
+
+					const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
+					const TransitionType transitionType = transitionDef.getType();
+					if (transitionType != TransitionType::EnterInterior)
+					{
+						// Not a transition to an interior.
+						return false;
+					}
+
+					const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+					const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+					return interiorGenInfo.getInteriorType() == interiorType;
 				}();
 
 				if (matchesTargetType)
@@ -1435,7 +1466,7 @@ namespace MapGeneration
 					int hash;
 					std::string name;
 
-					if (menuType == ArenaTypes::MenuType::Tavern)
+					if (interiorType == InteriorType::Tavern)
 					{
 						// Tavern.
 						int prefixIndex, suffixIndex;
@@ -1448,7 +1479,7 @@ namespace MapGeneration
 
 						name = createTavernName(prefixIndex, suffixIndex);
 					}
-					else if (menuType == ArenaTypes::MenuType::Equipment)
+					else if (interiorType == InteriorType::Equipment)
 					{
 						// Equipment store.
 						int prefixIndex, suffixIndex;
@@ -1468,7 +1499,7 @@ namespace MapGeneration
 						do
 						{
 							model = random.next() % 3;
-							const std::array<int, 3> ModelVars = { 5, 9, 10 };
+							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
 							const int vars = ModelVars.at(model);
 							suffixIndex = random.next() % vars;
 							hash = (model << 8) + suffixIndex;
@@ -1494,8 +1525,7 @@ namespace MapGeneration
 			}
 
 			// Fix some edge cases with main quest cities.
-			if ((menuType == ArenaTypes::MenuType::Temple) &&
-				(mainQuestTempleOverride != nullptr))
+			if ((interiorType == InteriorType::Temple) && (mainQuestTempleOverride != nullptr))
 			{
 				const int modelIndex = mainQuestTempleOverride->modelIndex;
 				const int suffixIndex = mainQuestTempleOverride->suffixIndex;
@@ -1510,9 +1540,9 @@ namespace MapGeneration
 			}
 		};
 
-		generateNames(ArenaTypes::MenuType::Tavern);
-		generateNames(ArenaTypes::MenuType::Equipment);
-		generateNames(ArenaTypes::MenuType::Temple);
+		generateNames(InteriorType::Tavern);
+		generateNames(InteriorType::Equipment);
+		generateNames(InteriorType::Temple);
 	}
 
 	// Using a separate building name info struct because the same level definition might be
