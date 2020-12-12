@@ -1524,10 +1524,10 @@ namespace MapGeneration
 	{
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
-		// Lambda for searching for a *MENU voxel of the given type in the chunk and generating
-		// a name for it if found.
+		// Lambda for searching for an interior entrance voxel of the given type in the chunk
+		// and generating a name for it if found.
 		auto tryGenerateChunkBuildingName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
-			outLevelInfoDef, buildingNameMappings, &exeData](ArenaTypes::MenuType menuType)
+			outLevelInfoDef, buildingNameMappings, &exeData](InteriorType interiorType)
 		{
 			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
 			{
@@ -1570,33 +1570,55 @@ namespace MapGeneration
 			};
 
 			// The lambda called for each main-floor voxel in the chunk.
-			auto tryGenerateBlockName = [wildChunkSeed, &levelDef, outBuildingNameInfo, outLevelInfoDef,
-				buildingNameMappings, menuType, &createTavernName, &createTempleName](SNInt x, WEInt z) -> bool
+			auto tryGenerateBlockName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
+				outLevelInfoDef, buildingNameMappings, interiorType, &createTavernName,
+				&createTempleName](SNInt x, WEInt z) -> bool
 			{
 				ArenaRandom random(wildChunkSeed);
 
-				// See if the current voxel is a *MENU block and matches the target menu type.
-				const bool matchesTargetType = [&levelDef, outLevelInfoDef, menuType, x, z]()
+				// See if the current voxel is an interior transition block and matches the target type.
+				const bool matchesTargetType = [&levelDef, outLevelInfoDef, interiorType, x, z]()
 				{
 					const LevelDefinition::VoxelDefID voxelDefID = levelDef.getVoxel(x, 1, z);
 					const VoxelDefinition &voxelDef = outLevelInfoDef->getVoxelDef(voxelDefID);
+					const VoxelDataType voxelDataType = voxelDef.dataType;
+					if (voxelDataType != VoxelDataType::Wall)
+					{
+						return false;
+					}
+
+					const VoxelDefinition::WallData &wallData = voxelDef.wall;
+					if (!wallData.isMenu())
+					{
+						// The voxel is not a *MENU.
+						return false;
+					}
+
+					const int menuID = wallData.menuID;
 					constexpr WorldType worldType = WorldType::Wilderness;
-					return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
-						(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+					const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, worldType);
+					const std::optional<InteriorType> menuInteriorType = InteriorUtils::menuTypeToInteriorType(menuType);
+					if (!menuInteriorType.has_value())
+					{
+						// The *MENU type is not for an interior.
+						return false;
+					}
+
+					return *menuInteriorType == interiorType;
 				}();
 
 				if (matchesTargetType)
 				{
 					// Get the *MENU block's display name.
-					std::string name = [menuType, &random, &createTavernName, &createTempleName]()
+					std::string name = [interiorType, &random, &createTavernName, &createTempleName]()
 					{
-						if (menuType == ArenaTypes::MenuType::Tavern)
+						if (interiorType == InteriorType::Tavern)
 						{
 							const int prefixIndex = random.next() % 23;
 							const int suffixIndex = random.next() % 23;
 							return createTavernName(prefixIndex, suffixIndex);
 						}
-						else if (menuType == ArenaTypes::MenuType::Temple)
+						else if (interiorType == InteriorType::Temple)
 						{
 							const int model = random.next() % 3;
 							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
@@ -1607,7 +1629,7 @@ namespace MapGeneration
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(menuType)));
+							DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(interiorType)));
 						}
 					}();
 
@@ -1615,13 +1637,13 @@ namespace MapGeneration
 					const auto iter = buildingNameMappings->find(name);
 					if (iter != buildingNameMappings->end())
 					{
-						outBuildingNameInfo->setBuildingNameID(menuType, iter->second);
+						outBuildingNameInfo->setBuildingNameID(interiorType, iter->second);
 					}
 					else
 					{
 						const LevelDefinition::BuildingNameID buildingNameID =
 							outLevelInfoDef->addBuildingName(std::string(name));
-						outBuildingNameInfo->setBuildingNameID(menuType, buildingNameID);
+						outBuildingNameInfo->setBuildingNameID(interiorType, buildingNameID);
 						buildingNameMappings->emplace(std::move(name), buildingNameID);
 					}
 
@@ -1647,8 +1669,8 @@ namespace MapGeneration
 			}
 		};
 
-		tryGenerateChunkBuildingName(ArenaTypes::MenuType::Tavern);
-		tryGenerateChunkBuildingName(ArenaTypes::MenuType::Temple);
+		tryGenerateChunkBuildingName(InteriorType::Tavern);
+		tryGenerateChunkBuildingName(InteriorType::Temple);
 	}
 }
 
@@ -1751,9 +1773,9 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID *outID) const
+	InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const
 {
-	const auto iter = this->ids.find(menuType);
+	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
 	{
 		*outID = iter->second;
@@ -1766,16 +1788,16 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	ArenaTypes::MenuType menuType, LevelDefinition::BuildingNameID id)
+	InteriorType interiorType, LevelDefinition::BuildingNameID id)
 {
-	const auto iter = this->ids.find(menuType);
+	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
 	{
 		iter->second = id;
 	}
 	else
 	{
-		this->ids.emplace(menuType, id);
+		this->ids.emplace(interiorType, id);
 	}
 }
 
