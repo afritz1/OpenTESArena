@@ -1674,7 +1674,7 @@ namespace MapGeneration
 				{
 					if (tryGenerateBlockName(x, z))
 					{
-						break;
+						return;
 					}
 				}
 			}
