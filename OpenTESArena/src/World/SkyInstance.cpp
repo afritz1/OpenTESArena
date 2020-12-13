@@ -250,11 +250,18 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SunObjectDefinition &objectDef = skyInfoDefinition.getSun(defID);
+		const ImageID imageID = objectDef.getImageID();
+		const Image &image = textureManager.getImageHandle(imageID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
 
 		for (const double position : placementDef.positions)
 		{
 			// Convert starting sun latitude to direction.
-			DebugNotImplemented();
+			// @todo: just use fixed direction for now, see RendererUtils later.
+			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
+			addGeneralObjectInst(tempDirection, width, height, imageID);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -270,10 +277,20 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::MoonDefID defID = placementDef.id;
 		const MoonObjectDefinition &objectDef = skyInfoDefinition.getMoon(defID);
 
+		// @todo: get the image from the current day, etc..
+		DebugAssert(objectDef.getImageIdCount() > 0);
+		const ImageID imageID = objectDef.getImageID(0);
+		const Image &image = textureManager.getImageHandle(imageID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
 			// Convert moon position to direction.
-			DebugNotImplemented();
+			// @todo: just use fixed direction for now, see RendererUtils later.
+			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
+			addGeneralObjectInst(tempDirection, width, height, imageID);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
