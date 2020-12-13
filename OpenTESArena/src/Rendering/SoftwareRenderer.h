@@ -87,7 +87,7 @@ private:
 		VoxelTexture();
 
 		void init(int width, int height, const uint8_t *srcTexels, const Palette &palette);
-		void setLightTexelsActive(bool active);
+		void setLightTexelsActive(bool active, const Palette &palette);
 	};
 
 	struct FlatTexture
@@ -1018,7 +1018,7 @@ public:
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
 	// with time-dependent light sources and textures.
-	void setNightLightsActive(bool active);
+	void setNightLightsActive(bool active, const Palette &palette);
 
 	// Zeroes out all renderer textures and entity render ID mappings to textures.
 	void clearTexturesAndEntityRenderIDs();

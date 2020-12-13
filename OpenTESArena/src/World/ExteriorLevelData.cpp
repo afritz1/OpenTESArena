@@ -210,16 +210,16 @@ void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, textureInstManager,
 		renderer);
 
-	// @todo: fetch this palette from somewhere better.
-	COLFile col;
-	const std::string colName = PaletteFile::fromName(PaletteName::Default);
-	if (!col.init(colName.c_str()))
+	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
 	{
-		DebugCrash("Couldn't init .COL file \"" + colName + "\".");
+		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
 	// Give distant sky data to the renderer.
-	renderer.setDistantSky(this->distantSky, col.getPalette(), textureManager);
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	renderer.setDistantSky(this->distantSky, palette, textureManager);
 }
 
 void ExteriorLevelData::tick(Game &game, double dt)

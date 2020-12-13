@@ -43,6 +43,8 @@ namespace
 	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
 	constexpr uint8_t PALETTE_INDEX_RED_DST2 = 159;
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
+	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_ACTIVE = 97;
+	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
 
@@ -144,10 +146,12 @@ void SoftwareRenderer::VoxelTexture::init(int width, int height, const uint8_t *
 	}
 }
 
-void SoftwareRenderer::VoxelTexture::setLightTexelsActive(bool active)
+void SoftwareRenderer::VoxelTexture::setLightTexelsActive(bool active, const Palette &palette)
 {
-	const Color activeColor(255, 166, 0);
-	const Color inactiveColor = Color::Black;
+	constexpr int activePaletteIndex = PALETTE_INDEX_NIGHT_LIGHT_ACTIVE;
+	constexpr int inactivePaletteIndex = PALETTE_INDEX_NIGHT_LIGHT_INACTIVE;
+	const Color &activeColor = palette[activePaletteIndex];
+	const Color &inactiveColor = palette[inactivePaletteIndex];
 
 	// Change voxel texels based on whether it's night.
 	const Double4 texelColor = Double4::fromARGB((active ? activeColor : inactiveColor).toARGB());
@@ -1197,13 +1201,13 @@ void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmTyp
 	texture.init(width, height, colors, palette);
 }
 
-void SoftwareRenderer::setNightLightsActive(bool active)
+void SoftwareRenderer::setNightLightsActive(bool active, const Palette &palette)
 {
 	// @todo: activate lights (don't worry about textures).
 
 	for (VoxelTexture &voxelTexture : this->voxelTextures)
 	{
-		voxelTexture.setLightTexelsActive(active);
+		voxelTexture.setLightTexelsActive(active, palette);
 	}
 }
 

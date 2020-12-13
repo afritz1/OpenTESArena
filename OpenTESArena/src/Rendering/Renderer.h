@@ -201,7 +201,7 @@ public:
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
 		TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
-	void setNightLightsActive(bool active);
+	void setNightLightsActive(bool active, const Palette &palette);
 	void clearTexturesAndEntityRenderIDs();
 	void clearDistantSky();
 

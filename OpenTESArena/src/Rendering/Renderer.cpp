@@ -634,10 +634,10 @@ void Renderer::setSkyPalette(const uint32_t *colors, int count)
 	this->softwareRenderer.setSkyPalette(colors, count);
 }
 
-void Renderer::setNightLightsActive(bool active)
+void Renderer::setNightLightsActive(bool active, const Palette &palette)
 {
 	DebugAssert(this->softwareRenderer.isInited());
-	this->softwareRenderer.setNightLightsActive(active);
+	this->softwareRenderer.setNightLightsActive(active, palette);
 }
 
 void Renderer::clearTexturesAndEntityRenderIDs()

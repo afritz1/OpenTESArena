@@ -247,7 +247,16 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(this->weatherType);
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->nightLightsAreActive());
+
+	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 }
 
 bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
@@ -416,7 +425,16 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->nightLightsAreActive());
+
+	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;
 }
@@ -492,7 +510,16 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	this->weatherType = weatherType;
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
-	renderer.setNightLightsActive(this->nightLightsAreActive());
+
+	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;
 }

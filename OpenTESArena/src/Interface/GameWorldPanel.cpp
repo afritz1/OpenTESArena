@@ -1958,7 +1958,16 @@ void GameWorldPanel::handleNightLightChange(bool active)
 		}
 	}
 
-	renderer.setNightLightsActive(active);
+	TextureManager &textureManager = game.getTextureManager();
+	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	PaletteID paletteID;
+	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	{
+		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	renderer.setNightLightsActive(active, palette);
 }
 
 void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
