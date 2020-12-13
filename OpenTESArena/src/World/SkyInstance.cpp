@@ -420,16 +420,28 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 	// Update transformed sky position of stars, suns, and moons.
 	for (int i = this->starStart; i < this->starEnd; i++)
 	{
-		DebugNotImplemented();
+		DebugAssertIndex(this->objectInsts, i);
+		ObjectInstance &objectInst = this->objectInsts[i];
+		// @todo: actually transform direction based on latitude and time of day.
+		const Double3 transformedDirection = objectInst.getBaseDirection();
+		objectInst.setTransformedDirection(transformedDirection);
 	}
 
 	for (int i = this->sunStart; i < this->sunEnd; i++)
 	{
-		DebugNotImplemented();
+		DebugAssertIndex(this->objectInsts, i);
+		ObjectInstance &objectInst = this->objectInsts[i];
+		// @todo: actually transform direction based on latitude and time of day.
+		const Double3 transformedDirection = objectInst.getBaseDirection();
+		objectInst.setTransformedDirection(transformedDirection);
 	}
 
 	for (int i = this->moonStart; i < this->moonEnd; i++)
 	{
-		DebugNotImplemented();
+		DebugAssertIndex(this->objectInsts, i);
+		ObjectInstance &objectInst = this->objectInsts[i];
+		// @todo: actually transform direction based on latitude and time of day.
+		const Double3 transformedDirection = objectInst.getBaseDirection();
+		objectInst.setTransformedDirection(transformedDirection);
 	}
 }
