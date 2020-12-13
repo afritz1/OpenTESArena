@@ -1,33 +1,96 @@
 #include <cmath>
 
 #include "AirObjectDefinition.h"
+#include "ArenaSkyUtils.h"
 #include "LandObjectDefinition.h"
 #include "MoonObjectDefinition.h"
 #include "SkyDefinition.h"
 #include "SkyInfoDefinition.h"
 #include "SkyInstance.h"
+#include "SkyUtils.h"
 #include "StarObjectDefinition.h"
 #include "SunObjectDefinition.h"
 
 #include "components/debug/Debug.h"
 
-SkyInstance::ObjectInstance::ObjectInstance(const Double3 &baseDirection, ImageID imageID, double width,
-	double height)
-	: baseDirection(baseDirection)
+SkyInstance::ObjectInstance::ObjectInstance()
 {
-	this->imageID = imageID;
+	this->type = static_cast<ObjectInstance::Type>(-1);
+	this->width = 0.0;
+	this->height = 0.0;
+}
+
+void SkyInstance::ObjectInstance::init(Type type, const Double3 &baseDirection, double width, double height)
+{
+	this->type = type;
+	this->baseDirection = baseDirection;
 	this->width = width;
 	this->height = height;
 }
 
-SkyInstance::AnimInstance::AnimInstance()
+void SkyInstance::ObjectInstance::initGeneral(const Double3 &baseDirection, double width, double height,
+	ImageID imageID)
 {
-	this->objectIndex = -1;
-	this->targetSeconds = 0.0;
-	this->currentSeconds = 0.0;
+	this->init(ObjectInstance::Type::General, baseDirection, width, height);
+	this->general.imageID = imageID;
 }
 
-void SkyInstance::AnimInstance::init(int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
+void SkyInstance::ObjectInstance::initSmallStar(const Double3 &baseDirection, double width, double height,
+	uint8_t paletteIndex)
+{
+	this->init(ObjectInstance::Type::SmallStar, baseDirection, width, height);
+	this->smallStar.paletteIndex = paletteIndex;
+}
+
+SkyInstance::ObjectInstance::Type SkyInstance::ObjectInstance::getType() const
+{
+	return this->type;
+}
+
+const Double3 &SkyInstance::ObjectInstance::getBaseDirection() const
+{
+	return this->baseDirection;
+}
+
+const Double3 &SkyInstance::ObjectInstance::getTransformedDirection() const
+{
+	return this->transformedDirection;
+}
+
+double SkyInstance::ObjectInstance::getWidth() const
+{
+	return this->width;
+}
+
+double SkyInstance::ObjectInstance::getHeight() const
+{
+	return this->height;
+}
+
+SkyInstance::ObjectInstance::General &SkyInstance::ObjectInstance::getGeneral()
+{
+	DebugAssert(this->type == ObjectInstance::Type::General);
+	return this->general;
+}
+
+const SkyInstance::ObjectInstance::General &SkyInstance::ObjectInstance::getGeneral() const
+{
+	DebugAssert(this->type == ObjectInstance::Type::General);
+	return this->general;
+}
+
+const SkyInstance::ObjectInstance::SmallStar &SkyInstance::ObjectInstance::getSmallStar() const
+{
+	DebugAssert(this->type == ObjectInstance::Type::SmallStar);
+	return this->smallStar;
+}
+
+void SkyInstance::ObjectInstance::setTransformedDirection(const Double3 &direction)
+{
+	this->transformedDirection = direction;
+}
+
+SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
 	double targetSeconds)
 {
 	this->objectIndex = objectIndex;
@@ -36,14 +99,32 @@ void SkyInstance::AnimInstance::init(int objectIndex, const TextureUtils::ImageI
 	this->currentSeconds = 0.0;
 }
 
-void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition)
+void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
+	const TextureManager &textureManager)
 {
-	auto addObjectInst = [this](const Double3 &baseDirection, ImageID imageID, double width, double height)
+	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
+		ImageID imageID)
 	{
-		this->objectInsts.emplace_back(baseDirection, imageID, width, height);
+		ObjectInstance objectInst;
+		objectInst.initGeneral(baseDirection, width, height, imageID);
+		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
-	// Spawn all sky objects from the ready-to-bake format.
+	auto addSmallStarObjectInst = [this](const Double3 &baseDirection, double width, double height,
+		uint8_t paletteIndex)
+	{
+		ObjectInstance objectInst;
+		objectInst.initSmallStar(baseDirection, width, height, paletteIndex);
+		this->objectInsts.emplace_back(std::move(objectInst));
+	};
+
+	auto addAnimInst = [this](int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
+		double targetSeconds)
+	{
+		this->animInsts.emplace_back(objectIndex, imageIDs, targetSeconds);
+	};
+
+	// Spawn all sky objects from the ready-to-bake format. Any animated objects start on their first frame.
 	int landInstCount = 0;
 	for (int i = 0; i < skyDefinition.getLandPlacementDefCount(); i++)
 	{
@@ -51,10 +132,29 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::LandDefID defID = placementDef.id;
 		const LandObjectDefinition &objectDef = skyInfoDefinition.getLand(defID);
 
+		DebugAssert(objectDef.getImageCount() > 0);
+		const ImageID imageID = objectDef.getImageID(0);
+		const Image &image = textureManager.getImageHandle(imageID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+
 		for (const Radians position : placementDef.positions)
 		{
 			// Convert radians to direction.
-			DebugNotImplemented();
+			const Radians angleY = 0.0;
+			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
+			addGeneralObjectInst(direction, width, height, imageID);
+
+			// Only land objects support animations (for now).
+			if (objectDef.hasAnimation())
+			{
+				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
+				const TextureUtils::ImageIdGroup imageIDs(objectDef.getImageID(0), objectDef.getImageCount());
+				const double targetSeconds = static_cast<int>(static_cast<double>(imageIDs.getCount()) *
+					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
+				addAnimInst(objectIndex, imageIDs, targetSeconds);
+			}
 		}
 
 		landInstCount += static_cast<int>(placementDef.positions.size());
@@ -69,11 +169,19 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const AirObjectDefinition &objectDef = skyInfoDefinition.getAir(defID);
+		const ImageID imageID = objectDef.getImageID();
+		const Image &image = textureManager.getImageHandle(imageID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
 
 		for (const std::pair<Radians, Radians> &position : placementDef.positions)
 		{
 			// Convert X and Y radians to direction.
-			DebugNotImplemented();
+			const Radians angleX = position.first;
+			const Radians angleY = position.second;
+			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
+			addGeneralObjectInst(direction, width, height, imageID);
 		}
 
 		airInstCount += static_cast<int>(placementDef.positions.size());
@@ -89,10 +197,45 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::StarDefID defID = placementDef.id;
 		const StarObjectDefinition &objectDef = skyInfoDefinition.getStar(defID);
 
-		for (const Double3 &position : placementDef.positions)
+		// @todo: this is where the imageID design is kind of breaking, and getting a renderer sprite
+		// resource ID would be better. SkyInstance::init() should be able to allocate textures IDs from
+		// the renderer eventually, and look up cached ones by string.
+		const StarObjectDefinition::Type starType = objectDef.getType();
+		if (starType == StarObjectDefinition::Type::Small)
 		{
-			// Use star direction directly.
-			DebugNotImplemented();
+			// Small stars are 1x1 pixels.
+			const StarObjectDefinition::SmallStar &smallStar = objectDef.getSmallStar();
+			const uint8_t paletteIndex = smallStar.paletteIndex;
+			constexpr int imageWidth = 1;
+			constexpr int imageHeight = imageWidth;
+
+			double width, height;
+			SkyUtils::getSkyObjectDimensions(imageWidth, imageHeight, &width, &height);
+
+			for (const Double3 &position : placementDef.positions)
+			{
+				// Use star direction directly.
+				addSmallStarObjectInst(position, width, height, paletteIndex);
+			}
+		}
+		else if (starType == StarObjectDefinition::Type::Large)
+		{
+			const StarObjectDefinition::LargeStar &largeStar = objectDef.getLargeStar();
+			const ImageID imageID = largeStar.imageID;
+			const Image &image = textureManager.getImageHandle(imageID);
+
+			double width, height;
+			SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+
+			for (const Double3 &position : placementDef.positions)
+			{
+				// Use star direction directly.
+				addGeneralObjectInst(position, width, height, imageID);
+			}
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(starType)));
 		}
 
 		starInstCount += static_cast<int>(placementDef.positions.size());
@@ -190,15 +333,38 @@ int SkyInstance::getMoonEndIndex() const
 	return this->moonEnd;
 }
 
+bool SkyInstance::isObjectSmallStar(int objectIndex) const
+{
+	DebugAssertIndex(this->objectInsts, objectIndex);
+	return this->objectInsts[objectIndex].getType() != SkyInstance::ObjectInstance::Type::SmallStar;
+}
+
 void SkyInstance::getObject(int index, Double3 *outDirection, ImageID *outImageID, double *outWidth,
 	double *outHeight) const
 {
 	DebugAssertIndex(this->objectInsts, index);
 	const ObjectInstance &objectInst = this->objectInsts[index];
-	*outDirection = objectInst.transformedDirection;
-	*outImageID = objectInst.imageID;
-	*outWidth = objectInst.width;
-	*outHeight = objectInst.height;
+	*outDirection = objectInst.getTransformedDirection();
+
+	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
+	*outImageID = objectInst.getGeneral().imageID;
+
+	*outWidth = objectInst.getWidth();
+	*outHeight = objectInst.getHeight();
+}
+
+void SkyInstance::getObjectSmallStar(int index, Double3 *outDirection, uint8_t *outPaletteIndex,
+	double *outWidth, double *outHeight) const
+{
+	DebugAssertIndex(this->objectInsts, index);
+	const ObjectInstance &objectInst = this->objectInsts[index];
+	*outDirection = objectInst.getTransformedDirection();
+
+	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar);
+	*outPaletteIndex = objectInst.getSmallStar().paletteIndex;
+
+	*outWidth = objectInst.getWidth();
+	*outHeight = objectInst.getHeight();
 }
 
 void SkyInstance::update(double dt, double latitude, double daytimePercent)
@@ -208,6 +374,13 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 	for (int i = 0; i < animInstCount; i++)
 	{
 		AnimInstance &animInst = this->animInsts[i];
+
+		// Small stars don't have animations.
+		if (this->isObjectSmallStar(animInst.objectIndex))
+		{
+			continue;
+		}
+
 		animInst.currentSeconds += dt;
 		if (animInst.currentSeconds >= animInst.targetSeconds)
 		{
@@ -221,7 +394,10 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 		
 		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
 		ObjectInstance &objectInst = this->objectInsts[animInst.objectIndex];
-		objectInst.imageID = newImageID;
+
+		DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
+		ObjectInstance::General &objectInstGeneral = objectInst.getGeneral();
+		objectInstGeneral.imageID = newImageID;
 	}
 
 	// Update transformed sky position of stars, suns, and moons.
