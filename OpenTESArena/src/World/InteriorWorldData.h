@@ -11,11 +11,13 @@
 class ExeData;
 class MIFFile;
 
+enum class InteriorType;
+
 class InteriorWorldData : public WorldData
 {
 private:
 	std::vector<InteriorLevelData> levels;
-	ArenaTypes::MenuType interiorType;
+	InteriorType interiorType;
 	int levelIndex;
 
 	InteriorWorldData();
@@ -25,11 +27,10 @@ public:
 
 	InteriorWorldData &operator=(InteriorWorldData&&) = default;
 
-	static InteriorWorldData loadInterior(ArenaTypes::MenuType interiorType,
-		const MIFFile &mif, const ExeData &exeData);
-	static InteriorWorldData loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
-		bool isArtifactDungeon, ArenaTypes::MenuType interiorType,
+	static InteriorWorldData loadInterior(InteriorType interiorType, const MIFFile &mif,
 		const ExeData &exeData);
+	static InteriorWorldData loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
+		bool isArtifactDungeon, const ExeData &exeData);
 
 	// Gets the currently selected level's index.
 	int getLevelIndex() const;
@@ -37,8 +38,8 @@ public:
 	// Gets the number of levels in the interior.
 	int getLevelCount() const;
 
-	// Gets the type of the interior (mostly needed for checking if it's a palace).
-	ArenaTypes::MenuType getInteriorType() const;
+	// Gets the type of the interior.
+	InteriorType getInteriorType() const;
 
 	// Always interior for interior world data.
 	virtual WorldType getWorldType() const override;

@@ -19,6 +19,7 @@
 #include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureName.h"
+#include "../World/InteriorType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
@@ -476,9 +477,8 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
 		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
-			ArenaTypes::MenuType::Dungeon, game.getEntityDefinitionLibrary(),
-			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
-			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
+			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
+			game.getRandom(), game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
 		}
@@ -513,7 +513,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
-			ArenaTypes::MenuType::Dungeon, mif, game.getEntityDefinitionLibrary(),
+			InteriorType::Dungeon, mif, game.getEntityDefinitionLibrary(),
 			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 			game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer()))
 		{

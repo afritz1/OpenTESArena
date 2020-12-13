@@ -124,7 +124,7 @@ void GameData::clearWorldDatas()
 }
 
 bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	ArenaTypes::MenuType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
+	InteriorType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
 	Renderer &renderer)
@@ -170,11 +170,10 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	return true;
 }
 
-void GameData::enterInterior(ArenaTypes::MenuType interiorType, const MIFFile &mif,
-	const Int2 &returnVoxel, const EntityDefinitionLibrary &entityDefLibrary,
-	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-	Renderer &renderer)
+void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
+	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
+	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	DebugAssert(!this->worldDatas.empty());
 	DebugAssert(this->worldDatas.top()->getWorldType() != WorldType::Interior);
@@ -259,12 +258,10 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 }
 
-bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, bool isArtifactDungeon,
-	ArenaTypes::MenuType interiorType, const EntityDefinitionLibrary &entityDefLibrary, 
-	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-	Renderer &renderer)
+bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	bool isArtifactDungeon, const EntityDefinitionLibrary &entityDefLibrary,
+	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary, Random &random,
+	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	// Must be for a named dungeon, not main quest dungeon.
 	DebugAssertMsg(locationDef.getType() == LocationDefinition::Type::Dungeon,
@@ -288,7 +285,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
 	this->clearWorldDatas();
 	this->worldDatas.push(std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
 		dungeonDef.dungeonSeed, dungeonDef.widthChunkCount, dungeonDef.heightChunkCount,
-		isArtifactDungeon, interiorType, binaryAssetLibrary.getExeData())));
+		isArtifactDungeon, binaryAssetLibrary.getExeData())));
 
 	// Set initial level active in the renderer.
 	WorldData &worldData = *this->worldDatas.top();
@@ -313,8 +310,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef,
 }
 
 bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
-	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY,
-	ArenaTypes::MenuType interiorType, const CityDataFile &cityData,
+	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY, const CityDataFile &cityData,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	TextureInstanceManager &textureInstManager, Renderer &renderer)
@@ -343,7 +339,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const bool isArtifactDungeon = false;
 	this->clearWorldDatas();
 	this->worldDatas.push(std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
-		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, interiorType, exeData)));
+		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData)));
 
 	// Set initial level active in the renderer.
 	WorldData &worldData = *this->worldDatas.top();

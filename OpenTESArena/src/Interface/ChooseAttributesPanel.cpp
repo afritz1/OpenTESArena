@@ -37,6 +37,7 @@
 #include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ClimateType.h"
+#include "../World/InteriorType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
@@ -328,9 +329,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						if (!gameData->loadInterior(*locationDefPtr, provinceDef,
-							ArenaTypes::MenuType::Dungeon, mif,
-							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+						if (!gameData->loadInterior(*locationDefPtr, provinceDef, InteriorType::Dungeon,
+							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
 							game.getTextureInstanceManager(), renderer))
 						{

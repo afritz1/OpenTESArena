@@ -1,4 +1,5 @@
 #include "ArenaInteriorUtils.h"
+#include "InteriorType.h"
 #include "InteriorWorldData.h"
 #include "WorldType.h"
 #include "../Assets/MIFUtils.h"
@@ -9,7 +10,7 @@
 
 InteriorWorldData::InteriorWorldData()
 {
-	this->interiorType = ArenaTypes::MenuType::None;
+	this->interiorType = static_cast<InteriorType>(-1);
 	this->levelIndex = 0;
 }
 
@@ -18,8 +19,8 @@ InteriorWorldData::~InteriorWorldData()
 
 }
 
-InteriorWorldData InteriorWorldData::loadInterior(ArenaTypes::MenuType interiorType,
-	const MIFFile &mif, const ExeData &exeData)
+InteriorWorldData InteriorWorldData::loadInterior(InteriorType interiorType, const MIFFile &mif,
+	const ExeData &exeData)
 {
 	InteriorWorldData worldData;
 
@@ -46,8 +47,7 @@ InteriorWorldData InteriorWorldData::loadInterior(ArenaTypes::MenuType interiorT
 }
 
 InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
-	bool isArtifactDungeon, ArenaTypes::MenuType interiorType,
-	const ExeData &exeData)
+	bool isArtifactDungeon, const ExeData &exeData)
 {
 	// Load the .MIF file with all the dungeon chunks in it. Dimensions should be 32x32.
 	const std::string mifName = "RANDOM1.MIF";
@@ -126,7 +126,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;
-	worldData.interiorType = interiorType;
+	worldData.interiorType = InteriorType::Dungeon;
 
 	return worldData;
 }
@@ -141,7 +141,7 @@ int InteriorWorldData::getLevelCount() const
 	return static_cast<int>(this->levels.size());
 }
 
-ArenaTypes::MenuType InteriorWorldData::getInteriorType() const
+InteriorType InteriorWorldData::getInteriorType() const
 {
 	return this->interiorType;
 }
