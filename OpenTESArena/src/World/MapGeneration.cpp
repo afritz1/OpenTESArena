@@ -295,7 +295,7 @@ namespace MapGeneration
 			const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
 
 			// @todo: TransitionDefID from flatIndex -- use MapGeneration::isMap1TransitionEntity().
-			DebugNotImplemented();
+			// @todo: support wild den transitions here. Might need to pass the transition cache here.
 
 			outDef->initDoodad(flatData.yOffset, scale, flatData.collider,
 				flatData.transparent, flatData.ceiling, streetLight, flatData.puddle,
