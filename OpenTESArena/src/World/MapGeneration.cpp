@@ -177,16 +177,11 @@ namespace MapGeneration
 		return interiorGenInfo;
 	}
 
-	MapGeneration::InteriorGenInfo makeProceduralInteriorGenInfo()
+	MapGeneration::InteriorGenInfo makeProceduralInteriorGenInfo(
+		const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon)
 	{
-		const uint32_t dungeonSeed = -1; // @todo: see existing InteriorLevelData functions I think?
-		const WEInt widthChunks = -1; // @todo
-		const SNInt depthChunks = -1; // @todo
-		const bool isArtifactDungeon = false; // Can't have wild den artifact dungeons.
-		DebugNotImplemented();
-
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initDungeon(dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 		return interiorGenInfo;
 	}
 
@@ -819,8 +814,9 @@ namespace MapGeneration
 	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
 		const LevelInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType, WorldType worldType,
-		const ExeData &exeData)
+		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
+		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
+		WorldType worldType, const ExeData &exeData)
 	{
 		TransitionDefinition transitionDef;
 
@@ -833,7 +829,8 @@ namespace MapGeneration
 			DebugAssert(transitionDefGenInfo.interiorType.has_value());
 			const InteriorType interiorType = *transitionDefGenInfo.interiorType;
 			MapGeneration::InteriorGenInfo interiorGenInfo = [&position, menuID, rulerSeed, &rulerIsMale,
-				palaceIsMainQuestDungeon, cityType, worldType, &exeData, interiorType]()
+				palaceIsMainQuestDungeon, cityType, dungeonDef, &isArtifactDungeon, worldType,
+				&exeData, interiorType]()
 			{
 				if (InteriorUtils::isPrefabInterior(interiorType))
 				{
@@ -846,7 +843,9 @@ namespace MapGeneration
 				}
 				else if (InteriorUtils::isProceduralInterior(interiorType))
 				{
-					return MapGeneration::makeProceduralInteriorGenInfo();
+					DebugAssert(dungeonDef != nullptr);
+					DebugAssert(isArtifactDungeon.has_value());
+					return MapGeneration::makeProceduralInteriorGenInfo(*dungeonDef, *isArtifactDungeon);
 				}
 				else
 				{
@@ -950,10 +949,11 @@ namespace MapGeneration
 	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, WorldType worldType,
 		const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
+		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
 		ArenaTransitionMappingCache *transitionCache)
 	{
@@ -1015,8 +1015,8 @@ namespace MapGeneration
 						{
 							TransitionDefinition transitionDef = MapGeneration::makeTransitionDef(
 								*transitionDefGenInfo, transitionPos, transitionDefGenInfo->menuID, rulerSeed,
-								rulerIsMale, palaceIsMainQuestDungeon, cityType, worldType,
-								binaryAssetLibrary.getExeData());
+								rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
+								worldType, binaryAssetLibrary.getExeData());
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 							transitionCache->insert(std::make_pair(map1Voxel, transitionDefID));
 						}
@@ -1194,9 +1194,10 @@ namespace MapGeneration
 	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		int levelUpBlock, const std::optional<int> &levelDownBlock, ArenaRandom &random,
 		WorldType worldType, InteriorType interiorType, const std::optional<bool> &rulerIsMale,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
+		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *florMappings, ArenaVoxelMappingCache *map1Mappings,
 		ArenaEntityMappingCache *entityMappings, ArenaLockMappingCache *lockMappings,
 		ArenaTriggerMappingCache *triggerMappings, ArenaTransitionMappingCache *transitionMappings)
@@ -1314,11 +1315,12 @@ namespace MapGeneration
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for dungeons.
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for dungeons.
 		constexpr std::optional<LocationDefinition::CityDefinition::Type> cityType; // Not necessary for dungeons.
+		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
 
 		MapGeneration::readArenaMAP1(levelMap1View, worldType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary,
-			binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, map1Mappings,
-			entityMappings, transitionMappings);
+			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef,
+			map1Mappings, entityMappings, transitionMappings);
 
 		// Generate ceiling (if any).
 		if (!inf.getCeiling().outdoorDungeon)
@@ -1755,12 +1757,10 @@ void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, Interio
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapGeneration::InteriorGenInfo::Dungeon::init(uint32_t dungeonSeed, WEInt widthChunks,
-	SNInt depthChunks, bool isArtifactDungeon)
+void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDefinition::DungeonDefinition *dungeonDef,
+	bool isArtifactDungeon)
 {
-	this->dungeonSeed = dungeonSeed;
-	this->widthChunks = widthChunks;
-	this->depthChunks = depthChunks;
+	this->dungeonDef = dungeonDef;
 	this->isArtifactDungeon = isArtifactDungeon;
 }
 
@@ -1781,11 +1781,11 @@ void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, InteriorT
 	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
 }
 
-void MapGeneration::InteriorGenInfo::initDungeon(uint32_t dungeonSeed, WEInt widthChunks,
-	SNInt depthChunks, bool isArtifactDungeon)
+void MapGeneration::InteriorGenInfo::initDungeon(const LocationDefinition::DungeonDefinition *dungeonDef,
+	bool isArtifactDungeon)
 {
 	this->init(InteriorGenInfo::Type::Dungeon);
-	this->dungeon.init(dungeonSeed, widthChunks, depthChunks, isArtifactDungeon);
+	this->dungeon.init(dungeonDef, isArtifactDungeon);
 }
 
 MapGeneration::InteriorGenInfo::Type MapGeneration::InteriorGenInfo::getType() const
@@ -1911,10 +1911,11 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
 	const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-	const std::optional<LocationDefinition::CityDefinition::Type> &cityType, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
+	const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
+	const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
 	// Each .MIF level voxel is unpacked into either a voxel or entity. These caches point to
 	// previously-added definitions in the level info def.
@@ -1930,9 +1931,9 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
 		MapGeneration::readArenaMAP1(level.getMAP1(), worldType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary,
-			binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings, &entityMappings,
-			&transitionMappings);
+			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
+			&entityMappings, &transitionMappings);
 
 		// If there is MAP2 data, use it for the ceiling layer, otherwise replicate a single ceiling
 		// block across the whole ceiling if not in an outdoor dungeon.
@@ -1950,10 +1951,10 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType,
 	InteriorType interiorType, const std::optional<bool> &rulerIsMale,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
-	LevelInt2 *outStartPoint)
+	const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+	LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint)
 {
 	ArenaVoxelMappingCache florMappings, map1Mappings;
 	ArenaEntityMappingCache entityMappings;
@@ -2015,9 +2016,9 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 		MapGeneration::generateArenaDungeonLevel(mif, widthChunks, depthChunks, levelUpBlock,
-			levelDownBlock, random, worldType, interiorType, rulerIsMale, inf, charClassLibrary,
-			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef,
-			&florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings,
+			levelDownBlock, random, worldType, interiorType, rulerIsMale, isArtifactDungeon,
+			inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
+			outLevelInfoDef, &florMappings, &map1Mappings, &entityMappings, &lockMappings, &triggerMappings,
 			&transitionMappings);
 	}
 
@@ -2087,13 +2088,16 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	constexpr WorldType worldType = WorldType::City;
 	constexpr std::optional<InteriorType> interiorType; // City is not an interior.
 	constexpr std::optional<bool> rulerIsMale; // Not necessary for city.
+	constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
+	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
 
 	MapGeneration::readArenaFLOR(tempFlorConstView, worldType, interiorType, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 		outLevelInfoDef, &florMappings, &entityMappings);
 	MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, interiorType, rulerSeed, rulerIsMale,
-		palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-		textureManager, outLevelDef, outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
+		palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, &map1Mappings,
+		&entityMappings, &transitionMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
 	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
 		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
@@ -2175,12 +2179,15 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 		constexpr WorldType worldType = WorldType::Wilderness;
 		constexpr std::optional<InteriorType> interiorType; // Wilderness is not an interior.
 		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
+		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for wild.
+		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for wild.
 
 		MapGeneration::readArenaFLOR(tempFlorConstView, worldType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
 		MapGeneration::readArenaMAP1(tempMap1ConstView, worldType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary,
 			textureManager, &levelDef, outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
 	}

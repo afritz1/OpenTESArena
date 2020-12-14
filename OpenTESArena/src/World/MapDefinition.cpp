@@ -112,10 +112,12 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, InteriorType interior
 		constexpr WorldType worldType = WorldType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<LocationDefinition::CityDefinition::Type> cityType; // Not necessary for interiors.
+		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
+		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
 		MapGeneration::readMifVoxels(mifLevelView, worldType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary,
-			binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
+			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
 		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
 		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
 
@@ -210,7 +212,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	constexpr InteriorType interiorType = InteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
-		worldType, interiorType, rulerIsMale, charClassLibrary, entityDefLibrary,
+		worldType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef, outStartPoint);
 
 	// Generate sky for each dungeon level.
@@ -430,13 +432,13 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 			return false;
 		}
 
-		ArenaRandom random(dungeonGenInfo.dungeonSeed);
+		ArenaRandom random(dungeonGenInfo.dungeonDef->dungeonSeed);
 
 		// Generate dungeon levels and get the player start point.
 		LevelInt2 startPoint;
-		this->initDungeonLevels(mif, dungeonGenInfo.widthChunks, dungeonGenInfo.depthChunks,
-			dungeonGenInfo.isArtifactDungeon, random, charClassLibrary, entityDefLibrary,
-			binaryAssetLibrary, textureManager, &startPoint);
+		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef->widthChunkCount,
+			dungeonGenInfo.dungeonDef->heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
+			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &startPoint);
 
 		const LevelDouble2 startPointReal(
 			static_cast<SNDouble>(startPoint.x) + 0.50,

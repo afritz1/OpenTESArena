@@ -57,12 +57,10 @@ namespace MapGeneration
 		// Output: N LevelDefinitions + 1 LevelInfoDefinition
 		struct Dungeon
 		{
-			uint32_t dungeonSeed;
-			WEInt widthChunks;
-			SNInt depthChunks;
+			const LocationDefinition::DungeonDefinition *dungeonDef;
 			bool isArtifactDungeon;
 
-			void init(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
+			void init(const LocationDefinition::DungeonDefinition *dungeonDef, bool isArtifactDungeon);
 		};
 	private:
 		Type type;
@@ -75,7 +73,7 @@ namespace MapGeneration
 
 		void initPrefab(std::string &&mifName, InteriorType interiorType,
 			const std::optional<bool> &rulerIsMale);
-		void initDungeon(uint32_t dungeonSeed, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon);
+		void initDungeon(const LocationDefinition::DungeonDefinition *dungeonDef, bool isArtifactDungeon);
 
 		Type getType() const;
 		const Prefab &getPrefab() const;
@@ -161,20 +159,22 @@ namespace MapGeneration
 	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
 		const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
+		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+		LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates levels from the random chunk .MIF file and converts them to the modern format.
 	// Also writes out the player start voxel.
 	void generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 		SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType,
 		InteriorType interiorType, const std::optional<bool> &rulerIsMale,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
-		LevelInt2 *outStartPoint);
+		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+		LevelInfoDefinition *outLevelInfoDef, LevelInt2 *outStartPoint);
 
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.
