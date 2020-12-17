@@ -373,7 +373,8 @@ Entity *EntityManager::getEntityHandle(EntityID id, EntityType type)
 	case EntityType::Dynamic:
 		return tryGetEntityHandle(this->dynamicGroups);
 	default:
-		DebugUnhandledReturnMsg(nullptr_t, std::to_string(static_cast<int>(type)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(type)));
+		return nullptr;
 	}
 }
 
@@ -405,7 +406,8 @@ const Entity *EntityManager::getEntityHandle(EntityID id, EntityType type) const
 	case EntityType::Dynamic:
 		return tryGetEntityHandle(this->dynamicGroups);
 	default:
-		DebugUnhandledReturnMsg(nullptr_t, std::to_string(static_cast<int>(type)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(type)));
+		return nullptr;
 	}
 }
 
