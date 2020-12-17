@@ -24,9 +24,6 @@ bool VoxelDefinition::WallData::isMenu() const
 	}
 }
 
-const double VoxelDefinition::ChasmData::WET_LAVA_DEPTH = static_cast<double>(
-	INFFile::CeilingData::DEFAULT_HEIGHT) / MIFUtils::ARENA_UNITS;
-
 bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 {
 	return (this->id == other.id) && (this->type == other.type);
@@ -72,8 +69,6 @@ VoxelDefinition::DoorData::CloseSoundData VoxelDefinition::DoorData::getCloseSou
 			std::to_string(static_cast<int>(this->type)));
 	}
 }
-
-const int VoxelDefinition::TOTAL_IDS = 64;
 
 VoxelDefinition::VoxelDefinition()
 {

@@ -8,6 +8,7 @@
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
+#include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelData.h"
 #include "../World/VoxelDataType.h"
@@ -449,7 +450,7 @@ namespace Physics
 			// The chasm type determines the depth relative to the top of the voxel.
 			const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
 			const bool isDryChasm = chasm.type == VoxelDefinition::ChasmData::Type::Dry;
-			const double voxelHeight = isDryChasm ? ceilingHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+			const double voxelHeight = isDryChasm ? ceilingHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 			const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingHeight;
 			const double chasmYBottom = chasmYTop - voxelHeight;

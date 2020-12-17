@@ -18,8 +18,8 @@ enum class WorldType;
 class VoxelDefinition
 {
 public:
-	// IDs range from 0 to 63.
-	static const int TOTAL_IDS;
+	// Original game ID values.
+	static constexpr int TOTAL_IDS = 64;
 
 	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
 	// can be inferred by the renderer.
@@ -88,12 +88,6 @@ public:
 	struct ChasmData
 	{
 		enum class Type { Dry, Wet, Lava };
-
-		// The sizes of wet chasms and lava chasms are unaffected by ceiling height.
-		static const double WET_LAVA_DEPTH;
-
-		// Seconds per chasm animation loop.
-		static constexpr double ANIM_SECONDS = 1.0 / 2.0; // Arbitrary.
 
 		int id;
 		Type type;

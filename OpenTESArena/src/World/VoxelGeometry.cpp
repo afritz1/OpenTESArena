@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include "ArenaVoxelUtils.h"
 #include "VoxelDataType.h"
 #include "VoxelFacing2D.h"
 #include "VoxelGeometry.h"
@@ -298,7 +299,7 @@ namespace
 		DebugAssert(faceCount > 0);
 
 		const double chasmDepth = (chasm.type == VoxelDefinition::ChasmData::Type::Dry) ?
-			ceilingHeight : VoxelDefinition::ChasmData::WET_LAVA_DEPTH;
+			ceilingHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 		const Double3 chasmOrigin = origin + Double3(0.0, ceilingHeight - chasmDepth, 0.0);
 
 		const bool hasNorthFace = (chasmState != nullptr) && chasmState->getNorth();

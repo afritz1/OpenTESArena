@@ -23,6 +23,7 @@
 #include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../World/ArenaVoxelUtils.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LocationDefinition.h"
@@ -601,7 +602,7 @@ double GameData::getDaytimePercent() const
 
 double GameData::getChasmAnimPercent() const
 {
-	const double percent = this->chasmAnimSeconds / VoxelDefinition::ChasmData::ANIM_SECONDS;
+	const double percent = this->chasmAnimSeconds / ArenaVoxelUtils::CHASM_ANIM_SECONDS;
 	return std::clamp(percent, 0.0, Constants::JustBelowOne);
 }
 
@@ -868,9 +869,9 @@ void GameData::tick(double dt, Game &game)
 
 	// Tick chasm animation.
 	this->chasmAnimSeconds += dt;
-	if (this->chasmAnimSeconds >= VoxelDefinition::ChasmData::ANIM_SECONDS)
+	if (this->chasmAnimSeconds >= ArenaVoxelUtils::CHASM_ANIM_SECONDS)
 	{
-		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, VoxelDefinition::ChasmData::ANIM_SECONDS);
+		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, ArenaVoxelUtils::CHASM_ANIM_SECONDS);
 	}
 
 	// Tick on-screen text messages.
