@@ -29,7 +29,7 @@ IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Optimizations. These settings are meant to work with a variety of CPUs.
     # Modify for your personal build if desired.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto=full")
+    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
