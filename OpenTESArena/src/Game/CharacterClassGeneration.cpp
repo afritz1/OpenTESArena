@@ -20,11 +20,6 @@ CharacterClassGeneration::ChoiceData::ChoiceData()
 	this->c = 0;
 }
 
-const int CharacterClassGeneration::ID_MASK = 0x1F;
-const int CharacterClassGeneration::SPELLCASTER_MASK = 0x20;
-const int CharacterClassGeneration::CRITICAL_HIT_MASK = 0x40;
-const int CharacterClassGeneration::THIEF_MASK = 0x80;
-
 const CharacterClassGeneration::ClassData &CharacterClassGeneration::getClassData(
 	int a, int b, int c) const
 {

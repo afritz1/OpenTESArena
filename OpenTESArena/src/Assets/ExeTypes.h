@@ -10,7 +10,7 @@ namespace ExeTypes
 {
 	struct Rect16
 	{
-		static const size_t SIZE;
+		static constexpr size_t SIZE = sizeof(int16_t) * 4;
 
 		int16_t x, y, w, h;
 
@@ -20,10 +20,10 @@ namespace ExeTypes
 	// List box definition with buttons, scroll bar, and flags for alignment.
 	struct List
 	{
-		static const uint16_t ALIGNMENT_MASK;
-		static const uint16_t LEFT_ALIGNMENT;
-		static const uint16_t RIGHT_ALIGNMENT;
-		static const uint16_t CENTER_ALIGNMENT;
+		static constexpr uint16_t ALIGNMENT_MASK = 0x3000;
+		static constexpr uint16_t LEFT_ALIGNMENT = 0x0000;
+		static constexpr uint16_t RIGHT_ALIGNMENT = 0x1000;
+		static constexpr uint16_t CENTER_ALIGNMENT = 0x2000;
 
 		Rect16 buttonUp, buttonDown, scrollBar, area;
 		uint16_t flags;

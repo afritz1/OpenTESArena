@@ -33,8 +33,8 @@ private:
 	// Current is where the player is. Selected is which location (if any) has been selected.
 	enum class LocationHighlightType { Current, Selected };
 
-	static const double BLINK_PERIOD; // Duration of blink period in seconds.
-	static const double BLINK_PERIOD_PERCENT_ON; // Percentage of each period spent "on".
+	static constexpr double BLINK_PERIOD = 1.0 / 5.0; // Duration of blink period in seconds.
+	static constexpr double BLINK_PERIOD_PERCENT_ON = 0.75; // Percentage of each period spent "on".
 
 	Button<Game&, ProvinceMapPanel&> searchButton, travelButton;
 	Button<Game&, std::unique_ptr<ProvinceMapPanel::TravelData>> backToWorldMapButton;

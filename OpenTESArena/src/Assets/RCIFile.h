@@ -11,16 +11,16 @@
 
 class RCIFile
 {
+public:
+	static constexpr int WIDTH = 320;
+	static constexpr int HEIGHT = 100;
 private:
 	Buffer<Buffer2D<uint8_t>> images;
 
 	// Number of bytes in a 320x100 frame (should be 32000).
-	static const int FRAME_SIZE;
+	static constexpr int FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
 public:
 	bool init(const char *filename);
-
-	static constexpr int WIDTH = 320;
-	static constexpr int HEIGHT = 100;
 
 	// Gets the number of frames (should be 5).
 	int getImageCount() const;

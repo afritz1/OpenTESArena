@@ -11,16 +11,16 @@
 
 class SETFile
 {
+public:
+	static constexpr int CHUNK_WIDTH = 64;
+	static constexpr int CHUNK_HEIGHT = CHUNK_WIDTH;
 private:
 	Buffer<Buffer2D<uint8_t>> images;
 
 	// Number of bytes in a 64x64 chunk (should be 4096).
-	static const int CHUNK_SIZE;
+	static constexpr int CHUNK_SIZE = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
 public:
 	bool init(const char *filename);
-
-	static constexpr int CHUNK_WIDTH = 64;
-	static constexpr int CHUNK_HEIGHT = CHUNK_WIDTH;
 
 	// Gets the number of images.
 	int getImageCount() const;

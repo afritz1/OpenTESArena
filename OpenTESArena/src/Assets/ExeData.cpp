@@ -736,7 +736,6 @@ const std::string ExeData::FLOPPY_VERSION_EXE_FILENAME = "A.EXE";
 const std::string ExeData::FLOPPY_VERSION_MAP_FILENAME = "data/text/aExeStrings.txt";
 const std::string ExeData::CD_VERSION_EXE_FILENAME = "ACD.EXE";
 const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.txt";
-const char ExeData::PAIR_SEPARATOR = ',';
 
 int ExeData::get(const KeyValueFile::Section &section, const std::string &key)
 {

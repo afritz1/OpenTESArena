@@ -1,5 +1,4 @@
 #include <ctime>
-#include <limits>
 
 #include "Random.h"
 
@@ -41,9 +40,6 @@ double Random::nextReal()
 }
 
 // ArenaRandom
-
-const uint32_t ArenaRandom::DEFAULT_SEED = 12345;
-const int ArenaRandom::MAX = std::numeric_limits<uint16_t>::max();
 
 ArenaRandom::ArenaRandom(uint32_t seed)
 {

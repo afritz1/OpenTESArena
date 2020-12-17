@@ -28,9 +28,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-const double FastTravelSubPanel::FRAME_TIME = 1.0 / 24.0;
-const double FastTravelSubPanel::MIN_SECONDS = 1.0;
-
 FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapPanel::TravelData &travelData)
 	: Panel(game), travelData(travelData)
 {

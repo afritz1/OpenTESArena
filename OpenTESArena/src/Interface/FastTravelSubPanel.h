@@ -17,7 +17,8 @@ class Texture;
 class FastTravelSubPanel : public Panel
 {
 private:
-	static const double FRAME_TIME; // Each animation frame's time in seconds.
+	// Each animation frame's time in seconds.
+	static constexpr double FRAME_TIME = 1.0 / 24.0;
 
 	ProvinceMapPanel::TravelData travelData; // To give to the game world's arrival pop-up.
 	double currentSeconds, totalSeconds, targetSeconds;
@@ -43,7 +44,7 @@ public:
 	FastTravelSubPanel(Game &game, const ProvinceMapPanel::TravelData &travelData);
 	virtual ~FastTravelSubPanel() = default;
 
-	static const double MIN_SECONDS;
+	static constexpr double MIN_SECONDS = 1.0;
 
 	virtual Panel::CursorData getCurrentCursor() const override;
 	virtual void tick(double dt) override;

@@ -6,8 +6,6 @@
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
-const int RCIFile::FRAME_SIZE = RCIFile::WIDTH * RCIFile::HEIGHT;
-
 bool RCIFile::init(const char *filename)
 {
 	Buffer<std::byte> src;

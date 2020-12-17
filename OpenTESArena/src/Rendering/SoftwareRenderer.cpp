@@ -628,8 +628,6 @@ SoftwareRenderer::DistantObject<T>::DistantObject(const T &obj, int textureIndex
 	this->textureIndex = textureIndex;
 }
 
-const int SoftwareRenderer::DistantObjects::NO_SUN = -1;
-
 SoftwareRenderer::DistantObjects::DistantObjects()
 {
 	this->sunTextureIndex = DistantObjects::NO_SUN;
@@ -944,15 +942,6 @@ void SoftwareRenderer::RenderThreadData::init(int totalThreads, const Camera &ca
 	this->go = false;
 	this->isDestructing = false;
 }
-
-const double SoftwareRenderer::NEAR_PLANE = 0.0001;
-const double SoftwareRenderer::FAR_PLANE = 1000.0;
-const int SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT = 64;
-//const int SoftwareRenderer::DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
-const double SoftwareRenderer::TALL_PIXEL_RATIO = 1.20;
-const double SoftwareRenderer::DOOR_MIN_VISIBLE = 0.10;
-const double SoftwareRenderer::SKY_GRADIENT_ANGLE = 30.0;
-const double SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE = 25.0;
 
 SoftwareRenderer::SoftwareRenderer()
 {

@@ -20,7 +20,7 @@ class ProvinceSearchSubPanel : public Panel
 private:
 	enum class Mode { TextEntry, List };
 
-	static const int MAX_NAME_LENGTH;
+	static constexpr int MAX_NAME_LENGTH = 20;
 	static const Int2 DEFAULT_TEXT_CURSOR_POSITION;
 
 	Texture parchment;

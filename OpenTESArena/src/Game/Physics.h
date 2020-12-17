@@ -1,6 +1,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include <limits>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -44,7 +45,7 @@ namespace Physics
 		VoxelHit voxelHit;
 		EntityHit entityHit;
 	public:
-		static const double MAX_T;
+		static constexpr double MAX_T = std::numeric_limits<double>::infinity();
 
 		void initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
 			const VoxelFacing3D *facing);

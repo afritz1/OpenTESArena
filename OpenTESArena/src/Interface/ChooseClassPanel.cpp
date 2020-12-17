@@ -31,8 +31,6 @@
 
 #include "components/debug/Debug.h"
 
-const int ChooseClassPanel::MAX_TOOLTIP_LINE_LENGTH = 14;
-
 ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game)
 {

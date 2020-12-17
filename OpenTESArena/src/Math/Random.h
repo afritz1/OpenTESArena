@@ -2,6 +2,7 @@
 #define RANDOM_H
 
 #include <cstdint>
+#include <limits>
 #include <random>
 
 class Random
@@ -37,14 +38,14 @@ public:
 class ArenaRandom
 {
 private:
-	static const uint32_t DEFAULT_SEED;
+	static constexpr uint32_t DEFAULT_SEED = 12345;
 
 	uint32_t value;
 public:
 	ArenaRandom(uint32_t seed);
 	ArenaRandom();
 
-	static const int MAX;
+	static constexpr int MAX = std::numeric_limits<uint16_t>::max();
 
 	uint32_t getSeed() const;
 	int next();

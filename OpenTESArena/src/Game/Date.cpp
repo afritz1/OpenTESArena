@@ -2,11 +2,6 @@
 
 #include "components/debug/Debug.h"
 
-const int Date::INITIAL_YEAR = 389;
-const int Date::MONTHS_PER_YEAR = 12;
-const int Date::DAYS_PER_MONTH = 30;
-const int Date::DAYS_PER_WEEK = 7;
-
 Date::Date(int year, int month, int day)
 {
 	// Make sure each value is in a valid range.

@@ -24,10 +24,10 @@ struct CharacterClassGeneration
 		ChoiceData();
 	};
 
-	static const int ID_MASK;
-	static const int SPELLCASTER_MASK;
-	static const int CRITICAL_HIT_MASK;
-	static const int THIEF_MASK;
+	static constexpr int ID_MASK = 0x1F;
+	static constexpr int SPELLCASTER_MASK = 0x20;
+	static constexpr int CRITICAL_HIT_MASK = 0x40;
+	static constexpr int THIEF_MASK = 0x80;
 
 	std::array<ClassData, 18> classes;
 	std::array<ChoiceData, 66> choices;

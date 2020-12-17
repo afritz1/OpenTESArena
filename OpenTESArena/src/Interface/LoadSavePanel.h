@@ -15,7 +15,7 @@ class LoadSavePanel : public Panel
 public:
 	enum class Type { Load, Save };
 private:
-	static const int SlotCount;
+	static constexpr int SlotCount = 10;
 
 	std::array<std::unique_ptr<TextBox>, 10> saveTextBoxes;
 	Button<Game&, int> confirmButton;

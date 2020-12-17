@@ -14,7 +14,7 @@ class ChooseRacePanel : public Panel
 {
 private:
 	// The mask ID for no selected province.
-	static const int NO_ID;
+	static constexpr int NO_ID = -1;
 
 	Button<Game&> backToGenderButton;
 	Button<Game&, int> acceptButton;

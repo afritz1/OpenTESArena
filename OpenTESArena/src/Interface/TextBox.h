@@ -35,7 +35,7 @@ private:
 	int x, y;
 public:
 	// Default number of characters per line before a newline occurs.
-	static const int DEFAULT_TEXT_WRAP = 60;
+	static constexpr int DEFAULT_TEXT_WRAP = 60;
 
 	TextBox(int x, int y, const RichTextString &richText, const ShadowData *shadow,
 		const FontLibrary &fontLibrary, Renderer &renderer);

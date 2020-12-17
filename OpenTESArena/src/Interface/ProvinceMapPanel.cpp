@@ -72,9 +72,6 @@ ProvinceMapPanel::TravelData::TravelData(int locationID, int provinceID, int tra
 	this->travelDays = travelDays;
 }
 
-const double ProvinceMapPanel::BLINK_PERIOD = 1.0 / 5.0;
-const double ProvinceMapPanel::BLINK_PERIOD_PERCENT_ON = 0.75;
-
 ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
 	: Panel(game), travelData(std::move(travelData))

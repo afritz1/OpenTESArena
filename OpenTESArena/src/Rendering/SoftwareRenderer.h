@@ -356,7 +356,7 @@ private:
 	struct DistantObjects
 	{
 		// Default index if no sun exists in the world.
-		static const int NO_SUN;
+		static constexpr int NO_SUN = -1;
 
 		std::vector<DistantObject<DistantSky::LandObject>> lands;
 		std::vector<DistantObject<DistantSky::AnimatedLandObject>> animLands;
@@ -525,24 +525,24 @@ private:
 	};
 
 	// Clipping planes for Z coordinates.
-	static const double NEAR_PLANE;
-	static const double FAR_PLANE;
+	static constexpr double NEAR_PLANE = 0.0001;
+	static constexpr double FAR_PLANE = 1000.0;
 
 	// Default texture array sizes (using vector instead of array to avoid stack overflow).
-	static const int DEFAULT_VOXEL_TEXTURE_COUNT;
-	//static const int DEFAULT_FLAT_TEXTURE_COUNT;
+	static constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
+	//static const int DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
 
 	// Height ratio between normal pixels and tall pixels.
-	static const double TALL_PIXEL_RATIO;
+	static constexpr double TALL_PIXEL_RATIO = 1.20;
 
 	// Amount of a sliding/raising door that is visible when fully open.
-	static const double DOOR_MIN_VISIBLE;
+	static constexpr double DOOR_MIN_VISIBLE = 0.10;
 
 	// Angle of the sky gradient above the horizon, in degrees.
-	static const double SKY_GRADIENT_ANGLE;
+	static constexpr double SKY_GRADIENT_ANGLE = 30.0;
 
 	// Max angle of distant clouds above the horizon, in degrees.
-	static const double DISTANT_CLOUDS_MAX_ANGLE;
+	static constexpr double DISTANT_CLOUDS_MAX_ANGLE = 25.0;
 
 	Buffer2D<double> depthBuffer;
 	Buffer<OcclusionData> occlusion; // 1D buffer, min and max Y for each pixel column.

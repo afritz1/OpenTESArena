@@ -34,8 +34,8 @@ public:
 	};
 private:
 	// Default time spent per animation frame.
-	static const double DEFAULT_TIME_PER_FRAME;
-	static const int FISTS_ID;
+	static constexpr double DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
+	static constexpr int FISTS_ID = -1;
 
 	WeaponAnimation::State state;
 	int weaponID;

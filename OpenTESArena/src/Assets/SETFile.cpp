@@ -7,8 +7,6 @@
 #include "components/debug/Debug.h"
 #include "components/vfs/manager.hpp"
 
-const int SETFile::CHUNK_SIZE = SETFile::CHUNK_WIDTH * SETFile::CHUNK_HEIGHT;
-
 bool SETFile::init(const char *filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);

@@ -3,6 +3,7 @@
 
 #include "Camera3D.h"
 #include "WeaponAnimation.h"
+#include "../Assets/MIFUtils.h"
 
 class CharacterClassLibrary;
 class ExeData;
@@ -13,14 +14,14 @@ class WorldData;
 class Player
 {
 private:
-	static const double STEPPING_HEIGHT; // Allowed change in height for stepping on stairs.
-	static const double JUMP_VELOCITY; // Instantaneous change in Y velocity when jumping.
+	static constexpr double STEPPING_HEIGHT = 0.25; // Allowed change in height for stepping on stairs.
+	static constexpr double JUMP_VELOCITY = 3.0; // Instantaneous change in Y velocity when jumping.
 	
 	// Magnitude of -Y acceleration in the air.
-	static const double GRAVITY;
+	static constexpr double GRAVITY = 9.81;
 
 	// Friction for slowing the player down on ground.
-	static const double FRICTION;
+	static constexpr double FRICTION = 4.0;
 
 	std::string displayName;
 	bool male;
@@ -47,11 +48,11 @@ public:
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
 	// Distance from player's feet to head.
-	static const double HEIGHT;
+	static constexpr double HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
 
 	// Arbitrary values for movement speed.
-	static const double DEFAULT_WALK_SPEED;
-	static const double DEFAULT_RUN_SPEED;
+	static constexpr double DEFAULT_WALK_SPEED = 2.0;
+	static constexpr double DEFAULT_RUN_SPEED = 8.0;
 
 	const Double3 &getPosition() const;
 	const std::string &getDisplayName() const;

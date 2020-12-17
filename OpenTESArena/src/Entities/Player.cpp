@@ -6,7 +6,6 @@
 #include "CharacterClassLibrary.h"
 #include "EntityType.h"
 #include "Player.h"
-#include "../Assets/MIFUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
@@ -21,14 +20,6 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
-
-const double Player::HEIGHT = 60.0 / MIFUtils::ARENA_UNITS;
-const double Player::DEFAULT_WALK_SPEED = 2.0;
-const double Player::DEFAULT_RUN_SPEED = 8.0;
-const double Player::STEPPING_HEIGHT = 0.25;
-const double Player::JUMP_VELOCITY = 3.0;
-const double Player::GRAVITY = 9.81;
-const double Player::FRICTION = 4.0;
 
 Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
 	int portraitID, const Double3 &position, const Double3 &direction, const Double3 &velocity,

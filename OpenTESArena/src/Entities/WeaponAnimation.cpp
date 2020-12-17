@@ -50,9 +50,6 @@ namespace
 	};
 }
 
-const double WeaponAnimation::DEFAULT_TIME_PER_FRAME = 1.0 / 16.0;
-const int WeaponAnimation::FISTS_ID = -1;
-
 WeaponAnimation::WeaponAnimation(int weaponID, const ExeData &exeData)
 {
 	this->state = WeaponAnimation::State::Sheathed;

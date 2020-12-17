@@ -21,7 +21,6 @@
 
 #include "components/utilities/String.h"
 
-const int ProvinceSearchSubPanel::MAX_NAME_LENGTH = 20;
 const Int2 ProvinceSearchSubPanel::DEFAULT_TEXT_CURSOR_POSITION(85, 100);
 
 ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,

@@ -1180,8 +1180,6 @@ namespace Physics
 	}
 }
 
-const double Physics::Hit::MAX_T = std::numeric_limits<double>::infinity();
-
 void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
 	const VoxelFacing3D *facing)
 {

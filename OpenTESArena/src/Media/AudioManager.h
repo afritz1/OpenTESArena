@@ -37,8 +37,8 @@ public:
     void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
 		bool is3D, const std::string &midiConfig);
 
-	static const double MIN_VOLUME;
-	static const double MAX_VOLUME;
+	static constexpr double MIN_VOLUME = 0.0;
+	static constexpr double MAX_VOLUME = 1.0;
 
 	double getMusicVolume() const;
 	double getSoundVolume() const;

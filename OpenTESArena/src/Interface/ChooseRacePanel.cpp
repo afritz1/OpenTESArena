@@ -28,8 +28,6 @@
 
 #include "components/utilities/String.h"
 
-const int ChooseRacePanel::NO_ID = -1;
-
 ChooseRacePanel::ChooseRacePanel(Game &game)
 	: Panel(game)
 {

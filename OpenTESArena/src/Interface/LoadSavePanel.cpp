@@ -27,8 +27,6 @@
 #include "components/utilities/File.h"
 #include "components/utilities/String.h"
 
-const int LoadSavePanel::SlotCount = 10;
-
 LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	: Panel(game)
 {

@@ -23,7 +23,7 @@ class TextBox;
 class ChooseClassPanel : public Panel
 {
 private:
-	static const int MAX_TOOLTIP_LINE_LENGTH;
+	static constexpr int MAX_TOOLTIP_LINE_LENGTH = 14;
 
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
