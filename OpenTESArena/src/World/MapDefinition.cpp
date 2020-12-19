@@ -496,14 +496,15 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	return true;
 }
 
-bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
-	WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
+	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
 	this->init(WorldType::Wilderness);
 
-	const DOSUtils::FilenameBuffer infName = ArenaWildUtils::generateInfName(climateType, weatherType);
+	const DOSUtils::FilenameBuffer infName = ArenaWildUtils::generateInfName(
+		exteriorSkyGenInfo.climateType, exteriorSkyGenInfo.weatherType);
 	INFFile inf;
 	if (!inf.init(infName.data()))
 	{

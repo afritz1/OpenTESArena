@@ -114,10 +114,10 @@ public:
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager);
-	bool initWild(const MapGeneration::WildGenInfo &generationInfo, ClimateType climateType,
-		WeatherType weatherType, const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+	bool initWild(const MapGeneration::WildGenInfo &generationInfo,
+		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager);
 
 	// Gets the initial level index for the map (if any).
 	const std::optional<int> &getStartLevelIndex() const;
