@@ -22,6 +22,7 @@ public:
 	using VoxelID = uint8_t;
 private:
 	static constexpr int MAX_VOXEL_DEFS = std::numeric_limits<VoxelID>::max() + 1;
+	static constexpr VoxelID AIR_VOXEL_ID = 0;
 
 	// Indices into voxel definitions.
 	Buffer3D<VoxelID> voxels;

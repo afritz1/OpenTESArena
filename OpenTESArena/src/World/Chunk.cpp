@@ -8,7 +8,7 @@ void Chunk::init(const ChunkInt2 &coord, int height)
 {
 	// Set all voxels to air and unused.
 	this->voxels.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->voxels.fill(0);
+	this->voxels.fill(Chunk::AIR_VOXEL_ID);
 
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
@@ -125,24 +125,33 @@ void Chunk::update(double dt)
 		VoxelInstance &voxelInst = this->voxelInsts[i];
 		voxelInst.update(dt);
 
-		const VoxelInstance::Type voxelInstType = voxelInst.getType();
-		if (voxelInstType == VoxelInstance::Type::Chasm)
+		// See if the voxel instance can be removed because it no longer has interesting state.
+		if (!voxelInst.hasRelevantState())
 		{
-			// Do nothing.
-		}
-		else if (voxelInstType == VoxelInstance::Type::OpenDoor)
-		{
-			// @todo: check door state. See LevelData::DoorState::update() for reference.
-			DebugNotImplemented();
-		}
-		else if (voxelInstType == VoxelInstance::Type::Fading)
-		{
-			// @todo: delete faded voxels. See LevelData::updateFadingVoxels() for reference.
-			DebugNotImplemented();
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelInstType)));
+			const VoxelInstance::Type voxelInstType = voxelInst.getType();
+			
+			// Do the voxel instance's "on destroy" action (if any).
+			if (voxelInstType == VoxelInstance::Type::Fading)
+			{
+				// Convert the faded voxel to air or a chasm depending on the Y coordinate.
+				const int voxelY = voxelInst.getY();
+				if (voxelY == 0)
+				{
+					// Chasm voxel.
+					// @todo: may need to store vector<Int3> of all faded voxels here so their adjacent
+					// chasms can be updated properly in the next for loop. I say "may" because voxel
+					// instances might be separate enough now from the old context-sensitive voxel
+					// definitions. Need to re-evaluate it.
+					DebugNotImplemented();
+				}
+				else
+				{
+					// Air voxel.
+					this->set(voxelInst.getX(), voxelY, voxelInst.getZ(), Chunk::AIR_VOXEL_ID);
+				}
+			}
+
+			this->voxelInsts.erase(this->voxelInsts.begin() + i);
 		}
 	}
 }
