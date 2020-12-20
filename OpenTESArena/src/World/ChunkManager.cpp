@@ -1,4 +1,4 @@
-#include <optional>
+#include <algorithm>
 
 #include "ChunkManager.h"
 #include "ChunkUtils.h"
@@ -9,145 +9,101 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 
-ChunkManager::ChunkManager()
-{
-	this->worldType = static_cast<WorldType>(-1);
-	this->chunkDistance = -1;
-}
-
-void ChunkManager::init(WorldType worldType, int chunkDistance)
-{
-	DebugAssertMsg(this->activeChunks.empty(), "Expected no active chunks.");
-
-	SNInt chunkCountX;
-	WEInt chunkCountZ;
-	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance, &chunkCountX, &chunkCountZ);
-
-	const int totalChunkCount = chunkCountX * chunkCountZ;
-	this->chunkPool = std::vector<ChunkPtr>(totalChunkCount);
-
-	// Initialize chunk pool chunks to empty.
-	for (ChunkPtr &chunkPtr : this->chunkPool)
-	{
-		chunkPtr = std::make_unique<Chunk>();
-	}
-
-	this->worldType = worldType;
-	this->chunkDistance = chunkDistance;
-}
-
-bool ChunkManager::isValidChunkID(ChunkID id) const
-{
-	return (id >= 0) && (id < static_cast<int>(this->activeChunks.size()));
-}
-
-ChunkManager::ChunkPtr &ChunkManager::getChunkPtr(ChunkID id)
-{
-	DebugAssertIndex(this->activeChunks, id);
-	return this->activeChunks[id];
-}
-
-const ChunkManager::ChunkPtr &ChunkManager::getChunkPtr(ChunkID id) const
-{
-	DebugAssertIndex(this->activeChunks, id);
-	return this->activeChunks[id];
-}
-
 int ChunkManager::getChunkCount() const
 {
 	return static_cast<int>(this->activeChunks.size());
 }
 
-ChunkID ChunkManager::getChunkID(int index) const
+Chunk &ChunkManager::getChunk(int index)
 {
 	DebugAssertIndex(this->activeChunks, index);
-	return static_cast<ChunkID>(index);
+	const ChunkPtr &chunkPtr = this->activeChunks[index];
+
+	DebugAssert(chunkPtr != nullptr);
+	return *chunkPtr;
 }
 
-bool ChunkManager::tryGetChunkID(const ChunkInt2 &coord, ChunkID *outID) const
+const Chunk &ChunkManager::getChunk(int index) const
 {
-	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
+	DebugAssertIndex(this->activeChunks, index);
+	const ChunkPtr &chunkPtr = this->activeChunks[index];
+
+	DebugAssert(chunkPtr != nullptr);
+	return *chunkPtr;
+}
+
+std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &coord) const
+{
+	const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
+		[&coord](const ChunkPtr &chunkPtr)
 	{
-		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		if (chunkPtr->getCoord() == coord)
-		{
-			*outID = this->getChunkID(i);
-			return true;
-		}
-	}
+		return chunkPtr->getCoord() == coord;
+	});
 
-	return false;
-}
-
-Chunk &ChunkManager::getChunk(ChunkID id)
-{
-	return *this->getChunkPtr(id);
-}
-
-const Chunk &ChunkManager::getChunk(ChunkID id) const
-{
-	return *this->getChunkPtr(id);
-}
-
-ChunkID ChunkManager::spawnChunk()
-{
-	DebugAssertMsg(this->chunkPool.size() > 0, "No more chunks allocated.");
-	ChunkPtr chunkPtr = std::move(this->chunkPool.back());
-	this->chunkPool.pop_back();
-
-	// Find open spot in active chunks list, or append new slot.
-	std::optional<int> existingIndex;
-	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
+	if (iter != this->activeChunks.end())
 	{
-		const ChunkPtr &activeChunkPtr = this->activeChunks[i];
-		if (activeChunkPtr == nullptr)
-		{
-			existingIndex = i;
-			break;
-		}
-	}
-
-	ChunkID id;
-	if (existingIndex.has_value())
-	{
-		this->activeChunks[*existingIndex] = std::move(chunkPtr);
-		id = this->getChunkID(*existingIndex);
+		return static_cast<int>(std::distance(this->activeChunks.begin(), iter));
 	}
 	else
 	{
-		this->activeChunks.emplace_back(std::move(chunkPtr));
-		id = this->getChunkID(static_cast<int>(this->activeChunks.size()) - 1);
+		return std::nullopt;
 	}
-
-	return id;
 }
 
-void ChunkManager::recycleChunk(ChunkID id, EntityManager &entityManager)
+int ChunkManager::getCenterChunkIndex() const
 {
-	DebugAssert(this->isValidChunkID(id));
-	ChunkPtr &chunkPtr = this->getChunkPtr(id);
-	const ChunkInt2 chunkCoord = chunkPtr->getCoord();
+	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunk);
+	DebugAssert(index.has_value());
+	return *index;
+}
+
+int ChunkManager::spawnChunk()
+{
+	if (!this->chunkPool.empty())
+	{
+		this->activeChunks.emplace_back(std::move(this->chunkPool.back()));
+		this->chunkPool.pop_back();
+	}
+	else
+	{
+		// Always allow expanding in the event that chunk distance is increased.
+		this->activeChunks.emplace_back(std::make_unique<Chunk>());
+	}
+
+	return static_cast<int>(this->activeChunks.size()) - 1;
+}
+
+void ChunkManager::recycleChunk(int index, EntityManager &entityManager)
+{
+	DebugAssertIndex(this->activeChunks, index);
+	ChunkPtr &chunkPtr = this->activeChunks[index];
+	const ChunkInt2 coord = chunkPtr->getCoord();
 
 	// @todo: save chunk changes
 
-	// Move chunk back to chunk pool, leaving active chunk slot null.
+	// Move chunk to chunk pool. It's okay to shift chunk pointers around because this is during the 
+	// time when references get invalidated.
 	chunkPtr->clear();
-	this->chunkPool.push_back(std::move(chunkPtr));
+	this->chunkPool.emplace_back(std::move(chunkPtr));
+	this->activeChunks.erase(this->activeChunks.begin() + index);
 
-	// Clear entities in the chunk (mark them for delete or however makes sense).
-	entityManager.clearChunk(chunkCoord);
+	// Notify entity manager that the chunk is being cleared.
+	entityManager.clearChunk(coord);
 }
 
-bool ChunkManager::populateChunk(ChunkID id, WorldType worldType, EntityManager &entityManager)
+bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, WorldType worldType,
+	EntityManager &entityManager)
 {
-	DebugAssert(this->isValidChunkID(id));
-	Chunk &chunk = this->getChunk(id);
+	Chunk &chunk = this->getChunk(index);
+	chunk.setCoord(coord);
 
 	if (worldType == WorldType::Interior)
 	{
 		// @todo
 		// Needs to know if the chunk coordinate intersects the level dimensions, so it knows
 		// to grab voxel data from the level definition. Otherwise, default empty chunk.
+
+		// @todo: do something with MapDefinition::Interior
 	}
 	else if (worldType == WorldType::City)
 	{
@@ -157,7 +113,10 @@ bool ChunkManager::populateChunk(ChunkID id, WorldType worldType, EntityManager 
 	else if (worldType == WorldType::Wilderness)
 	{
 		// @todo
-		// Get the .RMD file (or equivalent) that goes in that chunk's spot.
+		// Get the .RMD file (or equivalent) that goes in this chunk's spot.
+
+		// @todo: do something with MapDefinition::Wild
+		//const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 	}
 	else
 	{
@@ -168,43 +127,48 @@ bool ChunkManager::populateChunk(ChunkID id, WorldType worldType, EntityManager 
 	return true;
 }
 
-void ChunkManager::update(const ChunkInt2 &playerChunk, WorldType worldType,
+void ChunkManager::update(const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
 	EntityManager &entityManager)
 {
-	// Free out-of-range chunks.
-	for (int i = 0; i < static_cast<int>(this->activeChunks.size()); i++)
+	this->centerChunk = centerChunk;
+
+	// Free any out-of-range chunks.
+	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		if (chunkPtr != nullptr)
+		const ChunkInt2 &coord = chunkPtr->getCoord();
+		if (!ChunkUtils::isWithinActiveRange(centerChunk, coord, chunkDistance))
 		{
-			const ChunkInt2 &coord = chunkPtr->getCoord();
-			const bool shouldRemainActive = ChunkUtils::isWithinActiveRange(
-				playerChunk, coord, this->chunkDistance);
-
-			if (!shouldRemainActive)
-			{
-				const ChunkID chunkID = this->getChunkID(i);
-				this->recycleChunk(chunkID, entityManager);
-			}
+			this->recycleChunk(i, entityManager);
 		}
 	}
 
-	// Add new chunks to take the place of the removed ones. Get all the surrounding chunk coords
-	// for the player chunk and see which ones aren't in active list.
+	// Add new chunks until the area around the center chunk is filled.
 	ChunkInt2 minCoord, maxCoord;
-	ChunkUtils::getSurroundingChunks(playerChunk, this->chunkDistance, &minCoord, &maxCoord);
+	ChunkUtils::getSurroundingChunks(centerChunk, chunkDistance, &minCoord, &maxCoord);
 
-	for (WEInt y = minCoord.y; y < maxCoord.y; y++)
+	for (WEInt y = minCoord.y; y <= maxCoord.y; y++)
 	{
-		for (SNInt x = minCoord.x; x < maxCoord.x; x++)
+		for (SNInt x = minCoord.x; x <= maxCoord.x; x++)
 		{
-			const ChunkInt2 coord(x, y);			
-			ChunkID chunkID;
-			if (!this->tryGetChunkID(coord, &chunkID))
+			const ChunkInt2 coord(x, y);
+			const std::optional<int> index = this->tryGetChunkIndex(coord);
+			if (!index.has_value())
 			{
-				chunkID = this->spawnChunk();
-				this->populateChunk(chunkID, this->worldType, entityManager);
+				const int spawnIndex = this->spawnChunk();
+				if (!this->populateChunk(spawnIndex, coord, worldType, entityManager))
+				{
+					DebugLogError("Couldn't populate chunk \"" + std::to_string(spawnIndex) +
+						"\" at (" + coord.toString() + ").");
+				}
 			}
 		}
 	}
+
+	// Free any unneeded chunks for memory savings in case the chunk distance was once large
+	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
+	this->chunkPool.clear();
+
+	// @todo: call update on each chunk so they can remove finished voxel instances, etc..
+	// See LevelData::updateFadingVoxels() for reference.
 }

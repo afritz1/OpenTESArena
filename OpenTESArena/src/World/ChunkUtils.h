@@ -3,9 +3,6 @@
 
 #include "VoxelUtils.h"
 
-// Unique identifier for a chunk.
-using ChunkID = int;
-
 namespace ChunkUtils
 {
 	// Number of voxels per side on a chunk.
@@ -21,9 +18,8 @@ namespace ChunkUtils
 	// Gets the number of chunks that are potentially visible at any given time.
 	void getPotentiallyVisibleChunkCounts(int chunkDistance, SNInt *outChunkCountX, WEInt *outChunkCountZ);
 
-	// Gets chunks in an NxN pattern around the given chunk. Useful for potentially visible chunk
-	// coordinates around the camera position. Chunk distance is the distance away from the given
-	// chunk in X or Z to reach (to obtain 3x3, 5x5, etc.).
+	// Gets chunk coordinates in an inclusive NxN pattern around the given chunk. Chunk distance is
+	// the distance away from the given chunk in X or Z to reach (to obtain 3x3, 5x5, etc.).
 	void getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance, ChunkInt2 *outMinChunk,
 		ChunkInt2 *outMaxChunk);
 

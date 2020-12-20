@@ -2,15 +2,16 @@
 #define CHUNK_MANAGER_H
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "Chunk.h"
 #include "ChunkUtils.h"
 #include "VoxelUtils.h"
 
-// Handles active chunks and the voxels in them. Does not store any entities. When freeing a chunk,
-// it needs to tell the entity manager about it so the entities in it are handled correctly
-// (i.e. marked for deletion one way or another).
+// Handles lifetimes of chunks. Does not store any entities. When freeing a chunk, it needs to tell
+// the entity manager so the entities in it are handled correctly (marked for deletion one way or
+// another).
 
 class EntityManager;
 class Game;
@@ -24,39 +25,30 @@ private:
 
 	std::vector<ChunkPtr> chunkPool;
 	std::vector<ChunkPtr> activeChunks;
-	WorldType worldType;
-	int chunkDistance;
+	ChunkInt2 centerChunk;
 
-	// Returns whether the given chunk ID points to an active chunk. The chunk ID of a chunk can
-	// never change until it has returned to the chunk pool.
-	bool isValidChunkID(ChunkID id) const;
-
-	// Gets a pointer to the chunk associated with the ID if it is active.
-	ChunkPtr &getChunkPtr(ChunkID id);
-	const ChunkPtr &getChunkPtr(ChunkID id) const;
-
-	// Takes a chunk from the chunk pool and moves it to the active chunks.
-	ChunkID spawnChunk();
+	// Takes a chunk from the chunk pool, moves it to the active chunks, and returns its index.
+	int spawnChunk();
 
 	// Clears the chunk, including entities, and removes it from the active chunks.
-	void recycleChunk(ChunkID id, EntityManager &entityManager);
+	void recycleChunk(int index, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	bool populateChunk(ChunkID id, WorldType worldType, EntityManager &entityManager);
+	bool populateChunk(int index, const ChunkInt2 &coord, WorldType worldType,
+		EntityManager &entityManager);
 public:
-	ChunkManager();
-
-	void init(WorldType worldType, int chunkDistance);
-
 	int getChunkCount() const;
-	ChunkID getChunkID(int index) const;
-	bool tryGetChunkID(const ChunkInt2 &coord, ChunkID *outID) const;
-	Chunk &getChunk(ChunkID id);
-	const Chunk &getChunk(ChunkID id) const;
+	Chunk &getChunk(int index);
+	const Chunk &getChunk(int index) const;
+	std::optional<int> tryGetChunkIndex(const ChunkInt2 &coord) const;
+
+	// Index of the chunk all other active chunks surround.
+	int getCenterChunkIndex() const;
 
 	// Updates the chunk manager with the given chunk as the current center of the game world.
-	// This invalidates all existing chunk IDs.
-	void update(const ChunkInt2 &playerChunk, WorldType worldType, EntityManager &entityManager);
+	// This invalidates all active chunk references and they must be looked up again.
+	void update(const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
+		EntityManager &entityManager);
 };
 
 #endif

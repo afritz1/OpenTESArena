@@ -10,7 +10,8 @@
 
 #include "components/utilities/Buffer3D.h"
 
-// A chunk is a 3D set of voxels for each part of the world, for both interiors and exteriors.
+// A 3D set of voxels for a portion of the game world.
+
 class Chunk
 {
 public:
@@ -20,7 +21,7 @@ public:
 private:
 	static constexpr int MAX_VOXEL_DEFS = std::numeric_limits<VoxelID>::max() + 1;
 
-	// Indices into voxel definitions. Size depends on whether it's an interior or exterior.
+	// Indices into voxel definitions.
 	Buffer3D<VoxelID> voxels;
 
 	// Voxel definitions, pointed to by voxel IDs. If the associated bool is true,
@@ -34,12 +35,6 @@ public:
 	// Public for some classes that want non-instance dimensions.
 	static constexpr int WIDTH = 64;
 	static constexpr int DEPTH = WIDTH;
-
-	// Interior chunks are always three voxels high (ground, main floor, ceiling). Exteriors
-	// are higher to support taller buildings.
-	static constexpr int INTERIOR_HEIGHT = 3;
-	static constexpr int EXTERIOR_HEIGHT = 6;
-	static constexpr int WILDERNESS_HEIGHT = EXTERIOR_HEIGHT;
 
 	void init(const ChunkInt2 &coord, int height);
 
