@@ -19,7 +19,6 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, const Texture
 	for (int i = 0; i < this->levels.getCount(); i++)
 	{
 		// Initialize level instance.
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(i);
 		LevelInstance &levelInst = this->levels.get(i);
 		levelInst.init();
 		
@@ -44,7 +43,21 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureMana
 	this->levels.init(1);
 	this->skies.init(1);
 
-	DebugNotImplemented();
+	// Initialize level instance for the city.
+	LevelInstance &levelInst = this->levels.get(0);
+	levelInst.init();
+
+	// Initialize sky instance.
+	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
+	const SkyInfoDefinition &skyInfoDefinition = mapDefinition.getSkyInfoForSky(0);
+	SkyInstance &skyInst = this->skies.get(0);
+	skyInst.init(skyDefinition, skyInfoDefinition, textureManager);
+
+	// Set active level/sky.
+	const std::optional<int> &startLevelIndex = mapDefinition.getStartLevelIndex();
+	DebugAssert(startLevelIndex.has_value() && (*startLevelIndex == 0));
+	this->activeLevelIndex = 0;
+	this->activeSkyIndex = 0;
 }
 
 void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureManager &textureManager)
@@ -53,7 +66,21 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureMana
 	this->levels.init(1);
 	this->skies.init(1);
 
-	DebugNotImplemented();
+	// Initialize level instance for the wild.
+	LevelInstance &levelInst = this->levels.get(0);
+	levelInst.init();
+
+	// Initialize sky instance.
+	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
+	const SkyInfoDefinition &skyInfoDefinition = mapDefinition.getSkyInfoForSky(0);
+	SkyInstance &skyInst = this->skies.get(0);
+	skyInst.init(skyDefinition, skyInfoDefinition, textureManager);
+
+	// Set active level/sky.
+	const std::optional<int> &startLevelIndex = mapDefinition.getStartLevelIndex();
+	DebugAssert(!startLevelIndex.has_value());
+	this->activeLevelIndex = 0;
+	this->activeSkyIndex = 0;
 }
 
 void MapInstance::init(const MapDefinition &mapDefinition, const TextureManager &textureManager)
