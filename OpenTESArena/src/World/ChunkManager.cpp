@@ -127,8 +127,8 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, WorldType wo
 	return true;
 }
 
-void ChunkManager::update(const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
-	EntityManager &entityManager)
+void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, WorldType worldType,
+	int chunkDistance, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -169,6 +169,10 @@ void ChunkManager::update(const ChunkInt2 &centerChunk, WorldType worldType, int
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
-	// @todo: call update on each chunk so they can remove finished voxel instances, etc..
-	// See LevelData::updateFadingVoxels() for reference.
+	// Update each chunk so they can animate/destroy faded voxel instances, etc..
+	for (int i = 0; i < static_cast<int>(this->activeChunks.size()) - 1; i++)
+	{
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		chunkPtr->update(dt);
+	}
 }

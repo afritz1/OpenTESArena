@@ -57,6 +57,23 @@ const VoxelDefinition &Chunk::getVoxelDef(VoxelID id) const
 	return this->voxelDefs[id];
 }
 
+int Chunk::getVoxelInstCount() const
+{
+	return static_cast<int>(this->voxelInsts.size());
+}
+
+VoxelInstance &Chunk::getVoxelInst(int index)
+{
+	DebugAssertIndex(this->voxelInsts, index);
+	return this->voxelInsts[index];
+}
+
+const VoxelInstance &Chunk::getVoxelInst(int index) const
+{
+	DebugAssertIndex(this->voxelInsts, index);
+	return this->voxelInsts[index];
+}
+
 void Chunk::setCoord(const ChunkInt2 &coord)
 {
 	this->coord = coord;
@@ -97,5 +114,35 @@ void Chunk::clear()
 	this->voxels.clear();
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
+	this->voxelInsts.clear();
 	this->coord = ChunkInt2();
+}
+
+void Chunk::update(double dt)
+{
+	for (int i = static_cast<int>(this->voxelInsts.size()) - 1; i >= 0; i--)
+	{
+		VoxelInstance &voxelInst = this->voxelInsts[i];
+		voxelInst.update(dt);
+
+		const VoxelInstance::Type voxelInstType = voxelInst.getType();
+		if (voxelInstType == VoxelInstance::Type::Chasm)
+		{
+			// Do nothing.
+		}
+		else if (voxelInstType == VoxelInstance::Type::OpenDoor)
+		{
+			// @todo: check door state. See LevelData::DoorState::update() for reference.
+			DebugNotImplemented();
+		}
+		else if (voxelInstType == VoxelInstance::Type::Fading)
+		{
+			// @todo: delete faded voxels. See LevelData::updateFadingVoxels() for reference.
+			DebugNotImplemented();
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelInstType)));
+		}
+	}
 }

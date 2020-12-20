@@ -47,7 +47,7 @@ public:
 
 	// Updates the chunk manager with the given chunk as the current center of the game world.
 	// This invalidates all active chunk references and they must be looked up again.
-	void update(const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
+	void update(double dt, const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
 		EntityManager &entityManager);
 };
 
