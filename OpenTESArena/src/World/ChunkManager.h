@@ -15,6 +15,7 @@
 
 class EntityManager;
 class Game;
+class MapDefinition;
 
 enum class WorldType;
 
@@ -34,8 +35,8 @@ private:
 	void recycleChunk(int index, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	bool populateChunk(int index, const ChunkInt2 &coord, WorldType worldType,
-		EntityManager &entityManager);
+	bool populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, EntityManager &entityManager);
 public:
 	int getChunkCount() const;
 	Chunk &getChunk(int index);
@@ -47,8 +48,8 @@ public:
 
 	// Updates the chunk manager with the given chunk as the current center of the game world.
 	// This invalidates all active chunk references and they must be looked up again.
-	void update(double dt, const ChunkInt2 &centerChunk, WorldType worldType, int chunkDistance,
-		EntityManager &entityManager);
+	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, int chunkDistance, EntityManager &entityManager);
 };
 
 #endif

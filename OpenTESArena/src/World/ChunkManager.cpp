@@ -2,6 +2,7 @@
 
 #include "ChunkManager.h"
 #include "ChunkUtils.h"
+#include "MapDefinition.h"
 #include "WorldType.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Game.h"
@@ -91,32 +92,39 @@ void ChunkManager::recycleChunk(int index, EntityManager &entityManager)
 	entityManager.clearChunk(coord);
 }
 
-bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, WorldType worldType,
+bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord,
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	EntityManager &entityManager)
 {
 	Chunk &chunk = this->getChunk(index);
 	chunk.setCoord(coord);
 
+	const WorldType worldType = mapDefinition.getWorldType();
 	if (worldType == WorldType::Interior)
 	{
 		// @todo
 		// Needs to know if the chunk coordinate intersects the level dimensions, so it knows
 		// to grab voxel data from the level definition. Otherwise, default empty chunk.
 
-		// @todo: do something with MapDefinition::Interior
+		DebugAssert(activeLevelIndex.has_value());
+		const int levelDefIndex = *activeLevelIndex;
+		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
+		DebugNotImplemented();
+
+		const MapDefinition::Interior &mapDefInterior = mapDefinition.getInterior();
 	}
 	else if (worldType == WorldType::City)
 	{
-		// @todo
-		// Same as interior, except chunks outside the level are wrapped with only floor voxels.
+		// @todo: chunks outside the level are wrapped with only floor voxels.
+		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
+		DebugNotImplemented();
 	}
 	else if (worldType == WorldType::Wilderness)
 	{
-		// @todo
-		// Get the .RMD file (or equivalent) that goes in this chunk's spot.
-
-		// @todo: do something with MapDefinition::Wild
-		//const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
+		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
+		const int levelDefIndex = mapDefWild.getLevelDefIndex(coord);
+		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
+		DebugNotImplemented();
 	}
 	else
 	{
@@ -127,7 +135,8 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, WorldType wo
 	return true;
 }
 
-void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, WorldType worldType,
+void ChunkManager::update(double dt, const ChunkInt2 &centerChunk,
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	int chunkDistance, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
@@ -156,7 +165,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, WorldType wor
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				if (!this->populateChunk(spawnIndex, coord, worldType, entityManager))
+				if (!this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityManager))
 				{
 					DebugLogError("Couldn't populate chunk \"" + std::to_string(spawnIndex) +
 						"\" at (" + coord.toString() + ").");

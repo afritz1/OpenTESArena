@@ -1,6 +1,8 @@
 #ifndef LEVEL_INSTANCE_H
 #define LEVEL_INSTANCE_H
 
+#include <optional>
+
 #include "ChunkManager.h"
 #include "../Entities/EntityManager.h"
 
@@ -24,8 +26,8 @@ public:
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 
-	void update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
-		int chunkDistance);
+	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, int chunkDistance);
 };
 
 #endif

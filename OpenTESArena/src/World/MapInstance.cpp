@@ -159,4 +159,17 @@ void MapInstance::setActiveLevelIndex(int levelIndex)
 	DebugAssert(levelIndex >= 0);
 	DebugAssert(levelIndex < this->levels.getCount());
 	this->activeLevelIndex = levelIndex;
+	
+	// @todo: update sky level index
+	DebugNotImplemented();
+}
+
+void MapInstance::update(double dt, const ChunkInt2 &centerChunk,
+	const MapDefinition &mapDefinition, double latitude, double daytimePercent, int chunkDistance)
+{
+	LevelInstance &levelInst = this->getActiveLevel();
+	levelInst.update(dt, centerChunk, this->activeLevelIndex, mapDefinition, chunkDistance);
+
+	SkyInstance &skyInst = this->getActiveSky();
+	skyInst.update(dt, latitude, daytimePercent);
 }

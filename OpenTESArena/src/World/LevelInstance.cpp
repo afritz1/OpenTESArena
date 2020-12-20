@@ -31,9 +31,9 @@ const EntityManager &LevelInstance::getEntityManager() const
 	return this->entityManager;
 }
 
-void LevelInstance::update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
-	int chunkDistance)
+void LevelInstance::update(double dt, const ChunkInt2 &centerChunk,
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition, int chunkDistance)
 {
-	this->chunkManager.update(dt, centerChunk, mapDefinition.getWorldType(), chunkDistance,
+	this->chunkManager.update(dt, centerChunk, activeLevelIndex, mapDefinition, chunkDistance,
 		this->entityManager);
 }
