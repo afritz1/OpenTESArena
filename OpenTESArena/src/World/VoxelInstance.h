@@ -103,6 +103,9 @@ public:
 	FadeState &getFadeState();
 	const FadeState &getFadeState() const;
 
+	// Returns whether the voxel instance is worth keeping alive because it has unique data active.
+	bool hasRelevantState() const;
+
 	void update(double dt);
 };
 

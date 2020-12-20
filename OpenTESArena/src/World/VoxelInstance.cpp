@@ -262,6 +262,29 @@ const VoxelInstance::FadeState &VoxelInstance::getFadeState() const
 	return this->fade;
 }
 
+bool VoxelInstance::hasRelevantState() const
+{
+	if (this->type == Type::Chasm)
+	{
+		const VoxelInstance::ChasmState &chasmState = this->chasm;
+		return chasmState.getNorth() || chasmState.getSouth() || chasmState.getEast() || chasmState.getWest();
+	}
+	else if (this->type == Type::OpenDoor)
+	{
+		const VoxelInstance::DoorState &doorState = this->door;
+		return doorState.getStateType() != VoxelInstance::DoorState::StateType::Closed;
+	}
+	else if (this->type == Type::Fading)
+	{
+		const VoxelInstance::FadeState &fadeState = this->fade;
+		return !fadeState.isDoneFading();
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
 void VoxelInstance::update(double dt)
 {
 	if (this->type == Type::OpenDoor)
