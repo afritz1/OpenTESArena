@@ -156,6 +156,14 @@ void VoxelInstance::FadeState::update(double dt)
 	}
 }
 
+VoxelInstance::VoxelInstance()
+{
+	this->x = 0;
+	this->y = 0;
+	this->z = 0;
+	this->type = static_cast<VoxelInstance::Type>(-1);
+}
+
 void VoxelInstance::init(SNInt x, int y, WEInt z, Type type)
 {
 	this->x = x;

@@ -78,6 +78,8 @@ private:
 
 	void init(SNInt x, int y, WEInt z, Type type);
 public:
+	VoxelInstance();
+
 	static VoxelInstance makeChasm(SNInt x, int y, WEInt z, bool north, bool east,
 		bool south, bool west);
 
