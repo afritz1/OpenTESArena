@@ -6,13 +6,12 @@
 
 #include "../debug/Debug.h"
 
-// Simple non-owning view over a 1D range of data.
-
-// Useful when separating a container from the usage of its data.
+// Simple non-owning view over a 1D range of data. Useful when separating a container from the usage
+// of its data.
 
 // Data can be null. Only need assertions on things that reach into the buffer itself.
 
-template <typename T, bool Checked = true>
+template <typename T>
 class BufferView
 {
 private:
@@ -39,14 +38,10 @@ public:
 
 	void init(T *data, int count, int viewOffset, int viewCount)
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(count >= 0);
-			DebugAssert(viewOffset >= 0);
-			DebugAssert(viewCount >= 0);
-			DebugAssert((viewOffset + viewCount) <= count);
-		}
-		
+		DebugAssert(count >= 0);
+		DebugAssert(viewOffset >= 0);
+		DebugAssert(viewCount >= 0);
+		DebugAssert((viewOffset + viewCount) <= count);
 		this->data = data + viewOffset;
 		this->count = viewCount;
 	}
@@ -73,25 +68,17 @@ public:
 
 	T &get(int index)
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-			DebugAssert(index >= 0);
-			DebugAssert(index < this->count);
-		}
-
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
 		return this->data[index];
 	}
 
 	const T &get(int index) const
 	{
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-			DebugAssert(index >= 0);
-			DebugAssert(index < this->count);
-		}
-
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
 		return this->data[index];
 	}
 
@@ -114,13 +101,9 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-			DebugAssert(index >= 0);
-			DebugAssert(index < this->count);
-		}
-
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
 		this->data[index] = value;
 	}
 
@@ -128,13 +111,9 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-			DebugAssert(index >= 0);
-			DebugAssert(index < this->count);
-		}
-
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
 		this->data[index] = std::move(value);
 	}
 
@@ -142,11 +121,7 @@ public:
 	{
 		static_assert(!std::is_const_v<T>, "Cannot change const data.");
 
-		if constexpr (Checked)
-		{
-			DebugAssert(this->isValid());
-		}
-
+		DebugAssert(this->isValid());
 		std::fill(this->data, this->end(), value);
 	}
 
@@ -156,8 +131,5 @@ public:
 		this->count = 0;
 	}
 };
-
-template <typename T>
-using UncheckedBufferView = BufferView<T, false>;
 
 #endif
