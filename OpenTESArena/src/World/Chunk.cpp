@@ -13,7 +13,8 @@ void Chunk::init(const ChunkInt2 &coord, int height)
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
 
-	// Let the first voxel data (air) be usable immediately. All default voxel IDs can safely point to it.
+	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely
+	// point to it.
 	this->activeVoxelDefs.front() = true;
 
 	this->coord = coord;
@@ -24,22 +25,12 @@ const ChunkInt2 &Chunk::getCoord() const
 	return this->coord;
 }
 
-constexpr int Chunk::getWidth() const
-{
-	return Chunk::WIDTH;
-}
-
 int Chunk::getHeight() const
 {
 	return this->voxels.getHeight();
 }
 
-constexpr int Chunk::getDepth() const
-{
-	return Chunk::DEPTH;
-}
-
-Chunk::VoxelID Chunk::get(int x, int y, int z) const
+Chunk::VoxelID Chunk::getVoxel(SNInt x, int y, WEInt z) const
 {
 	return this->voxels.get(x, y, z);
 }
@@ -74,12 +65,7 @@ const VoxelInstance &Chunk::getVoxelInst(int index) const
 	return this->voxelInsts[index];
 }
 
-void Chunk::setCoord(const ChunkInt2 &coord)
-{
-	this->coord = coord;
-}
-
-void Chunk::set(int x, int y, int z, VoxelID value)
+void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
 {
 	this->voxels.set(x, y, z, value);
 }
@@ -147,7 +133,7 @@ void Chunk::update(double dt)
 				else
 				{
 					// Air voxel.
-					this->set(voxelInst.getX(), voxelY, voxelInst.getZ(), Chunk::AIR_VOXEL_ID);
+					this->setVoxel(voxelInst.getX(), voxelY, voxelInst.getZ(), Chunk::AIR_VOXEL_ID);
 				}
 			}
 

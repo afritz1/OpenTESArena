@@ -6,6 +6,7 @@
 #include <limits>
 #include <vector>
 
+#include "ChunkUtils.h"
 #include "VoxelDefinition.h"
 #include "VoxelInstance.h"
 #include "VoxelUtils.h"
@@ -41,27 +42,24 @@ private:
 	// Chunk coordinates in the world.
 	ChunkInt2 coord;
 public:
-	// Public for some classes that want non-instance dimensions.
-	static constexpr int WIDTH = 64;
-	static constexpr int DEPTH = WIDTH;
+	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
+	static constexpr WEInt DEPTH = WIDTH;
 
 	void init(const ChunkInt2 &coord, int height);
 
-	constexpr int getWidth() const;
 	int getHeight() const;
-	constexpr int getDepth() const;
 
 	// Gets the chunk's XY coordinate in the world.
 	const ChunkInt2 &getCoord() const;
 
 	// Gets the voxel ID at the given coordinate.
-	VoxelID get(int x, int y, int z) const;
+	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
 
 	// Gets the number of active voxel definitions.
 	int getVoxelDefCount() const;
 
 	// Gets the voxel definition associated with a voxel ID.
-	const VoxelDefinition &getVoxelDef(Chunk::VoxelID id) const;
+	const VoxelDefinition &getVoxelDef(VoxelID id) const;
 
 	// Gets the number of voxel instances.
 	int getVoxelInstCount() const;
@@ -70,11 +68,8 @@ public:
 	VoxelInstance &getVoxelInst(int index);
 	const VoxelInstance &getVoxelInst(int index) const;
 
-	// Sets the chunk's XY coordinate in the world.
-	void setCoord(const ChunkInt2 &coord);
-
 	// Sets the voxel at the given coordinate.
-	void set(int x, int y, int z, VoxelID id);
+	void setVoxel(SNInt x, int y, WEInt z, VoxelID id);
 
 	// Attempts to add a voxel definition and returns its assigned ID.
 	bool tryAddVoxelDef(VoxelDefinition &&voxelDef, VoxelID *outID);

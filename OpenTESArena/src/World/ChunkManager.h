@@ -15,6 +15,8 @@
 
 class EntityManager;
 class Game;
+class LevelDefinition;
+class LevelInfoDefinition;
 class MapDefinition;
 
 enum class WorldType;
@@ -34,9 +36,14 @@ private:
 	// Clears the chunk, including entities, and removes it from the active chunks.
 	void recycleChunk(int index, EntityManager &entityManager);
 
+	// Helper function for setting the chunk's voxels and definitions from the given level. This might
+	// not touch all voxels in the chunk because it does not fully overlap the level.
+	void populateChunkFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
+
 	// Fills the chunk with the data required based on its position and the world type.
-	bool populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, EntityManager &entityManager);
+	bool populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,
+		const MapDefinition &mapDefinition);
 public:
 	int getChunkCount() const;
 	Chunk &getChunk(int index);
@@ -48,7 +55,7 @@ public:
 
 	// Updates the chunk manager with the given chunk as the current center of the game world.
 	// This invalidates all active chunk references and they must be looked up again.
-	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	void update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
 		const MapDefinition &mapDefinition, int chunkDistance, EntityManager &entityManager);
 };
 

@@ -92,39 +92,105 @@ void ChunkManager::recycleChunk(int index, EntityManager &entityManager)
 	entityManager.clearChunk(coord);
 }
 
-bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	EntityManager &entityManager)
+void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset)
+{
+	// Add voxel definitions.
+	for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
+	{
+		VoxelDefinition voxelDefinition = levelInfoDefinition.getVoxelDef(i);
+		Chunk::VoxelID dummyID;
+		if (!chunk.tryAddVoxelDef(std::move(voxelDefinition), &dummyID))
+		{
+			DebugLogError("Couldn't add voxel definition \"" + std::to_string(i) + "\" to chunk (voxel type \"" +
+				std::to_string(static_cast<int>(voxelDefinition.dataType)) + "\".");
+		}
+	}
+
+	// Iterate only the portion of the level that the chunk overlaps.
+	const SNInt startX = levelOffset.x;
+	const SNInt endX = std::min(startX + Chunk::WIDTH, levelDefinition.getWidth());
+	const int startY = 0;
+	const int endY = levelDefinition.getHeight();
+	const WEInt startZ = levelOffset.y;
+	const WEInt endZ = std::min(startZ + Chunk::DEPTH, levelDefinition.getDepth());
+
+	// Set voxels.
+	for (WEInt z = startZ; z < endZ; z++)
+	{
+		for (int y = startY; y < endY; y++)
+		{
+			for (SNInt x = startX; x < endX; x++)
+			{
+				const VoxelInt3 chunkVoxel(x - startX, y - startY, z - startZ);
+
+				// Convert the voxel definition ID to a chunk voxel ID. If they don't match then the
+				// chunk doesn't support that high of a voxel definition ID.
+				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxel(x, y, z);
+				const Chunk::VoxelID voxelID = static_cast<Chunk::VoxelID>(voxelDefID);
+				if (static_cast<LevelDefinition::VoxelDefID>(voxelID) != voxelDefID)
+				{
+					continue;
+				}
+
+				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelID);
+			}
+		}
+	}
+}
+
+bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,
+	const MapDefinition &mapDefinition)
 {
 	Chunk &chunk = this->getChunk(index);
-	chunk.setCoord(coord);
 
+	// Populate all or part of the chunk from a level definition depending on the world type.
 	const WorldType worldType = mapDefinition.getWorldType();
 	if (worldType == WorldType::Interior)
 	{
-		// @todo
-		// Needs to know if the chunk coordinate intersects the level dimensions, so it knows
-		// to grab voxel data from the level definition. Otherwise, default empty chunk.
+		const LevelDefinition &levelDefinition = mapDefinition.getLevel(activeLevelIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(activeLevelIndex);
+		chunk.init(coord, levelDefinition.getHeight());
 
-		DebugAssert(activeLevelIndex.has_value());
-		const int levelDefIndex = *activeLevelIndex;
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
-		DebugNotImplemented();
+		// @todo: populate chunk entirely from default empty chunk (fast copy).
+		// - probably get from MapDefinition::Interior eventually.
 
-		const MapDefinition::Interior &mapDefInterior = mapDefinition.getInterior();
+		if (ChunkUtils::touchesLevelDimensions(coord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		{
+			// Populate chunk from the part of the level it overlaps.
+			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
+			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+		}
 	}
 	else if (worldType == WorldType::City)
 	{
-		// @todo: chunks outside the level are wrapped with only floor voxels.
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
-		DebugNotImplemented();
+		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
+		chunk.init(coord, levelDefinition.getHeight());
+
+		// @todo: chunks outside the level are wrapped but only have floor voxels.
+		// - just need to wrap based on level definitions, not chunk dimensions. So a 96x96 city
+		//   would start wrapping halfway through chunks (1, 0) and (0, 1).
+
+		if (ChunkUtils::touchesLevelDimensions(coord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		{
+			// Populate chunk from the part of the level it overlaps.
+			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
+			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+		}
 	}
 	else if (worldType == WorldType::Wilderness)
 	{
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(coord);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
-		DebugNotImplemented();
+		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
+		chunk.init(coord, levelDefinition.getHeight());
+
+		// Copy level definition directly into chunk.
+		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
+		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
+		this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, LevelInt2(0, 0));
 	}
 	else
 	{
@@ -135,9 +201,8 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord,
 	return true;
 }
 
-void ChunkManager::update(double dt, const ChunkInt2 &centerChunk,
-	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	int chunkDistance, EntityManager &entityManager)
+void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
+	const MapDefinition &mapDefinition, int chunkDistance, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -165,7 +230,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk,
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				if (!this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityManager))
+				if (!this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition))
 				{
 					DebugLogError("Couldn't populate chunk \"" + std::to_string(spawnIndex) +
 						"\" at (" + coord.toString() + ").");

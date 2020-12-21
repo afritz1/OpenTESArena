@@ -15,6 +15,36 @@ void LevelInfoDefinition::init(double ceilingScale)
 	this->addVoxelDef(VoxelDefinition());
 }
 
+int LevelInfoDefinition::getVoxelDefCount() const
+{
+	return static_cast<int>(this->voxelDefs.size());
+}
+
+int LevelInfoDefinition::getEntityDefCount() const
+{
+	return static_cast<int>(this->entityDefs.size());
+}
+
+int LevelInfoDefinition::getLockDefCount() const
+{
+	return static_cast<int>(this->lockDefs.size());
+}
+
+int LevelInfoDefinition::getTriggerDefCount() const
+{
+	return static_cast<int>(this->triggerDefs.size());
+}
+
+int LevelInfoDefinition::getTransitionDefCount() const
+{
+	return static_cast<int>(this->transitionDefs.size());
+}
+
+int LevelInfoDefinition::getBuildingNameCount() const
+{
+	return static_cast<int>(this->buildingNames.size());
+}
+
 const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDefID id) const
 {
 	DebugAssertIndex(this->voxelDefs, id);

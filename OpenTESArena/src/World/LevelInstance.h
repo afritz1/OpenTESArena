@@ -26,8 +26,12 @@ public:
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
 
-	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	void update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
 		const MapDefinition &mapDefinition, int chunkDistance);
+
+	// @todo: some "setActive()" like LevelData so the renderer can be initialized with this level's data.
+	// Probably also store the table of asset filenames/ImageIDs/etc. -> voxel/entity/etc. texture IDs in
+	// this class.
 };
 
 #endif

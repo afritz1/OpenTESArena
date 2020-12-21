@@ -40,6 +40,13 @@ public:
 
 	void init(double ceilingScale);
 
+	int getVoxelDefCount() const;
+	int getEntityDefCount() const;
+	int getLockDefCount() const;
+	int getTriggerDefCount() const;
+	int getTransitionDefCount() const;
+	int getBuildingNameCount() const;
+
 	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
 	const LockDefinition &getLockDef(LevelDefinition::LockDefID id) const;
