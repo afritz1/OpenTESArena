@@ -1,9 +1,9 @@
-#ifndef MOON_OBJECT_DEFINITION_H
-#define MOON_OBJECT_DEFINITION_H
+#ifndef SKY_MOON_DEFINITION_H
+#define SKY_MOON_DEFINITION_H
 
 #include "../Media/TextureManager.h"
 
-class MoonObjectDefinition
+class SkyMoonDefinition
 {
 private:
 	TextureUtils::ImageIdGroup imageIDs;

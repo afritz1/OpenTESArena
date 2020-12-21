@@ -1,8 +1,8 @@
-#include "LandObjectDefinition.h"
+#include "SkyLandDefinition.h"
 
 #include "components/debug/Debug.h"
 
-void LandObjectDefinition::init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
+void SkyLandDefinition::init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
 	ShadingType shadingType)
 {
 	this->imageIDs = imageIDs;
@@ -10,35 +10,35 @@ void LandObjectDefinition::init(const TextureUtils::ImageIdGroup &imageIDs, doub
 	this->shadingType = shadingType;
 }
 
-void LandObjectDefinition::init(ImageID imageID, ShadingType shadingType)
+void SkyLandDefinition::init(ImageID imageID, ShadingType shadingType)
 {
 	TextureUtils::ImageIdGroup imageIDs(imageID, 1);
 	constexpr double animSeconds = 0.0;
 	this->init(imageIDs, animSeconds, shadingType);
 }
 
-int LandObjectDefinition::getImageCount() const
+int SkyLandDefinition::getImageCount() const
 {
 	return this->imageIDs.getCount();
 }
 
-ImageID LandObjectDefinition::getImageID(int index) const
+ImageID SkyLandDefinition::getImageID(int index) const
 {
 	return this->imageIDs.getID(index);
 }
 
-bool LandObjectDefinition::hasAnimation() const
+bool SkyLandDefinition::hasAnimation() const
 {
 	return imageIDs.getCount() > 1;
 }
 
-double LandObjectDefinition::getAnimationSeconds() const
+double SkyLandDefinition::getAnimationSeconds() const
 {
 	DebugAssert(this->hasAnimation());
 	return this->animSeconds;
 }
 
-LandObjectDefinition::ShadingType LandObjectDefinition::getShadingType() const
+SkyLandDefinition::ShadingType SkyLandDefinition::getShadingType() const
 {
 	return this->shadingType;
 }

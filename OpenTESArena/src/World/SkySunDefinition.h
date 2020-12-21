@@ -1,9 +1,9 @@
-#ifndef AIR_OBJECT_DEFINITION_H
-#define AIR_OBJECT_DEFINITION_H
+#ifndef SKY_SUN_DEFINITION_H
+#define SKY_SUN_DEFINITION_H
 
 #include "../Media/TextureUtils.h"
 
-class AirObjectDefinition
+class SkySunDefinition
 {
 private:
 	ImageID imageID;

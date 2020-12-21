@@ -1,15 +1,15 @@
 #include <cmath>
 
-#include "AirObjectDefinition.h"
 #include "ArenaSkyUtils.h"
-#include "LandObjectDefinition.h"
-#include "MoonObjectDefinition.h"
+#include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
 #include "SkyInfoDefinition.h"
 #include "SkyInstance.h"
+#include "SkyLandDefinition.h"
+#include "SkyMoonDefinition.h"
+#include "SkyStarDefinition.h"
+#include "SkySunDefinition.h"
 #include "SkyUtils.h"
-#include "StarObjectDefinition.h"
-#include "SunObjectDefinition.h"
 
 #include "components/debug/Debug.h"
 
@@ -130,10 +130,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	{
 		const SkyDefinition::LandPlacementDef &placementDef = skyDefinition.getLandPlacementDef(i);
 		const SkyDefinition::LandDefID defID = placementDef.id;
-		const LandObjectDefinition &objectDef = skyInfoDefinition.getLand(defID);
+		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
 
-		DebugAssert(objectDef.getImageCount() > 0);
-		const ImageID imageID = objectDef.getImageID(0);
+		DebugAssert(skyLandDef.getImageCount() > 0);
+		const ImageID imageID = skyLandDef.getImageID(0);
 		const Image &image = textureManager.getImageHandle(imageID);
 
 		double width, height;
@@ -147,10 +147,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			addGeneralObjectInst(direction, width, height, imageID);
 
 			// Only land objects support animations (for now).
-			if (objectDef.hasAnimation())
+			if (skyLandDef.hasAnimation())
 			{
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-				const TextureUtils::ImageIdGroup imageIDs(objectDef.getImageID(0), objectDef.getImageCount());
+				const TextureUtils::ImageIdGroup imageIDs(skyLandDef.getImageID(0), skyLandDef.getImageCount());
 				const double targetSeconds = static_cast<int>(static_cast<double>(imageIDs.getCount()) *
 					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
 				addAnimInst(objectIndex, imageIDs, targetSeconds);
@@ -168,8 +168,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	{
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
 		const SkyDefinition::AirDefID defID = placementDef.id;
-		const AirObjectDefinition &objectDef = skyInfoDefinition.getAir(defID);
-		const ImageID imageID = objectDef.getImageID();
+		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
+		const ImageID imageID = skyAirDef.getImageID();
 		const Image &image = textureManager.getImageHandle(imageID);
 
 		double width, height;
@@ -195,16 +195,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	{
 		const SkyDefinition::StarPlacementDef &placementDef = skyDefinition.getStarPlacementDef(i);
 		const SkyDefinition::StarDefID defID = placementDef.id;
-		const StarObjectDefinition &objectDef = skyInfoDefinition.getStar(defID);
+		const SkyStarDefinition &skyStarDef = skyInfoDefinition.getStar(defID);
 
 		// @todo: this is where the imageID design is kind of breaking, and getting a renderer sprite
 		// resource ID would be better. SkyInstance::init() should be able to allocate textures IDs from
 		// the renderer eventually, and look up cached ones by string.
-		const StarObjectDefinition::Type starType = objectDef.getType();
-		if (starType == StarObjectDefinition::Type::Small)
+		const SkyStarDefinition::Type starType = skyStarDef.getType();
+		if (starType == SkyStarDefinition::Type::Small)
 		{
 			// Small stars are 1x1 pixels.
-			const StarObjectDefinition::SmallStar &smallStar = objectDef.getSmallStar();
+			const SkyStarDefinition::SmallStar &smallStar = skyStarDef.getSmallStar();
 			const uint8_t paletteIndex = smallStar.paletteIndex;
 			constexpr int imageWidth = 1;
 			constexpr int imageHeight = imageWidth;
@@ -218,9 +218,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 				addSmallStarObjectInst(position, width, height, paletteIndex);
 			}
 		}
-		else if (starType == StarObjectDefinition::Type::Large)
+		else if (starType == SkyStarDefinition::Type::Large)
 		{
-			const StarObjectDefinition::LargeStar &largeStar = objectDef.getLargeStar();
+			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
 			const ImageID imageID = largeStar.imageID;
 			const Image &image = textureManager.getImageHandle(imageID);
 
@@ -249,8 +249,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	{
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
 		const SkyDefinition::SunDefID defID = placementDef.id;
-		const SunObjectDefinition &objectDef = skyInfoDefinition.getSun(defID);
-		const ImageID imageID = objectDef.getImageID();
+		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
+		const ImageID imageID = skySunDef.getImageID();
 		const Image &image = textureManager.getImageHandle(imageID);
 
 		double width, height;
@@ -275,11 +275,11 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	{
 		const SkyDefinition::MoonPlacementDef &placementDef = skyDefinition.getMoonPlacementDef(i);
 		const SkyDefinition::MoonDefID defID = placementDef.id;
-		const MoonObjectDefinition &objectDef = skyInfoDefinition.getMoon(defID);
+		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
 
 		// @todo: get the image from the current day, etc..
-		DebugAssert(objectDef.getImageIdCount() > 0);
-		const ImageID imageID = objectDef.getImageID(0);
+		DebugAssert(skyMoonDef.getImageIdCount() > 0);
+		const ImageID imageID = skyMoonDef.getImageID(0);
 		const Image &image = textureManager.getImageHandle(imageID);
 
 		double width, height;

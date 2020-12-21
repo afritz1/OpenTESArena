@@ -3,35 +3,35 @@
 
 #include <vector>
 
-#include "AirObjectDefinition.h"
-#include "LandObjectDefinition.h"
-#include "MoonObjectDefinition.h"
+#include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
-#include "StarObjectDefinition.h"
-#include "SunObjectDefinition.h"
+#include "SkyLandDefinition.h"
+#include "SkyMoonDefinition.h"
+#include "SkyStarDefinition.h"
+#include "SkySunDefinition.h"
 
 // Contains object definitions pointed to by a sky definition.
 
 class SkyInfoDefinition
 {
 private:
-	std::vector<LandObjectDefinition> lands;
-	std::vector<AirObjectDefinition> airs;
-	std::vector<StarObjectDefinition> stars;
-	std::vector<SunObjectDefinition> suns;
-	std::vector<MoonObjectDefinition> moons;
+	std::vector<SkyLandDefinition> lands;
+	std::vector<SkyAirDefinition> airs;
+	std::vector<SkyStarDefinition> stars;
+	std::vector<SkySunDefinition> suns;
+	std::vector<SkyMoonDefinition> moons;
 public:
-	const LandObjectDefinition &getLand(SkyDefinition::LandDefID id) const;
-	const AirObjectDefinition &getAir(SkyDefinition::AirDefID id) const;
-	const StarObjectDefinition &getStar(SkyDefinition::StarDefID id) const;
-	const SunObjectDefinition &getSun(SkyDefinition::SunDefID id) const;
-	const MoonObjectDefinition &getMoon(SkyDefinition::MoonDefID id) const;
+	const SkyLandDefinition &getLand(SkyDefinition::LandDefID id) const;
+	const SkyAirDefinition &getAir(SkyDefinition::AirDefID id) const;
+	const SkyStarDefinition &getStar(SkyDefinition::StarDefID id) const;
+	const SkySunDefinition &getSun(SkyDefinition::SunDefID id) const;
+	const SkyMoonDefinition &getMoon(SkyDefinition::MoonDefID id) const;
 
-	SkyDefinition::LandDefID addLand(LandObjectDefinition &&def);
-	SkyDefinition::AirDefID addAir(AirObjectDefinition &&def);
-	SkyDefinition::StarDefID addStar(StarObjectDefinition &&def);
-	SkyDefinition::SunDefID addSun(SunObjectDefinition &&def);
-	SkyDefinition::MoonDefID addMoon(MoonObjectDefinition &&def);
+	SkyDefinition::LandDefID addLand(SkyLandDefinition &&def);
+	SkyDefinition::AirDefID addAir(SkyAirDefinition &&def);
+	SkyDefinition::StarDefID addStar(SkyStarDefinition &&def);
+	SkyDefinition::SunDefID addSun(SkySunDefinition &&def);
+	SkyDefinition::MoonDefID addMoon(SkyMoonDefinition &&def);
 };
 
 #endif

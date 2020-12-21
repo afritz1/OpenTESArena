@@ -153,9 +153,9 @@ namespace SkyGeneration
 			}
 			else
 			{
-				LandObjectDefinition landObject;
-				landObject.init(imageID, LandObjectDefinition::ShadingType::Ambient);
-				landDefID = outSkyInfoDef->addLand(std::move(landObject));
+				SkyLandDefinition skyLandDef;
+				skyLandDef.init(imageID, SkyLandDefinition::ShadingType::Ambient);
+				landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 				landCache->emplace(imageID, landDefID);
 			}
 
@@ -182,9 +182,9 @@ namespace SkyGeneration
 			}
 			else
 			{
-				AirObjectDefinition airObject;
-				airObject.init(imageID);
-				airDefID = outSkyInfoDef->addAir(std::move(airObject));
+				SkyAirDefinition skyAirDef;
+				skyAirDef.init(imageID);
+				airDefID = outSkyInfoDef->addAir(std::move(skyAirDef));
 				airCache->emplace(imageID, airDefID);
 			}
 
@@ -301,9 +301,9 @@ namespace SkyGeneration
 		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
 			static_cast<double>(imageIDs.getCount());
 
-		LandObjectDefinition landObject;
-		landObject.init(imageIDs, animSeconds, LandObjectDefinition::ShadingType::Bright);
-		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(landObject));
+		SkyLandDefinition skyLandDef;
+		skyLandDef.init(imageIDs, animSeconds, SkyLandDefinition::ShadingType::Bright);
+		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 		outSkyDef->addLand(landDefID, angleX);
 	}
 
@@ -439,9 +439,9 @@ namespace SkyGeneration
 					}
 					else
 					{
-						StarObjectDefinition starObject;
-						starObject.initSmall(paletteIndex);
-						starDefID = outSkyInfoDef->addStar(std::move(starObject));
+						SkyStarDefinition skyStarDef;
+						skyStarDef.initSmall(paletteIndex);
+						starDefID = outSkyInfoDef->addStar(std::move(skyStarDef));
 						smallStarCache.emplace(paletteIndex, starDefID);
 					}
 
@@ -476,9 +476,9 @@ namespace SkyGeneration
 				}
 				else
 				{
-					StarObjectDefinition starObject;
-					starObject.initLarge(imageID);
-					starDefID = outSkyInfoDef->addStar(std::move(starObject));
+					SkyStarDefinition skyStarDef;
+					skyStarDef.initLarge(imageID);
+					starDefID = outSkyInfoDef->addStar(std::move(skyStarDef));
 					largeStarCache.emplace(imageID, starDefID);
 				}
 
@@ -497,9 +497,9 @@ namespace SkyGeneration
 			DebugCrash("Couldn't get image ID for \"" + sunFilename + "\".");
 		}
 
-		SunObjectDefinition sunObject;
-		sunObject.init(imageID);
-		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(sunObject));
+		SkySunDefinition skySunDef;
+		skySunDef.init(imageID);
+		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(skySunDef));
 		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE);
 	}
 
@@ -531,9 +531,9 @@ namespace SkyGeneration
 			const double bonusLatitude = isFirstMoon ?
 				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
-			MoonObjectDefinition moonObject;
-			moonObject.init(imageIDs);
-			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(moonObject));
+			SkyMoonDefinition skyMoonDef;
+			skyMoonDef.init(imageIDs);
+			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(skyMoonDef));
 			outSkyDef->addMoon(moonDefID, baseDir, orbitPercent, bonusLatitude, phaseIndex);
 		};
 

@@ -1,12 +1,12 @@
-#ifndef STAR_OBJECT_DEFINITION_H
-#define STAR_OBJECT_DEFINITION_H
+#ifndef SKY_STAR_DEFINITION_H
+#define SKY_STAR_DEFINITION_H
 
 #include <cstdint>
 
 #include "../Math/MathUtils.h"
 #include "../Media/TextureUtils.h"
 
-class StarObjectDefinition
+class SkyStarDefinition
 {
 public:
 	enum class Type

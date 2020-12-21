@@ -1,9 +1,9 @@
-#ifndef LAND_OBJECT_DEFINITION_H
-#define LAND_OBJECT_DEFINITION_H
+#ifndef SKY_LAND_DEFINITION_H
+#define SKY_LAND_DEFINITION_H
 
 #include "../Media/TextureManager.h"
 
-class LandObjectDefinition
+class SkyLandDefinition
 {
 public:
 	enum class ShadingType
