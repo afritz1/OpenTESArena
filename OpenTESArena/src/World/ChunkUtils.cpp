@@ -13,7 +13,7 @@ void ChunkUtils::getChunkCounts(SNInt gridWidth, WEInt gridDepth, SNInt *outChun
 {
 	auto chunksForDimension = [](int dim)
 	{
-		return ChunkUtils::getNextHigherChunkMultiple(dim) / CHUNK_DIM;
+		return ChunkUtils::getNextHigherChunkMultiple(dim) / ChunkUtils::CHUNK_DIM;
 	};
 
 	*outChunkCountX = chunksForDimension(gridWidth);
@@ -35,6 +35,19 @@ void ChunkUtils::getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance,
 	DebugAssert(chunkDistance >= 1);
 	*outMinChunk = ChunkInt2(chunk.x - chunkDistance, chunk.y - chunkDistance);
 	*outMaxChunk = ChunkInt2(chunk.x + chunkDistance, chunk.y + chunkDistance);
+}
+
+bool ChunkUtils::touchesLevelDimensions(const ChunkInt2 &chunk, SNInt levelWidth, WEInt levelDepth)
+{
+	if ((chunk.x < 0) || (chunk.y < 0))
+	{
+		return false;
+	}
+
+	SNInt chunkCountX;
+	WEInt chunkCountZ;
+	ChunkUtils::getChunkCounts(levelWidth, levelDepth, &chunkCountX, &chunkCountZ);
+	return ((chunkCountX - 1) >= chunk.x) && ((chunkCountZ - 1) >= chunk.y);
 }
 
 bool ChunkUtils::isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &other,

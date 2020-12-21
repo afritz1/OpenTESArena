@@ -23,6 +23,10 @@ namespace ChunkUtils
 	void getSurroundingChunks(const ChunkInt2 &chunk, int chunkDistance, ChunkInt2 *outMinChunk,
 		ChunkInt2 *outMaxChunk);
 
+	// Returns whether the given chunk at least partially touches the level dimensions. Intended for
+	// interiors and cities.
+	bool touchesLevelDimensions(const ChunkInt2 &chunk, SNInt levelWidth, WEInt levelDepth);
+
 	// Returns whether the other chunk is close enough to the given chunk to be considered active.
 	bool isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &other, int chunkDistance);
 }
