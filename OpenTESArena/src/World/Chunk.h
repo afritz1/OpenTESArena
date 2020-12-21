@@ -17,11 +17,14 @@
 class Chunk
 {
 public:
-	// There should be fewer than 256 unique voxel types per chunk. If more are needed, then the data
-	// can be redesigned to be something like 9 bits per voxel (and the ID type would be 16-bit).
+	// This type must always support at least as many bits as are needed per voxel.
 	using VoxelID = uint8_t;
 private:
-	static constexpr int MAX_VOXEL_DEFS = std::numeric_limits<VoxelID>::max() + 1;
+	// Determines the allowed number of voxel types per chunk.
+	static constexpr int BITS_PER_VOXEL = 8;
+	static_assert((sizeof(VoxelID) * CHAR_BIT) >= BITS_PER_VOXEL);
+
+	static constexpr int MAX_VOXEL_DEFS = 1 << BITS_PER_VOXEL;
 	static constexpr VoxelID AIR_VOXEL_ID = 0;
 
 	// Indices into voxel definitions.
