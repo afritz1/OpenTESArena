@@ -18,8 +18,11 @@ class LevelInstance
 private:
 	ChunkManager chunkManager;
 	EntityManager entityManager;
+	double ceilingScale;
 public:
-	void init();
+	LevelInstance();
+
+	void init(double ceilingScale);
 
 	ChunkManager &getChunkManager();
 	const ChunkManager &getChunkManager() const;

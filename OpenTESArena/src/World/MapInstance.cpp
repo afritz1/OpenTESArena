@@ -19,8 +19,9 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, const Texture
 	for (int i = 0; i < this->levels.getCount(); i++)
 	{
 		// Initialize level instance.
+		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(i);
 		LevelInstance &levelInst = this->levels.get(i);
-		levelInst.init();
+		levelInst.init(levelInfoDefinition.getCeilingScale());
 		
 		// Initialize sky instance.
 		const int skyIndex = mapDefinition.getSkyIndexForLevel(i);
@@ -44,8 +45,9 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureMana
 	this->skies.init(1);
 
 	// Initialize level instance for the city.
+	const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 	LevelInstance &levelInst = this->levels.get(0);
-	levelInst.init();
+	levelInst.init(levelInfoDefinition.getCeilingScale());
 
 	// Initialize sky instance.
 	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
@@ -67,8 +69,9 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureMana
 	this->skies.init(1);
 
 	// Initialize level instance for the wild.
+	const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 	LevelInstance &levelInst = this->levels.get(0);
-	levelInst.init();
+	levelInst.init(levelInfoDefinition.getCeilingScale());
 
 	// Initialize sky instance.
 	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
