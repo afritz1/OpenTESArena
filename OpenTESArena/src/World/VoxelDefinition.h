@@ -18,9 +18,6 @@ enum class WorldType;
 class VoxelDefinition
 {
 public:
-	// Original game ID values.
-	static constexpr int TOTAL_IDS = 64;
-
 	// Regular wall with Y size equal to ceiling height. Y offset is 0, and Y size
 	// can be inferred by the renderer.
 	struct WallData

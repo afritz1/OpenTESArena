@@ -2,6 +2,7 @@
 #include <array>
 #include <stdexcept>
 
+#include "ArenaVoxelUtils.h"
 #include "VoxelDefinition.h"
 #include "VoxelDataType.h"
 #include "VoxelFacing2D.h"
@@ -79,17 +80,17 @@ VoxelDefinition::VoxelDefinition()
 VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID,
 	const std::optional<int> &menuID, WallData::Type type)
 {
-	if (sideID >= VoxelDefinition::TOTAL_IDS)
+	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Wall side ID \"" + std::to_string(sideID) + "\" out of range.");
 	}
 
-	if (floorID >= VoxelDefinition::TOTAL_IDS)
+	if (floorID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Wall floor ID \"" + std::to_string(floorID) + "\" out of range.");
 	}
 
-	if (ceilingID >= VoxelDefinition::TOTAL_IDS)
+	if (ceilingID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Wall ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
@@ -98,9 +99,9 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 	data.dataType = VoxelDataType::Wall;
 
 	VoxelDefinition::WallData &wall = data.wall;
-	wall.sideID = sideID % VoxelDefinition::TOTAL_IDS;
-	wall.floorID = floorID % VoxelDefinition::TOTAL_IDS;
-	wall.ceilingID = ceilingID % VoxelDefinition::TOTAL_IDS;
+	wall.sideID = sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
+	wall.floorID = floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
+	wall.ceilingID = ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 
 	// If the menu ID parameter is given, use it.
 	if (menuID.has_value())
@@ -121,7 +122,7 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 
 VoxelDefinition VoxelDefinition::makeFloor(int id)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Floor ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -130,14 +131,14 @@ VoxelDefinition VoxelDefinition::makeFloor(int id)
 	data.dataType = VoxelDataType::Floor;
 
 	VoxelDefinition::FloorData &floor = data.floor;
-	floor.id = id % VoxelDefinition::TOTAL_IDS;
+	floor.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 
 	return data;
 }
 
 VoxelDefinition VoxelDefinition::makeCeiling(int id)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Ceiling ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -146,7 +147,7 @@ VoxelDefinition VoxelDefinition::makeCeiling(int id)
 	data.dataType = VoxelDataType::Ceiling;
 
 	VoxelDefinition::CeilingData &ceiling = data.ceiling;
-	ceiling.id = id % VoxelDefinition::TOTAL_IDS;
+	ceiling.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 
 	return data;
 }
@@ -154,17 +155,17 @@ VoxelDefinition VoxelDefinition::makeCeiling(int id)
 VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
 	double ySize, double vTop, double vBottom)
 {
-	if (sideID >= VoxelDefinition::TOTAL_IDS)
+	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Raised side ID \"" + std::to_string(sideID) + "\" out of range.");
 	}
 
-	if (floorID >= VoxelDefinition::TOTAL_IDS)
+	if (floorID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Raised floor ID \"" + std::to_string(floorID) + "\" out of range.");
 	}
 
-	if (ceilingID >= VoxelDefinition::TOTAL_IDS)
+	if (ceilingID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Raised ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
@@ -173,9 +174,9 @@ VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceiling
 	data.dataType = VoxelDataType::Raised;
 
 	VoxelDefinition::RaisedData &raised = data.raised;
-	raised.sideID = sideID % VoxelDefinition::TOTAL_IDS;
-	raised.floorID = floorID % VoxelDefinition::TOTAL_IDS;
-	raised.ceilingID = ceilingID % VoxelDefinition::TOTAL_IDS;
+	raised.sideID = sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
+	raised.floorID = floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
+	raised.ceilingID = ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	raised.yOffset = yOffset;
 	raised.ySize = ySize;
 	raised.vTop = vTop;
@@ -186,7 +187,7 @@ VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceiling
 
 VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Diagonal ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -195,7 +196,7 @@ VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 	data.dataType = VoxelDataType::Diagonal;
 
 	VoxelDefinition::DiagonalData &diagonal = data.diagonal;
-	diagonal.id = id % VoxelDefinition::TOTAL_IDS;
+	diagonal.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	diagonal.type1 = type1;
 
 	return data;
@@ -203,7 +204,7 @@ VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 
 VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Transparent wall ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -212,7 +213,7 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 	data.dataType = VoxelDataType::TransparentWall;
 
 	VoxelDefinition::TransparentWallData &transparentWall = data.transparentWall;
-	transparentWall.id = id % VoxelDefinition::TOTAL_IDS;
+	transparentWall.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	transparentWall.collider = collider;
 
 	return data;
@@ -221,7 +222,7 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 	bool flipped, VoxelFacing2D facing)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Edge ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -230,7 +231,7 @@ VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 	data.dataType = VoxelDataType::Edge;
 
 	VoxelDefinition::EdgeData &edge = data.edge;
-	edge.id = id % VoxelDefinition::TOTAL_IDS;
+	edge.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	edge.yOffset = yOffset;
 	edge.collider = collider;
 	edge.flipped = flipped;
@@ -241,7 +242,7 @@ VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 
 VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Chasm ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -250,7 +251,7 @@ VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 	data.dataType = VoxelDataType::Chasm;
 
 	VoxelDefinition::ChasmData &chasm = data.chasm;
-	chasm.id = id % VoxelDefinition::TOTAL_IDS;
+	chasm.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	chasm.type = type;
 
 	return data;
@@ -258,7 +259,7 @@ VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 
 VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 {
-	if (id >= VoxelDefinition::TOTAL_IDS)
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Door ID \"" + std::to_string(id) + "\" out of range.");
 	}
@@ -267,7 +268,7 @@ VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 	data.dataType = VoxelDataType::Door;
 
 	VoxelDefinition::DoorData &door = data.door;
-	door.id = id % VoxelDefinition::TOTAL_IDS;
+	door.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
 	door.type = type;
 
 	return data;
