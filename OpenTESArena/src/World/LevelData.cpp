@@ -372,6 +372,16 @@ const LevelData::ChasmStates &LevelData::getChasmStates() const
 	return this->chasmStates;
 }
 
+std::vector<LevelData::Transition> &LevelData::getTransitions()
+{
+	return this->transitions;
+}
+
+const std::vector<LevelData::Transition> &LevelData::getTransitions() const
+{
+	return this->transitions;
+}
+
 const INFFile &LevelData::getInfFile() const
 {
 	return this->inf;

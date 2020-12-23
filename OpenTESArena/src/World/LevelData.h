@@ -207,6 +207,7 @@ private:
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
 	ChasmStates chasmStates;
+	std::vector<Transition> transitions;
 	std::string name;
 
 	void addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition);
@@ -250,6 +251,8 @@ public:
 	const std::vector<FadeState> &getFadingVoxels() const;
 	ChasmStates &getChasmStates();
 	const ChasmStates &getChasmStates() const;
+	std::vector<Transition> &getTransitions();
+	const std::vector<Transition> &getTransitions() const;
 	const INFFile &getInfFile() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
