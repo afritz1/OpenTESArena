@@ -259,6 +259,50 @@ int LevelData::ChasmState::getFaceCount() const
 		(this->south ? 1 : 0) + (this->west ? 1 : 0);
 }
 
+void LevelData::Transition::init(const NewInt2 &voxel, Type type)
+{
+	this->voxel = voxel;
+	this->type = type;
+}
+
+LevelData::Transition LevelData::Transition::makeLevelUp(const NewInt2 &voxel)
+{
+	Transition transition;
+	transition.init(voxel, Transition::Type::LevelUp);
+	return transition;
+}
+
+LevelData::Transition LevelData::Transition::makeLevelDown(const NewInt2 &voxel)
+{
+	Transition transition;
+	transition.init(voxel, Transition::Type::LevelDown);
+	return transition;
+}
+
+LevelData::Transition LevelData::Transition::makeMenu(const NewInt2 &voxel, int id)
+{
+	Transition transition;
+	transition.init(voxel, Transition::Type::Menu);
+	transition.menu.id = id;
+	return transition;
+}
+
+const NewInt2 &LevelData::Transition::getVoxel() const
+{
+	return this->voxel;
+}
+
+LevelData::Transition::Type LevelData::Transition::getType() const
+{
+	return this->type;
+}
+
+const LevelData::Transition::Menu &LevelData::Transition::getMenu() const
+{
+	DebugAssert(this->type == Transition::Type::Menu);
+	return this->menu;
+}
+
 LevelData::LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
 	const std::string &name)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)

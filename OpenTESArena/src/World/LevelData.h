@@ -164,6 +164,36 @@ public:
 	};
 
 	using ChasmStates = std::unordered_map<NewInt2, ChasmState>; // @temp change to hash table for wilderness performance.
+
+	// @temp: this is just a convenience class for converting voxel definition menus to the new level definition design.
+	class Transition
+	{
+	public:
+		enum class Type { LevelUp, LevelDown, Menu };
+
+		struct Menu
+		{
+			int id;
+		};
+	private:
+		NewInt2 voxel;
+		Type type;
+		
+		union
+		{
+			Menu menu;
+		};
+
+		void init(const NewInt2 &voxel, Type type);
+	public:
+		static Transition makeLevelUp(const NewInt2 &voxel);
+		static Transition makeLevelDown(const NewInt2 &voxel);
+		static Transition makeMenu(const NewInt2 &voxel, int id);
+
+		const NewInt2 &getVoxel() const;
+		Type getType() const;
+		const Transition::Menu &getMenu() const;
+	};
 private:
 	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
 	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
