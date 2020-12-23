@@ -27,6 +27,8 @@ public:
 		int sideID, floorID, ceilingID, menuID;
 		Type type;
 
+		void init(int sideID, int floorID, int ceilingID, int menuID, Type type);
+
 		// Returns whether the wall data is for a *MENU block.
 		bool isMenu() const;
 	};
@@ -35,12 +37,16 @@ public:
 	struct FloorData
 	{
 		int id;
+
+		void init(int id);
 	};
 
 	// Ceilings only have their bottom rendered.
 	struct CeilingData
 	{
 		int id;
+
+		void init(int id);
 	};
 
 	// Raised platform.
@@ -48,6 +54,9 @@ public:
 	{
 		int sideID, floorID, ceilingID;
 		double yOffset, ySize, vTop, vBottom;
+
+		void init(int sideID, int floorID, int ceilingID, double yOffset, double ySize,
+			double vTop, double vBottom);
 	};
 
 	// Diagonal. The type determines the start and end corners.
@@ -55,6 +64,8 @@ public:
 	{
 		int id;
 		bool type1; // Type 1 is '/', (nearX, nearZ) -> (farX, farZ).
+
+		void init(int id, bool type1);
 	};
 
 	// Transparent walls only shows front-facing textures (wooden arches, hedges, etc.).
@@ -63,6 +74,8 @@ public:
 	{
 		int id;
 		bool collider; // Also affects automap visibility.
+
+		void init(int id, bool collider);
 	};
 
 	// Rendered on one edge of a voxel with height equal to ceiling height.
@@ -78,6 +91,8 @@ public:
 		bool flipped;
 
 		VoxelFacing2D facing;
+
+		void init(int id, double yOffset, bool collider, bool flipped, VoxelFacing2D facing);
 	};
 
 	// Chasms have zero to four wall faces (stored with voxel instance) depending on adjacent
@@ -88,6 +103,8 @@ public:
 
 		int id;
 		Type type;
+
+		void init(int id, Type type);
 
 		bool matches(const ChasmData &other) const;
 	};
@@ -109,6 +126,8 @@ public:
 
 		int id;
 		Type type;
+
+		void init(int id, Type type);
 
 		// Gets the door's open sound index.
 		int getOpenSoundIndex() const;

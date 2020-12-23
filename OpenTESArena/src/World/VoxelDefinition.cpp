@@ -12,6 +12,15 @@
 
 #include "components/debug/Debug.h"
 
+void VoxelDefinition::WallData::init(int sideID, int floorID, int ceilingID, int menuID, Type type)
+{
+	this->sideID = sideID;
+	this->floorID = floorID;
+	this->ceilingID = ceilingID;
+	this->menuID = menuID;
+	this->type = type;
+}
+
 bool VoxelDefinition::WallData::isMenu() const
 {
 	if (this->type == WallData::Type::Menu)
@@ -25,9 +34,64 @@ bool VoxelDefinition::WallData::isMenu() const
 	}
 }
 
+void VoxelDefinition::FloorData::init(int id)
+{
+	this->id = id;
+}
+
+void VoxelDefinition::CeilingData::init(int id)
+{
+	this->id = id;
+}
+
+void VoxelDefinition::RaisedData::init(int sideID, int floorID, int ceilingID, double yOffset, double ySize,
+	double vTop, double vBottom)
+{
+	this->sideID = sideID;
+	this->floorID = floorID;
+	this->ceilingID = ceilingID;
+	this->yOffset = yOffset;
+	this->ySize = ySize;
+	this->vTop = vTop;
+	this->vBottom = vBottom;
+}
+
+void VoxelDefinition::DiagonalData::init(int id, bool type1)
+{
+	this->id = id;
+	this->type1 = type1;
+}
+
+void VoxelDefinition::TransparentWallData::init(int id, bool collider)
+{
+	this->id = id;
+	this->collider = collider;
+}
+
+void VoxelDefinition::EdgeData::init(int id, double yOffset, bool collider, bool flipped, VoxelFacing2D facing)
+{
+	this->id = id;
+	this->yOffset = yOffset;
+	this->collider = collider;
+	this->flipped = flipped;
+	this->facing = facing;
+}
+
+void VoxelDefinition::ChasmData::init(int id, Type type)
+{
+	this->id = id;
+	this->type = type;
+}
+
 bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 {
 	return (this->id == other.id) && (this->type == other.type);
+}
+
+void VoxelDefinition::DoorData::init(int id, Type type)
+{
+	this->id = id;
+	this->type = type;
 }
 
 int VoxelDefinition::DoorData::getOpenSoundIndex() const
@@ -80,6 +144,10 @@ VoxelDefinition::VoxelDefinition()
 VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID,
 	const std::optional<int> &menuID, WallData::Type type)
 {
+	DebugAssert((type == WallData::Type::Menu) == menuID.has_value());
+
+	// @todo: move these checks and modulos to when the Arena IDs are originally obtained from level data.
+	// - VoxelDefinition should not care about Arena-related values.
 	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
 	{
 		DebugLogWarning("Wall side ID \"" + std::to_string(sideID) + "\" out of range.");
@@ -95,29 +163,11 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 		DebugLogWarning("Wall ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Wall;
-
-	VoxelDefinition::WallData &wall = data.wall;
-	wall.sideID = sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	wall.floorID = floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	wall.ceilingID = ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-
-	// If the menu ID parameter is given, use it.
-	if (menuID.has_value())
-	{
-		DebugAssert(type == WallData::Type::Menu);
-		wall.menuID = *menuID;
-	}
-	else
-	{
-		DebugAssert(type != WallData::Type::Menu);
-		wall.menuID = -1; // Unused.
-	}
-
-	wall.type = type;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Wall;
+	voxelDef.wall.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
+		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, menuID.has_value() ? *menuID : -1, type);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeFloor(int id)
@@ -127,13 +177,10 @@ VoxelDefinition VoxelDefinition::makeFloor(int id)
 		DebugLogWarning("Floor ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Floor;
-
-	VoxelDefinition::FloorData &floor = data.floor;
-	floor.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Floor;
+	voxelDef.floor.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeCeiling(int id)
@@ -143,13 +190,10 @@ VoxelDefinition VoxelDefinition::makeCeiling(int id)
 		DebugLogWarning("Ceiling ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Ceiling;
-
-	VoxelDefinition::CeilingData &ceiling = data.ceiling;
-	ceiling.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Ceiling;
+	voxelDef.ceiling.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
@@ -170,19 +214,11 @@ VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceiling
 		DebugLogWarning("Raised ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Raised;
-
-	VoxelDefinition::RaisedData &raised = data.raised;
-	raised.sideID = sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	raised.floorID = floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	raised.ceilingID = ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	raised.yOffset = yOffset;
-	raised.ySize = ySize;
-	raised.vTop = vTop;
-	raised.vBottom = vBottom;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Raised;
+	voxelDef.raised.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
+		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, ySize, vTop, vBottom);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
@@ -192,14 +228,10 @@ VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 		DebugLogWarning("Diagonal ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Diagonal;
-
-	VoxelDefinition::DiagonalData &diagonal = data.diagonal;
-	diagonal.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	diagonal.type1 = type1;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Diagonal;
+	voxelDef.diagonal.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type1);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
@@ -209,14 +241,10 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 		DebugLogWarning("Transparent wall ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::TransparentWall;
-
-	VoxelDefinition::TransparentWallData &transparentWall = data.transparentWall;
-	transparentWall.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	transparentWall.collider = collider;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::TransparentWall;
+	voxelDef.transparentWall.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, collider);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
@@ -227,17 +255,10 @@ VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 		DebugLogWarning("Edge ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Edge;
-
-	VoxelDefinition::EdgeData &edge = data.edge;
-	edge.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	edge.yOffset = yOffset;
-	edge.collider = collider;
-	edge.flipped = flipped;
-	edge.facing = facing;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Edge;
+	voxelDef.edge.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, collider, flipped, facing);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
@@ -247,14 +268,10 @@ VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 		DebugLogWarning("Chasm ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Chasm;
-
-	VoxelDefinition::ChasmData &chasm = data.chasm;
-	chasm.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	chasm.type = type;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Chasm;
+	voxelDef.chasm.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
+	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
@@ -264,14 +281,10 @@ VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 		DebugLogWarning("Door ID \"" + std::to_string(id) + "\" out of range.");
 	}
 
-	VoxelDefinition data;
-	data.dataType = VoxelDataType::Door;
-
-	VoxelDefinition::DoorData &door = data.door;
-	door.id = id % ArenaVoxelUtils::TOTAL_VOXEL_IDS;
-	door.type = type;
-
-	return data;
+	VoxelDefinition voxelDef;
+	voxelDef.dataType = VoxelDataType::Door;
+	voxelDef.door.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
+	return voxelDef;
 }
 
 bool VoxelDefinition::allowsChasmFace() const
