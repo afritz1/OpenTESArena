@@ -1,11 +1,11 @@
 #include <algorithm>
 
 #include "ArenaVoxelUtils.h"
-#include "WorldType.h"
+#include "MapType.h"
 
 #include "components/debug/Debug.h"
 
-ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, WorldType worldType)
+ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
 {
 	if (menuID != -1)
 	{
@@ -50,7 +50,7 @@ ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, WorldType worldTyp
 		// Get the menu type associated with the *MENU ID and world type, or null if there
 		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
 		// to their std::array size.
-		const ArenaTypes::MenuType *typePtr = [menuID, worldType, &CityMenuMappings,
+		const ArenaTypes::MenuType *typePtr = [menuID, mapType, &CityMenuMappings,
 			&WildMenuMappings]()
 		{
 			auto getPtr = [menuID](const auto &arr)
@@ -65,11 +65,11 @@ ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, WorldType worldTyp
 			};
 
 			// Interpretation of *MENU ID depends on whether it's a city or wilderness.
-			if (worldType == WorldType::City)
+			if (mapType == MapType::City)
 			{
 				return getPtr(CityMenuMappings);
 			}
-			else if (worldType == WorldType::Wilderness)
+			else if (mapType == MapType::Wilderness)
 			{
 				return getPtr(WildMenuMappings);
 			}
@@ -78,7 +78,7 @@ ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, WorldType worldTyp
 				// @todo: try to replace getPtr() with getIndex() for each world type branch, or
 				// just return None menu type.
 				throw DebugException("Invalid world type \"" +
-					std::to_string(static_cast<int>(worldType)) + "\".");
+					std::to_string(static_cast<int>(mapType)) + "\".");
 			}
 		}();
 

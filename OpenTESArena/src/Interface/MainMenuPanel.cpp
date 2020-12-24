@@ -41,9 +41,9 @@
 #include "../World/InteriorType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
+#include "../World/MapType.h"
 #include "../World/WeatherType.h"
 #include "../World/WeatherUtils.h"
-#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -326,7 +326,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->quickStartButton = [&game]()
 	{
 		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
-			const std::optional<InteriorType> &optInteriorType, WeatherType weatherType, WorldType worldType)
+			const std::optional<InteriorType> &optInteriorType, WeatherType weatherType, MapType mapType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -346,7 +346,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				options.getMisc_StarDensity());
 
 			// Load the selected level based on world type (writing into active game data).
-			if (worldType == WorldType::Interior)
+			if (mapType == MapType::Interior)
 			{
 				if (testType != TestType_Dungeon)
 				{
@@ -479,7 +479,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 				}
 			}
-			else if (worldType == WorldType::City)
+			else if (mapType == MapType::City)
 			{
 				// There is only one "premade" city (used by the center province). All others
 				// are randomly generated.
@@ -566,7 +566,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					}
 				}
 			}
-			else if (worldType == WorldType::Wilderness)
+			else if (mapType == MapType::Wilderness)
 			{
 				// Pick a random location and province.
 				const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
@@ -596,7 +596,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else
 			{
 				DebugCrash("Unrecognized world type \"" + 
-					std::to_string(static_cast<int>(worldType)) + "\".");
+					std::to_string(static_cast<int>(mapType)) + "\".");
 			}
 
 			// Set clock to 5:45am.
@@ -605,10 +605,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Get the music that should be active on start.
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = [&game, &mifName, worldType, &gameData, &musicLibrary]()
+			const MusicDefinition *musicDef = [&game, &mifName, mapType, &gameData, &musicLibrary]()
 			{
-				const bool isExterior = (worldType == WorldType::City) ||
-					(worldType == WorldType::Wilderness);
+				const bool isExterior = (mapType == MapType::City) ||
+					(mapType == MapType::Wilderness);
 
 				// Exteriors depend on the time of day for which music to use. Interiors depend
 				// on the current location's .MIF name (if any).
@@ -656,11 +656,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				}
 			}();
 
-			const MusicDefinition *jingleMusicDef = [&game, worldType, &gameData, &musicLibrary]()
+			const MusicDefinition *jingleMusicDef = [&game, mapType, &gameData, &musicLibrary]()
 				-> const MusicDefinition*
 			{
 				const LocationDefinition &locationDef = gameData->getLocationDefinition();
-				const bool isCity = (worldType == WorldType::City) &&
+				const bool isCity = (mapType == MapType::City) &&
 					(locationDef.getType() == LocationDefinition::Type::City);
 
 				if (isCity)
@@ -697,7 +697,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		};
 
 		return Button<Game&, int, int, const std::string&,
-			const std::optional<InteriorType>&, WeatherType, WorldType>(function);
+			const std::optional<InteriorType>&, WeatherType, MapType>(function);
 	}();
 
 	this->exitButton = []()
@@ -1017,21 +1017,21 @@ WeatherType MainMenuPanel::getSelectedTestWeatherType() const
 	return Weathers.at(this->testWeather);
 }
 
-WorldType MainMenuPanel::getSelectedTestWorldType() const
+MapType MainMenuPanel::getSelectedTestMapType() const
 {
 	if ((this->testType == TestType_MainQuest) ||
 		(this->testType == TestType_Interior) ||
 		(this->testType == TestType_Dungeon))
 	{
-		return WorldType::Interior;
+		return MapType::Interior;
 	}
 	else if (this->testType == TestType_City)
 	{
-		return WorldType::City;
+		return MapType::City;
 	}
 	else
 	{
-		return WorldType::Wilderness;
+		return MapType::Wilderness;
 	}
 }
 
@@ -1070,7 +1070,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 			this->getSelectedTestName(),
 			this->getSelectedTestInteriorType(),
 			this->getSelectedTestWeatherType(),
-			this->getSelectedTestWorldType());
+			this->getSelectedTestMapType());
 	}
 
 	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1103,7 +1103,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 				this->getSelectedTestName(),
 				this->getSelectedTestInteriorType(),
 				this->getSelectedTestWeatherType(),
-				this->getSelectedTestWorldType());
+				this->getSelectedTestMapType());
 		}
 		else if (this->testTypeUpButton.contains(originalPoint))
 		{

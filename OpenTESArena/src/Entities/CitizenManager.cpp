@@ -8,8 +8,8 @@
 #include "../Media/PaletteName.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
+#include "../World/MapType.h"
 #include "../World/VoxelType.h"
-#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -38,8 +38,8 @@ bool CitizenManager::shouldSpawn(Game &game) const
 	return false;
 	/*auto &gameData = game.getGameData();
 	auto &worldData = gameData.getActiveWorld();
-	const WorldType activeWorldType = worldData.getActiveWorldType();
-	return (activeWorldType == WorldType::City) || (activeWorldType == WorldType::Wilderness);*/
+	const MapType activeMapType = worldData.getActiveMapType();
+	return (activeMapType == MapType::City) || (activeMapType == MapType::Wilderness);*/
 }
 
 const CitizenManager::GenerationEntry *CitizenManager::findGenerationEntry(bool male,

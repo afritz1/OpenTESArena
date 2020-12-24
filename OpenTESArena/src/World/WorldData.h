@@ -12,7 +12,7 @@
 class INFFile;
 class LevelData;
 
-enum class WorldType;
+enum class MapType;
 
 class WorldData
 {
@@ -27,7 +27,7 @@ public:
 	const std::vector<NewDouble2> &getStartPoints() const;
 	
 	// Gets the type of the world (interior, city, wilderness).
-	virtual WorldType getWorldType() const = 0;
+	virtual MapType getMapType() const = 0;
 
 	// Gets a reference to the active level data (a polymorphic type).
 	virtual LevelData &getActiveLevel() = 0;

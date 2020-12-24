@@ -11,9 +11,9 @@
 // A voxel's definition is used for multiple things, such as rendering, collision detection,
 // and color-coding on the automap.
 
+enum class MapType;
 enum class VoxelFacing2D;
 enum class VoxelType;
-enum class WorldType;
 
 class VoxelDefinition
 {

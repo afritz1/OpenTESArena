@@ -3,10 +3,10 @@
 #include <stdexcept>
 
 #include "ArenaVoxelUtils.h"
+#include "MapType.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
 #include "VoxelType.h"
-#include "WorldType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
 

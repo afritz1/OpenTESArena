@@ -3,7 +3,7 @@
 #include "ChunkManager.h"
 #include "ChunkUtils.h"
 #include "MapDefinition.h"
-#include "WorldType.h"
+#include "MapType.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Game.h"
 
@@ -145,8 +145,8 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	Chunk &chunk = this->getChunk(index);
 
 	// Populate all or part of the chunk from a level definition depending on the world type.
-	const WorldType worldType = mapDefinition.getWorldType();
-	if (worldType == WorldType::Interior)
+	const MapType mapType = mapDefinition.getMapType();
+	if (mapType == MapType::Interior)
 	{
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(activeLevelIndex);
@@ -162,7 +162,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		}
 	}
-	else if (worldType == WorldType::City)
+	else if (mapType == MapType::City)
 	{
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
@@ -179,7 +179,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		}
 	}
-	else if (worldType == WorldType::Wilderness)
+	else if (mapType == MapType::Wilderness)
 	{
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(coord);
@@ -194,7 +194,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	}
 	else
 	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(worldType)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(mapType)));
 		return false;
 	}
 

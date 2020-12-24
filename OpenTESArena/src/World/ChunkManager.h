@@ -19,7 +19,7 @@ class LevelDefinition;
 class LevelInfoDefinition;
 class MapDefinition;
 
-enum class WorldType;
+enum class MapType;
 
 class ChunkManager
 {

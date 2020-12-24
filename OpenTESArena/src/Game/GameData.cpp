@@ -30,10 +30,10 @@
 #include "../World/LocationInstance.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
+#include "../World/MapType.h"
 #include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
 #include "../World/WeatherUtils.h"
-#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -177,7 +177,7 @@ void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, cons
 	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
 	DebugAssert(!this->worldDatas.empty());
-	DebugAssert(this->worldDatas.top()->getWorldType() != WorldType::Interior);
+	DebugAssert(this->worldDatas.top()->getMapType() != MapType::Interior);
 	DebugAssert(!this->returnVoxel.has_value());
 
 	// Give the interior world data to the active exterior.
@@ -211,13 +211,13 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	Renderer &renderer)
 {
 	DebugAssert(this->worldDatas.size() >= 2);
-	DebugAssert(this->worldDatas.top()->getWorldType() == WorldType::Interior);
+	DebugAssert(this->worldDatas.top()->getMapType() == MapType::Interior);
 	DebugAssert(this->returnVoxel.has_value());
 
 	// Remove interior world data.
 	this->worldDatas.pop();
 
-	DebugAssert(this->worldDatas.top()->getWorldType() != WorldType::Interior);
+	DebugAssert(this->worldDatas.top()->getMapType() != MapType::Interior);
 	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldDatas.top());
 
 	// Leave the interior and get the voxel to return to in the exterior.
@@ -621,7 +621,7 @@ double GameData::getAmbientPercent() const
 	DebugAssert(!this->worldDatas.empty());
 	const WorldData &activeWorld = *this->worldDatas.top();
 
-	if (activeWorld.getWorldType() == WorldType::Interior)
+	if (activeWorld.getMapType() == MapType::Interior)
 	{
 		// Completely dark indoors (some places might be an exception to this, and those
 		// would be handled eventually).

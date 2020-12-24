@@ -14,7 +14,7 @@
 #include "../Media/TextureManager.h"
 #include "../World/ClimateType.h"
 #include "../World/InteriorType.h"
-#include "../World/WorldType.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
@@ -726,10 +726,10 @@ ArenaTypes::FlatIndex ArenaAnimUtils::getStreetLightInactiveIndex()
 	return 30;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, WorldType worldType)
+bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType)
 {
 	// Wilderness and interiors do not have streetlights.
-	if (worldType != WorldType::City)
+	if (mapType != MapType::City)
 	{
 		return false;
 	}
@@ -942,7 +942,7 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
+bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
 	const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 	EntityAnimationInstance *outAnimInst)
@@ -968,7 +968,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, W
 	// the flat index. The wilderness does not have any streetlights (there is no ID for them).
 	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
 	const bool isRuler = interiorType.has_value() && ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
-	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, worldType);
+	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 	if (isRuler)
 	{
 		DebugAssert(rulerIsMale.has_value());

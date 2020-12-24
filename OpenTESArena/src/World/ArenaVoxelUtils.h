@@ -5,7 +5,7 @@
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
 
-enum class WorldType;
+enum class MapType;
 
 namespace ArenaVoxelUtils
 {
@@ -20,7 +20,7 @@ namespace ArenaVoxelUtils
 	constexpr double CHASM_ANIM_SECONDS = 1.0 / 2.0; // @todo: arbitrary, get original game value.
 
 	// Gets exterior menu type from *MENU ID and world type, or "none" if no mapping exists.
-	ArenaTypes::MenuType getMenuType(int menuID, WorldType worldType);
+	ArenaTypes::MenuType getMenuType(int menuID, MapType mapType);
 
 	// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
 	// else (like city gates).

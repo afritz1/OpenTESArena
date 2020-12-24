@@ -5,13 +5,13 @@
 #include "ArenaVoxelUtils.h"
 #include "ClimateType.h"
 #include "LocationUtils.h"
+#include "MapType.h"
 #include "ProvinceDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
 #include "VoxelType.h"
 #include "WeatherType.h"
 #include "WeatherUtils.h"
-#include "WorldType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -527,9 +527,9 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				constexpr WorldType worldType = WorldType::City;
+				constexpr MapType mapType = MapType::City;
 				return (voxelDef.type == VoxelType::Wall) && voxelDef.wall.isMenu() &&
-					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
+					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, mapType) == menuType);
 			}();
 
 			if (matchesTargetType)

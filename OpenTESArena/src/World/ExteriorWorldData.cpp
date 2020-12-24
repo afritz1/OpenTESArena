@@ -6,9 +6,9 @@
 #include "LocationDefinition.h"
 #include "LocationType.h"
 #include "LocationUtils.h"
+#include "MapType.h"
 #include "VoxelUtils.h"
 #include "WeatherType.h"
-#include "WorldType.h"
 #include "../Assets/MIFUtils.h"
 
 #include "components/debug/Debug.h"
@@ -75,9 +75,9 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 	return worldData;
 }
 
-WorldType ExteriorWorldData::getWorldType() const
+MapType ExteriorWorldData::getMapType() const
 {
-	return this->isCity ? WorldType::City : WorldType::Wilderness;
+	return this->isCity ? MapType::City : MapType::Wilderness;
 }
 
 LevelData &ExteriorWorldData::getActiveLevel()

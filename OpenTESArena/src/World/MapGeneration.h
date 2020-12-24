@@ -31,7 +31,7 @@ class TextAssetLibrary;
 class TextureManager;
 
 enum class InteriorType;
-enum class WorldType;
+enum class MapType;
 
 namespace MapGeneration
 {
@@ -156,7 +156,7 @@ namespace MapGeneration
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
-	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, WorldType worldType,
+	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
 		const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
@@ -169,7 +169,7 @@ namespace MapGeneration
 	// Generates levels from the random chunk .MIF file and converts them to the modern format.
 	// Also writes out the player start voxel.
 	void generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
-		SNInt depthChunks, const INFFile &inf, ArenaRandom &random, WorldType worldType,
+		SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
 		InteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

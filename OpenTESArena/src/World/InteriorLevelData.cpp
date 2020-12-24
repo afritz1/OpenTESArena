@@ -1,6 +1,6 @@
-#include "InteriorLevelData.h"
 #include "ArenaInteriorUtils.h"
-#include "WorldType.h"
+#include "InteriorLevelData.h"
+#include "MapType.h"
 #include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Rendering/Renderer.h"
@@ -35,7 +35,7 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 
 	// Load FLOR and MAP1 voxels.
 	levelData.readFLOR(level.getFLOR(), inf);
-	levelData.readMAP1(level.getMAP1(), inf, WorldType::Interior, exeData);
+	levelData.readMAP1(level.getMAP1(), inf, MapType::Interior, exeData);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -181,7 +181,7 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
 	levelData.readFLOR(tempFlorView, inf);
-	levelData.readMAP1(tempMap1View, inf, WorldType::Interior, exeData);
+	levelData.readMAP1(tempMap1View, inf, MapType::Interior, exeData);
 	levelData.readCeiling(inf);
 
 	const BufferView<const ArenaTypes::MIFLock> tempLocksView(

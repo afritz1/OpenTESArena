@@ -11,7 +11,7 @@
 
 class MapDefinition;
 
-enum class WorldType;
+enum class MapType;
 
 class LevelInstance
 {

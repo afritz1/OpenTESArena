@@ -24,7 +24,7 @@ class TextureManager;
 enum class ClimateType;
 enum class EntityType;
 enum class InteriorType;
-enum class WorldType;
+enum class MapType;
 
 // Helper values for working with the original animations. These may or may not be directly
 // referencing original values and may only exist for convenience in the new engine.
@@ -113,7 +113,7 @@ namespace ArenaAnimUtils
 	// game give them a light source and toggle them between on and off states.
 	ArenaTypes::FlatIndex getStreetLightActiveIndex();
 	ArenaTypes::FlatIndex getStreetLightInactiveIndex();
-	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, WorldType worldType);
+	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType);
 
 	// Ruler flats are either a king or queen.
 	ArenaTypes::FlatIndex getRulerKingIndex();
@@ -151,7 +151,7 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view &type);
 
 	// Writes out static entity animation data to animation states.
-	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, WorldType worldType,
+	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
 		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 		EntityAnimationInstance *outAnimInst);

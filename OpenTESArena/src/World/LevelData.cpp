@@ -8,12 +8,12 @@
 #include "InteriorUtils.h"
 #include "LevelData.h"
 #include "LocationUtils.h"
+#include "MapType.h"
 #include "ProvinceDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
 #include "VoxelType.h"
 #include "WorldData.h"
-#include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -665,7 +665,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 }
 
 void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
-	WorldType worldType, const ExeData &exeData)
+	MapType mapType, const ExeData &exeData)
 {
 	const SNInt gridWidth = map1.getHeight();
 	const WEInt gridDepth = map1.getWidth();
@@ -773,7 +773,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 	};
 
 	// Lambda for obtaining the voxel data index of a raised platform.
-	auto getRaisedDataIndex = [this, &inf, worldType, &exeData, &findWallMapping](
+	auto getRaisedDataIndex = [this, &inf, mapType, &exeData, &findWallMapping](
 		uint16_t map1Voxel, uint8_t mostSigByte, SNInt x, WEInt z)
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
@@ -784,7 +784,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		else
 		{
 			// Lambda for creating a raised voxel data.
-			auto makeRaisedVoxelData = [worldType, &exeData, map1Voxel, &inf, mostSigByte, x, z]()
+			auto makeRaisedVoxelData = [mapType, &exeData, map1Voxel, &inf, mostSigByte, x, z]()
 			{
 				const uint8_t wallTextureID = map1Voxel & 0x000F;
 				const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
@@ -840,7 +840,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
 				int baseOffset, baseSize;
 				
-				if (worldType == WorldType::Interior)
+				if (mapType == MapType::Interior)
 				{
 					baseOffset = wallHeightTables.box1a.at(heightIndex);
 
@@ -849,12 +849,12 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					baseSize = boxScale.has_value() ?
 						((boxSize * (*boxScale)) / 256) : boxSize;
 				}
-				else if (worldType == WorldType::City)
+				else if (mapType == MapType::City)
 				{
 					baseOffset = wallHeightTables.box1b.at(heightIndex);
 					baseSize = wallHeightTables.box2b.at(thicknessIndex);
 				}
-				else if (worldType == WorldType::Wilderness)
+				else if (mapType == MapType::Wilderness)
 				{
 					baseOffset = wallHeightTables.box1c.at(heightIndex);
 
@@ -866,7 +866,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				else
 				{
 					throw DebugException("Invalid world type \"" +
-						std::to_string(static_cast<int>(worldType)) + "\".");
+						std::to_string(static_cast<int>(mapType)) + "\".");
 				}
 
 				const double yOffset = static_cast<double>(baseOffset) / MIFUtils::ARENA_UNITS;
@@ -899,7 +899,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 	};
 
 	// Lambda for obtaining the voxel data index of a type 0xA voxel.
-	auto getTypeADataIndex = [this, worldType, &findWallMapping](
+	auto getTypeADataIndex = [this, mapType, &findWallMapping](
 		uint16_t map1Voxel, int textureIndex)
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
@@ -910,12 +910,12 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		else
 		{
 			// Lambda for creating type 0xA voxel data.
-			auto makeTypeAVoxelData = [worldType, map1Voxel, textureIndex]()
+			auto makeTypeAVoxelData = [mapType, map1Voxel, textureIndex]()
 			{
-				const double yOffset = [worldType, map1Voxel]()
+				const double yOffset = [mapType, map1Voxel]()
 				{
 					const int baseOffset = (map1Voxel & 0x0E00) >> 9;
-					const int fullOffset = (worldType == WorldType::Interior) ?
+					const int fullOffset = (mapType == MapType::Interior) ?
 						(baseOffset * 8) : ((baseOffset * 32) - 8);
 
 					return static_cast<double>(fullOffset) / MIFUtils::ARENA_UNITS;
@@ -1565,11 +1565,11 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 		}();
 
-		const WorldType worldType = worldData.getWorldType();
-		const std::optional<InteriorType> interiorType = [&worldData, worldType]()
+		const MapType mapType = worldData.getMapType();
+		const std::optional<InteriorType> interiorType = [&worldData, mapType]()
 			-> std::optional<InteriorType>
 		{
-			if (worldType == WorldType::Interior)
+			if (mapType == MapType::Interior)
 			{
 				const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
 				return interior.getInteriorType();
@@ -1605,7 +1605,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			EntityAnimationInstance entityAnimInst;
 			if (entityType == EntityType::Static)
 			{
-				if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, worldType, interiorType,
+				if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType,
 					rulerIsMale, this->inf, textureManager, &entityAnimDef, &entityAnimInst))
 				{
 					DebugLogWarning("Couldn't make static entity anims for flat \"" +
@@ -1686,7 +1686,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			else // @todo: handle other entity definition types.
 			{
 				// Doodad.
-				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, worldType);
+				const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 				const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 				const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
 
@@ -1796,8 +1796,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		}
 
 		// Spawn citizens at level start if the conditions are met for the new level.
-		const bool isCity = worldType == WorldType::City;
-		const bool isWild = worldType == WorldType::Wilderness;
+		const bool isCity = mapType == MapType::City;
+		const bool isWild = mapType == MapType::Wilderness;
 		if (isCity || isWild)
 		{
 			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,

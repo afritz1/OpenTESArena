@@ -1,6 +1,6 @@
 #include "LevelInstance.h"
 #include "MapDefinition.h"
-#include "WorldType.h"
+#include "MapType.h"
 
 #include "components/debug/Debug.h"
 

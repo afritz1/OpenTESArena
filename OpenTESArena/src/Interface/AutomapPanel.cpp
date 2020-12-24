@@ -27,11 +27,11 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaWildUtils.h"
+#include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelGrid.h"
 #include "../World/VoxelType.h"
-#include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
 
@@ -125,7 +125,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 	const bool isWild = [&game]()
 	{
 		const auto &worldData = game.getGameData().getActiveWorld();
-		return worldData.getWorldType() == WorldType::Wilderness;
+		return worldData.getMapType() == MapType::Wilderness;
 	}();
 
 	this->mapTexture = [&game, &playerDirection, &voxelGrid, &playerVoxel, isWild]()

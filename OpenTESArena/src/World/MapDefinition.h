@@ -31,8 +31,8 @@ class TextureManager;
 
 enum class ClimateType;
 enum class InteriorType;
+enum class MapType;
 enum class WeatherType;
-enum class WorldType;
 
 class MapDefinition
 {
@@ -76,12 +76,12 @@ private:
 	Buffer<LevelDouble2> startPoints;
 	std::optional<int> startLevelIndex;
 
-	// World-type-specific data.
-	WorldType worldType;
+	// Map-type-specific data.
+	MapType mapType;
 	Interior interior;
 	Wild wild;
 
-	void init(WorldType worldType);
+	void init(MapType mapType);
 	bool initInteriorLevels(const MIFFile &mif, InteriorType interiorType,
 		const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -141,7 +141,7 @@ public:
 	const SkyDefinition &getSky(int index) const;
 	const SkyInfoDefinition &getSkyInfoForSky(int skyIndex) const;
 
-	WorldType getWorldType() const;
+	MapType getMapType() const;
 	const Interior &getInterior() const;
 	const Wild &getWild() const;
 };

@@ -11,15 +11,15 @@
 class Renderer;
 
 enum class InteriorType;
+enum class MapType;
 enum class WeatherType;
-enum class WorldType;
 
 class MainMenuPanel : public Panel
 {
 private:
 	Button<Game&> loadButton, newButton;
 	Button<Game&, int, int, const std::string&,
-		const std::optional<InteriorType>&, WeatherType, WorldType> quickStartButton;
+		const std::optional<InteriorType>&, WeatherType, MapType> quickStartButton;
 	Button<> exitButton;
 	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
 		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testWeatherUpButton,
@@ -29,7 +29,7 @@ private:
 	std::string getSelectedTestName() const;
 	std::optional<InteriorType> getSelectedTestInteriorType() const;
 	WeatherType getSelectedTestWeatherType() const;
-	WorldType getSelectedTestWorldType() const;
+	MapType getSelectedTestMapType() const;
 public:
 	MainMenuPanel(Game &game);
 	virtual ~MainMenuPanel() = default;

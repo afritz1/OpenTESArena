@@ -43,7 +43,7 @@ public:
 		int starCount, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager);
 
-	virtual WorldType getWorldType() const override;
+	virtual MapType getMapType() const override;
 
 	virtual LevelData &getActiveLevel() override;
 	virtual const LevelData &getActiveLevel() const override;

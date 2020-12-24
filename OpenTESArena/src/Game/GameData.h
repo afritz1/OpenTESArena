@@ -44,8 +44,8 @@ class Texture;
 class TextureManager;
 
 enum class InteriorType;
+enum class MapType;
 enum class WeatherType;
-enum class WorldType;
 
 class GameData
 {

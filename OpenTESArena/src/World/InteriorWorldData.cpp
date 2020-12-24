@@ -1,7 +1,7 @@
 #include "ArenaInteriorUtils.h"
 #include "InteriorType.h"
 #include "InteriorWorldData.h"
-#include "WorldType.h"
+#include "MapType.h"
 #include "../Assets/MIFUtils.h"
 #include "../Math/Random.h"
 
@@ -146,9 +146,9 @@ InteriorType InteriorWorldData::getInteriorType() const
 	return this->interiorType;
 }
 
-WorldType InteriorWorldData::getWorldType() const
+MapType InteriorWorldData::getMapType() const
 {
-	return WorldType::Interior;
+	return MapType::Interior;
 }
 
 LevelData &InteriorWorldData::getActiveLevel()

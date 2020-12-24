@@ -47,7 +47,7 @@ class Renderer;
 class TextureInstanceManager;
 class TextureManager;
 
-enum class WorldType;
+enum class MapType;
 
 class LevelData
 {
@@ -219,7 +219,7 @@ protected:
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
 	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf);
 	void readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
-		WorldType worldType, const ExeData &exeData);
+		MapType mapType, const ExeData &exeData);
 	void readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf);
 	void readCeiling(const INFFile &inf);
 	void readLocks(const BufferView<const ArenaTypes::MIFLock> &locks);

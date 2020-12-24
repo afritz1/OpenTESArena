@@ -1,6 +1,6 @@
 #include "MapDefinition.h"
 #include "MapInstance.h"
-#include "WorldType.h"
+#include "MapType.h"
 
 #include "components/debug/Debug.h"
 
@@ -12,7 +12,7 @@ MapInstance::MapInstance()
 
 void MapInstance::initInterior(const MapDefinition &mapDefinition, const TextureManager &textureManager)
 {
-	DebugAssert(mapDefinition.getWorldType() == WorldType::Interior);
+	DebugAssert(mapDefinition.getMapType() == MapType::Interior);
 	this->levels.init(mapDefinition.getLevelCount());
 	this->skies.init(this->levels.getCount());
 
@@ -40,7 +40,7 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, const Texture
 
 void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureManager &textureManager)
 {
-	DebugAssert(mapDefinition.getWorldType() == WorldType::City);
+	DebugAssert(mapDefinition.getMapType() == MapType::City);
 	this->levels.init(1);
 	this->skies.init(1);
 
@@ -64,7 +64,7 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureMana
 
 void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureManager &textureManager)
 {
-	DebugAssert(mapDefinition.getWorldType() == WorldType::Wilderness);
+	DebugAssert(mapDefinition.getMapType() == MapType::Wilderness);
 	this->levels.init(1);
 	this->skies.init(1);
 
@@ -88,22 +88,22 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureMana
 
 void MapInstance::init(const MapDefinition &mapDefinition, const TextureManager &textureManager)
 {
-	const WorldType worldType = mapDefinition.getWorldType();
-	if (worldType == WorldType::Interior)
+	const MapType mapType = mapDefinition.getMapType();
+	if (mapType == MapType::Interior)
 	{
 		this->initInterior(mapDefinition, textureManager);
 	}
-	else if (worldType == WorldType::City)
+	else if (mapType == MapType::City)
 	{
 		this->initCity(mapDefinition, textureManager);
 	}
-	else if (worldType == WorldType::Wilderness)
+	else if (mapType == MapType::Wilderness)
 	{
 		this->initWild(mapDefinition, textureManager);
 	}
 	else
 	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(worldType)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(mapType)));
 	}
 }
 

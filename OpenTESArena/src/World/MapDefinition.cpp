@@ -2,15 +2,15 @@
 #include <unordered_map>
 
 #include "ArenaCityUtils.h"
+#include "ArenaInteriorUtils.h"
 #include "ArenaLevelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
 #include "InteriorType.h"
-#include "ArenaInteriorUtils.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
+#include "MapType.h"
 #include "SkyGeneration.h"
-#include "WorldType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -68,9 +68,9 @@ const MapGeneration::WildChunkBuildingNameInfo *MapDefinition::Wild::getBuilding
 	return (iter != this->buildingNameInfos.end()) ? &(*iter) : nullptr;
 }
 
-void MapDefinition::init(WorldType worldType)
+void MapDefinition::init(MapType mapType)
 {
-	this->worldType = worldType;
+	this->mapType = mapType;
 }
 
 bool MapDefinition::initInteriorLevels(const MIFFile &mif, InteriorType interiorType,
@@ -109,13 +109,13 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, InteriorType interior
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
 		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
-		constexpr WorldType worldType = WorldType::Interior;
+		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<LocationDefinition::CityDefinition::Type> cityType; // Not necessary for interiors.
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
-		MapGeneration::readMifVoxels(mifLevelView, worldType, interiorType, rulerSeed, rulerIsMale,
+		MapGeneration::readMifVoxels(mifLevelView, mapType, interiorType, rulerSeed, rulerIsMale,
 			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
 		MapGeneration::readMifLocks(mifLevelView, inf, levelDefView, &levelInfoDef);
@@ -212,7 +212,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	constexpr InteriorType interiorType = InteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
-		worldType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
+		mapType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef, outStartPoint);
 
 	// Generate sky for each dungeon level.
@@ -400,7 +400,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
-	this->init(WorldType::Interior);
+	this->init(MapType::Interior);
 
 	const MapGeneration::InteriorGenInfo::Type interiorType = generationInfo.getType();
 	if (interiorType == MapGeneration::InteriorGenInfo::Type::Prefab)
@@ -461,7 +461,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
-	this->init(WorldType::City);
+	this->init(MapType::City);
 
 	const std::string &mifName = generationInfo.mifName;
 	MIFFile mif;
@@ -501,7 +501,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager)
 {
-	this->init(WorldType::Wilderness);
+	this->init(MapType::Wilderness);
 
 	const DOSUtils::FilenameBuffer infName = ArenaWildUtils::generateInfName(
 		exteriorSkyGenInfo.climateType, exteriorSkyGenInfo.weatherType);
@@ -571,19 +571,19 @@ const SkyInfoDefinition &MapDefinition::getSkyInfoForSky(int skyIndex) const
 	return this->skyInfos.get(skyInfoIndex);
 }
 
-WorldType MapDefinition::getWorldType() const
+MapType MapDefinition::getMapType() const
 {
-	return this->worldType;
+	return this->mapType;
 }
 
 const MapDefinition::Interior &MapDefinition::getInterior() const
 {
-	DebugAssert(this->worldType == WorldType::Interior);
+	DebugAssert(this->mapType == MapType::Interior);
 	return this->interior;
 }
 
 const MapDefinition::Wild &MapDefinition::getWild() const
 {
-	DebugAssert(this->worldType == WorldType::Wilderness);
+	DebugAssert(this->mapType == MapType::Wilderness);
 	return this->wild;
 }

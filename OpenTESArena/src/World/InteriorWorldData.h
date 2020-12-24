@@ -42,7 +42,7 @@ public:
 	InteriorType getInteriorType() const;
 
 	// Always interior for interior world data.
-	virtual WorldType getWorldType() const override;
+	virtual MapType getMapType() const override;
 
 	virtual LevelData &getActiveLevel() override;
 	virtual const LevelData &getActiveLevel() const override;

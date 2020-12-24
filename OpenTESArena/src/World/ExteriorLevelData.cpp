@@ -5,7 +5,7 @@
 #include "ArenaWildUtils.h"
 #include "ExteriorLevelData.h"
 #include "LocationDefinition.h"
-#include "WorldType.h"
+#include "MapType.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/MIFUtils.h"
@@ -86,7 +86,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlorConstView, inf);
-	levelData.readMAP1(tempMap1ConstView, inf, WorldType::City, exeData);
+	levelData.readMAP1(tempMap1ConstView, inf, MapType::City, exeData);
 	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
@@ -176,7 +176,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
 	levelData.readFLOR(tempFlorView, inf);
-	levelData.readMAP1(tempMap1View, inf, WorldType::Wilderness, exeData);
+	levelData.readMAP1(tempMap1View, inf, MapType::Wilderness, exeData);
 	levelData.readMAP2(tempMap2View, inf);
 
 	// Generate wilderness building names.
