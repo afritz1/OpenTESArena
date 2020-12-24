@@ -103,7 +103,7 @@ void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &l
 		if (!chunk.tryAddVoxelDef(std::move(voxelDefinition), &dummyID))
 		{
 			DebugLogError("Couldn't add voxel definition \"" + std::to_string(i) + "\" to chunk (voxel type \"" +
-				std::to_string(static_cast<int>(voxelDefinition.dataType)) + "\".");
+				std::to_string(static_cast<int>(voxelDefinition.type)) + "\".");
 		}
 	}
 

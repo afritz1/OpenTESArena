@@ -63,8 +63,8 @@
 #include "../World/LevelData.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
-#include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing3D.h"
+#include "../World/VoxelType.h"
 #include "../World/WeatherUtils.h"
 #include "../World/WorldType.h"
 
@@ -240,7 +240,7 @@ namespace
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
 				text = "Voxel: (" + voxelHit.voxel.toString() + "), " +
-					std::to_string(static_cast<int>(voxelDef.dataType)) +
+					std::to_string(static_cast<int>(voxelDef.type)) +
 					' ' + std::to_string(hit.getT());
 				break;
 			}
@@ -1668,15 +1668,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				if (hit.getT() <= maxSelectionDist)
 				{
-					if (voxelDef.dataType == VoxelDataType::Wall ||
-						voxelDef.dataType == VoxelDataType::Floor ||
-						voxelDef.dataType == VoxelDataType::Raised ||
-						voxelDef.dataType == VoxelDataType::Diagonal ||
-						voxelDef.dataType == VoxelDataType::TransparentWall)
+					if (voxelDef.type == VoxelType::Wall ||
+						voxelDef.type == VoxelType::Floor ||
+						voxelDef.type == VoxelType::Raised ||
+						voxelDef.type == VoxelType::Diagonal ||
+						voxelDef.type == VoxelType::TransparentWall)
 					{
 						if (!debugFadeVoxel)
 						{
-							if (voxelDef.dataType == VoxelDataType::Wall)
+							if (voxelDef.type == VoxelType::Wall)
 							{
 								const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -1709,7 +1709,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							}
 						}
 					}
-					else if (voxelDef.dataType == VoxelDataType::Edge)
+					else if (voxelDef.type == VoxelType::Edge)
 					{
 						const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -1721,7 +1721,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							this->handleWorldTransition(hit, menuID);
 						}
 					}
-					else if (voxelDef.dataType == VoxelDataType::Door)
+					else if (voxelDef.type == VoxelType::Door)
 					{
 						const VoxelDefinition::DoorData &doorData = voxelDef.door;
 						const Int2 voxelXZ(voxel.x, voxel.z);
@@ -1762,7 +1762,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			else
 			{
 				// Handle secondary click (i.e., right click).
-				if (voxelDef.dataType == VoxelDataType::Wall)
+				if (voxelDef.type == VoxelType::Wall)
 				{
 					const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -2469,7 +2469,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelDef.dataType == VoxelDataType::Wall)
+	if (voxelDef.type == VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 

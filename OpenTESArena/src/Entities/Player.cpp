@@ -13,9 +13,9 @@
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../World/LevelData.h"
-#include "../World/VoxelDataType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 #include "../World/WorldData.h"
 
 #include "components/debug/Debug.h"
@@ -250,13 +250,13 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	//   We should be able to cover all collision cases in Arena now.
 	auto wouldCollideWithVoxel = [&activeLevel](const Int3 &voxel, const VoxelDefinition &voxelDef)
 	{
-		if (voxelDef.dataType == VoxelDataType::TransparentWall)
+		if (voxelDef.type == VoxelType::TransparentWall)
 		{
 			// Transparent wall collision.
 			const VoxelDefinition::TransparentWallData &transparent = voxelDef.transparentWall;
 			return transparent.collider;
 		}
-		else if (voxelDef.dataType == VoxelDataType::Edge)
+		else if (voxelDef.type == VoxelType::Edge)
 		{
 			// Edge collision.
 			// - @todo: treat as edge, not solid voxel.
@@ -266,10 +266,10 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		else
 		{
 			// General voxel collision.
-			const bool isEmpty = voxelDef.dataType == VoxelDataType::None;
+			const bool isEmpty = voxelDef.type == VoxelType::None;
 			const bool isOpenDoor = [&activeLevel, &voxel, &voxelDef]()
 			{
-				if (voxelDef.dataType == VoxelDataType::Door)
+				if (voxelDef.type == VoxelType::Door)
 				{
 					const auto &openDoors = activeLevel.getOpenDoors();
 					const VoxelDefinition::DoorData &doorData = voxelDef.door;
@@ -299,7 +299,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			// - @todo: replace with "on would enter voxel" event and near facing check.
 			const bool isLevelUpDown = [&voxelDef]()
 			{
-				if (voxelDef.dataType == VoxelDataType::Wall)
+				if (voxelDef.type == VoxelType::Wall)
 				{
 					const VoxelDefinition::WallData::Type wallType = voxelDef.wall.type;
 					return (wallType == VoxelDefinition::WallData::Type::LevelUp) ||

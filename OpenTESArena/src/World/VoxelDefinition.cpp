@@ -4,8 +4,8 @@
 
 #include "ArenaVoxelUtils.h"
 #include "VoxelDefinition.h"
-#include "VoxelDataType.h"
 #include "VoxelFacing2D.h"
+#include "VoxelType.h"
 #include "WorldType.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -138,7 +138,7 @@ VoxelDefinition::DoorData::CloseSoundData VoxelDefinition::DoorData::getCloseSou
 VoxelDefinition::VoxelDefinition()
 {
 	// Default to empty.
-	this->dataType = VoxelDataType::None;
+	this->type = VoxelType::None;
 }
 
 VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID,
@@ -164,7 +164,7 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Wall;
+	voxelDef.type = VoxelType::Wall;
 	voxelDef.wall.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
 		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, menuID.has_value() ? *menuID : -1, type);
 	return voxelDef;
@@ -178,7 +178,7 @@ VoxelDefinition VoxelDefinition::makeFloor(int id)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Floor;
+	voxelDef.type = VoxelType::Floor;
 	voxelDef.floor.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
 	return voxelDef;
 }
@@ -191,7 +191,7 @@ VoxelDefinition VoxelDefinition::makeCeiling(int id)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Ceiling;
+	voxelDef.type = VoxelType::Ceiling;
 	voxelDef.ceiling.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
 	return voxelDef;
 }
@@ -215,7 +215,7 @@ VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceiling
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Raised;
+	voxelDef.type = VoxelType::Raised;
 	voxelDef.raised.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
 		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, ySize, vTop, vBottom);
 	return voxelDef;
@@ -229,7 +229,7 @@ VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Diagonal;
+	voxelDef.type = VoxelType::Diagonal;
 	voxelDef.diagonal.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type1);
 	return voxelDef;
 }
@@ -242,7 +242,7 @@ VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::TransparentWall;
+	voxelDef.type = VoxelType::TransparentWall;
 	voxelDef.transparentWall.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, collider);
 	return voxelDef;
 }
@@ -256,7 +256,7 @@ VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Edge;
+	voxelDef.type = VoxelType::Edge;
 	voxelDef.edge.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, collider, flipped, facing);
 	return voxelDef;
 }
@@ -269,7 +269,7 @@ VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Chasm;
+	voxelDef.type = VoxelType::Chasm;
 	voxelDef.chasm.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
 	return voxelDef;
 }
@@ -282,12 +282,12 @@ VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 	}
 
 	VoxelDefinition voxelDef;
-	voxelDef.dataType = VoxelDataType::Door;
+	voxelDef.type = VoxelType::Door;
 	voxelDef.door.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
 	return voxelDef;
 }
 
 bool VoxelDefinition::allowsChasmFace() const
 {
-	return (this->dataType != VoxelDataType::None) && (this->dataType != VoxelDataType::Chasm);
+	return (this->type != VoxelType::None) && (this->type != VoxelType::Chasm);
 }

@@ -6,9 +6,9 @@
 #include "ClimateType.h"
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
-#include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
+#include "VoxelType.h"
 #include "WeatherType.h"
 #include "WeatherUtils.h"
 #include "WorldType.h"
@@ -528,7 +528,7 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				constexpr WorldType worldType = WorldType::City;
-				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+				return (voxelDef.type == VoxelType::Wall) && voxelDef.wall.isMenu() &&
 					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 			}();
 

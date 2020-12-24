@@ -8,7 +8,7 @@
 #include "../Media/PaletteName.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
-#include "../World/VoxelDataType.h"
+#include "../World/VoxelType.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -147,8 +147,8 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				const VoxelDefinition &groundVoxelDef = voxelGrid.getVoxelDef(groundVoxelID);
 
-				if ((voxelDef.dataType == VoxelDataType::None) &&
-					(groundVoxelDef.dataType == VoxelDataType::Floor))
+				if ((voxelDef.type == VoxelType::None) &&
+					(groundVoxelDef.type == VoxelType::Floor))
 				{
 					foundSpawnPosition = true;
 					return voxel;

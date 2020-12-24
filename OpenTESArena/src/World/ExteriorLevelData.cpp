@@ -16,7 +16,7 @@
 #include "../Rendering/Renderer.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
-#include "../World/VoxelDataType.h"
+#include "../World/VoxelType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

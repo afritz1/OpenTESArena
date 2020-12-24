@@ -1,9 +1,9 @@
 #include <algorithm>
 
 #include "ArenaVoxelUtils.h"
-#include "VoxelDataType.h"
 #include "VoxelFacing2D.h"
 #include "VoxelGeometry.h"
+#include "VoxelType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
@@ -422,33 +422,33 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 		}
 	};
 
-	switch (voxelDef.dataType)
+	switch (voxelDef.type)
 	{
-	case VoxelDataType::None:
+	case VoxelType::None:
 		maybeWrite(0);
 		break;
-	case VoxelDataType::Wall:
+	case VoxelType::Wall:
 		maybeWrite(6);
 		break;
-	case VoxelDataType::Floor:
+	case VoxelType::Floor:
 		maybeWrite(1);
 		break;
-	case VoxelDataType::Ceiling:
+	case VoxelType::Ceiling:
 		maybeWrite(1);
 		break;
-	case VoxelDataType::Raised:
+	case VoxelType::Raised:
 		maybeWrite(6);
 		break;
-	case VoxelDataType::Diagonal:
+	case VoxelType::Diagonal:
 		maybeWrite(1);
 		break;
-	case VoxelDataType::TransparentWall:
+	case VoxelType::TransparentWall:
 		maybeWrite(4);
 		break;
-	case VoxelDataType::Edge:
+	case VoxelType::Edge:
 		maybeWrite(1);
 		break;
-	case VoxelDataType::Chasm:
+	case VoxelType::Chasm:
 	{
 		// Depends on visible face count.
 		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
@@ -462,12 +462,12 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 		maybeWrite(faceCount);
 		break;
 	}
-	case VoxelDataType::Door:
+	case VoxelType::Door:
 		// Doors are an unusual case. Just pretend they're closed here.
 		maybeWrite(4);
 		break;
 	default:
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelDef.dataType)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelDef.type)));
 		break;
 	}
 }
@@ -497,32 +497,32 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 		static_cast<double>(voxel.y) * ceilingHeight,
 		static_cast<double>(voxel.z));
 
-	switch (voxelDef.dataType)
+	switch (voxelDef.type)
 	{
-	case VoxelDataType::None:
+	case VoxelType::None:
 		break;
-	case VoxelDataType::Wall:
+	case VoxelType::Wall:
 		GenerateWall(voxelDef.wall, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Floor:
+	case VoxelType::Floor:
 		GenerateFloor(voxelDef.floor, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Ceiling:
+	case VoxelType::Ceiling:
 		GenerateCeiling(voxelDef.ceiling, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Raised:
+	case VoxelType::Raised:
 		GenerateRaised(voxelDef.raised, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Diagonal:
+	case VoxelType::Diagonal:
 		GenerateDiagonal(voxelDef.diagonal, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::TransparentWall:
+	case VoxelType::TransparentWall:
 		GenerateTransparentWall(voxelDef.transparentWall, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Edge:
+	case VoxelType::Edge:
 		GenerateEdge(voxelDef.edge, origin, ceilingHeight, quadView);
 		break;
-	case VoxelDataType::Chasm:
+	case VoxelType::Chasm:
 	{
 		// Need any existing state for this chasm.
 		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
@@ -535,7 +535,7 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmStatePtr, quadView);
 		break;
 	}
-	case VoxelDataType::Door:
+	case VoxelType::Door:
 		GenerateDoor(voxelDef.door, origin, ceilingHeight, quadView);
 		break;
 	default:

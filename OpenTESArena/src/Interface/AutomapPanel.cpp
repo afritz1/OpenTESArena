@@ -27,10 +27,10 @@
 #include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaWildUtils.h"
-#include "../World/VoxelDataType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 #include "../World/WorldType.h"
 
 #include "components/debug/Debug.h"
@@ -161,27 +161,27 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef)
 {
-	const VoxelDataType floorDataType = floorDef.dataType;
-	const VoxelDataType wallDataType = wallDef.dataType;
+	const VoxelType floorType = floorDef.type;
+	const VoxelType wallType = wallDef.type;
 
-	if (floorDataType == VoxelDataType::Chasm)
+	if (floorType == VoxelType::Chasm)
 	{
 		const VoxelDefinition::ChasmData::Type chasmType = floorDef.chasm.type;
 
 		if (chasmType == VoxelDefinition::ChasmData::Type::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallDataType == VoxelDataType::Wall) ? AutomapRaised : AutomapDryChasm;
+			return (wallType == VoxelType::Wall) ? AutomapRaised : AutomapDryChasm;
 		}
 		else if (chasmType == VoxelDefinition::ChasmData::Type::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallDataType == VoxelDataType::Raised) ? AutomapRaised : AutomapLavaChasm;
+			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
 		}
 		else if (chasmType == VoxelDefinition::ChasmData::Type::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallDataType == VoxelDataType::Raised) ? AutomapRaised : AutomapWetChasm;
+			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
 		}
 		else
 		{
@@ -190,15 +190,15 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 			return AutomapNotImplemented;
 		}
 	}
-	else if (floorDataType == VoxelDataType::Floor)
+	else if (floorType == VoxelType::Floor)
 	{
 		// If nothing is over the floor, return transparent. Otherwise, choose from
 		// a number of cases.
-		if (wallDataType == VoxelDataType::None)
+		if (wallType == VoxelType::None)
 		{
 			return AutomapFloor;
 		}
-		else if (wallDataType == VoxelDataType::Wall)
+		else if (wallType == VoxelType::Wall)
 		{
 			const VoxelDefinition::WallData::Type wallType = wallDef.wall.type;
 
@@ -226,40 +226,40 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 				return AutomapNotImplemented;
 			}
 		}
-		else if (wallDataType == VoxelDataType::Raised)
+		else if (wallType == VoxelType::Raised)
 		{
 			return AutomapRaised;
 		}
-		else if (wallDataType == VoxelDataType::Diagonal)
+		else if (wallType == VoxelType::Diagonal)
 		{
 			return AutomapFloor;
 		}
-		else if (wallDataType == VoxelDataType::Door)
+		else if (wallType == VoxelType::Door)
 		{
 			return AutomapDoor;
 		}
-		else if (wallDataType == VoxelDataType::TransparentWall)
+		else if (wallType == VoxelType::TransparentWall)
 		{
 			// Transparent walls with collision (hedges) are shown, while
 			// ones without collision (archways) are not.
 			const VoxelDefinition::TransparentWallData &transparentWallData = wallDef.transparentWall;
 			return transparentWallData.collider ? AutomapWall : AutomapFloor;
 		}
-		else if (wallDataType == VoxelDataType::Edge)
+		else if (wallType == VoxelType::Edge)
 		{
 			return AutomapWall;
 		}
 		else
 		{
 			DebugLogWarning("Unrecognized wall data type \"" +
-				std::to_string(static_cast<int>(wallDataType)) + "\".");
+				std::to_string(static_cast<int>(wallType)) + "\".");
 			return AutomapNotImplemented;
 		}
 	}
 	else
 	{
 		DebugLogWarning("Unrecognized floor data type \"" +
-			std::to_string(static_cast<int>(floorDataType)) + "\".");
+			std::to_string(static_cast<int>(floorType)) + "\".");
 		return AutomapNotImplemented;
 	}
 }
@@ -269,10 +269,10 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
 	// It's harder to make sense of in general compared to city and interior automaps,
 	// so the colors should probably be replaceable by an option or a mod at some point.
-	const VoxelDataType floorDataType = floorDef.dataType;
-	const VoxelDataType wallDataType = wallDef.dataType;
+	const VoxelType floorType = floorDef.type;
+	const VoxelType wallType = wallDef.type;
 
-	if (floorDataType == VoxelDataType::Chasm)
+	if (floorType == VoxelType::Chasm)
 	{
 		// The wilderness only has wet chasms, but support all of them just because.
 		const VoxelDefinition::ChasmData::Type chasmType = floorDef.chasm.type;
@@ -280,17 +280,17 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		if (chasmType == VoxelDefinition::ChasmData::Type::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallDataType == VoxelDataType::Wall) ? AutomapWildWall : AutomapDryChasm;
+			return (wallType == VoxelType::Wall) ? AutomapWildWall : AutomapDryChasm;
 		}
 		else if (chasmType == VoxelDefinition::ChasmData::Type::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallDataType == VoxelDataType::Raised) ? AutomapWildWall : AutomapLavaChasm;
+			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapLavaChasm;
 		}
 		else if (chasmType == VoxelDefinition::ChasmData::Type::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallDataType == VoxelDataType::Raised) ? AutomapWildWall : AutomapWetChasm;
+			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapWetChasm;
 		}
 		else
 		{
@@ -299,9 +299,9 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 			return AutomapNotImplemented;
 		}
 	}
-	else if (floorDataType == VoxelDataType::Floor)
+	else if (floorType == VoxelType::Floor)
 	{
-		if (wallDataType == VoxelDataType::None)
+		if (wallType == VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
 			const VoxelDefinition::FloorData &floorData = floorDef.floor;
@@ -317,7 +317,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 				return AutomapWildWall;
 			}
 		}
-		else if (wallDataType == VoxelDataType::Wall)
+		else if (wallType == VoxelType::Wall)
 		{
 			const VoxelDefinition::WallData &wallData = wallDef.wall;
 			const VoxelDefinition::WallData::Type wallType = wallData.type;
@@ -357,23 +357,23 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 				return AutomapNotImplemented;
 			}
 		}
-		else if (wallDataType == VoxelDataType::Raised)
+		else if (wallType == VoxelType::Raised)
 		{
 			return AutomapWildWall;
 		}
-		else if (wallDataType == VoxelDataType::Diagonal)
+		else if (wallType == VoxelType::Diagonal)
 		{
 			return AutomapFloor;
 		}
-		else if (wallDataType == VoxelDataType::Door)
+		else if (wallType == VoxelType::Door)
 		{
 			return AutomapWildDoor;
 		}
-		else if (wallDataType == VoxelDataType::TransparentWall)
+		else if (wallType == VoxelType::TransparentWall)
 		{
 			return AutomapFloor;
 		}
-		else if (wallDataType == VoxelDataType::Edge)
+		else if (wallType == VoxelType::Edge)
 		{
 			const VoxelDefinition::EdgeData &edgeData = wallDef.edge;
 
@@ -394,14 +394,14 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		else
 		{
 			DebugLogWarning("Unrecognized wall data type \"" +
-				std::to_string(static_cast<int>(wallDataType)) + "\".");
+				std::to_string(static_cast<int>(wallType)) + "\".");
 			return AutomapNotImplemented;
 		}
 	}
 	else
 	{
 		DebugLogWarning("Unrecognized floor data type \"" +
-			std::to_string(static_cast<int>(floorDataType)) + "\".");
+			std::to_string(static_cast<int>(floorType)) + "\".");
 		return AutomapNotImplemented;
 	}
 }

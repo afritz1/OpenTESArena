@@ -9,9 +9,9 @@
 #include "LevelData.h"
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
-#include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
+#include "VoxelType.h"
 #include "WorldData.h"
 #include "WorldType.h"
 #include "../Assets/ArenaAnimUtils.h"
@@ -631,7 +631,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			// Ignore non-chasm voxels.
 			const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
-			if (voxelDef.dataType != VoxelDataType::Chasm)
+			if (voxelDef.type != VoxelType::Chasm)
 			{
 				continue;
 			}
@@ -1232,7 +1232,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
 
 	// Ignore if not a chasm (no faces to update).
-	if (voxelDef.dataType != VoxelDataType::Chasm)
+	if (voxelDef.type != VoxelType::Chasm)
 	{
 		return;
 	}
@@ -1338,9 +1338,9 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
 		[&newDef](const VoxelDefinition &voxelDef)
 	{
-		if (voxelDef.dataType == VoxelDataType::Chasm)
+		if (voxelDef.type == VoxelType::Chasm)
 		{
-			DebugAssert(newDef.dataType == VoxelDataType::Chasm);
+			DebugAssert(newDef.type == VoxelType::Chasm);
 			const VoxelDefinition::ChasmData &newChasmData = newDef.chasm;
 			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 			return chasmData.matches(newChasmData);

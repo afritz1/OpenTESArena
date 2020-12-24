@@ -11,10 +11,10 @@
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelData.h"
-#include "../World/VoxelDataType.h"
 #include "../World/VoxelFacing3D.h"
 #include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
+#include "../World/VoxelType.h"
 
 #include "components/debug/Debug.h"
 
@@ -191,15 +191,15 @@ namespace Physics
 
 		// Get the voxel definition associated with the voxel.
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const VoxelDataType voxelDataType = voxelDef.dataType;
+		const VoxelType voxelType = voxelDef.type;
 
 		// Determine which type the voxel data is and run the associated calculation.
-		if (voxelDataType == VoxelDataType::None)
+		if (voxelType == VoxelType::None)
 		{
 			// Do nothing.
 			return false;
 		}
-		else if (voxelDataType == VoxelDataType::Wall)
+		else if (voxelType == VoxelType::Wall)
 		{
 			// Opaque walls are always hit.
 			const double t = (farPoint - rayStart).length();
@@ -207,7 +207,7 @@ namespace Physics
 			hit.initVoxel(t, hitPoint, voxelID, voxel, &farFacing);
 			return true;
 		}
-		else if (voxelDataType == VoxelDataType::Floor)
+		else if (voxelType == VoxelType::Floor)
 		{
 			// Check if the ray hits the top of the voxel.
 			if (farFacing == VoxelFacing3D::PositiveY)
@@ -222,7 +222,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Ceiling)
+		else if (voxelType == VoxelType::Ceiling)
 		{
 			// Check if the ray hits the bottom of the voxel.
 			if (farFacing == VoxelFacing3D::NegativeY)
@@ -237,7 +237,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Raised)
+		else if (voxelType == VoxelType::Raised)
 		{
 			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 			const double raisedYBottom = (static_cast<double>(voxel.y) + raised.yOffset) * ceilingHeight;
@@ -356,7 +356,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Diagonal)
+		else if (voxelType == VoxelType::Diagonal)
 		{
 			const VoxelDefinition::DiagonalData &diagonal = voxelDef.diagonal;
 			const bool isRightDiag = diagonal.type1;
@@ -409,12 +409,12 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::TransparentWall)
+		else if (voxelType == VoxelType::TransparentWall)
 		{
 			// Back faces of transparent walls are invisible.
 			return false;
 		}
-		else if (voxelDataType == VoxelDataType::Edge)
+		else if (voxelType == VoxelType::Edge)
 		{
 			// See if the intersected facing and the edge's facing are the same, and only
 			// consider edges with collision.
@@ -445,7 +445,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Chasm)
+		else if (voxelType == VoxelType::Chasm)
 		{
 			// The chasm type determines the depth relative to the top of the voxel.
 			const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
@@ -531,7 +531,7 @@ namespace Physics
 				}
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Door)
+		else if (voxelType == VoxelType::Door)
 		{
 			// Doors are not clickable when in the same voxel (besides, it would be complicated
 			// due to various oddities: some doors have back faces, swinging doors have corner
@@ -540,7 +540,7 @@ namespace Physics
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelDataType)));
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
@@ -555,18 +555,18 @@ namespace Physics
 
 		// Get the voxel definition associated with the voxel.
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const VoxelDataType voxelDataType = voxelDef.dataType;
+		const VoxelType voxelType = voxelDef.type;
 
 		// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
 		// instead of branching on type here.
 
 		// Determine which type the voxel data is and run the associated calculation.
-		if (voxelDataType == VoxelDataType::None)
+		if (voxelType == VoxelType::None)
 		{
 			// Do nothing.
 			return false;
 		}
-		else if (voxelDataType == VoxelDataType::Wall)
+		else if (voxelType == VoxelType::Wall)
 		{
 			// Opaque walls are always hit.
 			const double t = (nearPoint - rayStart).length();
@@ -574,7 +574,7 @@ namespace Physics
 			hit.initVoxel(t, hitPoint, voxelID, voxel, &nearFacing);
 			return true;
 		}
-		else if (voxelDataType == VoxelDataType::Floor)
+		else if (voxelType == VoxelType::Floor)
 		{
 			// Intersect the floor as a quad.
 			Quad quad;
@@ -598,7 +598,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Ceiling)
+		else if (voxelType == VoxelType::Ceiling)
 		{
 			// Intersect the ceiling as a quad.
 			Quad quad;
@@ -622,7 +622,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Raised)
+		else if (voxelType == VoxelType::Raised)
 		{
 			// Intersect each face of the platform and find the closest one (if any).
 			int quadCount;
@@ -678,7 +678,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Diagonal)
+		else if (voxelType == VoxelType::Diagonal)
 		{
 			// Intersect the diagonal as a quad.
 			Quad quad;
@@ -701,7 +701,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::TransparentWall)
+		else if (voxelType == VoxelType::TransparentWall)
 		{
 			// Intersect each face and find the closest one (if any).
 			int quadCount;
@@ -757,7 +757,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Edge)
+		else if (voxelType == VoxelType::Edge)
 		{
 			const VoxelDefinition::EdgeData &edge = voxelDef.edge;
 
@@ -790,7 +790,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Chasm)
+		else if (voxelType == VoxelType::Chasm)
 		{
 			// Intersect each face and find the closest one (if any).
 			int quadCount;
@@ -846,7 +846,7 @@ namespace Physics
 				return false;
 			}
 		}
-		else if (voxelDataType == VoxelDataType::Door)
+		else if (voxelType == VoxelType::Door)
 		{
 			// @todo: ideally this method would take any hit on a door into consideration, since
 			// it's the calling code's responsibility to decide what to do based on the door's open
@@ -908,7 +908,7 @@ namespace Physics
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelDataType)));
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 

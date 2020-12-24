@@ -11,8 +11,8 @@
 // A voxel's definition is used for multiple things, such as rendering, collision detection,
 // and color-coding on the automap.
 
-enum class VoxelDataType;
 enum class VoxelFacing2D;
+enum class VoxelType;
 enum class WorldType;
 
 class VoxelDefinition
@@ -136,9 +136,9 @@ public:
 		CloseSoundData getCloseSoundData() const;
 	};
 
-	VoxelDataType dataType; // Defines how the voxel is interpreted and rendered.
+	VoxelType type; // Defines how the voxel is interpreted and rendered.
 
-	// Only one voxel data type can be active at a time, given by "dataType".
+	// Only one voxel data type can be active at a time, given by "type".
 	union
 	{
 		WallData wall;

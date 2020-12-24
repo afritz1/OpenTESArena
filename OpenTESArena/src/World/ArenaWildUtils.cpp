@@ -5,9 +5,9 @@
 #include "ArenaWildUtils.h"
 #include "ClimateType.h"
 #include "LocationDefinition.h"
-#include "VoxelDataType.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
+#include "VoxelType.h"
 #include "WeatherUtils.h"
 #include "WorldType.h"
 #include "../Assets/MIFFile.h"
@@ -224,7 +224,7 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				constexpr WorldType worldType = WorldType::Wilderness;
-				return (voxelDef.dataType == VoxelDataType::Wall) && voxelDef.wall.isMenu() &&
+				return (voxelDef.type == VoxelType::Wall) && voxelDef.wall.isMenu() &&
 					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, worldType) == menuType);
 			}();
 
