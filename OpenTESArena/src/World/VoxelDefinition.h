@@ -3,10 +3,8 @@
 
 #include <optional>
 
-#include "../Math/Vector3.h"
-
 // The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
-// of voxel data per world, their size can be much larger than just a byte or two.
+// of voxels per world, their size can be much larger than just a byte or two.
 
 // A voxel's definition is used for multiple things, such as rendering, collision detection,
 // and color-coding on the automap.
