@@ -706,8 +706,62 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 	};
 
 	// Lambda for obtaining the voxel data index of a solid wall.
-	auto getWallDataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel, uint8_t mostSigByte)
+	auto getWallDataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel, uint8_t mostSigByte,
+		SNInt x, WEInt z)
 	{
+		const int textureIndex = mostSigByte - 1;
+
+		// Menu index if the voxel has the *MENU tag, or empty if it is not a *MENU voxel.
+		const std::optional<int> &menuIndex = inf.getMenuIndex(textureIndex);
+		const bool isMenu = menuIndex.has_value();
+
+		// Lambda for whether an .INF file *LEVELUP/LEVELDOWN index is for this texture.
+		auto isMatchingLevelChangeIndex = [textureIndex](const std::optional<int> &index)
+		{
+			return index.has_value() && (*index == textureIndex);
+		};
+
+		const bool isLevelUp = isMatchingLevelChangeIndex(inf.getLevelUpIndex());
+		const bool isLevelDown = isMatchingLevelChangeIndex(inf.getLevelDownIndex());
+
+		// Optionally add transition data for this voxel if it is a transition (level change or *MENU).
+		if (isLevelUp || isLevelDown || isMenu)
+		{
+			auto makeWallTransition = [](const NewInt2 &voxel, const std::optional<bool> &levelUp,
+				const std::optional<int> &menuID)
+			{
+				if (levelUp.has_value())
+				{
+					return *levelUp ? LevelData::Transition::makeLevelUp(voxel) :
+						LevelData::Transition::makeLevelDown(voxel);
+				}
+				else
+				{
+					DebugAssert(menuID.has_value());
+					return LevelData::Transition::makeMenu(voxel, *menuID);
+				}
+			};
+
+			const NewInt2 voxel(x, z);
+			const std::optional<bool> optIsLevelUp = [isLevelUp, isLevelDown, isMenu]() -> std::optional<bool>
+			{
+				if (isLevelUp)
+				{
+					return true;
+				}
+				else if (isLevelDown)
+				{
+					return false;
+				}
+				else
+				{
+					return std::nullopt;
+				}
+			}();
+
+			this->transitions.emplace_back(makeWallTransition(voxel, optIsLevelUp, menuIndex));
+		}
+
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
 		{
@@ -715,31 +769,20 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 		else
 		{
-			// Lambda for creating a basic solid wall voxel data.
-			auto makeWallVoxelData = [map1Voxel, &inf, mostSigByte]()
+			// Lambda for creating a solid wall voxel data.
+			auto makeWallVoxelData = [map1Voxel, &inf, mostSigByte, textureIndex, &menuIndex, isMenu,
+				isLevelUp, isLevelDown]()
 			{
-				const int textureIndex = mostSigByte - 1;
-
-				// Menu index if the voxel has the *MENU tag, or empty if it is not a *MENU voxel.
-				const std::optional<int> &menuIndex = inf.getMenuIndex(textureIndex);
-				const bool isMenu = menuIndex.has_value();
-
 				// Determine what the type of the wall is (level up/down, menu, 
 				// or just plain solid).
-				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
+				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, &menuIndex, isMenu,
+					isLevelUp, isLevelDown]()
 				{
-					// Returns whether the given index pointer is non-null and matches the
-					// current texture index.
-					auto matchesIndex = [textureIndex](const std::optional<int> &index)
-					{
-						return index.has_value() && (*index == textureIndex);
-					};
-
-					if (matchesIndex(inf.getLevelUpIndex()))
+					if (isLevelUp)
 					{
 						return VoxelDefinition::WallData::Type::LevelUp;
 					}
-					else if (matchesIndex(inf.getLevelDownIndex()))
+					else if (isLevelDown)
 					{
 						return VoxelDefinition::WallData::Type::LevelDown;
 					}
@@ -1022,7 +1065,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					if (voxelIsSolid)
 					{
 						// Regular solid wall.
-						const int dataIndex = getWallDataIndex(map1Voxel, mostSigByte);
+						const int dataIndex = getWallDataIndex(map1Voxel, mostSigByte, x, z);
 						this->setVoxel(x, 1, z, dataIndex);
 					}
 					else
