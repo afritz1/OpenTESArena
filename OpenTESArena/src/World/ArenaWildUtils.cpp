@@ -426,3 +426,9 @@ NewInt2 ArenaWildUtils::getCenteredWildOrigin(const NewInt2 &voxel)
 		(std::max(voxel.x - 32, 0) / RMDFile::WIDTH) * RMDFile::WIDTH,
 		(std::max(voxel.y - 32, 0) / RMDFile::DEPTH) * RMDFile::DEPTH);
 }
+
+bool ArenaWildUtils::menuIsDisplayedInWildAutomap(int menuIndex)
+{
+	return (menuIndex != 0) && (menuIndex != 2) && (menuIndex != 3) && (menuIndex != 4) &&
+		(menuIndex != 6) && (menuIndex != 7);
+}

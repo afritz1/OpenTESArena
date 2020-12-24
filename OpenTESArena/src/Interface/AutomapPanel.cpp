@@ -337,9 +337,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 			else if (wallType == VoxelDefinition::WallData::Type::Menu)
 			{
 				// Certain wilderness *MENU blocks are rendered like walls.
-				const bool isHiddenMenu = (wallData.menuID == 0) || (wallData.menuID == 2) ||
-					(wallData.menuID == 3) || (wallData.menuID == 4) || (wallData.menuID == 6) ||
-					(wallData.menuID == 7);
+				const bool isHiddenMenu = !ArenaWildUtils::menuIsDisplayedInWildAutomap(wallData.menuID);
 
 				if (isHiddenMenu)
 				{
