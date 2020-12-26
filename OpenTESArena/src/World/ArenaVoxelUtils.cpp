@@ -121,3 +121,14 @@ bool ArenaVoxelUtils::menuHasDisplayName(ArenaTypes::MenuType menuType)
 		(menuType == ArenaTypes::MenuType::Tavern) ||
 		(menuType == ArenaTypes::MenuType::Temple);
 }
+
+int ArenaVoxelUtils::clampVoxelTextureID(int id)
+{
+	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
+	{
+		DebugLogWarning("Original voxel texture ID \"" + std::to_string(id) + "\" out of range.");
+		id %= ArenaVoxelUtils::TOTAL_VOXEL_IDS;
+	}
+
+	return id;
+}

@@ -1,14 +1,7 @@
-#include <algorithm>
-#include <array>
-#include <stdexcept>
-
-#include "ArenaVoxelUtils.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
 #include "VoxelType.h"
-#include "../Assets/INFFile.h"
-#include "../Assets/MIFUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -128,144 +121,75 @@ VoxelDefinition::VoxelDefinition()
 
 VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID)
 {
-	// @todo: move these checks and modulos to when the Arena IDs are originally obtained from level data.
-	// - VoxelDefinition should not care about Arena-related values.
-	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Wall side ID \"" + std::to_string(sideID) + "\" out of range.");
-	}
-
-	if (floorID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Wall floor ID \"" + std::to_string(floorID) + "\" out of range.");
-	}
-
-	if (ceilingID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Wall ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Wall;
-	voxelDef.wall.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
-		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
+	voxelDef.wall.init(sideID, floorID, ceilingID);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeFloor(int id)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Floor ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Floor;
-	voxelDef.floor.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
+	voxelDef.floor.init(id);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeCeiling(int id)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Ceiling ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Ceiling;
-	voxelDef.ceiling.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
+	voxelDef.ceiling.init(id);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeRaised(int sideID, int floorID, int ceilingID, double yOffset,
 	double ySize, double vTop, double vBottom)
 {
-	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Raised side ID \"" + std::to_string(sideID) + "\" out of range.");
-	}
-
-	if (floorID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Raised floor ID \"" + std::to_string(floorID) + "\" out of range.");
-	}
-
-	if (ceilingID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Raised ceiling ID \"" + std::to_string(ceilingID) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Raised;
-	voxelDef.raised.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
-		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, ySize, vTop, vBottom);
+	voxelDef.raised.init(sideID, floorID, ceilingID, yOffset, ySize, vTop, vBottom);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeDiagonal(int id, bool type1)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Diagonal ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Diagonal;
-	voxelDef.diagonal.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type1);
+	voxelDef.diagonal.init(id, type1);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeTransparentWall(int id, bool collider)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Transparent wall ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::TransparentWall;
-	voxelDef.transparentWall.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, collider);
+	voxelDef.transparentWall.init(id, collider);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeEdge(int id, double yOffset, bool collider,
 	bool flipped, VoxelFacing2D facing)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Edge ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Edge;
-	voxelDef.edge.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, yOffset, collider, flipped, facing);
+	voxelDef.edge.init(id, yOffset, collider, flipped, facing);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeChasm(int id, ChasmData::Type type)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Chasm ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Chasm;
-	voxelDef.chasm.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
+	voxelDef.chasm.init(id, type);
 	return voxelDef;
 }
 
 VoxelDefinition VoxelDefinition::makeDoor(int id, DoorData::Type type)
 {
-	if (id >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
-	{
-		DebugLogWarning("Door ID \"" + std::to_string(id) + "\" out of range.");
-	}
-
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Door;
-	voxelDef.door.init(id % ArenaVoxelUtils::TOTAL_VOXEL_IDS, type);
+	voxelDef.door.init(id, type);
 	return voxelDef;
 }
 

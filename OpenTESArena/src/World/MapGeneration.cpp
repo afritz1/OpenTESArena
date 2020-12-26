@@ -312,7 +312,7 @@ namespace MapGeneration
 		// Determine if the floor voxel is either solid or a chasm.
 		if (!MIFUtils::isChasm(textureID))
 		{
-			return VoxelDefinition::makeFloor(textureID);
+			return VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(textureID));
 		}
 		else
 		{
@@ -368,7 +368,7 @@ namespace MapGeneration
 				DebugCrash("Unsupported chasm type \"" + std::to_string(textureID) + "\".");
 			}
 
-			return VoxelDefinition::makeChasm(chasmID, chasmType);
+			return VoxelDefinition::makeChasm(ArenaVoxelUtils::clampVoxelTextureID(chasmID), chasmType);
 		}
 	}
 
@@ -389,7 +389,8 @@ namespace MapGeneration
 			{
 				// Regular solid wall.
 				const int textureIndex = mostSigByte - 1;
-				return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex);
+				const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				return VoxelDefinition::makeWall(clampedTextureIndex, clampedTextureIndex, clampedTextureIndex);
 			}
 			else
 			{
@@ -483,8 +484,11 @@ namespace MapGeneration
 				const double vTop = std::max(0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelDefinition::makeRaised(sideID, floorID, ceilingID, yOffsetNormalized,
-					ySizeNormalized, vTop, vBottom);
+				return VoxelDefinition::makeRaised(
+					ArenaVoxelUtils::clampVoxelTextureID(sideID),
+					ArenaVoxelUtils::clampVoxelTextureID(floorID),
+					ArenaVoxelUtils::clampVoxelTextureID(ceilingID),
+					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			}
 		}
 		else
@@ -496,7 +500,8 @@ namespace MapGeneration
 				// itself).
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const bool collider = (map1Voxel & 0x0100) == 0;
-				return VoxelDefinition::makeTransparentWall(textureIndex, collider);
+				return VoxelDefinition::makeTransparentWall(
+					ArenaVoxelUtils::clampVoxelTextureID(textureIndex), collider);
 			}
 			else if (mostSigNibble == 0xA)
 			{
@@ -550,7 +555,8 @@ namespace MapGeneration
 					}
 				}();
 
-				return VoxelDefinition::makeEdge(textureIndex, yOffset, collider, flipped, facing);
+				return VoxelDefinition::makeEdge(ArenaVoxelUtils::clampVoxelTextureID(textureIndex),
+					yOffset, collider, flipped, facing);
 			}
 			else if (mostSigNibble == 0xB)
 			{
@@ -580,7 +586,7 @@ namespace MapGeneration
 					}
 				}();
 
-				return VoxelDefinition::makeDoor(textureIndex, doorType);
+				return VoxelDefinition::makeDoor(ArenaVoxelUtils::clampVoxelTextureID(textureIndex), doorType);
 			}
 			else if (mostSigNibble == 0xC)
 			{
@@ -593,7 +599,8 @@ namespace MapGeneration
 				// Diagonal wall.
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-				return VoxelDefinition::makeDiagonal(textureIndex, isRightDiag);
+				return VoxelDefinition::makeDiagonal(
+					ArenaVoxelUtils::clampVoxelTextureID(textureIndex), isRightDiag);
 			}
 			else
 			{
@@ -605,7 +612,8 @@ namespace MapGeneration
 	VoxelDefinition makeVoxelDefFromMAP2(ArenaTypes::VoxelID map2Voxel)
 	{
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
-		return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex);
+		const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+		return VoxelDefinition::makeWall(clampedTextureIndex, clampedTextureIndex, clampedTextureIndex);
 	}
 
 	LockDefinition makeLockDefFromArenaLock(const ArenaTypes::MIFLock &lock)
@@ -1079,7 +1087,8 @@ namespace MapGeneration
 		// hardcoding index 1 is enough?
 		const int textureIndex = ceiling.textureIndex.value_or(1);
 
-		VoxelDefinition voxelDef = VoxelDefinition::makeCeiling(textureIndex);
+		VoxelDefinition voxelDef = VoxelDefinition::makeCeiling(
+			ArenaVoxelUtils::clampVoxelTextureID(textureIndex));
 		LevelDefinition::VoxelDefID voxelDefID = outLevelInfoDef->addVoxelDef(std::move(voxelDef));
 
 		for (SNInt levelX = 0; levelX < outLevelDef->getWidth(); levelX++)

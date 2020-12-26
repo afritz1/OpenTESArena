@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "ArenaLevelUtils.h"
+#include "ArenaVoxelUtils.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
 #include "InteriorUtils.h"
@@ -470,7 +471,8 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		else
 		{
 			// Insert new mapping.
-			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeFloor(floorTextureID));
+			const int index = this->voxelGrid.addVoxelDef(
+				VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(floorTextureID)));
 			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
@@ -519,7 +521,8 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(dryChasmID, VoxelDefinition::ChasmData::Type::Dry);
+		return VoxelDefinition::makeChasm(
+			ArenaVoxelUtils::clampVoxelTextureID(dryChasmID), VoxelDefinition::ChasmData::Type::Dry);
 	};
 
 	auto makeLavaChasmVoxelDef = [](const INFFile &inf)
@@ -538,7 +541,8 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(lavaChasmID, VoxelDefinition::ChasmData::Type::Lava);
+		return VoxelDefinition::makeChasm(
+			ArenaVoxelUtils::clampVoxelTextureID(lavaChasmID), VoxelDefinition::ChasmData::Type::Lava);
 	};
 
 	auto makeWetChasmVoxelDef = [](const INFFile &inf)
@@ -557,7 +561,8 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(wetChasmID, VoxelDefinition::ChasmData::Type::Wet);
+		return VoxelDefinition::makeChasm(
+			ArenaVoxelUtils::clampVoxelTextureID(wetChasmID), VoxelDefinition::ChasmData::Type::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -769,8 +774,9 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 		else
 		{
-			const int index = this->voxelGrid.addVoxelDef(
-				VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex));
+			const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
+				clampedTextureIndex, clampedTextureIndex, clampedTextureIndex));
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -884,7 +890,10 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelDefinition::makeRaised(sideID, floorID, ceilingID,
+				return VoxelDefinition::makeRaised(
+					ArenaVoxelUtils::clampVoxelTextureID(sideID),
+					ArenaVoxelUtils::clampVoxelTextureID(floorID),
+					ArenaVoxelUtils::clampVoxelTextureID(ceilingID),
 					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			};
 
@@ -899,7 +908,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool collider = (map1Voxel & 0x0100) == 0;
-		return VoxelDefinition::makeTransparentWall(textureIndex, collider);
+		return VoxelDefinition::makeTransparentWall(
+			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), collider);
 	};
 
 	// Lambda for obtaining the voxel data index of a type 0xA voxel.
@@ -956,8 +966,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					}
 				}();
 
-				return VoxelDefinition::makeEdge(
-					textureIndex, yOffset, collider, flipped, facing);
+				return VoxelDefinition::makeEdge(ArenaVoxelUtils::clampVoxelTextureID(textureIndex),
+					yOffset, collider, flipped, facing);
 			};
 
 			const int index = this->voxelGrid.addVoxelDef(makeTypeAVoxelData());
@@ -994,7 +1004,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 			}
 		}();
 
-		return VoxelDefinition::makeDoor(textureIndex, doorType);
+		return VoxelDefinition::makeDoor(
+			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), doorType);
 	};
 
 	// Lambda for creating type 0xD voxel data.
@@ -1002,7 +1013,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 	{
 		const int textureIndex = (map1Voxel & 0x00FF) - 1;
 		const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-		return VoxelDefinition::makeDiagonal(textureIndex, isRightDiag);
+		return VoxelDefinition::makeDiagonal(
+			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), isRightDiag);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -1121,8 +1133,9 @@ void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, co
 		else
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
-			const int index = this->voxelGrid.addVoxelDef(
-				VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex));
+			const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
+				clampedTextureIndex, clampedTextureIndex, clampedTextureIndex));
 			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
 			return index;
 		}
@@ -1162,7 +1175,8 @@ void LevelData::readCeiling(const INFFile &inf)
 	}();
 
 	// Define the ceiling voxel data.
-	const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeCeiling(ceilingIndex));
+	const int index = this->voxelGrid.addVoxelDef(
+		VoxelDefinition::makeCeiling(ArenaVoxelUtils::clampVoxelTextureID(ceilingIndex)));
 
 	// Set all the ceiling voxels.
 	const SNInt gridWidth = this->voxelGrid.getWidth();
@@ -1334,7 +1348,8 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		return chasmIndex.has_value() ? *chasmIndex : 0;
 	}();
 
-	const VoxelDefinition newDef = VoxelDefinition::makeChasm(newTextureID, newChasmType);
+	const VoxelDefinition newDef = VoxelDefinition::makeChasm(
+		ArenaVoxelUtils::clampVoxelTextureID(newTextureID), newChasmType);
 
 	// Find matching chasm voxel definition, adding if missing.
 	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(

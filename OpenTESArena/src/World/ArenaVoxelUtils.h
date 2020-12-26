@@ -28,6 +28,9 @@ namespace ArenaVoxelUtils
 
 	// Returns whether the menu type displays text on-screen when the player right clicks it.
 	bool menuHasDisplayName(ArenaTypes::MenuType menuType);
+
+	// Validates a voxel texture ID to make sure it's in the proper range and clamps if necessary.
+	int clampVoxelTextureID(int id);
 }
 
 #endif
