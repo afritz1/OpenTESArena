@@ -72,47 +72,6 @@ void VoxelDefinition::DoorData::init(int id, Type type)
 	this->type = type;
 }
 
-int VoxelDefinition::DoorData::getOpenSoundIndex() const
-{
-	if (this->type == DoorData::Type::Swinging)
-	{
-		return 6;
-	}
-	else if (this->type == DoorData::Type::Sliding)
-	{
-		return 14;
-	}
-	else if (this->type == DoorData::Type::Raising)
-	{
-		return 15;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
-	}
-}
-
-VoxelDefinition::DoorData::CloseSoundData VoxelDefinition::DoorData::getCloseSoundData() const
-{
-	if (this->type == DoorData::Type::Swinging)
-	{
-		return { 5, DoorData::CloseSoundType::OnClosed };
-	}
-	else if (this->type == DoorData::Type::Sliding)
-	{
-		return { 14, DoorData::CloseSoundType::OnClosing };
-	}
-	else if (this->type == DoorData::Type::Raising)
-	{
-		return { 15, DoorData::CloseSoundType::OnClosing };
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(VoxelDefinition::DoorData::CloseSoundData,
-			std::to_string(static_cast<int>(this->type)));
-	}
-}
-
 VoxelDefinition::VoxelDefinition()
 {
 	// Default to empty.

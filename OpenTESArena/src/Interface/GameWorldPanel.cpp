@@ -1734,7 +1734,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					else if (voxelDef.type == VoxelType::Door)
 					{
 						const VoxelDefinition::DoorData &doorData = voxelDef.door;
-						const Int2 voxelXZ(voxel.x, voxel.z);
+						const NewInt2 voxelXZ(voxel.x, voxel.z);
 
 						// If the door is closed, then open it.
 						auto &openDoors = level.getOpenDoors();
@@ -1755,16 +1755,24 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							openDoors.push_back(LevelData::DoorState(voxelXZ));
 
 							// Play the door's opening sound at the center of the voxel.
-							const int soundIndex = doorData.getOpenSoundIndex();
-							const auto &inf = level.getInfFile();
-							const std::string &soundFilename = inf.getSound(soundIndex);
-							auto &audioManager = game.getAudioManager();
-							const Double3 soundPosition(
-								static_cast<double>(voxelXZ.x) + 0.50,
-								level.getCeilingHeight() * 1.50,
-								static_cast<double>(voxelXZ.y) + 0.50);
+							const auto &doorSoundLibrary = game.getDoorSoundLibrary();
+							const std::optional<int> doorSoundDefIndex =
+								doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Open);
 
-							audioManager.playSound(soundFilename, soundPosition);
+							if (doorSoundDefIndex.has_value())
+							{
+								const DoorSoundDefinition &doorSoundDef = doorSoundLibrary.getDef(*doorSoundDefIndex);
+								const DoorSoundDefinition::OpenDef &openDoorSoundDef = doorSoundDef.getOpen();
+								const auto &inf = level.getInfFile();
+								const std::string &soundFilename = inf.getSound(openDoorSoundDef.soundIndex);
+								auto &audioManager = game.getAudioManager();
+								const Double3 soundPosition(
+									static_cast<double>(voxelXZ.x) + 0.50,
+									level.getCeilingHeight() * 1.50,
+									static_cast<double>(voxelXZ.y) + 0.50);
+
+								audioManager.playSound(soundFilename, soundPosition);
+							}
 						}
 					}
 				}
@@ -2047,14 +2055,13 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 	const auto &voxelGrid = activeLevel.getVoxelGrid();
 
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
-	auto playSoundIfType = [&game, &activeLevel](
-		const VoxelDefinition::DoorData::CloseSoundData &closeSoundData,
-		VoxelDefinition::DoorData::CloseSoundType closeSoundType, const Int2 &doorVoxel)
+	auto playCloseSoundIfType = [&game, &activeLevel](const DoorSoundDefinition::CloseDef &closeSoundDef, 
+		DoorSoundDefinition::CloseType closeType, const NewInt2 &doorVoxel)
 	{
-		if (closeSoundData.type == closeSoundType)
+		if (closeSoundDef.closeType == closeType)
 		{
 			const auto &inf = activeLevel.getInfFile();
-			const std::string &soundFilename = inf.getSound(closeSoundData.soundIndex);
+			const std::string &soundFilename = inf.getSound(closeSoundDef.soundIndex);
 			auto &audioManager = game.getAudioManager();
 
 			// Put at the center of the door voxel.
@@ -2080,12 +2087,20 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const auto closeSoundData = doorData.getCloseSoundData();
+
+		const auto &doorSoundLibrary = game.getDoorSoundLibrary();
+		const std::optional<int> doorSoundDefIndex =
+			doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Close);
+		const DoorSoundDefinition *doorSoundDef = doorSoundDefIndex.has_value() ?
+			&doorSoundLibrary.getDef(*doorSoundDefIndex) : nullptr;
 
 		if (door.isClosed())
 		{
-			// Only some doors play a sound when they become closed.
-			playSoundIfType(closeSoundData, VoxelDefinition::DoorData::CloseSoundType::OnClosed, voxel);
+			if (doorSoundDef != nullptr)
+			{
+				// Only some doors play a sound when they become closed.
+				playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosed, voxel);
+			}
 
 			// Erase closed door.
 			openDoors.erase(openDoors.begin() + i);
@@ -2108,9 +2123,11 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			{
 				door.setDirection(LevelData::DoorState::Direction::Closing);
 
-				// Only some doors play a sound when they start closing.
-				playSoundIfType(closeSoundData,
-					VoxelDefinition::DoorData::CloseSoundType::OnClosing, voxel);
+				if (doorSoundDef != nullptr)
+				{
+					// Only some doors play a sound when they start closing.
+					playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosing, voxel);
+				}
 			}
 		}
 	}
