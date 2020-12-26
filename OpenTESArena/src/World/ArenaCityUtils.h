@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "ArenaLevelUtils.h"
+#include "LevelData.h"
 #include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
@@ -51,7 +52,8 @@ namespace ArenaCityUtils
 	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
 	ArenaLevelUtils::MenuNamesList generateBuildingNames(const LocationDefinition &locationDef,
 		const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
-		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary);
+		const std::vector<LevelData::Transition> &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary);
 }
 
 #endif

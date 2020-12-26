@@ -389,41 +389,7 @@ namespace MapGeneration
 			{
 				// Regular solid wall.
 				const int textureIndex = mostSigByte - 1;
-
-				// Menu index if the voxel has the *MENU tag, or -1 if it is not a *MENU voxel.
-				const std::optional<int> &menuIndex = inf.getMenuIndex(textureIndex);
-				const bool isMenu = menuIndex.has_value();
-
-				// Determine what the type of the wall is (level up/down, menu, or just plain solid).
-				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, isMenu]()
-				{
-					// Returns whether the given index pointer is non-null and matches the current
-					// texture index.
-					auto matchesIndex = [textureIndex](const std::optional<int> &index)
-					{
-						return index.has_value() && (*index == textureIndex);
-					};
-
-					if (matchesIndex(inf.getLevelUpIndex()))
-					{
-						return VoxelDefinition::WallData::Type::LevelUp;
-					}
-					else if (matchesIndex(inf.getLevelDownIndex()))
-					{
-						return VoxelDefinition::WallData::Type::LevelDown;
-					}
-					else if (isMenu)
-					{
-						return VoxelDefinition::WallData::Type::Menu;
-					}
-					else
-					{
-						return VoxelDefinition::WallData::Type::Solid;
-					}
-				}();
-
-				return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex,
-					menuIndex, type);
+				return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex);
 			}
 			else
 			{
@@ -639,9 +605,7 @@ namespace MapGeneration
 	VoxelDefinition makeVoxelDefFromMAP2(ArenaTypes::VoxelID map2Voxel)
 	{
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
-		constexpr std::optional<int> menuID; // MAP2 cannot have a *MENU ID.
-		return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex, menuID,
-			VoxelDefinition::WallData::Type::Solid);
+		return VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex);
 	}
 
 	LockDefinition makeLockDefFromArenaLock(const ArenaTypes::MIFLock &lock)

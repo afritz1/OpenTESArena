@@ -297,13 +297,24 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelUpDown = [&voxelDef]()
+			const bool isLevelTransition = [&activeLevel, &voxel, &voxelDef]()
 			{
 				if (voxelDef.type == VoxelType::Wall)
 				{
-					const VoxelDefinition::WallData::Type wallType = voxelDef.wall.type;
-					return (wallType == VoxelDefinition::WallData::Type::LevelUp) ||
-						(wallType == VoxelDefinition::WallData::Type::LevelDown);
+					const std::vector<LevelData::Transition> &transitions = activeLevel.getTransitions();
+					const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+						[&voxel](const LevelData::Transition &transition)
+					{
+						const NewInt2 &transitionVoxel = transition.getVoxel();
+						return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
+					});
+
+					if (transitionIter == transitions.end())
+					{
+						return false;
+					}
+
+					return transitionIter->getType() != LevelData::Transition::Type::Menu;
 				}
 				else
 				{
@@ -311,7 +322,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 				}
 			}();
 
-			return !isEmpty && !isOpenDoor && !isLevelUpDown;
+			return !isEmpty && !isOpenDoor && !isLevelTransition;
 		}
 	};
 

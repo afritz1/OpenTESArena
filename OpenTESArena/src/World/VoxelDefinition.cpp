@@ -12,26 +12,11 @@
 
 #include "components/debug/Debug.h"
 
-void VoxelDefinition::WallData::init(int sideID, int floorID, int ceilingID, int menuID, Type type)
+void VoxelDefinition::WallData::init(int sideID, int floorID, int ceilingID)
 {
 	this->sideID = sideID;
 	this->floorID = floorID;
 	this->ceilingID = ceilingID;
-	this->menuID = menuID;
-	this->type = type;
-}
-
-bool VoxelDefinition::WallData::isMenu() const
-{
-	if (this->type == WallData::Type::Menu)
-	{
-		DebugAssert(this->menuID != -1);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 void VoxelDefinition::FloorData::init(int id)
@@ -141,11 +126,8 @@ VoxelDefinition::VoxelDefinition()
 	this->type = VoxelType::None;
 }
 
-VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID,
-	const std::optional<int> &menuID, WallData::Type type)
+VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID)
 {
-	DebugAssert((type == WallData::Type::Menu) == menuID.has_value());
-
 	// @todo: move these checks and modulos to when the Arena IDs are originally obtained from level data.
 	// - VoxelDefinition should not care about Arena-related values.
 	if (sideID >= ArenaVoxelUtils::TOTAL_VOXEL_IDS)
@@ -166,7 +148,7 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Wall;
 	voxelDef.wall.init(sideID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, floorID % ArenaVoxelUtils::TOTAL_VOXEL_IDS,
-		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS, menuID.has_value() ? *menuID : -1, type);
+		ceilingID % ArenaVoxelUtils::TOTAL_VOXEL_IDS);
 	return voxelDef;
 }
 

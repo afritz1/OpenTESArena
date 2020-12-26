@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "ArenaLevelUtils.h"
+#include "LevelData.h"
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
 
@@ -37,7 +38,7 @@ namespace ArenaWildUtils
 
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	ArenaLevelUtils::MenuNamesList generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
-		const ExeData &exeData);
+		const std::vector<LevelData::Transition> &transitions, const ExeData &exeData);
 
 	// Changes the default filler city skeleton to the one intended for the city.
 	// @todo: maybe this should eventually take a bag of chunks w/ their coordinates

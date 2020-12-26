@@ -403,7 +403,8 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 
 ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
-	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary)
+	const std::vector<LevelData::Transition> &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary)
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
@@ -415,8 +416,8 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [&provinceDef, &citySeed, &random, &voxelGrid, &textAssetLibrary, &exeData,
-		&cityDef, &localCityPoint, &menuNames](ArenaTypes::MenuType menuType)
+	auto generateNames = [&provinceDef, &citySeed, &random, &voxelGrid, &transitions, &textAssetLibrary,
+		&exeData, &cityDef, &localCityPoint, &menuNames](ArenaTypes::MenuType menuType)
 	{
 		if ((menuType == ArenaTypes::MenuType::Equipment) ||
 			(menuType == ArenaTypes::MenuType::Temple))
@@ -519,17 +520,39 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 		};
 
 		// The lambda called for each main-floor voxel in the area.
-		auto tryGenerateBlockName = [menuType, &random, &voxelGrid, &menuNames, &seen, &hashInSeen,
-			&createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+		auto tryGenerateBlockName = [menuType, &random, &voxelGrid, &transitions, &menuNames, &seen,
+			&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 		{
 			// See if the current voxel is a *MENU block and matches the target menu type.
-			const bool matchesTargetType = [x, z, menuType, &voxelGrid]()
+			const bool matchesTargetType = [x, z, menuType, &voxelGrid, &transitions]()
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				constexpr MapType mapType = MapType::City;
-				return (voxelDef.type == VoxelType::Wall) && voxelDef.wall.isMenu() &&
-					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, mapType) == menuType);
+				if (voxelDef.type != VoxelType::Wall)
+				{
+					return false;
+				}
+
+				const auto iter = std::find_if(transitions.begin(), transitions.end(),
+					[x, z](const LevelData::Transition &transition)
+				{
+					const NewInt2 &transitionVoxel = transition.getVoxel();
+					return (transitionVoxel.x == x) && (transitionVoxel.y == z);
+				});
+
+				if (iter == transitions.end())
+				{
+					return false;
+				}
+
+				const LevelData::Transition &transition = *iter;
+				if (transition.getType() != LevelData::Transition::Type::Menu)
+				{
+					return false;
+				}
+
+				const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
+				return ArenaVoxelUtils::getMenuType(transitionMenu.id, MapType::City) == menuType;
 			}();
 
 			if (matchesTargetType)

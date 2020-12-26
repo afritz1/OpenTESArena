@@ -1,8 +1,6 @@
 #ifndef VOXEL_DEFINITION_H
 #define VOXEL_DEFINITION_H
 
-#include <optional>
-
 // The definition of a voxel that a voxel ID points to. Since there will only be a few kinds
 // of voxels per world, their size can be much larger than just a byte or two.
 
@@ -20,15 +18,9 @@ public:
 	// can be inferred by the renderer.
 	struct WallData
 	{
-		enum class Type { Solid, LevelUp, LevelDown, Menu };
+		int sideID, floorID, ceilingID;
 
-		int sideID, floorID, ceilingID, menuID;
-		Type type;
-
-		void init(int sideID, int floorID, int ceilingID, int menuID, Type type);
-
-		// Returns whether the wall data is for a *MENU block.
-		bool isMenu() const;
+		void init(int sideID, int floorID, int ceilingID);
 	};
 
 	// Floors only have their top rendered.
@@ -152,8 +144,7 @@ public:
 
 	VoxelDefinition();
 
-	static VoxelDefinition makeWall(int sideID, int floorID, int ceilingID,
-		const std::optional<int> &menuID, WallData::Type type);
+	static VoxelDefinition makeWall(int sideID, int floorID, int ceilingID);
 	static VoxelDefinition makeFloor(int id);
 	static VoxelDefinition makeCeiling(int id);
 	static VoxelDefinition makeRaised(int sideID, int floorID, int ceilingID, double yOffset,

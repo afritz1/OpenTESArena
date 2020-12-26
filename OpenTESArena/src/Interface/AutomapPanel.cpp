@@ -84,8 +84,9 @@ namespace
 	};
 }
 
-AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
-	const Double2 &playerDirection, const VoxelGrid &voxelGrid, const std::string &locationName)
+AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
+	const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions,
+	const std::string &locationName)
 	: Panel(game)
 {
 	this->locationTextBox = [&game, &locationName]()
@@ -128,12 +129,12 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		return worldData.getMapType() == MapType::Wilderness;
 	}();
 
-	this->mapTexture = [&game, &playerDirection, &voxelGrid, &playerVoxel, isWild]()
+	this->mapTexture = [&game, &playerDirection, &voxelGrid, &transitions, &playerVoxel, isWild]()
 	{
 		const CardinalDirectionName playerDir = CardinalDirection::getDirectionName(playerDirection);
 
 		auto &renderer = game.getRenderer();
-		Surface surface = AutomapPanel::makeAutomap(playerVoxel, playerDir, isWild, voxelGrid);
+		Surface surface = AutomapPanel::makeAutomap(playerVoxel, playerDir, isWild, voxelGrid, transitions);
 		Texture texture = renderer.createTextureFromSurface(surface);
 
 		return texture;
@@ -159,7 +160,8 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition,
 		playerVoxel, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
 }
 
-const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef)
+const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions)
 {
 	const VoxelType floorType = floorDef.type;
 	const VoxelType wallType = wallDef.type;
@@ -200,30 +202,39 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 		}
 		else if (wallType == VoxelType::Wall)
 		{
-			const VoxelDefinition::WallData::Type wallType = wallDef.wall.type;
+			const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+				[&voxel](const LevelData::Transition &transition)
+			{
+				return transition.getVoxel() == voxel;
+			});
 
-			if (wallType == VoxelDefinition::WallData::Type::Solid)
+			if (transitionIter == transitions.end())
 			{
+				// Not a transition.
 				return AutomapWall;
-			}
-			else if (wallType == VoxelDefinition::WallData::Type::LevelUp)
-			{
-				return AutomapLevelUp;
-			}
-			else if (wallType == VoxelDefinition::WallData::Type::LevelDown)
-			{
-				return AutomapLevelDown;
-			}
-			else if (wallType == VoxelDefinition::WallData::Type::Menu)
-			{
-				// Menu blocks are the same color as doors.
-				return AutomapDoor;
 			}
 			else
 			{
-				DebugLogWarning("Unrecognized wall type \"" +
-					std::to_string(static_cast<int>(wallType)) + "\".");
-				return AutomapNotImplemented;
+				const LevelData::Transition::Type transitionType = transitionIter->getType();
+				if (transitionType == LevelData::Transition::Type::LevelUp)
+				{
+					return AutomapLevelUp;
+				}
+				else if (transitionType == LevelData::Transition::Type::LevelDown)
+				{
+					return AutomapLevelDown;
+				}
+				else if (transitionType == LevelData::Transition::Type::Menu)
+				{
+					// *MENU blocks are the same color as doors.
+					return AutomapDoor;
+				}
+				else
+				{
+					DebugLogWarning("Unrecognized transition type \"" +
+						std::to_string(static_cast<int>(transitionType)) + "\".");
+					return AutomapNotImplemented;
+				}
 			}
 		}
 		else if (wallType == VoxelType::Raised)
@@ -264,7 +275,8 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 	}
 }
 
-const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef)
+const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+	const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
 	// It's harder to make sense of in general compared to city and interior automaps,
@@ -319,41 +331,49 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		}
 		else if (wallType == VoxelType::Wall)
 		{
-			const VoxelDefinition::WallData &wallData = wallDef.wall;
-			const VoxelDefinition::WallData::Type wallType = wallData.type;
+			const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+				[&voxel](const LevelData::Transition &transition)
+			{
+				return transition.getVoxel() == voxel;
+			});
 
-			if (wallType == VoxelDefinition::WallData::Type::Solid)
+			if (transitionIter == transitions.end())
 			{
 				return AutomapWildWall;
 			}
-			else if (wallType == VoxelDefinition::WallData::Type::LevelUp)
+			else
 			{
-				return AutomapLevelUp;
-			}
-			else if (wallType == VoxelDefinition::WallData::Type::LevelDown)
-			{
-				return AutomapLevelDown;
-			}
-			else if (wallType == VoxelDefinition::WallData::Type::Menu)
-			{
-				// Certain wilderness *MENU blocks are rendered like walls.
-				const bool isHiddenMenu = !ArenaWildUtils::menuIsDisplayedInWildAutomap(wallData.menuID);
-
-				if (isHiddenMenu)
+				const LevelData::Transition::Type transitionType = transitionIter->getType();
+				if (transitionType == LevelData::Transition::Type::LevelUp)
 				{
-					return AutomapWildWall;
+					return AutomapLevelUp;
+				}
+				else if (transitionType == LevelData::Transition::Type::LevelDown)
+				{
+					return AutomapLevelDown;
+				}
+				else if (transitionType == LevelData::Transition::Type::Menu)
+				{
+					// Certain wilderness *MENU blocks are rendered like walls.
+					const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+					const bool isHiddenMenu = !ArenaWildUtils::menuIsDisplayedInWildAutomap(transitionMenu.id);
+
+					if (isHiddenMenu)
+					{
+						return AutomapWildWall;
+					}
+					else
+					{
+						return AutomapWildDoor;
+					}
 				}
 				else
 				{
-					return AutomapWildDoor;
+					DebugLogWarning("Unrecognized wall type \"" +
+						std::to_string(static_cast<int>(wallType)) + "\".");
+					return AutomapNotImplemented;
 				}
-			}
-			else
-			{
-				DebugLogWarning("Unrecognized wall type \"" +
-					std::to_string(static_cast<int>(wallType)) + "\".");
-				return AutomapNotImplemented;
-			}
+			}			
 		}
 		else if (wallType == VoxelType::Raised)
 		{
@@ -405,7 +425,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 }
 
 Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-	bool isWild, const VoxelGrid &voxelGrid)
+	bool isWild, const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions)
 {
 	// Create scratch surface triple the size of the voxel area to display so that all directions
 	// of the player's arrow are representable in the same texture. This may change in the future
@@ -485,9 +505,10 @@ Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionN
 			const VoxelDefinition &wallDef = getVoxelDef(voxelX, 1, voxelZ);
 
 			// Decide which color to use for the automap pixel.
+			const NewInt2 voxel(voxelX, voxelZ);
 			const Color &color = !isWild ?
-				AutomapPanel::getPixelColor(floorDef, wallDef) :
-				AutomapPanel::getWildPixelColor(floorDef, wallDef);
+				AutomapPanel::getPixelColor(floorDef, wallDef, voxel, transitions) :
+				AutomapPanel::getWildPixelColor(floorDef, wallDef, voxel, transitions);
 
 			// Convert world XZ coordinates to automap XY coordinates.
 			const int automapX = (loopDepth - 1) - z;

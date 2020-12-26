@@ -769,47 +769,8 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 		else
 		{
-			// Lambda for creating a solid wall voxel data.
-			auto makeWallVoxelData = [map1Voxel, &inf, mostSigByte, textureIndex, &menuIndex, isMenu,
-				isLevelUp, isLevelDown]()
-			{
-				// Determine what the type of the wall is (level up/down, menu, 
-				// or just plain solid).
-				const VoxelDefinition::WallData::Type type = [&inf, textureIndex, &menuIndex, isMenu,
-					isLevelUp, isLevelDown]()
-				{
-					if (isLevelUp)
-					{
-						return VoxelDefinition::WallData::Type::LevelUp;
-					}
-					else if (isLevelDown)
-					{
-						return VoxelDefinition::WallData::Type::LevelDown;
-					}
-					else if (isMenu)
-					{
-						return VoxelDefinition::WallData::Type::Menu;
-					}
-					else
-					{
-						return VoxelDefinition::WallData::Type::Solid;
-					}
-				}();
-
-				VoxelDefinition voxelDef = VoxelDefinition::makeWall(
-					textureIndex, textureIndex, textureIndex, menuIndex, type);
-
-				// Set the *MENU index if it's a menu voxel.
-				if (isMenu)
-				{
-					VoxelDefinition::WallData &wallData = voxelDef.wall;
-					wallData.menuID = *menuIndex;
-				}
-
-				return voxelDef;
-			};
-
-			const int index = this->voxelGrid.addVoxelDef(makeWallVoxelData());
+			const int index = this->voxelGrid.addVoxelDef(
+				VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex));
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -1160,10 +1121,8 @@ void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, co
 		else
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
-			constexpr std::optional<int> menuID; // MAP2 cannot have a *MENU ID.
-			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
-				textureIndex, textureIndex, textureIndex, menuID,
-				VoxelDefinition::WallData::Type::Solid));
+			const int index = this->voxelGrid.addVoxelDef(
+				VoxelDefinition::makeWall(textureIndex, textureIndex, textureIndex));
 			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
 			return index;
 		}

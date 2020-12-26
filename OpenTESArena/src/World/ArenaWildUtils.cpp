@@ -154,14 +154,14 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 	return indices;
 }
 
-ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
-	const VoxelGrid &voxelGrid, const ExeData &exeData)
+ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
+	const std::vector<LevelData::Transition> &transitions, const ExeData &exeData)
 {
 	ArenaLevelUtils::MenuNamesList menuNames;
 
 	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 	// match the given menu type.
-	auto generateNames = [&voxelGrid, &exeData, &menuNames](int wildX, int wildY,
+	auto generateNames = [&voxelGrid, &transitions, &exeData, &menuNames](int wildX, int wildY,
 		ArenaTypes::MenuType menuType)
 	{
 		const uint32_t wildChunkSeed = ArenaWildUtils::makeWildChunkSeed(wildX, wildY);
@@ -205,8 +205,8 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 		};
 
 		// The lambda called for each main-floor voxel in the area.
-		auto tryGenerateBlockName = [&voxelGrid, &menuNames, wildX, wildY, menuType, wildChunkSeed,
-			&createTavernName, &createTempleName](SNInt x, WEInt z)
+		auto tryGenerateBlockName = [&voxelGrid, &transitions, &menuNames, wildX, wildY, menuType,
+			wildChunkSeed, &createTavernName, &createTempleName](SNInt x, WEInt z)
 		{
 			ArenaRandom random(wildChunkSeed);
 
@@ -219,13 +219,35 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(
 				relativeOrigin.x + (RMDFile::DEPTH - 1 - z));
 
 			// See if the current voxel is a *MENU block and matches the target menu type.
-			const bool matchesTargetType = [&voxelGrid, menuType, &dstPoint]()
+			const bool matchesTargetType = [&voxelGrid, &transitions, menuType, &dstPoint]()
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				if (voxelDef.type != VoxelType::Wall)
+				{
+					return false;
+				}
+
+				const auto iter = std::find_if(transitions.begin(), transitions.end(),
+					[&dstPoint](const LevelData::Transition &transition)
+				{
+					return transition.getVoxel() == dstPoint;
+				});
+
+				if (iter == transitions.end())
+				{
+					return false;
+				}
+
+				const LevelData::Transition &transition = *iter;
+				if (transition.getType() != LevelData::Transition::Type::Menu)
+				{
+					return false;
+				}
+
+				const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
 				constexpr MapType mapType = MapType::Wilderness;
-				return (voxelDef.type == VoxelType::Wall) && voxelDef.wall.isMenu() &&
-					(ArenaVoxelUtils::getMenuType(voxelDef.wall.menuID, mapType) == menuType);
+				return ArenaVoxelUtils::getMenuType(transitionMenu.id, mapType) == menuType;
 			}();
 
 			if (matchesTargetType)

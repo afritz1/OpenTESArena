@@ -599,8 +599,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					return (isCity || isMainQuestDungeon) ? locationName : std::string();
 				}();
 
-				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z),
-					player.getGroundDirection(), level.getVoxelGrid(), automapLocationName);
+				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), player.getGroundDirection(),
+					level.getVoxelGrid(), level.getTransitions(), automapLocationName);
 			}
 			else
 			{
@@ -1678,11 +1678,21 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						{
 							if (voxelDef.type == VoxelType::Wall)
 							{
-								const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-								if (wallData.isMenu())
+								const std::vector<LevelData::Transition> &transitions = level.getTransitions();
+								const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+									[&voxel](const LevelData::Transition &transition)
 								{
-									this->handleWorldTransition(hit, wallData.menuID);
+									const NewInt2 &transitionVoxel = transition.getVoxel();
+									return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
+								});
+
+								const bool isMenu = (transitionIter != transitions.end()) &&
+									(transitionIter->getType() == LevelData::Transition::Type::Menu);
+
+								if (isMenu)
+								{
+									const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+									this->handleWorldTransition(hit, transitionMenu.id);
 								}
 							}
 						}
@@ -1764,13 +1774,24 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Handle secondary click (i.e., right click).
 				if (voxelDef.type == VoxelType::Wall)
 				{
-					const VoxelDefinition::WallData &wallData = voxelDef.wall;
+					const std::vector<LevelData::Transition> &transitions = level.getTransitions();
+					const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+						[&voxel](const LevelData::Transition &transition)
+					{
+						const NewInt2 &transitionVoxel = transition.getVoxel();
+						return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
+					});
+
+					const bool isMenu = (transitionIter != transitions.end()) &&
+						(transitionIter->getType() == LevelData::Transition::Type::Menu);
+					const bool isInterior = worldData.getMapType() == MapType::Interior;
 
 					// Print interior display name if *MENU block is clicked in an exterior.
-					if (wallData.isMenu() && (worldData.getMapType() != MapType::Interior))
+					if (isMenu && !isInterior)
 					{
+						const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
 						const MapType mapType = worldData.getMapType();
-						const auto menuType = ArenaVoxelUtils::getMenuType(wallData.menuID, mapType);
+						const auto menuType = ArenaVoxelUtils::getMenuType(transitionMenu.id, mapType);
 
 						if (ArenaVoxelUtils::menuHasDisplayName(menuType))
 						{
@@ -2471,134 +2492,143 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	// If the associated voxel data is a wall, then it might be a transition voxel.
 	if (voxelDef.type == VoxelType::Wall)
 	{
-		const VoxelDefinition::WallData &wallData = voxelDef.wall;
-
-		// The direction from a level up/down voxel to where the player should end up after
-		// going through. In other words, it points to the destination voxel adjacent to the
-		// level up/down voxel.
-		auto dirToNewVoxel = [&playerVoxel, &transitionVoxel]()
+		const std::vector<LevelData::Transition> &transitions = level.getTransitions();
+		const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
+			[&transitionVoxel](const LevelData::Transition &transition)
 		{
-			const SNInt diffX = transitionVoxel.x - playerVoxel.x;
-			const WEInt diffZ = transitionVoxel.y - playerVoxel.y;
+			return transition.getVoxel() == transitionVoxel;
+		});
 
-			// @todo: this probably isn't robust enough. Maybe also check the player's angle
-			// of velocity with angles to the voxel's corners to get the "arrival vector"
-			// and thus the "near face" that is intersected, because this method doesn't
-			// handle the player coming in at a diagonal.
-
-			// Check which way the player is going and get the reverse of it.
-			if (diffX > 0)
-			{
-				// From south to north.
-				return -Double3::UnitX;
-			}
-			else if (diffX < 0)
-			{
-				// From north to south.
-				return Double3::UnitX;
-			}
-			else if (diffZ > 0)
-			{
-				// From west to east.
-				return -Double3::UnitZ;
-			}
-			else if (diffZ < 0)
-			{
-				// From east to west.
-				return Double3::UnitZ;
-			}
-			else
-			{
-				throw DebugException("Bad player transition voxel.");
-			}
-		}();
-
-		// Player destination after going through a level up/down voxel.
-		auto &player = gameData.getPlayer();
-		const NewDouble2 destinationXZ(
-			(static_cast<SNDouble>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
-			(static_cast<WEDouble>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
-
-		// Lambda for transitioning the player to the given level.
-		auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
-			&dirToNewVoxel](int levelIndex)
+		if (transitionIter != transitions.end())
 		{
-			// Clear all open doors and fading voxels in the level the player is switching
-			// away from.
-			auto &oldActiveLevel = interior.getActiveLevel();
-			oldActiveLevel.getOpenDoors().clear();
-			oldActiveLevel.getFadingVoxels().clear();
-
-			// Select the new level.
-			interior.setLevelIndex(levelIndex);
-
-			// Set the new level active in the renderer.
-			auto &newActiveLevel = interior.getActiveLevel();
-			newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-				gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
-				game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-				game.getBinaryAssetLibrary(), game.getRandom(), gameData.getCitizenManager(),
-				game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
-
-			// Move the player to where they should be in the new level.
-			player.teleport(Double3(
-				destinationXZ.x,
-				newActiveLevel.getCeilingHeight() + Player::HEIGHT,
-				destinationXZ.y));
-			player.lookAt(player.getPosition() + dirToNewVoxel);
-			player.setVelocityToZero();
-		};
-
-		// Lambda for opening the world map when the player enters a transition voxel
-		// that will "lead to the surface of the dungeon".
-		auto switchToWorldMap = [&playerVoxel, &game, &player]()
-		{
-			// Move player to center of previous voxel in case they change their mind
-			// about fast traveling. Don't change their direction.
-			player.teleport(Double3(
-				static_cast<SNDouble>(playerVoxel.x) + 0.50,
-				player.getPosition().y,
-				static_cast<WEDouble>(playerVoxel.y) + 0.50));
-			player.setVelocityToZero();
-
-			game.setPanel<WorldMapPanel>(game, nullptr);
-		};
-
-		// Check the voxel type to determine what it is exactly.
-		if (wallData.type == VoxelDefinition::WallData::Type::Menu)
-		{
-			DebugLog("Entered *MENU " + std::to_string(wallData.menuID) + ".");
-		}
-		else if (wallData.type == VoxelDefinition::WallData::Type::LevelUp)
-		{
-			// If the custom function has a target, call it and reset it.
-			auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
-
-			if (onLevelUpVoxelEnter)
+			// The direction from a level up/down voxel to where the player should end up after
+			// going through. In other words, it points to the destination voxel adjacent to the
+			// level up/down voxel.
+			auto dirToNewVoxel = [&playerVoxel, &transitionVoxel]()
 			{
-				onLevelUpVoxelEnter(game);
-				onLevelUpVoxelEnter = std::function<void(Game&)>();
+				const SNInt diffX = transitionVoxel.x - playerVoxel.x;
+				const WEInt diffZ = transitionVoxel.y - playerVoxel.y;
+
+				// @todo: this probably isn't robust enough. Maybe also check the player's angle
+				// of velocity with angles to the voxel's corners to get the "arrival vector"
+				// and thus the "near face" that is intersected, because this method doesn't
+				// handle the player coming in at a diagonal.
+
+				// Check which way the player is going and get the reverse of it.
+				if (diffX > 0)
+				{
+					// From south to north.
+					return -Double3::UnitX;
+				}
+				else if (diffX < 0)
+				{
+					// From north to south.
+					return Double3::UnitX;
+				}
+				else if (diffZ > 0)
+				{
+					// From west to east.
+					return -Double3::UnitZ;
+				}
+				else if (diffZ < 0)
+				{
+					// From east to west.
+					return Double3::UnitZ;
+				}
+				else
+				{
+					throw DebugException("Bad player transition voxel.");
+				}
+			}();
+
+			// Player destination after going through a level up/down voxel.
+			auto &player = gameData.getPlayer();
+			const NewDouble2 destinationXZ(
+				(static_cast<SNDouble>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
+				(static_cast<WEDouble>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
+
+			// Lambda for transitioning the player to the given level.
+			auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
+				&dirToNewVoxel](int levelIndex)
+			{
+				// Clear all open doors and fading voxels in the level the player is switching
+				// away from.
+				auto &oldActiveLevel = interior.getActiveLevel();
+				oldActiveLevel.getOpenDoors().clear();
+				oldActiveLevel.getFadingVoxels().clear();
+
+				// Select the new level.
+				interior.setLevelIndex(levelIndex);
+
+				// Set the new level active in the renderer.
+				auto &newActiveLevel = interior.getActiveLevel();
+				newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
+					gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
+					game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+					game.getBinaryAssetLibrary(), game.getRandom(), gameData.getCitizenManager(),
+					game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
+
+				// Move the player to where they should be in the new level.
+				player.teleport(Double3(
+					destinationXZ.x,
+					newActiveLevel.getCeilingHeight() + Player::HEIGHT,
+					destinationXZ.y));
+				player.lookAt(player.getPosition() + dirToNewVoxel);
+				player.setVelocityToZero();
+			};
+
+			// Lambda for opening the world map when the player enters a transition voxel
+			// that will "lead to the surface of the dungeon".
+			auto switchToWorldMap = [&playerVoxel, &game, &player]()
+			{
+				// Move player to center of previous voxel in case they change their mind
+				// about fast traveling. Don't change their direction.
+				player.teleport(Double3(
+					static_cast<SNDouble>(playerVoxel.x) + 0.50,
+					player.getPosition().y,
+					static_cast<WEDouble>(playerVoxel.y) + 0.50));
+				player.setVelocityToZero();
+
+				game.setPanel<WorldMapPanel>(game, nullptr);
+			};
+
+			// Check the voxel type to determine what it is exactly.
+			if (transitionIter->getType() == LevelData::Transition::Type::Menu)
+			{
+				const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+				DebugLog("Entered *MENU " + std::to_string(transitionMenu.id) + ".");
 			}
-			else if (interior.getLevelIndex() > 0)
+			else if (transitionIter->getType() == LevelData::Transition::Type::LevelUp)
 			{
-				// Decrement the world's level index and activate the new level.
-				switchToLevel(interior.getLevelIndex() - 1);
+				// If the custom function has a target, call it and reset it.
+				auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
+
+				if (onLevelUpVoxelEnter)
+				{
+					onLevelUpVoxelEnter(game);
+					onLevelUpVoxelEnter = std::function<void(Game&)>();
+				}
+				else if (interior.getLevelIndex() > 0)
+				{
+					// Decrement the world's level index and activate the new level.
+					switchToLevel(interior.getLevelIndex() - 1);
+				}
+				else
+				{
+					switchToWorldMap();
+				}
 			}
-			else
+			else if (transitionIter->getType() == LevelData::Transition::Type::LevelDown)
 			{
-				switchToWorldMap();
-			}
-		}
-		else if (wallData.type == VoxelDefinition::WallData::Type::LevelDown)
-		{
-			if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
-			{
-				// Increment the world's level index and activate the new level.
-				switchToLevel(interior.getLevelIndex() + 1);
-			}
-			else
-			{
-				switchToWorldMap();
+				if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
+				{
+					// Increment the world's level index and activate the new level.
+					switchToLevel(interior.getLevelIndex() + 1);
+				}
+				else
+				{
+					switchToWorldMap();
+				}
 			}
 		}
 	}

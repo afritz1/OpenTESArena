@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureUtils.h"
+#include "../World/LevelData.h"
 #include "../World/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel
@@ -48,14 +49,14 @@ private:
 	// voxel data definitions. The color depends on a couple factors, like whether the voxel is
 	// a wall, door, water, etc., and some context-sensitive cases like whether a dry chasm
 	// has a wall over it.
-	static const Color &getPixelColor(const VoxelDefinition &floorDef,
-		const VoxelDefinition &wallDef);
-	static const Color &getWildPixelColor(const VoxelDefinition &floorDef,
-		const VoxelDefinition &wallDef);
+	static const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+		const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions);
+	static const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
+		const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions);
 
 	// Generates a surface of the automap to be converted to a texture for rendering.
 	static Surface makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-		bool isWild, const VoxelGrid &voxelGrid);
+		bool isWild, const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions);
 
 	// Calculates screen offset of automap for rendering.
 	static Double2 makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
@@ -70,7 +71,8 @@ private:
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
-		const VoxelGrid &voxelGrid, const std::string &locationName);
+		const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions,
+		const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 
 	virtual Panel::CursorData getCurrentCursor() const override;

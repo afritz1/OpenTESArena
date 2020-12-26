@@ -91,7 +91,7 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 
 	// Generate building names.
 	levelData.menuNames = ArenaCityUtils::generateBuildingNames(locationDef, provinceDef, random,
-		levelData.getVoxelGrid(), binaryAssetLibrary, textAssetLibrary);
+		levelData.getVoxelGrid(), levelData.getTransitions(), binaryAssetLibrary, textAssetLibrary);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
@@ -181,7 +181,7 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 
 	// Generate wilderness building names.
 	levelData.menuNames = ArenaWildUtils::generateWildChunkBuildingNames(
-		levelData.getVoxelGrid(), exeData);
+		levelData.getVoxelGrid(), levelData.getTransitions(), exeData);
 
 	// Generate distant sky.
 	levelData.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
