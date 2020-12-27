@@ -24,10 +24,24 @@ using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0,
 using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
-struct ChunkCoord
+struct ChunkCoord2D
 {
 	ChunkInt2 chunk;
-	VoxelInt2 voxel; // @todo: needs to be VoxelInt3; change all usages of Y component to Z.
+	VoxelInt2 voxel;
+
+	ChunkCoord2D() = default;
+	ChunkCoord2D(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
+		: chunk(chunk), voxel(voxel) { }
+};
+
+struct ChunkCoord3D
+{
+	ChunkInt2 chunk;
+	VoxelInt3 voxel;
+
+	ChunkCoord3D() = default;
+	ChunkCoord3D(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
+		: chunk(chunk), voxel(voxel) { }
 };
 
 // These are here out of desperation after many months of confusing myself.
@@ -61,10 +75,10 @@ namespace VoxelUtils
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
-	ChunkCoord newVoxelToChunkVoxel(const NewInt2 &voxel);
+	ChunkCoord2D newVoxelToChunkVoxel(const NewInt2 &voxel);
 
 	// Converts a voxel from level definition space to chunk voxel space.
-	ChunkCoord levelVoxelToChunkVoxel(const LevelInt2 &voxel);
+	ChunkCoord2D levelVoxelToChunkVoxel(const LevelInt2 &voxel);
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel);
