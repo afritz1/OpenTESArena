@@ -15,7 +15,7 @@ namespace Bytes
 
 	// Counts number of 1's in an integer's bits.
 	template <typename T>
-	int getSetBitCount(T value)
+	constexpr int getSetBitCount(T value)
 	{
 		static_assert(std::is_integral_v<T>);
 		constexpr int bitCount = CHAR_BIT * sizeof(value);

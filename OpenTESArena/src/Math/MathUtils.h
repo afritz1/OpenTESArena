@@ -32,7 +32,7 @@ namespace MathUtils
 
 	// Returns whether the given integer is a power of 2.
 	template <typename T>
-	bool isPowerOf2(T value)
+	constexpr bool isPowerOf2(T value)
 	{
 		static_assert(std::is_integral_v<T>);
 		return Bytes::getSetBitCount(value) == 1;

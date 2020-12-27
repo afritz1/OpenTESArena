@@ -11,6 +11,7 @@
 #include "VoxelDefinition.h"
 #include "VoxelInstance.h"
 #include "VoxelUtils.h"
+#include "../Math/MathUtils.h"
 
 #include "components/utilities/Buffer3D.h"
 
@@ -45,6 +46,7 @@ private:
 public:
 	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
 	static constexpr WEInt DEPTH = WIDTH;
+	static_assert(MathUtils::isPowerOf2(WIDTH));
 
 	void init(const ChunkInt2 &coord, int height);
 
