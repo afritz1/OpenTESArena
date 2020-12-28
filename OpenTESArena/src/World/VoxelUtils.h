@@ -86,6 +86,9 @@ namespace VoxelUtils
 	// Wraps a voxel coordinate so it stays within the chunk range.
 	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);
 
+	// Adds half of a voxel to the voxel coordinate to get its center point.
+	Double2 getVoxelCenter(const Int2 &voxel);
+
 	// Gets the normal associated with a voxel facing.
 	Double3 getNormal(VoxelFacing2D facing);
 

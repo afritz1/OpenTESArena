@@ -231,9 +231,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 		random, this->citizenManager, textureManager, textureInstManager, renderer);
 
 	// Set player starting position and velocity.
-	const Double2 startPoint(
-		static_cast<double>(returnVoxel.x) + 0.50,
-		static_cast<double>(returnVoxel.y) + 0.50);
+	const Double2 startPoint = VoxelUtils::getVoxelCenter(returnVoxel);
 	this->player.teleport(Double3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
 	this->player.setVelocityToZero();

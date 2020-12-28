@@ -2112,9 +2112,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			{
 				const double maxDistance = 3.0; // @todo: arbitrary value.
 				const double maxDistanceSqr = maxDistance * maxDistance;
-				const Double2 diff(
-					playerPos.x - (static_cast<double>(voxel.x) + 0.50),
-					playerPos.y - (static_cast<double>(voxel.y) + 0.50));
+				const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(voxel);
 				const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
 				return distSqr > maxDistanceSqr;
 			}();
@@ -2560,9 +2558,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 
 			// Player destination after going through a level up/down voxel.
 			auto &player = gameData.getPlayer();
+			const NewDouble2 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionVoxel);
 			const NewDouble2 destinationXZ(
-				(static_cast<SNDouble>(transitionVoxel.x) + 0.50) + dirToNewVoxel.x,
-				(static_cast<WEDouble>(transitionVoxel.y) + 0.50) + dirToNewVoxel.z);
+				transitionVoxelCenter.x + dirToNewVoxel.x,
+				transitionVoxelCenter.y + dirToNewVoxel.z);
 
 			// Lambda for transitioning the player to the given level.
 			auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,

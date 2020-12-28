@@ -440,9 +440,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 			dungeonGenInfo.dungeonDef->heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &startPoint);
 
-		const LevelDouble2 startPointReal(
-			static_cast<SNDouble>(startPoint.x) + 0.50,
-			static_cast<WEDouble>(startPoint.y) + 0.50);
+		const LevelDouble2 startPointReal = VoxelUtils::getVoxelCenter(startPoint);
 		this->startPoints.init(1);
 		this->startPoints.set(0, startPointReal);
 		this->startLevelIndex = 0;

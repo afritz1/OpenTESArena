@@ -1787,9 +1787,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 				// Note: since the entity pointer is being used directly, update the position last
 				// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
-				const NewDouble2 positionXZ(
-					static_cast<SNDouble>(position.x) + 0.50,
-					static_cast<WEDouble>(position.y) + 0.50);
+				const NewDouble2 positionXZ = VoxelUtils::getVoxelCenter(position);
 				entityPtr->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 			}
 
