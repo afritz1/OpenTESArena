@@ -4,7 +4,7 @@
 // A unique identifier for each kind of weather. These can have an effect on the sky
 // palette, fog distance, music, etc..
 
-// If in terrain type 3, snow and snow overcast are replaced by rain.
+// If in a desert, snow is replaced by rain.
 
 enum class WeatherType
 {
