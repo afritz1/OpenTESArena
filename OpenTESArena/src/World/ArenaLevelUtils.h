@@ -22,6 +22,9 @@ enum class MapType;
 
 namespace ArenaLevelUtils
 {
+	// The distance in voxels that doors will auto-close when the player is far enough away.
+	constexpr double DOOR_CLOSE_DISTANCE = 3.0; // @todo: probably make this a multiple/fraction of ARENA_UNITS
+
 	// Display names for *MENU transition voxels in cities and the wilderness.
 	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
 

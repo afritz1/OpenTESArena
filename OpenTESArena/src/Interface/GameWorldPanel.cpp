@@ -2110,8 +2110,8 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			// Auto-close doors that the player is far enough away from.
 			const bool farEnough = [&playerPos, &voxel]()
 			{
-				const double maxDistance = 3.0; // @todo: arbitrary value.
-				const double maxDistanceSqr = maxDistance * maxDistance;
+				constexpr double maxDistance = ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+				constexpr double maxDistanceSqr = maxDistance * maxDistance;
 				const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(voxel);
 				const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
 				return distSqr > maxDistanceSqr;
