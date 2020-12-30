@@ -6,6 +6,7 @@
 #include "PaletteName.h"
 #include "PaletteUtils.h"
 #include "TextureManager.h"
+#include "../Assets/ArenaAssetUtils.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/COLFile.h"
@@ -26,17 +27,7 @@
 namespace
 {
 	// Texture filename extensions.
-	constexpr const char *EXTENSION_CEL = "CEL";
-	constexpr const char *EXTENSION_CFA = "CFA";
-	constexpr const char *EXTENSION_CIF = "CIF";
-	constexpr const char *EXTENSION_COL = "COL";
-	constexpr const char *EXTENSION_DFA = "DFA";
-	constexpr const char *EXTENSION_FLC = "FLC";
-	constexpr const char *EXTENSION_IMG = "IMG";
-	constexpr const char *EXTENSION_LGT = "LGT";
-	constexpr const char *EXTENSION_MNU = "MNU";
-	constexpr const char *EXTENSION_RCI = "RCI";
-	constexpr const char *EXTENSION_SET = "SET";
+	constexpr const char *EXTENSION_BMP = "BMP";
 }
 
 bool TextureManager::isValidFilename(const char *filename)
@@ -115,7 +106,7 @@ Texture TextureManager::makeTextureFrom8Bit(int width, int height, const uint8_t
 
 bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes)
 {
-	if (TextureManager::matchesExtension(filename, EXTENSION_COL))
+	if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_COL))
 	{
 		COLFile col;
 		if (!col.init(filename))
@@ -127,8 +118,8 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 		outPalettes->init(1);
 		outPalettes->set(0, col.getPalette());
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_CEL) ||
-		TextureManager::matchesExtension(filename, EXTENSION_FLC))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CEL) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_FLC))
 	{
 		FLCFile flc;
 		if (!flc.init(filename))
@@ -143,8 +134,8 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 			outPalettes->set(i, flc.getFramePalette(i));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
-		TextureManager::matchesExtension(filename, EXTENSION_MNU))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_MNU))
 	{
 		Palette palette;
 		if (!IMGFile::tryExtractPalette(filename, palette))
@@ -179,7 +170,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 		return image;
 	};
 
-	if (TextureManager::matchesExtension(filename, EXTENSION_CFA))
+	if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
 	{
 		CFAFile cfa;
 		if (!cfa.init(filename))
@@ -195,7 +186,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_CIF))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CIF))
 	{
 		CIFFile cif;
 		if (!cif.init(filename))
@@ -211,7 +202,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_DFA))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_DFA))
 	{
 		DFAFile dfa;
 		if (!dfa.init(filename))
@@ -227,8 +218,8 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_FLC) ||
-		TextureManager::matchesExtension(filename, EXTENSION_CEL))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_FLC) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CEL))
 	{
 		FLCFile flc;
 		if (!flc.init(filename))
@@ -244,8 +235,8 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
-		TextureManager::matchesExtension(filename, EXTENSION_MNU))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_MNU))
 	{
 		IMGFile img;
 		if (!img.init(filename))
@@ -258,7 +249,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 		outImages->init(1);
 		outImages->set(0, std::move(image));
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_LGT))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_LGT))
 	{
 		LGTFile lgt;
 		if (!lgt.init(filename))
@@ -275,7 +266,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_RCI))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_RCI))
 	{
 		RCIFile rci;
 		if (!rci.init(filename))
@@ -291,7 +282,7 @@ bool TextureManager::tryLoadImages(const char *filename, const PaletteID *palett
 			outImages->set(i, std::move(image));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_SET))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_SET))
 	{
 		SETFile set;
 		if (!set.init(filename))
@@ -380,7 +371,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 		return textureBuilder;
 	};
 
-	if (TextureManager::matchesExtension(filename, EXTENSION_CFA))
+	if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
 	{
 		CFAFile cfa;
 		if (!cfa.init(filename))
@@ -396,7 +387,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_CIF))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CIF))
 	{
 		CIFFile cif;
 		if (!cif.init(filename))
@@ -412,7 +403,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_DFA))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_DFA))
 	{
 		DFAFile dfa;
 		if (!dfa.init(filename))
@@ -428,8 +419,8 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_FLC) ||
-		TextureManager::matchesExtension(filename, EXTENSION_CEL))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_FLC) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CEL))
 	{
 		FLCFile flc;
 		if (!flc.init(filename))
@@ -445,8 +436,8 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
-		TextureManager::matchesExtension(filename, EXTENSION_MNU))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_MNU))
 	{
 		IMGFile img;
 		if (!img.init(filename))
@@ -459,7 +450,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 		outTextures->init(1);
 		outTextures->set(0, std::move(textureBuilder));
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_LGT))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_LGT))
 	{
 		LGTFile lgt;
 		if (!lgt.init(filename))
@@ -476,7 +467,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_RCI))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_RCI))
 	{
 		RCIFile rci;
 		if (!rci.init(filename))
@@ -492,7 +483,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			outTextures->set(i, std::move(textureBuilder));
 		}
 	}
-	else if (TextureManager::matchesExtension(filename, EXTENSION_SET))
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_SET))
 	{
 		SETFile set;
 		if (!set.init(filename))
