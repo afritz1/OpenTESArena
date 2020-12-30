@@ -371,7 +371,29 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 		return textureBuilder;
 	};
 
-	if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
+	if (TextureManager::matchesExtension(filename, EXTENSION_BMP))
+	{
+		SDL_Surface *surface = SDL_LoadBMP(filename);
+		if (surface == nullptr)
+		{
+			DebugLogWarning("Couldn't load .BMP file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
+		SDL_FreeSurface(surface);
+		if (optimizedSurface == nullptr)
+		{
+			DebugLogWarning("Couldn't optimize .BMP file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		TextureBuilder textureBuilder = makeTrueColor(optimizedSurface->w, optimizedSurface->h,
+			static_cast<const uint32_t*>(optimizedSurface->pixels));
+		outTextures->init(1);
+		outTextures->set(0, std::move(textureBuilder));
+	}
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
 	{
 		CFAFile cfa;
 		if (!cfa.init(filename))
