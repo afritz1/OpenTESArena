@@ -366,8 +366,154 @@ bool TextureManager::tryLoadTextures(const char *filename, const Palette &palett
 
 bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<TextureBuilder> *outTextures)
 {
-	// @todo: support all texture formats, load into Buffer2D of the correct type and create TextureBuilders.
-	DebugNotImplemented();
+	auto makePaletted = [](int width, int height, const uint8_t *texels)
+	{
+		TextureBuilder textureBuilder;
+		textureBuilder.initPaletted(width, height, texels);
+		return textureBuilder;
+	};
+
+	auto makeTrueColor = [](int width, int height, const uint32_t *texels)
+	{
+		TextureBuilder textureBuilder;
+		textureBuilder.initTrueColor(width, height, texels);
+		return textureBuilder;
+	};
+
+	if (TextureManager::matchesExtension(filename, EXTENSION_CFA))
+	{
+		CFAFile cfa;
+		if (!cfa.init(filename))
+		{
+			DebugLogWarning("Couldn't init .CFA file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(cfa.getImageCount());
+		for (int i = 0; i < cfa.getImageCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_CIF))
+	{
+		CIFFile cif;
+		if (!cif.init(filename))
+		{
+			DebugLogWarning("Couldn't init .CIF file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(cif.getImageCount());
+		for (int i = 0; i < cif.getImageCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_DFA))
+	{
+		DFAFile dfa;
+		if (!dfa.init(filename))
+		{
+			DebugLogWarning("Couldn't init .DFA file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(dfa.getImageCount());
+		for (int i = 0; i < dfa.getImageCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_FLC) ||
+		TextureManager::matchesExtension(filename, EXTENSION_CEL))
+	{
+		FLCFile flc;
+		if (!flc.init(filename))
+		{
+			DebugLogWarning("Couldn't init .FLC/.CEL file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(flc.getFrameCount());
+		for (int i = 0; i < flc.getFrameCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_IMG) ||
+		TextureManager::matchesExtension(filename, EXTENSION_MNU))
+	{
+		IMGFile img;
+		if (!img.init(filename))
+		{
+			DebugLogWarning("Couldn't init .IMG/.MNU file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		TextureBuilder textureBuilder = makePaletted(img.getWidth(), img.getHeight(), img.getPixels());
+		outTextures->init(1);
+		outTextures->set(0, std::move(textureBuilder));
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_LGT))
+	{
+		LGTFile lgt;
+		if (!lgt.init(filename))
+		{
+			DebugLogWarning("Couldn't init .LGT file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(LGTFile::PALETTE_COUNT);
+		for (int i = 0; i < outTextures->getCount(); i++)
+		{
+			const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+			TextureBuilder textureBuilder = makePaletted(lightPalette.getCount(), 1, lightPalette.get());
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_RCI))
+	{
+		RCIFile rci;
+		if (!rci.init(filename))
+		{
+			DebugLogWarning("Couldn't init .RCI file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(rci.getImageCount());
+		for (int i = 0; i < rci.getImageCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else if (TextureManager::matchesExtension(filename, EXTENSION_SET))
+	{
+		SETFile set;
+		if (!set.init(filename))
+		{
+			DebugLogWarning("Couldn't init .SET file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		outTextures->init(set.getImageCount());
+		for (int i = 0; i < set.getImageCount(); i++)
+		{
+			TextureBuilder textureBuilder = makePaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
+			outTextures->set(i, std::move(textureBuilder));
+		}
+	}
+	else
+	{
+		DebugLogWarning("Unrecognized texture builder file \"" + std::string(filename) + "\".");
+		return false;
+	}
+
 	return true;
 }
 

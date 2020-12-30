@@ -24,14 +24,14 @@ public:
 		Buffer2D<uint8_t> texels;
 		std::optional<PaletteID> paletteID;
 
-		void init(Buffer2D<uint8_t> &&texels, const std::optional<PaletteID> &paletteID);
+		void init(int width, int height, const uint8_t *texels, const std::optional<PaletteID> &paletteID);
 	};
 
 	struct TrueColorTexture
 	{
 		Buffer2D<uint32_t> texels;
 
-		void init(Buffer2D<uint32_t> &&texels);
+		void init(int width, int height, const uint32_t *texels);
 	};
 private:
 	Type type;
@@ -40,9 +40,9 @@ private:
 public:
 	TextureBuilder();
 
-	void initPaletted(Buffer2D<uint8_t> &&texels, const std::optional<PaletteID> &paletteID);
-	void initPaletted(Buffer2D<uint8_t> &&texels);
-	void initTrueColor(Buffer2D<uint32_t> &&texels);
+	void initPaletted(int width, int height, const uint8_t *texels, const std::optional<PaletteID> &paletteID);
+	void initPaletted(int width, int height, const uint8_t *texels);
+	void initTrueColor(int width, int height, const uint32_t *texels);
 
 	Type getType() const;
 	const PalettedTexture &getPaletted() const;
