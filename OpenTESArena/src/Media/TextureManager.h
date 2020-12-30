@@ -9,6 +9,7 @@
 
 #include "Image.h"
 #include "Palette.h"
+#include "TextureBuilder.h"
 #include "TextureUtils.h"
 #include "../Interface/Surface.h"
 #include "../Interface/Texture.h"
@@ -25,6 +26,7 @@ using PaletteRef = BufferRef<const std::vector<Palette>, const Palette>;
 using ImageRef = BufferRef2D<const std::vector<Image>, const Image>;
 using SurfaceRef = BufferRef2D<const std::vector<Surface>, const Surface>;
 using TextureRef = BufferRef2D<const std::vector<Texture>, const Texture>;
+using TextureBuilderRef = BufferRef2D<const std::vector<TextureBuilder>, const TextureBuilder>;
 
 class TextureManager
 {
@@ -36,15 +38,16 @@ private:
 	std::unordered_map<std::string, TextureUtils::ImageIdGroup> imageIDs;
 	std::unordered_map<std::string, TextureUtils::SurfaceIdGroup> surfaceIDs;
 	std::unordered_map<std::string, TextureUtils::TextureIdGroup> textureIDs;
+	std::unordered_map<std::string, TextureBuilderIdGroup> textureBuilderIDs;
 
 	// Texture data for each texture type. Any groups of textures from the same filename are
-	// stored contiguously.
+	// stored contiguously in the order they appear in the file.
 	std::vector<Palette> palettes;
 	std::vector<Image> images;
 	std::vector<Surface> surfaces;
 	std::vector<Texture> textures;
+	std::vector<TextureBuilder> textureBuilders;
 
-	// Validates the given texture filename.
 	static bool isValidFilename(const char *filename);
 
 	// Returns whether the given filename has the given extension.
@@ -68,10 +71,9 @@ private:
 		Buffer<Surface> *outSurfaces);
 	static bool tryLoadTextures(const char *filename, const Palette &palette,
 		Renderer &renderer, Buffer<Texture> *outTextures);
+	static bool tryLoadTextureBuilders(const char *filename, Buffer<TextureBuilder> *outTextures);
 public:
 	static constexpr int NO_ID = -1;
-
-	TextureManager &operator=(TextureManager &&textureManager) = delete;
 
 	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes
 	// must be loaded by the caller in advance -- no palettes are loaded in non-palette loader
@@ -84,11 +86,13 @@ public:
 	bool tryGetSurfaceIDs(const char *filename, PaletteID paletteID, TextureUtils::SurfaceIdGroup *outIDs);
 	bool tryGetTextureIDs(const char *filename, PaletteID paletteID, Renderer &renderer,
 		TextureUtils::TextureIdGroup *outIDs);
+	std::optional<TextureBuilderIdGroup> tryGetTextureBuilderIDs(const char *filename);
 	bool tryGetPaletteID(const char *filename, PaletteID *outID);
 	bool tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID);
 	bool tryGetImageID(const char *filename, ImageID *outID);
 	bool tryGetSurfaceID(const char *filename, PaletteID paletteID, SurfaceID *outID);
 	bool tryGetTextureID(const char *filename, PaletteID paletteID, Renderer &renderer, TextureID *outID);
+	std::optional<TextureBuilderID> tryGetTextureBuilderID(const char *filename);
 
 	// Texture getter functions, fast look-up. These return reference wrappers to avoid
 	// dangling pointer issues with internal buffer resizing.
@@ -96,12 +100,14 @@ public:
 	ImageRef getImageRef(ImageID id) const;
 	SurfaceRef getSurfaceRef(SurfaceID id) const;
 	TextureRef getTextureRef(TextureID id) const;
+	TextureBuilderRef getTextureBuilderRef(TextureBuilderID id) const;
 
 	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
 	const Palette &getPaletteHandle(PaletteID id) const;
 	const Image &getImageHandle(ImageID id) const;
 	const Surface &getSurfaceHandle(SurfaceID id) const;
 	const Texture &getTextureHandle(TextureID id) const;
+	const TextureBuilder &getTextureBuilderHandle(TextureBuilderID id) const;
 };
 
 #endif

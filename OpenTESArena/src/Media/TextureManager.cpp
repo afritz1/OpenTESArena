@@ -41,7 +41,7 @@ namespace
 
 bool TextureManager::isValidFilename(const char *filename)
 {
-	return filename != nullptr;
+	return !String::isNullOrEmpty(filename);
 }
 
 bool TextureManager::matchesExtension(const char *filename, const char *extension)
@@ -364,6 +364,13 @@ bool TextureManager::tryLoadTextures(const char *filename, const Palette &palett
 	return true;
 }
 
+bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<TextureBuilder> *outTextures)
+{
+	// @todo: support all texture formats, load into Buffer2D of the correct type and create TextureBuilders.
+	DebugNotImplemented();
+	return true;
+}
+
 bool TextureManager::tryGetPaletteIDs(const char *filename, TextureUtils::PaletteIdGroup *outIDs)
 {
 	if (!TextureManager::isValidFilename(filename))
@@ -385,7 +392,7 @@ bool TextureManager::tryGetPaletteIDs(const char *filename, TextureUtils::Palett
 
 			for (int i = 0; i < palettes.getCount(); i++)
 			{
-				this->palettes.push_back(std::move(palettes.get(i)));
+				this->palettes.emplace_back(std::move(palettes.get(i)));
 			}
 
 			iter = this->paletteIDs.emplace(
@@ -529,6 +536,40 @@ bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
 	return true;
 }
 
+std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(const char *filename)
+{
+	if (!TextureManager::isValidFilename(filename))
+	{
+		DebugLogWarning("Invalid texture builder filename \"" + std::string(filename) + "\".");
+		return std::nullopt;
+	}
+
+	std::string filenameStr(filename);
+	auto iter = this->textureBuilderIDs.find(filenameStr);
+	if (iter == this->textureBuilderIDs.end())
+	{
+		Buffer<TextureBuilder> textureBuilders;
+		if (!TextureManager::tryLoadTextureBuilders(filename, &textureBuilders))
+		{
+			DebugLogWarning("Couldn't load texture builders from \"" + filenameStr + "\".");
+			return std::nullopt;
+		}
+
+		const TextureBuilderID startID = static_cast<TextureBuilderID>(this->textureBuilders.size());
+		TextureBuilderIdGroup ids(startID, textureBuilders.getCount());
+
+		for (int i = 0; i < textureBuilders.getCount(); i++)
+		{
+			this->textureBuilders.emplace_back(std::move(textureBuilders.get(i)));
+		}
+
+		iter = this->textureBuilderIDs.emplace(
+			std::make_pair(std::move(filenameStr), std::move(ids))).first;
+	}
+
+	return iter->second;
+}
+
 bool TextureManager::tryGetPaletteID(const char *filename, PaletteID *outID)
 {
 	TextureUtils::PaletteIdGroup ids;
@@ -592,6 +633,19 @@ bool TextureManager::tryGetTextureID(const char *filename, PaletteID paletteID,
 	}
 }
 
+std::optional<TextureBuilderID> TextureManager::tryGetTextureBuilderID(const char *filename)
+{
+	const std::optional<TextureBuilderIdGroup> idGroup = this->tryGetTextureBuilderIDs(filename);
+	if (idGroup.has_value())
+	{
+		return idGroup->getID(0);
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
 PaletteRef TextureManager::getPaletteRef(PaletteID id) const
 {
 	return PaletteRef(&this->palettes, static_cast<int>(id));
@@ -610,6 +664,11 @@ SurfaceRef TextureManager::getSurfaceRef(SurfaceID id) const
 TextureRef TextureManager::getTextureRef(TextureID id) const
 {
 	return TextureRef(&this->textures, static_cast<int>(id));
+}
+
+TextureBuilderRef TextureManager::getTextureBuilderRef(TextureBuilderID id) const
+{
+	return TextureBuilderRef(&this->textureBuilders, static_cast<int>(id));
 }
 
 const Palette &TextureManager::getPaletteHandle(PaletteID id) const
@@ -634,4 +693,10 @@ const Texture &TextureManager::getTextureHandle(TextureID id) const
 {
 	DebugAssertIndex(this->textures, id);
 	return this->textures[id];
+}
+
+const TextureBuilder &TextureManager::getTextureBuilderHandle(TextureBuilderID id) const
+{
+	DebugAssertIndex(this->textureBuilders, id);
+	return this->textureBuilders[id];
 }
