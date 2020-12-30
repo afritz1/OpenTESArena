@@ -4,10 +4,11 @@
 #include "components/debug/Debug.h"
 
 // Various texture handles for use with texture manager.
-using PaletteID = int; // 256 color 32-bit software surface
+using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using ImageID = int; // 8-bit software surface
 using SurfaceID = int; // 32-bit software surface
 using TextureID = int; // 32-bit hardware surface
+using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 
 // Texture instance handles, same as texture manager but for generated textures not loaded
 // from a file.
@@ -53,5 +54,7 @@ namespace TextureUtils
 	using SurfaceIdGroup = IdGroup<SurfaceID>;
 	using TextureIdGroup = IdGroup<TextureID>;
 }
+
+using TextureBuilderIdGroup = TextureUtils::IdGroup<TextureBuilderID>;
 
 #endif
