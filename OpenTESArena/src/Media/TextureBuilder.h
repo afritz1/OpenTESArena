@@ -3,8 +3,6 @@
 
 #include <cstdint>
 
-#include "TextureUtils.h"
-
 #include "components/utilities/Buffer2D.h"
 
 // Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
