@@ -40,10 +40,11 @@ bool TextureManager::matchesExtension(const char *filename, const char *extensio
 	return StringView::caseInsensitiveEquals(StringView::getExtension(filename), extension);
 }
 
-std::string TextureManager::makeTextureMappingName(const char *filename, const PaletteID *paletteID)
+std::string TextureManager::makeTextureMappingName(const char *filename,
+	const std::optional<PaletteID> &paletteID)
 {
 	const std::string textureName(filename);
-	return (paletteID != nullptr) ? (textureName + std::to_string(*paletteID)) : textureName;
+	return paletteID.has_value() ? (textureName + std::to_string(*paletteID)) : textureName;
 }
 
 Surface TextureManager::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
@@ -156,7 +157,7 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 	return true;
 }
 
-bool TextureManager::tryLoadImages(const char *filename, const PaletteID *paletteID,
+bool TextureManager::tryLoadImages(const char *filename, const std::optional<PaletteID> &paletteID,
 	Buffer<Image> *outImages)
 {
 	auto makeImage = [paletteID](int width, int height, const uint8_t *srcPixels)
@@ -314,7 +315,7 @@ bool TextureManager::tryLoadSurfaces(const char *filename, const Palette &palett
 	// @todo: presumably could put some 32-bit-only loading here, like .BMP, but the palette
 	// would need to be nullable then.
 	Buffer<Image> images;
-	if (!TextureManager::tryLoadImages(filename, nullptr, &images))
+	if (!TextureManager::tryLoadImages(filename, std::nullopt, &images))
 	{
 		return false;
 	}
@@ -338,7 +339,7 @@ bool TextureManager::tryLoadTextures(const char *filename, const Palette &palett
 	// @todo: presumably could put some 32-bit-only loading here, like .BMP, but the palette
 	// would need to be nullable then.
 	Buffer<Image> images;
-	if (!TextureManager::tryLoadImages(filename, nullptr, &images))
+	if (!TextureManager::tryLoadImages(filename, std::nullopt, &images))
 	{
 		return false;
 	}
@@ -570,7 +571,7 @@ bool TextureManager::tryGetPaletteIDs(const char *filename, TextureUtils::Palett
 	return true;
 }
 
-bool TextureManager::tryGetImageIDs(const char *filename, const PaletteID *paletteID,
+bool TextureManager::tryGetImageIDs(const char *filename, const std::optional<PaletteID> &paletteID,
 	TextureUtils::ImageIdGroup *outIDs)
 {
 	if (!TextureManager::isValidFilename(filename))
@@ -611,7 +612,7 @@ bool TextureManager::tryGetImageIDs(const char *filename, const PaletteID *palet
 
 bool TextureManager::tryGetImageIDs(const char *filename, TextureUtils::ImageIdGroup *outIDs)
 {
-	const PaletteID *paletteID = nullptr;
+	constexpr std::optional<PaletteID> paletteID;
 	return this->tryGetImageIDs(filename, paletteID, outIDs);
 }
 
@@ -624,7 +625,7 @@ bool TextureManager::tryGetSurfaceIDs(const char *filename, PaletteID paletteID,
 		return false;
 	}
 
-	std::string mappingName = TextureManager::makeTextureMappingName(filename, &paletteID);
+	std::string mappingName = TextureManager::makeTextureMappingName(filename, paletteID);
 	auto iter = this->surfaceIDs.find(mappingName);
 	if (iter == this->surfaceIDs.end())
 	{
@@ -665,7 +666,7 @@ bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
 		return false;
 	}
 
-	std::string mappingName = TextureManager::makeTextureMappingName(filename, &paletteID);
+	std::string mappingName = TextureManager::makeTextureMappingName(filename, paletteID);
 	auto iter = this->textureIDs.find(mappingName);
 	if (iter == this->textureIDs.end())
 	{
@@ -745,7 +746,7 @@ bool TextureManager::tryGetPaletteID(const char *filename, PaletteID *outID)
 	}
 }
 
-bool TextureManager::tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID)
+bool TextureManager::tryGetImageID(const char *filename, const std::optional<PaletteID> &paletteID, ImageID *outID)
 {
 	TextureUtils::ImageIdGroup ids;
 	if (this->tryGetImageIDs(filename, paletteID, &ids))
@@ -761,7 +762,7 @@ bool TextureManager::tryGetImageID(const char *filename, const PaletteID *palett
 
 bool TextureManager::tryGetImageID(const char *filename, ImageID *outID)
 {
-	const PaletteID *paletteID = nullptr;
+	constexpr std::optional<PaletteID> paletteID;
 	return this->tryGetImageID(filename, paletteID, outID);
 }
 

@@ -78,13 +78,13 @@ TextureInstanceID TextureInstanceManager::getNextFreeTextureID()
 	return GetNextFreeID(this->textures, this->freeTextureIDs, this->textureRefCounts);
 }
 
-ImageInstanceID TextureInstanceManager::makeImage(int width, int height, const PaletteID *paletteID)
+ImageInstanceID TextureInstanceManager::makeImage(int width, int height, const std::optional<PaletteID> &paletteID)
 {
 	ImageInstanceID id = this->getNextFreeImageID();
 	if (id == TextureInstanceManager::NO_ID)
 	{
 		DebugLogError("Couldn't get free image ID (" + std::to_string(width) + "x" +
-			std::to_string(height) + ", palette: " + ((paletteID != nullptr) ? "yes" : "no") + ").");
+			std::to_string(height) + ", palette: " + (paletteID.has_value() ? "yes" : "no") + ").");
 		return TextureInstanceManager::NO_ID;
 	}
 

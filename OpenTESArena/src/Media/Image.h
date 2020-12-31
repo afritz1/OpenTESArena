@@ -18,7 +18,7 @@ private:
 	Buffer2D<uint8_t> pixels;
 	std::optional<PaletteID> paletteID;
 public:
-	void init(int width, int height, const PaletteID *paletteID);
+	void init(int width, int height, const std::optional<PaletteID> &paletteID);
 
 	int getWidth() const;
 	int getHeight() const;

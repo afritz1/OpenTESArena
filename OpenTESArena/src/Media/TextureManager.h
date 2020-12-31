@@ -2,6 +2,7 @@
 #define TEXTURE_MANAGER_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -55,7 +56,7 @@ private:
 
 	// Texture name mapping function, for combining a texture name with an optional
 	// palette ID so the same texture name can be used with multiple palettes.
-	static std::string makeTextureMappingName(const char *filename, const PaletteID *paletteID);
+	static std::string makeTextureMappingName(const char *filename, const std::optional<PaletteID> &paletteID);
 
 	// 32-bit texture generation functions.
 	static Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
@@ -65,7 +66,7 @@ private:
 
 	// Helper functions for loading texture files.
 	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
-	static bool tryLoadImages(const char *filename, const PaletteID *paletteID,
+	static bool tryLoadImages(const char *filename, const std::optional<PaletteID> &paletteID,
 		Buffer<Image> *outImages);
 	static bool tryLoadSurfaces(const char *filename, const Palette &palette,
 		Buffer<Surface> *outSurfaces);
@@ -81,14 +82,15 @@ public:
 	// returned ID will be for the first image. Similarly, if the file has a single image but the
 	// caller expected several, the returned ID group will have only one ID.
 	bool tryGetPaletteIDs(const char *filename, TextureUtils::PaletteIdGroup *outIDs);
-	bool tryGetImageIDs(const char *filename, const PaletteID *paletteID, TextureUtils::ImageIdGroup *outIDs);
+	bool tryGetImageIDs(const char *filename, const std::optional<PaletteID> &paletteID,
+		TextureUtils::ImageIdGroup *outIDs);
 	bool tryGetImageIDs(const char *filename, TextureUtils::ImageIdGroup *outIDs);
 	bool tryGetSurfaceIDs(const char *filename, PaletteID paletteID, TextureUtils::SurfaceIdGroup *outIDs);
 	bool tryGetTextureIDs(const char *filename, PaletteID paletteID, Renderer &renderer,
 		TextureUtils::TextureIdGroup *outIDs);
 	std::optional<TextureBuilderIdGroup> tryGetTextureBuilderIDs(const char *filename);
 	bool tryGetPaletteID(const char *filename, PaletteID *outID);
-	bool tryGetImageID(const char *filename, const PaletteID *paletteID, ImageID *outID);
+	bool tryGetImageID(const char *filename, const std::optional<PaletteID> &paletteID, ImageID *outID);
 	bool tryGetImageID(const char *filename, ImageID *outID);
 	bool tryGetSurfaceID(const char *filename, PaletteID paletteID, SurfaceID *outID);
 	bool tryGetTextureID(const char *filename, PaletteID paletteID, Renderer &renderer, TextureID *outID);
