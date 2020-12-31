@@ -30,11 +30,6 @@ namespace
 	constexpr const char *EXTENSION_BMP = "BMP";
 }
 
-bool TextureManager::isValidFilename(const char *filename)
-{
-	return !String::isNullOrEmpty(filename);
-}
-
 bool TextureManager::matchesExtension(const char *filename, const char *extension)
 {
 	return StringView::caseInsensitiveEquals(StringView::getExtension(filename), extension);
@@ -535,9 +530,9 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 
 bool TextureManager::tryGetPaletteIDs(const char *filename, PaletteIdGroup *outIDs)
 {
-	if (!TextureManager::isValidFilename(filename))
+	if (String::isNullOrEmpty(filename))
 	{
-		DebugLogWarning("Invalid palette filename \"" + std::string(filename) + "\".");
+		DebugLogWarning("Missing palette filename.");
 		return false;
 	}
 
@@ -574,9 +569,9 @@ bool TextureManager::tryGetPaletteIDs(const char *filename, PaletteIdGroup *outI
 bool TextureManager::tryGetImageIDs(const char *filename, const std::optional<PaletteID> &paletteID,
 	TextureUtils::ImageIdGroup *outIDs)
 {
-	if (!TextureManager::isValidFilename(filename))
+	if (String::isNullOrEmpty(filename))
 	{
-		DebugLogWarning("Invalid image filename \"" + std::string(filename) + "\".");
+		DebugLogWarning("Missing image filename.");
 		return false;
 	}
 
@@ -619,9 +614,9 @@ bool TextureManager::tryGetImageIDs(const char *filename, TextureUtils::ImageIdG
 bool TextureManager::tryGetSurfaceIDs(const char *filename, PaletteID paletteID,
 	TextureUtils::SurfaceIdGroup *outIDs)
 {
-	if (!TextureManager::isValidFilename(filename))
+	if (String::isNullOrEmpty(filename))
 	{
-		DebugLogWarning("Invalid surface filename \"" + std::string(filename) + "\".");
+		DebugLogWarning("Missing surface filename.");
 		return false;
 	}
 
@@ -660,9 +655,9 @@ bool TextureManager::tryGetSurfaceIDs(const char *filename, PaletteID paletteID,
 bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
 	Renderer &renderer, TextureUtils::TextureIdGroup *outIDs)
 {
-	if (!TextureManager::isValidFilename(filename))
+	if (String::isNullOrEmpty(filename))
 	{
-		DebugLogWarning("Invalid texture filename \"" + std::string(filename) + "\".");
+		DebugLogWarning("Missing texture filename.");
 		return false;
 	}
 
@@ -700,9 +695,9 @@ bool TextureManager::tryGetTextureIDs(const char *filename, PaletteID paletteID,
 
 std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(const char *filename)
 {
-	if (!TextureManager::isValidFilename(filename))
+	if (String::isNullOrEmpty(filename))
 	{
-		DebugLogWarning("Invalid texture builder filename \"" + std::string(filename) + "\".");
+		DebugLogWarning("Missing texture builder filename.");
 		return std::nullopt;
 	}
 

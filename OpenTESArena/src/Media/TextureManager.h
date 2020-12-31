@@ -49,8 +49,6 @@ private:
 	std::vector<Texture> textures;
 	std::vector<TextureBuilder> textureBuilders;
 
-	static bool isValidFilename(const char *filename);
-
 	// Returns whether the given filename has the given extension.
 	static bool matchesExtension(const char *filename, const char *extension);
 
