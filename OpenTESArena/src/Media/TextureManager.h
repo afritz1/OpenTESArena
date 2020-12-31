@@ -35,7 +35,7 @@ private:
 	// Mappings of texture filenames to their ID(s). 32-bit texture functions need to accept a
 	// palette ID and append it to the texture name behind the scenes so the same texture filename
 	// can map to different instances depending on the palette.
-	std::unordered_map<std::string, TextureUtils::PaletteIdGroup> paletteIDs;
+	std::unordered_map<std::string, PaletteIdGroup> paletteIDs;
 	std::unordered_map<std::string, TextureUtils::ImageIdGroup> imageIDs;
 	std::unordered_map<std::string, TextureUtils::SurfaceIdGroup> surfaceIDs;
 	std::unordered_map<std::string, TextureUtils::TextureIdGroup> textureIDs;
@@ -81,7 +81,7 @@ public:
 	// functions. If the requested file has multiple images but the caller requested only one, the
 	// returned ID will be for the first image. Similarly, if the file has a single image but the
 	// caller expected several, the returned ID group will have only one ID.
-	bool tryGetPaletteIDs(const char *filename, TextureUtils::PaletteIdGroup *outIDs);
+	bool tryGetPaletteIDs(const char *filename, PaletteIdGroup *outIDs);
 	bool tryGetImageIDs(const char *filename, const std::optional<PaletteID> &paletteID,
 		TextureUtils::ImageIdGroup *outIDs);
 	bool tryGetImageIDs(const char *filename, TextureUtils::ImageIdGroup *outIDs);

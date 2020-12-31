@@ -49,12 +49,12 @@ namespace TextureUtils
 		}
 	};
 
-	using PaletteIdGroup = IdGroup<PaletteID>;
 	using ImageIdGroup = IdGroup<ImageID>;
 	using SurfaceIdGroup = IdGroup<SurfaceID>;
 	using TextureIdGroup = IdGroup<TextureID>;
 }
 
+using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;
 using TextureBuilderIdGroup = TextureUtils::IdGroup<TextureBuilderID>;
 
 #endif

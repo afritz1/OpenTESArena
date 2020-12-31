@@ -533,7 +533,7 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 	return true;
 }
 
-bool TextureManager::tryGetPaletteIDs(const char *filename, TextureUtils::PaletteIdGroup *outIDs)
+bool TextureManager::tryGetPaletteIDs(const char *filename, PaletteIdGroup *outIDs)
 {
 	if (!TextureManager::isValidFilename(filename))
 	{
@@ -550,7 +550,7 @@ bool TextureManager::tryGetPaletteIDs(const char *filename, TextureUtils::Palett
 		if (TextureManager::tryLoadPalettes(filename, &palettes))
 		{
 			const PaletteID id = static_cast<PaletteID>(this->palettes.size());
-			TextureUtils::PaletteIdGroup ids(id, 1);
+			PaletteIdGroup ids(id, 1);
 
 			for (int i = 0; i < palettes.getCount(); i++)
 			{
@@ -734,7 +734,7 @@ std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(con
 
 bool TextureManager::tryGetPaletteID(const char *filename, PaletteID *outID)
 {
-	TextureUtils::PaletteIdGroup ids;
+	PaletteIdGroup ids;
 	if (this->tryGetPaletteIDs(filename, &ids))
 	{
 		*outID = ids.getID(0);
