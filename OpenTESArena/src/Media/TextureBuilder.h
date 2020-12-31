@@ -2,7 +2,6 @@
 #define TEXTURE_BUILDER_H
 
 #include <cstdint>
-#include <optional>
 
 #include "TextureUtils.h"
 
@@ -22,9 +21,8 @@ public:
 	struct PalettedTexture
 	{
 		Buffer2D<uint8_t> texels;
-		std::optional<PaletteID> paletteID;
 
-		void init(int width, int height, const uint8_t *texels, const std::optional<PaletteID> &paletteID);
+		void init(int width, int height, const uint8_t *texels);
 	};
 
 	struct TrueColorTexture
@@ -40,7 +38,6 @@ private:
 public:
 	TextureBuilder();
 
-	void initPaletted(int width, int height, const uint8_t *texels, const std::optional<PaletteID> &paletteID);
 	void initPaletted(int width, int height, const uint8_t *texels);
 	void initTrueColor(int width, int height, const uint32_t *texels);
 
