@@ -4,6 +4,5 @@
 #include <string>
 
 using AssetID = std::string;
-using TextureAssetID = AssetID;
 
 #endif
