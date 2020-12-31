@@ -56,12 +56,6 @@ private:
 	// palette ID so the same texture name can be used with multiple palettes.
 	static std::string makeTextureMappingName(const char *filename, const std::optional<PaletteID> &paletteID);
 
-	// 32-bit texture generation functions.
-	static Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
-		const Palette &palette);
-	static Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels,
-		const Palette &palette, Renderer &renderer);
-
 	// Helper functions for loading texture files.
 	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
 	static bool tryLoadImages(const char *filename, const std::optional<PaletteID> &paletteID,

@@ -6,6 +6,7 @@
 #include "PaletteName.h"
 #include "PaletteUtils.h"
 #include "TextureManager.h"
+#include "TextureUtils.h"
 #include "../Assets/ArenaAssetUtils.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
@@ -40,64 +41,6 @@ std::string TextureManager::makeTextureMappingName(const char *filename,
 {
 	const std::string textureName(filename);
 	return paletteID.has_value() ? (textureName + std::to_string(*paletteID)) : textureName;
-}
-
-Surface TextureManager::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels,
-	const Palette &palette)
-{
-	Surface surface = Surface::createWithFormat(width, height, Renderer::DEFAULT_BPP,
-		Renderer::DEFAULT_PIXELFORMAT);
-	uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
-	const int pixelCount = width * height;
-
-	for (int i = 0; i < pixelCount; i++)
-	{
-		const uint8_t srcPixel = pixels[i];
-		const Color dstColor = palette[srcPixel];
-		dstPixels[i] = dstColor.toARGB();
-	}
-
-	return surface;
-}
-
-Texture TextureManager::makeTextureFrom8Bit(int width, int height, const uint8_t *pixels,
-	const Palette &palette, Renderer &renderer)
-{
-	Texture texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, width, height);
-	if (texture.get() == nullptr)
-	{
-		DebugLogError("Couldn't create texture (dims: " +
-			std::to_string(width) + "x" + std::to_string(height) + ").");
-		return texture;
-	}
-
-	uint32_t *dstPixels;
-	int pitch;
-	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&dstPixels), &pitch) != 0)
-	{
-		DebugLogError("Couldn't lock SDL texture (dims: " +
-			std::to_string(width) + "x" + std::to_string(height) + ").");
-		return texture;
-	}
-
-	const int pixelCount = width * height;
-	for (int i = 0; i < pixelCount; i++)
-	{
-		const uint8_t srcPixel = pixels[i];
-		const Color dstColor = palette[srcPixel];
-		dstPixels[i] = dstColor.toARGB();
-	}
-
-	SDL_UnlockTexture(texture.get());
-
-	// Set alpha transparency on.
-	if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) != 0)
-	{
-		DebugLogError("Couldn't set SDL texture alpha blending.");
-	}
-
-	return texture;
 }
 
 bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes)
@@ -319,7 +262,7 @@ bool TextureManager::tryLoadSurfaces(const char *filename, const Palette &palett
 	for (int i = 0; i < images.getCount(); i++)
 	{
 		const Image &image = images.get(i);
-		Surface surface = TextureManager::makeSurfaceFrom8Bit(
+		Surface surface = TextureUtils::makeSurfaceFrom8Bit(
 			image.getWidth(), image.getHeight(), image.getPixels(), palette);
 		outSurfaces->set(i, std::move(surface));
 	}
@@ -343,7 +286,7 @@ bool TextureManager::tryLoadTextures(const char *filename, const Palette &palett
 	for (int i = 0; i < images.getCount(); i++)
 	{
 		const Image &image = images.get(i);
-		Texture texture = TextureManager::makeTextureFrom8Bit(
+		Texture texture = TextureUtils::makeTextureFrom8Bit(
 			image.getWidth(), image.getHeight(), image.getPixels(), palette, renderer);
 		outTextures->set(i, std::move(texture));
 	}

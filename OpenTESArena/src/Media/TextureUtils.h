@@ -1,6 +1,8 @@
 #ifndef TEXTURE_UTILS_H
 #define TEXTURE_UTILS_H
 
+#include "Palette.h"
+
 #include "components/debug/Debug.h"
 
 // Various texture handles for use with texture manager.
@@ -15,6 +17,10 @@ using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 using ImageInstanceID = int; // 8-bit software surface
 using SurfaceInstanceID = int; // 32-bit software surface
 using TextureInstanceID = int; // 32-bit hardware surface
+
+class Renderer;
+class Surface;
+class Texture;
 
 namespace TextureUtils
 {
@@ -52,6 +58,11 @@ namespace TextureUtils
 	using ImageIdGroup = IdGroup<ImageID>;
 	using SurfaceIdGroup = IdGroup<SurfaceID>;
 	using TextureIdGroup = IdGroup<TextureID>;
+
+	// 32-bit texture creation convenience functions.
+	Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette);
+	Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette,
+		Renderer &renderer);
 }
 
 using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;
