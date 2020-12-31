@@ -390,6 +390,8 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 
 		TextureBuilder textureBuilder = makeTrueColor(optimizedSurface->w, optimizedSurface->h,
 			static_cast<const uint32_t*>(optimizedSurface->pixels));
+		SDL_FreeSurface(optimizedSurface);
+
 		outTextures->init(1);
 		outTextures->set(0, std::move(textureBuilder));
 	}
