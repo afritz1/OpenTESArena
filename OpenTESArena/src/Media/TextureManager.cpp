@@ -6,7 +6,6 @@
 #include "PaletteName.h"
 #include "PaletteUtils.h"
 #include "TextureManager.h"
-#include "TextureUtils.h"
 #include "../Assets/ArenaAssetUtils.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
