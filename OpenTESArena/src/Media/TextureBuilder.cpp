@@ -31,6 +31,38 @@ void TextureBuilder::initTrueColor(int width, int height, const uint32_t *texels
 	this->trueColorTexture.init(width, height, texels);
 }
 
+int TextureBuilder::getWidth() const
+{
+	if (this->type == TextureBuilder::Type::Paletted)
+	{
+		return this->paletteTexture.texels.getWidth();
+	}
+	else if (this->type == TextureBuilder::Type::TrueColor)
+	{
+		return this->trueColorTexture.texels.getWidth();
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
+int TextureBuilder::getHeight() const
+{
+	if (this->type == TextureBuilder::Type::Paletted)
+	{
+		return this->paletteTexture.texels.getHeight();
+	}
+	else if (this->type == TextureBuilder::Type::TrueColor)
+	{
+		return this->trueColorTexture.texels.getHeight();
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
+	}
+}
+
 TextureBuilder::Type TextureBuilder::getType() const
 {
 	return this->type;

@@ -39,6 +39,8 @@ public:
 	void initPaletted(int width, int height, const uint8_t *texels);
 	void initTrueColor(int width, int height, const uint32_t *texels);
 
+	int getWidth() const;
+	int getHeight() const;
 	Type getType() const;
 	const PalettedTexture &getPaletted() const;
 	const TrueColorTexture &getTrueColor() const;
