@@ -51,9 +51,11 @@ If you would like music played in-game, see **Music setup** below. The engine us
 - Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
 - Run OpenTESArena.exe.
 
-If you receive an error about missing MSVCP141.dll, you will need to download and run the [Visual C++ 2017 Redistributable installer](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for your desired target (vc_redist.x64.exe for 64-bit, vc_redist.x86.exe for 32-bit). Similarly, MSVCP140.dll is in the [Visual C++ 2015 Redistributable installer](https://www.microsoft.com/en-us/download/details.aspx?id=48145).
+If you see an error about missing MSVCP141.dll or similar, download and run the [Visual C++ Redistributable Installer](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for Windows:
+- 64-bit (recommended): vc_redist.x64.exe
+- 32-bit: vc_redist.x86.exe
 
-If you see a warning about `alcOpenDevice()` failing, or there is no sound, you will need to download the [OpenAL 1.1 Windows Installer](https://www.openal.org/downloads/) and run oalinst.exe.
+If you see a warning about `alcOpenDevice()` failing, or there is no sound, download the [OpenAL 1.1 Windows Installer](https://www.openal.org/downloads/) and run oalinst.exe.
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
