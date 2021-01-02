@@ -9,6 +9,7 @@
 #include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
+#include "../Media/TextureUtils.h"
 #include "../World/LevelData.h"
 
 // Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
@@ -195,7 +196,7 @@ public:
 	EntityRenderID makeEntityRenderID();
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		const TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
+		TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
@@ -232,8 +233,8 @@ public:
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.
-	void drawCursor(const Texture &texture, CursorAlignment alignment, 
-		const Int2 &mousePosition, double scale);
+	void drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment,
+		const Int2 &mousePosition, double scale, const TextureManager &textureManager);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);
@@ -244,8 +245,18 @@ public:
 	void drawOriginal(const Texture &texture, int x, int y, int w, int h);
 	void drawOriginal(const Texture &texture, int x, int y);
 	void drawOriginal(const Texture &texture);
+	// @todo: using temp compatibility function until renderer allows allocating of texture handles for users.
+	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y, int w, int h,
+		const TextureManager& textureManager);
+	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
+		const TextureManager &textureManager);
+	void drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect);
 	void drawOriginalClipped(const Texture &texture, const Rect &srcRect, int x, int y);
+	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+		const Rect &dstRect, const TextureManager &textureManager);
+	void drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+		int x, int y, const TextureManager &textureManager);
 
 	// Stretches a texture over the entire native frame buffer.
 	void fill(const Texture &texture);

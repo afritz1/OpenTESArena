@@ -826,7 +826,7 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 		descriptionTextBox->getX(), descriptionTextBox->getY());
 }
 
-Panel::CursorData OptionsPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> OptionsPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

@@ -1795,13 +1795,13 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			const Palette &palette = [&textureManager]() -> const Palette&
 			{
 				const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
-				PaletteID paletteID;
-				if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+				const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+				if (!paletteID.has_value())
 				{
 					DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
 				}
 
-				return textureManager.getPaletteHandle(paletteID);
+				return textureManager.getPaletteHandle(*paletteID);
 			}();
 
 			// Initialize renderer buffers for the entity animation then populate all textures

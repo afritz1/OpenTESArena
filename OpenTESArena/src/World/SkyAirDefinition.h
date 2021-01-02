@@ -6,11 +6,11 @@
 class SkyAirDefinition
 {
 private:
-	ImageID imageID;
+	TextureBuilderID textureBuilderID;
 public:
-	void init(ImageID imageID);
+	void init(TextureBuilderID textureBuilderID);
 
-	ImageID getImageID() const;
+	TextureBuilderID getTextureBuilderID() const;
 };
 
 #endif

@@ -6,7 +6,7 @@
 #include <string>
 
 #include "EntityAnimationUtils.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureAssetReference.h"
 
 #include "components/utilities/BufferView.h"
 
@@ -18,15 +18,15 @@ public:
 	class Keyframe
 	{
 	private:
+		TextureAssetReference textureAssetRef;
+
 		// Dimensions of flat in world space. Required for determining the size of the
 		// flat on-screen for selection and rendering.
 		double width, height;
-
-		ImageID imageID;
 	public:
-		Keyframe(ImageID imageID, double width, double height);
+		Keyframe(TextureAssetReference &&textureAssetRef, double width, double height);
 
-		ImageID getImageID() const;
+		const TextureAssetReference &getTextureAssetRef() const;
 		double getWidth() const;
 		double getHeight() const;
 	};

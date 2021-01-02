@@ -96,11 +96,24 @@ void ImageSequencePanel::render(Renderer &renderer)
 
 	// Draw image.
 	auto &textureManager = this->getGame().getTextureManager();
-	DebugAssertIndex(this->textureNames, this->imageIndex);
 	DebugAssertIndex(this->paletteNames, this->imageIndex);
-	const std::string &textureName = this->textureNames[this->imageIndex];
 	const std::string &paletteName = this->paletteNames[this->imageIndex];
-	const TextureID textureID = this->getTextureID(textureName, paletteName);
-	const TextureRef texture = textureManager.getTextureRef(textureID);
-	renderer.drawOriginal(texture.get());
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteName + "\".");
+		return;
+	}
+
+	DebugAssertIndex(this->textureNames, this->imageIndex);
+	const std::string &textureName = this->textureNames[this->imageIndex];
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureName.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + textureName + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 }

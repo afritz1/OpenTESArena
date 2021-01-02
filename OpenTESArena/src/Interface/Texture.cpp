@@ -62,82 +62,119 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 
 		// Get the nine parchment tiles.
 		const std::string tilesPaletteFilename = "STARTGAM.MNU";
-		PaletteID tilesPaletteID;
-		if (!textureManager.tryGetPaletteID(tilesPaletteFilename.c_str(), &tilesPaletteID))
+		const std::optional<PaletteID> tilesPaletteID = textureManager.tryGetPaletteID(tilesPaletteFilename.c_str());
+		if (!tilesPaletteID.has_value())
 		{
-			DebugCrash("Couldn't get palette ID for \"" + tilesPaletteFilename + "\".");
+			DebugCrash("Couldn't get tile palette ID for \"" + tilesPaletteFilename + "\".");
 		}
 
 		const std::string &tilesFilename = TextureFile::fromName(TextureName::Parchment);
-		TextureUtils::SurfaceIdGroup tileIDs;
-		if (!textureManager.tryGetSurfaceIDs(tilesFilename.c_str(), tilesPaletteID, &tileIDs))
+		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
+		if (!tilesTextureBuilderIDs.has_value())
 		{
-			DebugCrash("Couldn't get surface IDs for \"" + tilesFilename + "\".");
+			DebugCrash("Couldn't get tiles texture builder IDs for \"" + tilesFilename + "\".");
 		}
 
+		// Lambda for making a temp SDL surface wrapper for writing to the final texture. This is a
+		// temp compatibility layer for keeping from changing the SDL blit code below, since making a
+		// new surface from a texture builder is wasteful.
+		auto makeSurface = [&textureManager, tilesPaletteID](TextureBuilderID textureBuilderID)
+		{
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+			Surface surface = Surface::createWithFormat(textureBuilder.getWidth(), textureBuilder.getHeight(),
+				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+
+			// Parchment tiles should all be 8-bit for now.
+			DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+			const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+			const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+
+			uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
+			const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
+			std::transform(srcTexels.get(), srcTexels.end(), dstPixels,
+				[&palette](const uint8_t srcTexel)
+			{
+				return palette[srcTexel].toARGB();
+			});
+
+			return surface;
+		};
+
 		// Four corner tiles.
-		SDL_Surface *topLeft = textureManager.getSurfaceHandle(tileIDs.getID(0)).get();
-		SDL_Surface *topRight = textureManager.getSurfaceHandle(tileIDs.getID(2)).get();
-		SDL_Surface *bottomLeft = textureManager.getSurfaceHandle(tileIDs.getID(6)).get();
-		SDL_Surface *bottomRight = textureManager.getSurfaceHandle(tileIDs.getID(8)).get();
+		const TextureBuilderID topLeftTextureBuilderID = tilesTextureBuilderIDs->getID(0);
+		const TextureBuilderID topRightTextureBuilderID = tilesTextureBuilderIDs->getID(2);
+		const TextureBuilderID bottomLeftTextureBuilderID = tilesTextureBuilderIDs->getID(6);
+		const TextureBuilderID bottomRightTextureBuilderID = tilesTextureBuilderIDs->getID(8);
+		const Surface topLeft = makeSurface(topLeftTextureBuilderID);
+		const Surface topRight = makeSurface(topRightTextureBuilderID);
+		const Surface bottomLeft = makeSurface(bottomLeftTextureBuilderID);
+		const Surface bottomRight = makeSurface(bottomRightTextureBuilderID);
 
 		// Four side tiles.
-		SDL_Surface *top = textureManager.getSurfaceHandle(tileIDs.getID(1)).get();
-		SDL_Surface *left = textureManager.getSurfaceHandle(tileIDs.getID(3)).get();
-		SDL_Surface *right = textureManager.getSurfaceHandle(tileIDs.getID(5)).get();
-		SDL_Surface *bottom = textureManager.getSurfaceHandle(tileIDs.getID(7)).get();
+		const TextureBuilderID topTextureBuilderID = tilesTextureBuilderIDs->getID(1);
+		const TextureBuilderID leftTextureBuilderID = tilesTextureBuilderIDs->getID(3);
+		const TextureBuilderID rightTextureBuilderID = tilesTextureBuilderIDs->getID(5);
+		const TextureBuilderID bottomTextureBuilderID = tilesTextureBuilderIDs->getID(7);
+		const Surface top = makeSurface(topTextureBuilderID);
+		const Surface left = makeSurface(leftTextureBuilderID);
+		const Surface right = makeSurface(rightTextureBuilderID);
+		const Surface bottom = makeSurface(bottomTextureBuilderID);
 
 		// One body tile.
-		SDL_Surface *body = textureManager.getSurfaceHandle(tileIDs.getID(4)).get();
+		const TextureBuilderID bodyTextureBuilderID = tilesTextureBuilderIDs->getID(4);
+		const Surface body = makeSurface(bodyTextureBuilderID);
 
 		// Draw body tiles.
-		for (int y = topLeft->h; y < (surface.getHeight() - topRight->h); y += body->h)
+		for (int y = topLeft.getHeight(); y < (surface.getHeight() - topRight.getHeight()); y += body.getHeight())
 		{
-			for (int x = topLeft->w; x < (surface.getWidth() - topRight->w); x += body->w)
+			for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += body.getWidth())
 			{
 				SDL_Rect rect;
 				rect.x = x;
 				rect.y = y;
-				rect.w = body->w;
-				rect.h = body->h;
+				rect.w = body.getWidth();
+				rect.h = body.getHeight();
 
-				SDL_BlitSurface(body, nullptr, surface.get(), &rect);
+				SDL_BlitSurface(body.get(), nullptr, surface.get(), &rect);
 			}
 		}
 
 		// Draw edge tiles.
-		for (int y = topLeft->h; y < (surface.getHeight() - bottomLeft->h); y += left->h)
+		for (int y = topLeft.getHeight(); y < (surface.getHeight() - bottomLeft.getHeight()); y += left.getHeight())
 		{
-			const Rect leftRect(0, y, left->w, left->h);
-			const Rect rightRect(surface.getWidth() - right->w, y, right->w, right->h);
+			const Rect leftRect(0, y, left.getWidth(), left.getHeight());
+			const Rect rightRect(surface.getWidth() - right.getWidth(), y, right.getWidth(), right.getHeight());
 
 			// Remove any traces of body tiles underneath.
 			surface.fillRect(leftRect, clearColor);
 			surface.fillRect(rightRect, clearColor);
 
-			SDL_BlitSurface(left, nullptr, surface.get(), const_cast<SDL_Rect*>(&leftRect.getRect()));
-			SDL_BlitSurface(right, nullptr, surface.get(), const_cast<SDL_Rect*>(&rightRect.getRect()));
+			SDL_BlitSurface(left.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&leftRect.getRect()));
+			SDL_BlitSurface(right.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&rightRect.getRect()));
 		}
 
-		for (int x = topLeft->w; x < (surface.getWidth() - topRight->w); x += top->w)
+		for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += top.getWidth())
 		{
-			const Rect topRect(x, 0, top->w, top->h);
-			const Rect bottomRect(x, surface.getHeight() - bottom->h, bottom->w, bottom->h);
+			const Rect topRect(x, 0, top.getWidth(), top.getHeight());
+			const Rect bottomRect(x, surface.getHeight() - bottom.getHeight(), bottom.getWidth(), bottom.getHeight());
 
 			// Remove any traces of other tiles underneath.
 			surface.fillRect(topRect, clearColor);
 			surface.fillRect(bottomRect, clearColor);
 
-			SDL_BlitSurface(top, nullptr, surface.get(), const_cast<SDL_Rect*>(&topRect.getRect()));
-			SDL_BlitSurface(bottom, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRect.getRect()));
+			SDL_BlitSurface(top.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topRect.getRect()));
+			SDL_BlitSurface(bottom.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRect.getRect()));
 		}
 
 		// Draw corner tiles.
-		const Rect topLeftRect(0, 0, topLeft->w, topLeft->h);
-		const Rect topRightRect(surface.getWidth() - topRight->w, 0, topRight->w, topRight->h);
-		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft->h, bottomLeft->w, bottomLeft->h);
-		const Rect bottomRightRect(surface.getWidth() - bottomRight->w,
-			surface.getHeight() - bottomRight->h, bottomRight->w, bottomRight->h);
+		const Rect topLeftRect(0, 0, topLeft.getWidth(), topLeft.getHeight());
+		const Rect topRightRect(surface.getWidth() - topRight.getWidth(), 0,
+			topRight.getWidth(), topRight.getHeight());
+		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft.getHeight(),
+			bottomLeft.getWidth(), bottomLeft.getHeight());
+		const Rect bottomRightRect(surface.getWidth() - bottomRight.getWidth(),
+			surface.getHeight() - bottomRight.getHeight(), bottomRight.getWidth(), bottomRight.getHeight());
 
 		// Remove any traces of other tiles underneath.
 		surface.fillRect(topLeftRect, clearColor);
@@ -145,10 +182,10 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 		surface.fillRect(bottomLeftRect, clearColor);
 		surface.fillRect(bottomRightRect, clearColor);
 
-		SDL_BlitSurface(topLeft, nullptr, surface.get(), const_cast<SDL_Rect*>(&topLeftRect.getRect()));
-		SDL_BlitSurface(topRight, nullptr, surface.get(), const_cast<SDL_Rect*>(&topRightRect.getRect()));
-		SDL_BlitSurface(bottomLeft, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomLeftRect.getRect()));
-		SDL_BlitSurface(bottomRight, nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRightRect.getRect()));
+		SDL_BlitSurface(topLeft.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topLeftRect.getRect()));
+		SDL_BlitSurface(topRight.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topRightRect.getRect()));
+		SDL_BlitSurface(bottomLeft.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomLeftRect.getRect()));
+		SDL_BlitSurface(bottomRight.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRightRect.getRect()));
 	}
 	else if (type == Texture::PatternType::Dark)
 	{

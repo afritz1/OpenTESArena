@@ -361,12 +361,10 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		auto function = [this](Game &game)
 		{
 			auto &textureManager = game.getTextureManager();
-			auto &renderer = game.getRenderer();
 			const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 
 			// The center of the pop-up depends on the interface mode.
-			const Int2 center = GameWorldPanel::getInterfaceCenter(
-				modernInterface, textureManager, renderer);
+			const Int2 center = GameWorldPanel::getInterfaceCenter(modernInterface, textureManager);
 
 			const std::string text = [&game]()
 			{
@@ -487,6 +485,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const Int2 &richTextDimensions = richText.getDimensions();
 
+			auto &renderer = game.getRenderer();
 			Texture texture = Texture::generate(Texture::PatternType::Dark,
 				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer);
 
@@ -672,8 +671,7 @@ GameWorldPanel::~GameWorldPanel()
 	}
 }
 
-Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &textureManager,
-	Renderer &renderer)
+Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &textureManager)
 {
 	if (modernInterface)
 	{
@@ -681,16 +679,17 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 	}
 	else
 	{
-		const TextureID gameInterfaceTextureID =
-			GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-		const TextureRef gameInterfaceTexture = textureManager.getTextureRef(gameInterfaceTextureID);
+		const TextureBuilderID gameInterfaceTextureBuilderID =
+			GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+		const TextureBuilder &gameInterfaceTextureBuilder =
+			textureManager.getTextureBuilderHandle(gameInterfaceTextureBuilderID);
 
 		return Int2(Renderer::ORIGINAL_WIDTH / 2,
-			(Renderer::ORIGINAL_HEIGHT - gameInterfaceTexture.getHeight()) / 2);
+			(Renderer::ORIGINAL_HEIGHT - gameInterfaceTextureBuilder.getHeight()) / 2);
 	}
 }
 
-Panel::CursorData GameWorldPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
 	auto &game = this->getGame();
@@ -702,34 +701,34 @@ Panel::CursorData GameWorldPanel::getCurrentCursor() const
 	if (modernInterface)
 	{
 		// Do not show cursor in modern mode.
-		return CursorData(nullptr, CursorAlignment::TopLeft);
+		return std::nullopt;
 	}
 	else
 	{
+		const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		}
+
 		// See which arrow cursor region the native mouse is in.
 		for (int i = 0; i < this->nativeCursorRegions.size(); i++)
 		{
 			if (this->nativeCursorRegions[i].contains(mousePosition))
 			{
 				// Get the relevant arrow cursor.
-				const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
-				PaletteID paletteID;
-				if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
-				{
-					DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-				}
-
 				const std::string &textureFilename = TextureFile::fromName(TextureName::ArrowCursors);
-				TextureUtils::TextureIdGroup textureIDs;
-				if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID,
-					renderer, &textureIDs))
+				const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+					textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
+				if (!textureBuilderIDs.has_value())
 				{
-					DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
+					DebugCrash("Couldn't get texture builder IDs for \"" + textureFilename + "\".");
 				}
 
-				const TextureID textureID = textureIDs.getID(i);
-				const Texture &texture = textureManager.getTextureHandle(textureID);
-				return CursorData(&texture, ArrowCursorAlignments.at(i));
+				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
+				const CursorAlignment cursorAlignment = ArrowCursorAlignments.at(i);
+				return CursorData(textureBuilderID, *paletteID, cursorAlignment);
 			}
 		}
 
@@ -738,88 +737,119 @@ Panel::CursorData GameWorldPanel::getCurrentCursor() const
 	}
 }
 
-TextureID GameWorldPanel::getGameWorldInterfaceTextureID(
-	TextureManager &textureManager, Renderer &renderer)
+TextureBuilderID GameWorldPanel::getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager)
 {
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
 	const std::string &textureFilename = TextureFile::fromName(TextureName::GameWorldInterface);
-	TextureID textureID;
-	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
 	{
-		DebugCrash("Couldn't get texture ID for \"" + textureFilename + "\".");
+		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
 	}
 
-	return textureID;
+	return *textureBuilderID;
 }
 
-TextureID GameWorldPanel::getCompassFrameTextureID() const
+TextureBuilderID GameWorldPanel::getCompassFrameTextureBuilderID() const
 {
-	return this->getTextureID(TextureName::CompassFrame, PaletteName::Default);
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &textureFilename = TextureFile::fromName(TextureName::CompassFrame);
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+	}
+
+	return *textureBuilderID;
 }
 
-TextureID GameWorldPanel::getCompassSliderTextureID() const
+TextureBuilderID GameWorldPanel::getCompassSliderTextureBuilderID() const
 {
-	return this->getTextureID(TextureName::CompassSlider, PaletteName::Default);
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &textureFilename = TextureFile::fromName(TextureName::CompassSlider);
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+	}
+
+	return *textureBuilderID;
 }
 
-TextureID GameWorldPanel::getPlayerPortraitTextureID(
+TextureBuilderID GameWorldPanel::getPlayerPortraitTextureBuilderID(
 	const std::string &portraitsFilename, int portraitID) const
 {
-	const TextureUtils::TextureIdGroup textureIDs =
-		this->getTextureIDs(portraitsFilename, PaletteFile::fromName(PaletteName::Default));
-	const TextureID textureID = textureIDs.getID(portraitID);
-	return textureID;
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(portraitsFilename.c_str());
+	if (!textureBuilderIDs.has_value())
+	{
+		DebugCrash("Couldn't get texture builder IDs for \"" + portraitsFilename + "\".");
+	}
+
+	return textureBuilderIDs->getID(portraitID);
 }
 
-TextureID GameWorldPanel::getStatusGradientTextureID(int gradientID) const
+TextureBuilderID GameWorldPanel::getStatusGradientTextureBuilderID(int gradientID) const
 {
-	const TextureUtils::TextureIdGroup textureIDs =
-		this->getTextureIDs(TextureName::StatusGradients, PaletteName::Default);
-	const TextureID textureID = textureIDs.getID(gradientID);
-	return textureID;
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &statusGradientsFilename = TextureFile::fromName(TextureName::StatusGradients);
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(statusGradientsFilename.c_str());
+	if (!textureBuilderIDs.has_value())
+	{
+		DebugCrash("Couldn't get texture builder IDs for \"" + statusGradientsFilename + "\".");
+	}
+
+	return textureBuilderIDs->getID(gradientID);
 }
 
-TextureID GameWorldPanel::getNoSpellTextureID() const
+TextureBuilderID GameWorldPanel::getNoSpellTextureBuilderID() const
 {
-	return this->getTextureID(TextureName::NoSpell, PaletteName::Default);
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &textureFilename = TextureFile::fromName(TextureName::NoSpell);
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+	}
+
+	return *textureBuilderID;
 }
 
-TextureID GameWorldPanel::getWeaponTextureID(const std::string &weaponFilename, int index) const
+TextureBuilderID GameWorldPanel::getWeaponTextureBuilderID(const std::string &weaponFilename, int index) const
 {
-	const TextureUtils::TextureIdGroup textureIDs =
-		this->getTextureIDs(weaponFilename, PaletteFile::fromName(PaletteName::Default));
-	const TextureID textureID = textureIDs.getID(index);
-	return textureID;
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(weaponFilename.c_str());
+	if (!textureBuilderIDs.has_value())
+	{
+		DebugCrash("Couldn't get texture builder IDs for \"" + weaponFilename + "\".");
+	}
+
+	return textureBuilderIDs->getID(index);
 }
 
 void GameWorldPanel::updateCursorRegions(int width, int height)
 {
 	// Scale ratios.
-	const double xScale = static_cast<double>(width) /
-		static_cast<double>(Renderer::ORIGINAL_WIDTH);
-	const double yScale = static_cast<double>(height) /
-		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+	const double xScale = static_cast<double>(width) / static_cast<double>(Renderer::ORIGINAL_WIDTH);
+	const double yScale = static_cast<double>(height) / static_cast<double>(Renderer::ORIGINAL_HEIGHT);
 
 	// Lambda for making a cursor region that scales to the current resolution.
 	auto scaleRect = [xScale, yScale](const Rect &rect)
 	{
-		const int x = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getLeft()) * xScale));
-		const int y = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getTop()) * yScale));
-		const int width = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getWidth()) * xScale));
-		const int height = static_cast<int>(std::ceil(
-			static_cast<double>(rect.getHeight()) * yScale));
-
+		const int x = static_cast<int>(std::ceil(static_cast<double>(rect.getLeft()) * xScale));
+		const int y = static_cast<int>(std::ceil(static_cast<double>(rect.getTop()) * yScale));
+		const int width = static_cast<int>(std::ceil(static_cast<double>(rect.getWidth()) * xScale));
+		const int height = static_cast<int>(std::ceil(static_cast<double>(rect.getHeight()) * yScale));
 		return Rect(x, y, width, height);
 	};
+
+	// @todo: maybe replace this with an index array into the global regions and a std::generate?
 
 	// Top row.
 	this->nativeCursorRegions.at(0) = scaleRect(TopLeftRegion);
@@ -1575,13 +1605,13 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 					// the requirements here.
 					auto &textureManager = game.getTextureManager();
 					auto &renderer = game.getRenderer();
-					const TextureID gameWorldInterfaceTextureID =
-						GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-					const TextureRef gameWorldInterfaceTexture =
-						textureManager.getTextureRef(gameWorldInterfaceTextureID);
+					const TextureBuilderID gameWorldInterfaceTextureID =
+						GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+					const TextureBuilder &gameWorldInterfaceTextureBuilder =
+						textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureID);
 					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
 					return rightClick && (originalCursorY <
-						(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight()));
+						(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight()));
 				}
 				else
 				{
@@ -1990,13 +2020,13 @@ void GameWorldPanel::handleNightLightChange(bool active)
 
 	TextureManager &textureManager = game.getTextureManager();
 	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(active, palette);
 }
 
@@ -2656,25 +2686,22 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		text, FontName::D, this->getGame().getFontLibrary(), renderer);
 
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID gameWorldInterfaceTextureID =
-		GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-	const TextureRef gameWorldInterfaceTexture =
-		textureManager.getTextureRef(gameWorldInterfaceTextureID);
+	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
+		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+	const TextureBuilder &gameWorldInterfaceTextureBuilder =
+		textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
 
 	const int x = 0;
 	const int y = Renderer::ORIGINAL_HEIGHT -
-		gameWorldInterfaceTexture.getHeight() - tooltip.getHeight();
+		gameWorldInterfaceTextureBuilder.getHeight() - tooltip.getHeight();
 	renderer.drawOriginal(tooltip, x, y);
 }
 
-void GameWorldPanel::drawCompass(const NewDouble2 &direction,
-	TextureManager &textureManager, Renderer &renderer)
+void GameWorldPanel::drawCompass(const NewDouble2 &direction, TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureID compassSliderTextureID = this->getCompassSliderTextureID();
-	const TextureID compassFrameTextureID = this->getCompassFrameTextureID();
-
-	// Draw compass slider based on player direction.
-	const TextureRef compassSlider = textureManager.getTextureRef(compassSliderTextureID);
+	// The compass slider is drawn based on player direction.
+	const TextureBuilderID compassSliderTextureBuilderID = this->getCompassSliderTextureBuilderID();
+	const TextureBuilderID compassFrameTextureBuilderID = this->getCompassFrameTextureBuilderID();
 
 	// Angle between 0 and 2 pi.
 	const double angle = std::atan2(-direction.y, -direction.x);
@@ -2686,6 +2713,7 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction,
 		std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
 
 	// Clip area for the visible part of the slider.
+	const TextureBuilder &compassSlider = textureManager.getTextureBuilderHandle(compassSliderTextureBuilderID);
 	const Rect clipRect(xOffset, 0, 32, compassSlider.getHeight());
 
 	// Top-left corner of the slider in 320x200 space.
@@ -2697,12 +2725,21 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction,
 	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
 		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
 
-	renderer.drawOriginalClipped(compassSlider.get(), clipRect, sliderX, sliderY);
+	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginalClipped(compassSliderTextureBuilderID, *paletteID, clipRect,
+		sliderX, sliderY, textureManager);
 
 	// Draw the compass frame over the slider.
-	const TextureRef compassFrame = textureManager.getTextureRef(compassFrameTextureID);
-	renderer.drawOriginal(compassFrame.get(),
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0);
+	const TextureBuilder &compassFrame = textureManager.getTextureBuilderHandle(compassFrameTextureBuilderID);
+	renderer.drawOriginal(compassFrameTextureBuilderID, *paletteID,
+		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0, textureManager);
 }
 
 void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
@@ -3097,23 +3134,30 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Get texture IDs in advance of any texture references.
 	auto &textureManager = game.getTextureManager();
-	const TextureID gameWorldInterfaceTextureID =
-		GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
-
-	const TextureID statusGradientTextureID = [this]()
+	const std::string &defaultPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
+	if (!defaultPaletteID.has_value())
 	{
-		const int gradientID = 0; // Default for now.
-		return this->getStatusGradientTextureID(gradientID);
+		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
+		return;
+	}
+
+	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
+		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+
+	const TextureBuilderID statusGradientTextureBuilderID = [this]()
+	{
+		constexpr int gradientID = 0; // Default for now.
+		return this->getStatusGradientTextureBuilderID(gradientID);
 	}();
 	
-	const TextureID playerPortraitTextureID = [this, &player]()
+	const TextureBuilderID playerPortraitTextureBuilderID = [this, &player]()
 	{
-		const std::string &headsFilename =
-			PortraitFile::getHeads(player.isMale(), player.getRaceID(), true);
-		return this->getPlayerPortraitTextureID(headsFilename, player.getPortraitID());
+		const std::string &headsFilename = PortraitFile::getHeads(player.isMale(), player.getRaceID(), true);
+		return this->getPlayerPortraitTextureBuilderID(headsFilename, player.getPortraitID());
 	}();
 
-	const TextureID noSpellTextureID = this->getNoSpellTextureID();
+	const TextureBuilderID noSpellTextureBuilderID = this->getNoSpellTextureBuilderID();
 
 	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -3124,24 +3168,21 @@ void GameWorldPanel::render(Renderer &renderer)
 	if (!modernInterface)
 	{
 		// Draw game world interface.
-		const TextureRef gameWorldInterfaceTexture =
-			textureManager.getTextureRef(gameWorldInterfaceTextureID);
-		renderer.drawOriginal(gameWorldInterfaceTexture.get(), 0,
-			Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight());
+		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
+			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
+		renderer.drawOriginal(gameWorldInterfaceTextureBuilderID, *defaultPaletteID, 0,
+			Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight(), textureManager);
 
 		// Draw player portrait.
-		const TextureRef statusGradientTexture = textureManager.getTextureRef(statusGradientTextureID);
-		const TextureRef playerPortraitTexture = textureManager.getTextureRef(playerPortraitTextureID);
-		renderer.drawOriginal(statusGradientTexture.get(), 14, 166);
-		renderer.drawOriginal(playerPortraitTexture.get(), 14, 166);
+		renderer.drawOriginal(statusGradientTextureBuilderID, *defaultPaletteID, 14, 166, textureManager);
+		renderer.drawOriginal(playerPortraitTextureBuilderID, *defaultPaletteID, 14, 166, textureManager);
 
 		// If the player's class can't use magic, show the darkened spell icon.
 		const auto &charClassLibrary = game.getCharacterClassLibrary();
 		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
 		if (!charClassDef.canCastMagic())
 		{
-			const TextureRef noSpellTexture = textureManager.getTextureRef(noSpellTextureID);
-			renderer.drawOriginal(noSpellTexture.get(), 91, 177);
+			renderer.drawOriginal(noSpellTextureBuilderID, *defaultPaletteID, 91, 177, textureManager);
 		}
 
 		// Draw text: player name.
@@ -3162,8 +3203,16 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	// Several interface objects are in this method because they are hidden by the status
 	// pop-up and the spells list.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID gameWorldInterfaceTextureID =
-		GameWorldPanel::getGameWorldInterfaceTextureID(textureManager, renderer);
+	const std::string &defaultPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
+	if (!defaultPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
+		return;
+	}
+
+	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
+		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
 
 	// Display player's weapon if unsheathed. The position also depends on whether
 	// the interface is in classic or modern mode.
@@ -3171,15 +3220,15 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	if (!weaponAnimation.isSheathed())
 	{
 		const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-		const TextureID weaponTextureID = [this, &weaponAnimation, weaponAnimIndex]()
+		const TextureBuilderID weaponTextureBuilderID = [this, &weaponAnimation, weaponAnimIndex]()
 		{
 			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			return this->getWeaponTextureID(weaponFilename, weaponAnimIndex);
+			return this->getWeaponTextureBuilderID(weaponFilename, weaponAnimIndex);
 		}();
 
-		const TextureRef gameWorldInterfaceTexture =
-			textureManager.getTextureRef(gameWorldInterfaceTextureID);
-		const TextureRef weaponTexture = textureManager.getTextureRef(weaponTextureID);
+		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
+			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
+		const TextureBuilderRef weaponTextureBuilderRef = textureManager.getTextureBuilderRef(weaponTextureBuilderID);
 
 		DebugAssertIndex(this->weaponOffsets, weaponAnimIndex);
 		const Int2 &weaponOffset = this->weaponOffsets[weaponAnimIndex];
@@ -3204,20 +3253,20 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Values to scale original weapon dimensions by.
 			const double weaponScaleX = newDiff / static_cast<double>(Renderer::ORIGINAL_WIDTH);
 			const double weaponScaleY = static_cast<double>(Renderer::ORIGINAL_HEIGHT) /
-				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight());
+				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
 
 			const int weaponX = newLeft +
 				static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
 			const int weaponY = static_cast<int>(std::round(
 				static_cast<double>(weaponOffset.y) * weaponScaleY));
 			const int weaponWidth = static_cast<int>(std::round(
-				static_cast<double>(weaponTexture.getWidth()) * weaponScaleX));
+				static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
 			const int weaponHeight = static_cast<int>(std::round(
-				static_cast<double>(std::min(weaponTexture.getHeight() + 1,
+				static_cast<double>(std::min(weaponTextureBuilderRef.getHeight() + 1,
 					std::max(Renderer::ORIGINAL_HEIGHT - weaponY, 0))) * weaponScaleY));
 
-			renderer.drawOriginal(weaponTexture.get(),
-				weaponX, weaponY, weaponWidth, weaponHeight);
+			renderer.drawOriginal(weaponTextureBuilderID, *defaultPaletteID,
+				weaponX, weaponY, weaponWidth, weaponHeight, textureManager);
 
 			// Reset letterbox mode back to what it was.
 			renderer.setLetterboxMode(options.getGraphics_LetterboxMode());
@@ -3227,13 +3276,13 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Clamp the max weapon height non-negative since some weapon animations like the
 			// morning star can cause it to become -1.
 			const int maxWeaponHeight = std::max(
-				(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTexture.getHeight()) - weaponOffset.y, 0);
+				(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight()) - weaponOffset.y, 0);
 
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
-			const int weaponHeight = std::clamp(weaponTexture.getHeight() + 1, 0, maxWeaponHeight);
-			renderer.drawOriginal(weaponTexture.get(),
-				weaponOffset.x, weaponOffset.y, weaponTexture.getWidth(), weaponHeight);
+			const int weaponHeight = std::clamp(weaponTextureBuilderRef.getHeight() + 1, 0, maxWeaponHeight);
+			renderer.drawOriginal(weaponTextureBuilderID, *defaultPaletteID,
+				weaponOffset.x, weaponOffset.y, weaponTextureBuilderRef.getWidth(), weaponHeight, textureManager);
 		}
 	}
 
@@ -3251,12 +3300,13 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		const Texture *triggerTextTexture;
 		gameData.getTriggerTextRenderInfo(&triggerTextTexture);
 
-		const TextureRef gameWorldInterfaceTexture = textureManager.getTextureRef(gameWorldInterfaceTextureID);
+		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
+			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
 		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
-		const int centerY = [modernInterface, &gameWorldInterfaceTexture, triggerTextTexture]()
+		const int centerY = [modernInterface, &gameWorldInterfaceTextureBuilderRef, triggerTextTexture]()
 		{
-			const int interfaceOffset = modernInterface ?
-				(gameWorldInterfaceTexture.getHeight() / 2) : gameWorldInterfaceTexture.getHeight();
+			const int interfaceOffset = modernInterface ? (gameWorldInterfaceTextureBuilderRef.getHeight() / 2) :
+				gameWorldInterfaceTextureBuilderRef.getHeight();
 			return Renderer::ORIGINAL_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 2;
 		}();
 

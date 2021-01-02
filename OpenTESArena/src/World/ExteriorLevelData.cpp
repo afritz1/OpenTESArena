@@ -210,15 +210,15 @@ void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, textureInstManager,
 		renderer);
 
-	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
 	// Give distant sky data to the renderer.
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setDistantSky(this->distantSky, palette, textureManager);
 }
 

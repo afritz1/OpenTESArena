@@ -317,7 +317,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 	}();
 }
 
-Panel::CursorData PauseMenuPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> PauseMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -395,67 +395,104 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	// Draw pause background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID pauseBackgroundTextureID = this->getTextureID(
-		TextureName::PauseBackground, PaletteName::Default);
-	const TextureRef pauseBackgroundTexture = textureManager.getTextureRef(pauseBackgroundTextureID);
-	renderer.drawOriginal(pauseBackgroundTexture.get());
+	const std::string &pauseBackgroundPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> pauseBackgroundPaletteID =
+		textureManager.tryGetPaletteID(pauseBackgroundPaletteFilename.c_str());
+	if (!pauseBackgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get pause background palette ID for \"" + pauseBackgroundPaletteFilename + "\".");
+		return;
+	}
+
+	const std::string &pauseBackgroundTextureFilename = TextureFile::fromName(TextureName::PauseBackground);
+	const std::optional<TextureBuilderID> pauseBackgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(pauseBackgroundTextureFilename.c_str());
+	if (!pauseBackgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get pause background texture builder ID for \"" + pauseBackgroundTextureFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*pauseBackgroundTextureBuilderID, *pauseBackgroundPaletteID, textureManager);
 
 	// Draw game world interface below the pause menu.
-	const TextureID gameInterfaceTextureID = this->getTextureID(
-		TextureName::GameWorldInterface, PaletteName::Default);
-	const TextureRef gameInterfaceTexture = textureManager.getTextureRef(gameInterfaceTextureID);
-	renderer.drawOriginal(gameInterfaceTexture.get(), 0,
-		Renderer::ORIGINAL_HEIGHT - gameInterfaceTexture.getHeight());
+	const PaletteID gameWorldInterfacePaletteID = *pauseBackgroundPaletteID;
+	const std::string &gameWorldInterfaceTextureFilename = TextureFile::fromName(TextureName::GameWorldInterface);
+	const std::optional<TextureBuilderID> gameWorldInterfaceTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(gameWorldInterfaceTextureFilename.c_str());
+	if (!gameWorldInterfaceTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get game world interface texture builder ID for \"" + gameWorldInterfaceTextureFilename + "\".");
+		return;
+	}
+
+	const TextureBuilder &gameWorldInterfaceTextureBuilder =
+		textureManager.getTextureBuilderHandle(*gameWorldInterfaceTextureBuilderID);
+	renderer.drawOriginal(*gameWorldInterfaceTextureBuilderID, gameWorldInterfacePaletteID,
+		0, Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight(), textureManager);
 
 	// Draw player portrait.
 	const auto &player = this->getGame().getGameData().getPlayer();
-	const auto &headsFilename = PortraitFile::getHeads(
-		player.isMale(), player.getRaceID(), true);
-	const TextureRef portraitTexture = [this, &textureManager, &headsFilename, &player]() -> TextureRef
+	const PaletteID portraitPaletteID = gameWorldInterfacePaletteID;
+	const TextureBuilderID portraitTextureBuilderID = [this, &textureManager, &player]()
 	{
-		const TextureUtils::TextureIdGroup portraitTextureIDs = this->getTextureIDs(
-			headsFilename, PaletteFile::fromName(PaletteName::Default));
-		const TextureID portraitTextureID = portraitTextureIDs.getID(player.getPortraitID());
-		return textureManager.getTextureRef(portraitTextureID);
+		const std::string &headsFilename = PortraitFile::getHeads(player.isMale(), player.getRaceID(), true);
+		const std::optional<TextureBuilderIdGroup> portraitTextureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(headsFilename.c_str());
+		if (!portraitTextureBuilderIDs.has_value())
+		{
+			DebugCrash("Couldn't get portrait texture builder IDs for \"" + headsFilename + "\".");
+		}
+
+		return portraitTextureBuilderIDs->getID(player.getPortraitID());
 	}();
 
-	const TextureRef statusTexture = [this, &textureManager]() -> TextureRef
+	const PaletteID statusPaletteID = portraitPaletteID;
+	const TextureBuilderID statusTextureBuilderID = [this, &textureManager]()
 	{
-		const TextureUtils::TextureIdGroup statusTextureIDs = this->getTextureIDs(
-			TextureFile::fromName(TextureName::StatusGradients),
-			PaletteFile::fromName(PaletteName::Default));
-		const TextureID statusTextureID = statusTextureIDs.getID(0);
-		return textureManager.getTextureRef(statusTextureID);
+		const std::string &statusFilename = TextureFile::fromName(TextureName::StatusGradients);
+		const std::optional<TextureBuilderIdGroup> statusTextureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(statusFilename.c_str());
+		if (!statusTextureBuilderIDs.has_value())
+		{
+			DebugCrash("Couldn't get status texture builder IDs for \"" + statusFilename + "\".");
+		}
+
+		return statusTextureBuilderIDs->getID(0);
 	}();
 
-	renderer.drawOriginal(statusTexture.get(), 14, 166);
-	renderer.drawOriginal(portraitTexture.get(), 14, 166);
+	renderer.drawOriginal(statusTextureBuilderID, statusPaletteID, 14, 166, textureManager);
+	renderer.drawOriginal(portraitTextureBuilderID, portraitPaletteID, 14, 166, textureManager);
 
 	// If the player's class can't use magic, show the darkened spell icon.
 	const auto &charClassLibrary = this->getGame().getCharacterClassLibrary();
 	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
 	if (!charClassDef.canCastMagic())
 	{
-		const TextureID nonMagicIconTextureID = this->getTextureID(
-			TextureName::NoSpell, PaletteName::Default);
-		const TextureRef nonMagicIconTexture = textureManager.getTextureRef(nonMagicIconTextureID);
-		renderer.drawOriginal(nonMagicIconTexture.get(), 91, 177);
+		const PaletteID nonMagicIconPaletteID = gameWorldInterfacePaletteID;
+		const std::string &nonMagicIconTextureFilename = TextureFile::fromName(TextureName::NoSpell);
+		const std::optional<TextureBuilderID> nonMagicIconTextureBuilderID =
+			textureManager.tryGetTextureBuilderID(nonMagicIconTextureFilename.c_str());
+		if (!nonMagicIconTextureBuilderID.has_value())
+		{
+			DebugCrash("Couldn't get non-magic icon texture builder ID for \"" + nonMagicIconTextureFilename + "\".");
+		}
+
+		renderer.drawOriginal(*nonMagicIconTextureBuilderID, nonMagicIconPaletteID, 91, 177, textureManager);
 	}
 
 	// Cover up the detail slider with a new options background.
-	Texture optionsBackground = Texture::generate(Texture::PatternType::Custom1,
-		this->optionsButton.getWidth(), this->optionsButton.getHeight(),
-		textureManager, renderer);
-	renderer.drawOriginal(optionsBackground, this->optionsButton.getX(),
-		this->optionsButton.getY());
+	Texture optionsBackground = Texture::generate(Texture::PatternType::Custom1, this->optionsButton.getWidth(),
+		this->optionsButton.getHeight(), textureManager, renderer);
+	renderer.drawOriginal(optionsBackground, this->optionsButton.getX(), this->optionsButton.getY());
 
 	// Draw text: player's name, music volume, sound volume, options.
-	renderer.drawOriginal(this->playerNameTextBox->getTexture(),
-		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawOriginal(this->musicTextBox->getTexture(),
-		this->musicTextBox->getX(), this->musicTextBox->getY());
-	renderer.drawOriginal(this->soundTextBox->getTexture(),
-		this->soundTextBox->getX(), this->soundTextBox->getY());
-	renderer.drawOriginal(this->optionsTextBox->getTexture(),
-		this->optionsTextBox->getX() - 1, this->optionsTextBox->getY());
+	renderer.drawOriginal(this->playerNameTextBox->getTexture(), this->playerNameTextBox->getX(),
+		this->playerNameTextBox->getY());
+	renderer.drawOriginal(this->musicTextBox->getTexture(), this->musicTextBox->getX(),
+		this->musicTextBox->getY());
+	renderer.drawOriginal(this->soundTextBox->getTexture(), this->soundTextBox->getX(),
+		this->soundTextBox->getY());
+	renderer.drawOriginal(this->optionsTextBox->getTexture(), this->optionsTextBox->getX() - 1,
+		this->optionsTextBox->getY());
 }

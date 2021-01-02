@@ -143,19 +143,22 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 	auto &textureManager = game.getTextureManager();
 	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Automap);
 	const std::string &backgroundPaletteName = backgroundTextureName;
-	PaletteID backgroundPaletteID;
-	if (!textureManager.tryGetPaletteID(backgroundPaletteName.c_str(), &backgroundPaletteID))
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
+	if (!backgroundPaletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
 	}
 
-	auto &renderer = game.getRenderer();
-	if (!textureManager.tryGetTextureID(backgroundTextureName.c_str(), backgroundPaletteID,
-		renderer, &this->backgroundTextureID))
+	this->backgroundPaletteID = *backgroundPaletteID;
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundTextureName.c_str());
+	if (!backgroundTextureBuilderID.has_value())
 	{
-		DebugCrash("Couldn't get texture ID for \"" + backgroundTextureName + "\".");
+		DebugCrash("Couldn't get texture builder ID for \"" + backgroundTextureName + "\".");
 	}
 
+	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
 	this->automapOffset = AutomapPanel::makeAutomapOffset(
 		playerVoxel, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
 }
@@ -594,30 +597,30 @@ NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWid
 	return ArenaWildUtils::getCenteredWildOrigin(voxel);
 }
 
-Panel::CursorData AutomapPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> AutomapPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 
 	const std::string &paletteFilename = TextureFile::fromName(TextureName::Automap);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		return CursorData::EMPTY;
+		return std::nullopt;
 	}
 
 	const std::string &textureFilename = TextureFile::fromName(TextureName::QuillCursor);
-	TextureID textureID;
-	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
 	{
-		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
-		return CursorData::EMPTY;
+		DebugLogWarning("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+		return std::nullopt;
 	}
 
-	const Texture &texture = textureManager.getTextureHandle(textureID);
-	return CursorData(&texture, CursorAlignment::BottomLeft);
+	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::BottomLeft);
 }
 
 void AutomapPanel::handleEvent(const SDL_Event &e)
@@ -714,8 +717,7 @@ void AutomapPanel::render(Renderer &renderer)
 
 	// Draw automap background.
 	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureRef backgroundTexture = textureManager.getTextureRef(this->backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	renderer.drawOriginal(this->backgroundTextureBuilderID, this->backgroundPaletteID, textureManager);
 
 	// Only draw the part of the automap within the drawing area.
 	const Rect nativeDrawingArea = renderer.originalToNative(DrawingArea);

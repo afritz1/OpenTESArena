@@ -7,16 +7,16 @@
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 
-EntityAnimationDefinition::Keyframe::Keyframe(ImageID imageID, double width, double height)
+EntityAnimationDefinition::Keyframe::Keyframe(TextureAssetReference &&textureAssetRef, double width, double height)
+	: textureAssetRef(std::move(textureAssetRef))
 {
-	this->imageID = imageID;
 	this->width = width;
 	this->height = height;
 }
 
-ImageID EntityAnimationDefinition::Keyframe::getImageID() const
+const TextureAssetReference &EntityAnimationDefinition::Keyframe::getTextureAssetRef() const
 {
-	return this->imageID;
+	return this->textureAssetRef;
 }
 
 double EntityAnimationDefinition::Keyframe::getWidth() const

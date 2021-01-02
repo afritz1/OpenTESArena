@@ -123,7 +123,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	}();
 }
 
-Panel::CursorData ChooseGenderPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseGenderPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -163,17 +163,28 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &backgroundFilename = TextureFile::fromName(TextureName::CharacterCreation);
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, male, and female.
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) -
-		(this->parchment.getWidth() / 2);
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) -
-		(this->parchment.getHeight() / 2);
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2);
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);

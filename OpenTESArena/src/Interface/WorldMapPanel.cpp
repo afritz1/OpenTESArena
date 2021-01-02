@@ -60,7 +60,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 	}
 }
 
-Panel::CursorData WorldMapPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> WorldMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -126,27 +126,40 @@ void WorldMapPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Get texture IDs in advance of any texture references.
-	const auto &gameData = this->getGame().getGameData();
-	const int provinceID = gameData.getProvinceDefinition().getRaceID();
-	const TextureID provinceTextTextureID = [this, provinceID]()
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &worldMapFilename = TextureFile::fromName(TextureName::WorldMap);
+	const std::string &paletteFilename = worldMapFilename;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
 	{
-		const TextureUtils::TextureIdGroup provinceTextTextureIDs = this->getTextureIDs(
-			TextureFile::fromName(TextureName::ProvinceNames),
-			TextureFile::fromName(TextureName::WorldMap));
-		return provinceTextTextureIDs.getID(provinceID);
-	}();
+		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return;
+	}
 
-	const TextureID mapBackgroundTextureID = this->getTextureID(
-		TextureName::WorldMap, PaletteName::BuiltIn);
-	
 	// Draw world map background. This one has "Exit" at the bottom right.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureRef mapBackgroundTexture = textureManager.getTextureRef(mapBackgroundTextureID);
-	renderer.drawOriginal(mapBackgroundTexture.get());
+	const std::optional<TextureBuilderID> mapBackgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(worldMapFilename.c_str());
+	if (!mapBackgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get map background texture builder ID for \"" + worldMapFilename + "\".");
+		return;
+	}
+	
+	renderer.drawOriginal(*mapBackgroundTextureBuilderID, *paletteID, textureManager);
 
 	// Draw yellow text over current province name.
-	const TextureRef provinceTextTexture = textureManager.getTextureRef(provinceTextTextureID);
+	const std::string &provinceNamesFilename = TextureFile::fromName(TextureName::ProvinceNames);
+	const std::optional<TextureBuilderIdGroup> provinceTextTextureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(provinceNamesFilename.c_str());
+	if (!provinceTextTextureBuilderIDs.has_value())
+	{
+		DebugLogError("Couldn't get province text texture builder IDs for \"" + provinceNamesFilename + "\".");
+		return;
+	}
+
+	const auto &gameData = this->getGame().getGameData();
+	const int provinceID = gameData.getProvinceDefinition().getRaceID();
+	const TextureBuilderID provinceTextTextureBuilderID = provinceTextTextureBuilderIDs->getID(provinceID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
-	renderer.drawOriginal(provinceTextTexture.get(), nameOffset.x, nameOffset.y);
+	renderer.drawOriginal(provinceTextTextureBuilderID, *paletteID, nameOffset.x, nameOffset.y, textureManager);
 }

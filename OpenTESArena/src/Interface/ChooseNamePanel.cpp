@@ -111,7 +111,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 	SDL_StartTextInput();
 }
 
-Panel::CursorData ChooseNamePanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseNamePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -178,10 +178,23 @@ void ChooseNamePanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	const std::string &backgroundFilename = TextureFile::fromName(TextureName::CharacterCreation);
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchment: title.
 	renderer.drawOriginal(this->parchment,

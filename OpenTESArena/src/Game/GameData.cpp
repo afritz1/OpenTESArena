@@ -247,13 +247,13 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	renderer.setFogDistance(fogDistance);
 
 	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 }
 
@@ -422,13 +422,13 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	renderer.setFogDistance(fogDistance);
 
 	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;
@@ -507,13 +507,13 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	renderer.setFogDistance(fogDistance);
 
 	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;

@@ -7,9 +7,6 @@
 
 // Various texture handles for use with texture manager.
 using PaletteID = int; // 32-bit software surface (generally 256 texels)
-using ImageID = int; // 8-bit software surface
-using SurfaceID = int; // 32-bit software surface
-using TextureID = int; // 32-bit hardware surface
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 
 // Texture instance handles, same as texture manager but for generated textures not loaded
@@ -54,10 +51,6 @@ namespace TextureUtils
 			return this->startID + index;
 		}
 	};
-
-	using ImageIdGroup = IdGroup<ImageID>;
-	using SurfaceIdGroup = IdGroup<SurfaceID>;
-	using TextureIdGroup = IdGroup<TextureID>;
 
 	// 32-bit texture creation convenience functions.
 	Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette);

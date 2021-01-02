@@ -1,11 +1,11 @@
 #include "SkyAirDefinition.h"
 
-void SkyAirDefinition::init(ImageID imageID)
+void SkyAirDefinition::init(TextureBuilderID textureBuilderID)
 {
-	this->imageID = imageID;
+	this->textureBuilderID = textureBuilderID;
 }
 
-ImageID SkyAirDefinition::getImageID() const
+TextureBuilderID SkyAirDefinition::getTextureBuilderID() const
 {
-	return this->imageID;
+	return this->textureBuilderID;
 }

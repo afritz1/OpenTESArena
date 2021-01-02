@@ -132,7 +132,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 }
 
-Panel::CursorData ChooseClassCreationPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -190,17 +190,28 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &backgroundFilename = TextureFile::fromName(TextureName::CharacterCreation);
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, generate, select.
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
-		(this->parchment.getWidth() / 2) - 1;
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
-		(this->parchment.getHeight() / 2) + 1;
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1;
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) + 1;
 
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);

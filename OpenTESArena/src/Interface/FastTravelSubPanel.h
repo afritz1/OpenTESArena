@@ -28,7 +28,7 @@ private:
 	const std::string &getBackgroundFilename() const;
 
 	// Gets the animation texture IDs for display.
-	TextureUtils::TextureIdGroup getAnimationTextureIDs() const;
+	TextureBuilderIdGroup getAnimationTextureIDs() const;
 
 	// Creates a text sub-panel for display when the player arrives at a city.
 	// - @todo: holiday pop-up function.
@@ -46,7 +46,7 @@ public:
 
 	static constexpr double MIN_SECONDS = 1.0;
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };

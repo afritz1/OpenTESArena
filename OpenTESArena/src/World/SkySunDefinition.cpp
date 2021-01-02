@@ -1,11 +1,11 @@
 #include "SkySunDefinition.h"
 
-void SkySunDefinition::init(ImageID imageID)
+void SkySunDefinition::init(TextureBuilderID textureBuilderID)
 {
-	this->imageID = imageID;
+	this->textureBuilderID = textureBuilderID;
 }
 
-ImageID SkySunDefinition::getImageID() const
+TextureBuilderID SkySunDefinition::getTextureBuilderID() const
 {
-	return this->imageID;
+	return this->textureBuilderID;
 }

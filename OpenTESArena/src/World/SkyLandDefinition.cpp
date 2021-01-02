@@ -2,34 +2,34 @@
 
 #include "components/debug/Debug.h"
 
-void SkyLandDefinition::init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
+void SkyLandDefinition::init(const TextureBuilderIdGroup &textureBuilderIDs, double animSeconds,
 	ShadingType shadingType)
 {
-	this->imageIDs = imageIDs;
+	this->textureBuilderIDs = textureBuilderIDs;
 	this->animSeconds = animSeconds;
 	this->shadingType = shadingType;
 }
 
-void SkyLandDefinition::init(ImageID imageID, ShadingType shadingType)
+void SkyLandDefinition::init(TextureBuilderID textureBuilderID, ShadingType shadingType)
 {
-	TextureUtils::ImageIdGroup imageIDs(imageID, 1);
+	const TextureBuilderIdGroup textureBuilderIDs(textureBuilderID, 1);
 	constexpr double animSeconds = 0.0;
-	this->init(imageIDs, animSeconds, shadingType);
+	this->init(textureBuilderIDs, animSeconds, shadingType);
 }
 
-int SkyLandDefinition::getImageCount() const
+int SkyLandDefinition::getTextureCount() const
 {
-	return this->imageIDs.getCount();
+	return this->textureBuilderIDs.getCount();
 }
 
-ImageID SkyLandDefinition::getImageID(int index) const
+TextureBuilderID SkyLandDefinition::getTextureBuilderID(int index) const
 {
-	return this->imageIDs.getID(index);
+	return this->textureBuilderIDs.getID(index);
 }
 
 bool SkyLandDefinition::hasAnimation() const
 {
-	return imageIDs.getCount() > 1;
+	return this->textureBuilderIDs.getCount() > 1;
 }
 
 double SkyLandDefinition::getAnimationSeconds() const

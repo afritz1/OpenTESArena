@@ -607,7 +607,7 @@ EntityRenderID Renderer::makeEntityRenderID()
 
 void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 	const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-	const TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
+	TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
@@ -776,11 +776,12 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
 }
 
-void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,
-	const Int2 &mousePosition, double scale)
+void Renderer::drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment,
+	const Int2& mousePosition, double scale, const TextureManager& textureManager)
 {
-	// The caller should check for any null textures.
-	DebugAssert(cursor.get() != nullptr);
+	// @todo: get texture handle for texture builder + palette.
+	const Texture &cursor = Texture(); // @todo
+	DebugNotImplemented();
 
 	const int scaledWidth = static_cast<int>(std::round(cursor.getWidth() * scale));
 	const int scaledHeight = static_cast<int>(std::round(cursor.getHeight() * scale));
@@ -899,6 +900,31 @@ void Renderer::drawOriginal(const Texture &texture)
 	this->drawOriginal(texture, 0, 0);
 }
 
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y, int w, int h,
+	const TextureManager &textureManager)
+{
+	// @todo: look up TextureBuilderID+PaletteID pair in a hash table to get const Texture&, or insert it.
+	DebugNotImplemented();
+}
+
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
+	const TextureManager &textureManager)
+{
+	// @todo: need this but from the TextureBuilderID's Texture.
+	int width, height;
+	/*SDL_QueryTexture(texture.get(), nullptr, nullptr, &width, &height);*/
+	DebugNotImplemented();
+	this->drawOriginal(textureBuilderID, paletteID, x, y, width, height, textureManager);
+}
+
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	constexpr int x = 0;
+	constexpr int y = 0;
+	this->drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
+}
+
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
@@ -914,6 +940,18 @@ void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, 
 {
 	this->drawOriginalClipped(texture, srcRect, 
 		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
+}
+
+void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+	const Rect &dstRect, const TextureManager &textureManager)
+{
+	DebugNotImplemented();
+}
+
+void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+	int x, int y, const TextureManager &textureManager)
+{
+	DebugNotImplemented();
 }
 
 void Renderer::fill(const Texture &texture)

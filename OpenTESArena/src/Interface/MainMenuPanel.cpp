@@ -1035,7 +1035,7 @@ MapType MainMenuPanel::getSelectedTestMapType() const
 	}
 }
 
-Panel::CursorData MainMenuPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> MainMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -1160,41 +1160,46 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 	}
 }
 
-void MainMenuPanel::render(Renderer &renderer)
+void MainMenuPanel::renderTestUI(Renderer &renderer)
 {
-	// Clear full screen.
-	renderer.clear();
-
-	// Draw main menu.
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID mainMenuTextureID = this->getTextureID(TextureName::MainMenu, PaletteName::BuiltIn);
-	const TextureRef mainMenuTexture = textureManager.getTextureRef(mainMenuTextureID);
-	renderer.drawOriginal(mainMenuTexture.get());
-
 	// Draw test buttons.
-	const TextureID arrowsTextureID = this->getTextureID(TextureName::UpDown, PaletteName::CharSheet);
-	const TextureRef arrowsTexture = textureManager.getTextureRef(arrowsTextureID);
-	renderer.drawOriginal(arrowsTexture.get(), this->testTypeUpButton.getX(),
-		this->testTypeUpButton.getY());
-	renderer.drawOriginal(arrowsTexture.get(), this->testIndexUpButton.getX(),
-		this->testIndexUpButton.getY());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &arrowsPaletteFilename = PaletteFile::fromName(PaletteName::CharSheet);
+	const std::optional<PaletteID> arrowsPaletteID = textureManager.tryGetPaletteID(arrowsPaletteFilename.c_str());
+	if (!arrowsPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get arrows palette ID for \"" + arrowsPaletteFilename + "\".");
+		return;
+	}
+
+	const std::string &arrowsTextureFilename = TextureFile::fromName(TextureName::UpDown);
+	const std::optional<TextureBuilderID> arrowsTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(arrowsTextureFilename.c_str());
+	if (!arrowsTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get arrows texture builder ID for \"" + arrowsTextureFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*arrowsTextureBuilderID, *arrowsPaletteID,
+		this->testTypeUpButton.getX(), this->testTypeUpButton.getY(), textureManager);
+	renderer.drawOriginal(*arrowsTextureBuilderID, *arrowsPaletteID,
+		this->testIndexUpButton.getX(), this->testIndexUpButton.getY(), textureManager);
 
 	if (this->testType == TestType_Interior)
 	{
-		renderer.drawOriginal(arrowsTexture.get(), this->testIndex2UpButton.getX(),
-			this->testIndex2UpButton.getY());
+		renderer.drawOriginal(*arrowsTextureBuilderID, *arrowsPaletteID,
+			this->testIndex2UpButton.getX(), this->testIndex2UpButton.getY(), textureManager);
 	}
 	else if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		renderer.drawOriginal(arrowsTexture.get(), this->testWeatherUpButton.getX(),
-			this->testWeatherUpButton.getY());
+		renderer.drawOriginal(*arrowsTextureBuilderID, *arrowsPaletteID,
+			this->testWeatherUpButton.getX(), this->testWeatherUpButton.getY(), textureManager);
 	}
 
-	const Texture testButton = Texture::generate(
-		Texture::PatternType::Custom1, TestButtonRect.getWidth(), 
+	const Texture testButton = Texture::generate(Texture::PatternType::Custom1, TestButtonRect.getWidth(),
 		TestButtonRect.getHeight(), textureManager, renderer);
-	renderer.drawOriginal(testButton, 
-		TestButtonRect.getLeft(), TestButtonRect.getTop(),
+	renderer.drawOriginal(testButton, TestButtonRect.getLeft(), TestButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 
 	// Draw test text.
@@ -1293,4 +1298,32 @@ void MainMenuPanel::render(Renderer &renderer)
 		renderer.drawOriginal(testWeatherTextBox.getTexture(),
 			testWeatherTextBox.getX(), testWeatherTextBox.getY());
 	}
+}
+
+void MainMenuPanel::render(Renderer &renderer)
+{
+	// Clear full screen.
+	renderer.clear();
+
+	// Draw main menu.
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &mainMenuTextureFilename = TextureFile::fromName(TextureName::MainMenu);
+	const std::string &mainMenuPaletteFilename = mainMenuTextureFilename;
+	const std::optional<PaletteID> mainMenuPaletteID = textureManager.tryGetPaletteID(mainMenuPaletteFilename.c_str());
+	if (!mainMenuPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get main menu palette ID for \"" + mainMenuPaletteFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> mainMenuTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(mainMenuTextureFilename.c_str());
+	if (!mainMenuTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get main menu texture builder ID for \"" + mainMenuTextureFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*mainMenuTextureBuilderID, *mainMenuPaletteID, textureManager);
+	this->renderTestUI(renderer);
 }

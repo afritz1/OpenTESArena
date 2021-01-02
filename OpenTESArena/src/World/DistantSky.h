@@ -136,23 +136,23 @@ private:
 	// Number of unique directions in 360 degrees.
 	static const int UNIQUE_ANGLES;
 
-	// Each texture entry holds its filename and 8-bit texture handle.
+	// Each texture entry holds its filename and texture handle.
 	struct TextureEntry
 	{
 		std::string filename;
-		ImageID imageID;
+		TextureBuilderID textureBuilderID;
 
-		TextureEntry(std::string &&filename, ImageID imageID);
+		TextureEntry(std::string &&filename, TextureBuilderID textureBuilderID);
 	};
 
-	// Each texture set entry holds its filename and 8-bit texture handles. Intended only for
-	// animated distant objects.
+	// Each texture set entry holds its filename and texture handles. Intended only for animated
+	// distant objects.
 	struct TextureSetEntry
 	{
 		std::string filename;
-		TextureUtils::ImageIdGroup imageIDs;
+		TextureBuilderIdGroup textureBuilderIDs;
 
-		TextureSetEntry(std::string &&filename, TextureUtils::ImageIdGroup &&imageIDs);
+		TextureSetEntry(std::string &&filename, const TextureBuilderIdGroup &textureBuilderIDs);
 	};
 
 	// Each object's texture index points into here.
@@ -197,13 +197,13 @@ public:
 	const StarObject &getStarObject(int index) const;
 	int getSunEntryIndex() const;
 
-	ImageID getImageID(int index) const;
+	TextureBuilderID getTextureBuilderID(int index) const;
 
 	// Gets the number of textures in the texture set at the given index.
 	int getTextureSetCount(int index) const;
 
-	// Gets the image ID at the given element index in the given texture set.
-	ImageID getTextureSetImageID(int index, int elementIndex) const;
+	// Gets the texture ID at the given element index in the given texture set.
+	TextureBuilderID getTextureSetTextureBuilderID(int index, int elementIndex) const;
 
 	// Added in the new engine for fun. Gets the number of stars for some density.
 	static int getStarCountFromDensity(int starDensity);

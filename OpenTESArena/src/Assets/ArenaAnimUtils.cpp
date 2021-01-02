@@ -103,28 +103,26 @@ namespace ArenaAnimUtils
 			return true;
 		}
 
-		const double dimensionModifier = ArenaAnimUtils::getDimensionModifier(flatData);
-
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(flatTextureName, &imageIDs))
+		const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(flatTextureName);
+		if (!textureFileMetadata.has_value())
 		{
-			DebugLogWarning("Couldn't get static anim image IDs for \"" +
-				std::string(flatTextureName) + "\".");
+			DebugLogWarning("Couldn't get static anim texture file metadata for \"" + std::string(flatTextureName) + "\".");
 			return false;
 		}
+
+		const double dimensionModifier = ArenaAnimUtils::getDimensionModifier(flatData);
 
 		EntityAnimationDefinition::KeyframeList defKeyframeList;
 		EntityAnimationInstance::KeyframeList instKeyframeList;
 		constexpr bool flipped = false; // Static anims cannot be flipped.
 		defKeyframeList.init(flipped);
 
-		for (int i = 0; i < imageIDs.getCount(); i++)
+		for (int i = 0; i < textureFileMetadata->getTextureCount(); i++)
 		{
-			const ImageID imageID = imageIDs.getID(i);
-			const Image &image = textureManager.getImageHandle(imageID);
-			const double width = MakeStaticKeyframeDimension(image.getWidth(), dimensionModifier);
-			const double height = MakeStaticKeyframeDimension(image.getHeight(), dimensionModifier);
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			const double width = MakeStaticKeyframeDimension(textureFileMetadata->getWidth(i), dimensionModifier);
+			const double height = MakeStaticKeyframeDimension(textureFileMetadata->getHeight(i), dimensionModifier);
+			TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
@@ -169,10 +167,11 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			TextureUtils::ImageIdGroup imageIDs;
-			if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
+			const std::optional<TextureFileMetadata> textureFileMetadata =
+				textureManager.tryGetMetadata(creatureFilename.c_str());
+			if (!textureFileMetadata.has_value())
 			{
-				DebugLogWarning("Couldn't get creature anim image IDs for \"" + creatureFilename + "\".");
+				DebugLogWarning("Couldn't get creature anim texture file metadata for \"" + creatureFilename + "\".");
 				return false;
 			}
 
@@ -184,16 +183,14 @@ namespace ArenaAnimUtils
 			{
 				// Certain creatures don't have anim frames for a look animation, so just use
 				// frame 0 as a fallback.
-				const int correctedFrameIndex = frameIndex < imageIDs.getCount() ? frameIndex : 0;
-
-				const ImageID imageID = imageIDs.getID(correctedFrameIndex);
-				const Image &image = textureManager.getImageHandle(imageID);
+				const int correctedFrameIndex = frameIndex < textureFileMetadata->getTextureCount() ? frameIndex : 0;
 
 				double width, height;
-				MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(), image.getHeight(),
-					exeData, &width, &height);
+				MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata->getWidth(correctedFrameIndex),
+					textureFileMetadata->getHeight(correctedFrameIndex), exeData, &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), correctedFrameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 
@@ -283,12 +280,13 @@ namespace ArenaAnimUtils
 
 			animName = String::toUppercase(animName);
 
-			// Not all permutations of human filenames exist. If a series is missing,
-			// then probably need to have special behavior.
-			TextureUtils::ImageIdGroup imageIDs;
-			if (!textureManager.tryGetImageIDs(animName.c_str(), &imageIDs))
+			// Not all permutations of human filenames exist. If a series is missing, then probably
+			// need to have special behavior.
+			const std::optional<TextureFileMetadata> textureFileMetadata =
+				textureManager.tryGetMetadata(animName.c_str());
+			if (!textureFileMetadata.has_value())
 			{
-				DebugLogWarning("Couldn't get human anim image IDs for \"" + animName + "\".");
+				DebugLogWarning("Couldn't get human anim texture file metadata for \"" + animName + "\".");
 				return false;
 			}
 
@@ -298,13 +296,12 @@ namespace ArenaAnimUtils
 
 			for (const int frameIndex : animIndices)
 			{
-				const ImageID imageID = imageIDs.getID(frameIndex);
-				const Image &image = textureManager.getImageHandle(imageID);
-
 				double width, height;
-				MakeHumanKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
+				MakeHumanKeyframeDimensions(textureFileMetadata->getWidth(frameIndex),
+					textureFileMetadata->getHeight(frameIndex), &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), frameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 
@@ -358,10 +355,11 @@ namespace ArenaAnimUtils
 			return false;
 		}
 
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
+		const std::optional<TextureFileMetadata> textureFileMetadata =
+			textureManager.tryGetMetadata(creatureFilename.c_str());
+		if (!textureFileMetadata.has_value())
 		{
-			DebugLogWarning("Couldn't get creature attack image IDs for \"" + creatureFilename + "\".");
+			DebugLogWarning("Couldn't get creature attack texture file metadata for \"" + creatureFilename + "\".");
 			return false;
 		}
 
@@ -371,14 +369,12 @@ namespace ArenaAnimUtils
 
 		for (const int frameIndex : CreatureAttackIndices)
 		{
-			const ImageID imageID = imageIDs.getID(frameIndex);
-			const Image &image = textureManager.getImageHandle(imageID);
-
 			double width, height;
-			MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(), image.getHeight(),
-				exeData, &width, &height);
+			MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata->getWidth(frameIndex),
+				textureFileMetadata->getHeight(frameIndex), exeData, &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), frameIndex);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
@@ -439,10 +435,10 @@ namespace ArenaAnimUtils
 		}
 
 		animName = String::toUppercase(animName);
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(animName.c_str(), &imageIDs))
+		const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(animName.c_str());
+		if (!textureFileMetadata.has_value())
 		{
-			DebugLogWarning("Couldn't get human attack image IDs for \"" + animName + "\".");
+			DebugLogWarning("Couldn't get human attack texture file metadata for \"" + animName + "\".");
 			return false;
 		}
 
@@ -451,15 +447,14 @@ namespace ArenaAnimUtils
 		defKeyframeList.init(animIsFlipped);
 
 		// No need for extra anim indices list, just use sequential image IDs.
-		for (int i = 0; i < imageIDs.getCount(); i++)
+		for (int i = 0; i < textureFileMetadata->getTextureCount(); i++)
 		{
-			const ImageID imageID = imageIDs.getID(i);
-			const Image &image = textureManager.getImageHandle(imageID);
-
 			double width, height;
-			MakeHumanKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
+			MakeHumanKeyframeDimensions(textureFileMetadata->getWidth(i),
+				textureFileMetadata->getHeight(i), &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
@@ -492,10 +487,11 @@ namespace ArenaAnimUtils
 			return false;
 		}
 
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(creatureFilename.c_str(), &imageIDs))
+		const std::optional<TextureFileMetadata> textureFileMetadata =
+			textureManager.tryGetMetadata(creatureFilename.c_str());
+		if (!textureFileMetadata.has_value())
 		{
-			DebugLogWarning("Couldn't get creature death image IDs for \"" + creatureFilename + "\".");
+			DebugLogWarning("Couldn't get creature death texture file metadata for \"" + creatureFilename + "\".");
 			return false;
 		}
 
@@ -504,16 +500,14 @@ namespace ArenaAnimUtils
 		defKeyframeList.init(animIsFlipped);
 
 		// No need for extra anim indices list, just use sequential image IDs.
-		for (int i = 0; i < imageIDs.getCount(); i++)
+		for (int i = 0; i < textureFileMetadata->getTextureCount(); i++)
 		{
-			const ImageID imageID = imageIDs.getID(i);
-			const Image &image = textureManager.getImageHandle(imageID);
-
 			double width, height;
-			ArenaAnimUtils::MakeCreatureKeyframeDimensions(creatureIndex, image.getWidth(),
-				image.getHeight(), exeData, &width, &height);
+			ArenaAnimUtils::MakeCreatureKeyframeDimensions(creatureIndex, textureFileMetadata->getWidth(i),
+				textureFileMetadata->getHeight(i), exeData, &width, &height);
 
-			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+			TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), i);
+			defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 			instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		}
 
@@ -544,10 +538,10 @@ namespace ArenaAnimUtils
 			return String::toUppercase(flatTextureData.filename.data());
 		}();
 
-		ImageID imageID;
-		if (!textureManager.tryGetImageID(animName.c_str(), &imageID))
+		const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(animName.c_str());
+		if (!textureFileMetadata.has_value())
 		{
-			DebugLogWarning("Couldn't get human death image ID for \"" + animName + "\".");
+			DebugLogWarning("Couldn't get human death texture file metadata for \"" + animName + "\".");
 			return false;
 		}
 
@@ -555,10 +549,10 @@ namespace ArenaAnimUtils
 		EntityAnimationInstance::KeyframeList instKeyframeList;
 		defKeyframeList.init(animIsFlipped);
 
-		const Image &image = textureManager.getImageHandle(imageID);
-		const double width = MakeDefaultKeyframeDimension(image.getWidth());
-		const double height = MakeDefaultKeyframeDimension(image.getHeight());
-		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+		const double width = MakeDefaultKeyframeDimension(textureFileMetadata->getWidth(0));
+		const double height = MakeDefaultKeyframeDimension(textureFileMetadata->getHeight(0));
+		TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()));
+		defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 		instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 		outDefState->addKeyframeList(std::move(defKeyframeList));
 		outInstState->addKeyframeList(std::move(instKeyframeList));
@@ -598,10 +592,11 @@ namespace ArenaAnimUtils
 				return false;
 			}
 
-			TextureUtils::ImageIdGroup imageIDs;
-			if (!textureManager.tryGetImageIDs(citizenFilename.c_str(), &imageIDs))
+			const std::optional<TextureFileMetadata> textureFileMetadata =
+				textureManager.tryGetMetadata(citizenFilename.c_str());
+			if (!textureFileMetadata.has_value())
 			{
-				DebugLogWarning("Couldn't get citizen anim image IDs for \"" + citizenFilename + "\".");
+				DebugLogWarning("Couldn't get citizen anim texture file metadata for \"" + citizenFilename + "\".");
 				return false;
 			}
 
@@ -612,15 +607,14 @@ namespace ArenaAnimUtils
 			for (const int frameIndex : animIndices)
 			{
 				// Citizens only have forward-facing idle animations, so use frame 0 for other facings.
-				const int correctedFrameIndex = frameIndex < imageIDs.getCount() ? frameIndex : 0;
-
-				const ImageID imageID = imageIDs.getID(correctedFrameIndex);
-				const Image &image = textureManager.getImageHandle(imageID);
+				const int correctedFrameIndex = frameIndex < textureFileMetadata->getTextureCount() ? frameIndex : 0;
 
 				double width, height;
-				MakeCitizenKeyframeDimensions(image.getWidth(), image.getHeight(), &width, &height);
+				MakeCitizenKeyframeDimensions(textureFileMetadata->getWidth(correctedFrameIndex),
+					textureFileMetadata->getHeight(correctedFrameIndex), &width, &height);
 
-				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(imageID, width, height));
+				TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), correctedFrameIndex);
+				defKeyframeList.addKeyframe(EntityAnimationDefinition::Keyframe(std::move(textureAssetRef), width, height));
 				instKeyframeList.addKeyframe(EntityAnimationInstance::Keyframe());
 			}
 

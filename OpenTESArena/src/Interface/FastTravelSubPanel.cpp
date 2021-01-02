@@ -45,27 +45,20 @@ const std::string &FastTravelSubPanel::getBackgroundFilename() const
 	return TextureFile::fromName(TextureName::WorldMap);
 }
 
-TextureUtils::TextureIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
+TextureBuilderIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
 {
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
-
-	const std::string &paletteFilename = this->getBackgroundFilename();
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
 
 	const std::string &textureFilename = TextureFile::fromName(TextureName::FastTravel);
-	TextureUtils::TextureIdGroup textureIDs;
-	if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID, renderer, &textureIDs))
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
+	if (!textureBuilderIDs.has_value())
 	{
-		DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
+		DebugCrash("Couldn't get texture builder IDs for \"" + textureFilename + "\".");
 	}
 
-	return textureIDs;
+	return *textureBuilderIDs;
 }
 
 std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
@@ -75,8 +68,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 	auto &renderer = game.getRenderer();
 
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	const Int2 center = GameWorldPanel::getInterfaceCenter(
-		modernInterface, textureManager, renderer) - Int2(0, 1);
+	const Int2 center = GameWorldPanel::getInterfaceCenter(modernInterface, textureManager) - Int2(0, 1);
 
 	const std::string text = [this, &game]()
 	{
@@ -323,7 +315,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		std::move(texture), textureCenter);
 }
 
-Panel::CursorData FastTravelSubPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> FastTravelSubPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -573,11 +565,19 @@ void FastTravelSubPanel::render(Renderer &renderer)
 {
 	// Draw horse animation.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureUtils::TextureIdGroup animationTextureIDs = this->getAnimationTextureIDs();
-	const TextureID animationTextureID = animationTextureIDs.getID(static_cast<int>(this->frameIndex));
-	const TextureRef animFrame = textureManager.getTextureRef(animationTextureID);
+	const std::string &paletteFilename = this->getBackgroundFilename();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return;
+	}
 
-	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);
-	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (animFrame.getHeight() / 2);
-	renderer.drawOriginal(animFrame.get(), x, y);
+	const TextureBuilderIdGroup textureBuilderIDs = this->getAnimationTextureIDs();
+	const TextureBuilderID textureBuilderID = textureBuilderIDs.getID(static_cast<int>(this->frameIndex));
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (textureBuilder.getWidth() / 2);
+	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (textureBuilder.getHeight() / 2);
+	renderer.drawOriginal(textureBuilderID, *paletteID, x, y, textureManager);
 }

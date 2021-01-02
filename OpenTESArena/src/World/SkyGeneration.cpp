@@ -22,6 +22,7 @@
 #include "../Media/Color.h"
 #include "../Media/PaletteFile.h"
 #include "../Media/PaletteName.h"
+#include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -30,36 +31,41 @@ namespace SkyGeneration
 {
 	// Mapping caches of Arena sky objects to modern sky info entries. Don't need caches for sun
 	// and moons since they're not spawned in bulk.
-	using ArenaLandMappingCache = std::unordered_map<ImageID, SkyDefinition::LandDefID>;
-	using ArenaAirMappingCache = std::unordered_map<ImageID, SkyDefinition::AirDefID>;
+	using ArenaLandMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::LandDefID>;
+	using ArenaAirMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::AirDefID>;
 	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
-	using ArenaLargeStarMappingCache = std::unordered_map<ImageID, SkyDefinition::StarDefID>;
+	using ArenaLargeStarMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::StarDefID>;
 
 	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
 	{
 		// Interior sky color comes from the darkest row of an .LGT light palette.
 		const char *lightPaletteName = outdoorDungeon ? "FOG.LGT" : "NORMAL.LGT";
 
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(lightPaletteName, &imageIDs))
+		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(lightPaletteName);
+		if (!textureBuilderIDs.has_value())
 		{
-			DebugLogWarning("Couldn't get .LGT image for \"" + std::string(lightPaletteName) + "\".");
+			DebugLogWarning("Couldn't get texture builder IDs for \"" + std::string(lightPaletteName) + "\".");
 			return Buffer<Color>();
 		}
 
 		// Get darkest light palette and a suitable color for 'dark'.
-		const Image &lightPalette = textureManager.getImageHandle(imageIDs.getID(imageIDs.getCount() - 1));
-		const uint8_t lightColor = lightPalette.getPixel(16, 0);
+		const TextureBuilderID darkestTextureBuilderID = textureBuilderIDs->getID(textureBuilderIDs->getCount() - 1);
+		const TextureBuilder &lightPaletteTextureBuilder = textureManager.getTextureBuilderHandle(darkestTextureBuilderID);
+		DebugAssert(lightPaletteTextureBuilder.getType() == TextureBuilder::Type::Paletted);
+		const TextureBuilder::PalettedTexture &lightPaletteTexture = lightPaletteTextureBuilder.getPaletted();
+		const Buffer2D<uint8_t> &lightPaletteTexels = lightPaletteTexture.texels;
+		const uint8_t lightColor = lightPaletteTexels.get(16, 0);
 
 		const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
-		PaletteID paletteID;
-		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
 		{
 			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
 			return Buffer<Color>();
 		}
 
-		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 		DebugAssertIndex(palette, lightColor);
 		const Color &paletteColor = palette[lightColor];
 
@@ -76,14 +82,14 @@ namespace SkyGeneration
 
 		// The palettes in the data files only cover half of the day, so some added darkness is
 		// needed for the other half.
-		PaletteID paletteID;
-		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
 		{
 			DebugLogWarning("Couldn't get palette ID for \"" + paletteName + "\".");
 			return Buffer<Color>();
 		}
 
-		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 		// Fill sky palette with darkness. The first color in the palette is the closest to night.
 		const Color &darkness = palette[0];
@@ -134,11 +140,12 @@ namespace SkyGeneration
 		const int arenaAngle = random.next() % ArenaSkyUtils::UNIQUE_ANGLES;
 		const Radians angleX = ArenaSkyUtils::arenaAngleToRadians(arenaAngle);
 
-		// Get the object's image ID.
-		ImageID imageID;
-		if (!textureManager.tryGetImageID(imageFilename.c_str(), &imageID))
+		// Get the object's texture ID.
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(imageFilename.c_str());
+		if (!textureBuilderID.has_value())
 		{
-			DebugLogWarning("Couldn't load sky static object image \"" + imageFilename + "\".");
+			DebugLogWarning("Couldn't get sky static object texture builder ID for \"" + imageFilename + "\".");
 			return false;
 		}
 
@@ -146,7 +153,7 @@ namespace SkyGeneration
 		if constexpr (IsLandObject)
 		{
 			SkyDefinition::LandDefID landDefID;
-			const auto iter = landCache->find(imageID);
+			const auto iter = landCache->find(*textureBuilderID);
 			if (iter != landCache->end())
 			{
 				landDefID = iter->second;
@@ -154,9 +161,9 @@ namespace SkyGeneration
 			else
 			{
 				SkyLandDefinition skyLandDef;
-				skyLandDef.init(imageID, SkyLandDefinition::ShadingType::Ambient);
+				skyLandDef.init(*textureBuilderID, SkyLandDefinition::ShadingType::Ambient);
 				landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
-				landCache->emplace(imageID, landDefID);
+				landCache->emplace(*textureBuilderID, landDefID);
 			}
 
 			outSkyDef->addLand(landDefID, angleX);
@@ -175,7 +182,7 @@ namespace SkyGeneration
 			}();
 
 			SkyDefinition::AirDefID airDefID;
-			const auto iter = airCache->find(imageID);
+			const auto iter = airCache->find(*textureBuilderID);
 			if (iter != airCache->end())
 			{
 				airDefID = iter->second;
@@ -183,9 +190,9 @@ namespace SkyGeneration
 			else
 			{
 				SkyAirDefinition skyAirDef;
-				skyAirDef.init(imageID);
+				skyAirDef.init(*textureBuilderID);
 				airDefID = outSkyInfoDef->addAir(std::move(skyAirDef));
-				airCache->emplace(imageID, airDefID);
+				airCache->emplace(*textureBuilderID, airDefID);
 			}
 
 			outSkyDef->addAir(airDefID, angleX, angleY);
@@ -287,10 +294,11 @@ namespace SkyGeneration
 
 		// Determine which frames the animation will have. .DFAs have multiple frames while
 		// .IMGs do not, although we can use the same texture manager function for both.
-		TextureUtils::ImageIdGroup imageIDs;
-		if (!textureManager.tryGetImageIDs(animFilename.c_str(), &imageIDs))
+		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(animFilename.c_str());
+		if (!textureBuilderIDs.has_value())
 		{
-			DebugCrash("Couldn't get image IDs for \"" + animFilename + "\".");
+			DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
 		}
 
 		// Position on the horizon.
@@ -299,10 +307,10 @@ namespace SkyGeneration
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
 		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
-			static_cast<double>(imageIDs.getCount());
+			static_cast<double>(textureBuilderIDs->getCount());
 
 		SkyLandDefinition skyLandDef;
-		skyLandDef.init(imageIDs, animSeconds, SkyLandDefinition::ShadingType::Bright);
+		skyLandDef.init(*textureBuilderIDs, animSeconds, SkyLandDefinition::ShadingType::Bright);
 		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 		outSkyDef->addLand(landDefID, angleX);
 	}
@@ -462,14 +470,15 @@ namespace SkyGeneration
 					return String::toUppercase(filename);
 				}();
 
-				ImageID imageID;
-				if (!textureManager.tryGetImageID(starFilename.c_str(), &imageID))
+				const std::optional<TextureBuilderID> textureBuilderID =
+					textureManager.tryGetTextureBuilderID(starFilename.c_str());
+				if (!textureBuilderID.has_value())
 				{
-					DebugCrash("Couldn't get image ID for \"" + starFilename + "\".");
+					DebugCrash("Couldn't get texture builder ID for \"" + starFilename + "\".");
 				}
 
 				SkyDefinition::StarDefID starDefID;
-				const auto iter = largeStarCache.find(imageID);
+				const auto iter = largeStarCache.find(*textureBuilderID);
 				if (iter != largeStarCache.end())
 				{
 					starDefID = iter->second;
@@ -477,9 +486,9 @@ namespace SkyGeneration
 				else
 				{
 					SkyStarDefinition skyStarDef;
-					skyStarDef.initLarge(imageID);
+					skyStarDef.initLarge(*textureBuilderID);
 					starDefID = outSkyInfoDef->addStar(std::move(skyStarDef));
-					largeStarCache.emplace(imageID, starDefID);
+					largeStarCache.emplace(*textureBuilderID, starDefID);
 				}
 
 				outSkyDef->addStar(starDefID, direction);
@@ -491,14 +500,15 @@ namespace SkyGeneration
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
 		const std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);		
-		ImageID imageID;
-		if (!textureManager.tryGetImageID(sunFilename.c_str(), &imageID))
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(sunFilename.c_str());
+		if (!textureBuilderID.has_value())
 		{
-			DebugCrash("Couldn't get image ID for \"" + sunFilename + "\".");
+			DebugCrash("Couldn't get texture builder ID for \"" + sunFilename + "\".");
 		}
 
 		SkySunDefinition skySunDef;
-		skySunDef.init(imageID);
+		skySunDef.init(*textureBuilderID);
 		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(skySunDef));
 		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE);
 	}
@@ -517,10 +527,11 @@ namespace SkyGeneration
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
 			const std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
 
-			TextureUtils::ImageIdGroup imageIDs;
-			if (!textureManager.tryGetImageIDs(moonFilename.c_str(), &imageIDs))
+			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+				textureManager.tryGetTextureBuilderIDs(moonFilename.c_str());
+			if (!textureBuilderIDs.has_value())
 			{
-				DebugCrash("Couldn't get image IDs for \"" + moonFilename + "\".");
+				DebugCrash("Couldn't get texture builder IDs for \"" + moonFilename + "\".");
 			}
 
 			// Base direction from original game values.
@@ -532,7 +543,7 @@ namespace SkyGeneration
 				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
 			SkyMoonDefinition skyMoonDef;
-			skyMoonDef.init(imageIDs);
+			skyMoonDef.init(*textureBuilderIDs);
 			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(skyMoonDef));
 			outSkyDef->addMoon(moonDefID, baseDir, orbitPercent, bonusLatitude, phaseIndex);
 		};

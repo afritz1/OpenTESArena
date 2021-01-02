@@ -116,13 +116,13 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	const Palette &basePalette = [&textureManager]() -> const Palette&
 	{
 		const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
-		PaletteID paletteID;
-		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
 		{
 			DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
 		}
 
-		return textureManager.getPaletteHandle(paletteID);
+		return textureManager.getPaletteHandle(*paletteID);
 	}();
 
 	constexpr int citizenCount = 150; // Arbitrary.

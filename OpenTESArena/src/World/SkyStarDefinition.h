@@ -24,9 +24,9 @@ public:
 
 	struct LargeStar
 	{
-		ImageID imageID;
+		TextureBuilderID textureBuilderID;
 
-		void init(ImageID imageID);
+		void init(TextureBuilderID textureBuilderID);
 	};
 private:
 	Type type;
@@ -40,7 +40,7 @@ private:
 	void init(Type type);
 public:
 	void initSmall(uint8_t paletteIndex);
-	void initLarge(ImageID imageID);
+	void initLarge(TextureBuilderID textureBuilderID);
 	
 	Type getType() const;
 	const SmallStar &getSmallStar() const;

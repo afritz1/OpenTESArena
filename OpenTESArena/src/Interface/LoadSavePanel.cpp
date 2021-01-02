@@ -145,7 +145,7 @@ int LoadSavePanel::getClickedIndex(const Int2 &point)
 	return -1;
 }
 
-Panel::CursorData LoadSavePanel::getCurrentCursor() const
+std::optional<Panel::CursorData> LoadSavePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -182,12 +182,25 @@ void LoadSavePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw slots background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID slotsBackgroundTextureID = this->getTextureID(
-		TextureName::LoadSave, PaletteName::Default);
-	const TextureRef slotsBackgroundTexture =
-		textureManager.getTextureRef(slotsBackgroundTextureID);
-	renderer.drawOriginal(slotsBackgroundTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return;
+	}
+
+	const std::string &textureFilename = TextureFile::fromName(TextureName::LoadSave);
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 
 	// Draw save text.
 	for (const auto &textBox : this->saveTextBoxes)
@@ -195,8 +208,7 @@ void LoadSavePanel::render(Renderer &renderer)
 		if (textBox.get() != nullptr)
 		{
 			const Rect textBoxRect = textBox->getRect();
-			renderer.drawOriginal(textBox->getTexture(),
-				textBoxRect.getLeft(), textBoxRect.getTop());
+			renderer.drawOriginal(textBox->getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 		}
 	}
 }

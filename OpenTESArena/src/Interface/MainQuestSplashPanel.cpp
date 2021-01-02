@@ -93,7 +93,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 	}();
 }
 
-Panel::CursorData MainQuestSplashPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> MainQuestSplashPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -123,14 +123,26 @@ void MainQuestSplashPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw staff dungeon splash image.
-	const auto &textureManager = this->getGame().getTextureManager();
+	auto &textureManager = this->getGame().getTextureManager();
 	const std::string &textureName = this->splashFilename;
 	const std::string &paletteName = textureName;
-	const TextureID splashImageTextureID = this->getTextureID(textureName, paletteName);
-	const TextureRef splashImageTexture = textureManager.getTextureRef(splashImageTextureID);
-	renderer.drawOriginal(splashImageTexture.get());
+	const std::optional<PaletteID> splashPaletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!splashPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get splash palette ID for \"" + paletteName + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> splashTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureName.c_str());
+	if (!splashTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get splash texture builder ID for \"" + textureName + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*splashTextureBuilderID, *splashPaletteID, textureManager);
 
 	// Draw text.
-	renderer.drawOriginal(this->textBox->getTexture(),
-		this->textBox->getX(), this->textBox->getY());
+	renderer.drawOriginal(this->textBox->getTexture(), this->textBox->getX(), this->textBox->getY());
 }

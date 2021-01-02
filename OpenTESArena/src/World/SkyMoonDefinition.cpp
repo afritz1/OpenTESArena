@@ -1,16 +1,16 @@
 #include "SkyMoonDefinition.h"
 
-void SkyMoonDefinition::init(const TextureUtils::ImageIdGroup &imageIDs)
+void SkyMoonDefinition::init(const TextureBuilderIdGroup &textureBuilderIDs)
 {
-	this->imageIDs = imageIDs;
+	this->textureBuilderIDs = textureBuilderIDs;
 }
 
-int SkyMoonDefinition::getImageIdCount() const
+int SkyMoonDefinition::getTextureCount() const
 {
-	return this->imageIDs.getCount();
+	return this->textureBuilderIDs.getCount();
 }
 
-ImageID SkyMoonDefinition::getImageID(int index) const
+TextureBuilderID SkyMoonDefinition::getTextureBuilderID(int index) const
 {
-	return this->imageIDs.getID(index);
+	return this->textureBuilderIDs.getID(index);
 }

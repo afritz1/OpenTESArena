@@ -1,7 +1,7 @@
 #ifndef SKY_LAND_DEFINITION_H
 #define SKY_LAND_DEFINITION_H
 
-#include "../Media/TextureManager.h"
+#include "../Media/TextureUtils.h"
 
 class SkyLandDefinition
 {
@@ -12,19 +12,18 @@ public:
 		Bright // Max brightness.
 	};
 private:
-	TextureUtils::ImageIdGroup imageIDs;
+	TextureBuilderIdGroup textureBuilderIDs;
 	double animSeconds;
 	ShadingType shadingType;
 public:
 	// Initializer for an animated land.
-	void init(const TextureUtils::ImageIdGroup &imageIDs, double animSeconds,
-		ShadingType shadingType);
+	void init(const TextureBuilderIdGroup &textureBuilderIDs, double animSeconds, ShadingType shadingType);
 
 	// Initializer for a non-animated land.
-	void init(ImageID imageID, ShadingType shadingType);
+	void init(TextureBuilderID textureBuilderID, ShadingType shadingType);
 
-	int getImageCount() const;
-	ImageID getImageID(int index) const;
+	int getTextureCount() const;
+	TextureBuilderID getTextureBuilderID(int index) const;
 
 	bool hasAnimation() const;
 	double getAnimationSeconds() const;
