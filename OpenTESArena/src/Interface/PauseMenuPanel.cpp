@@ -480,8 +480,8 @@ void PauseMenuPanel::render(Renderer &renderer)
 	}
 
 	// Cover up the detail slider with a new options background.
-	Texture optionsBackground = Texture::generate(Texture::PatternType::Custom1, this->optionsButton.getWidth(),
-		this->optionsButton.getHeight(), textureManager, renderer);
+	Texture optionsBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
+		this->optionsButton.getWidth(), this->optionsButton.getHeight(), textureManager, renderer);
 	renderer.drawOriginal(optionsBackground, this->optionsButton.getX(), this->optionsButton.getY());
 
 	// Draw text: player's name, music volume, sound volume, options.

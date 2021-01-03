@@ -26,9 +26,8 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 {
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
-	this->parchment = Texture::generate(
-		Texture::PatternType::Parchment, 280, 40, game.getTextureManager(),
-		game.getRenderer());
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 280, 40,
+		game.getTextureManager(), game.getRenderer());
 
 	this->textTitleTextBox = [&game]()
 	{

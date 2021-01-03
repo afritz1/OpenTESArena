@@ -87,7 +87,7 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 				game.popSubPanel();
 			};
 
-			Texture texture = Texture::generate(Texture::PatternType::Dark,
+			Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
 				richText.getDimensions().x + 10, richText.getDimensions().y + 10,
 				game.getTextureManager(), game.getRenderer());
 

@@ -982,7 +982,7 @@ void OptionsPanel::render(Renderer &renderer)
 
 	// Draw return button and tabs.
 	auto &textureManager = this->getGame().getTextureManager();
-	Texture tabBackground = Texture::generate(Texture::PatternType::Custom1,
+	Texture tabBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
 		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
 	for (int i = 0; i < 5; i++)
 	{
@@ -991,7 +991,7 @@ void OptionsPanel::render(Renderer &renderer)
 			GraphicsTabRect.getTop() + (tabBackground.getHeight() * i));
 	}
 
-	Texture returnBackground = Texture::generate(Texture::PatternType::Custom1,
+	Texture returnBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
 		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
 		textureManager, renderer);
 	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(),

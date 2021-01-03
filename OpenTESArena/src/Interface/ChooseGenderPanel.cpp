@@ -22,7 +22,7 @@
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = Texture::generate(Texture::PatternType::Parchment, 180, 40,
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 180, 40,
 		game.getTextureManager(), game.getRenderer());
 
 	this->genderTextBox = [&game]()

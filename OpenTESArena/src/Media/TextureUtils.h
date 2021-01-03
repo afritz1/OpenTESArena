@@ -18,9 +18,19 @@ using TextureInstanceID = int; // 32-bit hardware surface
 class Renderer;
 class Surface;
 class Texture;
+class TextureManager;
 
 namespace TextureUtils
 {
+	// Generated texture types. These refer to patterns used with pop-ups and buttons.
+	// @todo: move these to an Arena namespace eventually
+	enum class PatternType
+	{
+		Parchment,
+		Dark,
+		Custom1 // Light gray with borders.
+	};
+
 	// Defines a contiguous group of IDs for referencing textures.
 	template <typename T>
 	struct IdGroup
@@ -55,6 +65,10 @@ namespace TextureUtils
 	// 32-bit texture creation convenience functions.
 	Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette);
 	Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette,
+		Renderer &renderer);
+
+	// Generates a new texture from a pattern.
+	Texture generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);
 }
 

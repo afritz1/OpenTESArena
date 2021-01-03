@@ -1194,8 +1194,8 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 			this->testWeatherUpButton.getX(), this->testWeatherUpButton.getY(), textureManager);
 	}
 
-	const Texture testButton = Texture::generate(Texture::PatternType::Custom1, TestButtonRect.getWidth(),
-		TestButtonRect.getHeight(), textureManager, renderer);
+	const Texture testButton = TextureUtils::generate(TextureUtils::PatternType::Custom1,
+		TestButtonRect.getWidth(), TestButtonRect.getHeight(), textureManager, renderer);
 	renderer.drawOriginal(testButton, TestButtonRect.getLeft(), TestButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 

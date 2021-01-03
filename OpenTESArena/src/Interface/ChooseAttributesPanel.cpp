@@ -156,7 +156,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			{
 				const int width = messageBoxTitle.textBox->getRect().getWidth() + 12;
 				const int height = 24;
-				return Texture::generate(Texture::PatternType::Dark,
+				return TextureUtils::generate(TextureUtils::PatternType::Dark,
 					width, height, textureManager, renderer);
 			}();
 
@@ -196,7 +196,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			{
 				const int width = messageBoxTitle.texture.getWidth();
 				const int height = messageBoxTitle.texture.getHeight();
-				return Texture::generate(Texture::PatternType::Dark,
+				return TextureUtils::generate(TextureUtils::PatternType::Dark,
 					width, height, textureManager, renderer);
 			}();
 
@@ -227,7 +227,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					lineSpacing,
 					game.getFontLibrary());
 
-				Texture texture = Texture::generate(Texture::PatternType::Dark,
+				Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
 					richText.getDimensions().x + 10, richText.getDimensions().y + 12,
 					game.getTextureManager(), game.getRenderer());
 
@@ -539,7 +539,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			{
 				const int width = messageBoxSave.texture.getWidth();
 				const int height = messageBoxSave.texture.getHeight();
-				return Texture::generate(Texture::PatternType::Dark,
+				return TextureUtils::generate(TextureUtils::PatternType::Dark,
 					width, height, textureManager, renderer);
 			}();
 
@@ -635,7 +635,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			lineSpacing,
 			game.getFontLibrary());
 
-		Texture texture = Texture::generate(Texture::PatternType::Dark, 183, 42,
+		Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark, 183, 42,
 			game.getTextureManager(), game.getRenderer());
 
 		const Int2 textureCenter(

@@ -30,7 +30,7 @@
 ChooseNamePanel::ChooseNamePanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = Texture::generate(Texture::PatternType::Parchment, 300, 60,
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 300, 60,
 		game.getTextureManager(), game.getRenderer());
 
 	this->titleTextBox = [&game]()

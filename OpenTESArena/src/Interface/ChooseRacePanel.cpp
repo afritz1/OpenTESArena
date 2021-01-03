@@ -99,7 +99,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			{
 				const int width = messageBoxTitle.textBox->getRect().getWidth() + 22;
 				const int height = 60;
-				return Texture::generate(Texture::PatternType::Parchment, width, height,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
 					textureManager, renderer);
 			}();
 
@@ -129,7 +129,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
 			{
 				const int width = messageBoxTitle.texture.getWidth();
-				return Texture::generate(Texture::PatternType::Parchment, width, 40,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, 40,
 					textureManager, renderer);
 			}();
 
@@ -173,7 +173,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -232,7 +232,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -293,7 +293,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -371,7 +371,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -412,7 +412,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			{
 				const int width = messageBoxYes.texture.getWidth();
 				const int height = messageBoxYes.texture.getHeight();
-				return Texture::generate(Texture::PatternType::Parchment, width, height,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
 					textureManager, renderer);
 			}();
 
@@ -490,7 +490,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		lineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = Texture::generate(Texture::PatternType::Parchment, 240, 60,
+	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment, 240, 60,
 		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
