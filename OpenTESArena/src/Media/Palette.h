@@ -5,7 +5,6 @@
 
 #include "Color.h"
 
-constexpr int PALETTE_SIZE = 256;
-using Palette = std::array<Color, PALETTE_SIZE>;
+using Palette = std::array<Color, 256>;
 
 #endif
