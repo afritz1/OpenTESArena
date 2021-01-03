@@ -203,6 +203,27 @@ void Renderer::addTextureInstance(TextureBuilderID textureBuilderID, PaletteID p
 	this->textureInstances.emplace_back(std::move(textureInst));
 }
 
+const Texture *Renderer::getOrAddTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	std::optional<int> textureInstIndex = this->tryGetTextureInstanceIndex(textureBuilderID, paletteID);
+	if (!textureInstIndex.has_value())
+	{
+		this->addTextureInstance(textureBuilderID, paletteID, textureManager);
+		textureInstIndex = this->tryGetTextureInstanceIndex(textureBuilderID, paletteID);
+	}
+
+	if (textureInstIndex.has_value())
+	{
+		const TextureInstance &textureInst = this->textureInstances[*textureInstIndex];
+		return &textureInst.texture;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 double Renderer::getLetterboxAspect() const
 {
 	if (this->letterboxMode == 0)
@@ -866,14 +887,18 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 }
 
 void Renderer::drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment,
-	const Int2& mousePosition, double scale, const TextureManager& textureManager)
+	const Int2 &mousePosition, double scale, const TextureManager &textureManager)
 {
-	// @todo: get texture handle for texture builder + palette.
-	const Texture &cursor = Texture(); // @todo
-	DebugNotImplemented();
+	const Texture *cursor = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (cursor == nullptr)
+	{
+		DebugLogError("Couldn't draw cursor (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
 
-	const int scaledWidth = static_cast<int>(std::round(cursor.getWidth() * scale));
-	const int scaledHeight = static_cast<int>(std::round(cursor.getHeight() * scale));
+	const int scaledWidth = static_cast<int>(std::round(cursor->getWidth() * scale));
+	const int scaledHeight = static_cast<int>(std::round(cursor->getHeight() * scale));
 
 	// Get the magnitude to offset the cursor's coordinates by.
 	const Int2 cursorOffset = [alignment, scaledWidth, scaledHeight]()
@@ -921,11 +946,9 @@ void Renderer::drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID
 		return Int2(xOffset, yOffset);
 	}();
 
-	this->draw(cursor,
-		mousePosition.x - cursorOffset.x,
-		mousePosition.y - cursorOffset.y,
-		scaledWidth,
-		scaledHeight);
+	const int cursorX = mousePosition.x - cursorOffset.x;
+	const int cursorY = mousePosition.y - cursorOffset.y;
+	this->draw(*cursor, cursorX, cursorY, scaledWidth, scaledHeight);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
@@ -992,18 +1015,29 @@ void Renderer::drawOriginal(const Texture &texture)
 void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y, int w, int h,
 	const TextureManager &textureManager)
 {
-	// @todo: look up TextureBuilderID+PaletteID pair in a hash table to get const Texture&, or insert it.
-	DebugNotImplemented();
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginal(*texture, x, y, w, h);
 }
 
 void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
 	const TextureManager &textureManager)
 {
-	// @todo: need this but from the TextureBuilderID's Texture.
-	int width, height;
-	/*SDL_QueryTexture(texture.get(), nullptr, nullptr, &width, &height);*/
-	DebugNotImplemented();
-	this->drawOriginal(textureBuilderID, paletteID, x, y, width, height, textureManager);
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginal(*texture, x, y);
 }
 
 void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID,
@@ -1034,13 +1068,22 @@ void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, 
 void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
 	const Rect &dstRect, const TextureManager &textureManager)
 {
-	DebugNotImplemented();
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginalClipped(*texture, srcRect, dstRect);
 }
 
 void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
 	int x, int y, const TextureManager &textureManager)
 {
-	DebugNotImplemented();
+	this->drawOriginalClipped(textureBuilderID, paletteID, srcRect,
+		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()), textureManager);
 }
 
 void Renderer::fill(const Texture &texture)

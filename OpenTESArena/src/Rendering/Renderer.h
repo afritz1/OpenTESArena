@@ -96,6 +96,8 @@ private:
 
 	std::optional<int> tryGetTextureInstanceIndex(TextureBuilderID textureBuilderID, PaletteID paletteID) const;
 	void addTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
+	const Texture *getOrAddTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
+		const TextureManager &textureManager);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
