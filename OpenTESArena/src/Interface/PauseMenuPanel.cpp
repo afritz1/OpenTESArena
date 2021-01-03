@@ -29,6 +29,7 @@
 #include "../Media/FontName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
@@ -427,7 +428,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	const TextureBuilder &gameWorldInterfaceTextureBuilder =
 		textureManager.getTextureBuilderHandle(*gameWorldInterfaceTextureBuilderID);
 	renderer.drawOriginal(*gameWorldInterfaceTextureBuilderID, gameWorldInterfacePaletteID,
-		0, Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight(), textureManager);
+		0, ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight(), textureManager);
 
 	// Draw player portrait.
 	const auto &player = this->getGame().getGameData().getPlayer();

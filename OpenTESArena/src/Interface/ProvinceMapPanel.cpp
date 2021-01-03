@@ -31,6 +31,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
@@ -43,9 +44,9 @@
 namespace
 {
 	// .CIF palette indices for staff dungeon outlines.
-	const uint8_t BackgroundPaletteIndex = 220;
-	const uint8_t YellowPaletteIndex = 194;
-	const uint8_t RedPaletteIndex = 223;
+	constexpr uint8_t BackgroundPaletteIndex = 220;
+	constexpr uint8_t YellowPaletteIndex = 194;
+	constexpr uint8_t RedPaletteIndex = 223;
 
 	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
 	{
@@ -56,9 +57,9 @@ namespace
 
 	const std::unordered_map<ProvinceButtonName, Rect> ProvinceButtonClickAreas =
 	{
-		{ ProvinceButtonName::Search, Rect(34, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::Travel, Rect(53, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::BackToWorldMap, Rect(72, Renderer::ORIGINAL_HEIGHT - 32, 18, 27) }
+		{ ProvinceButtonName::Search, Rect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
+		{ ProvinceButtonName::Travel, Rect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
+		{ ProvinceButtonName::BackToWorldMap, Rect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) }
 	};
 }
 
@@ -572,7 +573,7 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
 
-	const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 98);
+	const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const Color color(52, 24, 8);
 	const int lineSpacing = 1;
 
@@ -592,8 +593,8 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
-		(Renderer::ORIGINAL_WIDTH / 2) - 1,
-		(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 	auto function = [](Game &game)
 	{
@@ -931,9 +932,9 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 
 	// Clamp to screen edges, with some extra space on the left and right.
 	const int x = std::clamp(textBox.getX(),
-		2, Renderer::ORIGINAL_WIDTH - textBoxSurface.getWidth() - 2);
+		2, ArenaRenderUtils::SCREEN_WIDTH - textBoxSurface.getWidth() - 2);
 	const int y = std::clamp(textBox.getY(),
-		2, Renderer::ORIGINAL_HEIGHT - textBoxSurface.getHeight() - 2);
+		2, ArenaRenderUtils::SCREEN_HEIGHT - textBoxSurface.getHeight() - 2);
 
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
@@ -950,9 +951,9 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
 	renderer.drawOriginal(tooltip, x, y);

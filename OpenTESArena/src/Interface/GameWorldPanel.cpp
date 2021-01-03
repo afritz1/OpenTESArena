@@ -50,6 +50,7 @@
 #include "../Media/SoundFile.h"
 #include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaLevelUtils.h"
 #include "../World/ArenaVoxelUtils.h"
@@ -289,8 +290,8 @@ namespace
 			fontLibrary);
 
 		const TextBox textBox(0, 0, richText, fontLibrary, renderer);
-		const int originalX = Renderer::ORIGINAL_WIDTH / 2;
-		const int originalY = (Renderer::ORIGINAL_HEIGHT / 2) + 10;
+		const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
+		const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
 		renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
 	}
 }
@@ -540,7 +541,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		// Y position is based on height of interface image.
 		const int x = 208;
-		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 3;
+		const int y = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 3;
 
 		auto function = [](GameWorldPanel &panel)
 		{
@@ -554,7 +555,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		// Y position is based on height of interface image.
 		const int x = 208;
-		const int y = (Renderer::ORIGINAL_HEIGHT - 53) + 44;
+		const int y = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 44;
 
 		auto function = [](GameWorldPanel &panel)
 		{
@@ -673,7 +674,7 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 {
 	if (modernInterface)
 	{
-		return Int2(Renderer::ORIGINAL_WIDTH / 2, Renderer::ORIGINAL_HEIGHT / 2);
+		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 	}
 	else
 	{
@@ -682,8 +683,8 @@ Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &te
 		const TextureBuilder &gameInterfaceTextureBuilder =
 			textureManager.getTextureBuilderHandle(gameInterfaceTextureBuilderID);
 
-		return Int2(Renderer::ORIGINAL_WIDTH / 2,
-			(Renderer::ORIGINAL_HEIGHT - gameInterfaceTextureBuilder.getHeight()) / 2);
+		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2,
+			(ArenaRenderUtils::SCREEN_HEIGHT - gameInterfaceTextureBuilder.getHeight()) / 2);
 	}
 }
 
@@ -834,8 +835,8 @@ TextureBuilderID GameWorldPanel::getWeaponTextureBuilderID(const std::string &we
 void GameWorldPanel::updateCursorRegions(int width, int height)
 {
 	// Scale ratios.
-	const double xScale = static_cast<double>(width) / static_cast<double>(Renderer::ORIGINAL_WIDTH);
-	const double yScale = static_cast<double>(height) / static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+	const double xScale = static_cast<double>(width) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+	const double yScale = static_cast<double>(height) / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 	// Lambda for making a cursor region that scales to the current resolution.
 	auto scaleRect = [xScale, yScale](const Rect &rect)
@@ -1609,7 +1610,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 						textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureID);
 					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
 					return rightClick && (originalCursorY <
-						(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight()));
+						(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight()));
 				}
 				else
 				{
@@ -2690,7 +2691,7 @@ void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 		textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
 
 	const int x = 0;
-	const int y = Renderer::ORIGINAL_HEIGHT -
+	const int y = ArenaRenderUtils::SCREEN_HEIGHT -
 		gameWorldInterfaceTextureBuilder.getHeight() - tooltip.getHeight();
 	renderer.drawOriginal(tooltip, x, y);
 }
@@ -2715,7 +2716,7 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction, TextureManager &te
 	const Rect clipRect(xOffset, 0, 32, compassSlider.getHeight());
 
 	// Top-left corner of the slider in 320x200 space.
-	const int sliderX = (Renderer::ORIGINAL_WIDTH / 2) - (clipRect.getWidth() / 2);
+	const int sliderX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (clipRect.getWidth() / 2);
 	const int sliderY = clipRect.getHeight();
 
 	// Since there are some off-by-one rounding errors with SDL_RenderCopy,
@@ -2737,7 +2738,7 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction, TextureManager &te
 	// Draw the compass frame over the slider.
 	const TextureBuilder &compassFrame = textureManager.getTextureBuilderHandle(compassFrameTextureBuilderID);
 	renderer.drawOriginal(compassFrameTextureBuilderID, *paletteID,
-		(Renderer::ORIGINAL_WIDTH / 2) - (compassFrame.getWidth() / 2), 0, textureManager);
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (compassFrame.getWidth() / 2), 0, textureManager);
 }
 
 void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
@@ -3169,7 +3170,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
 		renderer.drawOriginal(gameWorldInterfaceTextureBuilderID, *defaultPaletteID, 0,
-			Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight(), textureManager);
+			ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight(), textureManager);
 
 		// Draw player portrait.
 		renderer.drawOriginal(statusGradientTextureBuilderID, *defaultPaletteID, 14, 166, textureManager);
@@ -3240,7 +3241,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 			// Percent of the horizontal weapon offset across the original screen.
 			const double weaponOffsetXPercent = static_cast<double>(weaponOffset.x) /
-				static_cast<double>(Renderer::ORIGINAL_WIDTH);
+				static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
 
 			// Native left and right screen edges converted to original space.
 			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x;
@@ -3249,9 +3250,9 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			const double newDiff = static_cast<double>(newRight - newLeft);
 
 			// Values to scale original weapon dimensions by.
-			const double weaponScaleX = newDiff / static_cast<double>(Renderer::ORIGINAL_WIDTH);
-			const double weaponScaleY = static_cast<double>(Renderer::ORIGINAL_HEIGHT) /
-				static_cast<double>(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
+			const double weaponScaleX = newDiff / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+			const double weaponScaleY = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT) /
+				static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
 
 			const int weaponX = newLeft +
 				static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
@@ -3261,7 +3262,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 				static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
 			const int weaponHeight = static_cast<int>(std::round(
 				static_cast<double>(std::min(weaponTextureBuilderRef.getHeight() + 1,
-					std::max(Renderer::ORIGINAL_HEIGHT - weaponY, 0))) * weaponScaleY));
+					std::max(ArenaRenderUtils::SCREEN_HEIGHT - weaponY, 0))) * weaponScaleY));
 
 			renderer.drawOriginal(weaponTextureBuilderID, *defaultPaletteID,
 				weaponX, weaponY, weaponWidth, weaponHeight, textureManager);
@@ -3274,7 +3275,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Clamp the max weapon height non-negative since some weapon animations like the
 			// morning star can cause it to become -1.
 			const int maxWeaponHeight = std::max(
-				(Renderer::ORIGINAL_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight()) - weaponOffset.y, 0);
+				(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight()) - weaponOffset.y, 0);
 
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
@@ -3300,12 +3301,12 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
-		const int centerX = (Renderer::ORIGINAL_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
+		const int centerX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
 		const int centerY = [modernInterface, &gameWorldInterfaceTextureBuilderRef, triggerTextTexture]()
 		{
 			const int interfaceOffset = modernInterface ? (gameWorldInterfaceTextureBuilderRef.getHeight() / 2) :
 				gameWorldInterfaceTextureBuilderRef.getHeight();
-			return Renderer::ORIGINAL_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 2;
+			return ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 2;
 		}();
 
 		renderer.drawOriginal(*triggerTextTexture, centerX, centerY);
@@ -3316,7 +3317,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		const Texture *actionTextTexture;
 		gameData.getActionTextRenderInfo(&actionTextTexture);
 
-		const int textX = (Renderer::ORIGINAL_WIDTH / 2) - (actionTextTexture->getWidth() / 2);
+		const int textX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (actionTextTexture->getWidth() / 2);
 		const int textY = 20;
 		renderer.drawOriginal(*actionTextTexture, textX, textY);
 	}

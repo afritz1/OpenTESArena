@@ -14,6 +14,7 @@
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -23,7 +24,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 {
 	this->backToGameButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 22, Renderer::ORIGINAL_HEIGHT - 7);
+		Int2 center(ArenaRenderUtils::SCREEN_WIDTH - 22, ArenaRenderUtils::SCREEN_HEIGHT - 7);
 		int width = 36;
 		int height = 9;
 		auto function = [](Game &game)

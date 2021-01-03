@@ -24,6 +24,7 @@
 #include "../Media/FontName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -92,7 +93,7 @@ CharacterPanel::CharacterPanel(Game &game)
 
 	this->doneButton = []()
 	{
-		Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
+		Int2 center(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 		int width = 21;
 		int height = 13;
 		auto function = [](Game &game)
@@ -235,7 +236,7 @@ void CharacterPanel::render(Renderer &renderer)
 	const int bodyTextureX = [&textureManager, &bodyTextureBuilderID]()
 	{
 		const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*bodyTextureBuilderID);
-		return Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth();
+		return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
 	}();
 
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());

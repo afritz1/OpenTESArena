@@ -17,6 +17,7 @@
 #include "../Media/FontName.h"
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -83,8 +84,8 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 	this->textBoxes = [&game, &textCinematicDef]()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH / 2, 
-			Renderer::ORIGINAL_HEIGHT - 11);
+			ArenaRenderUtils::SCREEN_WIDTH / 2, 
+			ArenaRenderUtils::SCREEN_HEIGHT - 11);
 
 		const auto &textAssetLibrary = game.getTextAssetLibrary();
 		const auto &templateDat = textAssetLibrary.getTemplateDat();

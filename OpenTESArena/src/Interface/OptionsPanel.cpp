@@ -20,6 +20,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -268,8 +269,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	this->backToPauseMenuTextBox = [&game]()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH - 30,
-			Renderer::ORIGINAL_HEIGHT - 15);
+			ArenaRenderUtils::SCREEN_WIDTH - 30,
+			ArenaRenderUtils::SCREEN_HEIGHT - 15);
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
@@ -317,8 +318,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	this->backToPauseMenuButton = [this]()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH - 30,
-			Renderer::ORIGINAL_HEIGHT - 15);
+			ArenaRenderUtils::SCREEN_WIDTH - 30,
+			ArenaRenderUtils::SCREEN_HEIGHT - 15);
 
 		auto function = [](Game &game)
 		{

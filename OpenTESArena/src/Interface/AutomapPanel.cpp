@@ -22,6 +22,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
@@ -105,7 +106,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 
 	this->backToGameButton = []()
 	{
-		Int2 center(Renderer::ORIGINAL_WIDTH - 57, Renderer::ORIGINAL_HEIGHT - 29);
+		Int2 center(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
 		int width = 38;
 		int height = 13;
 		auto function = [](Game &game)
@@ -694,9 +695,9 @@ void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
 	renderer.drawOriginal(tooltip, x, y);

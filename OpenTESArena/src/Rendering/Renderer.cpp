@@ -5,6 +5,7 @@
 
 #include "SDL.h"
 
+#include "ArenaRenderUtils.h"
 #include "Renderer.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Interface/CursorAlignment.h"
@@ -44,8 +45,6 @@ void Renderer::TextureInstance::init(TextureBuilderID textureBuilderID, PaletteI
 
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
-const int Renderer::ORIGINAL_WIDTH = 320;
-const int Renderer::ORIGINAL_HEIGHT = 200;
 const int Renderer::DEFAULT_BPP = 32;
 const uint32_t Renderer::DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
@@ -281,8 +280,8 @@ int Renderer::getViewHeight() const
 	const int screenHeight = this->getWindowDimensions().y;
 
 	// Ratio of the view height and window height in 320x200.
-	const double viewWindowRatio = static_cast<double>(ORIGINAL_HEIGHT - 53) /
-		static_cast<double>(ORIGINAL_HEIGHT);
+	const double viewWindowRatio = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - 53) /
+		static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 	// Actual view height to use.
 	const int viewHeight = this->fullGameWindow ? screenHeight :
@@ -414,8 +413,8 @@ Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
 	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) /
 		static_cast<double>(letterbox.h);
 
-	const double originalWidthReal = static_cast<double>(Renderer::ORIGINAL_WIDTH);
-	const double originalHeightReal = static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+	const double originalWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+	const double originalHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 	const Int2 originalPoint(
 		static_cast<int>(originalWidthReal * letterboxXPercent),
@@ -439,9 +438,9 @@ Int2 Renderer::originalToNative(const Int2 &originalPoint) const
 {
 	// From original point to letterbox point.
 	const double originalXPercent = static_cast<double>(originalPoint.x) /
-		static_cast<double>(Renderer::ORIGINAL_WIDTH);
+		static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
 	const double originalYPercent = static_cast<double>(originalPoint.y) /
-		static_cast<double>(Renderer::ORIGINAL_HEIGHT);
+		static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 	const SDL_Rect letterbox = this->getLetterboxDimensions();
 

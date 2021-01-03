@@ -5,6 +5,7 @@
 #include <limits>
 #include <smmintrin.h>
 
+#include "ArenaRenderUtils.h"
 #include "RendererUtils.h"
 #include "SoftwareRenderer.h"
 #include "../Entities/EntityAnimationInstance.h"
@@ -31,38 +32,6 @@ namespace
 	// Hardcoded graphics options (will be loaded at runtime at some point).
 	constexpr int TextureFilterMode = 0;
 	constexpr bool LightContributionCap = true;
-
-	// Hardcoded palette indices with special behavior in the original game's renderer.
-	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
-	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
-	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_LOWEST = 1;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_HIGHEST = 13;
-	constexpr uint8_t PALETTE_INDEX_SKY_LEVEL_DIVISOR = 14;
-	constexpr uint8_t PALETTE_INDEX_RED_SRC1 = 14;
-	constexpr uint8_t PALETTE_INDEX_RED_SRC2 = 15;
-	constexpr uint8_t PALETTE_INDEX_RED_DST1 = 158;
-	constexpr uint8_t PALETTE_INDEX_RED_DST2 = 159;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT = 113;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_ACTIVE = 97;
-	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
-	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
-	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
-
-	bool IsGhostTexel(uint8_t texel)
-	{
-		return (texel >= PALETTE_INDEX_LIGHT_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_LIGHT_LEVEL_HIGHEST);
-	}
-
-	bool IsPuddleTexel(uint8_t texel)
-	{
-		return (texel == PALETTE_INDEX_PUDDLE_EVEN_ROW) || (texel == PALETTE_INDEX_PUDDLE_ODD_ROW);
-	}
-
-	bool IsCloudTexel(uint8_t texel)
-	{
-		return (texel >= PALETTE_INDEX_SKY_LEVEL_LOWEST) && (texel <= PALETTE_INDEX_SKY_LEVEL_HIGHEST);
-	}
 }
 
 void SoftwareRenderer::VoxelTexel::init(double r, double g, double b, double emission,
@@ -139,7 +108,7 @@ void SoftwareRenderer::VoxelTexture::init(int width, int height, const uint8_t *
 			dstTexel.init(r, g, b, emission, transparent);
 
 			// Check if the texel is used with night lights (yellow at night).
-			if (srcTexel == PALETTE_INDEX_NIGHT_LIGHT)
+			if (srcTexel == ArenaRenderUtils::PALETTE_INDEX_NIGHT_LIGHT)
 			{
 				this->lightTexels.push_back(Int2(x, y));
 			}
@@ -149,8 +118,8 @@ void SoftwareRenderer::VoxelTexture::init(int width, int height, const uint8_t *
 
 void SoftwareRenderer::VoxelTexture::setLightTexelsActive(bool active, const Palette &palette)
 {
-	constexpr int activePaletteIndex = PALETTE_INDEX_NIGHT_LIGHT_ACTIVE;
-	constexpr int inactivePaletteIndex = PALETTE_INDEX_NIGHT_LIGHT_INACTIVE;
+	constexpr int activePaletteIndex = ArenaRenderUtils::PALETTE_INDEX_NIGHT_LIGHT_ACTIVE;
+	constexpr int inactivePaletteIndex = ArenaRenderUtils::PALETTE_INDEX_NIGHT_LIGHT_INACTIVE;
 	const Color &activeColor = palette[activePaletteIndex];
 	const Color &inactiveColor = palette[inactivePaletteIndex];
 
@@ -204,18 +173,18 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 			// Determine how to interpret the source texel. Palette indices 1-13 are used for
 			// light level diminishing in the original game. These texels do not have any color
 			// and are purely for manipulating the previously rendered color in the frame buffer.
-			if (IsGhostTexel(srcTexel))
+			if (ArenaRenderUtils::IsGhostTexel(srcTexel))
 			{
 				// Ghost texel.
 				constexpr double r = 0.0;
 				constexpr double g = 0.0;
 				constexpr double b = 0.0;
 				const double a = static_cast<double>(srcTexel) /
-					static_cast<double>(PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+					static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
 				constexpr uint8_t reflection = 0;
 				dstTexel.init(r, g, b, a, reflection);
 			}
-			else if (reflective && IsPuddleTexel(srcTexel))
+			else if (reflective && ArenaRenderUtils::IsPuddleTexel(srcTexel))
 			{
 				// Puddle texel. The shader needs to know which reflection type it is.
 				constexpr double r = 0.0;
@@ -229,8 +198,8 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 			{
 				// Check if the color is hardcoded to another palette index. Otherwise,
 				// color the texel normally.
-				const int paletteIndex = (srcTexel == PALETTE_INDEX_RED_SRC1) ? PALETTE_INDEX_RED_DST1 :
-					((srcTexel == PALETTE_INDEX_RED_SRC2) ? PALETTE_INDEX_RED_DST2 : srcTexel);
+				const int paletteIndex = (srcTexel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC1) ? ArenaRenderUtils::PALETTE_INDEX_RED_DST1 :
+					((srcTexel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC2) ? ArenaRenderUtils::PALETTE_INDEX_RED_DST2 : srcTexel);
 
 				const Color &paletteColor = palette[paletteIndex];
 				const Double4 dstColor = Double4::fromARGB(paletteColor.toARGB());
@@ -271,14 +240,14 @@ void SoftwareRenderer::SkyTexture::init(int width, int height, const uint8_t *sr
 			SkyTexel &dstTexel = this->texels[index];
 
 			// Same as flat texels but for sky objects and without some hardcoded indices.
-			if (IsCloudTexel(srcTexel))
+			if (ArenaRenderUtils::IsCloudTexel(srcTexel))
 			{
 				// Transparency for clouds.
 				constexpr double r = 0.0;
 				constexpr double g = 0.0;
 				constexpr double b = 0.0;
 				const double a = static_cast<double>(srcTexel) /
-					static_cast<double>(PALETTE_INDEX_SKY_LEVEL_DIVISOR);
+					static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_SKY_LEVEL_DIVISOR);
 				dstTexel.init(r, g, b, a);
 			}
 			else

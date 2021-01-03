@@ -20,6 +20,7 @@
 #include "../Media/FontName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -330,7 +331,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const int bodyTextureX = [&textureManager, &bodyTextureBuilderID]()
 	{
 		const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*bodyTextureBuilderID);
-		return Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth();
+		return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
 	}();
 
 	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());

@@ -17,6 +17,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -29,7 +30,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 	this->titleTextBox = [&game]()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 80);
+		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		std::string text = exeData.charCreation.chooseClassCreation;
@@ -51,7 +52,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 	this->generateTextBox = [&game]()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
+		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationGenerate;
@@ -69,7 +70,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 	this->selectTextBox = [&game]()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
+		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseClassCreationSelect;
@@ -110,7 +111,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 	this->generateButton = []()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 120);
+		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
 		auto function = [](Game &game)
 		{
 			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
@@ -120,7 +121,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 
 	this->selectButton = []()
 	{
-		const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 160);
+		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
 		auto function = [](Game &game)
 		{
 			game.setPanel<ChooseClassPanel>(game);
@@ -173,9 +174,9 @@ void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &re
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
 		(mouseY - 1) : (mouseY - tooltip.getHeight());
 
 	renderer.drawOriginal(tooltip, x, y);
@@ -207,8 +208,8 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, generate, select.
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1;
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) + 1;
+	const int parchmentX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1;
+	const int parchmentY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2) + 1;
 
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);

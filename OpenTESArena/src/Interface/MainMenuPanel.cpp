@@ -34,6 +34,7 @@
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/InteriorType.h"
 #include "../World/LocationType.h"
@@ -54,7 +55,7 @@ namespace
 	const int TestType_Wilderness = 3;
 	const int TestType_Dungeon = 4;
 
-	const Rect TestButtonRect(135, Renderer::ORIGINAL_HEIGHT - 17, 30, 14);
+	const Rect TestButtonRect(135, ArenaRenderUtils::SCREEN_HEIGHT - 17, 30, 14);
 
 	// Main quest locations. There are eight map dungeons and eight staff dungeons.
 	// The special cases are the start dungeon and the final dungeon.

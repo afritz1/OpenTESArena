@@ -103,10 +103,6 @@ public:
 	Renderer();
 	~Renderer();
 
-	// Original screen dimensions.
-	static const int ORIGINAL_WIDTH;
-	static const int ORIGINAL_HEIGHT;
-
 	// Default bits per pixel.
 	static const int DEFAULT_BPP;
 

@@ -17,6 +17,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
@@ -27,7 +28,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 	this->genderTextBox = [&game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 80);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGender;
@@ -45,7 +46,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 	this->maleTextBox = [&game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderMale;
@@ -63,7 +64,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 	this->femaleTextBox = [&game]()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.charCreation.chooseGenderFemale;
@@ -91,7 +92,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 	this->maleButton = []()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 120);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
 		auto function = [](Game &game)
 		{
 			const bool male = true;
@@ -106,7 +107,7 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 
 	this->femaleButton = []()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH / 2, 160);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
 		auto function = [](Game &game)
 		{
 			const bool male = false;
@@ -180,8 +181,8 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, male, and female.
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2);
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2);
+	const int parchmentX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2);
+	const int parchmentY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);

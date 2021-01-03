@@ -14,6 +14,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -461,8 +462,8 @@ void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 {
 	// Draw parchment.
 	renderer.drawOriginal(this->parchment,
-		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1,
-		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) - 1);
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2) - 1);
 
 	// Draw text: title, location name.
 	renderer.drawOriginal(this->textTitleTextBox->getTexture(),

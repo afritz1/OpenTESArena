@@ -20,6 +20,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationUtils.h"
 
@@ -89,8 +90,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2),
-					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2),
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -103,9 +104,9 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 					textureManager, renderer);
 			}();
 
-			messageBoxTitle.textureX = (Renderer::ORIGINAL_WIDTH / 2) -
+			messageBoxTitle.textureX = (ArenaRenderUtils::SCREEN_WIDTH / 2) -
 				(messageBoxTitle.texture.getWidth() / 2) - 1;
-			messageBoxTitle.textureY = (Renderer::ORIGINAL_HEIGHT / 2) -
+			messageBoxTitle.textureY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) -
 				(messageBoxTitle.texture.getHeight() / 2) - 21;
 
 			MessageBoxSubPanel::Element messageBoxYes;
@@ -120,8 +121,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2) - 1,
-					(Renderer::ORIGINAL_HEIGHT / 2) + 28);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -151,7 +152,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 				{
 					game.popSubPanel();
 
-					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+					const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 
 					const std::string text = [&game]()
 					{
@@ -178,8 +179,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
-						(Renderer::ORIGINAL_WIDTH / 2) - 1,
-						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+						(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+						(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 					auto fourthSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toAttributes, std::move(texture),
@@ -192,7 +193,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 				{
 					game.popSubPanel();
 
-					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+					const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 
 					const std::string text = [&game]()
 					{
@@ -237,8 +238,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
-						(Renderer::ORIGINAL_WIDTH / 2) - 1,
-						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+						(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+						(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 					auto thirdSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toFourthSubPanel, std::move(texture),
@@ -251,7 +252,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 				{
 					game.popSubPanel();
 
-					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+					const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 
 					const std::string text = [&game]()
 					{
@@ -298,8 +299,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
-						(Renderer::ORIGINAL_WIDTH / 2) - 1,
-						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+						(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+						(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 					auto secondSubPanel = std::make_unique<TextSubPanel>(
 						game, center, richText, toThirdSubPanel, std::move(texture),
@@ -310,7 +311,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 				std::unique_ptr<Panel> firstSubPanel = [&game, &textColor, toSecondSubPanel]()
 				{
-					const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+					const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 
 					const std::string text = [&game]()
 					{
@@ -376,8 +377,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getTextureManager(), game.getRenderer());
 
 					const Int2 textureCenter(
-						(Renderer::ORIGINAL_WIDTH / 2) - 1,
-						(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+						(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+						(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 					return std::make_unique<TextSubPanel>(game, center, richText,
 						toSecondSubPanel, std::move(texture), textureCenter);
@@ -402,8 +403,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2) - 1,
-					(Renderer::ORIGINAL_HEIGHT / 2) + 68);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -454,7 +455,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
-	const Int2 center((Renderer::ORIGINAL_WIDTH / 2) - 1, 98);
+	const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	const Color color(48, 12, 12);
 
 	const std::string text = [&game]()
@@ -494,8 +495,8 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
-		(Renderer::ORIGINAL_WIDTH / 2) - 1,
-		(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 	auto function = [](Game &game)
 	{
@@ -586,9 +587,9 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	const int mouseX = originalPosition.x;
 	const int mouseY = originalPosition.y;
-	const int x = ((mouseX + 8 + tooltip.getWidth()) < Renderer::ORIGINAL_WIDTH) ?
+	const int x = ((mouseX + 8 + tooltip.getWidth()) < ArenaRenderUtils::SCREEN_WIDTH) ?
 		(mouseX + 8) : (mouseX - tooltip.getWidth());
-	const int y = ((mouseY + tooltip.getHeight()) < Renderer::ORIGINAL_HEIGHT) ?
+	const int y = ((mouseY + tooltip.getHeight()) < ArenaRenderUtils::SCREEN_HEIGHT) ?
 		mouseY : (mouseY - tooltip.getHeight());
 
 	renderer.drawOriginal(tooltip, x, y);
@@ -630,8 +631,8 @@ void ChooseRacePanel::render(Renderer &renderer)
 	}
 
 	const TextureBuilder &exitCoverTextureBuilder = textureManager.getTextureBuilderHandle(*exitCoverTextureBuilderID);
-	const int exitCoverX = Renderer::ORIGINAL_WIDTH - exitCoverTextureBuilder.getWidth();
-	const int exitCoverY = Renderer::ORIGINAL_HEIGHT - exitCoverTextureBuilder.getHeight();
+	const int exitCoverX = ArenaRenderUtils::SCREEN_WIDTH - exitCoverTextureBuilder.getWidth();
+	const int exitCoverY = ArenaRenderUtils::SCREEN_HEIGHT - exitCoverTextureBuilder.getHeight();
 	renderer.drawOriginal(*exitCoverTextureBuilderID, *raceSelectPaletteID, exitCoverX, exitCoverY, textureManager);
 }
 

@@ -16,6 +16,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 LogbookPanel::LogbookPanel(Game &game)
@@ -24,8 +25,8 @@ LogbookPanel::LogbookPanel(Game &game)
 	this->titleTextBox = [&game]()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH / 2,
-			Renderer::ORIGINAL_HEIGHT / 2);
+			ArenaRenderUtils::SCREEN_WIDTH / 2,
+			ArenaRenderUtils::SCREEN_HEIGHT / 2);
 
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.logbook.isEmpty;
@@ -44,8 +45,8 @@ LogbookPanel::LogbookPanel(Game &game)
 	this->backButton = []()
 	{
 		const Int2 center(
-			Renderer::ORIGINAL_WIDTH - 40,
-			Renderer::ORIGINAL_HEIGHT - 13);
+			ArenaRenderUtils::SCREEN_WIDTH - 40,
+			ArenaRenderUtils::SCREEN_HEIGHT - 13);
 
 		auto function = [](Game &game)
 		{

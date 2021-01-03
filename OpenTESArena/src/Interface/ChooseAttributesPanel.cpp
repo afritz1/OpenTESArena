@@ -32,6 +32,7 @@
 #include "../Media/MusicUtils.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ClimateType.h"
 #include "../World/InteriorType.h"
@@ -119,7 +120,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 	this->doneButton = [this]()
 	{
-		const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
+		const Int2 center(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 		const int width = 21;
 		const int height = 12;
 
@@ -146,8 +147,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2),
-					(Renderer::ORIGINAL_HEIGHT / 2) - 22);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2),
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -160,9 +161,9 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					width, height, textureManager, renderer);
 			}();
 
-			messageBoxTitle.textureX = (Renderer::ORIGINAL_WIDTH / 2) -
+			messageBoxTitle.textureX = (ArenaRenderUtils::SCREEN_WIDTH / 2) -
 				(messageBoxTitle.texture.getWidth() / 2) - 1;
-			messageBoxTitle.textureY = (Renderer::ORIGINAL_HEIGHT / 2) -
+			messageBoxTitle.textureY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) -
 				(messageBoxTitle.texture.getHeight() / 2) - 21;
 
 			const Color buttonTextColor(190, 113, 0);
@@ -186,8 +187,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2) - 1,
-					(Renderer::ORIGINAL_HEIGHT / 2) + 2);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 2);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -232,8 +233,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					game.getTextureManager(), game.getRenderer());
 
 				const Int2 textureCenter(
-					(Renderer::ORIGINAL_WIDTH / 2) - 1,
-					(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 				// The done button is replaced after the player confirms their stats,
 				// and it then leads to the main quest opening cinematic.
@@ -491,7 +492,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						audioManager.setMusic(musicDef);
 					};
 
-					const Int2 center(25, Renderer::ORIGINAL_HEIGHT - 15);
+					const Int2 center(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 					const int width = 21;
 					const int height = 12;
 
@@ -529,8 +530,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 					fontLibrary);
 
 				const Int2 center(
-					(Renderer::ORIGINAL_WIDTH / 2) - 1,
-					(Renderer::ORIGINAL_HEIGHT / 2) + 26);
+					(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+					(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 26);
 
 				return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
 			}();
@@ -572,7 +573,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 	this->portraitButton = []()
 	{
-		const Int2 center(Renderer::ORIGINAL_WIDTH - 72, 25);
+		const Int2 center(ArenaRenderUtils::SCREEN_WIDTH - 72, 25);
 		const int width = 60;
 		const int height = 42;
 		auto function = [](ChooseAttributesPanel &panel, bool increment)
@@ -613,8 +614,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	std::unique_ptr<Panel> textSubPanel = [&game]()
 	{
 		const Int2 center(
-			(Renderer::ORIGINAL_WIDTH / 2) - 1,
-			(Renderer::ORIGINAL_HEIGHT / 2) - 2);
+			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 2);
 		const Color color(199, 199, 199);
 
 		const std::string text = [&game]()
@@ -639,8 +640,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			game.getTextureManager(), game.getRenderer());
 
 		const Int2 textureCenter(
-			(Renderer::ORIGINAL_WIDTH / 2) - 1,
-			(Renderer::ORIGINAL_HEIGHT / 2) - 1);
+			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
 		auto function = [](Game &game)
 		{
@@ -756,7 +757,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	const int bodyTextureX = [&textureManager, &bodyTextureBuilderID]()
 	{
 		const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*bodyTextureBuilderID);
-		return Renderer::ORIGINAL_WIDTH - bodyTexture.getWidth();
+		return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
 	}();
 
 	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyTextureX, 0, textureManager);

@@ -16,6 +16,7 @@
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../World/InteriorType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
@@ -574,7 +575,7 @@ void FastTravelSubPanel::render(Renderer &renderer)
 	const TextureBuilderID textureBuilderID = textureBuilderIDs.getID(static_cast<int>(this->frameIndex));
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
-	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (textureBuilder.getWidth() / 2);
-	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (textureBuilder.getHeight() / 2);
+	const int x = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureBuilder.getWidth() / 2);
+	const int y = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureBuilder.getHeight() / 2);
 	renderer.drawOriginal(textureBuilderID, *paletteID, x, y, textureManager);
 }

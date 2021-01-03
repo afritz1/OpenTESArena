@@ -12,6 +12,7 @@
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -49,7 +50,7 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 			lineSpacing,
 			fontLibrary);
 		
-		const int x = (Renderer::ORIGINAL_WIDTH / 2) - (richText.getDimensions().x / 2);
+		const int x = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (richText.getDimensions().x / 2);
 		const int y = 133;
 		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
 	}();

@@ -23,6 +23,7 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -195,8 +196,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 
 	// Draw parchment: title.
 	renderer.drawOriginal(this->parchment,
-		(Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2),
-		(Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2));
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2),
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2));
 
 	// Draw text: title, name.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),
