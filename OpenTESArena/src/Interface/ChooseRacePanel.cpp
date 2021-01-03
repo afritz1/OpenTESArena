@@ -10,6 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
@@ -18,11 +19,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationUtils.h"
 
@@ -604,7 +601,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Draw background map.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &raceSelectFilename = TextureFile::fromName(TextureName::RaceSelect);
+	const std::string &raceSelectFilename = ArenaTextureName::RaceSelect;
 	const std::optional<PaletteID> raceSelectPaletteID = textureManager.tryGetPaletteID(raceSelectFilename.c_str());
 	if (!raceSelectPaletteID.has_value())
 	{
@@ -623,7 +620,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.drawOriginal(*raceSelectTextureBuilderID, *raceSelectPaletteID, textureManager);
 
 	// Arena just covers up the "exit" text at the bottom right.
-	const std::string &exitCoverFilename = TextureFile::fromName(TextureName::NoExit);
+	const std::string &exitCoverFilename = ArenaTextureName::NoExit;
 	const std::optional<TextureBuilderID> exitCoverTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(exitCoverFilename.c_str());
 	if (!exitCoverTextureBuilderID.has_value())

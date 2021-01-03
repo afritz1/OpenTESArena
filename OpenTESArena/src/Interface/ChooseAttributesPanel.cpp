@@ -13,6 +13,8 @@
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
@@ -28,13 +30,8 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
-#include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ClimateType.h"
 #include "../World/InteriorType.h"
@@ -722,7 +719,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	}();
 
 	auto &textureManager = game.getTextureManager();
-	const std::string &charSheetPaletteFilename = PaletteFile::fromName(PaletteName::CharSheet);
+	const std::string &charSheetPaletteFilename = ArenaPaletteName::CharSheet;
 	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteFilename.c_str());
 	if (!charSheetPaletteID.has_value())
 	{
@@ -768,7 +765,7 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*shirtTextureBuilderID, *charSheetPaletteID, shirtOffset.x, shirtOffset.y, textureManager);
 
 	// Draw attributes texture.
-	const std::string &charStatsBgFilename = TextureFile::fromName(TextureName::CharacterStats);
+	const std::string &charStatsBgFilename = ArenaTextureName::CharacterStats;
 	const std::optional<TextureBuilderID> attributesBgTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(charStatsBgFilename.c_str());
 	DebugAssert(attributesBgTextureBuilderID.has_value());

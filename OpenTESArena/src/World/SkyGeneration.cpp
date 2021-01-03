@@ -12,6 +12,7 @@
 #include "SkyInfoDefinition.h"
 #include "WeatherType.h"
 #include "WeatherUtils.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Constants.h"
@@ -20,8 +21,6 @@
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
 #include "../Media/Color.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
@@ -57,7 +56,7 @@ namespace SkyGeneration
 		const Buffer2D<uint8_t> &lightPaletteTexels = lightPaletteTexture.texels;
 		const uint8_t lightColor = lightPaletteTexels.get(16, 0);
 
-		const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
+		const std::string &paletteName = ArenaPaletteName::Default;
 		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 		if (!paletteID.has_value())
 		{
@@ -77,8 +76,8 @@ namespace SkyGeneration
 	Buffer<Color> makeExteriorSkyColors(WeatherType weatherType, TextureManager &textureManager)
 	{
 		// Get the palette name for the given weather.
-		const std::string &paletteName = PaletteFile::fromName(
-			(weatherType == WeatherType::Clear) ? PaletteName::Daytime : PaletteName::Dreary);
+		const std::string &paletteName = (weatherType == WeatherType::Clear) ?
+			ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 		// The palettes in the data files only cover half of the day, so some added darkness is
 		// needed for the other half.

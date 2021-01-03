@@ -24,8 +24,6 @@ class Texture;
 
 enum class CursorAlignment;
 enum class FontName;
-enum class PaletteName;
-enum class TextureName;
 
 struct SDL_Texture;
 

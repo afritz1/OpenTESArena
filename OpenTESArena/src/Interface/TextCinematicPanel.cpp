@@ -15,8 +15,6 @@
 #include "../Media/AudioManager.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"

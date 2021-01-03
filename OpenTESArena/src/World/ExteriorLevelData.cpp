@@ -6,13 +6,12 @@
 #include "ExteriorLevelData.h"
 #include "LocationDefinition.h"
 #include "MapType.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
@@ -210,7 +209,7 @@ void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, textureInstManager,
 		renderer);
 
-	const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
+	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{

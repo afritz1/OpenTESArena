@@ -1,13 +1,11 @@
 #include "CursorAlignment.h"
 #include "MessageBoxSubPanel.h"
 #include "TextBox.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
@@ -27,7 +25,7 @@ std::optional<Panel::CursorData> MessageBoxSubPanel::getCurrentCursor() const
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &paletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
 	{
@@ -35,7 +33,7 @@ std::optional<Panel::CursorData> MessageBoxSubPanel::getCurrentCursor() const
 		return std::nullopt;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
+	const std::string &textureFilename = ArenaTextureName::SwordCursor;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())

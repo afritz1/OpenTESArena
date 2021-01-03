@@ -8,6 +8,7 @@
 #include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -15,11 +16,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
@@ -164,7 +161,7 @@ void ChooseGenderPanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &backgroundFilename = TextureFile::fromName(TextureName::CharacterCreation);
+	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
 	if (!backgroundPaletteID.has_value())
 	{

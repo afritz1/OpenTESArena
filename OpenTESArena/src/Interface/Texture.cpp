@@ -2,10 +2,9 @@
 
 #include "Surface.h"
 #include "Texture.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Math/Rect.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -68,7 +67,7 @@ Texture Texture::generate(Texture::PatternType type, int width, int height,
 			DebugCrash("Couldn't get tile palette ID for \"" + tilesPaletteFilename + "\".");
 		}
 
-		const std::string &tilesFilename = TextureFile::fromName(TextureName::Parchment);
+		const std::string &tilesFilename = ArenaTextureName::Parchment;
 		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs =
 			textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
 		if (!tilesTextureBuilderIDs.has_value())

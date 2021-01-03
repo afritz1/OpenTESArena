@@ -10,6 +10,7 @@
 #include "RichTextString.h"
 #include "Surface.h"
 #include "TextBox.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -20,11 +21,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
@@ -141,7 +138,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 	}();
 
 	auto &textureManager = game.getTextureManager();
-	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Automap);
+	const std::string &backgroundTextureName = ArenaTextureName::Automap;
 	const std::string &backgroundPaletteName = backgroundTextureName;
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
 	if (!backgroundPaletteID.has_value())
@@ -603,7 +600,7 @@ std::optional<Panel::CursorData> AutomapPanel::getCurrentCursor() const
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 
-	const std::string &paletteFilename = TextureFile::fromName(TextureName::Automap);
+	const std::string &paletteFilename = ArenaTextureName::Automap;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
 	{
@@ -611,7 +608,7 @@ std::optional<Panel::CursorData> AutomapPanel::getCurrentCursor() const
 		return std::nullopt;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::QuillCursor);
+	const std::string &textureFilename = ArenaTextureName::QuillCursor;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())

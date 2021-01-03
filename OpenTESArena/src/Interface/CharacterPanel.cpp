@@ -8,6 +8,8 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
@@ -20,12 +22,8 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -186,7 +184,7 @@ void CharacterPanel::render(Renderer &renderer)
 	}();
 
 	auto &textureManager = game.getTextureManager();
-	const std::string &charSheetPaletteFilename = PaletteFile::fromName(PaletteName::CharSheet);
+	const std::string &charSheetPaletteFilename = ArenaPaletteName::CharSheet;
 	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteFilename.c_str());
 	if (!charSheetPaletteID.has_value())
 	{
@@ -216,8 +214,8 @@ void CharacterPanel::render(Renderer &renderer)
 		return headTextureBuilderIDs->getID(player.getPortraitID());
 	}();
 
-	const std::string &statsBackgroundTextureFilename = TextureFile::fromName(TextureName::CharacterStats);
-	const std::string &nextPageTextureFilename = TextureFile::fromName(TextureName::NextPage);
+	const std::string &statsBackgroundTextureFilename = ArenaTextureName::CharacterStats;
+	const std::string &nextPageTextureFilename = ArenaTextureName::NextPage;
 	const std::optional<TextureBuilderID> bodyTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(bodyFilename.c_str());
 	const std::optional<TextureBuilderID> shirtTextureBuilderID =

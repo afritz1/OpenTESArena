@@ -3,11 +3,7 @@
 #include "ImagePanel.h"
 #include "Texture.h"
 #include "../Game/Game.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 ImagePanel::ImagePanel(Game &game, const std::string &paletteName, 

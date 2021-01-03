@@ -7,6 +7,7 @@
 #include "MainQuestSplashPanel.h"
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Game/DateUtils.h"
@@ -14,11 +15,7 @@
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../World/InteriorType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
@@ -42,7 +39,7 @@ FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapPanel::Trave
 
 const std::string &FastTravelSubPanel::getBackgroundFilename() const
 {
-	return TextureFile::fromName(TextureName::WorldMap);
+	return ArenaTextureName::WorldMap;
 }
 
 TextureBuilderIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
@@ -50,7 +47,7 @@ TextureBuilderIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::FastTravel);
+	const std::string &textureFilename = ArenaTextureName::FastTravel;
 	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
 	if (!textureBuilderIDs.has_value())

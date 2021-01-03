@@ -10,6 +10,7 @@
 #include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
@@ -22,11 +23,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -465,7 +462,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	// Draw background.
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	const std::string &backgroundFilename = TextureFile::fromName(TextureName::CharacterCreation);
+	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
 	if (!backgroundPaletteID.has_value())
 	{
@@ -484,7 +481,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw list pop-up.
-	const std::string &listPopUpFilename = TextureFile::fromName(TextureName::PopUp2);
+	const std::string &listPopUpFilename = ArenaTextureName::PopUp2;
 	const std::optional<TextureBuilderID> listPopUpTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(listPopUpFilename.c_str());
 	if (!listPopUpTextureBuilderID.has_value())

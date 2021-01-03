@@ -7,6 +7,8 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassDefinition.h"
@@ -16,12 +18,8 @@
 #include "../Game/Options.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -289,7 +287,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const Int2 pantsOffset = PortraitFile::getPantsOffset(player.isMale());
 
 	auto &textureManager = game.getTextureManager();
-	const std::string &charSheetPaletteFilename = PaletteFile::fromName(PaletteName::CharSheet);
+	const std::string &charSheetPaletteFilename = ArenaPaletteName::CharSheet;
 	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteFilename.c_str());
 	if (!charSheetPaletteID.has_value())
 	{
@@ -314,7 +312,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	const std::string &bodyFilename = PortraitFile::getBody(player.isMale(), player.getRaceID());
 	const std::string &shirtFilename = PortraitFile::getShirt(player.isMale(), charClassDef.canCastMagic());
 	const std::string &pantsFilename = PortraitFile::getPants(player.isMale());
-	const std::string &charEquipmentFilename = TextureFile::fromName(TextureName::CharacterEquipment);
+	const std::string &charEquipmentFilename = ArenaTextureName::CharacterEquipment;
 
 	const std::optional<TextureBuilderID> bodyTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(bodyFilename.c_str());

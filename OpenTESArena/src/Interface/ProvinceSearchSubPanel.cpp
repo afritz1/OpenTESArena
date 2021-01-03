@@ -8,15 +8,12 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextEntry.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -491,7 +488,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 		return;
 	}
 	
-	const std::string &listBackgroundTextureFilename = TextureFile::fromName(TextureName::PopUp8);
+	const std::string &listBackgroundTextureFilename = ArenaTextureName::PopUp8;
 	const std::optional<TextureBuilderID> listBackgroundTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(listBackgroundTextureFilename.c_str());
 	if (!listBackgroundTextureBuilderID.has_value())

@@ -6,17 +6,14 @@
 #include "TextBox.h"
 #include "Texture.h"
 #include "WorldMapPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
 #include "../Game/GameData.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -127,7 +124,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &worldMapFilename = TextureFile::fromName(TextureName::WorldMap);
+	const std::string &worldMapFilename = ArenaTextureName::WorldMap;
 	const std::string &paletteFilename = worldMapFilename;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
@@ -148,7 +145,7 @@ void WorldMapPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*mapBackgroundTextureBuilderID, *paletteID, textureManager);
 
 	// Draw yellow text over current province name.
-	const std::string &provinceNamesFilename = TextureFile::fromName(TextureName::ProvinceNames);
+	const std::string &provinceNamesFilename = ArenaTextureName::ProvinceNames;
 	const std::optional<TextureBuilderIdGroup> provinceTextTextureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(provinceNamesFilename.c_str());
 	if (!provinceTextTextureBuilderIDs.has_value())

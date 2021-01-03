@@ -14,6 +14,8 @@
 #include "MainMenuPanel.h"
 #include "Surface.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -31,12 +33,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
-#include "../Media/TextureSequenceName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/InteriorType.h"
 #include "../World/LocationType.h"
@@ -297,8 +294,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			game.setPanel<CinematicPanel>(
 				game,
-				PaletteFile::fromName(PaletteName::BuiltIn),
-				TextureFile::fromName(TextureSequenceName::OpeningScroll),
+				ArenaTextureSequenceName::OpeningScroll,
+				ArenaTextureSequenceName::OpeningScroll,
 				1.0 / 24.0,
 				changeToNewGameStory);
 
@@ -1164,7 +1161,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 {
 	// Draw test buttons.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &arrowsPaletteFilename = PaletteFile::fromName(PaletteName::CharSheet);
+	const std::string &arrowsPaletteFilename = ArenaPaletteName::CharSheet;
 	const std::optional<PaletteID> arrowsPaletteID = textureManager.tryGetPaletteID(arrowsPaletteFilename.c_str());
 	if (!arrowsPaletteID.has_value())
 	{
@@ -1172,7 +1169,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		return;
 	}
 
-	const std::string &arrowsTextureFilename = TextureFile::fromName(TextureName::UpDown);
+	const std::string &arrowsTextureFilename = ArenaTextureName::UpDown;
 	const std::optional<TextureBuilderID> arrowsTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(arrowsTextureFilename.c_str());
 	if (!arrowsTextureBuilderID.has_value())
@@ -1307,7 +1304,7 @@ void MainMenuPanel::render(Renderer &renderer)
 
 	// Draw main menu.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &mainMenuTextureFilename = TextureFile::fromName(TextureName::MainMenu);
+	const std::string &mainMenuTextureFilename = ArenaTextureName::MainMenu;
 	const std::string &mainMenuPaletteFilename = mainMenuTextureFilename;
 	const std::optional<PaletteID> mainMenuPaletteID = textureManager.tryGetPaletteID(mainMenuPaletteFilename.c_str());
 	if (!mainMenuPaletteID.has_value())

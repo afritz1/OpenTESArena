@@ -8,18 +8,16 @@
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSave.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../Utilities/Platform.h"
 
@@ -183,7 +181,7 @@ void LoadSavePanel::render(Renderer &renderer)
 
 	// Draw slots background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &paletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
 	{
@@ -191,7 +189,7 @@ void LoadSavePanel::render(Renderer &renderer)
 		return;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::LoadSave);
+	const std::string &textureFilename = ArenaTextureName::LoadSave;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())

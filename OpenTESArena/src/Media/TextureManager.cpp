@@ -1,8 +1,5 @@
 #include "SDL.h"
 
-#include "PaletteFile.h"
-#include "PaletteName.h"
-#include "PaletteUtils.h"
 #include "TextureManager.h"
 #include "../Assets/ArenaAssetUtils.h"
 #include "../Assets/CFAFile.h"

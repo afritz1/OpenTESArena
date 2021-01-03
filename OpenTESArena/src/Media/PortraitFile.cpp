@@ -2,8 +2,7 @@
 #include <cstdio>
 
 #include "PortraitFile.h"
-#include "TextureFile.h"
-#include "TextureName.h"
+#include "../Assets/ArenaTextureName.h"
 
 #include "components/dos/DOSUtils.h"
 
@@ -27,34 +26,24 @@ std::string PortraitFile::getBody(bool male, int raceID)
 
 const std::string &PortraitFile::getShirt(bool male, bool magic)
 {
-	const TextureName textureName = [male, magic]()
+	if (male)
 	{
-		if (male)
-		{
-			return magic ? TextureName::MaleMagicShirt : TextureName::MaleNonMagicShirt;
-		}
-		else
-		{
-			return magic ? TextureName::FemaleMagicShirt : TextureName::FemaleNonMagicShirt;
-		}
-	}();
-
-	const std::string &filename = TextureFile::fromName(textureName);
-	return filename;
+		return magic ? ArenaTextureName::MaleMagicShirt : ArenaTextureName::MaleNonMagicShirt;
+	}
+	else
+	{
+		return magic ? ArenaTextureName::FemaleMagicShirt : ArenaTextureName::FemaleNonMagicShirt;
+	}
 }
 
 const std::string &PortraitFile::getPants(bool male)
 {
-	const TextureName textureName = male ? TextureName::MalePants : TextureName::FemalePants;
-	const std::string &filename = TextureFile::fromName(textureName);
-	return filename;
+	return male ? ArenaTextureName::MalePants : ArenaTextureName::FemalePants;
 }
 
 const std::string &PortraitFile::getEquipment(bool male)
 {
-	const TextureName textureName = male ? TextureName::MaleEquipment : TextureName::FemaleEquipment;
-	const std::string &filename = TextureFile::fromName(textureName);
-	return filename;
+	return male ? ArenaTextureName::MaleEquipment : ArenaTextureName::FemaleEquipment;
 }
 
 Int2 PortraitFile::getShirtOffset(bool male, bool magic)

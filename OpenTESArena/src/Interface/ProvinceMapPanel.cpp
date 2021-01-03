@@ -18,6 +18,7 @@
 #include "TextSubPanel.h"
 #include "Texture.h"
 #include "WorldMapPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
@@ -29,11 +30,7 @@
 #include "../Math/Rect.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
@@ -159,7 +156,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	const bool hasStaffDungeon = provinceID != LocationUtils::CENTER_PROVINCE_ID;
 	if (hasStaffDungeon)
 	{
-		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
+		const std::string &cifName = ArenaTextureName::StaffDungeonIcons;
 		this->staffDungeonCif = CIFFile();
 		if (!this->staffDungeonCif.init(cifName.c_str()))
 		{
@@ -649,10 +646,10 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 		return;
 	}
 
-	const std::string &cityStateIconFilename = TextureFile::fromName(TextureName::CityStateIcon);
-	const std::string &townIconFilename = TextureFile::fromName(TextureName::TownIcon);
-	const std::string &villageIconFilename = TextureFile::fromName(TextureName::VillageIcon);
-	const std::string &dungeonIconFilename = TextureFile::fromName(TextureName::DungeonIcon);
+	const std::string &cityStateIconFilename = ArenaTextureName::CityStateIcon;
+	const std::string &townIconFilename = ArenaTextureName::TownIcon;
+	const std::string &villageIconFilename = ArenaTextureName::VillageIcon;
+	const std::string &dungeonIconFilename = ArenaTextureName::DungeonIcon;
 	const std::optional<TextureBuilderID> cityStateIconTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(cityStateIconFilename.c_str());
 	const std::optional<TextureBuilderID> townIconTextureBuilderID =
@@ -706,7 +703,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 			{
-				const std::string &staffDungeonIconFilename = TextureFile::fromName(TextureName::StaffDungeonIcons);
+				const std::string &staffDungeonIconFilename = ArenaTextureName::StaffDungeonIcons;
 				const std::optional<TextureBuilderIdGroup> staffDungeonIconTextureBuilderIDs =
 					textureManager.tryGetTextureBuilderIDs(staffDungeonIconFilename.c_str());
 				if (!staffDungeonIconTextureBuilderIDs.has_value())
@@ -774,9 +771,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 	};
 
 	// Generic highlights (city, town, village, and dungeon).
-	const std::string &outlinesFilename = TextureFile::fromName(
-		(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
-		TextureName::MapIconOutlines : TextureName::MapIconOutlinesBlinking);
+	const std::string &outlinesFilename = (highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
+		ArenaTextureName::MapIconOutlines : ArenaTextureName::MapIconOutlinesBlinking;
 
 	const std::optional<TextureBuilderIdGroup> highlightTextureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(outlinesFilename.c_str());

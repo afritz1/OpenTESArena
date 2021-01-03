@@ -15,6 +15,8 @@
 #include "TextSubPanel.h"
 #include "Texture.h"
 #include "WorldMapPanel.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
 #include "../Assets/CIFFile.h"
@@ -44,14 +46,10 @@
 #include "../Media/FontName.h"
 #include "../Media/FontUtils.h"
 #include "../Media/MusicUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
 #include "../Media/SoundFile.h"
 #include "../Media/SoundName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaLevelUtils.h"
 #include "../World/ArenaVoxelUtils.h"
@@ -705,7 +703,7 @@ std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 	}
 	else
 	{
-		const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+		const std::string &paletteFilename = ArenaPaletteName::Default;
 		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 		if (!paletteID.has_value())
 		{
@@ -718,7 +716,7 @@ std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 			if (this->nativeCursorRegions[i].contains(mousePosition))
 			{
 				// Get the relevant arrow cursor.
-				const std::string &textureFilename = TextureFile::fromName(TextureName::ArrowCursors);
+				const std::string &textureFilename = ArenaTextureName::ArrowCursors;
 				const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
 					textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
 				if (!textureBuilderIDs.has_value())
@@ -739,7 +737,7 @@ std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 
 TextureBuilderID GameWorldPanel::getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager)
 {
-	const std::string &textureFilename = TextureFile::fromName(TextureName::GameWorldInterface);
+	const std::string &textureFilename = ArenaTextureName::GameWorldInterface;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())
@@ -753,7 +751,7 @@ TextureBuilderID GameWorldPanel::getGameWorldInterfaceTextureBuilderID(TextureMa
 TextureBuilderID GameWorldPanel::getCompassFrameTextureBuilderID() const
 {
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = TextureFile::fromName(TextureName::CompassFrame);
+	const std::string &textureFilename = ArenaTextureName::CompassFrame;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())
@@ -767,7 +765,7 @@ TextureBuilderID GameWorldPanel::getCompassFrameTextureBuilderID() const
 TextureBuilderID GameWorldPanel::getCompassSliderTextureBuilderID() const
 {
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = TextureFile::fromName(TextureName::CompassSlider);
+	const std::string &textureFilename = ArenaTextureName::CompassSlider;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())
@@ -795,7 +793,7 @@ TextureBuilderID GameWorldPanel::getPlayerPortraitTextureBuilderID(
 TextureBuilderID GameWorldPanel::getStatusGradientTextureBuilderID(int gradientID) const
 {
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &statusGradientsFilename = TextureFile::fromName(TextureName::StatusGradients);
+	const std::string &statusGradientsFilename = ArenaTextureName::StatusGradients;
 	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(statusGradientsFilename.c_str());
 	if (!textureBuilderIDs.has_value())
@@ -809,7 +807,7 @@ TextureBuilderID GameWorldPanel::getStatusGradientTextureBuilderID(int gradientI
 TextureBuilderID GameWorldPanel::getNoSpellTextureBuilderID() const
 {
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = TextureFile::fromName(TextureName::NoSpell);
+	const std::string &textureFilename = ArenaTextureName::NoSpell;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())
@@ -2019,7 +2017,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	}
 
 	TextureManager &textureManager = game.getTextureManager();
-	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
+	const std::string paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{
@@ -2725,7 +2723,7 @@ void GameWorldPanel::drawCompass(const NewDouble2 &direction, TextureManager &te
 	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
 		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
 
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &paletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
 	{
@@ -3134,7 +3132,7 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	// Get texture IDs in advance of any texture references.
 	auto &textureManager = game.getTextureManager();
-	const std::string &defaultPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
 	if (!defaultPaletteID.has_value())
 	{
@@ -3203,7 +3201,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	// Several interface objects are in this method because they are hidden by the status
 	// pop-up and the spells list.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &defaultPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
 	if (!defaultPaletteID.has_value())
 	{

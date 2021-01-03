@@ -7,6 +7,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "Texture.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -14,11 +15,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 LogbookPanel::LogbookPanel(Game &game)
@@ -96,7 +93,7 @@ void LogbookPanel::render(Renderer &renderer)
 
 	// Logbook background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Logbook);
+	const std::string &backgroundTextureName = ArenaTextureName::Logbook;
 	const std::string &backgroundPaletteName = backgroundTextureName;
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
 	if (!backgroundPaletteID.has_value())

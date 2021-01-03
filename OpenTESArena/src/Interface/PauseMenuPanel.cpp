@@ -13,6 +13,8 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "Texture.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
@@ -25,12 +27,8 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/PortraitFile.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
@@ -395,7 +393,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	// Draw pause background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &pauseBackgroundPaletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &pauseBackgroundPaletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> pauseBackgroundPaletteID =
 		textureManager.tryGetPaletteID(pauseBackgroundPaletteFilename.c_str());
 	if (!pauseBackgroundPaletteID.has_value())
@@ -404,7 +402,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		return;
 	}
 
-	const std::string &pauseBackgroundTextureFilename = TextureFile::fromName(TextureName::PauseBackground);
+	const std::string &pauseBackgroundTextureFilename = ArenaTextureName::PauseBackground;
 	const std::optional<TextureBuilderID> pauseBackgroundTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(pauseBackgroundTextureFilename.c_str());
 	if (!pauseBackgroundTextureBuilderID.has_value())
@@ -417,7 +415,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	// Draw game world interface below the pause menu.
 	const PaletteID gameWorldInterfacePaletteID = *pauseBackgroundPaletteID;
-	const std::string &gameWorldInterfaceTextureFilename = TextureFile::fromName(TextureName::GameWorldInterface);
+	const std::string &gameWorldInterfaceTextureFilename = ArenaTextureName::GameWorldInterface;
 	const std::optional<TextureBuilderID> gameWorldInterfaceTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(gameWorldInterfaceTextureFilename.c_str());
 	if (!gameWorldInterfaceTextureBuilderID.has_value())
@@ -450,7 +448,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	const PaletteID statusPaletteID = portraitPaletteID;
 	const TextureBuilderID statusTextureBuilderID = [this, &textureManager]()
 	{
-		const std::string &statusFilename = TextureFile::fromName(TextureName::StatusGradients);
+		const std::string &statusFilename = ArenaTextureName::StatusGradients;
 		const std::optional<TextureBuilderIdGroup> statusTextureBuilderIDs =
 			textureManager.tryGetTextureBuilderIDs(statusFilename.c_str());
 		if (!statusTextureBuilderIDs.has_value())
@@ -470,7 +468,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 	if (!charClassDef.canCastMagic())
 	{
 		const PaletteID nonMagicIconPaletteID = gameWorldInterfacePaletteID;
-		const std::string &nonMagicIconTextureFilename = TextureFile::fromName(TextureName::NoSpell);
+		const std::string &nonMagicIconTextureFilename = ArenaTextureName::NoSpell;
 		const std::optional<TextureBuilderID> nonMagicIconTextureBuilderID =
 			textureManager.tryGetTextureBuilderID(nonMagicIconTextureFilename.c_str());
 		if (!nonMagicIconTextureBuilderID.has_value())

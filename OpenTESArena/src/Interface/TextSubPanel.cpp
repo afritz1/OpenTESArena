@@ -4,14 +4,12 @@
 #include "RichTextString.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Media/FontLibrary.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
@@ -34,7 +32,7 @@ std::optional<Panel::CursorData> TextSubPanel::getCurrentCursor() const
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 	
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
+	const std::string &paletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
 	if (!paletteID.has_value())
 	{
@@ -42,7 +40,7 @@ std::optional<Panel::CursorData> TextSubPanel::getCurrentCursor() const
 		return std::nullopt;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
+	const std::string &textureFilename = ArenaTextureName::SwordCursor;
 	const std::optional<TextureBuilderID> textureBuilderID =
 		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
 	if (!textureBuilderID.has_value())

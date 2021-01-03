@@ -7,6 +7,7 @@
 #include "LocationUtils.h"
 #include "ProvinceDefinition.h"
 #include "WeatherType.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/COLFile.h"
 #include "../Assets/ExeData.h"
@@ -15,8 +16,6 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Random.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
@@ -610,7 +609,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		// Palette used to obtain colors for small stars in constellations.
 		const Palette palette = []()
 		{
-			const std::string &colName = PaletteFile::fromName(PaletteName::Default);
+			const std::string &colName = ArenaPaletteName::Default;
 			COLFile colFile;
 			if (!colFile.init(colName.c_str()))
 			{
