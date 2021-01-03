@@ -66,10 +66,20 @@ public:
 		ProfilerData();
 	};
 private:
+	struct TextureInstance
+	{
+		TextureBuilderID textureBuilderID;
+		PaletteID paletteID;
+		Texture texture;
+
+		void init(TextureBuilderID textureBuilderID, PaletteID paletteID, Texture &&texture);
+	};
+
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
 
 	std::vector<DisplayMode> displayModes;
+	std::vector<TextureInstance> textureInstances; // @temp placeholder until the renderer returns allocated texture handles.
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
@@ -83,6 +93,9 @@ private:
 
 	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
 	static int makeRendererDimension(int value, double resolutionScale);
+
+	std::optional<int> tryGetTextureInstanceIndex(TextureBuilderID textureBuilderID, PaletteID paletteID) const;
+	void addTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();

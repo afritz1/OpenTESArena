@@ -35,6 +35,13 @@ Renderer::ProfilerData::ProfilerData()
 	this->frameTime = 0.0;
 }
 
+void Renderer::TextureInstance::init(TextureBuilderID textureBuilderID, PaletteID paletteID, Texture &&texture)
+{
+	this->textureBuilderID = textureBuilderID;
+	this->paletteID = paletteID;
+	this->texture = std::move(texture);
+}
+
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
 const int Renderer::ORIGINAL_WIDTH = 320;
@@ -112,6 +119,88 @@ int Renderer::makeRendererDimension(int value, double resolutionScale)
 	// imprecise resolution scale doesn't result in off-by-one resolutions (like 1079p).
 	return std::max(static_cast<int>(
 		std::round(static_cast<double>(value) * resolutionScale)), 1);
+}
+
+std::optional<int> Renderer::tryGetTextureInstanceIndex(TextureBuilderID textureBuilderID, PaletteID paletteID) const
+{
+	const auto iter = std::find_if(this->textureInstances.begin(), this->textureInstances.end(),
+		[textureBuilderID, paletteID](const TextureInstance &textureInst)
+	{
+		return (textureInst.textureBuilderID == textureBuilderID) && (textureInst.paletteID == paletteID);
+	});
+
+	if (iter != this->textureInstances.end())
+	{
+		return static_cast<int>(std::distance(this->textureInstances.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+void Renderer::addTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	// Texture should not already exist.
+	DebugAssert(this->tryGetTextureInstanceIndex(textureBuilderID, paletteID) == std::nullopt);
+
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const int width = textureBuilder.getWidth();
+	const int height = textureBuilder.getHeight();
+	Texture texture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (texture.get() == nullptr)
+	{
+		DebugCrash("Couldn't create texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ", dimensions: " + std::to_string(width) + "x" +
+			std::to_string(height) + ").");
+	}
+
+	// Prepare destination texture for writing.
+	uint32_t *dstTexels;
+	int pitch;
+	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
+	{
+		DebugCrash("Couldn't lock SDL texture (dimensions: " + std::to_string(width) +
+			"x" + std::to_string(height) + ").");
+	}
+
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	{
+		// Convert 8-bit to 32-bit.
+		const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+		const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		std::transform(srcTexels.get(), srcTexels.end(), dstTexels,
+			[&palette](const uint8_t srcTexel)
+		{
+			return palette[srcTexel].toARGB();
+		});
+	}
+	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	{
+		// Copy from 32-bit.
+		const TextureBuilder::TrueColorTexture &srcTexture = textureBuilder.getTrueColor();
+		const Buffer2D<uint32_t> &srcTexels = srcTexture.texels;
+		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(textureBuilderType)));
+	}
+
+	SDL_UnlockTexture(texture.get());
+
+	// Set alpha transparency on.
+	if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) != 0)
+	{
+		DebugLogError("Couldn't set SDL texture alpha blending.");
+	}
+
+	TextureInstance textureInst;
+	textureInst.init(textureBuilderID, paletteID, std::move(texture));
+	this->textureInstances.emplace_back(std::move(textureInst));
 }
 
 double Renderer::getLetterboxAspect() const
