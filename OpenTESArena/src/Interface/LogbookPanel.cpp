@@ -7,6 +7,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "Texture.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -14,11 +15,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 LogbookPanel::LogbookPanel(Game &game)
@@ -56,26 +53,9 @@ LogbookPanel::LogbookPanel(Game &game)
 		};
 		return Button<Game&>(center, 34, 14, function);
 	}();
-
-	auto &textureManager = game.getTextureManager();
-	const std::string &backgroundTextureName = TextureFile::fromName(TextureName::Logbook);
-	const std::string &backgroundPaletteName = backgroundTextureName;
-	PaletteID backgroundPaletteID;
-	if (!textureManager.tryGetPaletteID(backgroundPaletteName.c_str(), &backgroundPaletteID))
-	{
-		DebugLogWarning("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
-		return;
-	}
-
-	auto &renderer = game.getRenderer();
-	if (!textureManager.tryGetTextureID(backgroundTextureName.c_str(), backgroundPaletteID,
-		renderer, &this->backgroundTextureID))
-	{
-		DebugLogWarning("Couldn't get texture ID for \"" + backgroundTextureName + "\".");
-	}
 }
 
-Panel::CursorData LogbookPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> LogbookPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -112,11 +92,26 @@ void LogbookPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Logbook background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureRef backgroundTexture = textureManager.getTextureRef(this->backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &backgroundTextureName = ArenaTextureName::Logbook;
+	const std::string &backgroundPaletteName = backgroundTextureName;
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundTextureName.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + backgroundTextureName + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw text: title.
-	renderer.drawOriginal(this->titleTextBox->getTexture(),
-		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
 }

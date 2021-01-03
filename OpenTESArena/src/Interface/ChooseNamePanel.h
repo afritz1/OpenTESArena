@@ -31,7 +31,7 @@ public:
 	ChooseNamePanel(Game &game);
 	virtual ~ChooseNamePanel() = default;
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

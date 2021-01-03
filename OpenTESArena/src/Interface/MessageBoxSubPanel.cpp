@@ -1,13 +1,11 @@
 #include "CursorAlignment.h"
 #include "MessageBoxSubPanel.h"
 #include "TextBox.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
@@ -21,30 +19,30 @@ MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&t
 	: Panel(game), title(std::move(title)), elements(std::move(elements)),
 	cancelFunction([](Game&) {}) { }
 
-Panel::CursorData MessageBoxSubPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> MessageBoxSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	const std::string &paletteFilename = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		return CursorData::EMPTY;
+		return std::nullopt;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
-	TextureID textureID;
-	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	const std::string &textureFilename = ArenaTextureName::SwordCursor;
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
 	{
-		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
-		return CursorData::EMPTY;
+		DebugLogWarning("Couldn't get texture builder ID for \"" + textureFilename + "\".");
+		return std::nullopt;
 	}
 
-	const Texture &texture = textureManager.getTextureHandle(textureID);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
 }
 
 void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
@@ -87,17 +85,13 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 void MessageBoxSubPanel::render(Renderer &renderer)
 {
 	// Draw title.
-	renderer.drawOriginal(this->title.texture,
-		this->title.textureX, this->title.textureY);
-	renderer.drawOriginal(this->title.textBox->getTexture(),
-		this->title.textBox->getX(), this->title.textBox->getY());
+	renderer.drawOriginal(this->title.texture, this->title.textureX, this->title.textureY);
+	renderer.drawOriginal(this->title.textBox->getTexture(), this->title.textBox->getX(), this->title.textBox->getY());
 
 	// Draw elements.
 	for (const auto &element : this->elements)
 	{
-		renderer.drawOriginal(element.texture,
-			element.textureX, element.textureY);
-		renderer.drawOriginal(element.textBox->getTexture(),
-			element.textBox->getX(), element.textBox->getY());
+		renderer.drawOriginal(element.texture, element.textureX, element.textureY);
+		renderer.drawOriginal(element.textBox->getTexture(), element.textBox->getX(), element.textBox->getY());
 	}
 }

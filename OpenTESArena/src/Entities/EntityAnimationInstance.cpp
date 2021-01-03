@@ -6,30 +6,37 @@
 
 #include "components/debug/Debug.h"
 
-EntityAnimationInstance::Keyframe::Keyframe()
-{
-	this->overrideImageID = TextureManager::NO_ID;
-}
-
-EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromImage(
-	ImageID overrideImageID)
+EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromTextureBuilderID(
+	TextureBuilderID overrideTextureBuilderID)
 {
 	Keyframe keyframe;
-	keyframe.overrideImageID = overrideImageID;
+	keyframe.overrideTextureBuilderID = overrideTextureBuilderID;
 	return keyframe;
 }
 
-const Image &EntityAnimationInstance::Keyframe::getImageHandle(
-	const EntityAnimationDefinition::Keyframe &defKeyframe, const TextureManager &textureManager) const
+const TextureBuilder &EntityAnimationInstance::Keyframe::getTextureBuilderHandle(
+	const EntityAnimationDefinition::Keyframe &defKeyframe, TextureManager &textureManager) const
 {
-	if (this->overrideImageID != TextureManager::NO_ID)
+	TextureBuilderID textureBuilderID;
+	if (this->overrideTextureBuilderID.has_value())
 	{
-		return textureManager.getImageHandle(this->overrideImageID);
+		textureBuilderID = *this->overrideTextureBuilderID;
 	}
 	else
 	{
-		return textureManager.getImageHandle(defKeyframe.getImageID());
+		const TextureAssetReference &textureAssetRef = defKeyframe.getTextureAssetRef();
+		const std::string &filename = textureAssetRef.filename;
+		const std::optional<TextureBuilderIdGroup> ids = textureManager.tryGetTextureBuilderIDs(filename.c_str());
+		if (!ids.has_value())
+		{
+			DebugCrash("Couldn't get texture builder IDs for \"" + filename + "\".");
+		}
+
+		const int textureIndex = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
+		textureBuilderID = ids->getID(textureIndex);
 	}
+
+	return textureManager.getTextureBuilderHandle(textureBuilderID);
 }
 
 int EntityAnimationInstance::KeyframeList::getKeyframeCount() const

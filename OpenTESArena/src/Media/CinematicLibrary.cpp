@@ -1,6 +1,5 @@
 #include "CinematicLibrary.h"
-#include "TextureFile.h"
-#include "TextureSequenceName.h"
+#include "../Assets/ArenaTextureName.h"
 
 #include "components/debug/Debug.h"
 
@@ -12,8 +11,8 @@ namespace
 
 void CinematicLibrary::init()
 {
-	const std::string animFilenameDreamGood = TextureFile::fromName(TextureSequenceName::Silmane);
-	const std::string animFilenameDreamBad = TextureFile::fromName(TextureSequenceName::Jagar);
+	const std::string &animFilenameDreamGood = ArenaTextureSequenceName::Silmane;
+	const std::string &animFilenameDreamBad = ArenaTextureSequenceName::Jagar;
 
 	// Main quest intro.
 	TextCinematicDefinition textCinematicDef;

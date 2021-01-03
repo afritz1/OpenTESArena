@@ -63,13 +63,13 @@ Buffer<uint32_t> WeatherUtils::makeExteriorSkyPalette(WeatherType weatherType,
 
 	// The palettes in the data files only cover half of the day, so some added
 	// darkness is needed for the other half.
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName, &paletteID))
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName);
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette ID for \"" + std::string(paletteName) + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 	// Fill sky palette with darkness (the first color in the palette is the closest to night).
 	const uint32_t darkness = palette[0].toARGB();

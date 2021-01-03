@@ -10,6 +10,8 @@
 #include "SkyStarDefinition.h"
 #include "SkySunDefinition.h"
 #include "SkyUtils.h"
+#include "../Media/TextureBuilder.h"
+#include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
 
@@ -29,10 +31,10 @@ void SkyInstance::ObjectInstance::init(Type type, const Double3 &baseDirection, 
 }
 
 void SkyInstance::ObjectInstance::initGeneral(const Double3 &baseDirection, double width, double height,
-	ImageID imageID)
+	TextureBuilderID textureBuilderID)
 {
 	this->init(ObjectInstance::Type::General, baseDirection, width, height);
-	this->general.imageID = imageID;
+	this->general.textureBuilderID = textureBuilderID;
 }
 
 void SkyInstance::ObjectInstance::initSmallStar(const Double3 &baseDirection, double width, double height,
@@ -90,11 +92,11 @@ void SkyInstance::ObjectInstance::setTransformedDirection(const Double3 &directi
 	this->transformedDirection = direction;
 }
 
-SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
+SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs,
 	double targetSeconds)
 {
 	this->objectIndex = objectIndex;
-	this->imageIDs = imageIDs;
+	this->textureBuilderIDs = textureBuilderIDs;
 	this->targetSeconds = targetSeconds;
 	this->currentSeconds = 0.0;
 }
@@ -103,10 +105,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	const TextureManager &textureManager)
 {
 	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
-		ImageID imageID)
+		TextureBuilderID textureBuilderID)
 	{
 		ObjectInstance objectInst;
-		objectInst.initGeneral(baseDirection, width, height, imageID);
+		objectInst.initGeneral(baseDirection, width, height, textureBuilderID);
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
@@ -118,10 +120,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
-	auto addAnimInst = [this](int objectIndex, const TextureUtils::ImageIdGroup &imageIDs,
+	auto addAnimInst = [this](int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs,
 		double targetSeconds)
 	{
-		this->animInsts.emplace_back(objectIndex, imageIDs, targetSeconds);
+		this->animInsts.emplace_back(objectIndex, textureBuilderIDs, targetSeconds);
 	};
 
 	// Spawn all sky objects from the ready-to-bake format. Any animated objects start on their first frame.
@@ -132,28 +134,28 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::LandDefID defID = placementDef.id;
 		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
 
-		DebugAssert(skyLandDef.getImageCount() > 0);
-		const ImageID imageID = skyLandDef.getImageID(0);
-		const Image &image = textureManager.getImageHandle(imageID);
+		DebugAssert(skyLandDef.getTextureCount() > 0);
+		const TextureBuilderID textureBuilderID = skyLandDef.getTextureBuilderID(0);
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
 		double width, height;
-		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const Radians position : placementDef.positions)
 		{
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
-			addGeneralObjectInst(direction, width, height, imageID);
+			addGeneralObjectInst(direction, width, height, textureBuilderID);
 
 			// Only land objects support animations (for now).
 			if (skyLandDef.hasAnimation())
 			{
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-				const TextureUtils::ImageIdGroup imageIDs(skyLandDef.getImageID(0), skyLandDef.getImageCount());
-				const double targetSeconds = static_cast<int>(static_cast<double>(imageIDs.getCount()) *
+				const TextureBuilderIdGroup textureBuilderIDs(skyLandDef.getTextureBuilderID(0), skyLandDef.getTextureCount());
+				const double targetSeconds = static_cast<int>(static_cast<double>(textureBuilderIDs.getCount()) *
 					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
-				addAnimInst(objectIndex, imageIDs, targetSeconds);
+				addAnimInst(objectIndex, textureBuilderIDs, targetSeconds);
 			}
 		}
 
@@ -169,11 +171,11 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
-		const ImageID imageID = skyAirDef.getImageID();
-		const Image &image = textureManager.getImageHandle(imageID);
+		const TextureBuilderID textureBuilderID = skyAirDef.getTextureBuilderID();
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
 		double width, height;
-		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const std::pair<Radians, Radians> &position : placementDef.positions)
 		{
@@ -181,7 +183,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleX = position.first;
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
-			addGeneralObjectInst(direction, width, height, imageID);
+			addGeneralObjectInst(direction, width, height, textureBuilderID);
 		}
 
 		airInstCount += static_cast<int>(placementDef.positions.size());
@@ -197,9 +199,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::StarDefID defID = placementDef.id;
 		const SkyStarDefinition &skyStarDef = skyInfoDefinition.getStar(defID);
 
-		// @todo: this is where the imageID design is kind of breaking, and getting a renderer sprite
-		// resource ID would be better. SkyInstance::init() should be able to allocate textures IDs from
-		// the renderer eventually, and look up cached ones by string.
+		// @todo: this is where the texture-id-from-texture-manager design is kind of breaking, and getting
+		// a renderer sprite resource ID would be better. SkyInstance::init() should be able to allocate
+		// textures IDs from the renderer eventually, and look up cached ones by string.
 		const SkyStarDefinition::Type starType = skyStarDef.getType();
 		if (starType == SkyStarDefinition::Type::Small)
 		{
@@ -221,16 +223,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		else if (starType == SkyStarDefinition::Type::Large)
 		{
 			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
-			const ImageID imageID = largeStar.imageID;
-			const Image &image = textureManager.getImageHandle(imageID);
+			const TextureBuilderID textureBuilderID = largeStar.textureBuilderID;
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
 			double width, height;
-			SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+			SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
-				addGeneralObjectInst(position, width, height, imageID);
+				addGeneralObjectInst(position, width, height, textureBuilderID);
 			}
 		}
 		else
@@ -250,18 +252,18 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
-		const ImageID imageID = skySunDef.getImageID();
-		const Image &image = textureManager.getImageHandle(imageID);
+		const TextureBuilderID textureBuilderID = skySunDef.getTextureBuilderID();
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
 		double width, height;
-		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const double position : placementDef.positions)
 		{
 			// Convert starting sun latitude to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, imageID);
+			addGeneralObjectInst(tempDirection, width, height, textureBuilderID);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -278,19 +280,19 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
 
 		// @todo: get the image from the current day, etc..
-		DebugAssert(skyMoonDef.getImageIdCount() > 0);
-		const ImageID imageID = skyMoonDef.getImageID(0);
-		const Image &image = textureManager.getImageHandle(imageID);
+		DebugAssert(skyMoonDef.getTextureCount() > 0);
+		const TextureBuilderID textureBuilderID = skyMoonDef.getTextureBuilderID(0);
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
 		double width, height;
-		SkyUtils::getSkyObjectDimensions(image.getWidth(), image.getHeight(), &width, &height);
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
 			// Convert moon position to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, imageID);
+			addGeneralObjectInst(tempDirection, width, height, textureBuilderID);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -356,15 +358,15 @@ bool SkyInstance::isObjectSmallStar(int objectIndex) const
 	return this->objectInsts[objectIndex].getType() != SkyInstance::ObjectInstance::Type::SmallStar;
 }
 
-void SkyInstance::getObject(int index, Double3 *outDirection, ImageID *outImageID, double *outWidth,
-	double *outHeight) const
+void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
+	double *outWidth, double *outHeight) const
 {
 	DebugAssertIndex(this->objectInsts, index);
 	const ObjectInstance &objectInst = this->objectInsts[index];
 	*outDirection = objectInst.getTransformedDirection();
 
 	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
-	*outImageID = objectInst.getGeneral().imageID;
+	*outTextureBuilderID = objectInst.getGeneral().textureBuilderID;
 
 	*outWidth = objectInst.getWidth();
 	*outHeight = objectInst.getHeight();
@@ -404,17 +406,17 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 			animInst.currentSeconds = std::fmod(animInst.currentSeconds, animInst.targetSeconds);
 		}
 
-		const int imageCount = animInst.imageIDs.getCount();
+		const int imageCount = animInst.textureBuilderIDs.getCount();
 		const double animPercent = std::clamp(animInst.currentSeconds / animInst.targetSeconds, 0.0, 1.0);
 		const int animIndex = static_cast<int>(static_cast<double>(imageCount) * animPercent);
-		const ImageID newImageID = animInst.imageIDs.getID(animIndex);
+		const TextureBuilderID newTextureBuilderID = animInst.textureBuilderIDs.getID(animIndex);
 		
 		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
 		ObjectInstance &objectInst = this->objectInsts[animInst.objectIndex];
 
 		DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
 		ObjectInstance::General &objectInstGeneral = objectInst.getGeneral();
-		objectInstGeneral.imageID = newImageID;
+		objectInstGeneral.textureBuilderID = newTextureBuilderID;
 	}
 
 	// Update transformed sky position of stars, suns, and moons.

@@ -40,7 +40,8 @@ private:
 	std::unique_ptr<TextBox> locationTextBox;
 	Button<Game&> backToGameButton;
 	Texture mapTexture;
-	TextureID backgroundTextureID;
+	TextureBuilderID backgroundTextureBuilderID;
+	PaletteID backgroundPaletteID;
 
 	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
 	Double2 automapOffset;
@@ -75,7 +76,7 @@ public:
 		const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

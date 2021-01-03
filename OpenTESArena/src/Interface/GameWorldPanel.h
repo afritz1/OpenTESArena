@@ -37,13 +37,13 @@ private:
 	std::vector<Int2> weaponOffsets;
 
 	// Helper functions for various UI textures.
-	static TextureID getGameWorldInterfaceTextureID(TextureManager &textureManager, Renderer &renderer);
-	TextureID getCompassFrameTextureID() const;
-	TextureID getCompassSliderTextureID() const;
-	TextureID getPlayerPortraitTextureID(const std::string &portraitsFilename, int portraitID) const;
-	TextureID getStatusGradientTextureID(int gradientID) const;
-	TextureID getNoSpellTextureID() const;
-	TextureID getWeaponTextureID(const std::string &weaponFilename, int index) const;
+	static TextureBuilderID getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager);
+	TextureBuilderID getCompassFrameTextureBuilderID() const;
+	TextureBuilderID getCompassSliderTextureBuilderID() const;
+	TextureBuilderID getPlayerPortraitTextureBuilderID(const std::string &portraitsFilename, int portraitID) const;
+	TextureBuilderID getStatusGradientTextureBuilderID(int gradientID) const;
+	TextureBuilderID getNoSpellTextureBuilderID() const;
+	TextureBuilderID getWeaponTextureBuilderID(const std::string &weaponFilename, int index) const;
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
@@ -100,10 +100,9 @@ public:
 
 	// Gets the center of the screen for pop-up related functions. The position depends on
 	// whether modern interface mode is set.
-	static Int2 getInterfaceCenter(bool modernInterface,
-		TextureManager &textureManager, Renderer &renderer);
+	static Int2 getInterfaceCenter(bool modernInterface, TextureManager &textureManager);
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void onPauseChanged(bool paused) override;
 	virtual void resize(int windowWidth, int windowHeight) override;

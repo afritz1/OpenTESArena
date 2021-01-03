@@ -4,14 +4,12 @@
 #include "RichTextString.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Media/FontLibrary.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
@@ -28,30 +26,30 @@ TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	const RichTextString &richText, const std::function<void(Game&)> &endingAction)
 	: TextSubPanel(game, textCenter, richText, endingAction, std::move(Texture()), Int2()) { }
 
-Panel::CursorData TextSubPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> TextSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
 	auto &textureManager = game.getTextureManager();
 	
-	const std::string &paletteFilename = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	const std::string &paletteFilename = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugLogWarning("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		return CursorData::EMPTY;
+		return std::nullopt;
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::SwordCursor);
-	TextureID textureID;
-	if (!textureManager.tryGetTextureID(textureFilename.c_str(), paletteID, renderer, &textureID))
+	const std::string &textureFilename = ArenaTextureName::SwordCursor;
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
+	if (!textureBuilderID.has_value())
 	{
 		DebugLogWarning("Couldn't get texture ID for \"" + textureFilename + "\".");
-		return CursorData::EMPTY;
+		return std::nullopt;
 	}
 
-	const Texture &texture = textureManager.getTextureHandle(textureID);
-	return CursorData(&texture, CursorAlignment::TopLeft);
+	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
 }
 
 void TextSubPanel::handleEvent(const SDL_Event &e)

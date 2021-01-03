@@ -402,8 +402,7 @@ void SoftwareRenderer::FlatTextureGroup::init(const EntityAnimationInstance &ani
 }
 
 void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, int textureID,
-	bool flipped, const uint8_t *srcTexels, int width, int height, bool reflective,
-	const Palette &palette)
+	bool flipped, const TextureBuilder &textureBuilder, bool reflective, const Palette &palette)
 {
 	if (!this->isValidLookup(stateID, angleID, textureID))
 	{
@@ -415,7 +414,14 @@ void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, in
 	FlatTextureGroup::State &state = this->states[stateID];
 	FlatTextureGroup::TextureList &textureList = state[angleID];
 	FlatTexture &texture = textureList[textureID];
-	texture.init(width, height, srcTexels, flipped, reflective, palette);
+
+	// @todo: figure out how the texture type should be handled in the long term. This renderer might
+	// end up being strictly 8-bit.
+	DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+	const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+
+	texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), flipped, reflective, palette);
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
@@ -640,13 +646,19 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 
 	// Creates a render texture from the given 8-bit image ID, adds it to the sky textures list,
 	// and returns its index in the sky textures list.
-	auto addSkyTexture = [&skyTextures, &palette, &textureManager](ImageID imageID)
+	auto addSkyTexture = [&skyTextures, &palette, &textureManager](TextureBuilderID textureBuilderID)
 	{
-		const Image &image = textureManager.getImageHandle(imageID);
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+		// @todo: decide how to handle texture builder format -- this renderer will probably
+		// eventually only be 8-bit, but it is 32-bit for now.
+		DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+		const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+		const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
 
 		skyTextures.push_back(SkyTexture());
 		SkyTexture &texture = skyTextures.back();
-		texture.init(image.getWidth(), image.getHeight(), image.getPixels(), palette);
+		texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), palette);
 
 		return static_cast<int>(skyTextures.size()) - 1;
 	};
@@ -678,7 +690,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
 		const int entryIndex = landObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
 		this->lands.push_back(DistantObject<DistantSky::LandObject>(landObject, textureIndex));
 	}
 
@@ -690,11 +702,11 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 		DebugAssert(setEntryCount > 0);
 
 		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(distantSky.getTextureSetImageID(setEntryIndex, 0));
+		const int textureIndex = addSkyTexture(distantSky.getTextureSetTextureBuilderID(setEntryIndex, 0));
 
 		for (int j = 1; j < setEntryCount; j++)
 		{
-			addSkyTexture(distantSky.getTextureSetImageID(setEntryIndex, j));
+			addSkyTexture(distantSky.getTextureSetTextureBuilderID(setEntryIndex, j));
 		}
 
 		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(
@@ -705,7 +717,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
 		const int entryIndex = airObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
 		this->airs.push_back(DistantObject<DistantSky::AirObject>(airObject, textureIndex));
 	}
 
@@ -713,7 +725,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
 		const int entryIndex = moonObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getImageID(entryIndex));
+		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
 		this->moons.push_back(DistantObject<DistantSky::MoonObject>(moonObject, textureIndex));
 	}
 
@@ -731,7 +743,7 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			{
 				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
 				const int entryIndex = largeStar.entryIndex;
-				return addSkyTexture(distantSky.getImageID(entryIndex));
+				return addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
 			}
 			else
 			{
@@ -740,15 +752,14 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			}
 		}();
 
-		this->stars.push_back(DistantObject<DistantSky::StarObject>(
-			starObject, textureIndex));
+		this->stars.push_back(DistantObject<DistantSky::StarObject>(starObject, textureIndex));
 	}
 
 	if (distantSky.hasSun())
 	{
 		// Add the sun to the sky textures and assign its texture index.
 		const int sunEntryIndex = distantSky.getSunEntryIndex();
-		this->sunTextureIndex = addSkyTexture(distantSky.getImageID(sunEntryIndex));
+		this->sunTextureIndex = addSkyTexture(distantSky.getTextureBuilderID(sunEntryIndex));
 	}
 }
 
@@ -1106,7 +1117,7 @@ EntityRenderID SoftwareRenderer::makeEntityRenderID()
 
 void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 	const EntityAnimationDefinition &animDef, const EntityAnimationInstance &animInst,
-	bool isPuddle, const Palette &palette, const TextureManager &textureManager,
+	bool isPuddle, const Palette &palette, TextureManager &textureManager,
 	const TextureInstanceManager &textureInstManager)
 {
 	DebugAssert(this->isValidEntityRenderID(entityRenderID));
@@ -1138,11 +1149,12 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 				const int angleID = keyframeListIndex;
 				const int keyframeID = keyframeIndex;
 
-				// Get texture associated with image ID and write texture data.
-				const Image &image = instKeyframe.getImageHandle(defKeyframe, textureManager);
+				// Get the associated texture and write texture data.
+				const TextureBuilder &textureBuilder =
+					instKeyframe.getTextureBuilderHandle(defKeyframe, textureManager);
 				const int textureID = keyframeID;
-				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, image.getPixels(),
-					image.getWidth(), image.getHeight(), isPuddle, palette);
+				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, textureBuilder,
+					isPuddle, palette);
 			}
 		}
 	}

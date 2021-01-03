@@ -308,7 +308,7 @@ private:
 		// @todo: pass some TextureDataDef instead that has either 8-bit + palette or 32-bit data,
 		// determined by a trueColor bool.
 		void setTexture(int stateID, int angleID, int textureID, bool flipped,
-			const uint8_t *srcTexels, int width, int height, bool reflective, const Palette &palette);
+			const TextureBuilder &textureBuilder, bool reflective, const Palette &palette);
 	};
 
 	// Each flat texture group is indexed by the entity render ID.
@@ -1013,7 +1013,7 @@ public:
 	// @todo: replace 8-bit restriction with some texture wrapper for 8-bit+palette/32-bit.
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		const TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
+		TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places

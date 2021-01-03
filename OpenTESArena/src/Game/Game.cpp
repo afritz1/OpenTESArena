@@ -521,16 +521,15 @@ void Game::render()
 	activePanel->renderSecondary(this->renderer);
 
 	// Get the active panel's cursor texture and alignment.
-	const Panel::CursorData cursor = activePanel->getCurrentCursor();
+	const std::optional<Panel::CursorData> cursor = activePanel->getCurrentCursor();
 
-	// Draw cursor if not null. Some panels do not define a cursor (like cinematics), 
-	// so their cursor is always null.
-	if (cursor.getTexture() != nullptr)
+	// Draw cursor if valid. Some panels do not define a cursor (like cinematics), so their cursor is empty.
+	if (cursor.has_value())
 	{
 		// The panel should not be drawing the cursor themselves. It's done here 
 		// just to make sure that the cursor is drawn only once and is always drawn last.
-		this->renderer.drawCursor(*cursor.getTexture(), cursor.getAlignment(),
-			this->inputManager.getMousePosition(), this->options.getGraphics_CursorScale());
+		this->renderer.drawCursor(cursor->getTextureBuilderID(), cursor->getPaletteID(), cursor->getAlignment(),
+			this->inputManager.getMousePosition(), this->options.getGraphics_CursorScale(), this->textureManager);
 	}
 
 	this->renderer.present();

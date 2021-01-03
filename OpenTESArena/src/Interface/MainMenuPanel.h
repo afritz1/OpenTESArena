@@ -30,11 +30,13 @@ private:
 	std::optional<InteriorType> getSelectedTestInteriorType() const;
 	WeatherType getSelectedTestWeatherType() const;
 	MapType getSelectedTestMapType() const;
+
+	void renderTestUI(Renderer &renderer);
 public:
 	MainMenuPanel(Game &game);
 	virtual ~MainMenuPanel() = default;
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

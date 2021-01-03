@@ -3,11 +3,7 @@
 #include "ImagePanel.h"
 #include "Texture.h"
 #include "../Game/Game.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 ImagePanel::ImagePanel(Game &game, const std::string &paletteName, 
@@ -57,7 +53,20 @@ void ImagePanel::render(Renderer &renderer)
 
 	// Draw image.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID textureID = this->getTextureID(this->textureName, this->paletteName);
-	const TextureRef texture = textureManager.getTextureRef(textureID);
-	renderer.drawOriginal(texture.get());
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(this->paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + this->paletteName + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> textureBuilderID =
+		textureManager.tryGetTextureBuilderID(this->textureName.c_str());
+	if (!textureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get texture builder ID for \"" + this->textureName + "\".");
+		return;
+	}
+	
+	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 }

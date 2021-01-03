@@ -10,6 +10,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
@@ -18,11 +19,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationUtils.h"
 
@@ -102,7 +99,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			{
 				const int width = messageBoxTitle.textBox->getRect().getWidth() + 22;
 				const int height = 60;
-				return Texture::generate(Texture::PatternType::Parchment, width, height,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
 					textureManager, renderer);
 			}();
 
@@ -132,7 +129,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
 			{
 				const int width = messageBoxTitle.texture.getWidth();
-				return Texture::generate(Texture::PatternType::Parchment, width, 40,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, 40,
 					textureManager, renderer);
 			}();
 
@@ -176,7 +173,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -235,7 +232,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -296,7 +293,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -374,7 +371,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 						game.getFontLibrary());
 
 					const int textureHeight = std::max(richText.getDimensions().y, 40);
-					Texture texture = Texture::generate(Texture::PatternType::Parchment,
+					Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 						richText.getDimensions().x + 20, textureHeight,
 						game.getTextureManager(), game.getRenderer());
 
@@ -415,7 +412,7 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 			{
 				const int width = messageBoxYes.texture.getWidth();
 				const int height = messageBoxYes.texture.getHeight();
-				return Texture::generate(Texture::PatternType::Parchment, width, height,
+				return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
 					textureManager, renderer);
 			}();
 
@@ -493,7 +490,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		lineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = Texture::generate(Texture::PatternType::Parchment, 240, 60,
+	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment, 240, 60,
 		game.getTextureManager(), game.getRenderer());
 
 	const Int2 textureCenter(
@@ -542,7 +539,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	return ChooseRacePanel::NO_ID;
 }
 
-Panel::CursorData ChooseRacePanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseRacePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -603,20 +600,39 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background map.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID raceSelectMapTextureID = this->getTextureID(
-		TextureName::RaceSelect, PaletteName::BuiltIn);
-	const TextureRef raceSelectMapTexture = textureManager.getTextureRef(raceSelectMapTextureID);
-	renderer.drawOriginal(raceSelectMapTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &raceSelectFilename = ArenaTextureName::RaceSelect;
+	const std::optional<PaletteID> raceSelectPaletteID = textureManager.tryGetPaletteID(raceSelectFilename.c_str());
+	if (!raceSelectPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get race select palette ID for \"" + raceSelectFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> raceSelectTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(raceSelectFilename.c_str());
+	if (!raceSelectTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get race select texture builder ID for \"" + raceSelectFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*raceSelectTextureBuilderID, *raceSelectPaletteID, textureManager);
 
 	// Arena just covers up the "exit" text at the bottom right.
-	const TextureID exitCoverTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::NoExit),
-		TextureFile::fromName(TextureName::RaceSelect));
-	const TextureRef exitCoverTexture = textureManager.getTextureRef(exitCoverTextureID);
-	renderer.drawOriginal(exitCoverTexture.get(),
-		Renderer::ORIGINAL_WIDTH - exitCoverTexture.getWidth(),
-		Renderer::ORIGINAL_HEIGHT - exitCoverTexture.getHeight());
+	const std::string &exitCoverFilename = ArenaTextureName::NoExit;
+	const std::optional<TextureBuilderID> exitCoverTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(exitCoverFilename.c_str());
+	if (!exitCoverTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get exit cover texture builder ID for \"" + exitCoverFilename + "\".");
+		return;
+	}
+
+	const TextureBuilder &exitCoverTextureBuilder = textureManager.getTextureBuilderHandle(*exitCoverTextureBuilderID);
+	const int exitCoverX = Renderer::ORIGINAL_WIDTH - exitCoverTextureBuilder.getWidth();
+	const int exitCoverY = Renderer::ORIGINAL_HEIGHT - exitCoverTextureBuilder.getHeight();
+	renderer.drawOriginal(*exitCoverTextureBuilderID, *raceSelectPaletteID, exitCoverX, exitCoverY, textureManager);
 }
 
 void ChooseRacePanel::renderSecondary(Renderer &renderer)
@@ -625,8 +641,7 @@ void ChooseRacePanel::renderSecondary(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 
 	// Draw hovered province tooltip.
-	const Int2 originalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
+	const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.
 	const int maskID = this->getProvinceMaskID(originalPoint);

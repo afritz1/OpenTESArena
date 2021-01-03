@@ -24,8 +24,6 @@ class Texture;
 
 enum class CursorAlignment;
 enum class FontName;
-enum class PaletteName;
-enum class TextureName;
 
 struct SDL_Texture;
 
@@ -34,17 +32,17 @@ union SDL_Event;
 class Panel
 {
 public:
-	class CursorData
+	class CursorData // @todo: rename to CursorDisplayState?
 	{
 	private:
-		const Texture *texture;
+		TextureBuilderID textureBuilderID; // @todo: maybe should be a UI texture handle at some point.
+		PaletteID paletteID;
 		CursorAlignment alignment;
 	public:
-		static const CursorData EMPTY;
+		CursorData(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment);
 
-		CursorData(const Texture *texture, CursorAlignment alignment);
-
-		const Texture *getTexture() const;
+		TextureBuilderID getTextureBuilderID() const;
+		PaletteID getPaletteID() const;
 		CursorAlignment getAlignment() const;
 	};
 private:
@@ -59,25 +57,15 @@ protected:
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
-
-	// Helper functions for accessing common UI textures. These functions assume that the
-	// textures exist.
-	TextureID getTextureID(const std::string &textureName, const std::string &paletteName) const;
-	TextureID getTextureID(TextureName textureName, PaletteName paletteName) const;
-	TextureUtils::TextureIdGroup getTextureIDs(const std::string &textureName,
-		const std::string &paletteName) const;
-	TextureUtils::TextureIdGroup getTextureIDs(TextureName textureName,
-		PaletteName paletteName) const;
 public:
 	Panel(Game &game);
 	virtual ~Panel() = default;
 
 	static std::unique_ptr<Panel> defaultPanel(Game &game);
 
-	// Gets the panel's active mouse cursor and alignment. Override this method if
-	// the panel has at least one cursor defined. The texture must be supplied by 
-	// the texture manager.
-	virtual CursorData getCurrentCursor() const;
+	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
+	// least one cursor defined.
+	virtual std::optional<CursorData> getCurrentCursor() const;
 
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.

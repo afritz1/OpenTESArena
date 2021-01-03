@@ -8,15 +8,12 @@
 #include "RichTextString.h"
 #include "TextAlignment.h"
 #include "TextEntry.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
 #include "../Media/Color.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -29,9 +26,8 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 {
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
-	this->parchment = Texture::generate(
-		Texture::PatternType::Parchment, 280, 40, game.getTextureManager(),
-		game.getRenderer());
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 280, 40,
+		game.getTextureManager(), game.getRenderer());
 
 	this->textTitleTextBox = [&game]()
 	{
@@ -156,12 +152,12 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game,
 	SDL_StartTextInput();
 }
 
-Panel::CursorData ProvinceSearchSubPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
 {
 	if (this->mode == ProvinceSearchSubPanel::Mode::TextEntry)
 	{
 		// No mouse cursor when typing.
-		return CursorData(nullptr, CursorAlignment::TopLeft);
+		return std::nullopt;
 	}
 	else
 	{
@@ -482,18 +478,32 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 	// Draw list background.
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	const TextureID listBackgroundTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::PopUp8), this->getBackgroundFilename());
-	const TextureRef listBackgroundTexture = textureManager.getTextureRef(listBackgroundTextureID);
+	const std::string listBackgroundPaletteFilename = this->getBackgroundFilename();
+	const std::optional<PaletteID> listBackgroundPaletteID =
+		textureManager.tryGetPaletteID(listBackgroundPaletteFilename.c_str());
+	if (!listBackgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get list background palette ID for \"" + listBackgroundPaletteFilename + "\".");
+		return;
+	}
+	
+	const std::string &listBackgroundTextureFilename = ArenaTextureName::PopUp8;
+	const std::optional<TextureBuilderID> listBackgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(listBackgroundTextureFilename.c_str());
+	if (!listBackgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get list background texture builder ID for \"" + listBackgroundTextureFilename + "\".");
+		return;
+	}
 
-	const int listBackgroundX = 57;
-	const int listBackgroundY = 11;
-	renderer.drawOriginal(listBackgroundTexture.get(), listBackgroundX, listBackgroundY);
+	constexpr int listBackgroundX = 57;
+	constexpr int listBackgroundY = 11;
+	renderer.drawOriginal(*listBackgroundTextureBuilderID, *listBackgroundPaletteID,
+		listBackgroundX, listBackgroundY, textureManager);
 
 	// Draw list box text.
 	renderer.drawOriginal(this->locationsListBox->getTexture(),
-		this->locationsListBox->getPoint().x,
-		this->locationsListBox->getPoint().y);
+		this->locationsListBox->getPoint().x, this->locationsListBox->getPoint().y);
 }
 
 void ProvinceSearchSubPanel::render(Renderer &renderer)

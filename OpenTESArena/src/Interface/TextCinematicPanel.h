@@ -50,7 +50,7 @@ private:
 
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
 	Button<Game&> skipButton;
-	TextureUtils::TextureIdGroup animTextureIDs;
+	std::string animTextureFilename;
 	SpeechState speechState;
 	double secondsPerImage, currentImageSeconds;
 	int animImageIndex, textIndex, textCinematicDefIndex;

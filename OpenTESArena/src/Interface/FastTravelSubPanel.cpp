@@ -7,6 +7,7 @@
 #include "MainQuestSplashPanel.h"
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Game/DateUtils.h"
@@ -14,11 +15,7 @@
 #include "../Game/GameData.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../World/InteriorType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
@@ -42,30 +39,23 @@ FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapPanel::Trave
 
 const std::string &FastTravelSubPanel::getBackgroundFilename() const
 {
-	return TextureFile::fromName(TextureName::WorldMap);
+	return ArenaTextureName::WorldMap;
 }
 
-TextureUtils::TextureIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
+TextureBuilderIdGroup FastTravelSubPanel::getAnimationTextureIDs() const
 {
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
 
-	const std::string &paletteFilename = this->getBackgroundFilename();
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteFilename.c_str(), &paletteID))
+	const std::string &textureFilename = ArenaTextureName::FastTravel;
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(textureFilename.c_str());
+	if (!textureBuilderIDs.has_value())
 	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		DebugCrash("Couldn't get texture builder IDs for \"" + textureFilename + "\".");
 	}
 
-	const std::string &textureFilename = TextureFile::fromName(TextureName::FastTravel);
-	TextureUtils::TextureIdGroup textureIDs;
-	if (!textureManager.tryGetTextureIDs(textureFilename.c_str(), paletteID, renderer, &textureIDs))
-	{
-		DebugCrash("Couldn't get texture IDs for \"" + textureFilename + "\".");
-	}
-
-	return textureIDs;
+	return *textureBuilderIDs;
 }
 
 std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
@@ -75,8 +65,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 	auto &renderer = game.getRenderer();
 
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	const Int2 center = GameWorldPanel::getInterfaceCenter(
-		modernInterface, textureManager, renderer) - Int2(0, 1);
+	const Int2 center = GameWorldPanel::getInterfaceCenter(modernInterface, textureManager) - Int2(0, 1);
 
 	const std::string text = [this, &game]()
 	{
@@ -308,7 +297,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		lineSpacing,
 		game.getFontLibrary());
 
-	Texture texture = Texture::generate(Texture::PatternType::Dark,
+	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
 		richText.getDimensions().x + 10, richText.getDimensions().y + 12,
 		textureManager, renderer);
 
@@ -323,7 +312,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		std::move(texture), textureCenter);
 }
 
-Panel::CursorData FastTravelSubPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> FastTravelSubPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -573,11 +562,19 @@ void FastTravelSubPanel::render(Renderer &renderer)
 {
 	// Draw horse animation.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureUtils::TextureIdGroup animationTextureIDs = this->getAnimationTextureIDs();
-	const TextureID animationTextureID = animationTextureIDs.getID(static_cast<int>(this->frameIndex));
-	const TextureRef animFrame = textureManager.getTextureRef(animationTextureID);
+	const std::string &paletteFilename = this->getBackgroundFilename();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		return;
+	}
 
-	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (animFrame.getWidth() / 2);
-	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (animFrame.getHeight() / 2);
-	renderer.drawOriginal(animFrame.get(), x, y);
+	const TextureBuilderIdGroup textureBuilderIDs = this->getAnimationTextureIDs();
+	const TextureBuilderID textureBuilderID = textureBuilderIDs.getID(static_cast<int>(this->frameIndex));
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+	const int x = (Renderer::ORIGINAL_WIDTH / 2) - (textureBuilder.getWidth() / 2);
+	const int y = (Renderer::ORIGINAL_HEIGHT / 2) - (textureBuilder.getHeight() / 2);
+	renderer.drawOriginal(textureBuilderID, *paletteID, x, y, textureManager);
 }

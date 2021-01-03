@@ -16,6 +16,7 @@
 #include "VoxelType.h"
 #include "WorldData.h"
 #include "../Assets/ArenaAnimUtils.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
@@ -36,8 +37,6 @@
 #include "../Items/ArmorMaterialType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
@@ -1473,7 +1472,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	// Palette for voxels and flats, required in the renderer so it can conditionally transform
 	// certain palette indices for transparency.
 	COLFile col;
-	col.init(PaletteFile::fromName(PaletteName::Default).c_str());
+	col.init(ArenaPaletteName::Default.c_str());
 	const Palette &palette = col.getPalette();
 
 	// Loads .INF voxel textures into the renderer.
@@ -1794,14 +1793,14 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			// Palette for renderer textures.
 			const Palette &palette = [&textureManager]() -> const Palette&
 			{
-				const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
-				PaletteID paletteID;
-				if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+				const std::string &paletteName = ArenaPaletteName::Default;
+				const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+				if (!paletteID.has_value())
 				{
 					DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
 				}
 
-				return textureManager.getPaletteHandle(paletteID);
+				return textureManager.getPaletteHandle(*paletteID);
 			}();
 
 			// Initialize renderer buffers for the entity animation then populate all textures

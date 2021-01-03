@@ -2,19 +2,20 @@
 #define ENTITY_ANIMATION_INSTANCE_H
 
 #include <array>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationUtils.h"
+#include "../Assets/TextureAssetReference.h"
 #include "../Media/TextureUtils.h"
 
 #include "components/utilities/BufferView.h"
 
 // Instance-specific animation data, references a shared animation definition.
 
-class Image;
-class TextureInstanceManager;
+class TextureBuilder;
 class TextureManager;
 
 class EntityAnimationInstance
@@ -23,15 +24,14 @@ public:
 	class Keyframe
 	{
 	private:
-		ImageID overrideImageID;
+		// @todo: might need to change this to an actual texture handle.
+		std::optional<TextureBuilderID> overrideTextureBuilderID;
 	public:
-		Keyframe();
+		static Keyframe makeFromTextureBuilderID(TextureBuilderID overrideTextureBuilderID);
 
-		static Keyframe makeFromImage(ImageID overrideImageID);
-
-		// Gets the raw image handle for this keyframe (does not protect from dangling pointers).
-		const Image &getImageHandle(const EntityAnimationDefinition::Keyframe &defKeyframe,
-			const TextureManager &textureManager) const;
+		// Gets the raw texture builder handle for this keyframe (does not protect from dangling pointers).
+		const TextureBuilder &getTextureBuilderHandle(const EntityAnimationDefinition::Keyframe &defKeyframe,
+			TextureManager &textureManager) const;
 	};
 
 	class KeyframeList

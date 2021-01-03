@@ -15,8 +15,6 @@
 #include "../Media/AudioManager.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -164,21 +162,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 		this->speechState.init(textCinematicDef.getTemplateDatKey());
 	}
 
-	// Load texture IDs for the cinematic animation.
-	auto &textureManager = game.getTextureManager();
-	const std::string &animFilename = textCinematicDef.getAnimationFilename();
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(animFilename.c_str(), &paletteID))
-	{
-		DebugCrash("Couldn't get palette ID for \"" + animFilename + "\".");
-	}
-
-	if (!textureManager.tryGetTextureIDs(animFilename.c_str(), paletteID,
-		game.getRenderer(), &this->animTextureIDs))
-	{
-		DebugCrash("Couldn't get texture IDs for \"" + animFilename + "\".");
-	}
-
+	this->animTextureFilename = textCinematicDef.getAnimationFilename();
 	this->secondsPerImage = secondsPerImage;
 	this->currentImageSeconds = 0.0;
 	this->textCinematicDefIndex = textCinematicDefIndex;
@@ -244,9 +228,17 @@ void TextCinematicPanel::tick(double dt)
 		this->currentImageSeconds -= this->secondsPerImage;
 		this->animImageIndex++;
 
-		// If at the end of the sequence, go back to the first image. The cinematic 
-		// ends at the end of the last text box.
-		if (this->animImageIndex == this->animTextureIDs.getCount())
+		auto &textureManager = this->getGame().getTextureManager();
+		const std::optional<TextureFileMetadata> textureFileMetadata =
+			textureManager.tryGetMetadata(this->animTextureFilename.c_str());
+		if (!textureFileMetadata.has_value())
+		{
+			DebugCrash("Couldn't get anim texture file metadata for \"" + this->animTextureFilename + "\".");
+		}
+
+		// If at the end of the sequence, go back to the first image. The cinematic ends at the end
+		// of the last text box.
+		if (this->animImageIndex == textureFileMetadata->getTextureCount())
 		{
 			this->animImageIndex = 0;
 		}
@@ -303,10 +295,24 @@ void TextCinematicPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw current frame in animation.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID textureID = this->animTextureIDs.getID(this->animImageIndex);
-	const TextureRef texture = textureManager.getTextureRef(textureID);
-	renderer.drawOriginal(texture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(this->animTextureFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette ID for \"" + this->animTextureFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(this->animTextureFilename.c_str());
+	if (!textureBuilderIDs.has_value())
+	{
+		DebugLogError("Couldn't get texture builder IDs for \"" + this->animTextureFilename + "\".");
+		return;
+	}
+
+	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(this->animImageIndex);
+	renderer.drawOriginal(textureBuilderID, *paletteID, textureManager);
 
 	// Draw the relevant text box.
 	DebugAssertIndex(this->textBoxes, this->textIndex);

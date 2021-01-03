@@ -8,6 +8,7 @@
 #include "ClockLibrary.h"
 #include "Game.h"
 #include "GameData.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -19,8 +20,6 @@
 #include "../Interface/TextBox.h"
 #include "../Math/Constants.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaVoxelUtils.h"
@@ -246,14 +245,14 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 
-	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 }
 
@@ -421,14 +420,14 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 
-	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;
@@ -506,14 +505,14 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	this->fogDistance = fogDistance;
 	renderer.setFogDistance(fogDistance);
 
-	const std::string paletteName = PaletteFile::fromName(PaletteName::Default);
-	PaletteID paletteID;
-	if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
 	{
 		DebugCrash("Couldn't get palette \"" + paletteName + "\".");
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(paletteID);
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 
 	return true;

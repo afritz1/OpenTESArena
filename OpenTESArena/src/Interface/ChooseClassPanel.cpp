@@ -10,6 +10,7 @@
 #include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
@@ -22,11 +23,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -164,7 +161,7 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	DebugAssert(this->tooltipTextures.size() == 0);
 }
 
-Panel::CursorData ChooseClassPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseClassPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -464,26 +461,42 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &game = this->getGame();
-	const auto &textureManager = game.getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	auto &textureManager = game.getTextureManager();
+	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw list pop-up.
-	const TextureID listPopUpTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::PopUp2),
-		TextureFile::fromName(TextureName::CharacterCreation));
-	const TextureRef listPopUpTexture = textureManager.getTextureRef(listPopUpTextureID);
-	renderer.drawOriginal(listPopUpTexture.get(), 55, 9,
-		listPopUpTexture.getWidth(), listPopUpTexture.getHeight());
+	const std::string &listPopUpFilename = ArenaTextureName::PopUp2;
+	const std::optional<TextureBuilderID> listPopUpTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(listPopUpFilename.c_str());
+	if (!listPopUpTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get list pop-up texture builder ID for \"" + listPopUpFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*listPopUpTextureBuilderID, *backgroundPaletteID, 55, 9, textureManager);
 
 	// Draw text: title, list.
 	renderer.drawOriginal(this->titleTextBox->getTexture(),
 		this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawOriginal(this->classesListBox->getTexture(),
-		this->classesListBox->getPoint().x,
-		this->classesListBox->getPoint().y);
+		this->classesListBox->getPoint().x, this->classesListBox->getPoint().y);
 
 	// Draw tooltip if over a valid element in the list box.
 	const auto &inputManager = game.getInputManager();

@@ -1,17 +1,17 @@
 #ifndef SKY_MOON_DEFINITION_H
 #define SKY_MOON_DEFINITION_H
 
-#include "../Media/TextureManager.h"
+#include "../Media/TextureUtils.h"
 
 class SkyMoonDefinition
 {
 private:
-	TextureUtils::ImageIdGroup imageIDs;
+	TextureBuilderIdGroup textureBuilderIDs;
 public:
-	void init(const TextureUtils::ImageIdGroup &imageIDs);
+	void init(const TextureBuilderIdGroup &textureBuilderIDs);
 
-	int getImageIdCount() const;
-	ImageID getImageID(int index) const;
+	int getTextureCount() const;
+	TextureBuilderID getTextureBuilderID(int index) const;
 };
 
 #endif

@@ -67,6 +67,8 @@ private:
 
 	// Draws an icon (i.e., location or highlight) centered at the given point.
 	void drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer);
+	void drawCenteredIcon(TextureBuilderID textureBuilderID, PaletteID paletteID,
+		const Int2 &point, Renderer &renderer);
 
 	// Draws the icons of all visible locations in the province.
 	void drawVisibleLocations(const std::string &backgroundFilename,
@@ -94,7 +96,7 @@ public:
 	// so the province search sub-panel can call it, too.
 	void trySelectLocation(int selectedLocationID);
 
-	virtual Panel::CursorData getCurrentCursor() const override;
+	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

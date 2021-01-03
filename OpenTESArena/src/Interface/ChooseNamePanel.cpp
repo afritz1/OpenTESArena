@@ -11,6 +11,7 @@
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "TextEntry.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
@@ -21,11 +22,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -33,7 +30,7 @@
 ChooseNamePanel::ChooseNamePanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = Texture::generate(Texture::PatternType::Parchment, 300, 60,
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 300, 60,
 		game.getTextureManager(), game.getRenderer());
 
 	this->titleTextBox = [&game]()
@@ -111,7 +108,7 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 	SDL_StartTextInput();
 }
 
-Panel::CursorData ChooseNamePanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseNamePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -178,10 +175,23 @@ void ChooseNamePanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchment: title.
 	renderer.drawOriginal(this->parchment,

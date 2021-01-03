@@ -18,6 +18,7 @@
 #include "TextSubPanel.h"
 #include "Texture.h"
 #include "WorldMapPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
@@ -29,11 +30,7 @@
 #include "../Math/Rect.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
@@ -159,7 +156,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 	const bool hasStaffDungeon = provinceID != LocationUtils::CENTER_PROVINCE_ID;
 	if (hasStaffDungeon)
 	{
-		const std::string &cifName = TextureFile::fromName(TextureName::StaffDungeonIcons);
+		const std::string &cifName = ArenaTextureName::StaffDungeonIcons;
 		this->staffDungeonCif = CIFFile();
 		if (!this->staffDungeonCif.init(cifName.c_str()))
 		{
@@ -246,7 +243,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	}
 }
 
-Panel::CursorData ProvinceMapPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ProvinceMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -590,7 +587,7 @@ std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) 
 	// Parchment minimum height is 40 pixels.
 	const int parchmentHeight = std::max(richText.getDimensions().y + 16, 40);
 
-	Texture texture = Texture::generate(Texture::PatternType::Parchment,
+	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
 		richText.getDimensions().x + 20, parchmentHeight,
 		game.getTextureManager(), game.getRenderer());
 
@@ -622,25 +619,49 @@ void ProvinceMapPanel::handleFastTravel()
 	game.setPanel<WorldMapPanel>(game, std::move(this->travelData));
 }
 
-void ProvinceMapPanel::drawCenteredIcon(const Texture &texture,
+void ProvinceMapPanel::drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer)
+{
+	const int x = point.x - (texture.getWidth() / 2);
+	const int y = point.y - (texture.getHeight() / 2);
+	renderer.drawOriginal(texture, x, y);
+}
+
+void ProvinceMapPanel::drawCenteredIcon(TextureBuilderID textureBuilderID, PaletteID paletteID,
 	const Int2 &point, Renderer &renderer)
 {
-	renderer.drawOriginal(texture,
-		point.x - (texture.getWidth() / 2),
-		point.y - (texture.getHeight() / 2));
+	const auto &textureManager = this->getGame().getTextureManager();
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const int x = point.x - (textureBuilder.getWidth() / 2);
+	const int y = point.y - (textureBuilder.getHeight() / 2);
+	renderer.drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
 }
 
 void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureID cityStateIconTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::CityStateIcon), backgroundFilename);
-	const TextureID townIconTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::TownIcon), backgroundFilename);
-	const TextureID villageIconTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::VillageIcon), backgroundFilename);
-	const TextureID dungeonIconTextureID = this->getTextureID(
-		TextureFile::fromName(TextureName::DungeonIcon), backgroundFilename);
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::string &cityStateIconFilename = ArenaTextureName::CityStateIcon;
+	const std::string &townIconFilename = ArenaTextureName::TownIcon;
+	const std::string &villageIconFilename = ArenaTextureName::VillageIcon;
+	const std::string &dungeonIconFilename = ArenaTextureName::DungeonIcon;
+	const std::optional<TextureBuilderID> cityStateIconTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(cityStateIconFilename.c_str());
+	const std::optional<TextureBuilderID> townIconTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(townIconFilename.c_str());
+	const std::optional<TextureBuilderID> villageIconTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(villageIconFilename.c_str());
+	const std::optional<TextureBuilderID> dungeonIconTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(dungeonIconFilename.c_str());
+	DebugAssert(cityStateIconTextureBuilderID.has_value());
+	DebugAssert(townIconTextureBuilderID.has_value());
+	DebugAssert(villageIconTextureBuilderID.has_value());
+	DebugAssert(dungeonIconTextureBuilderID.has_value());
 
 	auto &game = this->getGame();
 	auto &gameData = game.getGameData();
@@ -653,8 +674,8 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 	// Gets the displayed icon texture ID for a location.
 	auto getLocationIconTextureID = [this, &backgroundFilename, &textureManager, &renderer,
-		cityStateIconTextureID, townIconTextureID, villageIconTextureID,
-		dungeonIconTextureID](const LocationDefinition &locationDef) -> TextureID
+		&cityStateIconTextureBuilderID, &townIconTextureBuilderID, &villageIconTextureBuilderID,
+		&dungeonIconTextureBuilderID](const LocationDefinition &locationDef) -> TextureBuilderID
 	{
 		switch (locationDef.getType())
 		{
@@ -663,18 +684,18 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 			switch (locationDef.getCityDefinition().type)
 			{
 			case LocationDefinition::CityDefinition::Type::CityState:
-				return cityStateIconTextureID;
+				return *cityStateIconTextureBuilderID;
 			case LocationDefinition::CityDefinition::Type::Town:
-				return townIconTextureID;
+				return *townIconTextureBuilderID;
 			case LocationDefinition::CityDefinition::Type::Village:
-				return villageIconTextureID;
+				return *villageIconTextureBuilderID;
 			default:
 				throw DebugException(std::to_string(
 					static_cast<int>(locationDef.getCityDefinition().type)));
 			}
 		}
 		case LocationDefinition::Type::Dungeon:
-			return dungeonIconTextureID;
+			return *dungeonIconTextureBuilderID;
 		case LocationDefinition::Type::MainQuestDungeon:
 		{
 			const LocationDefinition::MainQuestDungeonDefinition::Type mainQuestDungeonType =
@@ -682,14 +703,19 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 
 			if (mainQuestDungeonType == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 			{
-				const TextureUtils::TextureIdGroup staffDungeonIconTextureIDs = this->getTextureIDs(
-					TextureFile::fromName(TextureName::StaffDungeonIcons), backgroundFilename);
-				const TextureID staffDungeonIconTextureID = staffDungeonIconTextureIDs.getID(this->provinceID);
-				return staffDungeonIconTextureID;
+				const std::string &staffDungeonIconFilename = ArenaTextureName::StaffDungeonIcons;
+				const std::optional<TextureBuilderIdGroup> staffDungeonIconTextureBuilderIDs =
+					textureManager.tryGetTextureBuilderIDs(staffDungeonIconFilename.c_str());
+				if (!staffDungeonIconTextureBuilderIDs.has_value())
+				{
+					DebugCrash("Couldn't get staff dungeon icon texture builder IDs for \"" + staffDungeonIconFilename + "\".");
+				}
+
+				return staffDungeonIconTextureBuilderIDs->getID(this->provinceID);
 			}
 			else
 			{
-				return dungeonIconTextureID;
+				return *dungeonIconTextureBuilderID;
 			}
 		}
 		default:
@@ -697,7 +723,7 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 		}
 	};
 
-	auto drawIconIfVisible = [this, &textureManager, &renderer, &provinceDef,
+	auto drawIconIfVisible = [this, &textureManager, &renderer, &backgroundPaletteID, &provinceDef,
 		&getLocationIconTextureID](const LocationInstance &locationInst)
 	{
 		if (locationInst.isVisible())
@@ -705,9 +731,8 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 			const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
-			const TextureID iconTextureID = getLocationIconTextureID(locationDef);
-			const TextureRef iconTexture = textureManager.getTextureRef(iconTextureID);
-			this->drawCenteredIcon(iconTexture.get(), point, renderer);
+			const TextureBuilderID iconTextureBuilderID = getLocationIconTextureID(locationDef);
+			this->drawCenteredIcon(iconTextureBuilderID, *backgroundPaletteID, point, renderer);
 		}
 	};
 
@@ -723,24 +748,44 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 	LocationHighlightType highlightType, const std::string &backgroundFilename,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	auto drawHighlight = [this, &locationDef, &renderer](const Texture &highlight)
+	const std::string &highlightPaletteFilename = backgroundFilename;
+	const std::optional<PaletteID> highlightPaletteID =
+		textureManager.tryGetPaletteID(highlightPaletteFilename.c_str());
+	if (!highlightPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get highlight palette ID for \"" + highlightPaletteFilename + "\".");
+		return;
+	}
+
+	auto drawHighlightTextureBuilderID = [this, &locationDef, &renderer, &highlightPaletteID](
+		TextureBuilderID highlightTextureBuilderID)
+	{
+		const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
+		this->drawCenteredIcon(highlightTextureBuilderID, *highlightPaletteID, point, renderer);
+	};
+
+	auto drawHighlightTexture = [this, &locationDef, &renderer](const Texture &highlight)
 	{
 		const Int2 point(locationDef.getScreenX(), locationDef.getScreenY());
 		this->drawCenteredIcon(highlight, point, renderer);
 	};
 
 	// Generic highlights (city, town, village, and dungeon).
-	const std::string &outlinesFilename = TextureFile::fromName(
-		(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
-		TextureName::MapIconOutlines : TextureName::MapIconOutlinesBlinking);
+	const std::string &outlinesFilename = (highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
+		ArenaTextureName::MapIconOutlines : ArenaTextureName::MapIconOutlinesBlinking;
 
-	const TextureUtils::TextureIdGroup highlightTextureIDs =
-		this->getTextureIDs(outlinesFilename, backgroundFilename);
-
-	auto handleCityHighlight = [&textureManager, &renderer, &locationDef,
-		&drawHighlight, &highlightTextureIDs]()
+	const std::optional<TextureBuilderIdGroup> highlightTextureBuilderIDs =
+		textureManager.tryGetTextureBuilderIDs(outlinesFilename.c_str());
+	if (!highlightTextureBuilderIDs.has_value())
 	{
-		const int highlightIndex = [&locationDef, &highlightTextureIDs]()
+		DebugLogError("Couldn't get highlight texture builder IDs for \"" + outlinesFilename + "\".");
+		return;
+	}
+
+	auto handleCityHighlight = [&textureManager, &renderer, &locationDef, &drawHighlightTextureBuilderID,
+		&highlightTextureBuilderIDs]()
+	{
+		const int highlightIndex = [&locationDef, &highlightTextureBuilderIDs]()
 		{
 			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
@@ -757,22 +802,21 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 			}
 		}();
 
-		const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
-		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
-		drawHighlight(highlightTexture.get());
+		const TextureBuilderID highlightTextureBuilderID = highlightTextureBuilderIDs->getID(highlightIndex);
+		drawHighlightTextureBuilderID(highlightTextureBuilderID);
 	};
 
-	auto handleDungeonHighlight = [this, &textureManager, &drawHighlight, &highlightTextureIDs]()
+	auto handleDungeonHighlight = [this, &textureManager, &drawHighlightTextureBuilderID,
+		&highlightTextureBuilderIDs]()
 	{
 		// Named dungeon (they all use the same icon).
 		constexpr int highlightIndex = 3;
-		const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
-		const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
-		drawHighlight(highlightTexture.get());
+		const TextureBuilderID highlightTextureBuilderID = highlightTextureBuilderIDs->getID(highlightIndex);
+		drawHighlightTextureBuilderID(highlightTextureBuilderID);
 	};
 
-	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &backgroundFilename,
-		&textureManager, &renderer, &drawHighlight, &highlightTextureIDs]()
+	auto handleMainQuestDungeonHighlight = [this, &locationDef, highlightType, &backgroundFilename, &textureManager,
+		&renderer, &drawHighlightTextureBuilderID, &drawHighlightTexture, &highlightTextureBuilderIDs]()
 	{
 		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
 			locationDef.getMainQuestDungeonDefinition();
@@ -785,9 +829,8 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		{
 			// Staff map dungeon.
 			constexpr int highlightIndex = 3;
-			const TextureID highlightTextureID = highlightTextureIDs.getID(highlightIndex);
-			const TextureRef highlightTexture = textureManager.getTextureRef(highlightTextureID);
-			drawHighlight(highlightTexture.get());
+			const TextureBuilderID highlightTextureBuilderID = highlightTextureBuilderIDs->getID(highlightIndex);
+			drawHighlightTextureBuilderID(highlightTextureBuilderID);
 		}
 		else if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{
@@ -833,7 +876,7 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 				return texture;
 			}();
 
-			drawHighlight(highlightTexture);
+			drawHighlightTexture(highlightTexture);
 		}
 		else
 		{
@@ -926,10 +969,22 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	auto &textureManager = this->getGame().getTextureManager();
 	const std::string backgroundFilename = this->getBackgroundFilename();
 	const std::string &backgroundPaletteName = backgroundFilename;
-	const TextureID mapBackgroundTextureID = this->getTextureID(
-		backgroundFilename, backgroundPaletteName);
-	const TextureRef mapBackgroundTexture = textureManager.getTextureRef(mapBackgroundTextureID);
-	renderer.drawOriginal(mapBackgroundTexture.get());
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundPaletteName + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> mapBackgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!mapBackgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get map background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*mapBackgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);

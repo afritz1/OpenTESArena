@@ -1,6 +1,7 @@
 #ifndef TEXTURE_INSTANCE_MANAGER_H
 #define TEXTURE_INSTANCE_MANAGER_H
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -51,7 +52,7 @@ public:
 	// @todo: makeSurfaceFrom8Bit() from TextureManager?
 
 	// Texture creation functions.
-	ImageInstanceID makeImage(int width, int height, const PaletteID *paletteID = nullptr);
+	ImageInstanceID makeImage(int width, int height, const std::optional<PaletteID> &paletteID = std::nullopt);
 	SurfaceInstanceID makeSurface(int width, int height);
 	TextureInstanceID makeTexture(int width, int height, Renderer &renderer);
 

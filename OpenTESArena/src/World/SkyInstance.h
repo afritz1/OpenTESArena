@@ -34,7 +34,7 @@ private:
 		struct General
 		{
 			// Current texture of object (may change due to animation).
-			ImageID imageID;
+			TextureBuilderID textureBuilderID;
 		};
 
 		struct SmallStar
@@ -57,7 +57,7 @@ private:
 	public:
 		ObjectInstance();
 
-		void initGeneral(const Double3 &baseDirection, double width, double height, ImageID imageID);
+		void initGeneral(const Double3 &baseDirection, double width, double height, TextureBuilderID textureBuilderID);
 		void initSmallStar(const Double3 &baseDirection, double width, double height, uint8_t paletteIndex);
 
 		Type getType() const;
@@ -76,10 +76,10 @@ private:
 	struct AnimInstance
 	{
 		int objectIndex;
-		TextureUtils::ImageIdGroup imageIDs; // All image IDs for the animation.
+		TextureBuilderIdGroup textureBuilderIDs; // All texture IDs for the animation.
 		double targetSeconds, currentSeconds;
 
-		AnimInstance(int objectIndex, const TextureUtils::ImageIdGroup &imageIDs, double targetSeconds);
+		AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs, double targetSeconds);
 	};
 
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
@@ -104,7 +104,7 @@ public:
 	// @todo: this is bad design; there should not be a small star type.
 	bool isObjectSmallStar(int objectIndex) const;
 
-	void getObject(int index, Double3 *outDirection, ImageID *outImageID, double *outWidth,
+	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, double *outWidth,
 		double *outHeight) const;
 
 	// @todo: this is bad design; there should not be a small star type. Eventually get renderer

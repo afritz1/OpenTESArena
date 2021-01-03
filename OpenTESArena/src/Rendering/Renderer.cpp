@@ -35,6 +35,13 @@ Renderer::ProfilerData::ProfilerData()
 	this->frameTime = 0.0;
 }
 
+void Renderer::TextureInstance::init(TextureBuilderID textureBuilderID, PaletteID paletteID, Texture &&texture)
+{
+	this->textureBuilderID = textureBuilderID;
+	this->paletteID = paletteID;
+	this->texture = std::move(texture);
+}
+
 const char *Renderer::DEFAULT_RENDER_SCALE_QUALITY = "nearest";
 const char *Renderer::DEFAULT_TITLE = "OpenTESArena";
 const int Renderer::ORIGINAL_WIDTH = 320;
@@ -112,6 +119,109 @@ int Renderer::makeRendererDimension(int value, double resolutionScale)
 	// imprecise resolution scale doesn't result in off-by-one resolutions (like 1079p).
 	return std::max(static_cast<int>(
 		std::round(static_cast<double>(value) * resolutionScale)), 1);
+}
+
+std::optional<int> Renderer::tryGetTextureInstanceIndex(TextureBuilderID textureBuilderID, PaletteID paletteID) const
+{
+	const auto iter = std::find_if(this->textureInstances.begin(), this->textureInstances.end(),
+		[textureBuilderID, paletteID](const TextureInstance &textureInst)
+	{
+		return (textureInst.textureBuilderID == textureBuilderID) && (textureInst.paletteID == paletteID);
+	});
+
+	if (iter != this->textureInstances.end())
+	{
+		return static_cast<int>(std::distance(this->textureInstances.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+void Renderer::addTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	// Texture should not already exist.
+	DebugAssert(this->tryGetTextureInstanceIndex(textureBuilderID, paletteID) == std::nullopt);
+
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const int width = textureBuilder.getWidth();
+	const int height = textureBuilder.getHeight();
+	Texture texture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
+	if (texture.get() == nullptr)
+	{
+		DebugCrash("Couldn't create texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ", dimensions: " + std::to_string(width) + "x" +
+			std::to_string(height) + ").");
+	}
+
+	// Prepare destination texture for writing.
+	uint32_t *dstTexels;
+	int pitch;
+	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
+	{
+		DebugCrash("Couldn't lock SDL texture (dimensions: " + std::to_string(width) +
+			"x" + std::to_string(height) + ").");
+	}
+
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	{
+		// Convert 8-bit to 32-bit.
+		const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+		const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		std::transform(srcTexels.get(), srcTexels.end(), dstTexels,
+			[&palette](const uint8_t srcTexel)
+		{
+			return palette[srcTexel].toARGB();
+		});
+	}
+	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	{
+		// Copy from 32-bit.
+		const TextureBuilder::TrueColorTexture &srcTexture = textureBuilder.getTrueColor();
+		const Buffer2D<uint32_t> &srcTexels = srcTexture.texels;
+		std::copy(srcTexels.get(), srcTexels.end(), dstTexels);
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(textureBuilderType)));
+	}
+
+	SDL_UnlockTexture(texture.get());
+
+	// Set alpha transparency on.
+	if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) != 0)
+	{
+		DebugLogError("Couldn't set SDL texture alpha blending.");
+	}
+
+	TextureInstance textureInst;
+	textureInst.init(textureBuilderID, paletteID, std::move(texture));
+	this->textureInstances.emplace_back(std::move(textureInst));
+}
+
+const Texture *Renderer::getOrAddTextureInstance(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	std::optional<int> textureInstIndex = this->tryGetTextureInstanceIndex(textureBuilderID, paletteID);
+	if (!textureInstIndex.has_value())
+	{
+		this->addTextureInstance(textureBuilderID, paletteID, textureManager);
+		textureInstIndex = this->tryGetTextureInstanceIndex(textureBuilderID, paletteID);
+	}
+
+	if (textureInstIndex.has_value())
+	{
+		const TextureInstance &textureInst = this->textureInstances[*textureInstIndex];
+		return &textureInst.texture;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 double Renderer::getLetterboxAspect() const
@@ -607,7 +717,7 @@ EntityRenderID Renderer::makeEntityRenderID()
 
 void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 	const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-	const TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
+	TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
 {
 	DebugAssert(this->softwareRenderer.isInited());
 	this->softwareRenderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle,
@@ -776,14 +886,19 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	this->draw(this->gameWorldTexture, 0, 0, screenWidth, viewHeight);
 }
 
-void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,
-	const Int2 &mousePosition, double scale)
+void Renderer::drawCursor(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment,
+	const Int2 &mousePosition, double scale, const TextureManager &textureManager)
 {
-	// The caller should check for any null textures.
-	DebugAssert(cursor.get() != nullptr);
+	const Texture *cursor = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (cursor == nullptr)
+	{
+		DebugLogError("Couldn't draw cursor (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
 
-	const int scaledWidth = static_cast<int>(std::round(cursor.getWidth() * scale));
-	const int scaledHeight = static_cast<int>(std::round(cursor.getHeight() * scale));
+	const int scaledWidth = static_cast<int>(std::round(cursor->getWidth() * scale));
+	const int scaledHeight = static_cast<int>(std::round(cursor->getHeight() * scale));
 
 	// Get the magnitude to offset the cursor's coordinates by.
 	const Int2 cursorOffset = [alignment, scaledWidth, scaledHeight]()
@@ -831,11 +946,9 @@ void Renderer::drawCursor(const Texture &cursor, CursorAlignment alignment,
 		return Int2(xOffset, yOffset);
 	}();
 
-	this->draw(cursor,
-		mousePosition.x - cursorOffset.x,
-		mousePosition.y - cursorOffset.y,
-		scaledWidth,
-		scaledHeight);
+	const int cursorX = mousePosition.x - cursorOffset.x;
+	const int cursorY = mousePosition.y - cursorOffset.y;
+	this->draw(*cursor, cursorX, cursorY, scaledWidth, scaledHeight);
 }
 
 void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
@@ -899,6 +1012,42 @@ void Renderer::drawOriginal(const Texture &texture)
 	this->drawOriginal(texture, 0, 0);
 }
 
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y, int w, int h,
+	const TextureManager &textureManager)
+{
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginal(*texture, x, y, w, h);
+}
+
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID, int x, int y,
+	const TextureManager &textureManager)
+{
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginal(*texture, x, y);
+}
+
+void Renderer::drawOriginal(TextureBuilderID textureBuilderID, PaletteID paletteID,
+	const TextureManager &textureManager)
+{
+	constexpr int x = 0;
+	constexpr int y = 0;
+	this->drawOriginal(textureBuilderID, paletteID, x, y, textureManager);
+}
+
 void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, const Rect &dstRect)
 {
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
@@ -914,6 +1063,27 @@ void Renderer::drawOriginalClipped(const Texture &texture, const Rect &srcRect, 
 {
 	this->drawOriginalClipped(texture, srcRect, 
 		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()));
+}
+
+void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+	const Rect &dstRect, const TextureManager &textureManager)
+{
+	const Texture *texture = this->getOrAddTextureInstance(textureBuilderID, paletteID, textureManager);
+	if (texture == nullptr)
+	{
+		DebugLogError("Couldn't get texture (texture builder ID: " + std::to_string(textureBuilderID) +
+			", palette ID: " + std::to_string(paletteID) + ").");
+		return;
+	}
+
+	this->drawOriginalClipped(*texture, srcRect, dstRect);
+}
+
+void Renderer::drawOriginalClipped(TextureBuilderID textureBuilderID, PaletteID paletteID, const Rect &srcRect,
+	int x, int y, const TextureManager &textureManager)
+{
+	this->drawOriginalClipped(textureBuilderID, paletteID, srcRect,
+		Rect(x, y, srcRect.getWidth(), srcRect.getHeight()), textureManager);
 }
 
 void Renderer::fill(const Texture &texture)

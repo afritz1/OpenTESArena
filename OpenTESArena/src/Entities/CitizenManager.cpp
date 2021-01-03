@@ -4,8 +4,7 @@
 #include "EntityManager.h"
 #include "EntityType.h"
 #include "../Assets/ArenaAnimUtils.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../World/MapType.h"
@@ -115,14 +114,14 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	// Base palette for citizens to generate from.
 	const Palette &basePalette = [&textureManager]() -> const Palette&
 	{
-		const std::string &paletteName = PaletteFile::fromName(PaletteName::Default);
-		PaletteID paletteID;
-		if (!textureManager.tryGetPaletteID(paletteName.c_str(), &paletteID))
+		const std::string &paletteName = ArenaPaletteName::Default;
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+		if (!paletteID.has_value())
 		{
 			DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
 		}
 
-		return textureManager.getPaletteHandle(paletteID);
+		return textureManager.getPaletteHandle(*paletteID);
 	}();
 
 	constexpr int citizenCount = 150; // Arbitrary.

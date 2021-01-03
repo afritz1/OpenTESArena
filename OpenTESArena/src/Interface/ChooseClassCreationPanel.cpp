@@ -8,6 +8,7 @@
 #include "Surface.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -15,11 +16,7 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/FontName.h"
-#include "../Media/PaletteFile.h"
-#include "../Media/PaletteName.h"
-#include "../Media/TextureFile.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureName.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/String.h"
@@ -27,7 +24,7 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = Texture::generate(Texture::PatternType::Parchment, 180, 40,
+	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 180, 40,
 		game.getTextureManager(), game.getRenderer());
 
 	this->titleTextBox = [&game]()
@@ -132,7 +129,7 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 }
 
-Panel::CursorData ChooseClassCreationPanel::getCurrentCursor() const
+std::optional<Panel::CursorData> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
@@ -190,17 +187,28 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw background.
-	const auto &textureManager = this->getGame().getTextureManager();
-	const TextureID backgroundTextureID = this->getTextureID(
-		TextureName::CharacterCreation, PaletteName::BuiltIn);
-	const TextureRef backgroundTexture = textureManager.getTextureRef(backgroundTextureID);
-	renderer.drawOriginal(backgroundTexture.get());
+	auto &textureManager = this->getGame().getTextureManager();
+	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	if (!backgroundPaletteID.has_value())
+	{
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
+		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	if (!backgroundTextureBuilderID.has_value())
+	{
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		return;
+	}
+
+	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, generate, select.
-	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - 
-		(this->parchment.getWidth() / 2) - 1;
-	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - 
-		(this->parchment.getHeight() / 2) + 1;
+	const int parchmentX = (Renderer::ORIGINAL_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1;
+	const int parchmentY = (Renderer::ORIGINAL_HEIGHT / 2) - (this->parchment.getHeight() / 2) + 1;
 
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
