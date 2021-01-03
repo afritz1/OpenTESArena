@@ -16,6 +16,7 @@
 #include "Texture.h"
 #include "WorldMapPanel.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CFAFile.h"
@@ -47,8 +48,6 @@
 #include "../Media/FontUtils.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/PortraitFile.h"
-#include "../Media/SoundFile.h"
-#include "../Media/SoundName.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
@@ -1582,7 +1581,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 				}
 
 				// Play the swing sound.
-				audioManager.playSound(SoundFile::fromName(SoundName::Swish));
+				audioManager.playSound(ArenaSoundName::Swish);
 			}
 		}
 		else
@@ -1625,7 +1624,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 				weaponAnimation.setState(WeaponAnimation::State::Firing);
 
 				// Play the firing sound.
-				audioManager.playSound(SoundFile::fromName(SoundName::ArrowFire));
+				audioManager.playSound(ArenaSoundName::ArrowFire);
 			}
 		}
 	}
