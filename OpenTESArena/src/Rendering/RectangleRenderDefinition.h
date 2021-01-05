@@ -27,6 +27,6 @@ public:
 };
 
 using VoxelRectangleRenderDefinition = RectangleRenderDefinition<VoxelTextureID>;
-using SpriteRectangleRenderDefinition = RectangleRenderDefinition<SpriteTextureID>;
+using EntityRectangleRenderDefinition = RectangleRenderDefinition<EntityTextureID>;
 
 #endif
