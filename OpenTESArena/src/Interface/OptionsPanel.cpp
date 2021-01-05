@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <limits>
+#include <optional>
 
 #include "SDL.h"
 
@@ -28,6 +29,8 @@
 
 namespace
 {
+	const Color BackgroundColor(60, 60, 68);
+
 	// Screen locations for various options things.
 	const Int2 TabsOrigin(3, 38);
 	const Int2 TabsDimensions(54, 16);
@@ -798,10 +801,100 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 
 	this->currentTabTextBoxes.clear();
 	this->currentTabTextBoxes.resize(visibleOptions.size());
-	
+
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
 		this->updateOptionTextBox(i);
+	}
+}
+
+void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
+{
+	auto &textureManager = this->getGame().getTextureManager();
+	Texture tabBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
+		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
+
+	for (int i = 0; i < 5; i++)
+	{
+		const int tabX = GraphicsTabRect.getLeft();
+		const int tabY = GraphicsTabRect.getTop() + (tabBackground.getHeight() * i);
+		renderer.drawOriginal(tabBackground, tabX, tabY);
+	}
+
+	Texture returnBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
+		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
+		textureManager, renderer);
+	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(),
+		this->backToPauseMenuButton.getY());
+}
+
+void OptionsPanel::drawText(Renderer &renderer)
+{
+	renderer.drawOriginal(this->titleTextBox->getTexture(),
+		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawOriginal(this->backToPauseMenuTextBox->getTexture(),
+		this->backToPauseMenuTextBox->getX(), this->backToPauseMenuTextBox->getY());
+
+	// Tabs.
+	renderer.drawOriginal(this->graphicsTextBox->getTexture(),
+		this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
+	renderer.drawOriginal(this->audioTextBox->getTexture(),
+		this->audioTextBox->getX(), this->audioTextBox->getY());
+	renderer.drawOriginal(this->inputTextBox->getTexture(),
+		this->inputTextBox->getX(), this->inputTextBox->getY());
+	renderer.drawOriginal(this->miscTextBox->getTexture(),
+		this->miscTextBox->getX(), this->miscTextBox->getY());
+	renderer.drawOriginal(this->devTextBox->getTexture(),
+		this->devTextBox->getX(), this->devTextBox->getY());
+}
+
+void OptionsPanel::drawTextOfOptions(Renderer &renderer)
+{
+	const auto &visibleOptions = this->getVisibleOptions();
+	std::optional<int> highlightedOptionIndex;
+	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
+	{
+		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
+		const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
+		const Rect optionRect(
+			ListOrigin.x,
+			ListOrigin.y + (optionTextBoxHeight * i),
+			ListDimensions.x,
+			optionTextBoxHeight);
+
+		const auto &inputManager = this->getGame().getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+		const bool optionRectContainsMouse = optionRect.contains(originalPosition);
+
+		// If the options rect contains the mouse cursor, highlight it before drawing text.
+		if (optionRectContainsMouse)
+		{
+			const Color highlightColor = BackgroundColor + Color(20, 20, 20);
+			renderer.fillOriginalRect(highlightColor,
+				optionRect.getLeft(), optionRect.getTop(),
+				optionRect.getWidth(), optionRect.getHeight());
+
+			// Store the highlighted option index for tooltip drawing.
+			highlightedOptionIndex = i;
+		}
+
+		// Draw option text.
+		renderer.drawOriginal(optionTextBox->getTexture(),
+			optionTextBox->getX(), optionTextBox->getY());
+
+		// Draw description if hovering over an option with a non-empty tooltip.
+		if (highlightedOptionIndex.has_value())
+		{
+			const auto &visibleOption = visibleOptions.at(*highlightedOptionIndex);
+			const std::string &tooltip = visibleOption->getTooltip();
+
+			// Only draw if the tooltip has text.
+			if (!tooltip.empty())
+			{
+				this->drawDescription(tooltip, renderer);
+			}
+		}
 	}
 }
 
@@ -978,88 +1071,10 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw solid background.
-	const Color backgroundColor(60, 60, 68);
-	renderer.clearOriginal(backgroundColor);
+	renderer.clearOriginal(BackgroundColor);
 
-	// Draw return button and tabs.
-	auto &textureManager = this->getGame().getTextureManager();
-	Texture tabBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
-	for (int i = 0; i < 5; i++)
-	{
-		renderer.drawOriginal(tabBackground,
-			GraphicsTabRect.getLeft(),
-			GraphicsTabRect.getTop() + (tabBackground.getHeight() * i));
-	}
-
-	Texture returnBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
-		textureManager, renderer);
-	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(),
-		this->backToPauseMenuButton.getY());
-
-	// Draw text.
-	renderer.drawOriginal(this->titleTextBox->getTexture(),
-		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->backToPauseMenuTextBox->getTexture(),
-		this->backToPauseMenuTextBox->getX(), this->backToPauseMenuTextBox->getY());
-	renderer.drawOriginal(this->graphicsTextBox->getTexture(),
-		this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
-	renderer.drawOriginal(this->audioTextBox->getTexture(),
-		this->audioTextBox->getX(), this->audioTextBox->getY());
-	renderer.drawOriginal(this->inputTextBox->getTexture(),
-		this->inputTextBox->getX(), this->inputTextBox->getY());
-	renderer.drawOriginal(this->miscTextBox->getTexture(),
-		this->miscTextBox->getX(), this->miscTextBox->getY());
-	renderer.drawOriginal(this->devTextBox->getTexture(),
-		this->devTextBox->getX(), this->devTextBox->getY());
-
-	const auto &inputManager = this->getGame().getInputManager();
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
-
-	// Draw each option's text.
-	const auto &visibleOptions = this->getVisibleOptions();
-	int highlightedOptionIndex = -1;
-	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
-	{
-		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
-		const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
-		const Rect optionRect(
-			ListOrigin.x,
-			ListOrigin.y + (optionTextBoxHeight * i),
-			ListDimensions.x,
-			optionTextBoxHeight);
-
-		const bool optionRectContainsMouse = optionRect.contains(originalPosition);
-
-		// If the options rect contains the mouse cursor, highlight it before drawing text.
-		if (optionRectContainsMouse)
-		{
-			const Color highlightColor = backgroundColor + Color(20, 20, 20);
-			renderer.fillOriginalRect(highlightColor,
-				optionRect.getLeft(), optionRect.getTop(),
-				optionRect.getWidth(), optionRect.getHeight());
-
-			// Store the highlighted option index for tooltip drawing.
-			highlightedOptionIndex = i;
-		}
-
-		// Draw option text.
-		renderer.drawOriginal(optionTextBox->getTexture(),
-			optionTextBox->getX(), optionTextBox->getY());
-	}
-
-	// Draw description if hovering over an option with a non-empty tooltip.
-	if (highlightedOptionIndex != -1)
-	{
-		const auto &visibleOption = visibleOptions.at(highlightedOptionIndex);
-		const std::string &tooltip = visibleOption->getTooltip();
-
-		// Only draw if the tooltip has text.
-		if (!tooltip.empty())
-		{
-			this->drawDescription(tooltip, renderer);
-		}
-	}
+	// Draw elements.
+	this->drawReturnButtonsAndTabs(renderer);
+	this->drawText(renderer);
+	this->drawTextOfOptions(renderer);
 }
