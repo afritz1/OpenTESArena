@@ -185,6 +185,15 @@ private:
 	// Regenerates all option text boxes in the current tab.
 	void updateVisibleOptionTextBoxes();
 
+    // Draws return buttons and tabs.
+    void drawReturnButtonsAndTabs(Renderer &renderer);
+
+    // Draws the text of the buttons.
+    void drawText(Renderer &renderer);
+
+    // Draw each option's text
+    void drawTextOfOptions(Renderer &renderer);
+
 	// Draws description for an option. Not using mouse tooltips because they
 	// get in the way of seeing what an option's value is.
 	void drawDescription(const std::string &text, Renderer &renderer);
