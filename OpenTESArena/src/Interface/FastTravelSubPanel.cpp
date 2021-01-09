@@ -21,6 +21,7 @@
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
+#include "../World/SkyUtils.h"
 #include "../World/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
@@ -395,7 +396,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			return WeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
 		}();
 
-		const int starCount = DistantSky::getStarCountFromDensity(
+		const int starCount = SkyUtils::getStarCountFromDensity(
 			game.getOptions().getMisc_StarDensity());
 
 		// Load the destination city.

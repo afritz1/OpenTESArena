@@ -40,6 +40,7 @@
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/MapType.h"
+#include "../World/SkyUtils.h"
 #include "../World/WeatherType.h"
 #include "../World/WeatherUtils.h"
 
@@ -340,7 +341,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
 				binaryAssetLibrary);
 
-			const int starCount = DistantSky::getStarCountFromDensity(
+			const int starCount = SkyUtils::getStarCountFromDensity(
 				options.getMisc_StarDensity());
 
 			// Load the selected level based on world type (writing into active game data).

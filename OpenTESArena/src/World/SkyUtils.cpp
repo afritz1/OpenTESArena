@@ -26,3 +26,26 @@ void SkyUtils::getSkyObjectDimensions(int imageWidth, int imageHeight, double *o
 	*outWidth = 0;
 	*outHeight = 0;
 }
+
+int SkyUtils::getStarCountFromDensity(int starDensity)
+{
+	if (starDensity == 0)
+	{
+		// Classic.
+		return 40;
+	}
+	else if (starDensity == 1)
+	{
+		// Moderate.
+		return 1000;
+	}
+	else if (starDensity == 2)
+	{
+		// High.
+		return 8000;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(int, std::to_string(starDensity));
+	}
+}

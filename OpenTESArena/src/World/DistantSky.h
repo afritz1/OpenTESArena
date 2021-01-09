@@ -205,9 +205,6 @@ public:
 	// Gets the texture ID at the given element index in the given texture set.
 	TextureBuilderID getTextureSetTextureBuilderID(int index, int elementIndex) const;
 
-	// Added in the new engine for fun. Gets the number of stars for some density.
-	static int getStarCountFromDensity(int starDensity);
-
 	void tick(double dt);
 };
 

@@ -14,6 +14,9 @@ namespace SkyUtils
 
 	// Converts sky object texture dimensions to shape dimensions.
 	void getSkyObjectDimensions(int imageWidth, int imageHeight, double *outWidth, double *outHeight);
+
+	// Gets the number of stars to generate based on the given star density (new to this engine).
+	int getStarCountFromDensity(int starDensity);
 }
 
 #endif

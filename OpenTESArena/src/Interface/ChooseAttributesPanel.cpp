@@ -38,6 +38,7 @@
 #include "../World/InteriorType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
+#include "../World/SkyUtils.h"
 #include "../World/WeatherType.h"
 
 #include "components/debug/Debug.h"
@@ -383,7 +384,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									return Weathers[index];
 								}();
 
-								const int starCount = DistantSky::getStarCountFromDensity(
+								const int starCount = SkyUtils::getStarCountFromDensity(
 									game.getOptions().getMisc_StarDensity());
 
 								auto &renderer = game.getRenderer();

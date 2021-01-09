@@ -807,29 +807,6 @@ TextureBuilderID DistantSky::getTextureSetTextureBuilderID(int index, int elemen
 	return textureBuilderID;
 }
 
-int DistantSky::getStarCountFromDensity(int starDensity)
-{
-	if (starDensity == 0)
-	{
-		// Classic.
-		return 40;
-	}
-	else if (starDensity == 1)
-	{
-		// Moderate.
-		return 1000;
-	}
-	else if (starDensity == 2)
-	{
-		// High.
-		return 8000;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(starDensity));
-	}
-}
-
 void DistantSky::tick(double dt)
 {
 	// Only animated distant land needs updating.

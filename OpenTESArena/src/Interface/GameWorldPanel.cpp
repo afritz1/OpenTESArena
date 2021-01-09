@@ -62,6 +62,7 @@
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/MapType.h"
+#include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
 #include "../World/VoxelType.h"
 #include "../World/WeatherUtils.h"
@@ -2385,7 +2386,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 				const ProvinceDefinition &provinceDef = gameData.getProvinceDefinition();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
-				const int starCount = DistantSky::getStarCountFromDensity(
+				const int starCount = SkyUtils::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
 
 				if (activeMapType == MapType::City)
