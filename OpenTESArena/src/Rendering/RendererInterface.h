@@ -1,6 +1,8 @@
 #ifndef RENDERER_INTERFACE_H
 #define RENDERER_INTERFACE_H
 
+#include <optional>
+
 #include "RenderTextureUtils.h"
 
 class RenderCamera;
@@ -16,10 +18,10 @@ public:
 	virtual void init(const RenderInitSettings &settings) = 0;
 	virtual void shutdown() = 0;
 	virtual void resize(int width, int height) = 0;
-	virtual VoxelTextureID createVoxelTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual EntityTextureID createEntityTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual SkyTextureID createSkyTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual UiTextureID createUiTexture(const TextureBuilder &textureBuilder) = 0;
+	virtual std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder) = 0;
+	virtual std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder) = 0;
+	virtual std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder) = 0;
+	virtual std::optional<UiTextureID> tryCreateUiTexture(const TextureBuilder &textureBuilder) = 0;
 	virtual void freeVoxelTexture(VoxelTextureID id) = 0;
 	virtual void freeEntityTexture(EntityTextureID id) = 0;
 	virtual void freeSkyTexture(SkyTextureID id) = 0;
