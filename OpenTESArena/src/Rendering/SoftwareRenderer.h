@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "RendererInterface.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Options.h"
 #include "../Math/MathUtils.h"
@@ -27,14 +28,14 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 
-// This class runs the CPU-based 3D rendering for the application.
+// CPU-based 2.5D rendering.
 
 class Entity;
 class VoxelGrid;
 
 enum class VoxelFacing2D;
 
-class SoftwareRenderer
+class SoftwareRenderer : public RendererInterface
 {
 public:
 	// Profiling info gathered from internal renderer state.
@@ -1026,14 +1027,21 @@ public:
 	// Removes all distant sky objects.
 	void clearDistantSky();
 
-	// Initializes software renderer with the given frame buffer dimensions. This can be called
-	// on first start or to reset the software renderer.
-	void init(int width, int height, int renderThreadsMode);
+	void init(const RenderInitSettings &settings) override;
+	void shutdown() override;
+	void resize(int width, int height) override;
 
-	// Resizes the frame buffer and related values.
-	void resize(int width, int height);
+	std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder) override;
+	std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder) override;
+	std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder) override;
+
+	// Texture handle freeing functions for each texture type.
+	void freeVoxelTexture(VoxelTextureID id) override;
+	void freeEntityTexture(EntityTextureID id) override;
+	void freeSkyTexture(SkyTextureID id) override;
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
+	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
 	void render(const Double3 &eye, const Double3 &direction, Degrees fovY,
 		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
 		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
@@ -1042,6 +1050,13 @@ public:
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
 		uint32_t *colorBuffer);
+
+	// @todo: might want to simplify the various set() function lifetimes of the renderer from
+	// at-init/occasional/every-frame to just at-init/every-frame. Things like the sky palette or render
+	// threads mode could be set every frame for simplicity. Just do it at the start of this method.
+	void submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,
+		const RenderCamera &camera, const RenderFrameSettings &settings) override;
+	void present() override;
 };
 
 #endif

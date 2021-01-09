@@ -7,6 +7,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "RendererUtils.h"
+#include "RenderInitSettings.h"
 #include "SoftwareRenderer.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Entities/EntityType.h"
@@ -32,6 +33,8 @@ namespace
 	// Hardcoded graphics options (will be loaded at runtime at some point).
 	constexpr int TextureFilterMode = 0;
 	constexpr bool LightContributionCap = true;
+
+	constexpr double DEPTH_BUFFER_INFINITY = std::numeric_limits<double>::infinity();
 }
 
 void SoftwareRenderer::VoxelTexel::init(double r, double g, double b, double emission,
@@ -1027,34 +1030,39 @@ Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
 	return (forwardComponent + rightComponent - upComponent).normalized();
 }
 
-void SoftwareRenderer::init(int width, int height, int renderThreadsMode)
+void SoftwareRenderer::init(const RenderInitSettings &settings)
 {
 	// Initialize frame buffer.
-	this->depthBuffer.init(width, height);
-	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
+	this->depthBuffer.init(settings.getWidth(), settings.getHeight());
+	this->depthBuffer.fill(DEPTH_BUFFER_INFINITY);
 
 	// Initialize occlusion columns.
-	this->occlusion.init(width);
-	this->occlusion.fill(OcclusionData(0, height));
+	this->occlusion.init(settings.getWidth());
+	this->occlusion.fill(OcclusionData(0, settings.getHeight()));
 
 	// Initialize sky gradient cache.
-	this->skyGradientRowCache.init(height);
+	this->skyGradientRowCache.init(settings.getHeight());
 	this->skyGradientRowCache.fill(Double3::Zero);
 
 	// Initialize texture vectors to default sizes.
 	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
 	this->flatTextureGroups = FlatTextureGroups();
 
-	this->width = width;
-	this->height = height;
-	this->renderThreadsMode = renderThreadsMode;
+	this->width = settings.getWidth();
+	this->height = settings.getHeight();
+	this->renderThreadsMode = settings.getRenderThreadsMode();
 
 	// Fog distance is zero by default.
 	this->fogDistance = 0.0;
 
 	// Initialize render threads.
-	const int threadCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
-	this->initRenderThreads(width, height, threadCount);
+	const int threadCount = RendererUtils::getRenderThreadsFromMode(settings.getRenderThreadsMode());
+	this->initRenderThreads(settings.getWidth(), settings.getHeight(), threadCount);
+}
+
+void SoftwareRenderer::shutdown()
+{
+	// Don't need to free anything manually.
 }
 
 void SoftwareRenderer::setRenderThreadsMode(int mode)
@@ -1207,7 +1215,7 @@ void SoftwareRenderer::clearDistantSky()
 void SoftwareRenderer::resize(int width, int height)
 {
 	this->depthBuffer.init(width, height);
-	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
+	this->depthBuffer.fill(DEPTH_BUFFER_INFINITY);
 
 	this->occlusion.init(width);
 	this->occlusion.fill(OcclusionData(0, height));
@@ -1221,6 +1229,78 @@ void SoftwareRenderer::resize(int width, int height)
 	// Restart render threads with new dimensions.
 	const int threadCount = RendererUtils::getRenderThreadsFromMode(this->renderThreadsMode);
 	this->initRenderThreads(width, height, threadCount);
+}
+
+std::optional<VoxelTextureID> SoftwareRenderer::tryCreateVoxelTexture(const TextureBuilder &textureBuilder)
+{
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	{
+		DebugNotImplemented();
+	}
+	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	{
+		// Not supported.
+		return std::nullopt;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::optional<VoxelTextureID>,
+			std::to_string(static_cast<int>(textureBuilderType)));
+	}
+}
+
+std::optional<EntityTextureID> SoftwareRenderer::tryCreateEntityTexture(const TextureBuilder &textureBuilder)
+{
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	{
+		DebugNotImplemented();
+	}
+	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	{
+		// Not supported.
+		return std::nullopt;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::optional<EntityTextureID>,
+			std::to_string(static_cast<int>(textureBuilderType)));
+	}
+}
+
+std::optional<SkyTextureID> SoftwareRenderer::tryCreateSkyTexture(const TextureBuilder &textureBuilder)
+{
+	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
+	if (textureBuilderType == TextureBuilder::Type::Paletted)
+	{
+		DebugNotImplemented();
+	}
+	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
+	{
+		// Not supported.
+		return std::nullopt;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::optional<SkyTextureID>,
+			std::to_string(static_cast<int>(textureBuilderType)));
+	}
+}
+
+void SoftwareRenderer::freeVoxelTexture(VoxelTextureID id)
+{
+	DebugNotImplemented();
+}
+
+void SoftwareRenderer::freeEntityTexture(EntityTextureID id)
+{
+	DebugNotImplemented();
+}
+
+void SoftwareRenderer::freeSkyTexture(SkyTextureID id)
+{
+	DebugNotImplemented();
 }
 
 void SoftwareRenderer::initRenderThreads(int width, int height, int threadCount)
@@ -3726,7 +3806,7 @@ void SoftwareRenderer::drawChasmPixelsShader(int x, const DrawRange &drawRange, 
 				}
 				else
 				{
-					frame.depthBuffer[index] = std::numeric_limits<double>::infinity();
+					frame.depthBuffer[index] = DEPTH_BUFFER_INFINITY;
 				}
 			}
 		}
@@ -3864,7 +3944,7 @@ void SoftwareRenderer::drawPerspectiveChasmPixelsShader(int x, const DrawRange &
 			}
 			else
 			{
-				frame.depthBuffer[index] = std::numeric_limits<double>::infinity();
+				frame.depthBuffer[index] = DEPTH_BUFFER_INFINITY;
 			}
 		}
 	}
@@ -7457,7 +7537,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 		const int startIndex = y * frame.width;
 		const int endIndex = (y + 1) * frame.width;
 		const uint32_t colorValue = color.toRGB();
-		constexpr double depthValue = std::numeric_limits<double>::infinity();
+		constexpr double depthValue = DEPTH_BUFFER_INFINITY;
 
 		// Clear the color and depth of one row.
 		for (int i = startIndex; i < endIndex; i++)
@@ -7858,4 +7938,15 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	{
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
+}
+
+void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,
+	const RenderCamera &camera, const RenderFrameSettings &settings)
+{
+	DebugNotImplemented();
+}
+
+void SoftwareRenderer::present()
+{
+	DebugNotImplemented();
 }

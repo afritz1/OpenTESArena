@@ -1,6 +1,8 @@
 #include "RendererInterface.h"
 #include "RenderTextureUtils.h"
 
+#include "components/debug/Debug.h"
+
 ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererInterface &rendererInterface)
 {
 	this->id = id;
@@ -57,7 +59,8 @@ ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, RendererInterface &render
 
 ScopedUiTextureRef::~ScopedUiTextureRef()
 {
-	this->rendererInterface->freeUiTexture(this->id);
+	DebugNotImplemented();
+	//this->rendererInterface->freeUiTexture(this->id);
 }
 
 UiTextureID ScopedUiTextureRef::get() const

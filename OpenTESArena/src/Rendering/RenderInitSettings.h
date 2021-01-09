@@ -10,8 +10,15 @@ private:
 	//   and the renderer will just limit its for loop to giving work to that fraction.
 
 	// @todo: might also contain SDL window handle for use with present().
+
+	int width, height;
+	int renderThreadsMode;
 public:
-	void init();
+	void init(int width, int height, int renderThreadsMode);
+
+	int getWidth() const;
+	int getHeight() const;
+	int getRenderThreadsMode() const;
 };
 
 #endif

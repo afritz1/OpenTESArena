@@ -7,6 +7,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "Renderer.h"
+#include "RenderInitSettings.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Interface/CursorAlignment.h"
 #include "../Interface/Surface.h"
@@ -687,7 +688,9 @@ void Renderer::initializeWorldRendering(double resolutionScale, bool fullGameWin
 		"Couldn't create game world texture, " + std::string(SDL_GetError()));
 
 	// Initialize 3D rendering.
-	this->softwareRenderer.init(renderWidth, renderHeight, renderThreadsMode);
+	RenderInitSettings initSettings;
+	initSettings.init(renderWidth, renderHeight, renderThreadsMode);
+	this->softwareRenderer.init(initSettings);
 }
 
 void Renderer::setRenderThreadsMode(int mode)
