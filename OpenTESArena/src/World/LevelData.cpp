@@ -1473,9 +1473,14 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 	// Palette for voxels and flats, required in the renderer so it can conditionally transform
 	// certain palette indices for transparency.
-	COLFile col;
-	col.init(ArenaPaletteName::Default.c_str());
-	const Palette &palette = col.getPalette();
+	const std::string &paletteFilename = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 	// Loads .INF voxel textures into the renderer.
 	auto loadVoxelTextures = [this, &textureManager, &renderer, &palette]()
