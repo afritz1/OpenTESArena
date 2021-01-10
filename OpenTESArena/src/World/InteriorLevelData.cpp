@@ -34,8 +34,9 @@ InteriorLevelData InteriorLevelData::loadInterior(const MIFFile::Level &level, S
 		Color::Gray.toARGB() : Color::Black.toARGB();
 
 	// Load FLOR and MAP1 voxels.
-	levelData.readFLOR(level.getFLOR(), inf);
-	levelData.readMAP1(level.getMAP1(), inf, MapType::Interior, exeData);
+	constexpr MapType mapType = MapType::Interior;
+	levelData.readFLOR(level.getFLOR(), inf, mapType);
+	levelData.readMAP1(level.getMAP1(), inf, mapType, exeData);
 
 	// All interiors have ceilings except some main quest dungeons which have a 1
 	// as the third number after *CEILING in their .INF file.
@@ -180,8 +181,9 @@ InteriorLevelData InteriorLevelData::loadDungeon(ArenaRandom &random,
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
 
 	// Load FLOR, MAP1, and ceiling into the voxel grid.
-	levelData.readFLOR(tempFlorView, inf);
-	levelData.readMAP1(tempMap1View, inf, MapType::Interior, exeData);
+	constexpr MapType mapType = MapType::Interior;
+	levelData.readFLOR(tempFlorView, inf, mapType);
+	levelData.readMAP1(tempMap1View, inf, mapType, exeData);
 	levelData.readCeiling(inf);
 
 	const BufferView<const ArenaTypes::MIFLock> tempLocksView(

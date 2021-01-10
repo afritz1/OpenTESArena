@@ -132,3 +132,13 @@ int ArenaVoxelUtils::clampVoxelTextureID(int id)
 
 	return id;
 }
+
+bool ArenaVoxelUtils::isFloorWildWallColored(int floorID, MapType mapType)
+{
+	if (mapType != MapType::Wilderness)
+	{
+		return false;
+	}
+
+	return (floorID != 0) && (floorID != 2) && (floorID != 3) && (floorID != 4);
+}

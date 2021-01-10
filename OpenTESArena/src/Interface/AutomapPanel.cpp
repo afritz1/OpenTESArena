@@ -318,8 +318,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		{
 			// Regular ground is transparent; all other grounds are wall color.
 			const VoxelDefinition::FloorData &floorData = floorDef.floor;
-			const bool isRegularGround = (floorData.id == 0) || (floorData.id == 2) ||
-				(floorData.id == 3) || (floorData.id == 4);
+			const bool isRegularGround = !floorData.isWildWallColored;
 
 			if (isRegularGround)
 			{

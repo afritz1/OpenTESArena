@@ -84,8 +84,9 @@ ExteriorLevelData ExteriorLevelData::loadCity(const LocationDefinition &location
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
-	levelData.readFLOR(tempFlorConstView, inf);
-	levelData.readMAP1(tempMap1ConstView, inf, MapType::City, exeData);
+	constexpr MapType mapType = MapType::City;
+	levelData.readFLOR(tempFlorConstView, inf, mapType);
+	levelData.readMAP1(tempMap1ConstView, inf, mapType, exeData);
 	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
@@ -174,8 +175,9 @@ ExteriorLevelData ExteriorLevelData::loadWilderness(const LocationDefinition &lo
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
-	levelData.readFLOR(tempFlorView, inf);
-	levelData.readMAP1(tempMap1View, inf, MapType::Wilderness, exeData);
+	constexpr MapType mapType = MapType::Wilderness;
+	levelData.readFLOR(tempFlorView, inf, mapType);
+	levelData.readMAP1(tempMap1View, inf, mapType, exeData);
 	levelData.readMAP2(tempMap2View, inf);
 
 	// Generate wilderness building names.

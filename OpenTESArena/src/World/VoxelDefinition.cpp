@@ -12,9 +12,10 @@ void VoxelDefinition::WallData::init(int sideID, int floorID, int ceilingID)
 	this->ceilingID = ceilingID;
 }
 
-void VoxelDefinition::FloorData::init(int id)
+void VoxelDefinition::FloorData::init(int id, bool isWildWallColored)
 {
 	this->id = id;
+	this->isWildWallColored = isWildWallColored;
 }
 
 void VoxelDefinition::CeilingData::init(int id)
@@ -86,11 +87,11 @@ VoxelDefinition VoxelDefinition::makeWall(int sideID, int floorID, int ceilingID
 	return voxelDef;
 }
 
-VoxelDefinition VoxelDefinition::makeFloor(int id)
+VoxelDefinition VoxelDefinition::makeFloor(int id, bool isWildWallColored)
 {
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Floor;
-	voxelDef.floor.init(id);
+	voxelDef.floor.init(id, isWildWallColored);
 	return voxelDef;
 }
 

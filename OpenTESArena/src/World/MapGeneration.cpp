@@ -305,14 +305,16 @@ namespace MapGeneration
 		return true;
 	}
 
-	VoxelDefinition makeVoxelDefFromFLOR(ArenaTypes::VoxelID florVoxel, const INFFile &inf)
+	VoxelDefinition makeVoxelDefFromFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf)
 	{
 		const int textureID = (florVoxel & 0xFF00) >> 8;
 
 		// Determine if the floor voxel is either solid or a chasm.
 		if (!MIFUtils::isChasm(textureID))
 		{
-			return VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(textureID));
+			return VoxelDefinition::makeFloor(
+				ArenaVoxelUtils::clampVoxelTextureID(textureID),
+				ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType));
 		}
 		else
 		{
@@ -869,7 +871,7 @@ namespace MapGeneration
 				}
 				else
 				{
-					VoxelDefinition voxelDef = MapGeneration::makeVoxelDefFromFLOR(florVoxel, inf);
+					VoxelDefinition voxelDef = MapGeneration::makeVoxelDefFromFLOR(florVoxel, mapType, inf);
 					voxelDefID = outLevelInfoDef->addVoxelDef(std::move(voxelDef));
 					voxelCache->insert(std::make_pair(florVoxel, voxelDefID));
 				}

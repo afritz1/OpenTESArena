@@ -217,7 +217,8 @@ protected:
 		const std::string &name);
 
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
-	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf);
+	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf,
+		MapType mapType);
 	void readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
 		MapType mapType, const ExeData &exeData);
 	void readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf);

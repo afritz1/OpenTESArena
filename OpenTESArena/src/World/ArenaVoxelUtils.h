@@ -31,6 +31,10 @@ namespace ArenaVoxelUtils
 
 	// Validates a voxel texture ID to make sure it's in the proper range and clamps if necessary.
 	int clampVoxelTextureID(int id);
+
+	// Returns whether the floor would be colored like a wall on the wild automap, to make it easier
+	// to see roads, etc..
+	bool isFloorWildWallColored(int floorID, MapType mapType);
 }
 
 #endif

@@ -440,7 +440,8 @@ void LevelData::setVoxel(SNInt x, int y, WEInt z, uint16_t id)
 	this->voxelGrid.setVoxel(x, y, z, id);
 }
 
-void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf)
+void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf,
+	MapType mapType)
 {
 	const SNInt gridWidth = flor.getHeight();
 	const WEInt gridDepth = flor.getWidth();
@@ -453,7 +454,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	};
 
 	// Lambda for obtaining the voxel data index of a typical (non-chasm) FLOR voxel.
-	auto getFlorDataIndex = [this](uint16_t florVoxel, int floorTextureID)
+	auto getFlorDataIndex = [this, mapType](uint16_t florVoxel, int floorTextureID)
 	{
 		// See if the voxel already has a mapping.
 		const auto floorIter = std::find_if(
@@ -470,8 +471,9 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		else
 		{
 			// Insert new mapping.
+			const bool isWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(floorTextureID, mapType);
 			const int index = this->voxelGrid.addVoxelDef(
-				VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(floorTextureID)));
+				VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(floorTextureID), isWildWallColored));
 			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
