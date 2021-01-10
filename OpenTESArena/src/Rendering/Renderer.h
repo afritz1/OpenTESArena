@@ -3,18 +3,19 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
-#include "SoftwareRenderer.h"
+#include "RendererSystem2D.h"
+#include "RendererSystem3D.h"
+#include "RendererSystemType.h"
 #include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Media/TextureUtils.h"
 #include "../World/LevelData.h"
 
-// Acts as a wrapper for SDL_Renderer operations as well as 3D rendering operations.
-
-// The format for all textures is ARGB8888.
+// Container for 2D and 3D rendering operations.
 
 class Color;
 class DistantSky;
@@ -78,12 +79,13 @@ private:
 	static const char *DEFAULT_RENDER_SCALE_QUALITY;
 	static const char *DEFAULT_TITLE;
 
+	std::unique_ptr<RendererSystem2D> renderer2D;
+	std::unique_ptr<RendererSystem3D> renderer3D;
 	std::vector<DisplayMode> displayModes;
 	std::vector<TextureInstance> textureInstances; // @temp placeholder until the renderer returns allocated texture handles.
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
-	SoftwareRenderer softwareRenderer; // Game world renderer.
 	ProfilerData profilerData;
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
@@ -167,7 +169,8 @@ public:
 	Texture createTexture(uint32_t format, int access, int w, int h);
 	Texture createTextureFromSurface(const Surface &surface);
 
-	void init(int width, int height, WindowMode windowMode, int letterboxMode);
+	void init(int width, int height, WindowMode windowMode, int letterboxMode,
+		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
@@ -200,6 +203,18 @@ public:
 
 	// Sets which mode to use for software render threads (low, medium, high, etc.).
 	void setRenderThreadsMode(int mode);
+
+	// Texture handle allocation functions.
+	std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder);
+	std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder);
+	std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder);
+	std::optional<UiTextureID> tryCreateUiTexture(const TextureBuilder &textureBuilder);
+
+	// Texture handle freeing functions.
+	void freeVoxelTexture(VoxelTextureID id);
+	void freeEntityTexture(EntityTextureID id);
+	void freeSkyTexture(SkyTextureID id);
+	void freeUiTexture(UiTextureID id);
 
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);

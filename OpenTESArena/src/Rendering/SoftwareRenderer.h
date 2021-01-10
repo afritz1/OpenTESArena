@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "RendererInterface.h"
+#include "RendererSystem3D.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Options.h"
 #include "../Math/MathUtils.h"
@@ -35,15 +35,8 @@ class VoxelGrid;
 
 enum class VoxelFacing2D;
 
-class SoftwareRenderer : public RendererInterface
+class SoftwareRenderer : public RendererSystem3D
 {
-public:
-	// Profiling info gathered from internal renderer state.
-	struct ProfilerData
-	{
-		int width, height;
-		int potentiallyVisFlatCount, visFlatCount, visLightCount;
-	};
 private:
 	struct VoxelTexel
 	{
@@ -968,10 +961,10 @@ public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
 
-	bool isInited() const;
+	bool isInited() const override;
 
 	// Gets profiling information about renderer internals.
-	ProfilerData getProfilerData() const;
+	ProfilerData getProfilerData() const override;
 
 	// Returns whether the given entity render ID points to a valid entry.
 	bool isValidEntityRenderID(EntityRenderID id) const;
@@ -980,52 +973,52 @@ public:
 	// successfully written.
 	bool tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
 		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
-		bool *outIsSelected) const;
+		bool *outIsSelected) const override;
 
 	// Converts a screen point to a ray into the game world.
-	static Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
-		Degrees fovY, double aspect);
+	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
+		Degrees fovY, double aspect) const override;
 
 	// Sets the render threads mode to use (low, medium, high, etc.).
-	void setRenderThreadsMode(int mode);
+	void setRenderThreadsMode(int mode) override;
 
 	// Sets the distance at which the fog is maximum.
-	void setFogDistance(double fogDistance);
+	void setFogDistance(double fogDistance) override;
 
 	// Sets textures for the distant sky (mountains, clouds, etc.).
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
-		TextureManager &textureManager);
+		TextureManager &textureManager) override;
 
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
-	void setSkyPalette(const uint32_t *colors, int count);
+	void setSkyPalette(const uint32_t *colors, int count) override;
 
 	// Adds a screen-space chasm texture to the given chasm type's texture list.
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
-		int width, int height, const Palette &palette);
+		int width, int height, const Palette &palette) override;
 
 	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
-	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
+	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette) override;
 
 	// Gets the next available entity render ID to be assigned to entities in the engine.
-	EntityRenderID makeEntityRenderID();
+	EntityRenderID makeEntityRenderID() override;
 
 	// Populates an entity's animation render buffers with textures.
 	// @todo: replace 8-bit restriction with some texture wrapper for 8-bit+palette/32-bit.
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
+		TextureManager &textureManager, const TextureInstanceManager &textureInstManager) override;
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
 	// with time-dependent light sources and textures.
-	void setNightLightsActive(bool active, const Palette &palette);
+	void setNightLightsActive(bool active, const Palette &palette) override;
 
 	// Zeroes out all renderer textures and entity render ID mappings to textures.
-	void clearTexturesAndEntityRenderIDs();
+	void clearTexturesAndEntityRenderIDs() override;
 
 	// Removes all distant sky objects.
-	void clearDistantSky();
+	void clearDistantSky() override;
 
 	void init(const RenderInitSettings &settings) override;
 	void shutdown() override;
@@ -1049,7 +1042,7 @@ public:
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		uint32_t *colorBuffer);
+		uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from
 	// at-init/occasional/every-frame to just at-init/every-frame. Things like the sky palette or render

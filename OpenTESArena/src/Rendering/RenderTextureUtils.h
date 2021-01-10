@@ -9,16 +9,17 @@ using EntityTextureID = int; // One per frame of entity animations, any dimensio
 using SkyTextureID = int; // Similar to entity textures but for mountains/clouds/stars/etc.
 using UiTextureID = int; // Used with all UI textures.
 
-class RendererInterface;
+class RendererSystem2D;
+class RendererSystem3D;
 
 // Convenience classes for creating and automatically destroying a texture.
 class ScopedVoxelTextureRef
 {
 private:
 	VoxelTextureID id;
-	RendererInterface *rendererInterface;
+	RendererSystem3D *rendererSystem;
 public:
-	ScopedVoxelTextureRef(VoxelTextureID id, RendererInterface &rendererInterface);
+	ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem);
 	~ScopedVoxelTextureRef();
 
 	VoxelTextureID get() const;
@@ -28,9 +29,9 @@ class ScopedEntityTextureRef
 {
 private:
 	EntityTextureID id;
-	RendererInterface *rendererInterface;
+	RendererSystem3D *rendererSystem;
 public:
-	ScopedEntityTextureRef(EntityTextureID id, RendererInterface &rendererInterface);
+	ScopedEntityTextureRef(EntityTextureID id, RendererSystem3D &rendererSystem);
 	~ScopedEntityTextureRef();
 
 	EntityTextureID get() const;
@@ -40,9 +41,9 @@ class ScopedSkyTextureRef
 {
 private:
 	SkyTextureID id;
-	RendererInterface *rendererInterface;
+	RendererSystem3D *rendererSystem;
 public:
-	ScopedSkyTextureRef(SkyTextureID id, RendererInterface &rendererInterface);
+	ScopedSkyTextureRef(SkyTextureID id, RendererSystem3D &rendererSystem);
 	~ScopedSkyTextureRef();
 
 	SkyTextureID get() const;
@@ -52,9 +53,9 @@ class ScopedUiTextureRef
 {
 private:
 	UiTextureID id;
-	RendererInterface *rendererInterface;
+	RendererSystem2D *rendererSystem;
 public:
-	ScopedUiTextureRef(UiTextureID id, RendererInterface &rendererInterface);
+	ScopedUiTextureRef(UiTextureID id, RendererSystem2D &rendererSystem);
 	~ScopedUiTextureRef();
 
 	UiTextureID get() const;

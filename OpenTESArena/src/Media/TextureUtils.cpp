@@ -4,6 +4,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Interface/Surface.h"
 #include "../Math/Rect.h"
+#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
 Surface TextureUtils::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette)

@@ -950,13 +950,8 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 {
 	// @todo: make this a member of SoftwareRenderer eventually when it is capturing more
 	// information in render(), etc..
-	ProfilerData data;
-	data.width = this->width;
-	data.height = this->height;
-	data.potentiallyVisFlatCount = static_cast<int>(this->potentiallyVisibleFlats.size());
-	data.visFlatCount = static_cast<int>(this->visibleFlats.size());
-	data.visLightCount = static_cast<int>(this->visibleLights.size());
-	return data;
+	return ProfilerData(this->width, this->height, static_cast<int>(this->potentiallyVisibleFlats.size()), 
+		static_cast<int>(this->visibleFlats.size()), static_cast<int>(this->visibleLights.size()));
 }
 
 bool SoftwareRenderer::isValidEntityRenderID(EntityRenderID id) const
@@ -1006,7 +1001,7 @@ bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, EntityRender
 }
 
 Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
-	const Double3 &cameraDirection, double fovY, double aspect)
+	const Double3 &cameraDirection, double fovY, double aspect) const
 {
 	// The basic components are the forward, up, and right vectors.
 	const Double3 up = Double3::UnitY;
@@ -1237,6 +1232,7 @@ std::optional<VoxelTextureID> SoftwareRenderer::tryCreateVoxelTexture(const Text
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
 		DebugNotImplemented();
+		return std::nullopt;
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
@@ -1256,6 +1252,7 @@ std::optional<EntityTextureID> SoftwareRenderer::tryCreateEntityTexture(const Te
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
 		DebugNotImplemented();
+		return std::nullopt;
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{
@@ -1275,6 +1272,7 @@ std::optional<SkyTextureID> SoftwareRenderer::tryCreateSkyTexture(const TextureB
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
 		DebugNotImplemented();
+		return std::nullopt;
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
 	{

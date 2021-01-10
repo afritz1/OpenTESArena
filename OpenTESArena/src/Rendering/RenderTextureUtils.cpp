@@ -1,17 +1,18 @@
-#include "RendererInterface.h"
+#include "RendererSystem2D.h"
+#include "RendererSystem3D.h"
 #include "RenderTextureUtils.h"
 
 #include "components/debug/Debug.h"
 
-ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererInterface &rendererInterface)
+ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem)
 {
 	this->id = id;
-	this->rendererInterface = &rendererInterface;
+	this->rendererSystem = &rendererSystem;
 }
 
 ScopedVoxelTextureRef::~ScopedVoxelTextureRef()
 {
-	this->rendererInterface->freeVoxelTexture(this->id);
+	this->rendererSystem->freeVoxelTexture(this->id);
 }
 
 VoxelTextureID ScopedVoxelTextureRef::get() const
@@ -19,15 +20,15 @@ VoxelTextureID ScopedVoxelTextureRef::get() const
 	return this->id;
 }
 
-ScopedEntityTextureRef::ScopedEntityTextureRef(EntityTextureID id, RendererInterface &rendererInterface)
+ScopedEntityTextureRef::ScopedEntityTextureRef(EntityTextureID id, RendererSystem3D &rendererSystem)
 {
 	this->id = id;
-	this->rendererInterface = &rendererInterface;
+	this->rendererSystem = &rendererSystem;
 }
 
 ScopedEntityTextureRef::~ScopedEntityTextureRef()
 {
-	this->rendererInterface->freeEntityTexture(this->id);
+	this->rendererSystem->freeEntityTexture(this->id);
 }
 
 EntityTextureID ScopedEntityTextureRef::get() const
@@ -35,15 +36,15 @@ EntityTextureID ScopedEntityTextureRef::get() const
 	return this->id;
 }
 
-ScopedSkyTextureRef::ScopedSkyTextureRef(SkyTextureID id, RendererInterface &rendererInterface)
+ScopedSkyTextureRef::ScopedSkyTextureRef(SkyTextureID id, RendererSystem3D &rendererSystem)
 {
 	this->id = id;
-	this->rendererInterface = &rendererInterface;
+	this->rendererSystem = &rendererSystem;
 }
 
 ScopedSkyTextureRef::~ScopedSkyTextureRef()
 {
-	this->rendererInterface->freeSkyTexture(this->id);
+	this->rendererSystem->freeSkyTexture(this->id);
 }
 
 SkyTextureID ScopedSkyTextureRef::get() const
@@ -51,16 +52,15 @@ SkyTextureID ScopedSkyTextureRef::get() const
 	return this->id;
 }
 
-ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, RendererInterface &rendererInterface)
+ScopedUiTextureRef::ScopedUiTextureRef(UiTextureID id, RendererSystem2D &rendererSystem)
 {
 	this->id = id;
-	this->rendererInterface = &rendererInterface;
+	this->rendererSystem = &rendererSystem;
 }
 
 ScopedUiTextureRef::~ScopedUiTextureRef()
 {
-	DebugNotImplemented();
-	//this->rendererInterface->freeUiTexture(this->id);
+	this->rendererSystem->freeUiTexture(this->id);
 }
 
 UiTextureID ScopedUiTextureRef::get() const
