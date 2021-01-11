@@ -7,3 +7,8 @@ TextureAssetReference::TextureAssetReference(std::string &&filename)
 	: filename(std::move(filename)), index(std::nullopt) { }
 
 TextureAssetReference::TextureAssetReference() { }
+
+bool TextureAssetReference::operator==(const TextureAssetReference &other) const
+{
+	return (this->filename == other.filename) && (this->index == other.index);
+}

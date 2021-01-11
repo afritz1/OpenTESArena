@@ -15,6 +15,8 @@ struct TextureAssetReference
 	TextureAssetReference(std::string &&filename, int index);
 	TextureAssetReference(std::string &&filename);
 	TextureAssetReference();
+
+	bool operator==(const TextureAssetReference &other) const;
 };
 
 #endif
