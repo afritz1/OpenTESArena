@@ -312,8 +312,11 @@ namespace MapGeneration
 		// Determine if the floor voxel is either solid or a chasm.
 		if (!MIFUtils::isChasm(textureID))
 		{
-			return VoxelDefinition::makeFloor(
-				ArenaVoxelUtils::clampVoxelTextureID(textureID),
+			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureID);
+			TextureAssetReference textureAssetRef(
+				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+			return VoxelDefinition::makeFloor(std::move(textureAssetRef),
 				ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType));
 		}
 		else
@@ -370,7 +373,11 @@ namespace MapGeneration
 				DebugCrash("Unsupported chasm type \"" + std::to_string(textureID) + "\".");
 			}
 
-			return VoxelDefinition::makeChasm(ArenaVoxelUtils::clampVoxelTextureID(chasmID), chasmType);
+			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
+			TextureAssetReference textureAssetRef(
+				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+			return VoxelDefinition::makeChasm(std::move(textureAssetRef), chasmType);
 		}
 	}
 
@@ -391,8 +398,12 @@ namespace MapGeneration
 			{
 				// Regular solid wall.
 				const int textureIndex = mostSigByte - 1;
-				const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-				return VoxelDefinition::makeWall(clampedTextureIndex, clampedTextureIndex, clampedTextureIndex);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				const TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeWall(TextureAssetReference(textureAssetRef),
+					TextureAssetReference(textureAssetRef), TextureAssetReference(textureAssetRef));
 			}
 			else
 			{
@@ -486,24 +497,35 @@ namespace MapGeneration
 				const double vTop = std::max(0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelDefinition::makeRaised(
-					ArenaVoxelUtils::clampVoxelTextureID(sideID),
-					ArenaVoxelUtils::clampVoxelTextureID(floorID),
-					ArenaVoxelUtils::clampVoxelTextureID(ceilingID),
-					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
+				const int clampedSideID = ArenaVoxelUtils::clampVoxelTextureID(sideID);
+				const int clampedFloorID = ArenaVoxelUtils::clampVoxelTextureID(floorID);
+				const int clampedCeilingID = ArenaVoxelUtils::clampVoxelTextureID(ceilingID);
+				TextureAssetReference sideTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedSideID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedSideID, inf));
+				TextureAssetReference floorTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedFloorID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedFloorID, inf));
+				TextureAssetReference ceilingTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingID, inf));
+				return VoxelDefinition::makeRaised(std::move(sideTextureAssetRef), std::move(floorTextureAssetRef),
+					std::move(ceilingTextureAssetRef), yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			}
 		}
 		else
 		{
 			if (mostSigNibble == 0x9)
 			{
-				// Transparent block with 1-sided texture on all sides, such as wooden arches in
-				// dungeons. These do not have back-faces (especially when standing in the voxel
-				// itself).
+				// Transparent block with 1-sided texture on all sides, such as wooden arches in dungeons.
+				// These do not have back-faces (especially when standing in the voxel itself).
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const bool collider = (map1Voxel & 0x0100) == 0;
-				return VoxelDefinition::makeTransparentWall(
-					ArenaVoxelUtils::clampVoxelTextureID(textureIndex), collider);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeTransparentWall(std::move(textureAssetRef), collider);
 			}
 			else if (mostSigNibble == 0xA)
 			{
@@ -557,8 +579,11 @@ namespace MapGeneration
 					}
 				}();
 
-				return VoxelDefinition::makeEdge(ArenaVoxelUtils::clampVoxelTextureID(textureIndex),
-					yOffset, collider, flipped, facing);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeEdge(std::move(textureAssetRef), yOffset, collider, flipped, facing);
 			}
 			else if (mostSigNibble == 0xB)
 			{
@@ -588,7 +613,11 @@ namespace MapGeneration
 					}
 				}();
 
-				return VoxelDefinition::makeDoor(ArenaVoxelUtils::clampVoxelTextureID(textureIndex), doorType);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeDoor(std::move(textureAssetRef), doorType);
 			}
 			else if (mostSigNibble == 0xC)
 			{
@@ -601,8 +630,11 @@ namespace MapGeneration
 				// Diagonal wall.
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-				return VoxelDefinition::makeDiagonal(
-					ArenaVoxelUtils::clampVoxelTextureID(textureIndex), isRightDiag);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeDiagonal(std::move(textureAssetRef), isRightDiag);
 			}
 			else
 			{
@@ -611,11 +643,15 @@ namespace MapGeneration
 		}
 	}
 
-	VoxelDefinition makeVoxelDefFromMAP2(ArenaTypes::VoxelID map2Voxel)
+	VoxelDefinition makeVoxelDefFromMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf)
 	{
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
-		const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-		return VoxelDefinition::makeWall(clampedTextureIndex, clampedTextureIndex, clampedTextureIndex);
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+		const TextureAssetReference textureAssetRef(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		return VoxelDefinition::makeWall(TextureAssetReference(textureAssetRef),
+			TextureAssetReference(textureAssetRef), TextureAssetReference(textureAssetRef));
 	}
 
 	LockDefinition makeLockDefFromArenaLock(const ArenaTypes::MIFLock &lock)
@@ -1060,7 +1096,7 @@ namespace MapGeneration
 				}
 				else
 				{
-					VoxelDefinition voxelDef = MapGeneration::makeVoxelDefFromMAP2(map2Voxel);
+					VoxelDefinition voxelDef = MapGeneration::makeVoxelDefFromMAP2(map2Voxel, inf);
 					voxelDefID = outLevelInfoDef->addVoxelDef(std::move(voxelDef));
 					voxelCache->insert(std::make_pair(map2Voxel, voxelDefID));
 				}
@@ -1089,8 +1125,11 @@ namespace MapGeneration
 		// hardcoding index 1 is enough?
 		const int textureIndex = ceiling.textureIndex.value_or(1);
 
-		VoxelDefinition voxelDef = VoxelDefinition::makeCeiling(
-			ArenaVoxelUtils::clampVoxelTextureID(textureIndex));
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+		TextureAssetReference textureAssetRef(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		VoxelDefinition voxelDef = VoxelDefinition::makeCeiling(std::move(textureAssetRef));
 		LevelDefinition::VoxelDefID voxelDefID = outLevelInfoDef->addVoxelDef(std::move(voxelDef));
 
 		for (SNInt levelX = 0; levelX < outLevelDef->getWidth(); levelX++)
