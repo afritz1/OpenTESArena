@@ -37,6 +37,10 @@ namespace ArenaVoxelUtils
 	// Gets the texture filename for the given voxel texture ID.
 	std::string getVoxelTextureFilename(int id, const INFFile &inf);
 
+	// Gets the index into a texture set for the given voxel texture ID, if any. For example, it may
+	// return 2 in a 4-image .SET file, or none if not a .SET file.
+	std::optional<int> getVoxelTextureSetIndex(int id, const INFFile &inf);
+
 	// Returns whether the floor would be colored like a wall on the wild automap, to make it easier
 	// to see roads, etc..
 	bool isFloorWildWallColored(int floorID, MapType mapType);

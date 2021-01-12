@@ -149,6 +149,19 @@ std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 	return String::toUppercase(filename);
 }
 
+std::optional<int> ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFile &inf)
+{
+	const std::vector<INFFile::VoxelTextureData> &voxelTextures = inf.getVoxelTextures();
+	if ((id < 0) || (id >= static_cast<int>(voxelTextures.size())))
+	{
+		DebugLogError("Couldn't get .INF voxel texture set index for ID \"" + std::to_string(id) + "\".");
+		return std::nullopt;
+	}
+
+	const INFFile::VoxelTextureData &textureData = voxelTextures[id];
+	return textureData.setIndex;
+}
+
 bool ArenaVoxelUtils::isFloorWildWallColored(int floorID, MapType mapType)
 {
 	if (mapType != MapType::Wilderness)
