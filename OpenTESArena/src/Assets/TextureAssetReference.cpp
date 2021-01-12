@@ -1,6 +1,6 @@
 #include "TextureAssetReference.h"
 
-TextureAssetReference::TextureAssetReference(std::string &&filename, int index)
+TextureAssetReference::TextureAssetReference(std::string &&filename, const std::optional<int> &index)
 	: filename(std::move(filename)), index(index) { }
 
 TextureAssetReference::TextureAssetReference(std::string &&filename)

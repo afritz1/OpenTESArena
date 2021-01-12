@@ -12,7 +12,7 @@ struct TextureAssetReference
 	std::string filename;
 	std::optional<int> index; // Points into sequential texture file.
 
-	TextureAssetReference(std::string &&filename, int index);
+	TextureAssetReference(std::string &&filename, const std::optional<int> &index);
 	TextureAssetReference(std::string &&filename);
 	TextureAssetReference();
 
