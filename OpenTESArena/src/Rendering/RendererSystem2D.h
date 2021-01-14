@@ -19,8 +19,10 @@
 // if it's the same backend.
 
 class TextureBuilder;
+class TextureManager;
 
 struct SDL_Window;
+struct TextureAssetReference;
 
 class RendererSystem2D
 {
@@ -45,10 +47,13 @@ public:
 	virtual void shutdown() = 0;
 
 	// Texture handle allocation function for a UI texture.
-	virtual std::optional<UiTextureID> tryCreateUiTexture(const TextureBuilder &textureBuilder) = 0;
+	// @todo: this should take a TextureBuilder and return optional<UiTextureID>.
+	virtual bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) = 0;
 
 	// Texture handle freeing function for a UI texture.
-	virtual void freeUiTexture(UiTextureID id) = 0;
+	// @todo: this should eventually take a UiTextureID.
+	virtual void freeUiTexture(const TextureAssetReference &textureAssetRef) = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetTextureDims(UiTextureID id) const = 0;

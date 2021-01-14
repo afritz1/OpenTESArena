@@ -205,20 +205,21 @@ public:
 	void setRenderThreadsMode(int mode);
 
 	// Texture handle allocation functions.
-	std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder);
-	std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder);
-	std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder);
-	std::optional<UiTextureID> tryCreateUiTexture(const TextureBuilder &textureBuilder);
+	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
+	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 
 	// Texture handle freeing functions.
-	void freeVoxelTexture(VoxelTextureID id);
-	void freeEntityTexture(EntityTextureID id);
-	void freeSkyTexture(SkyTextureID id);
-	void freeUiTexture(UiTextureID id);
+	// @todo: see RendererSystem3D -- these should take texture IDs instead.
+	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef);
+	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
+	void freeUiTexture(const TextureAssetReference &textureAssetRef);
 
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
-	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette);
 	EntityRenderID makeEntityRenderID();
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,

@@ -31,6 +31,8 @@ class TextureManager;
 class TextureInstanceManager;
 class VoxelGrid;
 
+struct TextureAssetReference;
+
 class RendererSystem3D
 {
 public:
@@ -49,14 +51,21 @@ public:
 	virtual bool isInited() const = 0;
 
 	// Texture handle allocation functions for each texture type.
-	virtual std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder) = 0;
+	// @todo: ideally these would take a TextureBuilder and return optional<VoxelTextureID/etc.>, but that
+	// would require a lot of renderer decoupling, such as binding VoxelTextureIDs/etc. to instance voxel
+	// geometry instead of relying on VoxelDefinition/etc. for texture look-ups.
+	virtual bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) = 0;
+	virtual bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) = 0;
+	virtual bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) = 0;
 
 	// Texture handle freeing functions for each texture type.
-	virtual void freeVoxelTexture(VoxelTextureID id) = 0;
-	virtual void freeEntityTexture(EntityTextureID id) = 0;
-	virtual void freeSkyTexture(SkyTextureID id) = 0;
+	// @todo: ideally these would take VoxelTextureID/etc..
+	virtual void freeVoxelTexture(const TextureAssetReference &textureAssetRef) = 0;
+	virtual void freeEntityTexture(const TextureAssetReference &textureAssetRef) = 0;
+	virtual void freeSkyTexture(const TextureAssetReference &textureAssetRef) = 0;
 
 	virtual void resize(int width, int height) = 0;
 
@@ -75,7 +84,6 @@ public:
 	// Legacy functions (remove these eventually).
 	virtual void setRenderThreadsMode(int mode) = 0;
 	virtual void setFogDistance(double fogDistance) = 0;
-	virtual void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette) = 0;
 	virtual EntityRenderID makeEntityRenderID() = 0;
 	virtual void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,

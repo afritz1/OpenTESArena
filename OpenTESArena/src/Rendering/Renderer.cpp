@@ -731,55 +731,49 @@ void Renderer::setRenderThreadsMode(int mode)
 	this->renderer3D->setRenderThreadsMode(mode);
 }
 
-std::optional<VoxelTextureID> Renderer::tryCreateVoxelTexture(const TextureBuilder &textureBuilder)
+bool Renderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateVoxelTexture(textureBuilder);
+	return this->renderer3D->tryCreateVoxelTexture(textureAssetRef, textureManager);
 }
 
-std::optional<EntityTextureID> Renderer::tryCreateEntityTexture(const TextureBuilder &textureBuilder)
+bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateEntityTexture(textureBuilder);
+	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, textureManager);
 }
 
-std::optional<SkyTextureID> Renderer::tryCreateSkyTexture(const TextureBuilder &textureBuilder)
+bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateSkyTexture(textureBuilder);
+	return this->renderer3D->tryCreateSkyTexture(textureAssetRef, textureManager);
 }
 
-std::optional<UiTextureID> Renderer::tryCreateUiTexture(const TextureBuilder &textureBuilder)
+bool Renderer::tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
 {
-	return this->renderer2D->tryCreateUiTexture(textureBuilder);
+	return this->renderer2D->tryCreateUiTexture(textureAssetRef, textureManager);
 }
 
-void Renderer::freeVoxelTexture(VoxelTextureID id)
+void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
 {
-	this->renderer3D->freeVoxelTexture(id);
+	this->renderer3D->freeVoxelTexture(textureAssetRef);
 }
 
-void Renderer::freeEntityTexture(EntityTextureID id)
+void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef)
 {
-	this->renderer3D->freeEntityTexture(id);
+	this->renderer3D->freeEntityTexture(textureAssetRef);
 }
 
-void Renderer::freeSkyTexture(SkyTextureID id)
+void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
 {
-	this->renderer3D->freeSkyTexture(id);
+	this->renderer3D->freeSkyTexture(textureAssetRef);
 }
 
-void Renderer::freeUiTexture(UiTextureID id)
+void Renderer::freeUiTexture(const TextureAssetReference &textureAssetRef)
 {
-	this->renderer2D->freeUiTexture(id);
+	this->renderer2D->freeUiTexture(textureAssetRef);
 }
 
 void Renderer::setFogDistance(double fogDistance)
 {
 	this->renderer3D->setFogDistance(fogDistance);
-}
-
-void Renderer::setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setVoxelTexture(id, srcTexels, palette);
 }
 
 EntityRenderID Renderer::makeEntityRenderID()
