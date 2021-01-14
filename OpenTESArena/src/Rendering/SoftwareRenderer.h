@@ -972,7 +972,7 @@ private:
 		int endX, int startY, int endY);
 public:
 	SoftwareRenderer();
-	~SoftwareRenderer();
+	virtual ~SoftwareRenderer();
 
 	bool isInited() const override;
 
