@@ -522,16 +522,6 @@ private:
 	static constexpr double NEAR_PLANE = 0.0001;
 	static constexpr double FAR_PLANE = 1000.0;
 
-	// Default texture array sizes (using vector instead of array to avoid stack overflow).
-	static constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
-	//static const int DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
-
-	// Height ratio between normal pixels and tall pixels.
-	static constexpr double TALL_PIXEL_RATIO = 1.20;
-
-	// Amount of a sliding/raising door that is visible when fully open.
-	static constexpr double DOOR_MIN_VISIBLE = 0.10;
-
 	// Angle of the sky gradient above the horizon, in degrees.
 	static constexpr double SKY_GRADIENT_ANGLE = 30.0;
 

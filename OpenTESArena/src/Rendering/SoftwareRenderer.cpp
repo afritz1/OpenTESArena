@@ -1016,7 +1016,7 @@ Double3 SoftwareRenderer::screenPointToRay(double xPercent, double yPercent,
 	const Radians yAngleRadians = cameraDirection.getYAngleRadians();
 	const double zoom = MathUtils::verticalFovToZoom(fovY);
 	const double yShear = RendererUtils::getYShear(yAngleRadians, zoom);
-	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / SoftwareRenderer::TALL_PIXEL_RATIO;
+	const double upPercent = (((yPercent - yShear) * 2.0) - 1.0) / ArenaRenderUtils::TALL_PIXEL_RATIO;
 
 	// Combine the various components to get the final vector
 	const Double3 forwardComponent = forward * zoom;
@@ -1040,7 +1040,7 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	this->skyGradientRowCache.fill(Double3::Zero);
 
 	// Initialize texture vectors to default sizes.
-	this->voxelTextures = std::vector<VoxelTexture>(SoftwareRenderer::DEFAULT_VOXEL_TEXTURE_COUNT);
+	this->voxelTextures = std::vector<VoxelTexture>(ArenaRenderUtils::DEFAULT_VOXEL_TEXTURE_COUNT);
 	this->flatTextureGroups = FlatTextureGroups();
 
 	this->width = settings.getWidth();
@@ -1438,7 +1438,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 		// Calculate the projected width of the object so we can get the left and right X
 		// coordinates on-screen.
 		const double objProjWidth = (objWidth * camera.zoom) /
-			(camera.aspect * SoftwareRenderer::TALL_PIXEL_RATIO);
+			(camera.aspect * ArenaRenderUtils::TALL_PIXEL_RATIO);
 		const double objProjHalfWidth = objProjWidth * 0.50;
 
 		// Left and right coordinates of the object in screen space.
@@ -2875,7 +2875,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 			{
 				// If far U coordinate is within percent closed, it's a hit. At 100% open,
 				// a sliding door is still partially visible.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double visibleAmount = 1.0 - ((1.0 - minVisible) * percentOpen);
 				if (visibleAmount > farU)
 				{
@@ -2904,7 +2904,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 			{
 				// If far U coordinate is within percent closed on left or right half, it's a hit.
 				// At 100% open, a splitting door is still partially visible.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const bool leftHalf = farU < 0.50;
 				const bool rightHalf = farU > 0.50;
 				double leftVisAmount, rightVisAmount;
@@ -3110,7 +3110,7 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 	{
 		// If near U coordinate is within percent closed, it's a hit. At 100% open,
 		// a sliding door is still partially visible.
-		const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+		const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 		const double visibleAmount = 1.0 - ((1.0 - minVisible) * percentOpen);
 		if (visibleAmount > nearU)
 		{
@@ -3139,7 +3139,7 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 	{
 		// If near U coordinate is within percent closed on left or right half, it's a hit.
 		// At 100% open, a splitting door is still partially visible.
-		const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+		const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 		const bool leftHalf = nearU < 0.50;
 		const bool rightHalf = nearU > 0.50;
 		double leftVisAmount, rightVisAmount;
@@ -4925,7 +4925,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -5255,7 +5255,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -5665,7 +5665,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -6183,7 +6183,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -6533,7 +6533,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -6983,7 +6983,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
-				const double minVisible = SoftwareRenderer::DOOR_MIN_VISIBLE;
+				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
 				const Double3 doorTopPoint(
@@ -7842,7 +7842,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const double aspect = widthReal / heightReal;
 
 	// To account for tall pixels.
-	const double projectionModifier = SoftwareRenderer::TALL_PIXEL_RATIO;
+	const double projectionModifier = ArenaRenderUtils::TALL_PIXEL_RATIO;
 
 	// 2.5D camera definition.
 	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
