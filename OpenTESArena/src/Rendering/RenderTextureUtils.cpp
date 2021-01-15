@@ -4,7 +4,7 @@
 
 #include "components/debug/Debug.h"
 
-ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem)
+/*ScopedVoxelTextureRef::ScopedVoxelTextureRef(VoxelTextureID id, RendererSystem3D &rendererSystem)
 {
 	this->id = id;
 	this->rendererSystem = &rendererSystem;
@@ -66,4 +66,4 @@ ScopedUiTextureRef::~ScopedUiTextureRef()
 UiTextureID ScopedUiTextureRef::get() const
 {
 	return this->id;
-}
+}*/

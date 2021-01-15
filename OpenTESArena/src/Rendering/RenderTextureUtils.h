@@ -13,7 +13,9 @@ class RendererSystem2D;
 class RendererSystem3D;
 
 // Convenience classes for creating and automatically destroying a texture.
-class ScopedVoxelTextureRef
+// @temp: commented out until the renderers are working with texture builders and texture IDs instead of
+// TextureAssetReferences for texture handle creation/destruction.
+/*class ScopedVoxelTextureRef
 {
 private:
 	VoxelTextureID id;
@@ -59,6 +61,6 @@ public:
 	~ScopedUiTextureRef();
 
 	UiTextureID get() const;
-};
+};*/
 
 #endif

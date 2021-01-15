@@ -17,8 +17,8 @@ public:
 	void init(SDL_Window *window) override; // @todo: might also need target SDL_Texture*
 	void shutdown() override;
 
-	std::optional<UiTextureID> tryCreateUiTexture(const TextureBuilder &textureBuilder) override;
-	void freeUiTexture(UiTextureID id) override;
+	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager) override;
+	void freeUiTexture(const TextureAssetReference &textureAssetRef) override;
 	std::optional<Int2> tryGetTextureDims(UiTextureID id) const override;
 
 	void draw(const RenderElement *elements, int count, RenderSpace renderSpace) override;

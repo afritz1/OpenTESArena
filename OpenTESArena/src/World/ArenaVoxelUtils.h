@@ -1,6 +1,8 @@
 #ifndef ARENA_VOXEL_UTILS_H
 #define ARENA_VOXEL_UTILS_H
 
+#include <string>
+
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -31,6 +33,13 @@ namespace ArenaVoxelUtils
 
 	// Validates a voxel texture ID to make sure it's in the proper range and clamps if necessary.
 	int clampVoxelTextureID(int id);
+
+	// Gets the texture filename for the given voxel texture ID.
+	std::string getVoxelTextureFilename(int id, const INFFile &inf);
+
+	// Gets the index into a texture set for the given voxel texture ID, if any. For example, it may
+	// return 2 in a 4-image .SET file, or none if not a .SET file.
+	std::optional<int> getVoxelTextureSetIndex(int id, const INFFile &inf);
 
 	// Returns whether the floor would be colored like a wall on the wild automap, to make it easier
 	// to see roads, etc..

@@ -115,6 +115,29 @@ private:
 		void init(int width, int height, const uint8_t *srcTexels, const Palette &palette);
 	};
 
+	// @temp: this is a temporary solution to voxel texture allocation management -- ideally the renderer
+	// would take texture builders and return texture handles and those would be bound to instance voxel
+	// geometry.
+	struct VoxelTextureMapping
+	{
+		TextureAssetReference textureAssetRef;
+		int textureIndex; // Index in voxel textures list.
+
+		VoxelTextureMapping(TextureAssetReference &&textureAssetRef, int textureIndex);
+	};
+
+	struct VoxelTextures
+	{
+		std::vector<VoxelTexture> textures;
+		std::vector<VoxelTextureMapping> mappings;
+
+		void addTexture(VoxelTexture &&texture, TextureAssetReference &&textureAssetRef);
+
+		const VoxelTexture &getTexture(const TextureAssetReference &textureAssetRef) const;
+
+		void clear();
+	};
+
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
 	struct Camera
 	{
@@ -465,7 +488,7 @@ private:
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
 			const VoxelGrid *voxelGrid;
-			const std::vector<VoxelTexture> *voxelTextures;
+			const VoxelTextures *voxelTextures;
 			const ChasmTextureGroups *chasmTextureGroups;
 			Buffer<OcclusionData> *occlusion;
 			double ceilingHeight;
@@ -478,8 +501,8 @@ private:
 				const LevelData::ChasmStates &chasmStates,
 				const std::vector<VisibleLight> &visLights,
 				const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-				const std::vector<VoxelTexture> &voxelTextures,
-				const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion);
+				const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
+				Buffer<OcclusionData> &occlusion);
 		};
 
 		struct Flats
@@ -522,16 +545,6 @@ private:
 	static constexpr double NEAR_PLANE = 0.0001;
 	static constexpr double FAR_PLANE = 1000.0;
 
-	// Default texture array sizes (using vector instead of array to avoid stack overflow).
-	static constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
-	//static const int DEFAULT_FLAT_TEXTURE_COUNT = 256; // Not used with flat texture groups.
-
-	// Height ratio between normal pixels and tall pixels.
-	static constexpr double TALL_PIXEL_RATIO = 1.20;
-
-	// Amount of a sliding/raising door that is visible when fully open.
-	static constexpr double DOOR_MIN_VISIBLE = 0.10;
-
 	// Angle of the sky gradient above the horizon, in degrees.
 	static constexpr double SKY_GRADIENT_ANGLE = 30.0;
 
@@ -546,7 +559,7 @@ private:
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
 	Buffer2D<VisibleLightList> visLightLists; // Potentially-visible voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
-	std::vector<VoxelTexture> voxelTextures; // Max 64 voxel textures in original engine.
+	VoxelTextures voxelTextures; // Voxel textures and their mappings.
 	FlatTextureGroups flatTextureGroups; // Entity anim textures accessed by entity render ID.
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
@@ -807,7 +820,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
@@ -818,7 +831,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
@@ -829,7 +842,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
@@ -841,7 +854,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper functions for drawing a voxel column.
@@ -853,7 +866,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
@@ -863,7 +876,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
@@ -873,7 +886,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
@@ -885,7 +898,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
@@ -906,7 +919,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper method for internal ray casting function that takes template parameters for better
@@ -918,7 +931,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &textures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 		OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
@@ -941,7 +954,7 @@ private:
 		const LevelData::ChasmStates &chasmStates,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const std::vector<VoxelTexture> &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
+		const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 		Buffer<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all flats for the current frame.
@@ -959,7 +972,7 @@ private:
 		int endX, int startY, int endY);
 public:
 	SoftwareRenderer();
-	~SoftwareRenderer();
+	virtual ~SoftwareRenderer();
 
 	bool isInited() const override;
 
@@ -997,9 +1010,6 @@ public:
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) override;
 
-	// Overwrites the selected voxel texture's data with the given 64x64 set of texels.
-	void setVoxelTexture(int id, const uint8_t *srcTexels, const Palette &palette) override;
-
 	// Gets the next available entity render ID to be assigned to entities in the engine.
 	EntityRenderID makeEntityRenderID() override;
 
@@ -1024,14 +1034,16 @@ public:
 	void shutdown() override;
 	void resize(int width, int height) override;
 
-	std::optional<VoxelTextureID> tryCreateVoxelTexture(const TextureBuilder &textureBuilder) override;
-	std::optional<EntityTextureID> tryCreateEntityTexture(const TextureBuilder &textureBuilder) override;
-	std::optional<SkyTextureID> tryCreateSkyTexture(const TextureBuilder &textureBuilder) override;
+	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) override;
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) override;
+	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
+		TextureManager &textureManager) override;
 
-	// Texture handle freeing functions for each texture type.
-	void freeVoxelTexture(VoxelTextureID id) override;
-	void freeEntityTexture(EntityTextureID id) override;
-	void freeSkyTexture(SkyTextureID id) override;
+	void freeVoxelTexture(const TextureAssetReference &textureAssetRef) override;
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef) override;
+	void freeSkyTexture(const TextureAssetReference &textureAssetRef) override;
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.

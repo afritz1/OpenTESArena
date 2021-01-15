@@ -9,6 +9,16 @@ namespace ArenaRenderUtils
 	constexpr int SCREEN_HEIGHT = 200;
 	constexpr int BITS_PER_PIXEL = 8;
 
+	// Texture limits.
+	constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
+	constexpr int DEFAULT_FLAT_TEXTURE_COUNT = 256;
+
+	// Height ratio between normal pixels and tall pixels.
+	constexpr double TALL_PIXEL_RATIO = 1.20;
+
+	// Amount of a sliding/raising door that is visible when fully open.
+	constexpr double DOOR_MIN_VISIBLE = 0.10;
+
 	// Hardcoded palette indices with special behavior in the original game's renderer.
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
@@ -25,6 +35,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
+	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112; // @todo: might not be correct, need to check with light tables
 
 	// Various functions for determining the type of palette index.
 	bool IsGhostTexel(uint8_t texel);

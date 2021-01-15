@@ -38,6 +38,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -454,7 +455,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	};
 
 	// Lambda for obtaining the voxel data index of a typical (non-chasm) FLOR voxel.
-	auto getFlorDataIndex = [this, mapType](uint16_t florVoxel, int floorTextureID)
+	auto getFlorDataIndex = [this, &inf, mapType](uint16_t florVoxel, int floorTextureID)
 	{
 		// See if the voxel already has a mapping.
 		const auto floorIter = std::find_if(
@@ -471,9 +472,13 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		else
 		{
 			// Insert new mapping.
+			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(floorTextureID);
+			TextureAssetReference textureAssetRef(
+				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			const bool isWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(floorTextureID, mapType);
 			const int index = this->voxelGrid.addVoxelDef(
-				VoxelDefinition::makeFloor(ArenaVoxelUtils::clampVoxelTextureID(floorTextureID), isWildWallColored));
+				VoxelDefinition::makeFloor(std::move(textureAssetRef), isWildWallColored));
 			this->floorDataMappings.push_back(std::make_pair(florVoxel, index));
 			return index;
 		}
@@ -522,8 +527,11 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(
-			ArenaVoxelUtils::clampVoxelTextureID(dryChasmID), VoxelDefinition::ChasmData::Type::Dry);
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(dryChasmID);
+		TextureAssetReference textureAssetRef(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Dry);
 	};
 
 	auto makeLavaChasmVoxelDef = [](const INFFile &inf)
@@ -542,8 +550,11 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(
-			ArenaVoxelUtils::clampVoxelTextureID(lavaChasmID), VoxelDefinition::ChasmData::Type::Lava);
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(lavaChasmID);
+		TextureAssetReference textureAssetRef(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Lava);
 	};
 
 	auto makeWetChasmVoxelDef = [](const INFFile &inf)
@@ -562,8 +573,11 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			}
 		}();
 
-		return VoxelDefinition::makeChasm(
-			ArenaVoxelUtils::clampVoxelTextureID(wetChasmID), VoxelDefinition::ChasmData::Type::Wet);
+		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(wetChasmID);
+		TextureAssetReference textureAssetRef(
+			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -775,9 +789,13 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 		else
 		{
-			const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const TextureAssetReference textureAssetRef(
+				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
-				clampedTextureIndex, clampedTextureIndex, clampedTextureIndex));
+				TextureAssetReference(textureAssetRef), TextureAssetReference(textureAssetRef),
+				TextureAssetReference(textureAssetRef)));
 			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
 			return index;
 		}
@@ -891,11 +909,20 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				return VoxelDefinition::makeRaised(
-					ArenaVoxelUtils::clampVoxelTextureID(sideID),
-					ArenaVoxelUtils::clampVoxelTextureID(floorID),
-					ArenaVoxelUtils::clampVoxelTextureID(ceilingID),
-					yOffsetNormalized, ySizeNormalized, vTop, vBottom);
+				const int clampedSideID = ArenaVoxelUtils::clampVoxelTextureID(sideID);
+				const int clampedFloorID = ArenaVoxelUtils::clampVoxelTextureID(floorID);
+				const int clampedCeilingID = ArenaVoxelUtils::clampVoxelTextureID(ceilingID);
+				TextureAssetReference sideTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedSideID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedSideID, inf));
+				TextureAssetReference floorTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedFloorID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedFloorID, inf));
+				TextureAssetReference ceilingTextureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingID, inf));
+				return VoxelDefinition::makeRaised(std::move(sideTextureAssetRef), std::move(floorTextureAssetRef),
+					std::move(ceilingTextureAssetRef), yOffsetNormalized, ySizeNormalized, vTop, vBottom);
 			};
 
 			const int index = this->voxelGrid.addVoxelDef(makeRaisedVoxelData());
@@ -904,18 +931,36 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 	};
 
-	// Lambda for creating type 0x9 voxel data.
-	auto makeType9VoxelData = [](uint16_t map1Voxel)
+	// Lambda for obtaining the voxel data index of a type 0x9 voxel.
+	auto getType9DataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel)
 	{
-		const int textureIndex = (map1Voxel & 0x00FF) - 1;
-		const bool collider = (map1Voxel & 0x0100) == 0;
-		return VoxelDefinition::makeTransparentWall(
-			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), collider);
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating type 0x9 voxel data.
+			auto makeType9VoxelData = [&inf, map1Voxel]()
+			{
+				const int textureIndex = (map1Voxel & 0x00FF) - 1;
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				const bool collider = (map1Voxel & 0x0100) == 0;
+				return VoxelDefinition::makeTransparentWall(std::move(textureAssetRef), collider);
+			};
+
+			const int index = this->voxelGrid.addVoxelDef(makeType9VoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
 	};
 
 	// Lambda for obtaining the voxel data index of a type 0xA voxel.
-	auto getTypeADataIndex = [this, mapType, &findWallMapping](
-		uint16_t map1Voxel, int textureIndex)
+	auto getTypeADataIndex = [this, &inf, mapType, &findWallMapping](uint16_t map1Voxel, int textureIndex)
 	{
 		const auto wallIter = findWallMapping(map1Voxel);
 		if (wallIter != this->wallDataMappings.end())
@@ -925,7 +970,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		else
 		{
 			// Lambda for creating type 0xA voxel data.
-			auto makeTypeAVoxelData = [mapType, map1Voxel, textureIndex]()
+			auto makeTypeAVoxelData = [&inf, mapType, map1Voxel, textureIndex]()
 			{
 				const double yOffset = [mapType, map1Voxel]()
 				{
@@ -967,8 +1012,11 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					}
 				}();
 
-				return VoxelDefinition::makeEdge(ArenaVoxelUtils::clampVoxelTextureID(textureIndex),
-					yOffset, collider, flipped, facing);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeEdge(std::move(textureAssetRef), yOffset, collider, flipped, facing);
 			};
 
 			const int index = this->voxelGrid.addVoxelDef(makeTypeAVoxelData());
@@ -977,45 +1025,83 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 		}
 	};
 
-	// Lambda for creating type 0xB voxel data.
-	auto makeTypeBVoxelData = [](uint16_t map1Voxel)
+	// Lambda for obtaining the voxel data index of a type 0xB voxel.
+	auto getTypeBDataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel)
 	{
-		const int textureIndex = (map1Voxel & 0x003F) - 1;
-		const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
 		{
-			const int type = (map1Voxel & 0x00C0) >> 4;
-			if (type == 0x0)
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating type 0xB voxel data.
+			auto makeTypeBVoxelData = [&inf, map1Voxel]()
 			{
-				return VoxelDefinition::DoorData::Type::Swinging;
-			}
-			else if (type == 0x4)
-			{
-				return VoxelDefinition::DoorData::Type::Sliding;
-			}
-			else if (type == 0x8)
-			{
-				return VoxelDefinition::DoorData::Type::Raising;
-			}
-			else
-			{
-				// I don't believe any doors in Arena split (but they are
-				// supported by the engine).
-				DebugUnhandledReturnMsg(
-					VoxelDefinition::DoorData::Type, std::to_string(type));
-			}
-		}();
+				const int textureIndex = (map1Voxel & 0x003F) - 1;
+				const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
+				{
+					const int type = (map1Voxel & 0x00C0) >> 4;
+					if (type == 0x0)
+					{
+						return VoxelDefinition::DoorData::Type::Swinging;
+					}
+					else if (type == 0x4)
+					{
+						return VoxelDefinition::DoorData::Type::Sliding;
+					}
+					else if (type == 0x8)
+					{
+						return VoxelDefinition::DoorData::Type::Raising;
+					}
+					else
+					{
+						// I don't believe any doors in Arena split (but they are
+						// supported by the engine).
+						DebugUnhandledReturnMsg(
+							VoxelDefinition::DoorData::Type, std::to_string(type));
+					}
+				}();
 
-		return VoxelDefinition::makeDoor(
-			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), doorType);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				return VoxelDefinition::makeDoor(std::move(textureAssetRef), doorType);
+			};
+
+			const int index = this->voxelGrid.addVoxelDef(makeTypeBVoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
 	};
 
-	// Lambda for creating type 0xD voxel data.
-	auto makeTypeDVoxelData = [](uint16_t map1Voxel)
+	// Lambda for obtaining the voxel data index of a type 0xD voxel.
+	auto getTypeDDataIndex = [this, &inf, &findWallMapping](uint16_t map1Voxel)
 	{
-		const int textureIndex = (map1Voxel & 0x00FF) - 1;
-		const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-		return VoxelDefinition::makeDiagonal(
-			ArenaVoxelUtils::clampVoxelTextureID(textureIndex), isRightDiag);
+		const auto wallIter = findWallMapping(map1Voxel);
+		if (wallIter != this->wallDataMappings.end())
+		{
+			return wallIter->second;
+		}
+		else
+		{
+			// Lambda for creating type 0xD voxel data.
+			auto makeTypeDVoxelData = [&inf, map1Voxel]()
+			{
+				const int textureIndex = (map1Voxel & 0x00FF) - 1;
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				TextureAssetReference textureAssetRef(
+					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
+				return VoxelDefinition::makeDiagonal(std::move(textureAssetRef), isRightDiag);
+			};
+
+			const int index = this->voxelGrid.addVoxelDef(makeTypeDVoxelData());
+			this->wallDataMappings.push_back(std::make_pair(map1Voxel, index));
+			return index;
+		}
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -1066,7 +1152,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 					// Transparent block with 1-sided texture on all sides, such as wooden 
 					// arches in dungeons. These do not have back-faces (especially when 
 					// standing in the voxel itself).
-					const int dataIndex = getDataIndex(map1Voxel, makeType9VoxelData);
+					const int dataIndex = getType9DataIndex(map1Voxel);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xA)
@@ -1086,7 +1172,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				else if (mostSigNibble == 0xB)
 				{
 					// Door voxel.
-					const int dataIndex = getDataIndex(map1Voxel, makeTypeBVoxelData);
+					const int dataIndex = getTypeBDataIndex(map1Voxel);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 				else if (mostSigNibble == 0xC)
@@ -1097,7 +1183,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				else if (mostSigNibble == 0xD)
 				{
 					// Diagonal wall. Its type is determined by the nineth bit.
-					const int dataIndex = getDataIndex(map1Voxel, makeTypeDVoxelData);
+					const int dataIndex = getTypeDDataIndex(map1Voxel);
 					this->setVoxel(x, 1, z, dataIndex);
 				}
 			}
@@ -1134,9 +1220,13 @@ void LevelData::readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, co
 		else
 		{
 			const int textureIndex = (map2Voxel & 0x007F) - 1;
-			const int clampedTextureIndex = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+			const TextureAssetReference textureAssetRef(
+				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeWall(
-				clampedTextureIndex, clampedTextureIndex, clampedTextureIndex));
+				TextureAssetReference(textureAssetRef), TextureAssetReference(textureAssetRef),
+				TextureAssetReference(textureAssetRef)));
 			this->map2DataMappings.push_back(std::make_pair(map2Voxel, index));
 			return index;
 		}
@@ -1176,8 +1266,11 @@ void LevelData::readCeiling(const INFFile &inf)
 	}();
 
 	// Define the ceiling voxel data.
-	const int index = this->voxelGrid.addVoxelDef(
-		VoxelDefinition::makeCeiling(ArenaVoxelUtils::clampVoxelTextureID(ceilingIndex)));
+	const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(ceilingIndex);
+	TextureAssetReference textureAssetRef(
+		ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
+		ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+	const int index = this->voxelGrid.addVoxelDef(VoxelDefinition::makeCeiling(std::move(textureAssetRef)));
 
 	// Set all the ceiling voxels.
 	const SNInt gridWidth = this->voxelGrid.getWidth();
@@ -1349,8 +1442,11 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		return chasmIndex.has_value() ? *chasmIndex : 0;
 	}();
 
-	const VoxelDefinition newDef = VoxelDefinition::makeChasm(
-		ArenaVoxelUtils::clampVoxelTextureID(newTextureID), newChasmType);
+	const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(newTextureID);
+	TextureAssetReference textureAssetRef(
+		ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, this->inf),
+		ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, this->inf));
+	const VoxelDefinition newDef = VoxelDefinition::makeChasm(std::move(textureAssetRef), newChasmType);
 
 	// Find matching chasm voxel definition, adding if missing.
 	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
@@ -1485,83 +1581,58 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	// Loads .INF voxel textures into the renderer.
 	auto loadVoxelTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		const auto &voxelTextures = this->inf.getVoxelTextures();
-		const int voxelTextureCount = static_cast<int>(voxelTextures.size());
-		for (int i = 0; i < voxelTextureCount; i++)
+		// Iterate the voxel grid's voxel definitions, get the texture asset reference(s), and allocate
+		// textures in the renderer.
+		// @todo: avoid allocating duplicate textures (maybe keep a hash set here).
+		const int voxelDefCount = this->voxelGrid.getVoxelDefCount();
+		for (int i = 0; i < voxelDefCount; i++)
 		{
-			DebugAssertIndex(voxelTextures, i);
-			const auto &textureData = voxelTextures[i];
-
-			const std::string textureName = String::toUppercase(textureData.filename.data());
-			const std::string_view extension = StringView::getExtension(textureName);
-			const bool isIMG = extension == "IMG";
-			const bool isSET = extension == "SET";
-			const bool noExtension = extension.size() == 0;
-
-			if (isIMG)
+			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(i);
+			const Buffer<TextureAssetReference> textureAssetRefs = voxelDef.getTextureAssetReferences();
+			for (int j = 0; j < textureAssetRefs.getCount(); j++)
 			{
-				IMGFile img;
-				if (!img.init(textureName.c_str()))
+				const TextureAssetReference &textureAssetRef = textureAssetRefs.get(j);
+				if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
 				{
-					DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
+					DebugLogError("Couldn't create voxel texture for \"" + textureAssetRef.filename + "\".");
 				}
-
-				renderer.setVoxelTexture(i, img.getPixels(), palette);
-			}
-			else if (isSET)
-			{
-				SETFile set;
-				if (!set.init(textureName.c_str()))
-				{
-					DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
-				}
-
-				// Use the texture data's .SET index to obtain the correct surface.
-				DebugAssert(textureData.setIndex.has_value());
-				const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
-				renderer.setVoxelTexture(i, srcPixels, palette);
-			}
-			else if (noExtension)
-			{
-				// Ignore texture names with no extension. They appear to be lore-related names
-				// that were used at one point in Arena's development.
-				static_cast<void>(textureData);
-			}
-			else
-			{
-				DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 			}
 		}
 	};
 
 	// Loads screen-space chasm textures into the renderer.
-	auto loadChasmTextures = [this, &renderer, &palette]()
+	auto loadChasmTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		const int chasmWidth = RCIFile::WIDTH;
-		const int chasmHeight = RCIFile::HEIGHT;
+		constexpr int chasmWidth = RCIFile::WIDTH;
+		constexpr int chasmHeight = RCIFile::HEIGHT;
 		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
 
 		// Dry chasm (just a single color).
-		constexpr uint8_t dryChasmColor = 112; // Matches the original game.
-		chasmBuffer.fill(dryChasmColor);
+		chasmBuffer.fill(ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR);
 		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
 			chasmWidth, chasmHeight, palette);
 
 		// Lambda for writing an .RCI animation to the renderer.
-		auto writeChasmAnim = [&renderer, &palette, chasmWidth, chasmHeight](
+		auto writeChasmAnim = [&textureManager, &renderer, &palette, chasmWidth, chasmHeight](
 			VoxelDefinition::ChasmData::Type chasmType, const std::string &rciName)
 		{
-			RCIFile rci;
-			if (!rci.init(rciName.c_str()))
+			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+				textureManager.tryGetTextureBuilderIDs(rciName.c_str());
+			if (!textureBuilderIDs.has_value())
 			{
-				DebugLogError("Couldn't init .RCI \"" + rciName + "\".");
+				DebugLogError("Couldn't get texture builder IDs for \"" + rciName + "\".");
 				return;
 			}
 
-			for (int i = 0; i < rci.getImageCount(); i++)
+			for (int i = 0; i < textureBuilderIDs->getCount(); i++)
 			{
-				const uint8_t *rciPixels = rci.getPixels(i);
-				renderer.addChasmTexture(chasmType, rciPixels, chasmWidth, chasmHeight, palette);
+				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
+				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+				
+				DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+				const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+				renderer.addChasmTexture(chasmType, palettedTexture.texels.get(),
+					textureBuilder.getWidth(), textureBuilder.getHeight(), palette);
 			}
 		};
 

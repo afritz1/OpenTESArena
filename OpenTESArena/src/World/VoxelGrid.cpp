@@ -50,6 +50,11 @@ uint16_t VoxelGrid::getVoxel(SNInt x, int y, WEInt z) const
 	return this->voxels.data()[index];
 }
 
+int VoxelGrid::getVoxelDefCount() const
+{
+	return static_cast<int>(this->voxelDefs.size());
+}
+
 VoxelDefinition &VoxelGrid::getVoxelDef(uint16_t id)
 {
 	DebugAssertIndex(this->voxelDefs, id);
