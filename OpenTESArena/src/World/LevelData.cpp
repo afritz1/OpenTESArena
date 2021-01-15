@@ -1601,10 +1601,10 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	};
 
 	// Loads screen-space chasm textures into the renderer.
-	auto loadChasmTextures = [this, &renderer, &palette]()
+	auto loadChasmTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		const int chasmWidth = RCIFile::WIDTH;
-		const int chasmHeight = RCIFile::HEIGHT;
+		constexpr int chasmWidth = RCIFile::WIDTH;
+		constexpr int chasmHeight = RCIFile::HEIGHT;
 		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
 
 		// Dry chasm (just a single color).
@@ -1613,20 +1613,26 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			chasmWidth, chasmHeight, palette);
 
 		// Lambda for writing an .RCI animation to the renderer.
-		auto writeChasmAnim = [&renderer, &palette, chasmWidth, chasmHeight](
+		auto writeChasmAnim = [&textureManager, &renderer, &palette, chasmWidth, chasmHeight](
 			VoxelDefinition::ChasmData::Type chasmType, const std::string &rciName)
 		{
-			RCIFile rci;
-			if (!rci.init(rciName.c_str()))
+			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+				textureManager.tryGetTextureBuilderIDs(rciName.c_str());
+			if (!textureBuilderIDs.has_value())
 			{
-				DebugLogError("Couldn't init .RCI \"" + rciName + "\".");
+				DebugLogError("Couldn't get texture builder IDs for \"" + rciName + "\".");
 				return;
 			}
 
-			for (int i = 0; i < rci.getImageCount(); i++)
+			for (int i = 0; i < textureBuilderIDs->getCount(); i++)
 			{
-				const uint8_t *rciPixels = rci.getPixels(i);
-				renderer.addChasmTexture(chasmType, rciPixels, chasmWidth, chasmHeight, palette);
+				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
+				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+				
+				DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+				const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+				renderer.addChasmTexture(chasmType, palettedTexture.texels.get(),
+					textureBuilder.getWidth(), textureBuilder.getHeight(), palette);
 			}
 		};
 
