@@ -9,6 +9,7 @@
 #include "RendererUtils.h"
 #include "RenderInitSettings.h"
 #include "SoftwareRenderer.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Entities/EntityType.h"
 #include "../Game/CardinalDirection.h"
@@ -1250,6 +1251,8 @@ void SoftwareRenderer::resize(int width, int height)
 bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
 	TextureManager &textureManager)
 {
+	// @todo: protect against duplicate textures.
+
 	const std::string &filename = textureAssetRef.filename;
 	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(filename.c_str());
@@ -1265,7 +1268,23 @@ bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textur
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
-		DebugNotImplemented();
+		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+
+		// @todo: this method shouldn't care about the palette if it's 8-bit.
+		const std::string &paletteFilename = ArenaPaletteName::Default;
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
+		VoxelTexture voxelTexture;
+		voxelTexture.init(textureBuilder.getWidth(), textureBuilder.getHeight(),
+			palettedTexture.texels.get(), palette);
+
+		this->voxelTextures.addTexture(std::move(voxelTexture), TextureAssetReference(textureAssetRef));
 		return true;
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)

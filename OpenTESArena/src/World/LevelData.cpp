@@ -1582,6 +1582,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	{
 		// Iterate the voxel grid's voxel definitions, get the texture asset reference(s), and allocate
 		// textures in the renderer.
+		// @todo: avoid allocating duplicate textures (maybe keep a hash set here).
 		const int voxelDefCount = this->voxelGrid.getVoxelDefCount();
 		for (int i = 0; i < voxelDefCount; i++)
 		{
