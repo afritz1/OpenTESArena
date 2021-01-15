@@ -35,6 +35,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_NIGHT_LIGHT_INACTIVE = 112;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
+	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112; // @todo: might not be correct, need to check with light tables
 
 	// Various functions for determining the type of palette index.
 	bool IsGhostTexel(uint8_t texel);

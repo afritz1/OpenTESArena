@@ -38,6 +38,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -1587,7 +1588,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		for (int i = 0; i < voxelDefCount; i++)
 		{
 			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(i);
-			Buffer<TextureAssetReference> textureAssetRefs = voxelDef.getTextureAssetReferences();
+			const Buffer<TextureAssetReference> textureAssetRefs = voxelDef.getTextureAssetReferences();
 			for (int j = 0; j < textureAssetRefs.getCount(); j++)
 			{
 				const TextureAssetReference &textureAssetRef = textureAssetRefs.get(j);
@@ -1607,8 +1608,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		Buffer<uint8_t> chasmBuffer(chasmWidth * chasmHeight);
 
 		// Dry chasm (just a single color).
-		constexpr uint8_t dryChasmColor = 112; // Matches the original game.
-		chasmBuffer.fill(dryChasmColor);
+		chasmBuffer.fill(ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR);
 		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
 			chasmWidth, chasmHeight, palette);
 
