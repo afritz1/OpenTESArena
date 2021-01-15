@@ -1580,55 +1580,20 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	// Loads .INF voxel textures into the renderer.
 	auto loadVoxelTextures = [this, &textureManager, &renderer, &palette]()
 	{
-		// @todo: this should iterate the voxel grid's voxel definitions, get the texture asset reference(s),
-		// allocate VoxelTextureIDs from the renderer, and pair them together.
-		// - instead of iterating the whole .INF file's voxelTextures, just use the VoxelDefinition indices;
-		//   that way, we won't have to worry about extension-less filenames.
-		const auto &voxelTextures = this->inf.getVoxelTextures();
-		const int voxelTextureCount = static_cast<int>(voxelTextures.size());
-		for (int i = 0; i < voxelTextureCount; i++)
+		// Iterate the voxel grid's voxel definitions, get the texture asset reference(s), and allocate
+		// textures in the renderer.
+		const int voxelDefCount = this->voxelGrid.getVoxelDefCount();
+		for (int i = 0; i < voxelDefCount; i++)
 		{
-			DebugAssertIndex(voxelTextures, i);
-			const auto &textureData = voxelTextures[i];
-
-			const std::string textureName = String::toUppercase(textureData.filename.data());
-			const std::string_view extension = StringView::getExtension(textureName);
-			const bool isIMG = extension == "IMG";
-			const bool isSET = extension == "SET";
-			const bool noExtension = extension.size() == 0;
-
-			if (isIMG)
+			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(i);
+			Buffer<TextureAssetReference> textureAssetRefs = voxelDef.getTextureAssetReferences();
+			for (int j = 0; j < textureAssetRefs.getCount(); j++)
 			{
-				IMGFile img;
-				if (!img.init(textureName.c_str()))
+				const TextureAssetReference &textureAssetRef = textureAssetRefs.get(j);
+				if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
 				{
-					DebugCrash("Couldn't init .IMG file \"" + textureName + "\".");
+					DebugLogError("Couldn't create voxel texture for \"" + textureAssetRef.filename + "\".");
 				}
-
-				renderer.setVoxelTexture(i, img.getPixels(), palette);
-			}
-			else if (isSET)
-			{
-				SETFile set;
-				if (!set.init(textureName.c_str()))
-				{
-					DebugCrash("Couldn't init .SET file \"" + textureName + "\".");
-				}
-
-				// Use the texture data's .SET index to obtain the correct surface.
-				DebugAssert(textureData.setIndex.has_value());
-				const uint8_t *srcPixels = set.getPixels(*textureData.setIndex);
-				renderer.setVoxelTexture(i, srcPixels, palette);
-			}
-			else if (noExtension)
-			{
-				// Ignore texture names with no extension. They appear to be lore-related names
-				// that were used at one point in Arena's development.
-				static_cast<void>(textureData);
-			}
-			else
-			{
-				DebugCrash("Unrecognized voxel texture extension \"" + textureName + "\".");
 			}
 		}
 	};

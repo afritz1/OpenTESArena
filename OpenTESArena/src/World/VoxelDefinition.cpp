@@ -165,3 +165,68 @@ bool VoxelDefinition::allowsChasmFace() const
 {
 	return (this->type != VoxelType::None) && (this->type != VoxelType::Chasm);
 }
+
+Buffer<TextureAssetReference> VoxelDefinition::getTextureAssetReferences() const
+{
+	Buffer<TextureAssetReference> buffer;
+
+	if (this->type == VoxelType::None)
+	{
+		// Do nothing.
+	}
+	else if (this->type == VoxelType::Wall)
+	{
+		buffer.init(3);
+		buffer.set(0, this->wall.sideTextureAssetRef);
+		buffer.set(1, this->wall.floorTextureAssetRef);
+		buffer.set(2, this->wall.ceilingTextureAssetRef);
+	}
+	else if (this->type == VoxelType::Floor)
+	{
+		buffer.init(1);
+		buffer.set(0, this->floor.textureAssetRef);
+	}
+	else if (this->type == VoxelType::Ceiling)
+	{
+		buffer.init(1);
+		buffer.set(0, this->ceiling.textureAssetRef);
+	}
+	else if (this->type == VoxelType::Raised)
+	{
+		buffer.init(3);
+		buffer.set(0, this->raised.sideTextureAssetRef);
+		buffer.set(1, this->raised.floorTextureAssetRef);
+		buffer.set(2, this->raised.ceilingTextureAssetRef);
+	}
+	else if (this->type == VoxelType::Diagonal)
+	{
+		buffer.init(1);
+		buffer.set(0, this->diagonal.textureAssetRef);
+	}
+	else if (this->type == VoxelType::TransparentWall)
+	{
+		buffer.init(1);
+		buffer.set(0, this->transparentWall.textureAssetRef);
+	}
+	else if (this->type == VoxelType::Edge)
+	{
+		buffer.init(1);
+		buffer.set(0, this->edge.textureAssetRef);
+	}
+	else if (this->type == VoxelType::Chasm)
+	{
+		buffer.init(1);
+		buffer.set(0, this->chasm.textureAssetRef);
+	}
+	else if (this->type == VoxelType::Door)
+	{
+		buffer.init(1);
+		buffer.set(0, this->door.textureAssetRef);
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->type)));
+	}
+
+	return buffer;
+}

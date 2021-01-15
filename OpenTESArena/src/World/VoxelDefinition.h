@@ -3,6 +3,8 @@
 
 #include "../Assets/TextureAssetReference.h"
 
+#include "components/utilities/Buffer.h"
+
 // The definition that a voxel ID points to, used for rendering, collision detection, and coloring automap voxels.
 
 enum class VoxelFacing2D;
@@ -146,6 +148,9 @@ public:
 
 	// Whether this voxel definition contributes to a chasm having a wall face.
 	bool allowsChasmFace() const;
+
+	// Gets all the texture asset references from the voxel definition based on its type.
+	Buffer<TextureAssetReference> getTextureAssetReferences() const;
 };
 
 #endif

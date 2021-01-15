@@ -43,6 +43,8 @@ public:
 	// Convenience method for getting a voxel's ID.
 	uint16_t getVoxel(SNInt x, int y, WEInt z) const;
 
+	int getVoxelDefCount() const;
+
 	// Gets the voxel definitions associated with an ID.
 	VoxelDefinition &getVoxelDef(uint16_t id);
 	const VoxelDefinition &getVoxelDef(uint16_t id) const;
