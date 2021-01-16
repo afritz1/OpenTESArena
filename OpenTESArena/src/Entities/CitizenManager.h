@@ -33,23 +33,11 @@ private:
 		HasSpawned
 	};
 
-	// Instance of unique-looking citizen info for the current world. Allows identical-looking
-	// citizens to share the same render ID.
-	struct GenerationEntry
-	{
-		bool male;
-		Palette palette;
-		EntityRenderID entityRenderID;
-
-		GenerationEntry(bool male, const Palette &palette, EntityRenderID entityRenderID);
-	};
-
 	StateType stateType;
-	std::vector<GenerationEntry> generationEntries;
+	// @todo: maybe need vector of EntityID to keep track of spawned citizens.
 	// @todo: need to track changes in active world type (i.e. city -> wilderness).
 
 	bool shouldSpawn(Game &game) const;
-	const GenerationEntry *findGenerationEntry(bool male, const Palette &palette) const;
 public:
 	CitizenManager();
 

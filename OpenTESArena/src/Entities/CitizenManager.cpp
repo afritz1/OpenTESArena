@@ -13,14 +13,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 
-CitizenManager::GenerationEntry::GenerationEntry(bool male, const Palette &palette,
-	EntityRenderID entityRenderID)
-{
-	this->male = male;
-	this->palette = palette;
-	this->entityRenderID = entityRenderID;
-}
-
 CitizenManager::CitizenManager()
 {
 	this->stateType = StateType::WaitingToSpawn;
@@ -41,26 +33,11 @@ bool CitizenManager::shouldSpawn(Game &game) const
 	return (activeMapType == MapType::City) || (activeMapType == MapType::Wilderness);*/
 }
 
-const CitizenManager::GenerationEntry *CitizenManager::findGenerationEntry(bool male,
-	const Palette &palette) const
-{
-	const auto iter = std::find_if(this->generationEntries.begin(), this->generationEntries.end(),
-		[male, &palette](const GenerationEntry &entry)
-	{
-		return (entry.male == male) && (entry.palette == palette);
-	});
-
-	return (iter != this->generationEntries.end()) ? &(*iter) : nullptr;
-}
-
 void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	TextureInstanceManager &textureInstManager, Renderer &renderer)
 {
-	// Clear any previously-generated citizen tuples.
-	this->generationEntries.clear();
-
 	const ClimateType climateType = [&locationDef]()
 	{
 		DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
@@ -111,6 +88,10 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		return;
 	}
 
+	// Male and female citizen resource handles for animation frames.
+	const EntityRenderID maleEntityRenderID = renderer.makeEntityRenderID();
+	const EntityRenderID femaleEntityRenderID = renderer.makeEntityRenderID();
+
 	// Base palette for citizens to generate from.
 	const Palette &basePalette = [&textureManager]() -> const Palette&
 	{
@@ -146,8 +127,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				const VoxelDefinition &groundVoxelDef = voxelGrid.getVoxelDef(groundVoxelID);
 
-				if ((voxelDef.type == VoxelType::None) &&
-					(groundVoxelDef.type == VoxelType::Floor))
+				if ((voxelDef.type == VoxelType::None) && (groundVoxelDef.type == VoxelType::Floor))
 				{
 					foundSpawnPosition = true;
 					return voxel;
@@ -172,22 +152,11 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		const uint16_t colorSeed = static_cast<uint16_t>(random.next());
 		const Palette generatedPalette = ArenaAnimUtils::transformCitizenColors(
 			raceID, colorSeed, basePalette, binaryAssetLibrary.getExeData());
-		
-		// See if this combination has already been generated.
-		const GenerationEntry *generationEntryPtr = this->findGenerationEntry(male, generatedPalette);
-		if (generationEntryPtr == nullptr)
-		{
-			// Allocate new renderer ID since this is a unique-looking citizen.
-			const EntityRenderID newEntityRenderID = renderer.makeEntityRenderID();
-			this->generationEntries.push_back(GenerationEntry(male, generatedPalette, newEntityRenderID));
-			generationEntryPtr = &this->generationEntries.back();
-		}
 
 		EntityRef entityRef = entityManager.makeEntity(EntityType::Dynamic);
 		DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
-		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst,
-			CardinalDirectionName::North);
-		dynamicEntity->setRenderID(generationEntryPtr->entityRenderID);
+		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst, CardinalDirectionName::North);
+		dynamicEntity->setRenderID(male ? maleEntityRenderID : femaleEntityRenderID);
 
 		// Idle animation by default.
 		int defaultStateIndex;
@@ -200,33 +169,34 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		EntityAnimationInstance &animInst = dynamicEntity->getAnimInstance();
 		animInst.setStateIndex(defaultStateIndex);
 
+		auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
+		citizenParams->palette = generatedPalette;
+		animInst.setCitizenParams(std::move(citizenParams));
+
 		// Note: since the entity pointer is being used directly, update the position last
 		// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 		const NewDouble2 positionXZ = VoxelUtils::getVoxelCenter(spawnPositionXZ);
 		dynamicEntity->setPosition(positionXZ, entityManager, voxelGrid);
 	}
 
-	// Initializes textures in the renderer for this citizen variation.
-	auto writeTextures = [&entityDefLibrary, &textureManager, &textureInstManager, &renderer, maleEntityDefID,
-		femaleEntityDefID, &maleAnimInst, &femaleAnimInst](const GenerationEntry &generationEntry)
+	// Initializes base male and female textures in the renderer.
+	auto writeTextures = [&entityDefLibrary, &textureManager, &textureInstManager, &renderer,
+		maleEntityDefID, femaleEntityDefID, maleEntityRenderID, femaleEntityRenderID, &maleAnimInst,
+		&femaleAnimInst, &basePalette](bool male)
 	{
-		const bool male = generationEntry.male;
-		const Palette &palette = generationEntry.palette;
-		const EntityRenderID entityRenderID = generationEntry.entityRenderID;
+		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
-		const bool isPuddle = false;
+		constexpr bool isPuddle = false;
 
-		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle, palette,
+		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle, basePalette,
 			textureManager, textureInstManager);
 	};
 
-	for (const GenerationEntry &generationEntry : this->generationEntries)
-	{
-		writeTextures(generationEntry);
-	}
+	writeTextures(true);
+	writeTextures(false);
 }
 
 void CitizenManager::clearCitizens(Game &game)
