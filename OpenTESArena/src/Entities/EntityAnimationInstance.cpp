@@ -6,21 +6,14 @@
 
 #include "components/debug/Debug.h"
 
-EntityAnimationInstance::Keyframe EntityAnimationInstance::Keyframe::makeFromTextureBuilderID(
-	TextureBuilderID overrideTextureBuilderID)
-{
-	Keyframe keyframe;
-	keyframe.overrideTextureBuilderID = overrideTextureBuilderID;
-	return keyframe;
-}
-
 const TextureBuilder &EntityAnimationInstance::Keyframe::getTextureBuilderHandle(
 	const EntityAnimationDefinition::Keyframe &defKeyframe, TextureManager &textureManager) const
 {
+	// @todo: this might all get cleaned up once entity texture handles are being used.
 	TextureBuilderID textureBuilderID;
-	if (this->overrideTextureBuilderID.has_value())
+	if (false) /*this->overrideTextureBuilderID.has_value()*/
 	{
-		textureBuilderID = *this->overrideTextureBuilderID;
+		//textureBuilderID = *this->overrideTextureBuilderID;
 	}
 	else
 	{
@@ -87,6 +80,34 @@ EntityAnimationInstance::EntityAnimationInstance()
 	this->currentSeconds = 0.0;
 }
 
+EntityAnimationInstance::EntityAnimationInstance(const EntityAnimationInstance &other)
+	: states(other.states)
+{
+	const std::unique_ptr<CitizenParams> &otherCitizenParams = other.citizenParams;
+	this->citizenParams = (otherCitizenParams != nullptr) ?
+		std::make_unique<CitizenParams>(*otherCitizenParams) : nullptr;
+
+	this->currentSeconds = other.currentSeconds;
+	this->stateIndex = other.stateIndex;
+}
+
+EntityAnimationInstance &EntityAnimationInstance::operator=(const EntityAnimationInstance &other)
+{
+	if (this != &other)
+	{
+		this->states = other.states;
+
+		const std::unique_ptr<CitizenParams> &otherCitizenParams = other.citizenParams;
+		this->citizenParams = (otherCitizenParams != nullptr) ?
+			std::make_unique<CitizenParams>(*otherCitizenParams) : nullptr;
+
+		this->currentSeconds = other.currentSeconds;
+		this->stateIndex = other.stateIndex;
+	}
+	
+	return *this;
+}
+
 int EntityAnimationInstance::getStateCount() const
 {
 	return static_cast<int>(this->states.size());
@@ -96,6 +117,11 @@ const EntityAnimationInstance::State &EntityAnimationInstance::getState(int inde
 {
 	DebugAssertIndex(this->states, index);
 	return this->states[index];
+}
+
+const EntityAnimationInstance::CitizenParams *EntityAnimationInstance::getCitizenParams() const
+{
+	return this->citizenParams.get();
 }
 
 int EntityAnimationInstance::getStateIndex() const
@@ -118,6 +144,11 @@ void EntityAnimationInstance::clearStates()
 	this->states.clear();
 }
 
+void EntityAnimationInstance::setCitizenParams(std::unique_ptr<CitizenParams> &&citizenParams)
+{
+	this->citizenParams = std::move(citizenParams);
+}
+
 void EntityAnimationInstance::setStateIndex(int index)
 {
 	this->stateIndex = index;
@@ -126,9 +157,10 @@ void EntityAnimationInstance::setStateIndex(int index)
 
 void EntityAnimationInstance::reset()
 {
-	this->stateIndex = -1;
-	this->resetTime();
 	this->states.clear();
+	this->citizenParams = nullptr;
+	this->resetTime();
+	this->stateIndex = -1;
 }
 
 void EntityAnimationInstance::resetTime()
