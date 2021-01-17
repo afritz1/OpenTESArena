@@ -28,7 +28,6 @@ class RenderInitSettings;
 class RenderInstanceGroup;
 class TextureBuilder;
 class TextureManager;
-class TextureInstanceManager;
 class VoxelGrid;
 
 struct TextureAssetReference;
@@ -72,7 +71,8 @@ public:
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.
 	virtual bool tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
-		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect, bool *outIsSelected) const = 0;
+		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect, const Palette &palette,
+		bool *outIsSelected) const = 0;
 
 	// Converts a screen point into a ray in the game world.
 	virtual Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -86,8 +86,7 @@ public:
 	virtual void setFogDistance(double fogDistance) = 0;
 	virtual EntityRenderID makeEntityRenderID() = 0;
 	virtual void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager, const TextureInstanceManager &textureInstManager) = 0;
+		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager) = 0;
 	virtual void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) = 0;
 	virtual void setDistantSky(const DistantSky &distantSky, const Palette &palette,
@@ -103,7 +102,7 @@ public:
 		const std::vector<LevelData::FadeState> &fadingVoxels,
 		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		uint32_t *colorBuffer) = 0;
+		const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.

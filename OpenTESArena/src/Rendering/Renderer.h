@@ -145,7 +145,7 @@ public:
 	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
 		const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
 		double entityWidth, double entityHeight, const Double3 &rayPoint,
-		const Double3 &rayDirection, bool pixelPerfect, Double3 *outHitPoint) const;
+		const Double3 &rayDirection, bool pixelPerfect, const Palette &palette, Double3 *outHitPoint) const;
 
 	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
 	// dependent on renderer details.
@@ -222,8 +222,7 @@ public:
 	void setFogDistance(double fogDistance);
 	EntityRenderID makeEntityRenderID();
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager, const TextureInstanceManager &textureInstManager);
+		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager);
 	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
@@ -250,13 +249,12 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
-		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
-		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary);
+	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
+		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+		const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

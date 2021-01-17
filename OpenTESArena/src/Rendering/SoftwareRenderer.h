@@ -46,12 +46,15 @@ private:
 		void init(double r, double g, double b, double emission, bool transparent);
 	};
 
+	// @todo: to finish the citizen variation rework, this needs to be 8-bit.
+	// - for each entity instance in the renderer, check if it has a custom palette mapping. If so, use that
+	//   in the entity shader instead of the base palette.
+	// - thinking of a std::vector<std::pair<EntityID, const Palette*>> passed to the renderer every frame.
 	struct FlatTexel
 	{
-		double r, g, b, a;
-		uint8_t reflection; // Puddle texels have two reflection states.
+		uint8_t value;
 
-		void init(double r, double g, double b, double a, uint8_t reflection);
+		void init(uint8_t value);
 	};
 
 	// For distant sky objects (mountains, clouds, etc.). Although most distant objects
@@ -88,11 +91,11 @@ private:
 	{
 		std::vector<FlatTexel> texels;
 		int width, height;
+		bool reflective;
 
 		FlatTexture();
 
-		void init(int width, int height, const uint8_t *srcTexels, bool flipped, bool reflective,
-			const Palette &palette);
+		void init(int width, int height, const uint8_t *srcTexels, bool flipped, bool reflective);
 	};
 
 	struct SkyTexture
@@ -246,6 +249,9 @@ private:
 		// Sky gradient brightness when stars become visible.
 		static constexpr double STAR_VIS_THRESHOLD = 64.0 / 255.0;
 
+		// The palette used for converting 8-bit texels to true color.
+		Palette palette;
+
 		// Rotation matrices for distant space objects.
 		Matrix4d timeRotation, latitudeRotation;
 
@@ -277,9 +283,9 @@ private:
 		// Whether the player has a light attached like the original game.
 		bool playerHasLight;
 
-		ShadingInfo(const std::vector<Double3> &skyPalette, double daytimePercent, double latitude,
-			double ambient, double fogDistance, double chasmAnimPercent, bool nightLightsAreActive,
-			bool isExterior, bool playerHasLight);
+		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyPalette, double daytimePercent,
+			double latitude, double ambient, double fogDistance, double chasmAnimPercent,
+			bool nightLightsAreActive, bool isExterior, bool playerHasLight);
 
 		const Double3 &getFogColor() const;
 	};
@@ -322,10 +328,8 @@ private:
 
 		// Sets the given texture's data. It is expected that the caller uses the entity animation
 		// instance to determine which textures to loop over.
-		// @todo: pass some TextureDataDef instead that has either 8-bit + palette or 32-bit data,
-		// determined by a trueColor bool.
 		void setTexture(int stateID, int angleID, int textureID, bool flipped,
-			const TextureBuilder &textureBuilder, bool reflective, const Palette &palette);
+			const TextureBuilder &textureBuilder, bool reflective);
 	};
 
 	// Each flat texture group is indexed by the entity render ID.
@@ -986,7 +990,7 @@ public:
 	// successfully written.
 	bool tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
 		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
-		bool *outIsSelected) const override;
+		const Palette &palette, bool *outIsSelected) const override;
 
 	// Converts a screen point to a ray into the game world.
 	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -1014,10 +1018,8 @@ public:
 	EntityRenderID makeEntityRenderID() override;
 
 	// Populates an entity's animation render buffers with textures.
-	// @todo: replace 8-bit restriction with some texture wrapper for 8-bit+palette/32-bit.
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-		TextureManager &textureManager, const TextureInstanceManager &textureInstManager) override;
+		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager) override;
 
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
@@ -1047,14 +1049,12 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
-	void render(const Double3 &eye, const Double3 &direction, Degrees fovY,
-		double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-		bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		uint32_t *colorBuffer) override;
+	void render(const Double3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
+		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
+		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+		const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+		const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from
 	// at-init/occasional/every-frame to just at-init/every-frame. Things like the sky palette or render

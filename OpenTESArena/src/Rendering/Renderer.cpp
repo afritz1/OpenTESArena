@@ -363,7 +363,7 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
 	const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
 	double entityWidth, double entityHeight, const Double3 &rayPoint, const Double3 &rayDirection,
-	bool pixelPerfect, Double3 *outHitPoint) const
+	bool pixelPerfect, const Palette &palette, Double3 *outHitPoint) const
 {
 	DebugAssert(this->renderer3D->isInited());
 	const Entity &entity = *visData.entity;
@@ -384,7 +384,7 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 		bool isSelected;
 		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv,
 			entity.getRenderID(), visData.stateIndex, visData.angleIndex, visData.keyframeIndex,
-			pixelPerfect, &isSelected);
+			pixelPerfect, palette, &isSelected);
 
 		return withinEntity && isSelected;
 	}
@@ -783,12 +783,10 @@ EntityRenderID Renderer::makeEntityRenderID()
 }
 
 void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-	const EntityAnimationInstance &animInst, bool isPuddle, const Palette &palette,
-	TextureManager &textureManager, const TextureInstanceManager &textureInstManager)
+	const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setFlatTextures(entityRenderID, animDef, animInst, isPuddle, palette,
-		textureManager, textureInstManager);
+	this->renderer3D->setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
 }
 
 void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
@@ -907,12 +905,11 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 }
 
 void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
-	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
-	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight,
-	const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
+	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
+	bool playerHasLight, int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const VoxelGrid &voxelGrid, const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
+	const Palette &palette)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->renderer3D->isInited());
@@ -924,14 +921,13 @@ void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fo
 	int gameWorldPitch;
 	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr,
 		reinterpret_cast<void**>(&gameWorldPixels), &gameWorldPitch);
-	DebugAssertMsg(status == 0, "Couldn't lock game world texture, " +
-		std::string(SDL_GetError()));
+	DebugAssertMsg(status == 0, "Couldn't lock game world texture, " + std::string(SDL_GetError()));
 
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent,
-		latitude, nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight,
-		openDoors, fadingVoxels, chasmStates, voxelGrid, entityManager, entityDefLibrary, gameWorldPixels);
+	this->renderer3D->render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
+		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight, openDoors, fadingVoxels,
+		chasmStates, voxelGrid, entityManager, entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 
 	// Update profiler stats.

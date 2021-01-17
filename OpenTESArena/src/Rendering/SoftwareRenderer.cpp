@@ -48,13 +48,9 @@ void SoftwareRenderer::VoxelTexel::init(double r, double g, double b, double emi
 	this->transparent = transparent;
 }
 
-void SoftwareRenderer::FlatTexel::init(double r, double g, double b, double a, uint8_t reflection)
+void SoftwareRenderer::FlatTexel::init(uint8_t value)
 {
-	this->r = r;
-	this->g = g;
-	this->b = b;
-	this->a = a;
-	this->reflection = reflection;
+	this->value = value;
 }
 
 void SoftwareRenderer::SkyTexel::init(double r, double g, double b, double a)
@@ -153,7 +149,7 @@ SoftwareRenderer::FlatTexture::FlatTexture()
 }
 
 void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *srcTexels,
-	bool flipped, bool reflective, const Palette &palette)
+	bool flipped, bool reflective)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -162,6 +158,7 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 	this->texels.resize(width * height);
 	this->width = width;
 	this->height = height;
+	this->reflective = reflective;
 
 	for (int y = 0; y < height; y++)
 	{
@@ -173,47 +170,7 @@ void SoftwareRenderer::FlatTexture::init(int width, int height, const uint8_t *s
 			// Texel order depends on whether the animation is flipped.
 			const int dstIndex = !flipped ? srcIndex : (((width - 1) - x) + (y * width));
 			FlatTexel &dstTexel = this->texels[dstIndex];
-
-			// Determine how to interpret the source texel. Palette indices 1-13 are used for
-			// light level diminishing in the original game. These texels do not have any color
-			// and are purely for manipulating the previously rendered color in the frame buffer.
-			if (ArenaRenderUtils::IsGhostTexel(srcTexel))
-			{
-				// Ghost texel.
-				constexpr double r = 0.0;
-				constexpr double g = 0.0;
-				constexpr double b = 0.0;
-				const double a = static_cast<double>(srcTexel) /
-					static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
-				constexpr uint8_t reflection = 0;
-				dstTexel.init(r, g, b, a, reflection);
-			}
-			else if (reflective && ArenaRenderUtils::IsPuddleTexel(srcTexel))
-			{
-				// Puddle texel. The shader needs to know which reflection type it is.
-				constexpr double r = 0.0;
-				constexpr double g = 0.0;
-				constexpr double b = 0.0;
-				constexpr double a = 1.0;
-				const uint8_t reflection = srcTexel;
-				dstTexel.init(r, g, b, a, reflection);
-			}
-			else
-			{
-				// Check if the color is hardcoded to another palette index. Otherwise,
-				// color the texel normally.
-				const int paletteIndex = (srcTexel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC1) ? ArenaRenderUtils::PALETTE_INDEX_RED_DST1 :
-					((srcTexel == ArenaRenderUtils::PALETTE_INDEX_RED_SRC2) ? ArenaRenderUtils::PALETTE_INDEX_RED_DST2 : srcTexel);
-
-				const Color &paletteColor = palette[paletteIndex];
-				const Double4 dstColor = Double4::fromARGB(paletteColor.toARGB());
-				const double r = dstColor.x;
-				const double g = dstColor.y;
-				const double b = dstColor.z;
-				const double a = dstColor.w;
-				constexpr uint8_t reflection = 0;
-				dstTexel.init(r, g, b, a, reflection);
-			}
+			dstTexel.init(srcTexel);
 		}
 	}
 }
@@ -413,7 +370,7 @@ void SoftwareRenderer::FlatTextureGroup::init(const EntityAnimationInstance &ani
 }
 
 void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, int textureID,
-	bool flipped, const TextureBuilder &textureBuilder, bool reflective, const Palette &palette)
+	bool flipped, const TextureBuilder &textureBuilder, bool reflective)
 {
 	if (!this->isValidLookup(stateID, angleID, textureID))
 	{
@@ -432,7 +389,7 @@ void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, in
 	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
 	const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
 
-	texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), flipped, reflective, palette);
+	texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), flipped, reflective);
 }
 
 SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
@@ -601,10 +558,11 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 	}
 }
 
-SoftwareRenderer::ShadingInfo::ShadingInfo(const std::vector<Double3> &skyPalette,
+SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::vector<Double3> &skyPalette,
 	double daytimePercent, double latitude, double ambient, double fogDistance,
 	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
+	this->palette = palette;
 	this->timeRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
 	this->latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
 	this->nightLightsAreActive = nightLightsAreActive;
@@ -999,7 +957,7 @@ bool SoftwareRenderer::isValidEntityRenderID(EntityRenderID id) const
 }
 
 bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
-	int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
+	int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect, const Palette &palette,
 	bool *outIsSelected) const
 {
 	// Branch depending on whether the selection request needs to include texture data.
@@ -1026,7 +984,8 @@ bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, EntityRender
 
 		// Check if the texel is non-transparent.
 		const FlatTexel &texel = texture.texels[textureIndex];
-		*outIsSelected = texel.a > 0.0;
+		const Color &texelColor = palette[texel.value];
+		*outIsSelected = texelColor.a > 0;
 		return true;
 	}
 	else
@@ -1116,8 +1075,7 @@ EntityRenderID SoftwareRenderer::makeEntityRenderID()
 
 void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 	const EntityAnimationDefinition &animDef, const EntityAnimationInstance &animInst,
-	bool isPuddle, const Palette &palette, TextureManager &textureManager,
-	const TextureInstanceManager &textureInstManager)
+	bool isPuddle, TextureManager &textureManager)
 {
 	DebugAssert(this->isValidEntityRenderID(entityRenderID));
 	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
@@ -1152,8 +1110,7 @@ void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
 				const TextureBuilder &textureBuilder =
 					instKeyframe.getTextureBuilderHandle(defKeyframe, textureManager);
 				const int textureID = keyframeID;
-				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, textureBuilder,
-					isPuddle, palette);
+				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, textureBuilder, isPuddle);
 			}
 		}
 	}
@@ -7250,6 +7207,9 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	// Shading on the texture.
 	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
+	// The palette for converting 8-bit to true color.
+	const Palette &palette = shadingInfo.palette;
+
 	// Draw by-column, similar to wall rendering.
 	for (int x = xStart; x < xEnd; x++)
 	{
@@ -7275,8 +7235,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 
 		// Light contribution per column.
 		const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-			visLightLists, voxelX, voxelZ, eyeVoxelXZ.x, eyeVoxelXZ.y, gridWidth, gridDepth,
-			chunkDistance);
+			visLightLists, voxelX, voxelZ, eyeVoxelXZ.x, eyeVoxelXZ.y, gridWidth, gridDepth, chunkDistance);
 		const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(topPointXZ, visLights, visLightList);
 
@@ -7301,25 +7260,27 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 				// Vertical texel position.
 				const int textureY = static_cast<int>(v * static_cast<double>(texture.height));
 
-				// Alpha is checked in this loop, and transparent texels are not drawn.
-				// Flats do not have emission, so ignore it.
+				// Alpha is checked in this loop and transparent texels are not drawn.
 				const int textureIndex = textureX + (textureY * texture.width);
 				const FlatTexel &texel = texture.texels[textureIndex];
+				const bool isTransparentTexel = texel.value == 0;
 
-				if (texel.a > 0.0)
+				if (!isTransparentTexel)
 				{
 					double colorR, colorG, colorB;
-					if (texel.a < 1.0)
+					if (ArenaRenderUtils::IsGhostTexel(texel.value))
 					{
-						// Special case (for true color): if texel alpha is between 0 and 1,
-						// the previously rendered pixel is diminished by some amount.
+						// Ghost shader. The previously rendered pixel is diminished by some amount.
+						const double alpha = static_cast<double>(texel.value) /
+							static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+
 						const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[index]);
-						const double visPercent = std::clamp(1.0 - texel.a, 0.0, 1.0);
+						const double visPercent = std::clamp(1.0 - alpha, 0.0, 1.0);
 						colorR = prevColor.x * visPercent;
 						colorG = prevColor.y * visPercent;
 						colorB = prevColor.z * visPercent;
 					}
-					else if (texel.reflection != 0)
+					else if (texture.reflective && ArenaRenderUtils::IsPuddleTexel(texel.value))
 					{
 						// Reflective texel (i.e. puddle).
 						// Copy-paste the previously-drawn pixel from the Y pixel coordinate mirrored
@@ -7347,11 +7308,17 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 					}
 					else
 					{
-						// Texture color with shading.
+						// Texture color with shading and some conditional palette look-ups.
+						const bool isRedSrc1 = (texel.value == ArenaRenderUtils::PALETTE_INDEX_RED_SRC1);
+						const bool isRedSrc2 = (texel.value == ArenaRenderUtils::PALETTE_INDEX_RED_SRC2);
+						const int paletteIndex = isRedSrc1 ? ArenaRenderUtils::PALETTE_INDEX_RED_DST1 :
+							(isRedSrc2 ? ArenaRenderUtils::PALETTE_INDEX_RED_DST2 : texel.value);
+						const Double4 texelColor = Double4::fromARGB(palette[paletteIndex].toARGB());
+
 						const double shadingMax = 1.0;
-						colorR = texel.r * std::min(shading.x + lightContributionPercent, shadingMax);
-						colorG = texel.g * std::min(shading.y + lightContributionPercent, shadingMax);
-						colorB = texel.b * std::min(shading.z + lightContributionPercent, shadingMax);
+						colorR = texelColor.x * std::min(shading.x + lightContributionPercent, shadingMax);
+						colorG = texelColor.y * std::min(shading.y + lightContributionPercent, shadingMax);
+						colorB = texelColor.z * std::min(shading.z + lightContributionPercent, shadingMax);
 					}
 
 					// Linearly interpolate with fog.
@@ -7903,14 +7870,12 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 	}
 }
 
-void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY,
-	double ambient, double daytimePercent, double chasmAnimPercent, double latitude,
-	bool nightLightsAreActive, bool isExterior, bool playerHasLight, int chunkDistance,
-	double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-	const std::vector<LevelData::FadeState> &fadingVoxels,
-	const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
-	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-	uint32_t *colorBuffer)
+void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY, double ambient,
+	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
+	bool playerHasLight, int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
+	const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
+	const VoxelGrid &voxelGrid, const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
+	const Palette &palette, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -7928,7 +7893,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
-	const ShadingInfo shadingInfo(this->skyPalette, daytimePercent, latitude, ambient,
+	const ShadingInfo shadingInfo(palette, this->skyPalette, daytimePercent, latitude, ambient,
 		this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior, playerHasLight);
 	const FrameView frame(colorBuffer, this->depthBuffer.get(), this->width, this->height);
 

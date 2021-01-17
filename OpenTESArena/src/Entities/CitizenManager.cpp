@@ -180,9 +180,8 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	}
 
 	// Initializes base male and female textures in the renderer.
-	auto writeTextures = [&entityDefLibrary, &textureManager, &textureInstManager, &renderer,
-		maleEntityDefID, femaleEntityDefID, maleEntityRenderID, femaleEntityRenderID, &maleAnimInst,
-		&femaleAnimInst, &basePalette](bool male)
+	auto writeTextures = [&entityDefLibrary, &textureManager, &renderer, maleEntityDefID, femaleEntityDefID,
+		maleEntityRenderID, femaleEntityRenderID, &maleAnimInst, &femaleAnimInst](bool male)
 	{
 		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
@@ -191,8 +190,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
 		constexpr bool isPuddle = false;
 
-		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle, basePalette,
-			textureManager, textureInstManager);
+		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
 	};
 
 	writeTextures(true);

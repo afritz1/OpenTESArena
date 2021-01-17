@@ -133,6 +133,16 @@ namespace
 		const auto &voxelGrid = levelData.getVoxelGrid();
 		const double ceilingHeight = levelData.getCeilingHeight();
 
+		const std::string &paletteFilename = ArenaPaletteName::Default;
+		auto &textureManager = game.getTextureManager();
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
 		for (int y = 0; y < windowDims.y; y += yOffset)
 		{
 			for (int x = 0; x < windowDims.x; x += xOffset)
@@ -149,7 +159,7 @@ namespace
 
 				Physics::Hit hit;
 				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance,
-					ceilingHeight, levelData.getChasmStates(), cameraDirection, pixelPerfect,
+					ceilingHeight, levelData.getChasmStates(), cameraDirection, pixelPerfect, palette,
 					includeEntities, entityManager, voxelGrid, game.getEntityDefinitionLibrary(),
 					renderer, hit);
 
@@ -218,12 +228,23 @@ namespace
 		const auto &levelData = worldData.getActiveLevel();
 		const auto &entityManager = levelData.getEntityManager();
 		const auto &voxelGrid = levelData.getVoxelGrid();
+
+		const std::string &paletteFilename = ArenaPaletteName::Default;
+		auto &textureManager = game.getTextureManager();
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+		if (!paletteID.has_value())
+		{
+			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		}
+
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
 		const bool includeEntities = true;
 
 		Physics::Hit hit;
 		const bool success = Physics::rayCast(rayStart, rayDirection,
 			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), levelData.getChasmStates(),
-			cameraDirection, options.getInput_PixelPerfectSelection(), includeEntities, entityManager,
+			cameraDirection, options.getInput_PixelPerfectSelection(), palette, includeEntities, entityManager,
 			voxelGrid, game.getEntityDefinitionLibrary(), renderer, hit);
 
 		std::string text;
@@ -1671,11 +1692,21 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	// Pixel-perfect selection determines whether an entity's texture is used in the
 	// selection calculation.
 	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
+
+	const std::string &paletteFilename = ArenaPaletteName::Default;
+	auto &textureManager = game.getTextureManager();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const bool includeEntities = true;
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
-		level.getChasmStates(), cameraDirection, pixelPerfectSelection, includeEntities,
+		level.getChasmStates(), cameraDirection, pixelPerfectSelection, palette, includeEntities,
 		entityManager, voxelGrid, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
@@ -3124,14 +3155,6 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	const bool isExterior = worldData.getMapType() != MapType::Interior;
 
-	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
-		gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(), isExterior,
-		options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
-		level.getOpenDoors(), level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
-		level.getEntityManager(), game.getEntityDefinitionLibrary());
-
-	// Get texture IDs in advance of any texture references.
 	auto &textureManager = game.getTextureManager();
 	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
 	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
@@ -3140,6 +3163,15 @@ void GameWorldPanel::render(Renderer &renderer)
 		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
 		return;
 	}
+
+	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
+
+	renderer.renderWorld(player.getPosition(), player.getDirection(),
+		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
+		gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(), isExterior,
+		options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
+		level.getOpenDoors(), level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
+		level.getEntityManager(), game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);

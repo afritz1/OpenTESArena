@@ -1868,23 +1868,9 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				entityPtr->setPosition(positionXZ, this->entityManager, this->voxelGrid);
 			}
 
-			// Palette for renderer textures.
-			const Palette &palette = [&textureManager]() -> const Palette&
-			{
-				const std::string &paletteName = ArenaPaletteName::Default;
-				const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-				if (!paletteID.has_value())
-				{
-					DebugCrash("Couldn't get default palette \"" + paletteName + "\".");
-				}
-
-				return textureManager.getPaletteHandle(*paletteID);
-			}();
-
 			// Initialize renderer buffers for the entity animation then populate all textures
 			// of the animation.
-			renderer.setFlatTextures(entityRenderID, entityAnimDefRef, entityAnimInst, isPuddle,
-				palette, textureManager, textureInstManager);
+			renderer.setFlatTextures(entityRenderID, entityAnimDefRef, entityAnimInst, isPuddle, textureManager);
 		}
 
 		// Spawn citizens at level start if the conditions are met for the new level.
