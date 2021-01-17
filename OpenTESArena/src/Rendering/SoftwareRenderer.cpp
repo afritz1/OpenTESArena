@@ -1267,18 +1267,14 @@ bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textur
 {
 	// @todo: protect against duplicate textures.
 
-	const std::string &filename = textureAssetRef.filename;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(filename.c_str());
-	if (!textureBuilderIDs.has_value())
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get voxel texture builder IDs for \"" + filename + "\".");
+		DebugLogError("Couldn't get voxel texture builder ID for \"" + textureAssetRef.filename + "\".");
 		return false;
 	}
 
-	const int textureIndex = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
-	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(textureIndex);
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
@@ -1315,18 +1311,14 @@ bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textur
 bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
 	TextureManager &textureManager)
 {
-	const std::string &filename = textureAssetRef.filename;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(filename.c_str());
-	if (!textureBuilderIDs.has_value())
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get entity texture builder IDs for \"" + filename + "\".");
+		DebugLogError("Couldn't get entity texture builder ID for \"" + textureAssetRef.filename + "\".");
 		return false;
 	}
 
-	const int textureIndex = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
-	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(textureIndex);
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
@@ -1347,18 +1339,14 @@ bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textu
 bool SoftwareRenderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 	TextureManager &textureManager)
 {
-	const std::string &filename = textureAssetRef.filename;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(filename.c_str());
-	if (!textureBuilderIDs.has_value())
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get sky texture builder IDs for \"" + filename + "\".");
+		DebugLogError("Couldn't get sky texture builder ID for \"" + textureAssetRef.filename + "\".");
 		return false;
 	}
 
-	const int textureIndex = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
-	const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(textureIndex);
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{

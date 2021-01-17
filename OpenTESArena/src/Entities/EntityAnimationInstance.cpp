@@ -9,7 +9,7 @@ const TextureBuilder &EntityAnimationInstance::Keyframe::getTextureBuilderHandle
 	const EntityAnimationDefinition::Keyframe &defKeyframe, TextureManager &textureManager) const
 {
 	// @todo: this might all get cleaned up once entity texture handles are being used.
-	TextureBuilderID textureBuilderID;
+	std::optional<TextureBuilderID> textureBuilderID;
 	if (false) /*this->overrideTextureBuilderID.has_value()*/
 	{
 		//textureBuilderID = *this->overrideTextureBuilderID;
@@ -17,18 +17,15 @@ const TextureBuilder &EntityAnimationInstance::Keyframe::getTextureBuilderHandle
 	else
 	{
 		const TextureAssetReference &textureAssetRef = defKeyframe.getTextureAssetRef();
-		const std::string &filename = textureAssetRef.filename;
-		const std::optional<TextureBuilderIdGroup> ids = textureManager.tryGetTextureBuilderIDs(filename.c_str());
-		if (!ids.has_value())
+		textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
 		{
-			DebugCrash("Couldn't get texture builder IDs for \"" + filename + "\".");
+			DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
 		}
-
-		const int textureIndex = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
-		textureBuilderID = ids->getID(textureIndex);
 	}
 
-	return textureManager.getTextureBuilderHandle(textureBuilderID);
+	DebugAssert(textureBuilderID.has_value());
+	return textureManager.getTextureBuilderHandle(*textureBuilderID);
 }
 
 int EntityAnimationInstance::KeyframeList::getKeyframeCount() const

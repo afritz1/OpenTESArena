@@ -67,8 +67,7 @@ void VoxelDefinition::ChasmData::init(TextureAssetReference &&textureAssetRef, T
 
 bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 {
-	return (this->textureAssetRef.filename == other.textureAssetRef.filename) &&
-		(this->textureAssetRef.index == other.textureAssetRef.index) && (this->type == other.type);
+	return (this->textureAssetRef == other.textureAssetRef) && (this->type == other.type);
 }
 
 void VoxelDefinition::DoorData::init(TextureAssetReference &&textureAssetRef, Type type)
