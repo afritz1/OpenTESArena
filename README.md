@@ -80,7 +80,7 @@ sudo apt-get install wget unzip rar
 wget https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip
 wget https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-<version>/opentesarena-<version>-Linux<arch>.tar.gz
 tar xvzf opentesarena-<version>-Linux<arch>.tar.gz
-cd opentesarena-<version>/data
+cd opentesarena-<version>-Linux<arch>/data
 unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 cd ..
