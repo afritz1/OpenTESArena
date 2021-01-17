@@ -356,6 +356,7 @@ private:
 		double z;
 
 		// Entity animation texture look-up values.
+		const Palette *overridePalette; // For citizen variations.
 		EntityRenderID entityRenderID;
 		int animStateID;
 		int animAngleID;
@@ -909,9 +910,9 @@ private:
 	// X value is exclusive.
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
 		const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
-		int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, SNInt gridWidth, WEInt gridDepth,
-		const FrameView &frame);
+		const Palette *overridePalette, int chunkDistance, const FlatTexture &texture,
+		const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+		SNInt gridWidth, WEInt gridDepth, const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.

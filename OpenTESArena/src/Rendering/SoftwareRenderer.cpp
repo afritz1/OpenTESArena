@@ -1870,6 +1870,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
 			visFlat.topRight = visFlat.bottomRight + flatUpScaled;
 
+			// Add palette override if it is a citizen entity.
+			const EntityAnimationInstance &animInst = entity->getAnimInstance();
+			const EntityAnimationInstance::CitizenParams *citizenParams = animInst.getCitizenParams();
+			visFlat.overridePalette = (citizenParams != nullptr) ? &citizenParams->palette : nullptr;
+
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
 			// are used to find where the flat is on-screen.
@@ -7148,9 +7153,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 
 void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
 	const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
-	int chunkDistance, const FlatTexture &texture, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, int gridWidth, int gridDepth,
-	const FrameView &frame)
+	const Palette *overridePalette, int chunkDistance, const FlatTexture &texture,
+	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	int gridWidth, int gridDepth, const FrameView &frame)
 {
 	// X percents across the screen for the given start and end columns.
 	const double startXPercent = (static_cast<double>(startX) + 0.50) / 
@@ -7207,8 +7212,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 	// Shading on the texture.
 	const Double3 shading(shadingInfo.ambient, shadingInfo.ambient, shadingInfo.ambient);
 
-	// The palette for converting 8-bit to true color.
-	const Palette &palette = shadingInfo.palette;
+	// Use the override palette for citizen variations or the base palette for most entities.
+	const Palette &palette = (overridePalette != nullptr) ? *overridePalette : shadingInfo.palette;
 
 	// Draw by-column, similar to wall rendering.
 	for (int x = xStart; x < xEnd; x++)
@@ -7755,9 +7760,9 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		const FlatTexture &texture = textureGroup.getTexture(
 			flat.animStateID, flat.animAngleID, flat.animTextureID);
 
-		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D,
-			camera.horizonProjY, shadingInfo, chunkDistance, texture, visLights, visLightLists,
-			gridWidth, gridDepth, frame);
+		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D, camera.horizonProjY,
+			shadingInfo, flat.overridePalette, chunkDistance, texture, visLights, visLightLists, gridWidth,
+			gridDepth, frame);
 	}
 }
 
