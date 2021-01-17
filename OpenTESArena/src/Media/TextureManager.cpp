@@ -12,6 +12,7 @@
 #include "../Assets/LGTFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
+#include "../Assets/TextureAssetReference.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
 
@@ -340,6 +341,20 @@ std::optional<PaletteID> TextureManager::tryGetPaletteID(const char *filename)
 	}
 }
 
+std::optional<PaletteID> TextureManager::tryGetPaletteID(const TextureAssetReference &textureAssetRef)
+{
+	const std::optional<PaletteIdGroup> ids = this->tryGetPaletteIDs(textureAssetRef.filename.c_str());
+	if (ids.has_value())
+	{
+		const int index = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
+		return ids->getID(index);
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
 std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(const char *filename)
 {
 	if (String::isNullOrEmpty(filename))
@@ -380,6 +395,20 @@ std::optional<TextureBuilderID> TextureManager::tryGetTextureBuilderID(const cha
 	if (ids.has_value())
 	{
 		return ids->getID(0);
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+std::optional<PaletteID> TextureManager::tryGetTextureBuilderID(const TextureAssetReference &textureAssetRef)
+{
+	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(textureAssetRef.filename.c_str());
+	if (ids.has_value())
+	{
+		const int index = textureAssetRef.index.has_value() ? *textureAssetRef.index : 0;
+		return ids->getID(index);
 	}
 	else
 	{

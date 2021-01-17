@@ -17,6 +17,8 @@
 #include "components/utilities/BufferRef.h"
 #include "components/utilities/BufferRef2D.h"
 
+struct TextureAssetReference;
+
 // BufferRef variations for avoiding returning easily-stale handles from texture manager.
 // All references are read-only interfaces.
 using PaletteRef = BufferRef<const std::vector<Palette>, const Palette>;
@@ -51,8 +53,10 @@ public:
 	// caller expected several, the returned ID group will have only one ID.
 	std::optional<PaletteIdGroup> tryGetPaletteIDs(const char *filename);
 	std::optional<PaletteID> tryGetPaletteID(const char *filename);
+	std::optional<PaletteID> tryGetPaletteID(const TextureAssetReference &textureAssetRef);
 	std::optional<TextureBuilderIdGroup> tryGetTextureBuilderIDs(const char *filename);
 	std::optional<TextureBuilderID> tryGetTextureBuilderID(const char *filename);
+	std::optional<TextureBuilderID> tryGetTextureBuilderID(const TextureAssetReference &textureAssetRef);
 
 	// Texture getter functions, fast look-up. These return reference wrappers to avoid
 	// dangling pointer issues with internal buffer resizing.
