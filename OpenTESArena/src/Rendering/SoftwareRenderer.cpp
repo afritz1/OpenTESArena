@@ -285,7 +285,7 @@ const SoftwareRenderer::VoxelTexture &SoftwareRenderer::VoxelTextures::getTextur
 		const VoxelTextureMapping &mapping = this->mappings[i];
 		if (mapping.textureAssetRef == textureAssetRef)
 		{
-			index = i;
+			index = mapping.textureIndex;
 			break;
 		}
 	}
