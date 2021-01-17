@@ -46,10 +46,6 @@ private:
 		void init(double r, double g, double b, double emission, bool transparent);
 	};
 
-	// @todo: to finish the citizen variation rework, this needs to be 8-bit.
-	// - for each entity instance in the renderer, check if it has a custom palette mapping. If so, use that
-	//   in the entity shader instead of the base palette.
-	// - thinking of a std::vector<std::pair<EntityID, const Palette*>> passed to the renderer every frame.
 	struct FlatTexel
 	{
 		uint8_t value;
