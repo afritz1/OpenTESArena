@@ -289,3 +289,23 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 	Texture texture = renderer.createTextureFromSurface(surface);
 	return texture;
 }
+
+std::vector<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,
+	TextureManager &textureManager)
+{
+	const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(filename.c_str());
+	if (!textureFileMetadata.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for \"" + filename + "\".");
+		return std::vector<TextureAssetReference>();
+	}
+
+	std::vector<TextureAssetReference> textureAssetRefs;
+	for (int i = 0; i < textureFileMetadata->getTextureCount(); i++)
+	{
+		TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), i);
+		textureAssetRefs.emplace_back(std::move(textureAssetRef));
+	}
+
+	return textureAssetRefs;
+}

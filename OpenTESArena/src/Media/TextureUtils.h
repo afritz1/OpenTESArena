@@ -1,6 +1,9 @@
 #ifndef TEXTURE_UTILS_H
 #define TEXTURE_UTILS_H
 
+#include <string>
+#include <vector>
+
 #include "Palette.h"
 
 #include "components/debug/Debug.h"
@@ -19,6 +22,8 @@ class Renderer;
 class Surface;
 class Texture;
 class TextureManager;
+
+struct TextureAssetReference;
 
 namespace TextureUtils
 {
@@ -70,6 +75,11 @@ namespace TextureUtils
 	// Generates a new texture from a pattern.
 	Texture generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);
+
+	// Generates individual texture asset references from the given filename. This should be used for filenames
+	// that point to a set of textures.
+	std::vector<TextureAssetReference> makeTextureAssetRefs(const std::string &filename,
+		TextureManager &textureManager);
 }
 
 using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;
