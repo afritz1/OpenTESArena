@@ -383,6 +383,10 @@ private:
 		std::vector<DistantObject<DistantSky::StarObject>> stars;
 		int sunTextureIndex; // Points into skyTextures if the sun exists, or NO_SUN if it doesn't.
 
+		// @temp hack to assist with animated land texture count determination.
+		const DistantSky *distantSky;
+		TextureManager *textureManager;
+
 		DistantObjects();
 
 		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures,

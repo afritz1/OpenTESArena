@@ -65,20 +65,13 @@ double DistantSky::LandObject::getAngle() const
 	return this->angle;
 }
 
-DistantSky::AnimatedLandObject::AnimatedLandObject(int setEntryIndex, Radians angle, double frameTime)
+DistantSky::AnimatedLandObject::AnimatedLandObject(int setEntryIndex, Radians angle)
 {
-	// Frame time must be positive.
-	DebugAssert(frameTime > 0.0);
-
 	this->setEntryIndex = setEntryIndex;
 	this->angle = angle;
-	this->targetFrameTime = frameTime;
-	this->currentFrameTime = 0.0;
-	this->index = 0;
+	this->targetSeconds = AnimatedLandObject::DEFAULT_ANIM_SECONDS;
+	this->currentSeconds = 0.0;
 }
-
-DistantSky::AnimatedLandObject::AnimatedLandObject(int textureSetIndex, Radians angle)
-	: AnimatedLandObject(textureSetIndex, angle, AnimatedLandObject::DEFAULT_FRAME_TIME) { }
 
 int DistantSky::AnimatedLandObject::getTextureSetEntryIndex() const
 {
@@ -90,43 +83,17 @@ double DistantSky::AnimatedLandObject::getAngle() const
 	return this->angle;
 }
 
-double DistantSky::AnimatedLandObject::getFrameTime() const
+double DistantSky::AnimatedLandObject::getAnimPercent() const
 {
-	return this->targetFrameTime;
+	return std::clamp(this->currentSeconds / this->targetSeconds, 0.0, 1.0);
 }
 
-int DistantSky::AnimatedLandObject::getIndex() const
+void DistantSky::AnimatedLandObject::update(double dt)
 {
-	return this->index;
-}
-
-void DistantSky::AnimatedLandObject::setFrameTime(double frameTime)
-{
-	// Frame time must be positive.
-	DebugAssert(frameTime > 0.0);
-
-	this->targetFrameTime = frameTime;
-}
-
-void DistantSky::AnimatedLandObject::setIndex(int index)
-{
-	this->index = index;
-}
-
-void DistantSky::AnimatedLandObject::update(double dt, const DistantSky &distantSky)
-{
-	// Must have at least one image.
-	const int textureCount = distantSky.getTextureSetCount(this->setEntryIndex);
-	if (textureCount > 0)
+	this->currentSeconds += dt;
+	while (this->currentSeconds >= this->targetSeconds)
 	{
-		// Animate based on delta time.
-		this->currentFrameTime += dt;
-
-		while (this->currentFrameTime >= this->targetFrameTime)
-		{
-			this->currentFrameTime -= this->targetFrameTime;
-			this->index = (this->index < (textureCount - 1)) ? (this->index + 1) : 0;
-		}
+		this->currentSeconds -= this->targetSeconds;
 	}
 }
 
@@ -221,14 +188,11 @@ const Double3 &DistantSky::StarObject::getDirection() const
 	return this->direction;
 }
 
-DistantSky::TextureEntry::TextureEntry(std::string &&filename, TextureBuilderID textureBuilderID)
-	: filename(std::move(filename))
-{
-	this->textureBuilderID = textureBuilderID;
-}
+DistantSky::TextureEntry::TextureEntry(TextureAssetReference &&textureAssetRef)
+	: textureAssetRef(std::move(textureAssetRef)) { }
 
-DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename, const TextureBuilderIdGroup &textureBuilderIDs)
-	: filename(std::move(filename)), textureBuilderIDs(textureBuilderIDs) { }
+DistantSky::TextureSetEntry::TextureSetEntry(std::string &&filename)
+	: filename(std::move(filename)) { }
 
 const int DistantSky::UNIQUE_ANGLES = 512;
 const double DistantSky::IDENTITY_DIM = 320.0;
@@ -239,7 +203,7 @@ std::optional<int> DistantSky::getTextureEntryIndex(const std::string_view &file
 	const auto iter = std::find_if(this->textures.begin(), this->textures.end(),
 		[&filename](const TextureEntry &entry)
 	{
-		return entry.filename == filename;
+		return entry.textureAssetRef.filename == filename;
 	});
 
 	if (iter != this->textures.end())
@@ -349,13 +313,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			{
 				if (!entryIndex.has_value())
 				{
-					const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
-					if (!textureBuilderID.has_value())
-					{
-						DebugCrash("Couldn't get texture builder ID for \"" + filename + "\".");
-					}
-
-					TextureEntry textureEntry(std::move(filename), *textureBuilderID);
+					TextureEntry textureEntry(TextureAssetReference(std::move(filename)));
 					this->textures.push_back(std::move(textureEntry));
 					entryIndex = static_cast<int>(this->textures.size()) - 1;
 				}
@@ -450,16 +408,9 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 
 		if (!setEntryIndex.has_value())
 		{
-			// Determine which frames the animation will have. .DFAs have multiple frames while
-			// .IMGs do not, although we can use the same texture manager function for both.
-			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-				textureManager.tryGetTextureBuilderIDs(animFilename.c_str());
-			if (!textureBuilderIDs.has_value())
-			{
-				DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
-			}
-
-			TextureSetEntry textureSetEntry(std::move(animFilename), *textureBuilderIDs);
+			// .DFAs have multiple frames while .IMGs do not, although we can use the same texture
+			// manager function for both.
+			TextureSetEntry textureSetEntry(std::move(animFilename));
 			this->textureSets.push_back(std::move(textureSetEntry));
 			setEntryIndex = static_cast<int>(this->textureSets.size()) - 1;
 		}
@@ -502,15 +453,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 			std::optional<int> entryIndex = this->getTextureEntryIndex(filename);
 			if (!entryIndex.has_value())
 			{
-				const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-					textureManager.tryGetTextureBuilderIDs(filename.c_str());
-				if (!textureBuilderIDs.has_value())
-				{
-					DebugCrash("Couldn't get texture builder IDs for \"" + filename + "\".");
-				}
-
-				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(phaseIndex);
-				TextureEntry textureEntry(std::move(filename), textureBuilderID);
+				TextureEntry textureEntry(TextureAssetReference(std::move(filename), phaseIndex));
 				this->textures.push_back(std::move(textureEntry));
 				entryIndex = static_cast<int>(this->textures.size()) - 1;
 			}
@@ -681,14 +624,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 				std::optional<int> entryIndex = this->getTextureEntryIndex(starFilename);
 				if (!entryIndex.has_value())
 				{
-					const std::optional<TextureBuilderID> textureBuilderID =
-						textureManager.tryGetTextureBuilderID(starFilename.c_str());
-					if (!textureBuilderID.has_value())
-					{
-						DebugCrash("Couldn't get texture builder ID for \"" + starFilename + "\".");
-					}
-
-					TextureEntry textureEntry(std::move(starFilename), *textureBuilderID);
+					TextureEntry textureEntry(TextureAssetReference(std::move(starFilename)));
 					this->textures.push_back(std::move(textureEntry));
 					entryIndex = static_cast<int>(this->textures.size()) - 1;
 				}
@@ -702,14 +638,7 @@ void DistantSky::init(const LocationDefinition &locationDef, const ProvinceDefin
 		std::optional<int> sunTextureIndex = this->getTextureEntryIndex(sunFilename);
 		if (!sunTextureIndex.has_value())
 		{
-			const std::optional<TextureBuilderID> textureBuilderID =
-				textureManager.tryGetTextureBuilderID(sunFilename.c_str());
-			if (!textureBuilderID.has_value())
-			{
-				DebugCrash("Couldn't get texture builder ID for \"" + sunFilename + "\".");
-			}
-
-			TextureEntry textureEntry(std::move(sunFilename), *textureBuilderID);
+			TextureEntry textureEntry(TextureAssetReference(std::move(sunFilename)));
 			this->textures.push_back(std::move(textureEntry));
 			sunTextureIndex = static_cast<int>(this->textures.size()) - 1;
 		}
@@ -784,27 +713,18 @@ int DistantSky::getSunEntryIndex() const
 	return *this->sunEntryIndex;
 }
 
-TextureBuilderID DistantSky::getTextureBuilderID(int index) const
+const TextureAssetReference &DistantSky::getTextureAssetRef(int index) const
 {
 	DebugAssertIndex(this->textures, index);
 	const TextureEntry &entry = this->textures[index];
-	return entry.textureBuilderID;
+	return entry.textureAssetRef;
 }
 
-int DistantSky::getTextureSetCount(int index) const
-{
-	DebugAssertIndex(this->textureSets, index);
-	const TextureSetEntry entry = this->textureSets[index];
-	return entry.textureBuilderIDs.getCount();
-}
-
-TextureBuilderID DistantSky::getTextureSetTextureBuilderID(int index, int elementIndex) const
+const std::string &DistantSky::getTextureSetFilename(int index) const
 {
 	DebugAssertIndex(this->textureSets, index);
 	const TextureSetEntry &entry = this->textureSets[index];
-	const TextureBuilderIdGroup &textureBuilderIDs = entry.textureBuilderIDs;
-	const TextureBuilderID textureBuilderID = textureBuilderIDs.getID(elementIndex);
-	return textureBuilderID;
+	return entry.filename;
 }
 
 void DistantSky::tick(double dt)
@@ -812,6 +732,6 @@ void DistantSky::tick(double dt)
 	// Only animated distant land needs updating.
 	for (auto &anim : this->animLandObjects)
 	{
-		anim.update(dt, *this);
+		anim.update(dt);
 	}
 }

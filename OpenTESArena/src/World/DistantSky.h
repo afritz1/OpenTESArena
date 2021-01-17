@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "../Assets/TextureAssetReference.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 #include "../Media/TextureManager.h"
@@ -42,25 +43,20 @@ public:
 	class AnimatedLandObject
 	{
 	private:
-		static constexpr double DEFAULT_FRAME_TIME = 1.0 / 18.0;
+		static constexpr double DEFAULT_ANIM_SECONDS = 1.0 / 3.0;
 
 		int setEntryIndex; // Texture set entry in distant sky.
 		Radians angle;
-		double targetFrameTime, currentFrameTime;
-		int index;
+		double targetSeconds, currentSeconds;
 	public:
 		// All textures are stored in one texture set in the distant sky.
-		AnimatedLandObject(int setEntryIndex, Radians angle, double frameTime);
 		AnimatedLandObject(int setEntryIndex, Radians angle);
 
 		int getTextureSetEntryIndex() const;
 		Radians getAngle() const;
-		double getFrameTime() const;
-		int getIndex() const;
+		double getAnimPercent() const;
 
-		void setFrameTime(double frameTime);
-		void setIndex(int index);
-		void update(double dt, const DistantSky &distantSky);
+		void update(double dt);
 	};
 
 	// An object in the air, like clouds.
@@ -136,23 +132,21 @@ private:
 	// Number of unique directions in 360 degrees.
 	static const int UNIQUE_ANGLES;
 
-	// Each texture entry holds its filename and texture handle.
+	// Each texture entry holds its filename and optional index into a set of textures.
 	struct TextureEntry
 	{
-		std::string filename;
-		TextureBuilderID textureBuilderID;
+		TextureAssetReference textureAssetRef;
 
-		TextureEntry(std::string &&filename, TextureBuilderID textureBuilderID);
+		TextureEntry(TextureAssetReference &&textureAssetRef);
 	};
 
-	// Each texture set entry holds its filename and texture handles. Intended only for animated
-	// distant objects.
+	// Each texture set entry holds its filename which points to a file with one or more textures.
+	// Intended only for animated distant objects.
 	struct TextureSetEntry
 	{
 		std::string filename;
-		TextureBuilderIdGroup textureBuilderIDs;
 
-		TextureSetEntry(std::string &&filename, const TextureBuilderIdGroup &textureBuilderIDs);
+		TextureSetEntry(std::string &&filename);
 	};
 
 	// Each object's texture index points into here.
@@ -197,13 +191,10 @@ public:
 	const StarObject &getStarObject(int index) const;
 	int getSunEntryIndex() const;
 
-	TextureBuilderID getTextureBuilderID(int index) const;
+	const TextureAssetReference &getTextureAssetRef(int index) const;
 
-	// Gets the number of textures in the texture set at the given index.
-	int getTextureSetCount(int index) const;
-
-	// Gets the texture ID at the given element index in the given texture set.
-	TextureBuilderID getTextureSetTextureBuilderID(int index, int elementIndex) const;
+	// Gets the filename for the given texture set.
+	const std::string &getTextureSetFilename(int index) const;
 
 	void tick(double dt);
 };

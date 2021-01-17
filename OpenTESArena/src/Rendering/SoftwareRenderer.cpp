@@ -613,6 +613,9 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 {
 	DebugAssert(skyTextures.size() == 0);
 
+	this->distantSky = &distantSky;
+	this->textureManager = &textureManager;
+
 	// Creates a render texture from the given 8-bit image ID, adds it to the sky textures list,
 	// and returns its index in the sky textures list.
 	auto addSkyTexture = [&skyTextures, &palette, &textureManager](TextureBuilderID textureBuilderID)
@@ -659,7 +662,16 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
 		const int entryIndex = landObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
+		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const int textureIndex = addSkyTexture(*textureBuilderID);
 		this->lands.push_back(DistantObject<DistantSky::LandObject>(landObject, textureIndex));
 	}
 
@@ -667,26 +679,47 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
 		const int setEntryIndex = animLandObject.getTextureSetEntryIndex();
-		const int setEntryCount = distantSky.getTextureSetCount(setEntryIndex);
-		DebugAssert(setEntryCount > 0);
+		const std::string &setEntryFilename = distantSky.getTextureSetFilename(setEntryIndex);
+		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+			textureManager.tryGetTextureBuilderIDs(setEntryFilename.c_str());
+		if (!textureBuilderIDs.has_value())
+		{
+			DebugLogError("Couldn't get texture builder IDs for \"" + setEntryFilename + "\".");
+			continue;
+		}
+
+		const int setEntryCount = textureBuilderIDs->getCount();
+		if (setEntryCount == 0)
+		{
+			DebugLogError("Need at least one animated land texture from \"" + setEntryFilename + "\".");
+			continue;
+		}
 
 		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(distantSky.getTextureSetTextureBuilderID(setEntryIndex, 0));
+		const int textureIndex = addSkyTexture(textureBuilderIDs->getID(0));
 
 		for (int j = 1; j < setEntryCount; j++)
 		{
-			addSkyTexture(distantSky.getTextureSetTextureBuilderID(setEntryIndex, j));
+			addSkyTexture(textureBuilderIDs->getID(j));
 		}
 
-		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(
-			animLandObject, textureIndex));
+		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(animLandObject, textureIndex));
 	}
 
 	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
 		const int entryIndex = airObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
+		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const int textureIndex = addSkyTexture(*textureBuilderID);
 		this->airs.push_back(DistantObject<DistantSky::AirObject>(airObject, textureIndex));
 	}
 
@@ -694,14 +727,23 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
 		const int entryIndex = moonObject.getTextureEntryIndex();
-		const int textureIndex = addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
+		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const int textureIndex = addSkyTexture(*textureBuilderID);
 		this->moons.push_back(DistantObject<DistantSky::MoonObject>(moonObject, textureIndex));
 	}
 
 	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
 	{
 		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
-		const int textureIndex = [&distantSky, &addSkyTexture, &addSmallStarTexture, &starObject]()
+		const int textureIndex = [&distantSky, &textureManager, &addSkyTexture, &addSmallStarTexture, &starObject]()
 		{
 			if (starObject.getType() == DistantSky::StarObject::Type::Small)
 			{
@@ -712,12 +754,19 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 			{
 				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
 				const int entryIndex = largeStar.entryIndex;
-				return addSkyTexture(distantSky.getTextureBuilderID(entryIndex));
+				const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
+				const std::optional<TextureBuilderID> textureBuilderID =
+					textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
+				if (!textureBuilderID.has_value())
+				{
+					DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+				}
+
+				return addSkyTexture(*textureBuilderID);
 			}
 			else
 			{
-				DebugUnhandledReturnMsg(int,
-					std::to_string(static_cast<int>(starObject.getType())));
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(starObject.getType())));
 			}
 		}();
 
@@ -728,7 +777,15 @@ void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
 	{
 		// Add the sun to the sky textures and assign its texture index.
 		const int sunEntryIndex = distantSky.getSunEntryIndex();
-		this->sunTextureIndex = addSkyTexture(distantSky.getTextureBuilderID(sunEntryIndex));
+		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(sunEntryIndex);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
+		if (!textureBuilderID.has_value())
+		{
+			DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+		}
+
+		this->sunTextureIndex = addSkyTexture(*textureBuilderID);
 	}
 }
 
@@ -1515,8 +1572,26 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 
 	for (const auto &animLand : this->distantObjects.animLands)
 	{
-		const SkyTexture &texture = this->skyTextures.at(
-			animLand.textureIndex + animLand.obj.getIndex());
+		const DistantSky::AnimatedLandObject &animLandObj = animLand.obj;
+
+		// Need to see how many frames the animated land has.
+		const std::string &animLandFilename =
+			this->distantObjects.distantSky->getTextureSetFilename(animLandObj.getTextureSetEntryIndex());
+		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
+			this->distantObjects.textureManager->tryGetTextureBuilderIDs(animLandFilename.c_str());
+		if (!textureBuilderIDs.has_value())
+		{
+			DebugLogError("Couldn't get texture builder IDs for \"" + animLandFilename + "\".");
+			continue;
+		}
+
+		const int animTextureCount = textureBuilderIDs->getCount();
+		const double animPercent = animLandObj.getAnimPercent();
+		const int curAnimTextureIndex = std::clamp(
+			static_cast<int>(static_cast<double>(animTextureCount) * animPercent), 0, animTextureCount - 1);
+
+		const int skyTextureIndex = DebugMakeIndex(this->skyTextures, animLand.textureIndex + curAnimTextureIndex);
+		const SkyTexture &texture = this->skyTextures[skyTextureIndex];
 		const Radians xAngleRadians = animLand.obj.getAngle();
 		const Radians yAngleRadians = 0.0;
 		const bool emissive = true;
