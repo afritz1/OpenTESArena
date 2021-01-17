@@ -21,7 +21,6 @@
 #include "../Media/DoorSoundLibrary.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
-#include "../Media/TextureInstanceManager.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
@@ -61,7 +60,6 @@ private:
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
 	Renderer renderer;
 	TextureManager textureManager;
-	TextureInstanceManager textureInstManager;
 	BinaryAssetLibrary binaryAssetLibrary;
 	TextAssetLibrary textAssetLibrary;
 	Random random; // Convenience random for ease of use.
@@ -149,9 +147,6 @@ public:
 
 	// Gets the texture manager object for loading images from file.
 	TextureManager &getTextureManager();
-
-	// Gets the texture instance manager for generating textures in-engine.
-	TextureInstanceManager &getTextureInstanceManager();
 
 	// Gets various asset libraries for loading Arena-related files.
 	const BinaryAssetLibrary &getBinaryAssetLibrary() const;

@@ -205,11 +205,10 @@ void ExteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
-	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	LevelData::setActive(nightLightsAreActive, worldData, provinceDef, locationDef, entityDefLibrary,
-		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, textureInstManager,
-		renderer);
+		charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager, renderer);
 
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());

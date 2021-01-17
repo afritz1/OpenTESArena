@@ -44,7 +44,6 @@ class LocationDefinition;
 class ProvinceDefinition;
 class Random;
 class Renderer;
-class TextureInstanceManager;
 class TextureManager;
 
 enum class MapType;
@@ -272,8 +271,7 @@ public:
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
-		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-		Renderer &renderer);
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
 	virtual void tick(Game &game, double dt);

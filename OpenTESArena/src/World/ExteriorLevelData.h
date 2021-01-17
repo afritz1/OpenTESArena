@@ -56,8 +56,7 @@ public:
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
-		TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-		Renderer &renderer) override;
+		TextureManager &textureManager, Renderer &renderer) override;
 
 	// Updates data exclusive to exterior level data (such as animated distant land).
 	virtual void tick(Game &game, double dt) override;

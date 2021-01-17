@@ -2,7 +2,6 @@
 
 #include "EntityAnimationInstance.h"
 #include "../Media/TextureManager.h"
-#include "../Media/TextureInstanceManager.h"
 
 #include "components/debug/Debug.h"
 

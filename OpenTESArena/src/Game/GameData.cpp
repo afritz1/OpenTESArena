@@ -126,8 +126,7 @@ void GameData::clearWorldDatas()
 bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	InteriorType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-	Renderer &renderer)
+	Random &random, TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
 	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
@@ -153,7 +152,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	LevelData &activeLevel = worldData.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), worldData, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
@@ -173,7 +172,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-	TextureInstanceManager &textureInstManager, Renderer &renderer)
+	Renderer &renderer)
 {
 	DebugAssert(!this->worldDatas.empty());
 	DebugAssert(this->worldDatas.top()->getMapType() != MapType::Interior);
@@ -190,7 +189,7 @@ void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, cons
 	LevelData &activeLevel = interior.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), interior, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = interior.getStartPoints().front();
@@ -206,8 +205,7 @@ void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, cons
 
 void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-	Renderer &renderer)
+	Random &random, TextureManager &textureManager, Renderer &renderer)
 {
 	DebugAssert(this->worldDatas.size() >= 2);
 	DebugAssert(this->worldDatas.top()->getMapType() == MapType::Interior);
@@ -227,7 +225,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	LevelData &activeLevel = exterior.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), exterior, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 startPoint = VoxelUtils::getVoxelCenter(returnVoxel);
@@ -259,7 +257,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	bool isArtifactDungeon, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary, Random &random,
-	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Must be for a named dungeon, not main quest dungeon.
 	DebugAssertMsg(locationDef.getType() == LocationDefinition::Type::Dungeon,
@@ -290,7 +288,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const Pro
 	LevelData &activeLevel = worldData.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), worldData, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
@@ -311,7 +309,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY, const CityDataFile &cityData,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-	TextureInstanceManager &textureInstManager, Renderer &renderer)
+	Renderer &renderer)
 {
 	// Set location.
 	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
@@ -344,7 +342,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	LevelData &activeLevel = worldData.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), worldData, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
@@ -365,7 +363,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, Random &random, TextureManager &textureManager,
-	TextureInstanceManager &textureInstManager, Renderer &renderer)
+	Renderer &renderer)
 {
 	// Set location.
 	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
@@ -401,7 +399,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	LevelData &activeLevel = worldData.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), worldData, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
@@ -437,8 +435,7 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
 	int starCount, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-	Renderer &renderer)
+	Random &random, TextureManager &textureManager, Renderer &renderer)
 {
 	// Set location.
 	if (!this->worldMapDef.tryGetProvinceIndex(provinceDef, &this->provinceIndex))
@@ -464,7 +461,7 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	LevelData &activeLevel = worldData.getActiveLevel();
 	activeLevel.setActive(this->nightLightsAreActive(), worldData, this->getProvinceDefinition(),
 		this->getLocationDefinition(), entityDefLibrary, charClassLibrary, binaryAssetLibrary,
-		random, this->citizenManager, textureManager, textureInstManager, renderer);
+		random, this->citizenManager, textureManager, renderer);
 
 	// Get player starting point in the wilderness.
 	const auto &voxelGrid = activeLevel.getVoxelGrid();

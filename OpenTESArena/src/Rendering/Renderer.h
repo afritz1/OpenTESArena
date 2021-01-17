@@ -25,7 +25,6 @@ class EntityDefinitionLibrary;
 class EntityManager;
 class Rect;
 class Surface;
-class TextureInstanceManager;
 class TextureManager;
 class VoxelGrid;
 

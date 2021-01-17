@@ -279,11 +279,6 @@ TextureManager &Game::getTextureManager()
 	return this->textureManager;
 }
 
-TextureInstanceManager &Game::getTextureInstanceManager()
-{
-	return this->textureInstManager;
-}
-
 const BinaryAssetLibrary &Game::getBinaryAssetLibrary() const
 {
 	return this->binaryAssetLibrary;

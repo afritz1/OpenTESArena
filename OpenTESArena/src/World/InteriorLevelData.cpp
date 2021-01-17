@@ -248,11 +248,11 @@ void InteriorLevelData::setActive(bool nightLightsAreActive, const WorldData &wo
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
-	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	LevelData::setActive(nightLightsAreActive, worldData, provinceDef, locationDef,
 		entityDefLibrary, charClassLibrary, binaryAssetLibrary, random, citizenManager, textureManager,
-		textureInstManager, renderer);
+		renderer);
 
 	// Set interior sky color.
 	renderer.setSkyPalette(&this->skyColor, 1);

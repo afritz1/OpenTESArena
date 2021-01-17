@@ -21,7 +21,6 @@ class LevelData;
 class LocationDefinition;
 class Random;
 class Renderer;
-class TextureInstanceManager;
 class TextureManager;
 
 class CitizenManager
@@ -43,8 +42,7 @@ public:
 
 	void spawnCitizens(LevelData &levelData, int raceID, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, TextureInstanceManager &textureInstManager,
-		Renderer &renderer);
+		Random &random, TextureManager &textureManager, Renderer &renderer);
 	void clearCitizens(Game &game);
 	void tick(Game &game);
 };

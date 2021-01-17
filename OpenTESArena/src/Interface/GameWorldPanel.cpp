@@ -2222,8 +2222,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 		gameData.leaveInterior(game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-			binaryAssetLibrary, game.getRandom(), textureManager, game.getTextureInstanceManager(),
-			renderer);
+			binaryAssetLibrary, game.getRandom(), textureManager, renderer);
 
 		// Change to exterior music.
 		const auto &clock = gameData.getClock();
@@ -2371,7 +2370,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					gameData.enterInterior(*interiorType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
-						game.getTextureInstanceManager(), game.getRenderer());
+						game.getRenderer());
 
 					// Change to interior music.
 					const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2457,8 +2456,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
 						ignoreGatePos, gameData.getWeatherType(), starCount,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getRandom(), textureManager,
-						game.getTextureInstanceManager(), renderer))
+						binaryAssetLibrary, game.getRandom(), textureManager, renderer))
 					{
 						DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 					}
@@ -2469,7 +2467,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
 						starCount, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(), textureManager,
-						game.getTextureInstanceManager(), renderer))
+						renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -2642,7 +2640,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 					gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
 					game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 					game.getBinaryAssetLibrary(), game.getRandom(), gameData.getCitizenManager(),
-					game.getTextureManager(), game.getTextureInstanceManager(), game.getRenderer());
+					game.getTextureManager(), game.getRenderer());
 
 				// Move the player to where they should be in the new level.
 				player.teleport(Double3(

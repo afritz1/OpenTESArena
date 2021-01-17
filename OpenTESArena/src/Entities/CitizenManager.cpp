@@ -36,7 +36,7 @@ bool CitizenManager::shouldSpawn(Game &game) const
 void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-	TextureInstanceManager &textureInstManager, Renderer &renderer)
+	Renderer &renderer)
 {
 	const ClimateType climateType = [&locationDef]()
 	{
@@ -241,10 +241,9 @@ void CitizenManager::tick(Game &game)
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
-			auto &textureInstManager = game.getTextureInstanceManager();
 			auto &renderer = game.getRenderer();
 			this->spawnCitizens(levelData, provinceDef.getRaceID(), locationDef, entityDefLibrary,
-				binaryAssetLibrary, random, textureManager, textureInstManager, renderer);
+				binaryAssetLibrary, random, textureManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
 		}

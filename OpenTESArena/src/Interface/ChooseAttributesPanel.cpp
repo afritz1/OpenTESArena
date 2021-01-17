@@ -331,7 +331,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						if (!gameData->loadInterior(*locationDefPtr, provinceDef, InteriorType::Dungeon,
 							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
-							game.getTextureInstanceManager(), renderer))
+							renderer))
 						{
 							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
 						}
@@ -391,7 +391,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								if (!gameData.loadCity(locationDef, provinceDef, weatherType, starCount,
 									game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getRandom(),
-									game.getTextureManager(), game.getTextureInstanceManager(), renderer))
+									game.getTextureManager(), renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}

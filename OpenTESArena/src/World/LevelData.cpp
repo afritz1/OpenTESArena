@@ -1560,7 +1560,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
-	TextureManager &textureManager, TextureInstanceManager &textureInstManager, Renderer &renderer)
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTexturesAndEntityRenderIDs();
@@ -1643,7 +1643,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	// Initializes entities from the flat defs list and write their textures to the renderer.
 	auto loadEntities = [this, nightLightsAreActive, &worldData, &provinceDef, &locationDef,
 		&entityDefLibrary, &charClassLibrary, &binaryAssetLibrary, &random, &citizenManager,
-		&textureManager, &textureInstManager, &renderer, &palette]()
+		&textureManager, &renderer, &palette]()
 	{
 		// See whether the current ruler (if any) is male. This affects the displayed ruler in palaces.
 		const std::optional<bool> rulerIsMale = [&locationDef]() -> std::optional<bool>
@@ -1879,8 +1879,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		if (isCity || isWild)
 		{
 			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,
-				entityDefLibrary, binaryAssetLibrary, random, textureManager, textureInstManager,
-				renderer);
+				entityDefLibrary, binaryAssetLibrary, random, textureManager, renderer);
 		}
 	};
 
