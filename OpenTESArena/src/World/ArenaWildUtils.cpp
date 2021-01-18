@@ -150,7 +150,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 }
 
 ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
-	const std::vector<LevelData::Transition> &transitions, const ExeData &exeData)
+	const LevelData::Transitions &transitions, const ExeData &exeData)
 {
 	ArenaLevelUtils::MenuNamesList menuNames;
 
@@ -223,18 +223,13 @@ ArenaLevelUtils::MenuNamesList ArenaWildUtils::generateWildChunkBuildingNames(co
 					return false;
 				}
 
-				const auto iter = std::find_if(transitions.begin(), transitions.end(),
-					[&dstPoint](const LevelData::Transition &transition)
-				{
-					return transition.getVoxel() == dstPoint;
-				});
-
+				const auto iter = transitions.find(dstPoint);
 				if (iter == transitions.end())
 				{
 					return false;
 				}
 
-				const LevelData::Transition &transition = *iter;
+				const LevelData::Transition &transition = iter->second;
 				if (transition.getType() != LevelData::Transition::Type::Menu)
 				{
 					return false;

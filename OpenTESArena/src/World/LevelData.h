@@ -193,6 +193,9 @@ public:
 		Type getType() const;
 		const Transition::Menu &getMenu() const;
 	};
+
+	// @temp change to hash table for wild chunk name generation performance.
+	using Transitions = std::unordered_map<NewInt2, Transition>;
 private:
 	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
 	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
@@ -206,7 +209,7 @@ private:
 	std::vector<DoorState> openDoors;
 	std::vector<FadeState> fadingVoxels;
 	ChasmStates chasmStates;
-	std::vector<Transition> transitions;
+	Transitions transitions;
 	std::string name;
 
 	void addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition);
@@ -251,8 +254,8 @@ public:
 	const std::vector<FadeState> &getFadingVoxels() const;
 	ChasmStates &getChasmStates();
 	const ChasmStates &getChasmStates() const;
-	std::vector<Transition> &getTransitions();
-	const std::vector<Transition> &getTransitions() const;
+	Transitions &getTransitions();
+	const Transitions &getTransitions() const;
 	const INFFile &getInfFile() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;

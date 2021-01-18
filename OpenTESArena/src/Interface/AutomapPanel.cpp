@@ -83,8 +83,7 @@ namespace
 }
 
 AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
-	const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions,
-	const std::string &locationName)
+	const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName)
 	: Panel(game)
 {
 	this->locationTextBox = [&game, &locationName]()
@@ -162,7 +161,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 }
 
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-	const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions)
+	const NewInt2 &voxel, const LevelData::Transitions &transitions)
 {
 	const VoxelType floorType = floorDef.type;
 	const VoxelType wallType = wallDef.type;
@@ -203,12 +202,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 		}
 		else if (wallType == VoxelType::Wall)
 		{
-			const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-				[&voxel](const LevelData::Transition &transition)
-			{
-				return transition.getVoxel() == voxel;
-			});
-
+			const auto transitionIter = transitions.find(voxel);
 			if (transitionIter == transitions.end())
 			{
 				// Not a transition.
@@ -216,7 +210,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 			}
 			else
 			{
-				const LevelData::Transition::Type transitionType = transitionIter->getType();
+				const LevelData::Transition::Type transitionType = transitionIter->second.getType();
 				if (transitionType == LevelData::Transition::Type::LevelUp)
 				{
 					return AutomapLevelUp;
@@ -277,7 +271,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 }
 
 const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-	const NewInt2 &voxel, const std::vector<LevelData::Transition> &transitions)
+	const NewInt2 &voxel, const LevelData::Transitions &transitions)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
 	// It's harder to make sense of in general compared to city and interior automaps,
@@ -331,19 +325,15 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		}
 		else if (wallType == VoxelType::Wall)
 		{
-			const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-				[&voxel](const LevelData::Transition &transition)
-			{
-				return transition.getVoxel() == voxel;
-			});
-
+			const auto transitionIter = transitions.find(voxel);
 			if (transitionIter == transitions.end())
 			{
 				return AutomapWildWall;
 			}
 			else
 			{
-				const LevelData::Transition::Type transitionType = transitionIter->getType();
+				const LevelData::Transition &transition = transitionIter->second;
+				const LevelData::Transition::Type transitionType = transition.getType();
 				if (transitionType == LevelData::Transition::Type::LevelUp)
 				{
 					return AutomapLevelUp;
@@ -355,7 +345,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 				else if (transitionType == LevelData::Transition::Type::Menu)
 				{
 					// Certain wilderness *MENU blocks are rendered like walls.
-					const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+					const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
 					const bool isHiddenMenu = !ArenaWildUtils::menuIsDisplayedInWildAutomap(transitionMenu.id);
 
 					if (isHiddenMenu)
@@ -425,7 +415,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 }
 
 Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-	bool isWild, const VoxelGrid &voxelGrid, const std::vector<LevelData::Transition> &transitions)
+	bool isWild, const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions)
 {
 	// Create scratch surface triple the size of the voxel area to display so that all directions
 	// of the player's arrow are representable in the same texture. This may change in the future

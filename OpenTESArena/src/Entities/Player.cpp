@@ -301,20 +301,14 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			{
 				if (voxelDef.type == VoxelType::Wall)
 				{
-					const std::vector<LevelData::Transition> &transitions = activeLevel.getTransitions();
-					const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-						[&voxel](const LevelData::Transition &transition)
-					{
-						const NewInt2 &transitionVoxel = transition.getVoxel();
-						return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
-					});
-
+					const LevelData::Transitions &transitions = activeLevel.getTransitions();
+					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
 					if (transitionIter == transitions.end())
 					{
 						return false;
 					}
 
-					return transitionIter->getType() != LevelData::Transition::Type::Menu;
+					return transitionIter->second.getType() != LevelData::Transition::Type::Menu;
 				}
 				else
 				{

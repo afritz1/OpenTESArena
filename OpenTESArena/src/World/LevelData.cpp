@@ -373,12 +373,12 @@ const LevelData::ChasmStates &LevelData::getChasmStates() const
 	return this->chasmStates;
 }
 
-std::vector<LevelData::Transition> &LevelData::getTransitions()
+LevelData::Transitions &LevelData::getTransitions()
 {
 	return this->transitions;
 }
 
-const std::vector<LevelData::Transition> &LevelData::getTransitions() const
+const LevelData::Transitions &LevelData::getTransitions() const
 {
 	return this->transitions;
 }
@@ -779,7 +779,7 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 				}
 			}();
 
-			this->transitions.emplace_back(makeWallTransition(voxel, optIsLevelUp, menuIndex));
+			this->transitions.emplace(voxel, makeWallTransition(voxel, optIsLevelUp, menuIndex));
 		}
 
 		const auto wallIter = findWallMapping(map1Voxel);

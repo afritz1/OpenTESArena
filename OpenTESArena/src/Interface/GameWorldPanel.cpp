@@ -1738,20 +1738,14 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						{
 							if (voxelDef.type == VoxelType::Wall)
 							{
-								const std::vector<LevelData::Transition> &transitions = level.getTransitions();
-								const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-									[&voxel](const LevelData::Transition &transition)
-								{
-									const NewInt2 &transitionVoxel = transition.getVoxel();
-									return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
-								});
-
+								const LevelData::Transitions &transitions = level.getTransitions();
+								const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
 								const bool isMenu = (transitionIter != transitions.end()) &&
-									(transitionIter->getType() == LevelData::Transition::Type::Menu);
+									(transitionIter->second.getType() == LevelData::Transition::Type::Menu);
 
 								if (isMenu)
 								{
-									const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+									const LevelData::Transition::Menu &transitionMenu = transitionIter->second.getMenu();
 									this->handleWorldTransition(hit, transitionMenu.id);
 								}
 							}
@@ -1842,22 +1836,16 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Handle secondary click (i.e., right click).
 				if (voxelDef.type == VoxelType::Wall)
 				{
-					const std::vector<LevelData::Transition> &transitions = level.getTransitions();
-					const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-						[&voxel](const LevelData::Transition &transition)
-					{
-						const NewInt2 &transitionVoxel = transition.getVoxel();
-						return (transitionVoxel.x == voxel.x) && (transitionVoxel.y == voxel.z);
-					});
-
+					const LevelData::Transitions &transitions = level.getTransitions();
+					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
 					const bool isMenu = (transitionIter != transitions.end()) &&
-						(transitionIter->getType() == LevelData::Transition::Type::Menu);
+						(transitionIter->second.getType() == LevelData::Transition::Type::Menu);
 					const bool isInterior = worldData.getMapType() == MapType::Interior;
 
 					// Print interior display name if *MENU block is clicked in an exterior.
 					if (isMenu && !isInterior)
 					{
-						const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+						const LevelData::Transition::Menu &transitionMenu = transitionIter->second.getMenu();
 						const MapType mapType = worldData.getMapType();
 						const auto menuType = ArenaVoxelUtils::getMenuType(transitionMenu.id, mapType);
 
@@ -2565,13 +2553,8 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	// If the associated voxel data is a wall, then it might be a transition voxel.
 	if (voxelDef.type == VoxelType::Wall)
 	{
-		const std::vector<LevelData::Transition> &transitions = level.getTransitions();
-		const auto transitionIter = std::find_if(transitions.begin(), transitions.end(),
-			[&transitionVoxel](const LevelData::Transition &transition)
-		{
-			return transition.getVoxel() == transitionVoxel;
-		});
-
+		const LevelData::Transitions &transitions = level.getTransitions();
+		const auto transitionIter = transitions.find(transitionVoxel);
 		if (transitionIter != transitions.end())
 		{
 			// The direction from a level up/down voxel to where the player should end up after
@@ -2667,12 +2650,13 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			};
 
 			// Check the voxel type to determine what it is exactly.
-			if (transitionIter->getType() == LevelData::Transition::Type::Menu)
+			const LevelData::Transition &transition = transitionIter->second;
+			if (transition.getType() == LevelData::Transition::Type::Menu)
 			{
-				const LevelData::Transition::Menu &transitionMenu = transitionIter->getMenu();
+				const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
 				DebugLog("Entered *MENU " + std::to_string(transitionMenu.id) + ".");
 			}
-			else if (transitionIter->getType() == LevelData::Transition::Type::LevelUp)
+			else if (transition.getType() == LevelData::Transition::Type::LevelUp)
 			{
 				// If the custom function has a target, call it and reset it.
 				auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
@@ -2692,7 +2676,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 					switchToWorldMap();
 				}
 			}
-			else if (transitionIter->getType() == LevelData::Transition::Type::LevelDown)
+			else if (transition.getType() == LevelData::Transition::Type::LevelDown)
 			{
 				if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
 				{

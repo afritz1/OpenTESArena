@@ -399,7 +399,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 
 ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
-	const std::vector<LevelData::Transition> &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
+	const LevelData::Transitions &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary)
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
@@ -529,19 +529,13 @@ ArenaLevelUtils::MenuNamesList ArenaCityUtils::generateBuildingNames(const Locat
 					return false;
 				}
 
-				const auto iter = std::find_if(transitions.begin(), transitions.end(),
-					[x, z](const LevelData::Transition &transition)
-				{
-					const NewInt2 &transitionVoxel = transition.getVoxel();
-					return (transitionVoxel.x == x) && (transitionVoxel.y == z);
-				});
-
+				const auto iter = transitions.find(NewInt2(x, z));
 				if (iter == transitions.end())
 				{
 					return false;
 				}
 
-				const LevelData::Transition &transition = *iter;
+				const LevelData::Transition &transition = iter->second;
 				if (transition.getType() != LevelData::Transition::Type::Menu)
 				{
 					return false;
