@@ -10,7 +10,6 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
 
-#include "components/dos/DOSUtils.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"
 
@@ -29,7 +28,7 @@ enum class WeatherType;
 namespace ArenaCityUtils
 {
 	// Generates the .INF name for a city given a climate and current weather.
-	DOSUtils::FilenameBuffer generateInfName(ClimateType climateType, WeatherType weatherType);
+	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
 
 	// Writes the barebones city layout (just ground and walls).
 	void writeSkeleton(const MIFFile::Level &level, BufferView2D<ArenaTypes::VoxelID> &dstFlor,

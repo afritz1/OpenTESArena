@@ -93,7 +93,7 @@ namespace ArenaAnimUtils
 			const std::vector<INFFile::FlatTextureData> &flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, flatData.textureIndex);
 			const INFFile::FlatTextureData &flatTextureData = flatTextures[flatData.textureIndex];
-			return flatTextureData.filename.data();
+			return flatTextureData.filename.c_str();
 		}();
 
 		// Avoid files with no extension. They are lore-based names that are not used in-game.
@@ -535,7 +535,7 @@ namespace ArenaAnimUtils
 			const auto &flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, corpseFlatTextureIndex);
 			const INFFile::FlatTextureData &flatTextureData = flatTextures[corpseFlatTextureIndex];
-			return String::toUppercase(flatTextureData.filename.data());
+			return String::toUppercase(flatTextureData.filename);
 		}();
 
 		const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(animName.c_str());

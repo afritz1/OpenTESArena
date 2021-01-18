@@ -8,7 +8,6 @@
 #include "VoxelUtils.h"
 #include "../Assets/ExeData.h"
 
-#include "components/dos/DOSUtils.h"
 #include "components/utilities/Buffer2D.h"
 
 class BinaryAssetLibrary;
@@ -27,7 +26,7 @@ namespace ArenaWildUtils
 	constexpr int WILD_HEIGHT = WILD_WIDTH;
 
 	// Generates the .INF name for the wilderness given a climate and current weather.
-	DOSUtils::FilenameBuffer generateInfName(ClimateType climateType, WeatherType weatherType);
+	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
 
 	// Makes a 32-bit seed for a wilderness chunk. Intended for building names.
 	uint32_t makeWildChunkSeed(int wildX, int wildY);

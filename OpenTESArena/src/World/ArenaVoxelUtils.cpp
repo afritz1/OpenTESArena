@@ -145,7 +145,7 @@ std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 	}
 
 	const INFFile::VoxelTextureData &textureData = voxelTextures[id];
-	const char *filename = textureData.filename.data();
+	const char *filename = textureData.filename.c_str();
 	return String::toUppercase(filename);
 }
 

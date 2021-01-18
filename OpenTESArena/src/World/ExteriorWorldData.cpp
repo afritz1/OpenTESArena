@@ -31,14 +31,12 @@ ExteriorWorldData ExteriorWorldData::loadCity(const LocationDefinition &location
 {
 	const MIFFile::Level &level = mif.getLevel(0);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const DOSUtils::FilenameBuffer infName =
-		ArenaCityUtils::generateInfName(cityDef.climateType, weatherType);
+	const std::string infName = ArenaCityUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Generate level data for the city.
 	ExteriorLevelData levelData = ExteriorLevelData::loadCity(
-		locationDef, provinceDef, level, weatherType, currentDay, starCount,
-		std::string(infName.data()), mif.getDepth(), mif.getWidth(), binaryAssetLibrary,
-		textAssetLibrary, textureManager);
+		locationDef, provinceDef, level, weatherType, currentDay, starCount, infName,
+		mif.getDepth(), mif.getWidth(), binaryAssetLibrary, textAssetLibrary, textureManager);
 
 	// Generate world data from the level data.
 	const bool isCity = true; // False in wilderness.
@@ -60,12 +58,11 @@ ExteriorWorldData ExteriorWorldData::loadWilderness(const LocationDefinition &lo
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const DOSUtils::FilenameBuffer infName =
-		ArenaWildUtils::generateInfName(cityDef.climateType, weatherType);
+	const std::string infName = ArenaWildUtils::generateInfName(cityDef.climateType, weatherType);
 
 	// Load wilderness data (no starting points to load).
 	ExteriorLevelData levelData = ExteriorLevelData::loadWilderness(
-		locationDef, provinceDef, weatherType, currentDay, starCount, std::string(infName.data()),
+		locationDef, provinceDef, weatherType, currentDay, starCount, infName,
 		binaryAssetLibrary, textureManager);
 
 	const bool isCity = false; // False if wilderness.

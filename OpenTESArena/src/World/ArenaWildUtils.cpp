@@ -16,8 +16,7 @@
 
 #include "components/debug/Debug.h"
 
-DOSUtils::FilenameBuffer ArenaWildUtils::generateInfName(ClimateType climateType,
-	WeatherType weatherType)
+std::string ArenaWildUtils::generateInfName(ClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -72,11 +71,7 @@ DOSUtils::FilenameBuffer ArenaWildUtils::generateInfName(ClimateType climateType
 		}
 	}();
 
-	DOSUtils::FilenameBuffer buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%C%C%C.INF",
-		climateLetter, locationLetter, weatherLetter);
-
-	return buffer;
+	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
 }
 
 uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)

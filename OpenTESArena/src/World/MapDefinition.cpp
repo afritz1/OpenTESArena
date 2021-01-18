@@ -469,12 +469,11 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const DOSUtils::FilenameBuffer infName = ArenaCityUtils::generateInfName(
-		skyGenInfo.climateType, skyGenInfo.weatherType);
+	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherType);
 	INFFile inf;
-	if (!inf.init(infName.data()))
+	if (!inf.init(infName.c_str()))
 	{
-		DebugLogError("Couldn't init .INF file \"" + std::string(infName.data()) + "\".");
+		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
 		return false;
 	}
 
@@ -501,12 +500,12 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 {
 	this->init(MapType::Wilderness);
 
-	const DOSUtils::FilenameBuffer infName = ArenaWildUtils::generateInfName(
+	const std::string infName = ArenaWildUtils::generateInfName(
 		exteriorSkyGenInfo.climateType, exteriorSkyGenInfo.weatherType);
 	INFFile inf;
-	if (!inf.init(infName.data()))
+	if (!inf.init(infName.c_str()))
 	{
-		DebugLogError("Couldn't init .INF file \"" + std::string(infName.data()) + "\".");
+		DebugLogError("Couldn't init .INF file \"" + infName + "\".");
 		return false;
 	}
 	

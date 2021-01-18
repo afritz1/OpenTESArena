@@ -101,28 +101,13 @@ namespace
 }
 
 INFFile::VoxelTextureData::VoxelTextureData(const char *filename, const std::optional<int> &setIndex)
-	: setIndex(setIndex)
-{
-	std::snprintf(this->filename.data(), this->filename.size(), "%s", filename);
-}
+	: filename(filename), setIndex(setIndex) { }
 
 INFFile::VoxelTextureData::VoxelTextureData(const char *filename)
 	: VoxelTextureData(filename, std::nullopt) { }
 
-INFFile::VoxelTextureData::VoxelTextureData()
-{
-	this->filename.fill('\0');
-}
-
 INFFile::FlatTextureData::FlatTextureData(const char *filename)
-{
-	std::snprintf(this->filename.data(), this->filename.size(), "%s", filename);
-}
-
-INFFile::FlatTextureData::FlatTextureData()
-{
-	this->filename.fill('\0');
-}
+	: filename(filename) { }
 
 INFFile::CeilingData::CeilingData()
 {
@@ -200,11 +185,7 @@ bool INFFile::init(const char *filename)
 		}
 	}
 
-	if (!String::tryCopy(filename, this->name.data(), this->name.size()))
-	{
-		DebugLogError("Couldn't copy .INF filename \"" + std::string(filename) + "\".");
-		return false;
-	}
+	this->name = filename;
 
 	// Assign the data (now decoded if it was encoded) to the text member exposed
 	// to the rest of the program.
@@ -760,17 +741,9 @@ bool INFFile::init(const char *filename)
 	{
 		// Split into the filename and ID. Make sure the filename is all caps.
 		const std::vector<std::string_view> tokens = StringView::split(line);
-		const std::string vocFilename = String::toUppercase(std::string(tokens.front()));
+		std::string vocFilename = String::toUppercase(std::string(tokens.front()));
 		const int vocID = std::stoi(std::string(tokens.at(1)));
-
-		DOSUtils::FilenameBuffer vocFilenameBuffer;
-		if (!String::tryCopy(vocFilename.c_str(), vocFilenameBuffer.data(), vocFilenameBuffer.size()))
-		{
-			DebugLogError("Couldn't write .VOC filename \"" + vocFilename + "\".");
-			return;
-		}
-
-		this->sounds.insert(std::make_pair(vocID, std::move(vocFilenameBuffer)));
+		this->sounds.emplace(vocID, std::move(vocFilename));
 	};
 
 	auto parseTextLine = [this, &textState, &flushTextState](const std::string &line)
@@ -1066,12 +1039,12 @@ const char *INFFile::getSound(int index) const
 	// some default sound.
 	if (soundIter != this->sounds.end())
 	{
-		return soundIter->second.data();
+		return soundIter->second.c_str();
 	}
 	else
 	{
 		DebugLogWarning("Invalid sound index \"" + std::to_string(index) + "\".");
-		return this->sounds.at(0).data();
+		return this->sounds.at(0).c_str();
 	}
 }
 
@@ -1107,7 +1080,7 @@ const INFFile::TextData &INFFile::getText(int index) const
 
 const char *INFFile::getName() const
 {
-	return this->name.data();
+	return this->name.c_str();
 }
 
 const std::optional<int> &INFFile::getDryChasmIndex() const
