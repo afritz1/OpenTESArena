@@ -1,6 +1,7 @@
 #ifndef SKY_LAND_DEFINITION_H
 #define SKY_LAND_DEFINITION_H
 
+#include "../Assets/TextureAssetReference.h"
 #include "../Media/TextureUtils.h"
 
 class SkyLandDefinition
@@ -12,18 +13,18 @@ public:
 		Bright // Max brightness.
 	};
 private:
-	TextureBuilderIdGroup textureBuilderIDs;
+	std::vector<TextureAssetReference> textureAssetRefs;
 	double animSeconds;
 	ShadingType shadingType;
 public:
 	// Initializer for an animated land.
-	void init(const TextureBuilderIdGroup &textureBuilderIDs, double animSeconds, ShadingType shadingType);
+	void init(std::vector<TextureAssetReference> &&textureAssetRefs, double animSeconds, ShadingType shadingType);
 
 	// Initializer for a non-animated land.
-	void init(TextureBuilderID textureBuilderID, ShadingType shadingType);
+	void init(TextureAssetReference &&textureAssetRef, ShadingType shadingType);
 
 	int getTextureCount() const;
-	TextureBuilderID getTextureBuilderID(int index) const;
+	const TextureAssetReference &getTextureAssetRef(int index) const;
 
 	bool hasAnimation() const;
 	double getAnimationSeconds() const;

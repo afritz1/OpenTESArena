@@ -10,7 +10,7 @@ MapInstance::MapInstance()
 	this->activeSkyIndex = -1;
 }
 
-void MapInstance::initInterior(const MapDefinition &mapDefinition, const TextureManager &textureManager)
+void MapInstance::initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager)
 {
 	DebugAssert(mapDefinition.getMapType() == MapType::Interior);
 	this->levels.init(mapDefinition.getLevelCount());
@@ -38,7 +38,7 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, const Texture
 	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(this->activeLevelIndex);
 }
 
-void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureManager &textureManager)
+void MapInstance::initCity(const MapDefinition &mapDefinition, TextureManager &textureManager)
 {
 	DebugAssert(mapDefinition.getMapType() == MapType::City);
 	this->levels.init(1);
@@ -62,7 +62,7 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, const TextureMana
 	this->activeSkyIndex = 0;
 }
 
-void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureManager &textureManager)
+void MapInstance::initWild(const MapDefinition &mapDefinition, TextureManager &textureManager)
 {
 	DebugAssert(mapDefinition.getMapType() == MapType::Wilderness);
 	this->levels.init(1);
@@ -86,7 +86,7 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, const TextureMana
 	this->activeSkyIndex = 0;
 }
 
-void MapInstance::init(const MapDefinition &mapDefinition, const TextureManager &textureManager)
+void MapInstance::init(const MapDefinition &mapDefinition, TextureManager &textureManager)
 {
 	const MapType mapType = mapDefinition.getMapType();
 	if (mapType == MapType::Interior)

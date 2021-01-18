@@ -1,16 +1,19 @@
 #include "SkyMoonDefinition.h"
 
-void SkyMoonDefinition::init(const TextureBuilderIdGroup &textureBuilderIDs)
+#include "components/debug/Debug.h"
+
+void SkyMoonDefinition::init(std::vector<TextureAssetReference> &&textureAssetRefs)
 {
-	this->textureBuilderIDs = textureBuilderIDs;
+	this->textureAssetRefs = std::move(textureAssetRefs);
 }
 
 int SkyMoonDefinition::getTextureCount() const
 {
-	return this->textureBuilderIDs.getCount();
+	return static_cast<int>(this->textureAssetRefs.size());
 }
 
-TextureBuilderID SkyMoonDefinition::getTextureBuilderID(int index) const
+const TextureAssetReference &SkyMoonDefinition::getTextureAssetRef(int index) const
 {
-	return this->textureBuilderIDs.getID(index);
+	DebugAssertIndex(this->textureAssetRefs, index);
+	return this->textureAssetRefs[index];
 }

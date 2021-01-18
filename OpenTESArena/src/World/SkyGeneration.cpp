@@ -30,10 +30,10 @@ namespace SkyGeneration
 {
 	// Mapping caches of Arena sky objects to modern sky info entries. Don't need caches for sun
 	// and moons since they're not spawned in bulk.
-	using ArenaLandMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::LandDefID>;
-	using ArenaAirMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::AirDefID>;
+	using ArenaLandMappingCache = std::unordered_map<std::string, SkyDefinition::LandDefID>;
+	using ArenaAirMappingCache = std::unordered_map<std::string, SkyDefinition::AirDefID>;
 	using ArenaSmallStarMappingCache = std::unordered_map<uint8_t, SkyDefinition::StarDefID>;
-	using ArenaLargeStarMappingCache = std::unordered_map<TextureBuilderID, SkyDefinition::StarDefID>;
+	using ArenaLargeStarMappingCache = std::unordered_map<std::string, SkyDefinition::StarDefID>;
 
 	Buffer<Color> makeInteriorSkyColors(bool outdoorDungeon, TextureManager &textureManager)
 	{
@@ -116,8 +116,7 @@ namespace SkyGeneration
 
 		DebugAssert(digits.size() <= maxDigits);
 
-		// @todo: consider DOSUtils::FilenameBuffer
-		std::string imageFilename = [&baseFilename, position, maxDigits, &digits]()
+		const std::string imageFilename = [&baseFilename, position, maxDigits, &digits]()
 		{
 			std::string name = baseFilename;
 			const int digitCount = static_cast<int>(digits.size());
@@ -139,20 +138,12 @@ namespace SkyGeneration
 		const int arenaAngle = random.next() % ArenaSkyUtils::UNIQUE_ANGLES;
 		const Radians angleX = ArenaSkyUtils::arenaAngleToRadians(arenaAngle);
 
-		// Get the object's texture ID.
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(imageFilename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogWarning("Couldn't get sky static object texture builder ID for \"" + imageFilename + "\".");
-			return false;
-		}
-
 		// The object is either a mountain or cloud.
+		TextureAssetReference textureAssetRef = TextureAssetReference(std::string(imageFilename)); // Most vexing parse.
 		if constexpr (IsLandObject)
 		{
 			SkyDefinition::LandDefID landDefID;
-			const auto iter = landCache->find(*textureBuilderID);
+			const auto iter = landCache->find(imageFilename);
 			if (iter != landCache->end())
 			{
 				landDefID = iter->second;
@@ -160,9 +151,9 @@ namespace SkyGeneration
 			else
 			{
 				SkyLandDefinition skyLandDef;
-				skyLandDef.init(*textureBuilderID, SkyLandDefinition::ShadingType::Ambient);
+				skyLandDef.init(std::move(textureAssetRef), SkyLandDefinition::ShadingType::Ambient);
 				landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
-				landCache->emplace(*textureBuilderID, landDefID);
+				landCache->emplace(imageFilename, landDefID);
 			}
 
 			outSkyDef->addLand(landDefID, angleX);
@@ -181,7 +172,7 @@ namespace SkyGeneration
 			}();
 
 			SkyDefinition::AirDefID airDefID;
-			const auto iter = airCache->find(*textureBuilderID);
+			const auto iter = airCache->find(imageFilename);
 			if (iter != airCache->end())
 			{
 				airDefID = iter->second;
@@ -189,9 +180,9 @@ namespace SkyGeneration
 			else
 			{
 				SkyAirDefinition skyAirDef;
-				skyAirDef.init(*textureBuilderID);
+				skyAirDef.init(std::move(textureAssetRef));
 				airDefID = outSkyInfoDef->addAir(std::move(skyAirDef));
-				airCache->emplace(*textureBuilderID, airDefID);
+				airCache->emplace(imageFilename, airDefID);
 			}
 
 			outSkyDef->addAir(airDefID, angleX, angleY);
@@ -291,14 +282,10 @@ namespace SkyGeneration
 		DebugAssertIndex(animFilenames, animIndex);
 		const std::string animFilename = String::toUppercase(animFilenames[animIndex]);
 
-		// Determine which frames the animation will have. .DFAs have multiple frames while
-		// .IMGs do not, although we can use the same texture manager function for both.
-		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-			textureManager.tryGetTextureBuilderIDs(animFilename.c_str());
-		if (!textureBuilderIDs.has_value())
-		{
-			DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
-		}
+		// Determine which frames the animation will have. DFAs have multiple frames while
+		// IMGs do not, although we can use the same texture manager function for both.
+		std::vector<TextureAssetReference> textureAssetRefs =
+			TextureUtils::makeTextureAssetRefs(animFilename, textureManager);
 
 		// Position on the horizon.
 		const Radians angleX = std::atan2(
@@ -306,10 +293,10 @@ namespace SkyGeneration
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
 		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
-			static_cast<double>(textureBuilderIDs->getCount());
+			static_cast<double>(textureAssetRefs.size());
 
 		SkyLandDefinition skyLandDef;
-		skyLandDef.init(*textureBuilderIDs, animSeconds, SkyLandDefinition::ShadingType::Bright);
+		skyLandDef.init(std::move(textureAssetRefs), animSeconds, SkyLandDefinition::ShadingType::Bright);
 		const SkyDefinition::LandDefID landDefID = outSkyInfoDef->addLand(std::move(skyLandDef));
 		outSkyDef->addLand(landDefID, angleX);
 	}
@@ -469,15 +456,9 @@ namespace SkyGeneration
 					return String::toUppercase(filename);
 				}();
 
-				const std::optional<TextureBuilderID> textureBuilderID =
-					textureManager.tryGetTextureBuilderID(starFilename.c_str());
-				if (!textureBuilderID.has_value())
-				{
-					DebugCrash("Couldn't get texture builder ID for \"" + starFilename + "\".");
-				}
-
+				TextureAssetReference textureAssetRef = TextureAssetReference(std::string(starFilename)); // Most vexing parse.
 				SkyDefinition::StarDefID starDefID;
-				const auto iter = largeStarCache.find(*textureBuilderID);
+				const auto iter = largeStarCache.find(starFilename);
 				if (iter != largeStarCache.end())
 				{
 					starDefID = iter->second;
@@ -485,9 +466,9 @@ namespace SkyGeneration
 				else
 				{
 					SkyStarDefinition skyStarDef;
-					skyStarDef.initLarge(*textureBuilderID);
+					skyStarDef.initLarge(std::move(textureAssetRef));
 					starDefID = outSkyInfoDef->addStar(std::move(skyStarDef));
-					largeStarCache.emplace(*textureBuilderID, starDefID);
+					largeStarCache.emplace(starFilename, starDefID);
 				}
 
 				outSkyDef->addStar(starDefID, direction);
@@ -498,16 +479,11 @@ namespace SkyGeneration
 	void generateArenaSun(const ExeData &exeData, TextureManager &textureManager,
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
-		const std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);		
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(sunFilename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugCrash("Couldn't get texture builder ID for \"" + sunFilename + "\".");
-		}
+		std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
+		TextureAssetReference textureAssetRef(std::move(sunFilename));
 
 		SkySunDefinition skySunDef;
-		skySunDef.init(*textureBuilderID);
+		skySunDef.init(std::move(textureAssetRef));
 		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(skySunDef));
 		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE);
 	}
@@ -524,16 +500,12 @@ namespace SkyGeneration
 			const int moonFilenameIndex = isFirstMoon ? 0 : 1;
 			const auto &moonFilenames = exeData.locations.moonFilenames;
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
-			const std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
-
-			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-				textureManager.tryGetTextureBuilderIDs(moonFilename.c_str());
-			if (!textureBuilderIDs.has_value())
-			{
-				DebugCrash("Couldn't get texture builder IDs for \"" + moonFilename + "\".");
-			}
+			std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
+			std::vector<TextureAssetReference> textureAssetRefs =
+				TextureUtils::makeTextureAssetRefs(moonFilename, textureManager);
 
 			// Base direction from original game values.
+			// @todo: move to ArenaSkyUtils
 			const Double3 baseDir = (isFirstMoon ?
 				Double3(0.0, -57536.0, 0.0) : Double3(-3000.0, -53536.0, 0.0)).normalized();
 
@@ -542,7 +514,7 @@ namespace SkyGeneration
 				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
 			SkyMoonDefinition skyMoonDef;
-			skyMoonDef.init(*textureBuilderIDs);
+			skyMoonDef.init(std::move(textureAssetRefs));
 			const SkyDefinition::MoonDefID moonDefID = outSkyInfoDef->addMoon(std::move(skyMoonDef));
 			outSkyDef->addMoon(moonDefID, baseDir, orbitPercent, bonusLatitude, phaseIndex);
 		};

@@ -1,16 +1,16 @@
 #ifndef SKY_AIR_DEFINITION_H
 #define SKY_AIR_DEFINITION_H
 
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureAssetReference.h"
 
 class SkyAirDefinition
 {
 private:
-	TextureBuilderID textureBuilderID;
+	TextureAssetReference textureAssetRef;
 public:
-	void init(TextureBuilderID textureBuilderID);
+	void init(TextureAssetReference &&textureAssetRef);
 
-	TextureBuilderID getTextureBuilderID() const;
+	const TextureAssetReference &getTextureAssetRef() const;
 };
 
 #endif

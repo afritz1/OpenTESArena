@@ -3,8 +3,7 @@
 
 #include <cstdint>
 
-#include "../Math/MathUtils.h"
-#include "../Media/TextureUtils.h"
+#include "../Assets/TextureAssetReference.h"
 
 class SkyStarDefinition
 {
@@ -24,23 +23,19 @@ public:
 
 	struct LargeStar
 	{
-		TextureBuilderID textureBuilderID;
+		TextureAssetReference textureAssetRef;
 
-		void init(TextureBuilderID textureBuilderID);
+		void init(TextureAssetReference &&textureAssetRef);
 	};
 private:
 	Type type;
-
-	union
-	{
-		SmallStar smallStar;
-		LargeStar largeStar;
-	};
+	SmallStar smallStar;
+	LargeStar largeStar;
 
 	void init(Type type);
 public:
 	void initSmall(uint8_t paletteIndex);
-	void initLarge(TextureBuilderID textureBuilderID);
+	void initLarge(TextureAssetReference &&textureAssetRef);
 	
 	Type getType() const;
 	const SmallStar &getSmallStar() const;

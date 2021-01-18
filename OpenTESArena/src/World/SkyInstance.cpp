@@ -102,7 +102,7 @@ SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdG
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-	const TextureManager &textureManager)
+	TextureManager &textureManager)
 {
 	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
 		TextureBuilderID textureBuilderID)
@@ -135,8 +135,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
 
 		DebugAssert(skyLandDef.getTextureCount() > 0);
-		const TextureBuilderID textureBuilderID = skyLandDef.getTextureBuilderID(0);
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+		const TextureAssetReference &textureAssetRef = skyLandDef.getTextureAssetRef(0);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
@@ -146,13 +154,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
-			addGeneralObjectInst(direction, width, height, textureBuilderID);
+			addGeneralObjectInst(direction, width, height, *textureBuilderID);
 
 			// Only land objects support animations (for now).
 			if (skyLandDef.hasAnimation())
 			{
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-				const TextureBuilderIdGroup textureBuilderIDs(skyLandDef.getTextureBuilderID(0), skyLandDef.getTextureCount());
+				// @todo: these texture builder IDs should come from iterating the SkyLandDefinition's texture asset refs.
+				const TextureBuilderIdGroup textureBuilderIDs(*textureBuilderID, skyLandDef.getTextureCount());
 				const double targetSeconds = static_cast<int>(static_cast<double>(textureBuilderIDs.getCount()) *
 					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
 				addAnimInst(objectIndex, textureBuilderIDs, targetSeconds);
@@ -171,8 +180,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::AirPlacementDef &placementDef = skyDefinition.getAirPlacementDef(i);
 		const SkyDefinition::AirDefID defID = placementDef.id;
 		const SkyAirDefinition &skyAirDef = skyInfoDefinition.getAir(defID);
-		const TextureBuilderID textureBuilderID = skyAirDef.getTextureBuilderID();
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+		const TextureAssetReference &textureAssetRef = skyAirDef.getTextureAssetRef();
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
@@ -183,7 +200,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleX = position.first;
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
-			addGeneralObjectInst(direction, width, height, textureBuilderID);
+			addGeneralObjectInst(direction, width, height, *textureBuilderID);
 		}
 
 		airInstCount += static_cast<int>(placementDef.positions.size());
@@ -199,8 +216,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::StarDefID defID = placementDef.id;
 		const SkyStarDefinition &skyStarDef = skyInfoDefinition.getStar(defID);
 
-		// @todo: this is where the texture-id-from-texture-manager design is kind of breaking, and getting
-		// a renderer sprite resource ID would be better. SkyInstance::init() should be able to allocate
+		// @todo: this is where the texture-id-from-texture-manager design is breaking, and getting
+		// a renderer texture handle would be better. SkyInstance::init() should be able to allocate
 		// textures IDs from the renderer eventually, and look up cached ones by string.
 		const SkyStarDefinition::Type starType = skyStarDef.getType();
 		if (starType == SkyStarDefinition::Type::Small)
@@ -223,8 +240,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		else if (starType == SkyStarDefinition::Type::Large)
 		{
 			const SkyStarDefinition::LargeStar &largeStar = skyStarDef.getLargeStar();
-			const TextureBuilderID textureBuilderID = largeStar.textureBuilderID;
-			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+			const TextureAssetReference &textureAssetRef = largeStar.textureAssetRef;
+			const std::optional<TextureBuilderID> textureBuilderID =
+				textureManager.tryGetTextureBuilderID(textureAssetRef);
+			if (!textureBuilderID.has_value())
+			{
+				DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+				continue;
+			}
+
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 			double width, height;
 			SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
@@ -232,7 +257,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
-				addGeneralObjectInst(position, width, height, textureBuilderID);
+				addGeneralObjectInst(position, width, height, *textureBuilderID);
 			}
 		}
 		else
@@ -252,8 +277,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
 		const SkyDefinition::SunDefID defID = placementDef.id;
 		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
-		const TextureBuilderID textureBuilderID = skySunDef.getTextureBuilderID();
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+		const TextureAssetReference &textureAssetRef = skySunDef.getTextureAssetRef();
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
@@ -263,7 +296,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert starting sun latitude to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, textureBuilderID);
+			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -281,8 +314,16 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 		// @todo: get the image from the current day, etc..
 		DebugAssert(skyMoonDef.getTextureCount() > 0);
-		const TextureBuilderID textureBuilderID = skyMoonDef.getTextureBuilderID(0);
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(0);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 		double width, height;
 		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
@@ -292,7 +333,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert moon position to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, textureBuilderID);
+			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());

@@ -2,34 +2,35 @@
 
 #include "components/debug/Debug.h"
 
-void SkyLandDefinition::init(const TextureBuilderIdGroup &textureBuilderIDs, double animSeconds,
+void SkyLandDefinition::init(std::vector<TextureAssetReference> &&textureAssetRefs, double animSeconds,
 	ShadingType shadingType)
 {
-	this->textureBuilderIDs = textureBuilderIDs;
+	this->textureAssetRefs = std::move(textureAssetRefs);
 	this->animSeconds = animSeconds;
 	this->shadingType = shadingType;
 }
 
-void SkyLandDefinition::init(TextureBuilderID textureBuilderID, ShadingType shadingType)
+void SkyLandDefinition::init(TextureAssetReference &&textureAssetRef, ShadingType shadingType)
 {
-	const TextureBuilderIdGroup textureBuilderIDs(textureBuilderID, 1);
+	std::vector<TextureAssetReference> textureAssetRefs { std::move(textureAssetRef) };
 	constexpr double animSeconds = 0.0;
-	this->init(textureBuilderIDs, animSeconds, shadingType);
+	this->init(std::move(textureAssetRefs), animSeconds, shadingType);
 }
 
 int SkyLandDefinition::getTextureCount() const
 {
-	return this->textureBuilderIDs.getCount();
+	return static_cast<int>(this->textureAssetRefs.size());
 }
 
-TextureBuilderID SkyLandDefinition::getTextureBuilderID(int index) const
+const TextureAssetReference &SkyLandDefinition::getTextureAssetRef(int index) const
 {
-	return this->textureBuilderIDs.getID(index);
+	DebugAssertIndex(this->textureAssetRefs, index);
+	return this->textureAssetRefs[index];
 }
 
 bool SkyLandDefinition::hasAnimation() const
 {
-	return this->textureBuilderIDs.getCount() > 1;
+	return this->getTextureCount() > 1;
 }
 
 double SkyLandDefinition::getAnimationSeconds() const

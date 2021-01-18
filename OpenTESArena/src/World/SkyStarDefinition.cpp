@@ -7,9 +7,9 @@ void SkyStarDefinition::SmallStar::init(uint8_t paletteIndex)
 	this->paletteIndex = paletteIndex;
 }
 
-void SkyStarDefinition::LargeStar::init(TextureBuilderID textureBuilderID)
+void SkyStarDefinition::LargeStar::init(TextureAssetReference &&textureAssetRef)
 {
-	this->textureBuilderID = textureBuilderID;
+	this->textureAssetRef = std::move(textureAssetRef);
 }
 
 void SkyStarDefinition::init(Type type)
@@ -23,10 +23,10 @@ void SkyStarDefinition::initSmall(uint8_t paletteIndex)
 	this->smallStar.init(paletteIndex);
 }
 
-void SkyStarDefinition::initLarge(TextureBuilderID textureBuilderID)
+void SkyStarDefinition::initLarge(TextureAssetReference &&textureAssetRef)
 {
 	this->init(Type::Large);
-	this->largeStar.init(textureBuilderID);
+	this->largeStar.init(std::move(textureAssetRef));
 }
 
 SkyStarDefinition::Type SkyStarDefinition::getType() const
