@@ -271,22 +271,8 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			{
 				if (voxelDef.type == VoxelType::Door)
 				{
-					const auto &openDoors = activeLevel.getOpenDoors();
-					const VoxelDefinition::DoorData &doorData = voxelDef.door;
-
-					// Only collide with a door voxel if the door is closed.
-					const bool isClosed = [&voxel, &openDoors]()
-					{
-						const Int2 voxelXZ(voxel.x, voxel.z);
-						const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-							[&voxelXZ](const LevelData::DoorState &openDoor)
-						{
-							return openDoor.getVoxel() == voxelXZ;
-						});
-
-						return iter == openDoors.end();
-					}();
-
+					const VoxelInstance *doorInst = activeLevel.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
+					const bool isClosed = doorInst == nullptr;
 					return !isClosed;
 				}
 				else

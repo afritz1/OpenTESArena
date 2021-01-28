@@ -5,6 +5,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
+#include "../World/LevelData.h"
 
 #include "components/debug/Debug.h"
 
@@ -107,34 +108,34 @@ void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *out
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ,
-	const std::vector<LevelData::DoorState> &openDoors)
+double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const LevelData &levelData)
 {
-	const NewInt2 voxel(voxelX, voxelZ);
-	const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-		[&voxel](const LevelData::DoorState &openDoor)
+	const Int3 voxel(voxelX, 1, voxelZ);
+	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
+	if (voxelInst != nullptr)
 	{
-		return openDoor.getVoxel() == voxel;
-	});
-
-	return (iter != openDoors.end()) ? iter->getPercentOpen() : 0.0;
+		const VoxelInstance::DoorState &doorState = voxelInst->getDoorState();
+		return doorState.getPercentOpen();
+	}
+	else
+	{
+		return 0.0;
+	}
 }
 
-double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ,
-	const std::vector<LevelData::FadeState> &fadingVoxels)
+double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const LevelData &levelData)
 {
 	const Int3 voxel(voxelX, voxelY, voxelZ);
-
-	// find_if was terribly slow in MSVC due to iterators, so using for loop instead.
-	for (const LevelData::FadeState &fadeState : fadingVoxels)
+	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Fading);
+	if (voxelInst != nullptr)
 	{
-		if (fadeState.getVoxel() == voxel)
-		{
-			return std::clamp(1.0 - fadeState.getPercentDone(), 0.0, 1.0);
-		}
+		const VoxelInstance::FadeState &fadeState = voxelInst->getFadeState();
+		return std::clamp(1.0 - fadeState.getPercentFaded(), 0.0, 1.0);
 	}
-
-	return 1.0;
+	else
+	{
+		return 1.0;
+	}
 }
 
 double RendererUtils::getYShear(Radians angleRadians, double zoom)

@@ -1,9 +1,12 @@
 #include <algorithm>
 
 #include "ArenaVoxelUtils.h"
+#include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
 #include "VoxelGeometry.h"
+#include "VoxelInstance.h"
 #include "VoxelType.h"
+#include "../Math/Quad.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
@@ -292,7 +295,7 @@ namespace
 	}
 
 	void GenerateChasm(const VoxelDefinition::ChasmData &chasm, const Double3 &origin,
-		double ceilingHeight, const LevelData::ChasmState *chasmState, BufferView<Quad> &outView)
+		double ceilingHeight, const VoxelInstance::ChasmState *chasmState, BufferView<Quad> &outView)
 	{
 		// Depends on number of faces and chasm type.
 		const int faceCount = outView.getCount();
@@ -411,8 +414,7 @@ namespace
 	}
 }
 
-void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
-	const LevelData::ChasmStates &chasmStates, int *outQuadCount)
+void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance *voxelInst, int *outQuadCount)
 {
 	auto maybeWrite = [outQuadCount](int quadCount)
 	{
@@ -450,15 +452,23 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 		break;
 	case VoxelType::Chasm:
 	{
-		// Depends on visible face count.
-		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
+		// Chasm geometry depends on visible face count.
+		const int faceCount = [voxelInst]()
 		{
-			const NewInt2 voxelXZ(voxel.x, voxel.z);
-			const auto iter = chasmStates.find(voxelXZ);
-			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+			if (voxelInst != nullptr)
+			{
+				if (voxelInst->getType() == VoxelInstance::Type::Chasm)
+				{
+					const VoxelInstance::ChasmState &chasmState = voxelInst->getChasmState();
+					return chasmState.getFaceCount();
+				}
+			}
+			else
+			{
+				return 0;
+			}
 		}();
 
-		const int faceCount = (chasmStatePtr != nullptr) ? chasmStatePtr->getFaceCount() : 0;
 		maybeWrite(faceCount);
 		break;
 	}
@@ -473,7 +483,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const Int3 &voxel,
 }
 
 int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, double ceilingHeight,
-	const LevelData::ChasmStates &chasmStates, Quad *outQuads, int bufferSize)
+	const VoxelInstance *voxelInst, Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))
 	{
@@ -481,7 +491,7 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 	}
 
 	int quadCount;
-	VoxelGeometry::getInfo(voxelDef, voxel, chasmStates, &quadCount);
+	VoxelGeometry::getInfo(voxelDef, voxelInst, &quadCount);
 
 	// If there's nothing to write, or all the geometry data can't fit in the output buffer,
 	// then return failure.
@@ -524,15 +534,17 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, 
 		break;
 	case VoxelType::Chasm:
 	{
-		// Need any existing state for this chasm.
-		const LevelData::ChasmState *chasmStatePtr = [&voxel, &chasmStates]()
+		const VoxelInstance::ChasmState *chasmState = [voxelInst]() -> const VoxelInstance::ChasmState*
 		{
-			const NewInt2 voxelXZ(voxel.x, voxel.z);
-			const auto iter = chasmStates.find(voxelXZ);
-			return (iter != chasmStates.end()) ? &iter->second : nullptr;
+			if ((voxelInst != nullptr) && (voxelInst->getType() == VoxelInstance::Type::Chasm))
+			{
+				return &voxelInst->getChasmState();
+			}
+			
+			return nullptr;
 		}();
 
-		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmStatePtr, quadView);
+		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmState, quadView);
 		break;
 	}
 	case VoxelType::Door:

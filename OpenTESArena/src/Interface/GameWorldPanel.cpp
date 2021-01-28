@@ -54,6 +54,7 @@
 #include "../World/ArenaLevelUtils.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
+#include "../World/ChunkUtils.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
 #include "../World/InteriorUtils.h"
@@ -158,10 +159,9 @@ namespace
 				const bool includeEntities = false;
 
 				Physics::Hit hit;
-				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance,
-					ceilingHeight, levelData.getChasmStates(), cameraDirection, pixelPerfect, palette,
-					includeEntities, entityManager, voxelGrid, game.getEntityDefinitionLibrary(),
-					renderer, hit);
+				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
+					cameraDirection, pixelPerfect, palette, includeEntities, levelData,
+					game.getEntityDefinitionLibrary(), renderer, hit);
 
 				if (success)
 				{
@@ -243,9 +243,9 @@ namespace
 
 		Physics::Hit hit;
 		const bool success = Physics::rayCast(rayStart, rayDirection,
-			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), levelData.getChasmStates(),
-			cameraDirection, options.getInput_PixelPerfectSelection(), palette, includeEntities, entityManager,
-			voxelGrid, game.getEntityDefinitionLibrary(), renderer, hit);
+			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), cameraDirection,
+			options.getInput_PixelPerfectSelection(), palette, includeEntities, levelData,
+			game.getEntityDefinitionLibrary(), renderer, hit);
 
 		std::string text;
 		if (success)
@@ -1706,8 +1706,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 	Physics::Hit hit;
 	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
-		level.getChasmStates(), cameraDirection, pixelPerfectSelection, palette, includeEntities,
-		entityManager, voxelGrid, game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
+		cameraDirection, pixelPerfectSelection, palette, includeEntities, level,
+		game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
@@ -1724,7 +1724,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			if (primaryClick)
 			{
 				// Arbitrary max distance for selection.
-				const double maxSelectionDist = 1.50;
+				// @todo: move to some ArenaPlayerUtils maybe
+				constexpr double maxSelectionDist = 1.50;
 
 				if (hit.getT() <= maxSelectionDist)
 				{
@@ -1753,23 +1754,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						else
 						{
 							// @temp: add to fading voxels if it doesn't already exist.
-							LevelData::FadeState fadeState(voxel);
-							auto &fadingVoxels = level.getFadingVoxels();
-
-							const bool exists = [&voxel, fadingVoxels]()
+							const VoxelInstance *existingFadingVoxelInst =
+								level.tryGetVoxelInstance(voxel, VoxelInstance::Type::Fading);
+							const bool isFading = existingFadingVoxelInst != nullptr;
+							if (!isFading)
 							{
-								const auto iter = std::find_if(fadingVoxels.begin(), fadingVoxels.end(),
-									[&voxel](const LevelData::FadeState &state)
-								{
-									return state.getVoxel() == voxel;
-								});
-
-								return iter != fadingVoxels.end();
-							}();
-
-							if (!exists)
-							{
-								fadingVoxels.push_back(std::move(fadeState));
+								const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+								VoxelInstance newFadingVoxelInst = VoxelInstance::makeFading(
+									voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+								level.addVoxelInstance(chunk, std::move(newFadingVoxelInst));
 							}
 						}
 					}
@@ -1788,25 +1781,19 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 					else if (voxelDef.type == VoxelType::Door)
 					{
 						const VoxelDefinition::DoorData &doorData = voxelDef.door;
-						const NewInt2 voxelXZ(voxel.x, voxel.z);
 
 						// If the door is closed, then open it.
-						auto &openDoors = level.getOpenDoors();
-						const bool isClosed = [&openDoors, &voxelXZ]()
-						{
-							const auto iter = std::find_if(openDoors.begin(), openDoors.end(),
-								[&voxelXZ](const LevelData::DoorState &openDoor)
-							{
-								return openDoor.getVoxel() == voxelXZ;
-							});
-
-							return iter == openDoors.end();
-						}();
+						const VoxelInstance *existingOpenDoorInst =
+							level.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
+						const bool isClosed = existingOpenDoorInst == nullptr;
 
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
-							openDoors.push_back(LevelData::DoorState(voxelXZ));
+							const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+							VoxelInstance newOpenDoorInst = VoxelInstance::makeDoor(
+								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+							level.addVoxelInstance(chunk, std::move(newOpenDoorInst));
 
 							// Play the door's opening sound at the center of the voxel.
 							const auto &doorSoundLibrary = game.getDoorSoundLibrary();
@@ -1818,12 +1805,13 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								const DoorSoundDefinition &doorSoundDef = doorSoundLibrary.getDef(*doorSoundDefIndex);
 								const DoorSoundDefinition::OpenDef &openDoorSoundDef = doorSoundDef.getOpen();
 								const auto &inf = level.getInfFile();
-								const std::string &soundFilename = inf.getSound(openDoorSoundDef.soundIndex);
 								auto &audioManager = game.getAudioManager();
+								const std::string &soundFilename = inf.getSound(openDoorSoundDef.soundIndex);
+								const double ceilingHeight = level.getCeilingHeight();
 								const Double3 soundPosition(
-									static_cast<double>(voxelXZ.x) + 0.50,
-									level.getCeilingHeight() * 1.50,
-									static_cast<double>(voxelXZ.y) + 0.50);
+									static_cast<SNDouble>(voxel.x) + 0.50,
+									(static_cast<double>(voxel.y) * ceilingHeight) + (ceilingHeight * 0.50),
+									static_cast<WEDouble>(voxel.z) + 0.50);
 
 								audioManager.playSound(soundFilename, soundPosition);
 							}
@@ -2099,12 +2087,10 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 	auto &gameData = game.getGameData();
 	auto &worldData = gameData.getActiveWorld();
 	auto &activeLevel = worldData.getActiveLevel();
-	auto &openDoors = activeLevel.getOpenDoors();
-	const auto &voxelGrid = activeLevel.getVoxelGrid();
 
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
 	auto playCloseSoundIfType = [&game, &activeLevel](const DoorSoundDefinition::CloseDef &closeSoundDef, 
-		DoorSoundDefinition::CloseType closeType, const NewInt2 &doorVoxel)
+		DoorSoundDefinition::CloseType closeType, const Int3 &doorVoxel)
 	{
 		if (closeSoundDef.closeType == closeType)
 		{
@@ -2113,66 +2099,90 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 			auto &audioManager = game.getAudioManager();
 
 			// Put at the center of the door voxel.
+			const double ceilingHeight = activeLevel.getCeilingHeight();
 			const Double3 soundPosition(
-				static_cast<double>(doorVoxel.x) + 0.50,
-				activeLevel.getCeilingHeight() * 1.50,
-				static_cast<double>(doorVoxel.y) + 0.50);
+				static_cast<SNDouble>(doorVoxel.x) + 0.50,
+				(static_cast<double>(doorVoxel.y) * ceilingHeight) + (ceilingHeight * 0.50),
+				static_cast<WEDouble>(doorVoxel.z) + 0.50);
 
 			audioManager.playSound(soundFilename, soundPosition);
 		}
 	};
 
-	// Update each open door and remove ones that become closed. A reverse iterator loop
-	// was causing increment issues after erasing.
-	for (int i = static_cast<int>(openDoors.size()) - 1; i >= 0; i--)
+	const ChunkInt2 playerChunk = VoxelUtils::newVoxelToChunk(
+		NewInt2(static_cast<SNInt>(playerPos.x), static_cast<WEInt>(playerPos.y)));
+	const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
+	ChunkInt2 minChunk, maxChunk;
+	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
+
+	// Iterate over chunks near the player.
+	for (SNInt chunkX = minChunk.x; chunkX != maxChunk.x; chunkX++)
 	{
-		auto &door = openDoors.at(i);
-		door.update(dt);
-
-		// Get the door's voxel data and its close sound data for determining how it plays
-		// sounds when closing.
-		const Int2 &voxel = door.getVoxel();
-		const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-
-		const auto &doorSoundLibrary = game.getDoorSoundLibrary();
-		const std::optional<int> doorSoundDefIndex =
-			doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Close);
-		const DoorSoundDefinition *doorSoundDef = doorSoundDefIndex.has_value() ?
-			&doorSoundLibrary.getDef(*doorSoundDefIndex) : nullptr;
-
-		if (door.isClosed())
+		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
 		{
-			if (doorSoundDef != nullptr)
+			const ChunkInt2 chunk(chunkX, chunkZ);
+			std::vector<VoxelInstance> *voxelInsts = activeLevel.tryGetVoxelInstances(chunk);
+			if (voxelInsts != nullptr)
 			{
-				// Only some doors play a sound when they become closed.
-				playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosed, voxel);
-			}
-
-			// Erase closed door.
-			openDoors.erase(openDoors.begin() + i);
-		}
-		else if (!door.isClosing())
-		{
-			// Auto-close doors that the player is far enough away from.
-			const bool farEnough = [&playerPos, &voxel]()
-			{
-				constexpr double maxDistance = ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
-				constexpr double maxDistanceSqr = maxDistance * maxDistance;
-				const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(voxel);
-				const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
-				return distSqr > maxDistanceSqr;
-			}();
-
-			if (farEnough)
-			{
-				door.setDirection(LevelData::DoorState::Direction::Closing);
-
-				if (doorSoundDef != nullptr)
+				// Update each open door and remove ones that become closed.
+				for (int i = static_cast<int>(voxelInsts->size()) - 1; i >= 0; i--)
 				{
-					// Only some doors play a sound when they start closing.
-					playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosing, voxel);
+					VoxelInstance &voxelInst = (*voxelInsts)[i];
+					if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
+					{
+						voxelInst.update(dt);
+
+						// Get the door's voxel definition and its sound definition for determining how it
+						// sounds when closing.
+						const auto &voxelGrid = activeLevel.getVoxelGrid();
+						const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+						const VoxelDefinition::DoorData &doorData = voxelDef.door;
+
+						const auto &doorSoundLibrary = game.getDoorSoundLibrary();
+						const std::optional<int> doorSoundDefIndex =
+							doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Close);
+						const DoorSoundDefinition *doorSoundDef = doorSoundDefIndex.has_value() ?
+							&doorSoundLibrary.getDef(*doorSoundDefIndex) : nullptr;
+
+						VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
+						const VoxelInstance::DoorState::StateType doorStateType = doorState.getStateType();
+						if (doorStateType == VoxelInstance::DoorState::StateType::Closed)
+						{
+							if (doorSoundDef != nullptr)
+							{
+								// Only some doors play a sound when they become closed.
+								playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosed, voxel);
+							}
+
+							// Erase closed door.
+							voxelInsts->erase(voxelInsts->begin() + i);
+						}
+						else if (doorStateType != VoxelInstance::DoorState::StateType::Closing)
+						{
+							// Auto-close doors that the player is far enough away from.
+							const bool farEnough = [&playerPos, &voxel]()
+							{
+								constexpr double maxDistance = ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+								constexpr double maxDistanceSqr = maxDistance * maxDistance;
+								const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(NewInt2(voxel.x, voxel.z));
+								const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
+								return distSqr > maxDistanceSqr;
+							}();
+
+							if (farEnough)
+							{
+								doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+
+								if (doorSoundDef != nullptr)
+								{
+									// Only some doors play a sound when they start closing.
+									playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosing, voxel);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -2608,11 +2618,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
 				&dirToNewVoxel](int levelIndex)
 			{
-				// Clear all open doors and fading voxels in the level the player is switching
-				// away from.
+				// Clear all open doors and fading voxels in the level the player is switching away from.
+				// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
 				auto &oldActiveLevel = interior.getActiveLevel();
-				oldActiveLevel.getOpenDoors().clear();
-				oldActiveLevel.getFadingVoxels().clear();
+				oldActiveLevel.clearTemporaryVoxelInstances();
 
 				// Select the new level.
 				interior.setLevelIndex(levelIndex);
@@ -3152,8 +3161,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
 		gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(), isExterior,
 		options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
-		level.getOpenDoors(), level.getFadingVoxels(), level.getChasmStates(), level.getVoxelGrid(),
-		level.getEntityManager(), game.getEntityDefinitionLibrary(), defaultPalette);
+		level, game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);

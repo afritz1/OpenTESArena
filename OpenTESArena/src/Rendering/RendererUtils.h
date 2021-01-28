@@ -6,11 +6,12 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 
 #include "components/utilities/BufferView.h"
+
+class LevelData;
 
 namespace RendererUtils
 {
@@ -36,11 +37,10 @@ namespace RendererUtils
 		NewDouble2 *outMiddle, NewDouble2 *outEnd);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
-	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const std::vector<LevelData::DoorState> &openDoors);
+	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const LevelData &levelData);
 
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
-	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ,
-		const std::vector<LevelData::FadeState> &fadingVoxels);
+	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const LevelData &levelData);
 
 	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
 	// and the zoom of the camera (dependent on vertical field of view).

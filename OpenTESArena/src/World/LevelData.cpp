@@ -4,6 +4,7 @@
 
 #include "ArenaLevelUtils.h"
 #include "ArenaVoxelUtils.h"
+#include "ChunkUtils.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
 #include "InteriorUtils.h"
@@ -34,6 +35,7 @@
 #include "../Entities/EntityType.h"
 #include "../Entities/StaticEntity.h"
 #include "../Game/CardinalDirection.h"
+#include "../Game/Game.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -107,157 +109,6 @@ bool LevelData::TextTrigger::hasBeenDisplayed() const
 void LevelData::TextTrigger::setPreviouslyDisplayed(bool previouslyDisplayed)
 {
 	this->previouslyDisplayed = previouslyDisplayed;
-}
-
-LevelData::DoorState::DoorState(const NewInt2 &voxel, double percentOpen,
-	DoorState::Direction direction)
-	: voxel(voxel)
-{
-	this->percentOpen = percentOpen;
-	this->direction = direction;
-}
-
-LevelData::DoorState::DoorState(const NewInt2 &voxel)
-	: DoorState(voxel, 0.0, DoorState::Direction::Opening) { }
-
-const NewInt2 &LevelData::DoorState::getVoxel() const
-{
-	return this->voxel;
-}
-
-double LevelData::DoorState::getPercentOpen() const
-{
-	return this->percentOpen;
-}
-
-bool LevelData::DoorState::isClosing() const
-{
-	return this->direction == Direction::Closing;
-}
-
-bool LevelData::DoorState::isClosed() const
-{
-	return this->percentOpen == 0.0;
-}
-
-void LevelData::DoorState::setDirection(DoorState::Direction direction)
-{
-	this->direction = direction;
-}
-
-void LevelData::DoorState::update(double dt)
-{
-	const double delta = DoorState::DEFAULT_SPEED * dt;
-
-	// Decide how to change the door state depending on its current direction.
-	if (this->direction == DoorState::Direction::Opening)
-	{
-		this->percentOpen = std::min(this->percentOpen + delta, 1.0);
-		const bool isOpen = this->percentOpen == 1.0;
-
-		if (isOpen)
-		{
-			this->direction = DoorState::Direction::None;
-		}
-	}
-	else if (this->direction == DoorState::Direction::Closing)
-	{
-		this->percentOpen = std::max(this->percentOpen - delta, 0.0);
-
-		if (this->isClosed())
-		{
-			this->direction = DoorState::Direction::None;
-		}
-	}
-}
-
-LevelData::FadeState::FadeState(const Int3 &voxel, double targetSeconds)
-	: voxel(voxel)
-{
-	this->currentSeconds = 0.0;
-	this->targetSeconds = targetSeconds;
-}
-
-LevelData::FadeState::FadeState(const Int3 &voxel)
-	: FadeState(voxel, FadeState::DEFAULT_SECONDS) { }
-
-const Int3 &LevelData::FadeState::getVoxel() const
-{
-	return this->voxel;
-}
-
-double LevelData::FadeState::getPercentDone() const
-{
-	return std::clamp(this->currentSeconds / this->targetSeconds, 0.0, 1.0);
-}
-
-bool LevelData::FadeState::isDoneFading() const
-{
-	return this->getPercentDone() == 1.0;
-}
-
-void LevelData::FadeState::update(double dt)
-{
-	this->currentSeconds = std::min(this->currentSeconds + dt, this->targetSeconds);
-}
-
-LevelData::ChasmState::ChasmState(const NewInt2 &voxel, bool north, bool east, bool south, bool west)
-	: voxel(voxel)
-{
-	this->north = north;
-	this->east = east;
-	this->south = south;
-	this->west = west;
-}
-
-const NewInt2 &LevelData::ChasmState::getVoxel() const
-{
-	return this->voxel;
-}
-
-bool LevelData::ChasmState::getNorth() const
-{
-	return this->north;
-}
-
-bool LevelData::ChasmState::getEast() const
-{
-	return this->east;
-}
-
-bool LevelData::ChasmState::getSouth() const
-{
-	return this->south;
-}
-
-bool LevelData::ChasmState::getWest() const
-{
-	return this->west;
-}
-
-bool LevelData::ChasmState::faceIsVisible(VoxelFacing2D facing) const
-{
-	switch (facing)
-	{
-	case VoxelFacing2D::PositiveX:
-		return this->south;
-	case VoxelFacing2D::PositiveZ:
-		return this->west;
-	case VoxelFacing2D::NegativeX:
-		return this->north;
-	case VoxelFacing2D::NegativeZ:
-		return this->east;
-	default:
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
-		return false;
-	}
-}
-
-int LevelData::ChasmState::getFaceCount() const
-{
-	// Add one for floor.
-	return 1 + (this->north ? 1 : 0) + (this->east ? 1 : 0) +
-		(this->south ? 1 : 0) + (this->west ? 1 : 0);
 }
 
 void LevelData::Transition::init(const NewInt2 &voxel, Type type)
@@ -343,34 +194,84 @@ const std::vector<LevelData::FlatDef> &LevelData::getFlats() const
 	return this->flatsLists;
 }
 
-std::vector<LevelData::DoorState> &LevelData::getOpenDoors()
+std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk)
 {
-	return this->openDoors;
+	const auto iter = this->voxelInstMap.find(chunk);
+	if (iter != this->voxelInstMap.end())
+	{
+		return &iter->second;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
-const std::vector<LevelData::DoorState> &LevelData::getOpenDoors() const
+const std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk) const
 {
-	return this->openDoors;
+	const auto iter = this->voxelInstMap.find(chunk);
+	if (iter != this->voxelInstMap.end())
+	{
+		return &iter->second;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
-std::vector<LevelData::FadeState> &LevelData::getFadingVoxels()
+VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type)
 {
-	return this->fadingVoxels;
+	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
+	if (voxelInsts != nullptr)
+	{
+		std::optional<int> index;
+		for (int i = 0; i < static_cast<int>(voxelInsts->size()) - 1; i++)
+		{
+			const VoxelInstance &voxelInst = (*voxelInsts)[i];
+			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
+				(voxelInst.getZ() == voxel.z) && (voxelInst.getType() == type))
+			{
+				index = i;
+				break;
+			}
+		}
+
+		if (index.has_value())
+		{
+			return &((*voxelInsts)[*index]);
+		}
+	}
+
+	return nullptr;
 }
 
-const std::vector<LevelData::FadeState> &LevelData::getFadingVoxels() const
+const VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type) const
 {
-	return this->fadingVoxels;
-}
+	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+	const std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
+	if (voxelInsts != nullptr)
+	{
+		std::optional<int> index;
+		for (int i = 0; i < static_cast<int>(voxelInsts->size()) - 1; i++)
+		{
+			const VoxelInstance &voxelInst = (*voxelInsts)[i];
+			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
+				(voxelInst.getZ() == voxel.z) && (voxelInst.getType() == type))
+			{
+				index = i;
+				break;
+			}
+		}
 
-LevelData::ChasmStates &LevelData::getChasmStates()
-{
-	return this->chasmStates;
-}
+		if (index.has_value())
+		{
+			return &((*voxelInsts)[*index]);
+		}
+	}
 
-const LevelData::ChasmStates &LevelData::getChasmStates() const
-{
-	return this->chasmStates;
+	return nullptr;
 }
 
 LevelData::Transitions &LevelData::getTransitions()
@@ -433,6 +334,38 @@ void LevelData::addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &
 		FlatDef flatDef(flatIndex);
 		flatDef.addPosition(flatPosition);
 		this->flatsLists.push_back(std::move(flatDef));
+	}
+}
+
+void LevelData::addVoxelInstance(const ChunkInt2 &chunk, VoxelInstance &&voxelInst)
+{
+	auto iter = this->voxelInstMap.find(chunk);
+	if (iter == this->voxelInstMap.end())
+	{
+		iter = this->voxelInstMap.emplace(std::make_pair(chunk, std::vector<VoxelInstance>())).first;
+	}
+
+	std::vector<VoxelInstance> &voxelInsts = iter->second;
+	voxelInsts.emplace_back(std::move(voxelInst));
+}
+
+void LevelData::clearTemporaryVoxelInstances()
+{
+	for (auto &pair : this->voxelInstMap)
+	{
+		std::vector<VoxelInstance> &voxelInsts = pair.second;
+		for (int i = static_cast<int>(voxelInsts.size()) - 1; i >= 0; i--)
+		{
+			VoxelInstance &voxelInst = voxelInsts[i];
+			const VoxelInstance::Type voxelInstType = voxelInst.getType();
+			const bool isTemporary = (voxelInstType == VoxelInstance::Type::OpenDoor) ||
+				(voxelInstType == VoxelInstance::Type::Fading);
+
+			if (isTemporary)
+			{
+				voxelInsts.erase(voxelInsts.begin() + i);
+			}
+		}
 	}
 }
 
@@ -676,9 +609,10 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 			if (shouldAddChasmState)
 			{
-				const NewInt2 voxelXZ(x, z);
-				ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-				this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
+				const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(x, z));
+				VoxelInstance voxelInst = VoxelInstance::makeChasm(x, 0, z, hasNorthFace, hasEastFace,
+					hasSouthFace, hasWestFace);
+				this->addVoxelInstance(chunk, std::move(voxelInst));
 			}
 		}
 	}
@@ -1363,26 +1297,44 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const bool hasWestFace = westDef.allowsChasmFace();
 
 	// Add/update chasm state.
-	const NewInt2 voxelXZ(voxel.x, voxel.z);
-	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
+	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, 0, voxel.z, hasNorthFace, hasEastFace,
+		hasSouthFace, hasWestFace);
+	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
-	if (chasmStateIter != this->chasmStates.end())
+	if (voxelInsts != nullptr)
 	{
-		if (shouldAddChasmState)
+		const auto iter = std::find_if(voxelInsts->begin(), voxelInsts->end(),
+			[&voxel](const VoxelInstance &inst)
 		{
-			chasmStateIter->second = std::move(newChasmState);
+			return (inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
+				(inst.getType() == VoxelInstance::Type::Chasm);
+		});
+
+		if (iter != voxelInsts->end())
+		{
+			if (shouldAddChasmState)
+			{
+				*iter = std::move(voxelInst);
+			}
+			else
+			{
+				voxelInsts->erase(iter);
+			}
 		}
 		else
 		{
-			this->chasmStates.erase(chasmStateIter);
+			if (shouldAddChasmState)
+			{
+				voxelInsts->emplace_back(std::move(voxelInst));
+			}
 		}
 	}
 	else
 	{
 		if (shouldAddChasmState)
 		{
-			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
+			this->addVoxelInstance(chunk, std::move(voxelInst));
 		}
 	}
 }
@@ -1466,26 +1418,44 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	});
 
 	// Add/update chasm state.
-	const NewInt2 voxelXZ(voxel.x, voxel.z);
-	ChasmState newChasmState(voxelXZ, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-	const auto chasmStateIter = this->chasmStates.find(newChasmState.getVoxel());
+	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
+	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, 0, voxel.z, hasNorthFace, hasEastFace,
+		hasSouthFace, hasWestFace);
+	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
-	if (chasmStateIter != this->chasmStates.end())
+	if (voxelInsts != nullptr)
 	{
-		if (shouldAddChasmState)
+		const auto iter = std::find_if(voxelInsts->begin(), voxelInsts->end(),
+			[&voxel](const VoxelInstance &inst)
 		{
-			chasmStateIter->second = std::move(newChasmState);
+			return (inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
+				(inst.getType() == VoxelInstance::Type::Chasm);
+		});
+
+		if (iter != voxelInsts->end())
+		{
+			if (shouldAddChasmState)
+			{
+				*iter = std::move(voxelInst);
+			}
+			else
+			{
+				voxelInsts->erase(iter);
+			}
 		}
 		else
 		{
-			this->chasmStates.erase(chasmStateIter);
+			if (shouldAddChasmState)
+			{
+				voxelInsts->emplace_back(std::move(voxelInst));
+			}
 		}
 	}
 	else
 	{
 		if (shouldAddChasmState)
 		{
-			this->chasmStates.emplace(voxelXZ, std::move(newChasmState));
+			this->addVoxelInstance(chunk, std::move(voxelInst));
 		}
 	}
 
@@ -1500,40 +1470,54 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	}
 }
 
-void LevelData::updateFadingVoxels(double dt)
+void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &maxChunk, double dt)
 {
 	std::vector<Int3> completedVoxels;
 
-	// Reverse iterate, removing voxels that are done fading out.
-	for (int i = static_cast<int>(this->fadingVoxels.size()) - 1; i >= 0; i--)
+	for (SNInt chunkX = minChunk.x; chunkX != maxChunk.x; chunkX++)
 	{
-		FadeState &fadingVoxel = this->fadingVoxels[i];
-		const Int3 &voxel = fadingVoxel.getVoxel();
-		fadingVoxel.update(dt);
-
-		if (fadingVoxel.isDoneFading())
+		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
 		{
-			completedVoxels.push_back(voxel);
-
-			const bool isFloorVoxel = voxel.y == 0;
-			const uint16_t newVoxelID = [this, &voxel, isFloorVoxel]() -> uint16_t
+			const ChunkInt2 chunk(chunkX, chunkZ);
+			std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
+			if (voxelInsts != nullptr)
 			{
-				if (isFloorVoxel)
+				// Reverse iterate, removing voxels that are done fading out.
+				for (int i = static_cast<int>(voxelInsts->size()) - 1; i >= 0; i--)
 				{
-					// Convert from floor to chasm.
-					return this->getChasmIdFromFadedFloorVoxel(voxel);
-				}
-				else
-				{
-					// Clear the voxel.
-					return 0;
-				}
-			}();
+					VoxelInstance &voxelInst = (*voxelInsts)[i];
+					if (voxelInst.getType() == VoxelInstance::Type::Fading)
+					{
+						voxelInst.update(dt);
 
-			// Change the voxel in the grid to its empty representation (either air or chasm) and
-			// erase the fading voxel from the list.
-			voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
-			this->fadingVoxels.erase(this->fadingVoxels.begin() + i);
+						if (!voxelInst.hasRelevantState())
+						{
+							const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+							completedVoxels.push_back(voxel);
+
+							const uint16_t newVoxelID = [this, &voxel]() -> uint16_t
+							{
+								const bool isFloorVoxel = voxel.y == 0;
+								if (isFloorVoxel)
+								{
+									// Convert from floor to chasm.
+									return this->getChasmIdFromFadedFloorVoxel(voxel);
+								}
+								else
+								{
+									// Clear the voxel.
+									return 0;
+								}
+							}();
+
+							// Change the voxel to its empty representation (either air or chasm) and erase
+							// the fading voxel from the list.
+							voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
+							voxelInsts->erase(voxelInsts->begin() + i);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1890,7 +1874,14 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 void LevelData::tick(Game &game, double dt)
 {
-	this->updateFadingVoxels(dt);
+	const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
+	const auto &player = game.getGameData().getPlayer();
+	const Int3 playerVoxel = player.getVoxelPosition();
+	const ChunkInt2 playerChunk = VoxelUtils::newVoxelToChunk(NewInt2(playerVoxel.x, playerVoxel.z));
+	
+	ChunkInt2 minChunk, maxChunk;
+	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
+	this->updateFadingVoxels(minChunk, maxChunk, dt);
 
 	// Update entities.
 	this->entityManager.tick(game, dt);

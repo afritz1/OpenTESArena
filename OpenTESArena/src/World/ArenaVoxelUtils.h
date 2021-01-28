@@ -21,6 +21,13 @@ namespace ArenaVoxelUtils
 	// Seconds per chasm animation loop.
 	constexpr double CHASM_ANIM_SECONDS = 1.0 / 2.0; // @todo: arbitrary, get original game value.
 
+	// Seconds for a door to open.
+	//constexpr double DOOR_ANIM_SECONDS = 1.0 / 1.30; // @todo: arbitrary value
+	constexpr double DOOR_ANIM_SPEED = 1.30; // @todo: change to animation seconds
+
+	// Seconds for a fading voxel to animate.
+	constexpr double FADING_VOXEL_SECONDS = 1.0;
+
 	// Gets exterior menu type from *MENU ID and world type, or "none" if no mapping exists.
 	ArenaTypes::MenuType getMenuType(int menuID, MapType mapType);
 
