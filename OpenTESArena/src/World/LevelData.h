@@ -199,7 +199,7 @@ public:
 	// Returns whether a level is considered an outdoor dungeon. Only true for some interiors.
 	virtual bool isOutdoorDungeon() const = 0;
 
-	void addVoxelInstance(const ChunkInt2 &chunk, VoxelInstance &&voxelInst);
+	void addVoxelInstance(VoxelInstance &&voxelInst);
 
 	// Removes all voxel instances not stored between level transitions (open doors, fading voxels).
 	void clearTemporaryVoxelInstances();

@@ -1759,10 +1759,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							const bool isFading = existingFadingVoxelInst != nullptr;
 							if (!isFading)
 							{
-								const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
 								VoxelInstance newFadingVoxelInst = VoxelInstance::makeFading(
 									voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-								level.addVoxelInstance(chunk, std::move(newFadingVoxelInst));
+								level.addVoxelInstance(std::move(newFadingVoxelInst));
 							}
 						}
 					}
@@ -1790,10 +1789,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						if (isClosed)
 						{
 							// Add the door to the open doors list.
-							const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
 							VoxelInstance newOpenDoorInst = VoxelInstance::makeDoor(
 								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							level.addVoxelInstance(chunk, std::move(newOpenDoorInst));
+							level.addVoxelInstance(std::move(newOpenDoorInst));
 
 							// Play the door's opening sound at the center of the voxel.
 							const auto &doorSoundLibrary = game.getDoorSoundLibrary();

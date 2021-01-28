@@ -337,8 +337,9 @@ void LevelData::addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &
 	}
 }
 
-void LevelData::addVoxelInstance(const ChunkInt2 &chunk, VoxelInstance &&voxelInst)
+void LevelData::addVoxelInstance(VoxelInstance &&voxelInst)
 {
+	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxelInst.getX(), voxelInst.getZ()));
 	auto iter = this->voxelInstMap.find(chunk);
 	if (iter == this->voxelInstMap.end())
 	{
@@ -609,10 +610,9 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 			if (shouldAddChasmState)
 			{
-				const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(x, z));
-				VoxelInstance voxelInst = VoxelInstance::makeChasm(x, 0, z, hasNorthFace, hasEastFace,
-					hasSouthFace, hasWestFace);
-				this->addVoxelInstance(chunk, std::move(voxelInst));
+				VoxelInstance voxelInst = VoxelInstance::makeChasm(
+					x, 0, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+				this->addVoxelInstance(std::move(voxelInst));
 			}
 		}
 	}
@@ -1298,7 +1298,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, 0, voxel.z, hasNorthFace, hasEastFace,
+	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
 		hasSouthFace, hasWestFace);
 	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
@@ -1334,7 +1334,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->addVoxelInstance(chunk, std::move(voxelInst));
+			this->addVoxelInstance(std::move(voxelInst));
 		}
 	}
 }
@@ -1419,7 +1419,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, 0, voxel.z, hasNorthFace, hasEastFace,
+	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
 		hasSouthFace, hasWestFace);
 	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
@@ -1455,7 +1455,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->addVoxelInstance(chunk, std::move(voxelInst));
+			this->addVoxelInstance(std::move(voxelInst));
 		}
 	}
 
