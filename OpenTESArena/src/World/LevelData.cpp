@@ -227,7 +227,7 @@ VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::
 	if (voxelInsts != nullptr)
 	{
 		std::optional<int> index;
-		for (int i = 0; i < static_cast<int>(voxelInsts->size()) - 1; i++)
+		for (int i = 0; i < static_cast<int>(voxelInsts->size()); i++)
 		{
 			const VoxelInstance &voxelInst = (*voxelInsts)[i];
 			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
@@ -254,7 +254,7 @@ const VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInst
 	if (voxelInsts != nullptr)
 	{
 		std::optional<int> index;
-		for (int i = 0; i < static_cast<int>(voxelInsts->size()) - 1; i++)
+		for (int i = 0; i < static_cast<int>(voxelInsts->size()); i++)
 		{
 			const VoxelInstance &voxelInst = (*voxelInsts)[i];
 			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
@@ -1296,10 +1296,16 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	const bool hasEastFace = eastDef.allowsChasmFace();
 	const bool hasWestFace = westDef.allowsChasmFace();
 
+	// Lambda for creating chasm voxel instance (replaces local variable since this is cleaner
+	// with the below if/else branches and it avoids the assertion in the voxel instance builder).
+	auto makeChasmInst = [&voxel, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace]()
+	{
+		return VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
+			hasSouthFace, hasWestFace);
+	};
+
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
-		hasSouthFace, hasWestFace);
 	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 	if (voxelInsts != nullptr)
@@ -1315,7 +1321,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 		{
 			if (shouldAddChasmState)
 			{
-				*iter = std::move(voxelInst);
+				*iter = makeChasmInst();
 			}
 			else
 			{
@@ -1326,7 +1332,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 		{
 			if (shouldAddChasmState)
 			{
-				voxelInsts->emplace_back(std::move(voxelInst));
+				voxelInsts->emplace_back(makeChasmInst());
 			}
 		}
 	}
@@ -1334,7 +1340,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->addVoxelInstance(std::move(voxelInst));
+			this->addVoxelInstance(makeChasmInst());
 		}
 	}
 }
@@ -1417,10 +1423,16 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		}
 	});
 
+	// Lambda for creating chasm voxel instance (replaces local variable since this is cleaner
+	// with the below if/else branches and it avoids the assertion in the voxel instance builder).
+	auto makeChasmInst = [&voxel, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace]()
+	{
+		return VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
+			hasSouthFace, hasWestFace);
+	};
+
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	VoxelInstance voxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace,
-		hasSouthFace, hasWestFace);
 	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
 	if (voxelInsts != nullptr)
@@ -1436,7 +1448,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		{
 			if (shouldAddChasmState)
 			{
-				*iter = std::move(voxelInst);
+				*iter = makeChasmInst();
 			}
 			else
 			{
@@ -1447,7 +1459,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 		{
 			if (shouldAddChasmState)
 			{
-				voxelInsts->emplace_back(std::move(voxelInst));
+				voxelInsts->emplace_back(makeChasmInst());
 			}
 		}
 	}
@@ -1455,7 +1467,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	{
 		if (shouldAddChasmState)
 		{
-			this->addVoxelInstance(std::move(voxelInst));
+			this->addVoxelInstance(makeChasmInst());
 		}
 	}
 
