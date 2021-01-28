@@ -457,15 +457,14 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance
 		{
 			if (voxelInst != nullptr)
 			{
-				if (voxelInst->getType() == VoxelInstance::Type::Chasm)
-				{
-					const VoxelInstance::ChasmState &chasmState = voxelInst->getChasmState();
-					return chasmState.getFaceCount();
-				}
+				DebugAssert(voxelInst->getType() == VoxelInstance::Type::Chasm);
+				const VoxelInstance::ChasmState &chasmState = voxelInst->getChasmState();
+				return chasmState.getFaceCount();
 			}
 			else
 			{
-				return 0;
+				// One for floor.
+				return 1;
 			}
 		}();
 
