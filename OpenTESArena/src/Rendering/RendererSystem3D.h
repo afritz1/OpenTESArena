@@ -20,7 +20,6 @@ class DistantSky;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
-class EntityManager;
 class RenderCamera;
 class RenderDefinitionGroup;
 class RenderFrameSettings;
@@ -28,7 +27,6 @@ class RenderInitSettings;
 class RenderInstanceGroup;
 class TextureBuilder;
 class TextureManager;
-class VoxelGrid;
 
 struct TextureAssetReference;
 
@@ -97,12 +95,8 @@ public:
 	virtual void clearDistantSky() = 0;
 	virtual void render(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
-		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates, const VoxelGrid &voxelGrid,
-		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
-		const Palette &palette, uint32_t *colorBuffer) = 0;
+		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.

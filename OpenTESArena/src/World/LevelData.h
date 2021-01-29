@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "VoxelGrid.h"
+#include "VoxelInstance.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -51,21 +52,6 @@ enum class MapType;
 class LevelData
 {
 public:
-	// Mapping of .INF flat index to instances in the game world.
-	class FlatDef
-	{
-	private:
-		ArenaTypes::FlatIndex flatIndex; // Index in .INF file flats and flat textures.
-		std::vector<NewInt2> positions;
-	public:
-		FlatDef(ArenaTypes::FlatIndex flatIndex);
-
-		ArenaTypes::FlatIndex getFlatIndex() const;
-		const std::vector<NewInt2> &getPositions() const;
-
-		void addPosition(const NewInt2 &position);
-	};
-
 	class Lock
 	{
 	private:
@@ -92,77 +78,6 @@ public:
 		bool hasBeenDisplayed() const;
 		void setPreviouslyDisplayed(bool previouslyDisplayed);
 	};
-
-	class DoorState
-	{
-	public:
-		enum class Direction { None, Opening, Closing };
-	private:
-		static constexpr double DEFAULT_SPEED = 1.30; // @todo: currently arbitrary value.
-
-		NewInt2 voxel;
-		double percentOpen;
-		Direction direction;
-	public:
-		DoorState(const NewInt2 &voxel, double percentOpen, DoorState::Direction direction);
-
-		// Defaults to opening state (as if the player had just activated it).
-		DoorState(const NewInt2 &voxel);
-
-		const NewInt2 &getVoxel() const;
-		double getPercentOpen() const;
-
-		// Returns whether the door's current direction is closing. This is used to make
-		// sure that sounds are only played once when a door begins closing.
-		bool isClosing() const;
-
-		// Removed from open doors list when true. The code that manages open doors should
-		// update the doors before removing closed ones.
-		bool isClosed() const;
-
-		void setDirection(DoorState::Direction direction);
-		void update(double dt);
-	};
-
-	class FadeState
-	{
-	private:
-		Int3 voxel;
-		double currentSeconds, targetSeconds;
-	public:
-		static constexpr double DEFAULT_SECONDS = 1.0;
-
-		FadeState(const Int3 &voxel, double targetSeconds);
-		FadeState(const Int3 &voxel);
-
-		const Int3 &getVoxel() const;
-		double getPercentDone() const;
-		bool isDoneFading() const;
-
-		void update(double dt);
-	};
-
-	class ChasmState
-	{
-	private:
-		NewInt2 voxel;
-
-		// Visible chasm faces. These were moved out of the voxel definition as it makes more sense
-		// that it's for the current state of the chasm and can change frequently in-game.
-		bool north, east, south, west;
-	public:
-		ChasmState(const NewInt2 &voxel, bool north, bool east, bool south, bool west);
-
-		const NewInt2 &getVoxel() const;
-		bool getNorth() const;
-		bool getEast() const;
-		bool getSouth() const;
-		bool getWest() const;
-		bool faceIsVisible(VoxelFacing2D facing) const;
-		int getFaceCount() const;
-	};
-
-	using ChasmStates = std::unordered_map<NewInt2, ChasmState>; // @temp change to hash table for wilderness performance.
 
 	// @temp: this is just a convenience class for converting voxel definition menus to the new level definition design.
 	class Transition
@@ -196,7 +111,25 @@ public:
 
 	// @temp change to hash table for wild chunk name generation performance.
 	using Transitions = std::unordered_map<NewInt2, Transition>;
+
+	// One group per chunk. Needs to be a hash table for chasm rendering performance.
+	using VoxelInstanceGroup = std::unordered_map<Int3, std::vector<VoxelInstance>>;
 private:
+	// Mapping of .INF flat index to instances in the game world.
+	class FlatDef
+	{
+	private:
+		ArenaTypes::FlatIndex flatIndex; // Index in .INF file flats and flat textures.
+		std::vector<NewInt2> positions;
+	public:
+		FlatDef(ArenaTypes::FlatIndex flatIndex);
+
+		ArenaTypes::FlatIndex getFlatIndex() const;
+		const std::vector<NewInt2> &getPositions() const;
+
+		void addPosition(const NewInt2 &position);
+	};
+
 	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
 	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
 	std::vector<std::pair<uint16_t, int>> wallDataMappings, floorDataMappings, map2DataMappings;
@@ -206,9 +139,7 @@ private:
 	INFFile inf;
 	std::vector<FlatDef> flatsLists;
 	std::unordered_map<NewInt2, Lock> locks;
-	std::vector<DoorState> openDoors;
-	std::vector<FadeState> fadingVoxels;
-	ChasmStates chasmStates;
+	std::unordered_map<ChunkInt2, VoxelInstanceGroup> voxelInstMap; // @temp interim solution until using chunk system.
 	Transitions transitions;
 	std::string name;
 
@@ -219,6 +150,7 @@ protected:
 		const std::string &name);
 
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
+
 	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf,
 		MapType mapType);
 	void readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, const INFFile &inf,
@@ -239,7 +171,8 @@ protected:
 	// Gets the new voxel ID of a floor voxel after figuring out what chasm it would be.
 	uint16_t getChasmIdFromFadedFloorVoxel(const Int3 &voxel);
 
-	void updateFadingVoxels(double dt);
+	// Updates fading voxels in the given chunk range (interim solution to using the chunk system).
+	void updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &maxChunk, double dt);
 public:
 	LevelData(LevelData&&) = default;
 	virtual ~LevelData();
@@ -248,12 +181,13 @@ public:
 	double getCeilingHeight() const;
 	std::vector<FlatDef> &getFlats();
 	const std::vector<FlatDef> &getFlats() const;
-	std::vector<DoorState> &getOpenDoors();
-	const std::vector<DoorState> &getOpenDoors() const;
-	std::vector<FadeState> &getFadingVoxels();
-	const std::vector<FadeState> &getFadingVoxels() const;
-	ChasmStates &getChasmStates();
-	const ChasmStates &getChasmStates() const;
+	VoxelInstanceGroup *tryGetVoxelInstances(const ChunkInt2 &chunk);
+	const VoxelInstanceGroup *tryGetVoxelInstances(const ChunkInt2 &chunk) const;
+
+	// Convenience function that does the chunk look-up internally.
+	VoxelInstance *tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type);
+	const VoxelInstance *tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type) const;
+
 	Transitions &getTransitions();
 	const Transitions &getTransitions() const;
 	const INFFile &getInfFile() const;
@@ -267,6 +201,11 @@ public:
 
 	// Returns whether a level is considered an outdoor dungeon. Only true for some interiors.
 	virtual bool isOutdoorDungeon() const = 0;
+
+	void addVoxelInstance(VoxelInstance &&voxelInst);
+
+	// Removes all voxel instances not stored between level transitions (open doors, fading voxels).
+	void clearTemporaryVoxelInstances();
 
 	// Sets this level active in the renderer. It's virtual so derived level data classes can
 	// do some extra work (like set interior sky colors in the renderer).

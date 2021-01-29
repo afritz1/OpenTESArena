@@ -487,12 +487,9 @@ private:
 		struct Voxels
 		{
 			int threadsDone;
-			const std::vector<LevelData::DoorState> *openDoors;
-			const std::vector<LevelData::FadeState> *fadingVoxels;
-			const LevelData::ChasmStates *chasmStates;
+			const LevelData *levelData;
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
-			const VoxelGrid *voxelGrid;
 			const VoxelTextures *voxelTextures;
 			const ChasmTextureGroups *chasmTextureGroups;
 			Buffer<OcclusionData> *occlusion;
@@ -500,12 +497,8 @@ private:
 			int chunkDistance;
 			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
-			void init(int chunkDistance, double ceilingHeight,
-				const std::vector<LevelData::DoorState> &openDoors,
-				const std::vector<LevelData::FadeState> &fadingVoxels,
-				const LevelData::ChasmStates &chasmStates,
-				const std::vector<VisibleLight> &visLights,
-				const Buffer2D<VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
+			void init(int chunkDistance, double ceilingHeight, const LevelData &levelData,
+				const std::vector<VisibleLight> &visLights, const Buffer2D<VisibleLightList> &visLightLists,
 				const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 				Buffer<OcclusionData> &occlusion);
 		};
@@ -820,91 +813,62 @@ private:
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
 	static void drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper functions for drawing a voxel column.
 	static void drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
-		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, double nearZ, double farZ, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
+		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
 	// X value is exclusive.
@@ -919,31 +883,22 @@ private:
 	template <bool NonNegativeDirX, bool NonNegativeDirZ>
 	static void rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper method for internal ray casting function that takes template parameters for better
 	// code generation.
-	static void rayCast2D(int x, const Camera &camera, const Ray &ray,
-		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
-		const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
+	static void rayCast2D(int x, const Camera &camera, const Ray &ray, const ShadingInfo &shadingInfo,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
-		OcclusionData &occlusion, const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
-	static void drawSkyGradient(int startY, int endY, double gradientProjYTop,
-		double gradientProjYBottom, Buffer<Double3> &skyGradientRowCache,
-		std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo,
+	static void drawSkyGradient(int startY, int endY, double gradientProjYTop, double gradientProjYBottom,
+		Buffer<Double3> &skyGradientRowCache, std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo,
 		const FrameView &frame);
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
@@ -954,13 +909,10 @@ private:
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
-		double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels,
-		const LevelData::ChasmStates &chasmStates,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelGrid &voxelGrid,
-		const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
-		Buffer<OcclusionData> &occlusion, const ShadingInfo &shadingInfo, const FrameView &frame);
+		double ceilingHeight, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
+		const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
@@ -1052,9 +1004,7 @@ public:
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
 	void render(const Double3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
-		const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from

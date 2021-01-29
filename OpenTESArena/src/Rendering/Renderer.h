@@ -250,9 +250,7 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const std::vector<LevelData::DoorState> &openDoors,
-		const std::vector<LevelData::FadeState> &fadingVoxels, const LevelData::ChasmStates &chasmStates,
-		const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 

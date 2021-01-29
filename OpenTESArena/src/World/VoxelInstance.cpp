@@ -50,6 +50,11 @@ bool VoxelInstance::ChasmState::faceIsVisible(VoxelFacing3D facing) const
 	}
 }
 
+bool VoxelInstance::ChasmState::faceIsVisible(VoxelFacing2D facing) const
+{
+	return this->faceIsVisible(VoxelUtils::convertFaceTo3D(facing));
+}
+
 int VoxelInstance::ChasmState::getFaceCount() const
 {
 	// Add one for floor.
