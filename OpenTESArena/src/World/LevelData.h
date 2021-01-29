@@ -52,21 +52,6 @@ enum class MapType;
 class LevelData
 {
 public:
-	// Mapping of .INF flat index to instances in the game world.
-	class FlatDef
-	{
-	private:
-		ArenaTypes::FlatIndex flatIndex; // Index in .INF file flats and flat textures.
-		std::vector<NewInt2> positions;
-	public:
-		FlatDef(ArenaTypes::FlatIndex flatIndex);
-
-		ArenaTypes::FlatIndex getFlatIndex() const;
-		const std::vector<NewInt2> &getPositions() const;
-
-		void addPosition(const NewInt2 &position);
-	};
-
 	class Lock
 	{
 	private:
@@ -126,7 +111,25 @@ public:
 
 	// @temp change to hash table for wild chunk name generation performance.
 	using Transitions = std::unordered_map<NewInt2, Transition>;
+
+	// One group per chunk. Needs to be a hash table for chasm rendering performance.
+	using VoxelInstanceGroup = std::unordered_map<Int3, std::vector<VoxelInstance>>;
 private:
+	// Mapping of .INF flat index to instances in the game world.
+	class FlatDef
+	{
+	private:
+		ArenaTypes::FlatIndex flatIndex; // Index in .INF file flats and flat textures.
+		std::vector<NewInt2> positions;
+	public:
+		FlatDef(ArenaTypes::FlatIndex flatIndex);
+
+		ArenaTypes::FlatIndex getFlatIndex() const;
+		const std::vector<NewInt2> &getPositions() const;
+
+		void addPosition(const NewInt2 &position);
+	};
+
 	// Mappings of IDs to voxel data indices. These maps are stored here because they might be
 	// shared between multiple calls to read{FLOR,MAP1,MAP2}().
 	std::vector<std::pair<uint16_t, int>> wallDataMappings, floorDataMappings, map2DataMappings;
@@ -136,7 +139,7 @@ private:
 	INFFile inf;
 	std::vector<FlatDef> flatsLists;
 	std::unordered_map<NewInt2, Lock> locks;
-	std::unordered_map<ChunkInt2, std::vector<VoxelInstance>> voxelInstMap; // @temp interim solution until using chunk system.
+	std::unordered_map<ChunkInt2, VoxelInstanceGroup> voxelInstMap; // @temp interim solution until using chunk system.
 	Transitions transitions;
 	std::string name;
 
@@ -178,8 +181,8 @@ public:
 	double getCeilingHeight() const;
 	std::vector<FlatDef> &getFlats();
 	const std::vector<FlatDef> &getFlats() const;
-	std::vector<VoxelInstance> *tryGetVoxelInstances(const ChunkInt2 &chunk);
-	const std::vector<VoxelInstance> *tryGetVoxelInstances(const ChunkInt2 &chunk) const;
+	VoxelInstanceGroup *tryGetVoxelInstances(const ChunkInt2 &chunk);
+	const VoxelInstanceGroup *tryGetVoxelInstances(const ChunkInt2 &chunk) const;
 
 	// Convenience function that does the chunk look-up internally.
 	VoxelInstance *tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type);

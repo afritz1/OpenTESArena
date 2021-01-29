@@ -194,7 +194,7 @@ const std::vector<LevelData::FlatDef> &LevelData::getFlats() const
 	return this->flatsLists;
 }
 
-std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk)
+LevelData::VoxelInstanceGroup *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk)
 {
 	const auto iter = this->voxelInstMap.find(chunk);
 	if (iter != this->voxelInstMap.end())
@@ -207,7 +207,7 @@ std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt2 &chu
 	}
 }
 
-const std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk) const
+const LevelData::VoxelInstanceGroup *LevelData::tryGetVoxelInstances(const ChunkInt2 &chunk) const
 {
 	const auto iter = this->voxelInstMap.find(chunk);
 	if (iter != this->voxelInstMap.end())
@@ -223,24 +223,28 @@ const std::vector<VoxelInstance> *LevelData::tryGetVoxelInstances(const ChunkInt
 VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type)
 {
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
-	if (voxelInsts != nullptr)
+	VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
+	if (voxelInstGroup != nullptr)
 	{
-		std::optional<int> index;
-		for (int i = 0; i < static_cast<int>(voxelInsts->size()); i++)
+		const auto iter = voxelInstGroup->find(voxel);
+		if (iter != voxelInstGroup->end())
 		{
-			const VoxelInstance &voxelInst = (*voxelInsts)[i];
-			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
-				(voxelInst.getZ() == voxel.z) && (voxelInst.getType() == type))
+			std::vector<VoxelInstance> &voxelInsts = iter->second;
+			std::optional<int> index;
+			for (int i = 0; i < static_cast<int>(voxelInsts.size()); i++)
 			{
-				index = i;
-				break;
+				const VoxelInstance &voxelInst = voxelInsts[i];
+				if (voxelInst.getType() == type)
+				{
+					index = i;
+					break;
+				}
 			}
-		}
 
-		if (index.has_value())
-		{
-			return &((*voxelInsts)[*index]);
+			if (index.has_value())
+			{
+				return &voxelInsts[*index];
+			}
 		}
 	}
 
@@ -250,24 +254,28 @@ VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::
 const VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type) const
 {
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	const std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
-	if (voxelInsts != nullptr)
+	const VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
+	if (voxelInstGroup != nullptr)
 	{
-		std::optional<int> index;
-		for (int i = 0; i < static_cast<int>(voxelInsts->size()); i++)
+		const auto iter = voxelInstGroup->find(voxel);
+		if (iter != voxelInstGroup->end())
 		{
-			const VoxelInstance &voxelInst = (*voxelInsts)[i];
-			if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
-				(voxelInst.getZ() == voxel.z) && (voxelInst.getType() == type))
+			const std::vector<VoxelInstance> &voxelInsts = iter->second;
+			std::optional<int> index;
+			for (int i = 0; i < static_cast<int>(voxelInsts.size()); i++)
 			{
-				index = i;
-				break;
+				const VoxelInstance &voxelInst = voxelInsts[i];
+				if (voxelInst.getType() == type)
+				{
+					index = i;
+					break;
+				}
 			}
-		}
 
-		if (index.has_value())
-		{
-			return &((*voxelInsts)[*index]);
+			if (index.has_value())
+			{
+				return &voxelInsts[*index];
+			}
 		}
 	}
 
@@ -343,10 +351,18 @@ void LevelData::addVoxelInstance(VoxelInstance &&voxelInst)
 	auto iter = this->voxelInstMap.find(chunk);
 	if (iter == this->voxelInstMap.end())
 	{
-		iter = this->voxelInstMap.emplace(std::make_pair(chunk, std::vector<VoxelInstance>())).first;
+		iter = this->voxelInstMap.emplace(std::make_pair(chunk, VoxelInstanceGroup())).first;
 	}
 
-	std::vector<VoxelInstance> &voxelInsts = iter->second;
+	VoxelInstanceGroup &voxelInstGroup = iter->second;
+	const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+	auto groupIter = voxelInstGroup.find(voxel);
+	if (groupIter == voxelInstGroup.end())
+	{
+		groupIter = voxelInstGroup.emplace(std::make_pair(voxel, std::vector<VoxelInstance>())).first;
+	}
+
+	std::vector<VoxelInstance> &voxelInsts = groupIter->second;
 	voxelInsts.emplace_back(std::move(voxelInst));
 }
 
@@ -354,17 +370,21 @@ void LevelData::clearTemporaryVoxelInstances()
 {
 	for (auto &pair : this->voxelInstMap)
 	{
-		std::vector<VoxelInstance> &voxelInsts = pair.second;
-		for (int i = static_cast<int>(voxelInsts.size()) - 1; i >= 0; i--)
+		VoxelInstanceGroup &voxelInstGroup = pair.second;
+		for (auto &groupPair : voxelInstGroup)
 		{
-			VoxelInstance &voxelInst = voxelInsts[i];
-			const VoxelInstance::Type voxelInstType = voxelInst.getType();
-			const bool isTemporary = (voxelInstType == VoxelInstance::Type::OpenDoor) ||
-				(voxelInstType == VoxelInstance::Type::Fading);
-
-			if (isTemporary)
+			std::vector<VoxelInstance> &voxelInsts = groupPair.second;
+			for (int i = static_cast<int>(voxelInsts.size()) - 1; i >= 0; i--)
 			{
-				voxelInsts.erase(voxelInsts.begin() + i);
+				VoxelInstance &voxelInst = voxelInsts[i];
+				const VoxelInstance::Type voxelInstType = voxelInst.getType();
+				const bool isTemporary = (voxelInstType == VoxelInstance::Type::OpenDoor) ||
+					(voxelInstType == VoxelInstance::Type::Fading);
+
+				if (isTemporary)
+				{
+					voxelInsts.erase(voxelInsts.begin() + i);
+				}
 			}
 		}
 	}
@@ -1306,33 +1326,42 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
+	VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
-	if (voxelInsts != nullptr)
+	if (voxelInstGroup != nullptr)
 	{
-		const auto iter = std::find_if(voxelInsts->begin(), voxelInsts->end(),
-			[&voxel](const VoxelInstance &inst)
+		auto groupIter = voxelInstGroup->find(voxel);
+		if ((groupIter == voxelInstGroup->end()) && shouldAddChasmState)
 		{
-			return (inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
-				(inst.getType() == VoxelInstance::Type::Chasm);
-		});
+			groupIter = voxelInstGroup->emplace(std::make_pair(voxel, std::vector<VoxelInstance>())).first;
+		}
 
-		if (iter != voxelInsts->end())
+		if (groupIter != voxelInstGroup->end())
 		{
-			if (shouldAddChasmState)
+			std::vector<VoxelInstance> &voxelInsts = groupIter->second;
+			const auto voxelIter = std::find_if(voxelInsts.begin(), voxelInsts.end(),
+				[](const VoxelInstance &inst)
 			{
-				*iter = makeChasmInst();
+				return inst.getType() == VoxelInstance::Type::Chasm;
+			});
+
+			if (voxelIter != voxelInsts.end())
+			{
+				if (shouldAddChasmState)
+				{
+					*voxelIter = makeChasmInst();
+				}
+				else
+				{
+					voxelInsts.erase(voxelIter);
+				}
 			}
 			else
 			{
-				voxelInsts->erase(iter);
-			}
-		}
-		else
-		{
-			if (shouldAddChasmState)
-			{
-				voxelInsts->emplace_back(makeChasmInst());
+				if (shouldAddChasmState)
+				{
+					voxelInsts.emplace_back(makeChasmInst());
+				}
 			}
 		}
 	}
@@ -1433,33 +1462,43 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 
 	// Add/update chasm state.
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
-	std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
+	VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
 	const bool shouldAddChasmState = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
-	if (voxelInsts != nullptr)
+	if (voxelInstGroup != nullptr)
 	{
-		const auto iter = std::find_if(voxelInsts->begin(), voxelInsts->end(),
-			[&voxel](const VoxelInstance &inst)
+		auto groupIter = voxelInstGroup->find(voxel);
+		if ((groupIter == voxelInstGroup->end()) && shouldAddChasmState)
 		{
-			return (inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
-				(inst.getType() == VoxelInstance::Type::Chasm);
-		});
+			groupIter = voxelInstGroup->emplace(std::make_pair(voxel, std::vector<VoxelInstance>())).first;
+		}
 
-		if (iter != voxelInsts->end())
+		if (groupIter != voxelInstGroup->end())
 		{
-			if (shouldAddChasmState)
+			std::vector<VoxelInstance> &voxelInsts = groupIter->second;
+			const auto iter = std::find_if(voxelInsts.begin(), voxelInsts.end(),
+				[&voxel](const VoxelInstance &inst)
 			{
-				*iter = makeChasmInst();
+				return (inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
+					(inst.getType() == VoxelInstance::Type::Chasm);
+			});
+
+			if (iter != voxelInsts.end())
+			{
+				if (shouldAddChasmState)
+				{
+					*iter = makeChasmInst();
+				}
+				else
+				{
+					voxelInsts.erase(iter);
+				}
 			}
 			else
 			{
-				voxelInsts->erase(iter);
-			}
-		}
-		else
-		{
-			if (shouldAddChasmState)
-			{
-				voxelInsts->emplace_back(makeChasmInst());
+				if (shouldAddChasmState)
+				{
+					voxelInsts.emplace_back(makeChasmInst());
+				}
 			}
 		}
 	}
@@ -1491,41 +1530,46 @@ void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &m
 		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunk(chunkX, chunkZ);
-			std::vector<VoxelInstance> *voxelInsts = this->tryGetVoxelInstances(chunk);
-			if (voxelInsts != nullptr)
+			VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
+			if (voxelInstGroup != nullptr)
 			{
-				// Reverse iterate, removing voxels that are done fading out.
-				for (int i = static_cast<int>(voxelInsts->size()) - 1; i >= 0; i--)
+				for (auto &pair : *voxelInstGroup)
 				{
-					VoxelInstance &voxelInst = (*voxelInsts)[i];
-					if (voxelInst.getType() == VoxelInstance::Type::Fading)
+					std::vector<VoxelInstance> &voxelInsts = pair.second;
+
+					// Reverse iterate, removing voxels that are done fading out.
+					for (int i = static_cast<int>(voxelInsts.size()) - 1; i >= 0; i--)
 					{
-						voxelInst.update(dt);
-
-						if (!voxelInst.hasRelevantState())
+						VoxelInstance &voxelInst = voxelInsts[i];
+						if (voxelInst.getType() == VoxelInstance::Type::Fading)
 						{
-							const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-							completedVoxels.push_back(voxel);
+							voxelInst.update(dt);
 
-							const uint16_t newVoxelID = [this, &voxel]() -> uint16_t
+							if (!voxelInst.hasRelevantState())
 							{
-								const bool isFloorVoxel = voxel.y == 0;
-								if (isFloorVoxel)
-								{
-									// Convert from floor to chasm.
-									return this->getChasmIdFromFadedFloorVoxel(voxel);
-								}
-								else
-								{
-									// Clear the voxel.
-									return 0;
-								}
-							}();
+								const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+								completedVoxels.push_back(voxel);
 
-							// Change the voxel to its empty representation (either air or chasm) and erase
-							// the fading voxel from the list.
-							voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
-							voxelInsts->erase(voxelInsts->begin() + i);
+								const uint16_t newVoxelID = [this, &voxel]() -> uint16_t
+								{
+									const bool isFloorVoxel = voxel.y == 0;
+									if (isFloorVoxel)
+									{
+										// Convert from floor to chasm.
+										return this->getChasmIdFromFadedFloorVoxel(voxel);
+									}
+									else
+									{
+										// Clear the voxel.
+										return 0;
+									}
+								}();
+
+								// Change the voxel to its empty representation (either air or chasm) and erase
+								// the fading voxel from the list.
+								voxelGrid.setVoxel(voxel.x, voxel.y, voxel.z, newVoxelID);
+								voxelInsts.erase(voxelInsts.begin() + i);
+							}
 						}
 					}
 				}

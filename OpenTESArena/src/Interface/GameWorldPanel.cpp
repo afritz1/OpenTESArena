@@ -2119,64 +2119,69 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunk(chunkX, chunkZ);
-			std::vector<VoxelInstance> *voxelInsts = activeLevel.tryGetVoxelInstances(chunk);
-			if (voxelInsts != nullptr)
+			LevelData::VoxelInstanceGroup *voxelInstGroup = activeLevel.tryGetVoxelInstances(chunk);
+			if (voxelInstGroup != nullptr)
 			{
-				// Update each open door and remove ones that become closed.
-				for (int i = static_cast<int>(voxelInsts->size()) - 1; i >= 0; i--)
+				for (auto &pair : *voxelInstGroup)
 				{
-					VoxelInstance &voxelInst = (*voxelInsts)[i];
-					if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
+					std::vector<VoxelInstance> &voxelInsts = pair.second;
+
+					// Update each open door and remove ones that become closed.
+					for (int i = static_cast<int>(voxelInsts.size()) - 1; i >= 0; i--)
 					{
-						voxelInst.update(dt);
-
-						// Get the door's voxel definition and its sound definition for determining how it
-						// sounds when closing.
-						const auto &voxelGrid = activeLevel.getVoxelGrid();
-						const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-						const VoxelDefinition::DoorData &doorData = voxelDef.door;
-
-						const auto &doorSoundLibrary = game.getDoorSoundLibrary();
-						const std::optional<int> doorSoundDefIndex =
-							doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Close);
-						const DoorSoundDefinition *doorSoundDef = doorSoundDefIndex.has_value() ?
-							&doorSoundLibrary.getDef(*doorSoundDefIndex) : nullptr;
-
-						VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
-						const VoxelInstance::DoorState::StateType doorStateType = doorState.getStateType();
-						if (doorStateType == VoxelInstance::DoorState::StateType::Closed)
+						VoxelInstance &voxelInst = voxelInsts[i];
+						if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 						{
-							if (doorSoundDef != nullptr)
-							{
-								// Only some doors play a sound when they become closed.
-								playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosed, voxel);
-							}
+							voxelInst.update(dt);
 
-							// Erase closed door.
-							voxelInsts->erase(voxelInsts->begin() + i);
-						}
-						else if (doorStateType != VoxelInstance::DoorState::StateType::Closing)
-						{
-							// Auto-close doors that the player is far enough away from.
-							const bool farEnough = [&playerPos, &voxel]()
-							{
-								constexpr double maxDistance = ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
-								constexpr double maxDistanceSqr = maxDistance * maxDistance;
-								const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(NewInt2(voxel.x, voxel.z));
-								const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
-								return distSqr > maxDistanceSqr;
-							}();
+							// Get the door's voxel definition and its sound definition for determining how it
+							// sounds when closing.
+							const auto &voxelGrid = activeLevel.getVoxelGrid();
+							const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+							const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
+							const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+							const VoxelDefinition::DoorData &doorData = voxelDef.door;
 
-							if (farEnough)
-							{
-								doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+							const auto &doorSoundLibrary = game.getDoorSoundLibrary();
+							const std::optional<int> doorSoundDefIndex =
+								doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Close);
+							const DoorSoundDefinition *doorSoundDef = doorSoundDefIndex.has_value() ?
+								&doorSoundLibrary.getDef(*doorSoundDefIndex) : nullptr;
 
+							VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
+							const VoxelInstance::DoorState::StateType doorStateType = doorState.getStateType();
+							if (doorStateType == VoxelInstance::DoorState::StateType::Closed)
+							{
 								if (doorSoundDef != nullptr)
 								{
-									// Only some doors play a sound when they start closing.
-									playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosing, voxel);
+									// Only some doors play a sound when they become closed.
+									playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosed, voxel);
+								}
+
+								// Erase closed door.
+								voxelInsts.erase(voxelInsts.begin() + i);
+							}
+							else if (doorStateType != VoxelInstance::DoorState::StateType::Closing)
+							{
+								// Auto-close doors that the player is far enough away from.
+								const bool farEnough = [&playerPos, &voxel]()
+								{
+									constexpr double maxDistance = ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+									constexpr double maxDistanceSqr = maxDistance * maxDistance;
+									const Double2 diff = playerPos - VoxelUtils::getVoxelCenter(NewInt2(voxel.x, voxel.z));
+									const double distSqr = (diff.x * diff.x) + (diff.y * diff.y);
+									return distSqr > maxDistanceSqr;
+								}();
+
+								if (farEnough)
+								{
+									doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+
+									if (doorSoundDef != nullptr)
+									{
+										// Only some doors play a sound when they start closing.
+										playCloseSoundIfType(doorSoundDef->getClose(), DoorSoundDefinition::CloseType::OnClosing, voxel);
+									}
 								}
 							}
 						}
