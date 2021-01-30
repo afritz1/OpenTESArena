@@ -2,8 +2,11 @@
 #include <functional>
 #include <optional>
 
+#include "ArenaCityUtils.h"
+#include "ArenaInteriorUtils.h"
 #include "ArenaLevelUtils.h"
 #include "ArenaVoxelUtils.h"
+#include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
@@ -154,8 +157,14 @@ const LevelData::Transition::Menu &LevelData::Transition::getMenu() const
 	return this->menu;
 }
 
+void LevelData::Interior::init(uint32_t skyColor, bool outdoorDungeon)
+{
+	this->skyColor = skyColor;
+	this->outdoorDungeon = outdoorDungeon;
+}
+
 LevelData::LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
-	const std::string &name)
+	const std::string &name, bool isInterior)
 	: voxelGrid(gridWidth, gridHeight, gridDepth), name(name)
 {
 	const int chunkCountX = (gridWidth + (RMDFile::WIDTH - 1)) / RMDFile::WIDTH;
@@ -166,11 +175,340 @@ LevelData::LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std
 	{
 		DebugCrash("Could not init .INF file \"" + infName + "\".");
 	}
+
+	this->isInterior = isInterior;
 }
 
-LevelData::~LevelData()
+LevelData LevelData::loadInterior(const MIFFile::Level &level, SNInt gridWidth, WEInt gridDepth, const ExeData &exeData)
 {
+	// .INF filename associated with the interior level.
+	const std::string infName = String::toUppercase(level.getInfo());
 
+	constexpr bool isInterior = true;
+	LevelData levelData(gridWidth, ArenaInteriorUtils::GRID_HEIGHT, gridDepth, infName, level.getName(), isInterior);
+
+	const INFFile &inf = levelData.getInfFile();
+	const bool outdoorDungeon = inf.getCeiling().outdoorDungeon;
+	const uint32_t skyColor = (outdoorDungeon ? Color::Gray : Color::Black).toARGB(); // @todo: use color from palette
+	levelData.interior.init(skyColor, outdoorDungeon);
+
+	// Load FLOR and MAP1 voxels.
+	constexpr MapType mapType = MapType::Interior;
+	levelData.readFLOR(level.getFLOR(), inf, mapType);
+	levelData.readMAP1(level.getMAP1(), inf, mapType, exeData);
+
+	// All interiors have ceilings except some main quest dungeons which have a 1
+	// as the third number after *CEILING in their .INF file.
+	const bool hasCeiling = !inf.getCeiling().outdoorDungeon;
+
+	// Fill the second floor with ceiling tiles if it's an "indoor dungeon". Otherwise,
+	// leave it empty (for some "outdoor dungeons").
+	if (hasCeiling)
+	{
+		levelData.readCeiling(inf);
+	}
+
+	// Assign locks.
+	levelData.readLocks(level.getLOCK());
+
+	// Assign text and sound triggers.
+	levelData.readTriggers(level.getTRIG(), inf);
+
+	return levelData;
+}
+
+LevelData LevelData::loadDungeon(ArenaRandom &random, const MIFFile &mif, int levelUpBlock,
+	const int *levelDownBlock, int widthChunks, int depthChunks, const std::string &infName, SNInt gridWidth,
+	WEInt gridDepth, const ExeData &exeData)
+{
+	// Create temp buffers for dungeon block data.
+	Buffer2D<uint16_t> tempFlor(gridDepth, gridWidth);
+	Buffer2D<uint16_t> tempMap1(gridDepth, gridWidth);
+	tempFlor.fill(0);
+	tempMap1.fill(0);
+
+	std::vector<ArenaTypes::MIFLock> tempLocks;
+	std::vector<ArenaTypes::MIFTrigger> tempTriggers;
+	const int tileSet = random.next() % 4;
+
+	for (SNInt row = 0; row < depthChunks; row++)
+	{
+		const SNInt zOffset = row * ArenaInteriorUtils::DUNGEON_CHUNK_DIM;
+		for (WEInt column = 0; column < widthChunks; column++)
+		{
+			const WEInt xOffset = column * ArenaInteriorUtils::DUNGEON_CHUNK_DIM;
+
+			// Get the selected level from the .MIF file.
+			const int blockIndex = (tileSet * 8) + (random.next() % 8);
+			const auto &blockLevel = mif.getLevel(blockIndex);
+			const BufferView2D<const ArenaTypes::VoxelID> &blockFLOR = blockLevel.getFLOR();
+			const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
+
+			// Copy block data to temp buffers.
+			for (SNInt z = 0; z < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; z++)
+			{
+				for (WEInt x = 0; x < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; x++)
+				{
+					const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
+					const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+					const WEInt dstX = xOffset + x;
+					const SNInt dstZ = zOffset + z;
+					tempFlor.set(dstX, dstZ, srcFlorVoxel);
+					tempMap1.set(dstX, dstZ, srcMap1Voxel);
+				}
+			}
+
+			// Assign locks to the current block.
+			const BufferView<const ArenaTypes::MIFLock> &blockLOCK = blockLevel.getLOCK();
+			for (int i = 0; i < blockLOCK.getCount(); i++)
+			{
+				const auto &lock = blockLOCK.get(i);
+
+				ArenaTypes::MIFLock tempLock;
+				tempLock.x = xOffset + lock.x;
+				tempLock.y = zOffset + lock.y;
+				tempLock.lockLevel = lock.lockLevel;
+
+				tempLocks.push_back(std::move(tempLock));
+			}
+
+			// Assign text/sound triggers to the current block.
+			const BufferView<const ArenaTypes::MIFTrigger> &blockTRIG = blockLevel.getTRIG();
+			for (int i = 0; i < blockTRIG.getCount(); i++)
+			{
+				const auto &trigger = blockTRIG.get(i);
+
+				ArenaTypes::MIFTrigger tempTrigger;
+				tempTrigger.x = xOffset + trigger.x;
+				tempTrigger.y = zOffset + trigger.y;
+				tempTrigger.textIndex = trigger.textIndex;
+				tempTrigger.soundIndex = trigger.soundIndex;
+
+				tempTriggers.push_back(std::move(tempTrigger));
+			}
+		}
+	}
+
+	// Dungeon (either named or in wilderness).
+	constexpr bool isInterior = true;
+	LevelData levelData(gridWidth, ArenaInteriorUtils::GRID_HEIGHT, gridDepth, infName, std::string(), isInterior);
+
+	const uint32_t skyColor = Color::Black.toARGB(); // @todo: use color from palette
+	constexpr bool outdoorDungeon = false;
+	levelData.interior.init(skyColor, outdoorDungeon);
+
+	// Draw perimeter blocks. First top and bottom, then right and left.
+	constexpr ArenaTypes::VoxelID perimeterVoxel = 0x7800;
+	for (WEInt x = 0; x < tempMap1.getWidth(); x++)
+	{
+		tempMap1.set(x, 0, perimeterVoxel);
+		tempMap1.set(x, tempMap1.getHeight() - 1, perimeterVoxel);
+	}
+
+	for (SNInt z = 1; z < (tempMap1.getHeight() - 1); z++)
+	{
+		tempMap1.set(0, z, perimeterVoxel);
+		tempMap1.set(tempMap1.getWidth() - 1, z, perimeterVoxel);
+	}
+
+	const INFFile &inf = levelData.getInfFile();
+
+	// Put transition blocks, unless null.
+	const uint8_t levelUpVoxelByte = *inf.getLevelUpIndex() + 1;
+	WEInt levelUpX;
+	SNInt levelUpZ;
+	ArenaInteriorUtils::unpackLevelChangeVoxel(levelUpBlock, &levelUpX, &levelUpZ);
+	tempMap1.set(ArenaInteriorUtils::offsetLevelChangeVoxel(levelUpX),
+		ArenaInteriorUtils::offsetLevelChangeVoxel(levelUpZ),
+		ArenaInteriorUtils::convertLevelChangeVoxel(levelUpVoxelByte));
+
+	if (levelDownBlock != nullptr)
+	{
+		const uint8_t levelDownVoxelByte = *inf.getLevelDownIndex() + 1;
+		WEInt levelDownX;
+		SNInt levelDownZ;
+		ArenaInteriorUtils::unpackLevelChangeVoxel(*levelDownBlock, &levelDownX, &levelDownZ);
+		tempMap1.set(ArenaInteriorUtils::offsetLevelChangeVoxel(levelDownX),
+			ArenaInteriorUtils::offsetLevelChangeVoxel(levelDownZ),
+			ArenaInteriorUtils::convertLevelChangeVoxel(levelDownVoxelByte));
+	}
+
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorView(
+		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1View(
+		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+
+	// Load FLOR, MAP1, and ceiling into the voxel grid.
+	constexpr MapType mapType = MapType::Interior;
+	levelData.readFLOR(tempFlorView, inf, mapType);
+	levelData.readMAP1(tempMap1View, inf, mapType, exeData);
+	levelData.readCeiling(inf);
+
+	const BufferView<const ArenaTypes::MIFLock> tempLocksView(
+		tempLocks.data(), static_cast<int>(tempLocks.size()));
+	const BufferView<const ArenaTypes::MIFTrigger> tempTriggersView(
+		tempTriggers.data(), static_cast<int>(tempTriggers.size()));
+
+	// Load locks and triggers (if any).
+	levelData.readLocks(tempLocksView);
+	levelData.readTriggers(tempTriggersView, inf);
+
+	return levelData;
+}
+
+LevelData LevelData::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
+	SNInt gridWidth, WEInt gridDepth, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
+{
+	// Create temp voxel data buffers and write the city skeleton data to them. Each city
+	// block will be written to them as well.
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(gridDepth, gridWidth);
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(gridDepth, gridWidth);
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(gridDepth, gridWidth);
+	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	ArenaCityUtils::writeSkeleton(level, tempFlorView, tempMap1View, tempMap2View);
+
+	// Get the city's seed for random chunk generation. It is modified later during
+	// building name generation.
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const uint32_t citySeed = cityDef.citySeed;
+	ArenaRandom random(citySeed);
+
+	if (!cityDef.premade)
+	{
+		// Generate procedural city data and write it into the temp buffers.
+		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+			static_cast<int>(cityDef.reservedBlocks->size()));
+		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
+		ArenaCityUtils::generateCity(citySeed, cityDef.cityBlocksPerSide, gridDepth, reservedBlocks,
+			blockStartPosition, random, binaryAssetLibrary, tempFlor, tempMap1, tempMap2);
+	}
+
+	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
+	ArenaCityUtils::revisePalaceGraphics(tempMap1, gridWidth, gridDepth);
+
+	// Create the level for the voxel data to be written into.
+	constexpr bool isInterior = false;
+	LevelData levelData(gridWidth, ArenaCityUtils::LEVEL_HEIGHT, gridDepth, infName, level.getName(), isInterior);
+
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
+		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
+		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
+		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	const INFFile &inf = levelData.getInfFile();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+
+	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
+	constexpr MapType mapType = MapType::City;
+	levelData.readFLOR(tempFlorConstView, inf, mapType);
+	levelData.readMAP1(tempMap1ConstView, inf, mapType, exeData);
+	levelData.readMAP2(tempMap2ConstView, inf);
+
+	// Generate building names.
+	levelData.exterior.menuNames = ArenaCityUtils::generateBuildingNames(locationDef, provinceDef, random,
+		levelData.getVoxelGrid(), levelData.getTransitions(), binaryAssetLibrary, textAssetLibrary);
+
+	// Generate distant sky.
+	levelData.exterior.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);
+
+	return levelData;
+}
+
+LevelData LevelData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
+{
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const ExeData::Wilderness &wildData = binaryAssetLibrary.getExeData().wild;
+	const Buffer2D<ArenaWildUtils::WildBlockID> wildIndices =
+		ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, wildData);
+
+	// Temp buffers for voxel data.
+	Buffer2D<ArenaTypes::VoxelID> tempFlor(RMDFile::DEPTH * wildIndices.getWidth(),
+		RMDFile::WIDTH * wildIndices.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> tempMap1(tempFlor.getWidth(), tempFlor.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> tempMap2(tempFlor.getWidth(), tempFlor.getHeight());
+	tempFlor.fill(0);
+	tempMap1.fill(0);
+	tempMap2.fill(0);
+
+	auto writeRMD = [&binaryAssetLibrary, &tempFlor, &tempMap1, &tempMap2](
+		uint8_t rmdID, WEInt xOffset, SNInt zOffset)
+	{
+		const std::vector<RMDFile> &rmdFiles = binaryAssetLibrary.getWildernessChunks();
+		const int rmdIndex = DebugMakeIndex(rmdFiles, rmdID - 1);
+		const RMDFile &rmd = rmdFiles[rmdIndex];
+
+		// Copy .RMD voxel data to temp buffers.
+		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
+		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
+
+		for (SNInt z = 0; z < RMDFile::DEPTH; z++)
+		{
+			for (WEInt x = 0; x < RMDFile::WIDTH; x++)
+			{
+				const ArenaTypes::VoxelID srcFlorVoxel = rmdFLOR.get(x, z);
+				const ArenaTypes::VoxelID srcMap1Voxel = rmdMAP1.get(x, z);
+				const ArenaTypes::VoxelID srcMap2Voxel = rmdMAP2.get(x, z);
+				const WEInt dstX = xOffset + x;
+				const SNInt dstZ = zOffset + z;
+				tempFlor.set(dstX, dstZ, srcFlorVoxel);
+				tempMap1.set(dstX, dstZ, srcMap1Voxel);
+				tempMap2.set(dstX, dstZ, srcMap2Voxel);
+			}
+		}
+	};
+
+	// Load .RMD files into the wilderness, each at some X and Z offset in the voxel grid.
+	for (int y = 0; y < wildIndices.getHeight(); y++)
+	{
+		for (int x = 0; x < wildIndices.getWidth(); x++)
+		{
+			const uint8_t wildIndex = wildIndices.get(x, y);
+			writeRMD(wildIndex, x * RMDFile::WIDTH, y * RMDFile::DEPTH);
+		}
+	}
+
+	// Change the placeholder WILD00{1..4}.MIF blocks to the ones for the given city.
+	ArenaWildUtils::reviseWildernessCity(locationDef, tempFlor, tempMap1, tempMap2, binaryAssetLibrary);
+
+	// Create the level for the voxel data to be written into.
+	const std::string levelName = "WILD"; // Arbitrary
+	constexpr bool isInterior = false;
+	LevelData levelData(tempFlor.getWidth(), ArenaWildUtils::LEVEL_HEIGHT, tempFlor.getHeight(),
+		infName, levelName, isInterior);
+
+	const BufferView2D<const ArenaTypes::VoxelID> tempFlorView(
+		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap1View(
+		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
+	const BufferView2D<const ArenaTypes::VoxelID> tempMap2View(
+		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
+	const INFFile &inf = levelData.getInfFile();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+
+	// Load FLOR, MAP1, and MAP2 voxels into the voxel grid.
+	constexpr MapType mapType = MapType::Wilderness;
+	levelData.readFLOR(tempFlorView, inf, mapType);
+	levelData.readMAP1(tempMap1View, inf, mapType, exeData);
+	levelData.readMAP2(tempMap2View, inf);
+
+	// Generate wilderness building names.
+	levelData.exterior.menuNames = ArenaWildUtils::generateWildChunkBuildingNames(
+		levelData.getVoxelGrid(), levelData.getTransitions(), exeData);
+
+	// Generate distant sky.
+	levelData.exterior.distantSky.init(locationDef, provinceDef, weatherType, currentDay,
+		starCount, exeData, textureManager);
+
+	return levelData;
 }
 
 const std::string &LevelData::getName() const
@@ -320,6 +658,52 @@ const LevelData::Lock *LevelData::getLock(const NewInt2 &voxel) const
 {
 	const auto lockIter = this->locks.find(voxel);
 	return (lockIter != this->locks.end()) ? &lockIter->second : nullptr;
+}
+
+LevelData::TextTrigger *LevelData::getTextTrigger(const NewInt2 &voxel)
+{
+	if (this->isInterior)
+	{
+		auto &textTriggers = this->interior.textTriggers;
+		const auto textIter = textTriggers.find(voxel);
+		return (textIter != textTriggers.end()) ? &textIter->second : nullptr;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const std::string *LevelData::getSoundTrigger(const NewInt2 &voxel) const
+{
+	if (this->isInterior)
+	{
+		const auto &soundTriggers = this->interior.soundTriggers;
+		const auto soundIter = soundTriggers.find(voxel);
+		return (soundIter != soundTriggers.end()) ? &soundIter->second : nullptr;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const ArenaLevelUtils::MenuNamesList &LevelData::getMenuNames() const
+{
+	DebugAssert(!this->isInterior);
+	return this->exterior.menuNames;
+}
+
+bool LevelData::isOutdoorDungeon() const
+{
+	if (this->isInterior)
+	{
+		return this->interior.outdoorDungeon;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void LevelData::addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition)
@@ -1247,6 +1631,36 @@ void LevelData::readLocks(const BufferView<const ArenaTypes::MIFLock> &locks)
 	}
 }
 
+void LevelData::readTriggers(const BufferView<const ArenaTypes::MIFTrigger> &triggers, const INFFile &inf)
+{
+	DebugAssert(this->isInterior);
+
+	for (int i = 0; i < triggers.getCount(); i++)
+	{
+		const auto &trigger = triggers.get(i);
+
+		// Transform the voxel coordinates from the Arena layout to the new layout.
+		const NewInt2 voxel = VoxelUtils::originalVoxelToNewVoxel(OriginalInt2(trigger.x, trigger.y));
+
+		// There can be a text trigger and sound trigger in the same voxel.
+		const bool isTextTrigger = trigger.textIndex != -1;
+		const bool isSoundTrigger = trigger.soundIndex != -1;
+
+		// Make sure the text index points to a text value (i.e., not a key or riddle).
+		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
+		{
+			const INFFile::TextData &textData = inf.getText(trigger.textIndex);
+			this->interior.textTriggers.emplace(std::make_pair(
+				voxel, TextTrigger(textData.text, textData.displayedOnce)));
+		}
+
+		if (isSoundTrigger)
+		{
+			this->interior.soundTriggers.emplace(std::make_pair(voxel, inf.getSound(trigger.soundIndex)));
+		}
+	}
+}
+
 void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
 	uint16_t *outEastID, uint16_t *outWestID) const
 {
@@ -1925,6 +2339,16 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 	loadVoxelTextures();
 	loadChasmTextures();
 	loadEntities();
+
+	// Level-type-specific loading.
+	if (this->isInterior)
+	{
+		renderer.setSkyPalette(&this->interior.skyColor, 1);
+	}
+	else
+	{
+		renderer.setDistantSky(this->exterior.distantSky, palette, textureManager);
+	}
 }
 
 void LevelData::tick(Game &game, double dt)
@@ -1940,4 +2364,10 @@ void LevelData::tick(Game &game, double dt)
 
 	// Update entities.
 	this->entityManager.tick(game, dt);
+
+	// Level-type-specific updating.
+	if (!this->isInterior)
+	{
+		this->exterior.distantSky.tick(dt);
+	}
 }

@@ -25,6 +25,9 @@ namespace ArenaWildUtils
 	constexpr int WILD_WIDTH = 64;
 	constexpr int WILD_HEIGHT = WILD_WIDTH;
 
+	// Max height of .RMD with highest MAP2 extension.
+	constexpr int LEVEL_HEIGHT = 6;
+
 	// Generates the .INF name for the wilderness given a climate and current weather.
 	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
 

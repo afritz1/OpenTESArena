@@ -27,7 +27,7 @@ InteriorWorldData InteriorWorldData::loadInterior(ArenaTypes::InteriorType inter
 	for (int i = 0; i < mif.getLevelCount(); i++)
 	{
 		const MIFFile::Level &level = mif.getLevel(i);
-		worldData.levels.push_back(InteriorLevelData::loadInterior(
+		worldData.levels.emplace_back(LevelData::loadInterior(
 			level, mif.getDepth(), mif.getWidth(), exeData));
 	}
 
@@ -107,7 +107,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 		// No *LEVELDOWN block on the lowest level.
 		const int *levelDownBlock = (i < (levelCount - 1)) ? &transitions.at(i + 1) : nullptr;
 
-		worldData.levels.push_back(InteriorLevelData::loadDungeon(
+		worldData.levels.emplace_back(LevelData::loadDungeon(
 			random, mif, levelUpBlock, levelDownBlock, widthChunks, depthChunks, infName,
 			gridWidth, gridDepth, exeData));
 	}

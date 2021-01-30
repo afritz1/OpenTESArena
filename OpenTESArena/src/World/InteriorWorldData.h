@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "InteriorLevelData.h"
+#include "LevelData.h"
 #include "VoxelDefinition.h"
 #include "WorldData.h"
 #include "../Assets/ArenaTypes.h"
@@ -15,7 +15,7 @@ class MIFFile;
 class InteriorWorldData : public WorldData
 {
 private:
-	std::vector<InteriorLevelData> levels;
+	std::vector<LevelData> levels;
 	ArenaTypes::InteriorType interiorType;
 	int levelIndex;
 

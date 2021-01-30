@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-#include "ExteriorLevelData.h"
 #include "LevelData.h"
 #include "WorldData.h"
 #include "../Assets/INFFile.h"
@@ -23,10 +22,10 @@ enum class WeatherType;
 class ExteriorWorldData : public WorldData
 {
 private:
-	ExteriorLevelData levelData;
+	LevelData levelData;
 	bool isCity; // True if city, false if wilderness.
 
-	ExteriorWorldData(ExteriorLevelData &&levelData, bool isCity);
+	ExteriorWorldData(LevelData &&levelData, bool isCity);
 public:
 	ExteriorWorldData(ExteriorWorldData&&) = default;
 	virtual ~ExteriorWorldData();

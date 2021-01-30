@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ArenaLevelUtils.h"
+#include "DistantSky.h"
 #include "VoxelGrid.h"
 #include "VoxelInstance.h"
 #include "../Assets/ArenaTypes.h"
@@ -45,9 +47,11 @@ class LocationDefinition;
 class ProvinceDefinition;
 class Random;
 class Renderer;
+class TextAssetLibrary;
 class TextureManager;
 
 enum class MapType;
+enum class WeatherType;
 
 class LevelData
 {
@@ -112,6 +116,28 @@ public:
 	// @temp change to hash table for wild chunk name generation performance.
 	using Transitions = std::unordered_map<NewInt2, Transition>;
 
+	// Interior-specific data.
+	struct Interior
+	{
+		std::unordered_map<NewInt2, LevelData::TextTrigger> textTriggers;
+		std::unordered_map<NewInt2, std::string> soundTriggers;
+
+		// Exteriors have dynamic sky palettes, so sky color can only be stored by interiors (for the
+		// purposes of background fill, fog, etc.).
+		uint32_t skyColor;
+
+		bool outdoorDungeon;
+
+		void init(uint32_t skyColor, bool outdoorDungeon);
+	};
+
+	// Exterior-specific data.
+	struct Exterior
+	{
+		DistantSky distantSky;
+		ArenaLevelUtils::MenuNamesList menuNames;
+	};
+
 	// One group per chunk. Needs to be a hash table for chasm rendering performance.
 	using VoxelInstanceGroup = std::unordered_map<Int3, std::vector<VoxelInstance>>;
 private:
@@ -143,13 +169,18 @@ private:
 	Transitions transitions;
 	std::string name;
 
-	void addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition);
-protected:
+	// Level-type-specific data.
+	bool isInterior;
+	LevelData::Interior interior;
+	LevelData::Exterior exterior;
+
 	// Used by derived LevelData load methods.
 	LevelData(SNInt gridWidth, int gridHeight, WEInt gridDepth, const std::string &infName,
-		const std::string &name);
+		const std::string &name, bool isInterior);
 
 	void setVoxel(SNInt x, int y, WEInt z, uint16_t id);
+
+	void addFlatInstance(ArenaTypes::FlatIndex flatIndex, const NewInt2 &flatPosition);
 
 	void readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, const INFFile &inf,
 		MapType mapType);
@@ -158,6 +189,7 @@ protected:
 	void readMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf);
 	void readCeiling(const INFFile &inf);
 	void readLocks(const BufferView<const ArenaTypes::MIFLock> &locks);
+	void readTriggers(const BufferView<const ArenaTypes::MIFTrigger> &triggers, const INFFile &inf);
 
 	// Gets voxel IDs surrounding the given voxel. If one of the IDs would point to a voxel
 	// outside the grid, it is air.
@@ -175,7 +207,30 @@ protected:
 	void updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &maxChunk, double dt);
 public:
 	LevelData(LevelData&&) = default;
-	virtual ~LevelData();
+
+	// Interior level. The .INF is obtained from the level's info member.
+	static LevelData loadInterior(const MIFFile::Level &level, SNInt gridWidth,
+		WEInt gridDepth, const ExeData &exeData);
+
+	// Interior dungeon level. Each chunk is determined by an "inner seed" which depends on the
+	// dungeon level count being calculated beforehand.
+	static LevelData loadDungeon(ArenaRandom &random, const MIFFile &mif,
+		int levelUpBlock, const int *levelDownBlock, int widthChunks, int depthChunks,
+		const std::string &infName, SNInt gridWidth, WEInt gridDepth, const ExeData &exeData);
+
+	// Exterior level with a pre-defined .INF file. If premade, this loads the premade city. Otherwise,
+	// this loads the skeleton of the level (city walls, etc.), and fills in the rest by generating
+	// the required chunks.
+	static LevelData loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		const MIFFile::Level &level, WeatherType weatherType, int currentDay, int starCount,
+		const std::string &infName, SNInt gridWidth, WEInt gridDepth, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager);
+
+	// Exterior wilderness level with a pre-defined .INF file. This loads the skeleton of the wilderness
+	// and fills in the rest by loading the required .RMD chunks.
+	static LevelData loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+		WeatherType weatherType, int currentDay, int starCount, const std::string &infName,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 
 	const std::string &getName() const;
 	double getCeilingHeight() const;
@@ -199,24 +254,34 @@ public:
 	// Returns a pointer to some lock if the given voxel has a lock, or null if it doesn't.
 	const Lock *getLock(const NewInt2 &voxel) const;
 
+	// Returns a pointer to some trigger text if the given voxel has a text trigger, or null if it doesn't.
+		// Also returns a pointer to one-shot text triggers that have been activated previously (use another
+		// function to check activation).
+	LevelData::TextTrigger *getTextTrigger(const NewInt2 &voxel);
+
+	// Returns a pointer to a sound filename if the given voxel has a sound trigger, or null if it doesn't.
+	const std::string *getSoundTrigger(const NewInt2 &voxel) const;
+
+	// Only for exterior levels. Gets the mappings of voxel coordinates to *MENU display names.
+	const ArenaLevelUtils::MenuNamesList &getMenuNames() const;
+
 	// Returns whether a level is considered an outdoor dungeon. Only true for some interiors.
-	virtual bool isOutdoorDungeon() const = 0;
+	bool isOutdoorDungeon() const;
 
 	void addVoxelInstance(VoxelInstance &&voxelInst);
 
 	// Removes all voxel instances not stored between level transitions (open doors, fading voxels).
 	void clearTemporaryVoxelInstances();
 
-	// Sets this level active in the renderer. It's virtual so derived level data classes can
-	// do some extra work (like set interior sky colors in the renderer).
-	virtual void setActive(bool nightLightsAreActive, const WorldData &worldData,
+	// Sets this level active in the renderer.
+	void setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const ProvinceDefinition &provinceDef, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, CitizenManager &citizenManager,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Ticks the level data by delta time. Does nothing by default.
-	virtual void tick(Game &game, double dt);
+	void tick(Game &game, double dt);
 };
 
 #endif

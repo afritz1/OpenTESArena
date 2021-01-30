@@ -57,7 +57,6 @@
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/ExteriorWorldData.h"
-#include "../World/InteriorLevelData.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
 #include "../World/LocationType.h"
@@ -1837,17 +1836,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 						if (ArenaVoxelUtils::menuHasDisplayName(menuType))
 						{
-							const auto &exterior = static_cast<ExteriorLevelData&>(level);
-
 							// Get interior name from the clicked voxel.
-							const std::string menuName = [&game, &voxel, mapType, menuType, &exterior]()
+							const std::string menuName = [&game, &level, &voxel, mapType, menuType]()
 							{
 								const NewInt2 voxelXZ(voxel.x, voxel.z);
 
 								if (mapType == MapType::City)
 								{
 									// City interior name.
-									const auto &menuNames = exterior.getMenuNames();
+									const auto &menuNames = level.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
 										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
 									{
@@ -1893,7 +1890,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 										originalVoxel.x / RMDFile::WIDTH,
 										originalVoxel.y / RMDFile::DEPTH);*/
 
-									const auto &menuNames = exterior.getMenuNames();
+									const auto &menuNames = level.getMenuNames();
 									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
 										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
 									{
@@ -2042,7 +2039,7 @@ void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 	// Only interior levels have triggers.
 	if (worldData.getMapType() == MapType::Interior)
 	{
-		auto &level = static_cast<InteriorLevelData&>(worldData.getActiveLevel());
+		auto &level = worldData.getActiveLevel();
 
 		// See if there's a text trigger.
 		LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
@@ -2843,7 +2840,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const MapType mapType = worldData.getMapType();
 		if (mapType == MapType::Wilderness)
 		{
-			const auto &activeLevel = static_cast<const ExteriorLevelData&>(worldData.getActiveLevel());
+			const auto &activeLevel = worldData.getActiveLevel();
 			const auto &voxelGrid = activeLevel.getVoxelGrid();
 
 			const NewInt2 playerVoxel(

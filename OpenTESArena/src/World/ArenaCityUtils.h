@@ -27,6 +27,9 @@ enum class WeatherType;
 
 namespace ArenaCityUtils
 {
+	// Max height of .MIF with highest MAP2 extension.
+	constexpr int LEVEL_HEIGHT = 6;
+
 	// Generates the .INF name for a city given a climate and current weather.
 	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
 
