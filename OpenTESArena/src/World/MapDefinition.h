@@ -14,6 +14,7 @@
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView2D.h"
@@ -30,7 +31,6 @@ class TextAssetLibrary;
 class TextureManager;
 
 enum class ClimateType;
-enum class InteriorType;
 enum class MapType;
 enum class WeatherType;
 
@@ -40,13 +40,13 @@ public:
 	class Interior
 	{
 	private:
-		InteriorType interiorType;
+		ArenaTypes::InteriorType interiorType;
 		// - InteriorDefinition?
 		// - probably store the music filename here, or make it retrievable by the interior type
 	public:
-		void init(InteriorType interiorType);
+		void init(ArenaTypes::InteriorType interiorType);
 
-		InteriorType getInteriorType() const;
+		ArenaTypes::InteriorType getInteriorType() const;
 	};
 
 	class Wild
@@ -82,7 +82,7 @@ private:
 	Wild wild;
 
 	void init(MapType mapType);
-	bool initInteriorLevels(const MIFFile &mif, InteriorType interiorType,
+	bool initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
 		const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);

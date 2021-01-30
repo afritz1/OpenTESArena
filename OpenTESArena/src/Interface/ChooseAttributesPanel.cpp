@@ -15,6 +15,7 @@
 #include "Texture.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
@@ -35,7 +36,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ClimateType.h"
-#include "../World/InteriorType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/SkyUtils.h"
@@ -328,7 +328,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						if (!gameData->loadInterior(*locationDefPtr, provinceDef, InteriorType::Dungeon,
+						if (!gameData->loadInterior(*locationDefPtr, provinceDef, ArenaTypes::InteriorType::Dungeon,
 							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
 							renderer))

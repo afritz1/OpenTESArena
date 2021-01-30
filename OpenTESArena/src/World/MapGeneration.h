@@ -12,6 +12,7 @@
 #include "TransitionType.h"
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
 
@@ -30,7 +31,6 @@ class LocationDefinition;
 class TextAssetLibrary;
 class TextureManager;
 
-enum class InteriorType;
 enum class MapType;
 
 namespace MapGeneration
@@ -46,10 +46,10 @@ namespace MapGeneration
 		struct Prefab
 		{
 			std::string mifName;
-			InteriorType interiorType;
+			ArenaTypes::InteriorType interiorType;
 			std::optional<bool> rulerIsMale;
 
-			void init(std::string &&mifName, InteriorType interiorType,
+			void init(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 				const std::optional<bool> &rulerIsMale);
 		};
 
@@ -71,14 +71,14 @@ namespace MapGeneration
 	public:
 		InteriorGenInfo();
 
-		void initPrefab(std::string &&mifName, InteriorType interiorType,
+		void initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 			const std::optional<bool> &rulerIsMale);
 		void initDungeon(const LocationDefinition::DungeonDefinition *dungeonDef, bool isArtifactDungeon);
 
 		Type getType() const;
 		const Prefab &getPrefab() const;
 		const Dungeon &getDungeon() const;
-		InteriorType getInteriorType() const;
+		ArenaTypes::InteriorType getInteriorType() const;
 	};
 
 	// Input: 1 .MIF + 1 weather .INF
@@ -133,31 +133,31 @@ namespace MapGeneration
 	{
 	private:
 		ChunkInt2 chunk;
-		std::unordered_map<InteriorType, LevelDefinition::BuildingNameID> ids;
+		std::unordered_map<ArenaTypes::InteriorType, LevelDefinition::BuildingNameID> ids;
 	public:
 		void init(const ChunkInt2 &chunk);
 
 		const ChunkInt2 &getChunk() const;
 		bool hasBuildingNames() const;
-		bool tryGetBuildingNameID(InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const;
-		void setBuildingNameID(InteriorType interiorType, LevelDefinition::BuildingNameID id);
+		bool tryGetBuildingNameID(ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const;
+		void setBuildingNameID(ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID id);
 	};
 
 	// Data that can be used when creating an actual transition definition.
 	struct TransitionDefGenInfo
 	{
 		TransitionType transitionType;
-		std::optional<InteriorType> interiorType;
+		std::optional<ArenaTypes::InteriorType> interiorType;
 		std::optional<int> menuID; // Arena *MENU ID for transitions.
 		std::optional<bool> isLevelUp; // Stairs direction for interior level changes.
 
-		void init(TransitionType transitionType, const std::optional<InteriorType> &interiorType,
+		void init(TransitionType transitionType, const std::optional<ArenaTypes::InteriorType> &interiorType,
 			const std::optional<int> &menuID, const std::optional<bool> &isLevelUp);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
 	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
-		const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
 		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
@@ -170,7 +170,7 @@ namespace MapGeneration
 	// Also writes out the player start voxel.
 	void generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 		SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
-		InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+		ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,

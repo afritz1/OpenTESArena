@@ -51,13 +51,13 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../World/ArenaInteriorUtils.h"
 #include "../World/ArenaLevelUtils.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/ExteriorWorldData.h"
 #include "../World/InteriorLevelData.h"
-#include "../World/InteriorUtils.h"
 #include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
 #include "../World/LocationType.h"
@@ -2366,7 +2366,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 					}
 
-					const std::optional<InteriorType> interiorType = InteriorUtils::menuTypeToInteriorType(menuType);
+					const std::optional<ArenaTypes::InteriorType> interiorType =
+						ArenaInteriorUtils::menuTypeToInteriorType(menuType);
 					DebugAssert(interiorType.has_value());
 					gameData.enterInterior(*interiorType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),

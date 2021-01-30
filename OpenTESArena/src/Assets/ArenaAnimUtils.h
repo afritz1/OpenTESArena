@@ -23,7 +23,6 @@ class TextureManager;
 
 enum class ClimateType;
 enum class EntityType;
-enum class InteriorType;
 enum class MapType;
 
 // Helper values for working with the original animations. These may or may not be directly
@@ -118,7 +117,7 @@ namespace ArenaAnimUtils
 	// Ruler flats are either a king or queen.
 	ArenaTypes::FlatIndex getRulerKingIndex();
 	ArenaTypes::FlatIndex getRulerQueenIndex();
-	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, InteriorType interiorType);
+	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -152,7 +151,7 @@ namespace ArenaAnimUtils
 
 	// Writes out static entity animation data to animation states.
 	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 		EntityAnimationInstance *outAnimInst);
 

@@ -1,5 +1,4 @@
 #include "ArenaInteriorUtils.h"
-#include "InteriorType.h"
 #include "InteriorWorldData.h"
 #include "MapType.h"
 #include "../Assets/MIFUtils.h"
@@ -10,7 +9,7 @@
 
 InteriorWorldData::InteriorWorldData()
 {
-	this->interiorType = static_cast<InteriorType>(-1);
+	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
 	this->levelIndex = 0;
 }
 
@@ -19,7 +18,7 @@ InteriorWorldData::~InteriorWorldData()
 
 }
 
-InteriorWorldData InteriorWorldData::loadInterior(InteriorType interiorType, const MIFFile &mif,
+InteriorWorldData InteriorWorldData::loadInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 	const ExeData &exeData)
 {
 	InteriorWorldData worldData;
@@ -126,7 +125,7 @@ InteriorWorldData InteriorWorldData::loadDungeon(uint32_t seed, WEInt widthChunk
 	worldData.startPoints.push_back(VoxelUtils::getTransformedVoxel(startPoint));
 
 	worldData.levelIndex = 0;
-	worldData.interiorType = InteriorType::Dungeon;
+	worldData.interiorType = ArenaTypes::InteriorType::Dungeon;
 
 	return worldData;
 }
@@ -141,7 +140,7 @@ int InteriorWorldData::getLevelCount() const
 	return static_cast<int>(this->levels.size());
 }
 
-InteriorType InteriorWorldData::getInteriorType() const
+ArenaTypes::InteriorType InteriorWorldData::getInteriorType() const
 {
 	return this->interiorType;
 }

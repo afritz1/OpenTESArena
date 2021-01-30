@@ -8,6 +8,7 @@
 #include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Game/DateUtils.h"
@@ -17,7 +18,6 @@
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../World/InteriorType.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
@@ -501,7 +501,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		}
 
 		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
-			InteriorType::Dungeon, mif, game.getEntityDefinitionLibrary(),
+			ArenaTypes::InteriorType::Dungeon, mif, game.getEntityDefinitionLibrary(),
 			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 			game.getTextureManager(), game.getRenderer()))
 		{

@@ -2,9 +2,11 @@
 #define ARENA_INTERIOR_UTILS_H
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 
 class ArenaRandom;
 
@@ -34,6 +36,11 @@ namespace ArenaInteriorUtils
 
 	// Determines how many levels a dungeon has.
 	int generateDungeonLevelCount(bool isArtifactDungeon, ArenaRandom &random);
+
+	std::optional<ArenaTypes::InteriorType> menuTypeToInteriorType(ArenaTypes::MenuType menuType);
+
+	bool isPrefabInterior(ArenaTypes::InteriorType interiorType);
+	bool isProceduralInterior(ArenaTypes::InteriorType interiorType);
 }
 
 #endif

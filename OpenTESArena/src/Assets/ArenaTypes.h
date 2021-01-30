@@ -39,6 +39,24 @@ namespace ArenaTypes
 		Tower // TOWER
 	};
 
+	// Helps determine entity definitions during level generation. Separate from MenuType since it's only
+	// for interiors.
+	// - @todo: add an InteriorDefinition at some point to further de-hardcode things. It would contain
+	//   rulerIsMale, etc.. Might also have a variable for loot piles when sneaking in at night.
+	enum class InteriorType
+	{
+		Crypt, // WCRYPT
+		Dungeon, // DUNGEON
+		Equipment, // EQUIP
+		House, // BS
+		MagesGuild, // MAGE
+		Noble, // NOBLE
+		Palace, // PALACE
+		Tavern, // TAVERN
+		Temple, // TEMPLE
+		Tower // TOWER
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

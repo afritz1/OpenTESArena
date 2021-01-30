@@ -2,6 +2,7 @@
 #include <limits>
 
 #include "ArenaAnimUtils.h"
+#include "ArenaTypes.h"
 #include "BinaryAssetLibrary.h"
 #include "CFAFile.h"
 #include "DFAFile.h"
@@ -13,7 +14,6 @@
 #include "../Items/ArmorMaterialType.h"
 #include "../Media/TextureManager.h"
 #include "../World/ClimateType.h"
-#include "../World/InteriorType.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -742,9 +742,9 @@ ArenaTypes::FlatIndex ArenaAnimUtils::getRulerQueenIndex()
 	return 1;
 }
 
-bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, InteriorType interiorType)
+bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType)
 {
-	if (interiorType != InteriorType::Palace)
+	if (interiorType != ArenaTypes::InteriorType::Palace)
 	{
 		return false;
 	}
@@ -937,7 +937,7 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 }
 
 bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-	const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
 	EntityAnimationInstance *outAnimInst)
 {

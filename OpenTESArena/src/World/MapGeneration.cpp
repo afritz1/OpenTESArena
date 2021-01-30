@@ -7,8 +7,6 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "InteriorType.h"
-#include "InteriorUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LocationUtils.h"
@@ -83,28 +81,28 @@ namespace MapGeneration
 	}
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
-	std::optional<InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
+	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
 	{
 		if (mapType == MapType::City)
 		{
 			// Mappings of Arena city *MENU IDs to interiors.
-			constexpr std::array<std::pair<int, InteriorType>, 11> CityMenuMappings =
+			constexpr std::array<std::pair<int, ArenaTypes::InteriorType>, 11> CityMenuMappings =
 			{
 				{
-					{ 0, InteriorType::Equipment },
-					{ 1, InteriorType::Tavern },
-					{ 2, InteriorType::MagesGuild },
-					{ 3, InteriorType::Temple },
-					{ 4, InteriorType::House },
-					{ 5, InteriorType::House },
-					{ 6, InteriorType::House },
+					{ 0, ArenaTypes::InteriorType::Equipment },
+					{ 1, ArenaTypes::InteriorType::Tavern },
+					{ 2, ArenaTypes::InteriorType::MagesGuild },
+					{ 3, ArenaTypes::InteriorType::Temple },
+					{ 4, ArenaTypes::InteriorType::House },
+					{ 5, ArenaTypes::InteriorType::House },
+					{ 6, ArenaTypes::InteriorType::House },
 					// 7 - city gate
 					// 8 - city gate
-					{ 9, InteriorType::Noble },
+					{ 9, ArenaTypes::InteriorType::Noble },
 					// 10 - none
-					{ 11, InteriorType::Palace },
-					{ 12, InteriorType::Palace },
-					{ 13, InteriorType::Palace }
+					{ 11, ArenaTypes::InteriorType::Palace },
+					{ 12, ArenaTypes::InteriorType::Palace },
+					{ 13, ArenaTypes::InteriorType::Palace }
 				}
 			};
 
@@ -126,19 +124,19 @@ namespace MapGeneration
 		else if (mapType == MapType::Wilderness)
 		{
 			// Mappings of Arena wilderness *MENU IDs to interiors.
-			constexpr std::array<std::pair<int, InteriorType>, 7> WildMenuMappings =
+			constexpr std::array<std::pair<int, ArenaTypes::InteriorType>, 7> WildMenuMappings =
 			{
 				{
 					// 0 - none
-					{ 1, InteriorType::Crypt },
-					{ 2, InteriorType::House },
-					{ 3, InteriorType::Tavern },
-					{ 4, InteriorType::Temple },
-					{ 5, InteriorType::Tower },
+					{ 1, ArenaTypes::InteriorType::Crypt },
+					{ 2, ArenaTypes::InteriorType::House },
+					{ 3, ArenaTypes::InteriorType::Tavern },
+					{ 4, ArenaTypes::InteriorType::Temple },
+					{ 5, ArenaTypes::InteriorType::Tower },
 					// 6 - city gate
 					// 7 - city gate
-					{ 8, InteriorType::Dungeon },
-					{ 9, InteriorType::Dungeon }
+					{ 8, ArenaTypes::InteriorType::Dungeon },
+					{ 9, ArenaTypes::InteriorType::Dungeon }
 				}
 			};
 
@@ -159,11 +157,11 @@ namespace MapGeneration
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(std::optional<InteriorType>, std::to_string(static_cast<int>(mapType)));
+			DebugUnhandledReturnMsg(std::optional<ArenaTypes::InteriorType>, std::to_string(static_cast<int>(mapType)));
 		}
 	}
 
-	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(InteriorType interiorType,
+	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(ArenaTypes::InteriorType interiorType,
 		const LevelInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
 		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type cityType,
 		MapType mapType, const ExeData &exeData)
@@ -189,7 +187,7 @@ namespace MapGeneration
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
 	bool tryMakeEntityDefFromArenaFlat(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityDefinition *outDef)
@@ -721,7 +719,7 @@ namespace MapGeneration
 				const TransitionType transitionType = isLevelChange ?
 					TransitionType::LevelChange : TransitionType::ExitInterior;
 
-				constexpr std::optional<InteriorType> interiorType; // Can't have interiors in interiors.
+				constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Can't have interiors in interiors.
 				const std::optional<bool> isLevelUp = [matchesLevelUp, isLevelChange]() -> std::optional<bool>
 				{
 					if (isLevelChange)
@@ -754,7 +752,7 @@ namespace MapGeneration
 
 				// Can't guarantee that an Arena *MENU block that isn't a city gate is a valid transition?
 				// I thought there were some wild dungeon voxels that resulted in bad values or something.
-				const std::optional<InteriorType> interiorType =
+				const std::optional<ArenaTypes::InteriorType> interiorType =
 					MapGeneration::tryGetInteriorTypeFromMenuIndex(*menuIndex, mapType);
 
 				// This is optional because of the interior type issue above.
@@ -817,7 +815,8 @@ namespace MapGeneration
 		}
 
 		MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
-		transitionDefGenInfo.init(TransitionType::EnterInterior, InteriorType::Dungeon, std::nullopt, std::nullopt);
+		transitionDefGenInfo.init(TransitionType::EnterInterior, ArenaTypes::InteriorType::Dungeon,
+			std::nullopt, std::nullopt);
 		return transitionDefGenInfo;
 	}
 
@@ -837,12 +836,12 @@ namespace MapGeneration
 		else if (transitionDefGenInfo.transitionType == TransitionType::EnterInterior)
 		{
 			DebugAssert(transitionDefGenInfo.interiorType.has_value());
-			const InteriorType interiorType = *transitionDefGenInfo.interiorType;
+			const ArenaTypes::InteriorType interiorType = *transitionDefGenInfo.interiorType;
 			MapGeneration::InteriorGenInfo interiorGenInfo = [&position, menuID, rulerSeed, &rulerIsMale,
 				palaceIsMainQuestDungeon, cityType, dungeonDef, &isArtifactDungeon, mapType,
 				&exeData, interiorType]()
 			{
-				if (InteriorUtils::isPrefabInterior(interiorType))
+				if (ArenaInteriorUtils::isPrefabInterior(interiorType))
 				{
 					DebugAssert(menuID.has_value());
 					DebugAssert(rulerSeed.has_value());
@@ -851,7 +850,7 @@ namespace MapGeneration
 					return MapGeneration::makePrefabInteriorGenInfo(interiorType, position, *menuID,
 						*rulerSeed, rulerIsMale, *palaceIsMainQuestDungeon, *cityType, mapType, exeData);
 				}
-				else if (InteriorUtils::isProceduralInterior(interiorType))
+				else if (ArenaInteriorUtils::isProceduralInterior(interiorType))
 				{
 					DebugAssert(dungeonDef != nullptr);
 					DebugAssert(isArtifactDungeon.has_value());
@@ -886,7 +885,7 @@ namespace MapGeneration
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
 	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, MapType mapType,
-		const std::optional<InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
@@ -957,7 +956,7 @@ namespace MapGeneration
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
 	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, MapType mapType,
-		const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
 		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
@@ -1207,7 +1206,7 @@ namespace MapGeneration
 
 	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		int levelUpBlock, const std::optional<int> &levelDownBlock, ArenaRandom &random,
-		MapType mapType, InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+		MapType mapType, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -1357,9 +1356,10 @@ namespace MapGeneration
 		// match the given menu type.
 		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
 			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData,
-			&localCityPoint](InteriorType interiorType)
+			&localCityPoint](ArenaTypes::InteriorType interiorType)
 		{
-			if ((interiorType == InteriorType::Equipment) || (interiorType == InteriorType::Temple))
+			if ((interiorType == ArenaTypes::InteriorType::Equipment) ||
+				(interiorType == ArenaTypes::InteriorType::Temple))
 			{
 				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 				random.srand(citySeed);
@@ -1514,7 +1514,7 @@ namespace MapGeneration
 					int hash;
 					std::string name;
 
-					if (interiorType == InteriorType::Tavern)
+					if (interiorType == ArenaTypes::InteriorType::Tavern)
 					{
 						// Tavern.
 						int prefixIndex, suffixIndex;
@@ -1527,7 +1527,7 @@ namespace MapGeneration
 
 						name = createTavernName(prefixIndex, suffixIndex);
 					}
-					else if (interiorType == InteriorType::Equipment)
+					else if (interiorType == ArenaTypes::InteriorType::Equipment)
 					{
 						// Equipment store.
 						int prefixIndex, suffixIndex;
@@ -1573,7 +1573,7 @@ namespace MapGeneration
 			}
 
 			// Fix some edge cases with main quest cities.
-			if ((interiorType == InteriorType::Temple) && (mainQuestTempleOverride != nullptr))
+			if ((interiorType == ArenaTypes::InteriorType::Temple) && (mainQuestTempleOverride != nullptr))
 			{
 				const int modelIndex = mainQuestTempleOverride->modelIndex;
 				const int suffixIndex = mainQuestTempleOverride->suffixIndex;
@@ -1588,9 +1588,9 @@ namespace MapGeneration
 			}
 		};
 
-		generateNames(InteriorType::Tavern);
-		generateNames(InteriorType::Equipment);
-		generateNames(InteriorType::Temple);
+		generateNames(ArenaTypes::InteriorType::Tavern);
+		generateNames(ArenaTypes::InteriorType::Equipment);
+		generateNames(ArenaTypes::InteriorType::Temple);
 	}
 
 	// Using a separate building name info struct because the same level definition might be
@@ -1605,7 +1605,7 @@ namespace MapGeneration
 		// Lambda for searching for an interior entrance voxel of the given type in the chunk
 		// and generating a name for it if found.
 		auto tryGenerateChunkBuildingName = [wildChunkSeed, &levelDef, outBuildingNameInfo,
-			outLevelInfoDef, buildingNameMappings, &exeData](InteriorType interiorType)
+			outLevelInfoDef, buildingNameMappings, &exeData](ArenaTypes::InteriorType interiorType)
 		{
 			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
 			{
@@ -1701,13 +1701,13 @@ namespace MapGeneration
 					// Get the *MENU block's display name.
 					std::string name = [interiorType, &random, &createTavernName, &createTempleName]()
 					{
-						if (interiorType == InteriorType::Tavern)
+						if (interiorType == ArenaTypes::InteriorType::Tavern)
 						{
 							const int prefixIndex = random.next() % 23;
 							const int suffixIndex = random.next() % 23;
 							return createTavernName(prefixIndex, suffixIndex);
 						}
-						else if (interiorType == InteriorType::Temple)
+						else if (interiorType == ArenaTypes::InteriorType::Temple)
 						{
 							const int model = random.next() % 3;
 							constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
@@ -1758,12 +1758,12 @@ namespace MapGeneration
 			}
 		};
 
-		tryGenerateChunkBuildingName(InteriorType::Tavern);
-		tryGenerateChunkBuildingName(InteriorType::Temple);
+		tryGenerateChunkBuildingName(ArenaTypes::InteriorType::Tavern);
+		tryGenerateChunkBuildingName(ArenaTypes::InteriorType::Temple);
 	}
 }
 
-void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, InteriorType interiorType,
+void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 	const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = std::move(mifName);
@@ -1788,7 +1788,7 @@ void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
 	this->type = type;
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, InteriorType interiorType,
+void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 	const std::optional<bool> &rulerIsMale)
 {
 	this->init(InteriorGenInfo::Type::Prefab);
@@ -1819,7 +1819,7 @@ const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::g
 	return this->dungeon;
 }
 
-InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
+ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 {
 	if (this->type == InteriorGenInfo::Type::Prefab)
 	{
@@ -1827,11 +1827,11 @@ InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 	}
 	else if (this->type == InteriorGenInfo::Type::Dungeon)
 	{
-		return InteriorType::Dungeon;
+		return ArenaTypes::InteriorType::Dungeon;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(InteriorType, std::to_string(static_cast<int>(this->type)));
+		DebugUnhandledReturnMsg(ArenaTypes::InteriorType, std::to_string(static_cast<int>(this->type)));
 	}
 }
 
@@ -1884,7 +1884,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const
+	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -1899,7 +1899,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	InteriorType interiorType, LevelDefinition::BuildingNameID id)
+	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID id)
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -1913,7 +1913,7 @@ void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
 }
 
 void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
-	const std::optional<InteriorType> &interiorType, const std::optional<int> &menuID,
+	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<int> &menuID,
 	const std::optional<bool> &isLevelUp)
 {
 	this->transitionType = transitionType;
@@ -1923,7 +1923,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 }
 
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
-	const std::optional<InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 	const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
 	const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
@@ -1964,7 +1964,7 @@ void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels
 
 void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
-	InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+	ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
 	const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
@@ -2100,7 +2100,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 	constexpr MapType mapType = MapType::City;
-	constexpr std::optional<InteriorType> interiorType; // City is not an interior.
+	constexpr std::optional<ArenaTypes::InteriorType> interiorType; // City is not an interior.
 	constexpr std::optional<bool> rulerIsMale; // Not necessary for city.
 	constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
 	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
@@ -2191,7 +2191,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 			tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 		constexpr MapType mapType = MapType::Wilderness;
-		constexpr std::optional<InteriorType> interiorType; // Wilderness is not an interior.
+		constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Wilderness is not an interior.
 		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for wild.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for wild.

@@ -16,6 +16,7 @@
 #include "Texture.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -36,7 +37,6 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
-#include "../World/InteriorType.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/MapType.h"
@@ -158,19 +158,19 @@ namespace
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
 	// These also need ".MIF" appended at the end.
-	const std::vector<std::tuple<std::string, std::pair<int, int>, InteriorType>> InteriorLocations =
+	const std::vector<std::tuple<std::string, std::pair<int, int>, ArenaTypes::InteriorType>> InteriorLocations =
 	{
-		{ "BS", { 1, 8 }, InteriorType::House },
-		{ "EQUIP", { 1, 8 }, InteriorType::Equipment },
-		{ "MAGE", { 1, 8 }, InteriorType::MagesGuild },
-		{ "NOBLE", { 1, 8 }, InteriorType::Noble },
-		{ "PALACE", { 1, 5 }, InteriorType::Palace },
-		{ "TAVERN", { 1, 8 }, InteriorType::Tavern },
-		{ "TEMPLE", { 1, 8 }, InteriorType::Temple },
-		{ "TOWER", { 1, 8 }, InteriorType::Tower },
-		{ "TOWNPAL", { 1, 3 }, InteriorType::Palace },
-		{ "VILPAL", { 1, 3 }, InteriorType::Palace },
-		{ "WCRYPT", { 1, 8 }, InteriorType::Crypt }
+		{ "BS", { 1, 8 }, ArenaTypes::InteriorType::House },
+		{ "EQUIP", { 1, 8 }, ArenaTypes::InteriorType::Equipment },
+		{ "MAGE", { 1, 8 }, ArenaTypes::InteriorType::MagesGuild },
+		{ "NOBLE", { 1, 8 }, ArenaTypes::InteriorType::Noble },
+		{ "PALACE", { 1, 5 }, ArenaTypes::InteriorType::Palace },
+		{ "TAVERN", { 1, 8 }, ArenaTypes::InteriorType::Tavern },
+		{ "TEMPLE", { 1, 8 }, ArenaTypes::InteriorType::Temple },
+		{ "TOWER", { 1, 8 }, ArenaTypes::InteriorType::Tower },
+		{ "TOWNPAL", { 1, 3 }, ArenaTypes::InteriorType::Palace },
+		{ "VILPAL", { 1, 3 }, ArenaTypes::InteriorType::Palace },
+		{ "WCRYPT", { 1, 8 }, ArenaTypes::InteriorType::Crypt }
 	};
 
 	const std::string ImperialMIF = "IMPERIAL.MIF";
@@ -325,7 +325,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->quickStartButton = [&game]()
 	{
 		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
-			const std::optional<InteriorType> &optInteriorType, WeatherType weatherType, MapType mapType)
+			const std::optional<ArenaTypes::InteriorType> &optInteriorType, WeatherType weatherType, MapType mapType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -411,7 +411,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 					DebugAssert(optInteriorType.has_value());
-					const InteriorType interiorType = *optInteriorType;
+					const ArenaTypes::InteriorType interiorType = *optInteriorType;
 					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getRandom(), game.getTextureManager(), renderer))
@@ -694,7 +694,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		};
 
 		return Button<Game&, int, int, const std::string&,
-			const std::optional<InteriorType>&, WeatherType, MapType>(function);
+			const std::optional<ArenaTypes::InteriorType>&, WeatherType, MapType>(function);
 	}();
 
 	this->exitButton = []()
@@ -987,11 +987,11 @@ std::string MainMenuPanel::getSelectedTestName() const
 	}
 }
 
-std::optional<InteriorType> MainMenuPanel::getSelectedTestInteriorType() const
+std::optional<ArenaTypes::InteriorType> MainMenuPanel::getSelectedTestInteriorType() const
 {
 	if (this->testType == TestType_MainQuest || this->testType == TestType_Dungeon)
 	{
-		return InteriorType::Dungeon;
+		return ArenaTypes::InteriorType::Dungeon;
 	}
 	else if (this->testType == TestType_Interior)
 	{

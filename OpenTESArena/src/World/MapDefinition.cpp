@@ -6,7 +6,6 @@
 #include "ArenaLevelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "InteriorType.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
 #include "MapType.h"
@@ -21,12 +20,12 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 
-void MapDefinition::Interior::init(InteriorType interiorType)
+void MapDefinition::Interior::init(ArenaTypes::InteriorType interiorType)
 {
 	this->interiorType = interiorType;
 }
 
-InteriorType MapDefinition::Interior::getInteriorType() const
+ArenaTypes::InteriorType MapDefinition::Interior::getInteriorType() const
 {
 	return this->interiorType;
 }
@@ -73,7 +72,7 @@ void MapDefinition::init(MapType mapType)
 	this->mapType = mapType;
 }
 
-bool MapDefinition::initInteriorLevels(const MIFFile &mif, InteriorType interiorType,
+bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
 	const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
@@ -209,7 +208,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	constexpr InteriorType interiorType = InteriorType::Dungeon;
+	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
 		mapType, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary, entityDefLibrary,

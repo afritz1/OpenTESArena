@@ -9,6 +9,7 @@
 
 #include "Clock.h"
 #include "Date.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Entities/CitizenManager.h"
 #include "../Entities/EntityManager.h"
@@ -43,7 +44,6 @@ class TextBox;
 class Texture;
 class TextureManager;
 
-enum class InteriorType;
 enum class MapType;
 enum class WeatherType;
 
@@ -107,14 +107,14 @@ public:
 
 	// Reads in data from an interior .MIF file and writes it to the game data.
 	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		InteriorType interiorType, const MIFFile &mif,
+		ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
 	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(InteriorType interiorType, const MIFFile &mif,
+	void enterInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 		const Int2 &returnVoxel, const EntityDefinitionLibrary &entityDefLibrary,
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		Random &random, TextureManager &textureManager, Renderer &renderer);

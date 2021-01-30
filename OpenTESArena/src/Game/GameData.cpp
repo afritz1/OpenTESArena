@@ -124,7 +124,7 @@ void GameData::clearWorldDatas()
 }
 
 bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-	InteriorType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
+	ArenaTypes::InteriorType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, Renderer &renderer)
 {
@@ -169,7 +169,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	return true;
 }
 
-void GameData::enterInterior(InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
+void GameData::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	Renderer &renderer)

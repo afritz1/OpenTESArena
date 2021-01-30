@@ -6,18 +6,17 @@
 #include "InteriorLevelData.h"
 #include "VoxelDefinition.h"
 #include "WorldData.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 
 class ExeData;
 class MIFFile;
 
-enum class InteriorType;
-
 class InteriorWorldData : public WorldData
 {
 private:
 	std::vector<InteriorLevelData> levels;
-	InteriorType interiorType;
+	ArenaTypes::InteriorType interiorType;
 	int levelIndex;
 
 	InteriorWorldData();
@@ -27,7 +26,7 @@ public:
 
 	InteriorWorldData &operator=(InteriorWorldData&&) = default;
 
-	static InteriorWorldData loadInterior(InteriorType interiorType, const MIFFile &mif,
+	static InteriorWorldData loadInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 		const ExeData &exeData);
 	static InteriorWorldData loadDungeon(uint32_t seed, WEInt widthChunks, SNInt depthChunks,
 		bool isArtifactDungeon, const ExeData &exeData);
@@ -39,7 +38,7 @@ public:
 	int getLevelCount() const;
 
 	// Gets the type of the interior.
-	InteriorType getInteriorType() const;
+	ArenaTypes::InteriorType getInteriorType() const;
 
 	// Always interior for interior world data.
 	virtual MapType getMapType() const override;

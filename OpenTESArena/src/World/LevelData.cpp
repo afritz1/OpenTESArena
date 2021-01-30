@@ -7,7 +7,6 @@
 #include "ChunkUtils.h"
 #include "ExteriorWorldData.h"
 #include "InteriorWorldData.h"
-#include "InteriorUtils.h"
 #include "LevelData.h"
 #include "LocationUtils.h"
 #include "MapType.h"
@@ -1700,8 +1699,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		}();
 
 		const MapType mapType = worldData.getMapType();
-		const std::optional<InteriorType> interiorType = [&worldData, mapType]()
-			-> std::optional<InteriorType>
+		const std::optional<ArenaTypes::InteriorType> interiorType = [&worldData, mapType]()
+			-> std::optional<ArenaTypes::InteriorType>
 		{
 			if (mapType == MapType::Interior)
 			{
