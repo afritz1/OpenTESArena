@@ -196,6 +196,13 @@ private:
 	void getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
 		uint16_t *outEastID, uint16_t *outWestID) const;
 
+	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
+	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
+	static ArenaLevelUtils::MenuNamesList generateBuildingNames(const LocationDefinition &locationDef,
+		const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
+		const LevelData::Transitions &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary);
+
 	// Creates mappings of wilderness *MENU voxel coordinates to *MENU names.
 	static ArenaLevelUtils::MenuNamesList generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,
 		const LevelData::Transitions &transitions, const ExeData &exeData);

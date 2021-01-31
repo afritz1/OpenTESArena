@@ -408,7 +408,7 @@ LevelData LevelData::loadCity(const LocationDefinition &locationDef, const Provi
 	levelData.readMAP2(tempMap2ConstView, inf);
 
 	// Generate building names.
-	levelData.exterior.menuNames = ArenaCityUtils::generateBuildingNames(locationDef, provinceDef, random,
+	levelData.exterior.menuNames = LevelData::generateBuildingNames(locationDef, provinceDef, random,
 		levelData.getVoxelGrid(), levelData.getTransitions(), binaryAssetLibrary, textAssetLibrary);
 
 	// Generate distant sky.
@@ -1693,6 +1693,239 @@ void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uin
 	{
 		*outWestID = getVoxelIdOrAir(westVoxel);
 	}
+}
+
+ArenaLevelUtils::MenuNamesList LevelData::generateBuildingNames(const LocationDefinition &locationDef,
+	const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
+	const LevelData::Transitions &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary)
+{
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+
+	uint32_t citySeed = cityDef.citySeed;
+	const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
+
+	ArenaLevelUtils::MenuNamesList menuNames;
+
+	// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
+	// match the given menu type.
+	auto generateNames = [&provinceDef, &citySeed, &random, &voxelGrid, &transitions, &textAssetLibrary,
+		&exeData, &cityDef, &localCityPoint, &menuNames](ArenaTypes::MenuType menuType)
+	{
+		if ((menuType == ArenaTypes::MenuType::Equipment) ||
+			(menuType == ArenaTypes::MenuType::Temple))
+		{
+			citySeed = (localCityPoint.x << 16) + localCityPoint.y;
+			random.srand(citySeed);
+		}
+
+		std::vector<int> seen;
+		auto hashInSeen = [&seen](int hash)
+		{
+			return std::find(seen.begin(), seen.end(), hash) != seen.end();
+		};
+
+		// Lambdas for creating tavern, equipment store, and temple building names.
+		auto createTavernName = [&exeData, &cityDef](int m, int n)
+		{
+			const auto &tavernPrefixes = exeData.cityGen.tavernPrefixes;
+			const auto &tavernSuffixes = cityDef.coastal ?
+				exeData.cityGen.tavernMarineSuffixes : exeData.cityGen.tavernSuffixes;
+			return tavernPrefixes.at(m) + ' ' + tavernSuffixes.at(n);
+		};
+
+		auto createEquipmentName = [&provinceDef, &random, &textAssetLibrary, &exeData,
+			&cityDef](int m, int n, SNInt x, WEInt z)
+		{
+			const auto &equipmentPrefixes = exeData.cityGen.equipmentPrefixes;
+			const auto &equipmentSuffixes = exeData.cityGen.equipmentSuffixes;
+
+			// Equipment store names can have variables in them.
+			std::string str = equipmentPrefixes.at(m) + ' ' + equipmentSuffixes.at(n);
+
+			// Replace %ct with city type name.
+			size_t index = str.find("%ct");
+			if (index != std::string::npos)
+			{
+				const std::string_view cityTypeName = cityDef.typeDisplayName;
+				str.replace(index, 3, cityTypeName);
+			}
+
+			// Replace %ef with generated male first name from (y<<16)+x seed. Use a local RNG for
+			// modifications to building names. Swap and reverse the XZ dimensions so they fit the
+			// original XY values in Arena.
+			index = str.find("%ef");
+			if (index != std::string::npos)
+			{
+				ArenaRandom nameRandom((x << 16) + z);
+				const bool isMale = true;
+				const std::string maleFirstName = [&provinceDef, &textAssetLibrary, isMale, &nameRandom]()
+				{
+					const std::string name = textAssetLibrary.generateNpcName(
+						provinceDef.getRaceID(), isMale, nameRandom);
+					const std::string firstName = String::split(name).front();
+					return firstName;
+				}();
+
+				str.replace(index, 3, maleFirstName);
+			}
+
+			// Replace %n with generated male name from (x<<16)+y seed.
+			index = str.find("%n");
+			if (index != std::string::npos)
+			{
+				ArenaRandom nameRandom((z << 16) + x);
+				const bool isMale = true;
+				const std::string maleName = textAssetLibrary.generateNpcName(
+					provinceDef.getRaceID(), isMale, nameRandom);
+				str.replace(index, 2, maleName);
+			}
+
+			return str;
+		};
+
+		auto createTempleName = [&exeData](int model, int n)
+		{
+			const auto &templePrefixes = exeData.cityGen.templePrefixes;
+			const auto &temple1Suffixes = exeData.cityGen.temple1Suffixes;
+			const auto &temple2Suffixes = exeData.cityGen.temple2Suffixes;
+			const auto &temple3Suffixes = exeData.cityGen.temple3Suffixes;
+
+			const std::string &templeSuffix = [&temple1Suffixes, &temple2Suffixes,
+				&temple3Suffixes, model, n]() -> const std::string&
+			{
+				if (model == 0)
+				{
+					return temple1Suffixes.at(n);
+				}
+				else if (model == 1)
+				{
+					return temple2Suffixes.at(n);
+				}
+				else
+				{
+					return temple3Suffixes.at(n);
+				}
+			}();
+
+			// No extra whitespace needed, I think?
+			return templePrefixes.at(model) + templeSuffix;
+		};
+
+		// The lambda called for each main-floor voxel in the area.
+		auto tryGenerateBlockName = [menuType, &random, &voxelGrid, &transitions, &menuNames, &seen,
+			&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+		{
+			// See if the current voxel is a *MENU block and matches the target menu type.
+			const bool matchesTargetType = [x, z, menuType, &voxelGrid, &transitions]()
+			{
+				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
+				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				if (voxelDef.type != VoxelType::Wall)
+				{
+					return false;
+				}
+
+				const auto iter = transitions.find(NewInt2(x, z));
+				if (iter == transitions.end())
+				{
+					return false;
+				}
+
+				const LevelData::Transition &transition = iter->second;
+				if (transition.getType() != LevelData::Transition::Type::Menu)
+				{
+					return false;
+				}
+
+				const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
+				return ArenaVoxelUtils::getMenuType(transitionMenu.id, MapType::City) == menuType;
+			}();
+
+			if (matchesTargetType)
+			{
+				// Get the *MENU block's display name.
+				int hash;
+				std::string name;
+
+				if (menuType == ArenaTypes::MenuType::Tavern)
+				{
+					// Tavern.
+					int m, n;
+					do
+					{
+						m = random.next() % 23;
+						n = random.next() % 23;
+						hash = (m << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createTavernName(m, n);
+				}
+				else if (menuType == ArenaTypes::MenuType::Equipment)
+				{
+					// Equipment store.
+					int m, n;
+					do
+					{
+						m = random.next() % 20;
+						n = random.next() % 10;
+						hash = (m << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createEquipmentName(m, n, x, z);
+				}
+				else
+				{
+					// Temple.
+					int model, n;
+					do
+					{
+						model = random.next() % 3;
+						const std::array<int, 3> ModelVars = { 5, 9, 10 };
+						const int vars = ModelVars.at(model);
+						n = random.next() % vars;
+						hash = (model << 8) + n;
+					} while (hashInSeen(hash));
+
+					name = createTempleName(model, n);
+				}
+
+				menuNames.push_back(std::make_pair(NewInt2(x, z), std::move(name)));
+				seen.push_back(hash);
+			}
+		};
+
+		// Start at the top-right corner of the map, running right to left and top to bottom.
+		for (SNInt x = 0; x < voxelGrid.getWidth(); x++)
+		{
+			for (WEInt z = 0; z < voxelGrid.getDepth(); z++)
+			{
+				tryGenerateBlockName(x, z);
+			}
+		}
+
+		// Fix some edge cases used with the main quest.
+		if ((menuType == ArenaTypes::MenuType::Temple) &&
+			cityDef.hasMainQuestTempleOverride)
+		{
+			const auto &mainQuestTempleOverride = cityDef.mainQuestTempleOverride;
+			const int modelIndex = mainQuestTempleOverride.modelIndex;
+			const int suffixIndex = mainQuestTempleOverride.suffixIndex;
+
+			// Added an index variable since the original game seems to store its menu names in a
+			// way other than with a vector like this solution is using.
+			const int menuNamesIndex = mainQuestTempleOverride.menuNamesIndex;
+
+			DebugAssertIndex(menuNames, menuNamesIndex);
+			menuNames[menuNamesIndex].second = createTempleName(modelIndex, suffixIndex);
+		}
+	};
+
+	generateNames(ArenaTypes::MenuType::Tavern);
+	generateNames(ArenaTypes::MenuType::Equipment);
+	generateNames(ArenaTypes::MenuType::Temple);
+	return menuNames;
 }
 
 ArenaLevelUtils::MenuNamesList LevelData::generateWildChunkBuildingNames(const VoxelGrid &voxelGrid,

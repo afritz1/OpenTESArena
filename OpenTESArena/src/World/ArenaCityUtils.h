@@ -49,13 +49,6 @@ namespace ArenaCityUtils
 	// actual ones used in-game.
 	// @todo: this should use Arena dimensions (from MAP1?), not modern dimensions
 	void revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1, SNInt gridWidth, WEInt gridDepth);
-
-	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
-	// been loaded into the voxel grid so that voxel bits don't have to be decoded twice.
-	ArenaLevelUtils::MenuNamesList generateBuildingNames(const LocationDefinition &locationDef,
-		const ProvinceDefinition &provinceDef, ArenaRandom &random, const VoxelGrid &voxelGrid,
-		const LevelData::Transitions &transitions, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary);
 }
 
 #endif
