@@ -16,12 +16,13 @@ class BinaryAssetLibrary;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
+class EntityManager;
 class Game;
-class LevelData;
 class LocationDefinition;
 class Random;
 class Renderer;
 class TextureManager;
+class VoxelGrid;
 
 class CitizenManager
 {
@@ -40,10 +41,11 @@ private:
 public:
 	CitizenManager();
 
-	void spawnCitizens(LevelData &levelData, int raceID, const LocationDefinition &locationDef,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);
-	void clearCitizens(Game &game);
+	void spawnCitizens(int raceID, const VoxelGrid &voxelGrid, EntityManager &entityManager,
+		const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
+		Renderer &renderer);
+	void clearCitizens(EntityManager &entityManager);
 	void tick(Game &game);
 };
 

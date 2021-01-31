@@ -2703,8 +2703,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		const bool isWild = mapType == MapType::Wilderness;
 		if (isCity || isWild)
 		{
-			citizenManager.spawnCitizens(*this, provinceDef.getRaceID(), locationDef,
-				entityDefLibrary, binaryAssetLibrary, random, textureManager, renderer);
+			citizenManager.spawnCitizens(provinceDef.getRaceID(), this->voxelGrid, this->entityManager,
+				locationDef, entityDefLibrary, binaryAssetLibrary, random, textureManager, renderer);
 		}
 	};
 

@@ -33,7 +33,7 @@ bool CitizenManager::shouldSpawn(Game &game) const
 	return (activeMapType == MapType::City) || (activeMapType == MapType::Wilderness);*/
 }
 
-void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
+void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, EntityManager &entityManager,
 	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	Renderer &renderer)
@@ -45,7 +45,7 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 		return cityDef.climateType;
 	}();
 
-	auto tryMakeEntityAnimInst = [&levelData, &binaryAssetLibrary, &textureManager, climateType](
+	auto tryMakeEntityAnimInst = [&binaryAssetLibrary, &textureManager, climateType](
 		bool male, EntityAnimationInstance *outAnimInst)
 	{
 		EntityAnimationDefinition animDef;
@@ -108,8 +108,6 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	constexpr int citizenCount = 150; // Arbitrary.
 	for (int i = 0; i < citizenCount; i++)
 	{
-		const auto &voxelGrid = levelData.getVoxelGrid();
-
 		// Find suitable spawn position; might not succeed if there is no available spot.
 		bool foundSpawnPosition = false;
 		const NewInt2 spawnPositionXZ = [&voxelGrid, &random, &foundSpawnPosition]()
@@ -143,7 +141,6 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 			continue;
 		}
 
-		auto &entityManager = levelData.getEntityManager();
 		const bool male = (random.next() % 2) == 0;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
@@ -197,13 +194,8 @@ void CitizenManager::spawnCitizens(LevelData &levelData, int raceID,
 	writeTextures(false);
 }
 
-void CitizenManager::clearCitizens(Game &game)
+void CitizenManager::clearCitizens(EntityManager &entityManager)
 {
-	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getActiveWorld();
-	auto &levelData = worldData.getActiveLevel();
-	auto &entityManager = levelData.getEntityManager();
-
 	Buffer<const Entity*> entities(entityManager.getCount(EntityType::Dynamic));
 	const int entityWriteCount = entityManager.getEntities(
 		EntityType::Dynamic, entities.get(), entities.getCount());
@@ -235,6 +227,8 @@ void CitizenManager::tick(Game &game)
 			auto &gameData = game.getGameData();
 			auto &worldData = gameData.getActiveWorld();
 			auto &levelData = worldData.getActiveLevel();
+			const auto &voxelGrid = levelData.getVoxelGrid();
+			auto &entityManager = levelData.getEntityManager();
 			const auto &provinceDef = gameData.getProvinceDefinition();
 			const auto &locationDef = gameData.getLocationDefinition();
 			const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -242,7 +236,7 @@ void CitizenManager::tick(Game &game)
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
-			this->spawnCitizens(levelData, provinceDef.getRaceID(), locationDef, entityDefLibrary,
+			this->spawnCitizens(provinceDef.getRaceID(), voxelGrid, entityManager, locationDef, entityDefLibrary,
 				binaryAssetLibrary, random, textureManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
