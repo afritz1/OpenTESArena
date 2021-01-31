@@ -10,10 +10,10 @@ enum class WeatherType
 {
 	Clear,
 	Overcast, // With fog.
-	Rain,
+	Rain, // If rnd() < 24000 then thunderstorm.
 	Snow,
 	SnowOvercast, // With fog.
-	Rain2,
+	Rain2, // If rnd() < 24000 then thunderstorm.
 	Overcast2,
 	SnowOvercast2 // If rnd() < 16000 then with fog.
 };
