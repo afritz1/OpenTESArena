@@ -980,8 +980,9 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 			const OriginalInt2 displayedCoords = [&worldData, &player, &voxelGrid]()
 			{
-				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-					NewInt2(player.getVoxelPosition().x, player.getVoxelPosition().z));
+				const Int3 playerVoxel = player.getVoxelPosition();
+				const NewInt2 playerVoxelXZ(playerVoxel.x, playerVoxel.z);
+				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxelXZ);
 
 				// The displayed coordinates in the wilderness behave differently in the original
 				// game due to how the 128x128 grid shifts to keep the player roughly centered.
@@ -2282,13 +2283,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		// Make sure the voxel will actually lead somewhere first.
 		if (isTransitionVoxel)
 		{
-			auto &voxelGrid = activeLevel.getVoxelGrid();
-			const NewInt2 voxel(voxelHit.voxel.x, voxelHit.voxel.z);
 			const bool isTransitionToInterior = ArenaVoxelUtils::menuLeadsToInterior(menuType);
 
 			if (isTransitionToInterior)
 			{
-				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxel);
+				const NewInt2 voxelXZ(voxelHit.voxel.x, voxelHit.voxel.z);
+				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxelXZ);
 				const OriginalInt2 doorVoxel = [activeMapType, &originalVoxel]()
 				{
 					if (activeMapType == MapType::City)
@@ -2403,8 +2403,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// @todo: handle wilderness dungeon .MIF names differently than just with
 					// an empty string?
-					DebugLogWarning("Empty .MIF name at voxel (" + std::to_string(voxel.x) + ", " +
-						std::to_string(voxel.y) + ").");
+					DebugLogWarning("Empty .MIF name at voxel (" + std::to_string(voxelXZ.x) + ", " +
+						std::to_string(voxelXZ.y) + ").");
 				}
 			}
 			else
@@ -2841,10 +2841,9 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			const auto &activeLevel = worldData.getActiveLevel();
 			const auto &voxelGrid = activeLevel.getVoxelGrid();
 
-			const NewInt2 playerVoxel(
-				static_cast<int>(position.x),
-				static_cast<int>(position.z));
-			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxel);
+			const Int3 playerVoxel = player.getVoxelPosition();
+			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
+				NewInt2(playerVoxel.x, playerVoxel.z));
 			const Int2 chunkCoord(
 				originalVoxel.x / RMDFile::WIDTH,
 				originalVoxel.y / RMDFile::DEPTH);
