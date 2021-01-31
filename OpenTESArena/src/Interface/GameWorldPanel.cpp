@@ -56,8 +56,6 @@
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
-#include "../World/ExteriorWorldData.h"
-#include "../World/InteriorWorldData.h"
 #include "../World/LevelData.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
@@ -2541,11 +2539,11 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	auto &gameData = game.getGameData();
 
 	// Level transitions are always between interiors.
-	auto &interior = [&gameData]() -> InteriorWorldData&
+	auto &interior = [&gameData]() -> WorldData&
 	{
 		auto &worldData = gameData.getActiveWorld();
 		DebugAssert(worldData.getMapType() == MapType::Interior);
-		return static_cast<InteriorWorldData&>(worldData);
+		return worldData;
 	}();
 
 	const auto &level = interior.getActiveLevel();
@@ -2625,7 +2623,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 				oldActiveLevel.clearTemporaryVoxelInstances();
 
 				// Select the new level.
-				interior.setLevelIndex(levelIndex);
+				interior.setActiveLevelIndex(levelIndex);
 
 				// Set the new level active in the renderer.
 				auto &newActiveLevel = interior.getActiveLevel();
@@ -2676,10 +2674,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 					onLevelUpVoxelEnter(game);
 					onLevelUpVoxelEnter = std::function<void(Game&)>();
 				}
-				else if (interior.getLevelIndex() > 0)
+				else if (interior.getActiveLevelIndex() > 0)
 				{
 					// Decrement the world's level index and activate the new level.
-					switchToLevel(interior.getLevelIndex() - 1);
+					switchToLevel(interior.getActiveLevelIndex() - 1);
 				}
 				else
 				{
@@ -2688,10 +2686,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			}
 			else if (transition.getType() == LevelData::Transition::Type::LevelDown)
 			{
-				if (interior.getLevelIndex() < (interior.getLevelCount() - 1))
+				if (interior.getActiveLevelIndex() < (interior.getLevelCount() - 1))
 				{
 					// Increment the world's level index and activate the new level.
-					switchToLevel(interior.getLevelIndex() + 1);
+					switchToLevel(interior.getActiveLevelIndex() + 1);
 				}
 				else
 				{

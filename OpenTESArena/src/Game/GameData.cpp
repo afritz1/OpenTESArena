@@ -23,8 +23,6 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaVoxelUtils.h"
-#include "../World/ExteriorWorldData.h"
-#include "../World/InteriorWorldData.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationInstance.h"
 #include "../World/LocationType.h"
@@ -144,8 +142,8 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	// Call interior WorldData loader.
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	this->clearWorldDatas();
-	this->worldDatas.push(std::make_unique<InteriorWorldData>(
-		InteriorWorldData::loadInterior(interiorType, mif, exeData)));
+	this->worldDatas.push(std::make_unique<WorldData>(
+		WorldData::loadInterior(interiorType, mif, exeData)));
 
 	// Set initial level active in the renderer.
 	WorldData &worldData = *this->worldDatas.top();
@@ -180,8 +178,8 @@ void GameData::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFil
 
 	// Give the interior world data to the active exterior.
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	this->worldDatas.push(std::make_unique<InteriorWorldData>(
-		InteriorWorldData::loadInterior(interiorType, mif, exeData)));
+	this->worldDatas.push(std::make_unique<WorldData>(
+		WorldData::loadInterior(interiorType, mif, exeData)));
 	this->returnVoxel = returnVoxel;
 
 	// Set interior level active in the renderer.
@@ -215,7 +213,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	this->worldDatas.pop();
 
 	DebugAssert(this->worldDatas.top()->getMapType() != MapType::Interior);
-	ExteriorWorldData &exterior = static_cast<ExteriorWorldData&>(*this->worldDatas.top());
+	WorldData &exterior = *this->worldDatas.top();
 
 	// Leave the interior and get the voxel to return to in the exterior.
 	const Int2 returnVoxel = *this->returnVoxel;
@@ -279,7 +277,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const Pro
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 	this->clearWorldDatas();
-	this->worldDatas.push(std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
+	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadDungeon(
 		dungeonDef.dungeonSeed, dungeonDef.widthChunkCount, dungeonDef.heightChunkCount,
 		isArtifactDungeon, binaryAssetLibrary.getExeData())));
 
@@ -334,7 +332,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const SNInt depthChunks = LocationUtils::WILD_DUNGEON_HEIGHT_CHUNK_COUNT;
 	const bool isArtifactDungeon = false;
 	this->clearWorldDatas();
-	this->worldDatas.push(std::make_unique<InteriorWorldData>(InteriorWorldData::loadDungeon(
+	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadDungeon(
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData)));
 
 	// Set initial level active in the renderer.
@@ -390,7 +388,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 
 	// Call city WorldData loader.
 	this->clearWorldDatas();
-	this->worldDatas.push(std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadCity(
+	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadCity(
 		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
 		binaryAssetLibrary, textAssetLibrary, textureManager)));
 
@@ -452,7 +450,7 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 
 	// Call wilderness WorldData loader.
 	this->clearWorldDatas();
-	this->worldDatas.push(std::make_unique<ExteriorWorldData>(ExteriorWorldData::loadWilderness(
+	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadWilderness(
 		locationDef, provinceDef, weatherType, this->date.getDay(), starCount,
 		binaryAssetLibrary, textureManager)));
 

@@ -8,8 +8,6 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "ExteriorWorldData.h"
-#include "InteriorWorldData.h"
 #include "LevelData.h"
 #include "LocationUtils.h"
 #include "MapType.h"
@@ -2118,8 +2116,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 		{
 			if (mapType == MapType::Interior)
 			{
-				const InteriorWorldData &interior = static_cast<const InteriorWorldData&>(worldData);
-				return interior.getInteriorType();
+				const WorldData::Interior &interior = worldData.getInterior();
+				return interior.interiorType;
 			}
 			else
 			{
