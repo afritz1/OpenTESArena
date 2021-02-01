@@ -116,9 +116,9 @@ double Player::getJumpMagnitude() const
 	return Player::JUMP_VELOCITY;
 }
 
-Int3 Player::getVoxelPosition() const
+NewInt3 Player::getVoxelPosition() const
 {
-	return Int3(
+	return NewInt3(
 		static_cast<int>(std::floor(this->camera.position.x)),
 		static_cast<int>(std::floor(this->camera.position.y)),
 		static_cast<int>(std::floor(this->camera.position.z)));
@@ -152,7 +152,7 @@ bool Player::onGround(const WorldData &worldData) const
 	/*const double feetY = this->getFeetY();
 	const double feetVoxelYPos = std::floor(feetY);
 	const bool closeEnoughToLowerVoxel = std::abs(feetY - feetVoxelYPos) < EPSILON;
-	const Int3 feetVoxel(
+	const NewInt3 feetVoxel(
 		static_cast<int>(std::floor(this->camera.position.x)),
 		static_cast<int>(feetVoxelYPos) - (closeEnoughToLowerVoxel ? 1 : 0),
 		static_cast<int>(std::floor(this->camera.position.z)));
@@ -201,7 +201,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 {
 	const LevelData &activeLevel = worldData.getActiveLevel();
 
-	auto getVoxelDef = [&activeLevel](const Int3 &voxel) -> VoxelDefinition
+	auto getVoxelDef = [&activeLevel](const NewInt3 &voxel) -> VoxelDefinition
 	{
 		const VoxelGrid &voxelGrid = activeLevel.getVoxelGrid();
 
@@ -225,16 +225,16 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		this->getFeetY() / activeLevel.getCeilingHeight()));
 
 	// Get the voxel data for each voxel the player would touch on each axis.
-	const Int3 playerVoxel = this->getVoxelPosition();
-	const Int3 xVoxel(
+	const NewInt3 playerVoxel = this->getVoxelPosition();
+	const NewInt3 xVoxel(
 		static_cast<int>(std::floor(this->camera.position.x + (this->velocity.x * dt))),
 		feetVoxelY,
 		playerVoxel.z);
-	const Int3 yVoxel(
+	const NewInt3 yVoxel(
 		playerVoxel.x,
 		feetVoxelY,
 		playerVoxel.z);
-	const Int3 zVoxel(
+	const NewInt3 zVoxel(
 		playerVoxel.x,
 		feetVoxelY,
 		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
@@ -248,7 +248,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&activeLevel](const Int3 &voxel, const VoxelDefinition &voxelDef)
+	auto wouldCollideWithVoxel = [&activeLevel](const NewInt3 &voxel, const VoxelDefinition &voxelDef)
 	{
 		if (voxelDef.type == VoxelType::TransparentWall)
 		{

@@ -79,7 +79,7 @@ public:
 	double getJumpMagnitude() const;
 
 	// Gets the voxel coordinates of the player.
-	Int3 getVoxelPosition() const;
+	NewInt3 getVoxelPosition() const;
 
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();

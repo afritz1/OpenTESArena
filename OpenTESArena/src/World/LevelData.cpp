@@ -555,7 +555,7 @@ const LevelData::VoxelInstanceGroup *LevelData::tryGetVoxelInstances(const Chunk
 	}
 }
 
-VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type)
+VoxelInstance *LevelData::tryGetVoxelInstance(const NewInt3 &voxel, VoxelInstance::Type type)
 {
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
 	VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
@@ -586,7 +586,7 @@ VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::
 	return nullptr;
 }
 
-const VoxelInstance *LevelData::tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type) const
+const VoxelInstance *LevelData::tryGetVoxelInstance(const NewInt3 &voxel, VoxelInstance::Type type) const
 {
 	const ChunkInt2 chunk = VoxelUtils::newVoxelToChunk(NewInt2(voxel.x, voxel.z));
 	const VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
@@ -736,7 +736,7 @@ void LevelData::addVoxelInstance(VoxelInstance &&voxelInst)
 	}
 
 	VoxelInstanceGroup &voxelInstGroup = iter->second;
-	const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+	const NewInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 	auto groupIter = voxelInstGroup.find(voxel);
 	if (groupIter == voxelInstGroup.end())
 	{
@@ -981,7 +981,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 	{
 		for (WEInt z = 0; z < gridDepth; z++)
 		{
-			const Int3 voxel(x, 0, z);
+			const NewInt3 voxel(x, 0, z);
 
 			// Ignore non-chasm voxels.
 			const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
@@ -1659,20 +1659,20 @@ void LevelData::readTriggers(const BufferView<const ArenaTypes::MIFTrigger> &tri
 	}
 }
 
-void LevelData::getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
+void LevelData::getAdjacentVoxelIDs(const NewInt3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
 	uint16_t *outEastID, uint16_t *outWestID) const
 {
-	auto getVoxelIdOrAir = [this](const Int3 &voxel)
+	auto getVoxelIdOrAir = [this](const NewInt3 &voxel)
 	{
 		// The voxel is air if outside the grid.
 		return this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z) ?
 			this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z) : 0;
 	};
 
-	const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
-	const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
-	const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
-	const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
+	const NewInt3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+	const NewInt3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+	const NewInt3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+	const NewInt3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 
 	if (outNorthID != nullptr)
 	{
@@ -2069,7 +2069,7 @@ ArenaLevelUtils::MenuNamesList LevelData::generateWildChunkBuildingNames(const V
 	return menuNames;
 }
 
-void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
+void LevelData::tryUpdateChasmVoxel(const NewInt3 &voxel)
 {
 	// Ignore if outside the grid.
 	if (!this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z))
@@ -2159,7 +2159,7 @@ void LevelData::tryUpdateChasmVoxel(const Int3 &voxel)
 	}
 }
 
-uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
+uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const NewInt3 &voxel)
 {
 	DebugAssert(this->voxelGrid.coordIsValid(voxel.x, voxel.y, voxel.z));
 
@@ -2186,7 +2186,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 	{
 		// @todo: include player position. If there are no chasms to pick from, then default to
 		// wet chasm.
-		// @todo: getNearestChasmType(const Int3 &voxel)
+		// @todo: getNearestChasmType(const NewInt3 &voxel)
 		return VoxelDefinition::ChasmData::Type::Wet;
 	}();
 
@@ -2308,7 +2308,7 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const Int3 &voxel)
 
 void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &maxChunk, double dt)
 {
-	std::vector<Int3> completedVoxels;
+	std::vector<NewInt3> completedVoxels;
 
 	for (SNInt chunkX = minChunk.x; chunkX != maxChunk.x; chunkX++)
 	{
@@ -2332,7 +2332,7 @@ void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &m
 
 							if (!voxelInst.hasRelevantState())
 							{
-								const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+								const NewInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 								completedVoxels.push_back(voxel);
 
 								const uint16_t newVoxelID = [this, &voxel]() -> uint16_t
@@ -2363,16 +2363,16 @@ void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &m
 	}
 
 	// Update adjacent chasm faces (not sure why this has to be done after, but it works).
-	for (const Int3 &voxel : completedVoxels)
+	for (const NewInt3 &voxel : completedVoxels)
 	{
 		const bool isFloorVoxel = voxel.y == 0;
 
 		if (isFloorVoxel)
 		{
-			const Int3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
-			const Int3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
-			const Int3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
-			const Int3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
+			const NewInt3 northVoxel(voxel.x - 1, voxel.y, voxel.z);
+			const NewInt3 southVoxel(voxel.x + 1, voxel.y, voxel.z);
+			const NewInt3 eastVoxel(voxel.x, voxel.y, voxel.z - 1);
+			const NewInt3 westVoxel(voxel.x, voxel.y, voxel.z + 1);
 			this->tryUpdateChasmVoxel(northVoxel);
 			this->tryUpdateChasmVoxel(southVoxel);
 			this->tryUpdateChasmVoxel(eastVoxel);
@@ -2727,7 +2727,7 @@ void LevelData::tick(Game &game, double dt)
 {
 	const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 	const auto &player = game.getGameData().getPlayer();
-	const Int3 playerVoxel = player.getVoxelPosition();
+	const NewInt3 playerVoxel = player.getVoxelPosition();
 	const ChunkInt2 playerChunk = VoxelUtils::newVoxelToChunk(NewInt2(playerVoxel.x, playerVoxel.z));
 	
 	ChunkInt2 minChunk, maxChunk;

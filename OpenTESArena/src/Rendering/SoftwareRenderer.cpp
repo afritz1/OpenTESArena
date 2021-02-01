@@ -401,7 +401,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 		std::floor(eye.x),
 		std::floor(eye.y),
 		std::floor(eye.z));
-	this->eyeVoxel = Int3(
+	this->eyeVoxel = NewInt3(
 		static_cast<int>(this->eyeVoxelReal.x),
 		static_cast<int>(this->eyeVoxelReal.y),
 		static_cast<int>(this->eyeVoxelReal.z));
@@ -4886,7 +4886,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
-		const Int3 voxel(voxelX, 0, voxelZ);
+		const NewInt3 voxel(voxelX, 0, voxelZ);
 		const VoxelInstance *chasmVoxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
@@ -5622,7 +5622,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
-		const Int3 voxel(voxelX, 0, voxelZ);
+		const NewInt3 voxel(voxelX, 0, voxelZ);
 		const VoxelInstance *chasmVoxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
@@ -6112,7 +6112,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
-		const Int3 voxel(voxelX, 0, voxelZ);
+		const NewInt3 voxel(voxelX, 0, voxelZ);
 		const VoxelInstance *chasmVoxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
@@ -6908,7 +6908,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
-		const Int3 voxel(voxelX, 0, voxelZ);
+		const NewInt3 voxel(voxelX, 0, voxelZ);
 		const VoxelInstance *chasmVoxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
@@ -7481,7 +7481,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
 	// the Y cell coordinate is constant.
-	Int3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
+	NewInt3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
 	
 	// Delta distance sums in each component, starting at the initial wall hit. The lowest
 	// component is the candidate for the next DDA loop.

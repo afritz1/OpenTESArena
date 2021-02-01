@@ -27,7 +27,7 @@ namespace Physics
 		struct VoxelHit
 		{
 			uint16_t id;
-			Int3 voxel;
+			NewInt3 voxel;
 			std::optional<VoxelFacing3D> facing;
 		};
 
@@ -47,7 +47,7 @@ namespace Physics
 	public:
 		static constexpr double MAX_T = std::numeric_limits<double>::infinity();
 
-		void initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
+		void initVoxel(double t, const Double3 &point, uint16_t id, const NewInt3 &voxel,
 			const VoxelFacing3D *facing);
 		void initEntity(double t, const Double3 &point, EntityID id, EntityType type);
 

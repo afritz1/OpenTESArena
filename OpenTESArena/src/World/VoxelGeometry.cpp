@@ -481,7 +481,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance
 	}
 }
 
-int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const Int3 &voxel, double ceilingHeight,
+int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxel, double ceilingHeight,
 	const VoxelInstance *voxelInst, Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))

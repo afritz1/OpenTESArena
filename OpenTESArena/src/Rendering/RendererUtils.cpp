@@ -110,7 +110,7 @@ void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *out
 
 double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const LevelData &levelData)
 {
-	const Int3 voxel(voxelX, 1, voxelZ);
+	const NewInt3 voxel(voxelX, 1, voxelZ);
 	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
 	if (voxelInst != nullptr)
 	{
@@ -125,7 +125,7 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Level
 
 double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const LevelData &levelData)
 {
-	const Int3 voxel(voxelX, voxelY, voxelZ);
+	const NewInt3 voxel(voxelX, voxelY, voxelZ);
 	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Fading);
 	if (voxelInst != nullptr)
 	{

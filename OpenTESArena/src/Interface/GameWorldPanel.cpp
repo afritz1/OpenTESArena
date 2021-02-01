@@ -252,7 +252,7 @@ namespace
 			case Physics::Hit::Type::Voxel:
 			{
 				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-				const Int3 &voxel = voxelHit.voxel;
+				const NewInt3 &voxel = voxelHit.voxel;
 				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -980,7 +980,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 			const OriginalInt2 displayedCoords = [&worldData, &player, &voxelGrid]()
 			{
-				const Int3 playerVoxel = player.getVoxelPosition();
+				const NewInt3 playerVoxel = player.getVoxelPosition();
 				const NewInt2 playerVoxelXZ(playerVoxel.x, playerVoxel.z);
 				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxelXZ);
 
@@ -1713,7 +1713,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-			const Int3 &voxel = voxelHit.voxel;
+			const NewInt3 &voxel = voxelHit.voxel;
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -2084,7 +2084,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
 	auto playCloseSoundIfType = [&game, &activeLevel](const DoorSoundDefinition::CloseDef &closeSoundDef, 
-		DoorSoundDefinition::CloseType closeType, const Int3 &doorVoxel)
+		DoorSoundDefinition::CloseType closeType, const NewInt3 &doorVoxel)
 	{
 		if (closeSoundDef.closeType == closeType)
 		{
@@ -2133,7 +2133,7 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 							// Get the door's voxel definition and its sound definition for determining how it
 							// sounds when closing.
 							const auto &voxelGrid = activeLevel.getVoxelGrid();
-							const Int3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+							const NewInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 							const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 							const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 							const VoxelDefinition::DoorData &doorData = voxelDef.door;
@@ -2318,9 +2318,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
 				// "wild return".
-				const Int3 returnVoxel = [&voxelHit]()
+				const NewInt3 returnVoxel = [&voxelHit]()
 				{
-					const Int3 delta = [&voxelHit]()
+					const NewInt3 delta = [&voxelHit]()
 					{
 						// Assuming this is a wall voxel.
 						DebugAssert(voxelHit.facing.has_value());
@@ -2328,23 +2328,23 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 						if (facing == VoxelFacing3D::PositiveX)
 						{
-							return Int3(1, 0, 0);
+							return NewInt3(1, 0, 0);
 						}
 						else if (facing == VoxelFacing3D::NegativeX)
 						{
-							return Int3(-1, 0, 0);
+							return NewInt3(-1, 0, 0);
 						}
 						else if (facing == VoxelFacing3D::PositiveZ)
 						{
-							return Int3(0, 0, 1);
+							return NewInt3(0, 0, 1);
 						}
 						else if (facing == VoxelFacing3D::NegativeZ)
 						{
-							return Int3(0, 0, -1);
+							return NewInt3(0, 0, -1);
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(Int3, std::to_string(static_cast<int>(facing)));
+							DebugUnhandledReturnMsg(NewInt3, std::to_string(static_cast<int>(facing)));
 						}
 					}();
 
@@ -2841,7 +2841,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			const auto &activeLevel = worldData.getActiveLevel();
 			const auto &voxelGrid = activeLevel.getVoxelGrid();
 
-			const Int3 playerVoxel = player.getVoxelPosition();
+			const NewInt3 playerVoxel = player.getVoxelPosition();
 			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
 				NewInt2(playerVoxel.x, playerVoxel.z));
 			const Int2 chunkCoord(
@@ -3075,9 +3075,9 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
-	const Int3 oldPlayerVoxel = player.getVoxelPosition();
+	const NewInt3 oldPlayerVoxel = player.getVoxelPosition();
 	player.tick(game, dt);
-	const Int3 newPlayerVoxel = player.getVoxelPosition();
+	const NewInt3 newPlayerVoxel = player.getVoxelPosition();
 
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);

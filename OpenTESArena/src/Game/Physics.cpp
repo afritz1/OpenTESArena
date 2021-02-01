@@ -23,7 +23,7 @@
 
 namespace Physics
 {
-	using VoxelEntityMap = std::unordered_map<Int3, std::vector<EntityManager::EntityVisibilityData>>;
+	using VoxelEntityMap = std::unordered_map<NewInt3, std::vector<EntityManager::EntityVisibilityData>>;
 
 	// Converts the normal to the associated voxel facing on success. Not all conversions
 	// exist, for example, diagonals have normals but do not have a voxel facing.
@@ -160,7 +160,7 @@ namespace Physics
 				{
 					for (SNInt x = startX; x <= endX; x++)
 					{
-						const Int3 voxel(x, y, z);
+						const NewInt3 voxel(x, y, z);
 
 						// Add the entity to the list. Create a new voxel->entity list mapping if
 						// there isn't one for this voxel.
@@ -184,7 +184,7 @@ namespace Physics
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const Double3 &rayStart, const Double3 &rayDirection,
-		const Int3 &voxel, VoxelFacing3D farFacing, const Double3 &farPoint, double ceilingHeight,
+		const NewInt3 &voxel, VoxelFacing3D farFacing, const Double3 &farPoint, double ceilingHeight,
 		const LevelData &levelData, Physics::Hit &hit)
 	{
 		const VoxelGrid &voxelGrid = levelData.getVoxelGrid();
@@ -553,7 +553,7 @@ namespace Physics
 
 	// Checks a voxel for ray hits and writes them into the output parameter. Returns
 	// true if the ray hit something.
-	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection, const Int3 &voxel,
+	bool testVoxelRay(const Double3 &rayStart, const Double3 &rayDirection, const NewInt3 &voxel,
 		VoxelFacing3D nearFacing, const Double3 &nearPoint, const Double3 &farPoint,
 		double ceilingHeight, const LevelData &levelData, Physics::Hit &hit)
 	{
@@ -921,7 +921,7 @@ namespace Physics
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
 	bool testEntitiesInVoxel(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &flatForward,
-		const Double3 &flatRight, const Double3 &flatUp, const Int3 &voxel,
+		const Double3 &flatRight, const Double3 &flatUp, const NewInt3 &voxel,
 		const VoxelEntityMap &voxelEntityMap, bool pixelPerfect, const Palette &palette,
 		const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
 		const Renderer &renderer, Physics::Hit &hit)
@@ -997,7 +997,7 @@ namespace Physics
 			std::floor(rayStart.x / axisLen.x),
 			std::floor(rayStart.y / axisLen.y),
 			std::floor(rayStart.z / axisLen.z));
-		const Int3 rayStartVoxel(
+		const NewInt3 rayStartVoxel(
 			static_cast<int>(rayStartVoxelReal.x),
 			static_cast<int>(rayStartVoxelReal.y),
 			static_cast<int>(rayStartVoxelReal.z));
@@ -1104,7 +1104,7 @@ namespace Physics
 		}
 
 		// The current voxel coordinate in the DDA loop.
-		Int3 currentVoxel(rayStartVoxel.x, rayStartVoxel.y, rayStartVoxel.z);
+		NewInt3 currentVoxel(rayStartVoxel.x, rayStartVoxel.y, rayStartVoxel.z);
 
 		// Delta distance sums in each component, starting at the initial wall hit. The lowest
 		// component is the candidate for the next DDA loop.
@@ -1161,7 +1161,7 @@ namespace Physics
 		{
 			// Store part of the current DDA state. The loop needs to do another DDA step to calculate
 			// the point on the far side of this voxel.
-			const Int3 savedVoxel = currentVoxel;
+			const NewInt3 savedVoxel = currentVoxel;
 			const VoxelFacing3D savedFacing = facing;
 			const double savedDistance = rayDistance;
 
@@ -1189,7 +1189,7 @@ namespace Physics
 	}
 }
 
-void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const Int3 &voxel,
+void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const NewInt3 &voxel,
 	const VoxelFacing3D *facing)
 {
 	this->t = t;

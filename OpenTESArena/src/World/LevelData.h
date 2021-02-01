@@ -13,6 +13,7 @@
 #include "DistantSky.h"
 #include "VoxelGrid.h"
 #include "VoxelInstance.h"
+#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
@@ -139,7 +140,7 @@ public:
 	};
 
 	// One group per chunk. Needs to be a hash table for chasm rendering performance.
-	using VoxelInstanceGroup = std::unordered_map<Int3, std::vector<VoxelInstance>>;
+	using VoxelInstanceGroup = std::unordered_map<NewInt3, std::vector<VoxelInstance>>;
 private:
 	// Mapping of .INF flat index to instances in the game world.
 	class FlatDef
@@ -193,7 +194,7 @@ private:
 
 	// Gets voxel IDs surrounding the given voxel. If one of the IDs would point to a voxel
 	// outside the grid, it is air.
-	void getAdjacentVoxelIDs(const Int3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
+	void getAdjacentVoxelIDs(const NewInt3 &voxel, uint16_t *outNorthID, uint16_t *outSouthID,
 		uint16_t *outEastID, uint16_t *outWestID) const;
 
 	// Creates mappings of *MENU voxel coordinates to *MENU names. Call this after voxels have
@@ -209,10 +210,10 @@ private:
 
 	// Refreshes a chasm voxel, after one of its neighbors presumably just changed from a
 	// floor voxel.
-	void tryUpdateChasmVoxel(const Int3 &voxel);
+	void tryUpdateChasmVoxel(const NewInt3 &voxel);
 
 	// Gets the new voxel ID of a floor voxel after figuring out what chasm it would be.
-	uint16_t getChasmIdFromFadedFloorVoxel(const Int3 &voxel);
+	uint16_t getChasmIdFromFadedFloorVoxel(const NewInt3 &voxel);
 
 	// Updates fading voxels in the given chunk range (interim solution to using the chunk system).
 	void updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &maxChunk, double dt);
@@ -251,8 +252,8 @@ public:
 	const VoxelInstanceGroup *tryGetVoxelInstances(const ChunkInt2 &chunk) const;
 
 	// Convenience function that does the chunk look-up internally.
-	VoxelInstance *tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type);
-	const VoxelInstance *tryGetVoxelInstance(const Int3 &voxel, VoxelInstance::Type type) const;
+	VoxelInstance *tryGetVoxelInstance(const NewInt3 &voxel, VoxelInstance::Type type);
+	const VoxelInstance *tryGetVoxelInstance(const NewInt3 &voxel, VoxelInstance::Type type) const;
 
 	Transitions &getTransitions();
 	const Transitions &getTransitions() const;
