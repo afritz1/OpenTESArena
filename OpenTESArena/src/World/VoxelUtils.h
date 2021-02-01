@@ -18,6 +18,7 @@ using NewDouble2 = Double2; // +X south, +Y west (DEPRECATE IN FAVOR OF VoxelDou
 using LevelDouble2 = Double2; // +X south, +Y west, used with level definitions (independent of chunks).
 using VoxelDouble2 = Double2; // +X south, +Y west, in the space of chunk voxels.
 
+using NewInt3 = Int3; // +X south, +Y up, +Z west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt3).
 using LevelInt3 = Int3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
@@ -72,6 +73,8 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Converts a voxel from chunk space to new voxel grid space.
+	NewInt3 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
+	NewInt3 chunkCoordToNewVoxel(const ChunkCoord3D &coord);
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
