@@ -78,10 +78,11 @@ namespace VoxelUtils
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
-	ChunkCoord2D newVoxelToChunkVoxel(const NewInt2 &voxel);
+	ChunkCoord3D newVoxelToChunkCoord(const NewInt3 &voxel);
+	ChunkCoord2D newVoxelToChunkCoord(const NewInt2 &voxel);
 
 	// Converts a voxel from level definition space to chunk voxel space.
-	ChunkCoord2D levelVoxelToChunkVoxel(const LevelInt2 &voxel);
+	ChunkCoord2D levelVoxelToChunkCoord(const LevelInt2 &voxel);
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel);

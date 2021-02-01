@@ -172,7 +172,10 @@ namespace
 								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
 							};
 
-							color = colors[std::min(hit.getVoxelHit().voxel.y, 4)];
+							const ChunkCoord3D &coord = hit.getVoxelHit().coord;
+							const NewInt3 hitVoxel = VoxelUtils::chunkCoordToNewVoxel(coord);
+							const int colorsIndex = std::min(hitVoxel.y, 4);
+							color = colors[colorsIndex];
 							break;
 						}
 						case Physics::Hit::Type::Entity:
@@ -252,11 +255,12 @@ namespace
 			case Physics::Hit::Type::Voxel:
 			{
 				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-				const NewInt3 &voxel = voxelHit.voxel;
+				const ChunkCoord3D &coord = voxelHit.coord;
+				const NewInt3 voxel = VoxelUtils::chunkCoordToNewVoxel(voxelHit.coord);
 				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
-				text = "Voxel: (" + voxelHit.voxel.toString() + "), " +
+				text = "Voxel: (" + voxel.toString() + "), " +
 					std::to_string(static_cast<int>(voxelDef.type)) +
 					' ' + std::to_string(hit.getT());
 				break;
@@ -1713,7 +1717,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-			const NewInt3 &voxel = voxelHit.voxel;
+			const ChunkCoord3D &coord = voxelHit.coord;
+			const NewInt3 voxel = VoxelUtils::chunkCoordToNewVoxel(coord);
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -2284,10 +2289,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		if (isTransitionVoxel)
 		{
 			const bool isTransitionToInterior = ArenaVoxelUtils::menuLeadsToInterior(menuType);
+			const ChunkCoord3D &coord = voxelHit.coord;
+			const NewInt3 hitVoxel = VoxelUtils::chunkCoordToNewVoxel(coord);
 
 			if (isTransitionToInterior)
 			{
-				const NewInt2 voxelXZ(voxelHit.voxel.x, voxelHit.voxel.z);
+				const NewInt2 voxelXZ(hitVoxel.x, hitVoxel.z);
 				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(voxelXZ);
 				const OriginalInt2 doorVoxel = [activeMapType, &originalVoxel]()
 				{
@@ -2318,9 +2325,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				// @todo: the return data needs to include chunk coordinates when in the
 				// wilderness. Maybe make that a discriminated union: "city return" and
 				// "wild return".
-				const NewInt3 returnVoxel = [&voxelHit]()
+				const NewInt3 returnVoxel = [&voxelHit, &hitVoxel]()
 				{
-					const NewInt3 delta = [&voxelHit]()
+					const NewInt3 delta = [&voxelHit, &hitVoxel]()
 					{
 						// Assuming this is a wall voxel.
 						DebugAssert(voxelHit.facing.has_value());
@@ -2348,7 +2355,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 						}
 					}();
 
-					return voxelHit.voxel + delta;
+					return hitVoxel + delta;
 				}();
 
 				// Enter the interior location if the .MIF name is valid.
@@ -2420,7 +2427,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				{
 					// From city to wilderness. Use the gate position to determine where to put the
 					// player in the wilderness.
-					const NewInt2 gatePos(voxelHit.voxel.x, voxelHit.voxel.z);
+					const NewInt2 gatePos(hitVoxel.x, hitVoxel.z);
 					const NewInt2 transitionDir = [&voxelHit]()
 					{
 						// Assuming this is a wall voxel.

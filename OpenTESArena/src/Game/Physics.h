@@ -11,6 +11,7 @@
 #include "../Math/Vector3.h"
 #include "../Rendering/Renderer.h"
 #include "../World/VoxelDefinition.h"
+#include "../World/VoxelUtils.h"
 
 // Namespace for physics-related calculations like ray casting.
 
@@ -27,7 +28,7 @@ namespace Physics
 		struct VoxelHit
 		{
 			uint16_t id;
-			NewInt3 voxel;
+			ChunkCoord3D coord;
 			std::optional<VoxelFacing3D> facing;
 		};
 
@@ -47,7 +48,7 @@ namespace Physics
 	public:
 		static constexpr double MAX_T = std::numeric_limits<double>::infinity();
 
-		void initVoxel(double t, const Double3 &point, uint16_t id, const NewInt3 &voxel,
+		void initVoxel(double t, const Double3 &point, uint16_t id, const ChunkCoord3D &coord,
 			const VoxelFacing3D *facing);
 		void initEntity(double t, const Double3 &point, EntityID id, EntityType type);
 
