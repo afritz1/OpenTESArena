@@ -22,6 +22,7 @@
 #include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/String.h"
 
 Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 {
@@ -84,35 +85,50 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 		return nullptr;
 	}
 
+	SDL_RendererInfo rendererInfo;
+	if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
+	{
+		DebugLogError("Couldn't get SDL_RendererInfo (error: " + std::string(SDL_GetError()) + ").");
+		return nullptr;
+	}
+
+	const std::string rendererInfoFlags = String::toHexString(rendererInfo.flags);
+	DebugLog("Created renderer \"" + std::string(rendererInfo.name) + "\" (flags: 0x" + rendererInfoFlags + ").");
+
 	// Set pixel interpolation hint.
-	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
+	const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
-		DebugLogWarning("Could not set interpolation hint.");
+		DebugLogWarning("Couldn't set SDL rendering interpolation hint.");
 	}
 
 	// Set the size of the render texture to be the size of the whole screen
 	// (it automatically scales otherwise).
-	SDL_Surface *nativeSurface = SDL_GetWindowSurface(window);
+	const SDL_Surface *nativeSurface = SDL_GetWindowSurface(window);
 
 	// If this fails, we might not support hardware accelerated renderers for some reason
 	// (such as with Linux), so we retry with software.
 	if (nativeSurface == nullptr)
 	{
 		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
-
 		SDL_DestroyRenderer(rendererContext);
 
 		rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
-		DebugAssertMsg(rendererContext != nullptr, "SDL_CreateRenderer software");
+		if (rendererContext == nullptr)
+		{
+			DebugLogError("Couldn't create software fallback SDL_Renderer.");
+			return nullptr;
+		}
 
 		nativeSurface = SDL_GetWindowSurface(window);
+		if (nativeSurface == nullptr)
+		{
+			DebugLogError("Couldn't get software fallback SDL_Window surface.");
+			return nullptr;
+		}
 	}
 
-	DebugAssertMsg(nativeSurface != nullptr, "SDL_GetWindowSurface");
-
-	// Set the device-independent resolution for rendering (i.e., the 
-	// "behind-the-scenes" resolution).
+	// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
 	SDL_RenderSetLogicalSize(rendererContext, nativeSurface->w, nativeSurface->h);
 
 	return rendererContext;
