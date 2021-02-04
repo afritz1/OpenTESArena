@@ -79,7 +79,7 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		DebugAssert(height >= 40);
 
 		// Get the nine parchment tiles.
-		const std::string tilesPaletteFilename = "STARTGAM.MNU";
+		const std::string &tilesPaletteFilename = ArenaTextureName::CharacterCreation;
 		const std::optional<PaletteID> tilesPaletteID = textureManager.tryGetPaletteID(tilesPaletteFilename.c_str());
 		if (!tilesPaletteID.has_value())
 		{
