@@ -84,10 +84,6 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 		return nullptr;
 	}
 
-	DebugAssertMsg(rendererContext != nullptr, "SDL_CreateRenderer");
-
-
-
 	// Set pixel interpolation hint.
 	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
