@@ -155,3 +155,17 @@ std::optional<VoxelFacing2D> VoxelUtils::tryConvertFaceTo2D(VoxelFacing3D facing
 		DebugUnhandledReturnMsg(VoxelFacing2D, std::to_string(static_cast<int>(facing)));
 	}
 }
+
+void VoxelUtils::getSurroundingVoxels(const VoxelInt3 &voxel, int distance, VoxelInt3 *outMinVoxel, VoxelInt3 *outMaxVoxel)
+{
+	DebugAssert(distance >= 0);
+	*outMinVoxel = VoxelInt3(voxel.x - distance, voxel.y - distance, voxel.z - distance);
+	*outMaxVoxel = VoxelInt3(voxel.x + distance, voxel.y + distance, voxel.z + distance);
+}
+
+void VoxelUtils::getSurroundingVoxels(const VoxelInt2 &voxel, int distance, VoxelInt2 *outMinVoxel, VoxelInt2 *outMaxVoxel)
+{
+	DebugAssert(distance >= 0);
+	*outMinVoxel = VoxelInt2(voxel.x - distance, voxel.y - distance);
+	*outMaxVoxel = VoxelInt2(voxel.x + distance, voxel.y + distance);
+}

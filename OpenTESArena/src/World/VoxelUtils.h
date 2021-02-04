@@ -99,6 +99,12 @@ namespace VoxelUtils
 	// Converts between 2D and 3D specializations of voxel facings.
 	VoxelFacing3D convertFaceTo3D(VoxelFacing2D facing);
 	std::optional<VoxelFacing2D> tryConvertFaceTo2D(VoxelFacing3D facing);
+
+	// Gets voxel coordinates in an inclusive NxN pattern around the given voxel. 'Distance' is
+	// the number of voxels away from the given voxel to reach (to obtain 3x3, 5x5, etc.). Does not
+	// clamp within any specified range.
+	void getSurroundingVoxels(const VoxelInt3 &voxel, int distance, VoxelInt3 *outMinVoxel, VoxelInt3 *outMaxVoxel);
+	void getSurroundingVoxels(const VoxelInt2 &voxel, int distance, VoxelInt2 *outMinVoxel, VoxelInt2 *outMaxVoxel);
 }
 
 #endif
