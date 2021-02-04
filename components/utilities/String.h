@@ -114,7 +114,7 @@ namespace String
 		static_assert(std::is_integral_v<T>);
 
 		std::stringstream ss;
-		ss << std::hex << value;
+		ss << std::uppercase << std::hex << value;
 		return ss.str();
 	}
 
