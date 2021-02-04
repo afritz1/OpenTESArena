@@ -75,15 +75,21 @@ Renderer::~Renderer()
 SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 {
 	// Automatically choose the best driver.
-	const int bestDriver = -1;
+	constexpr int bestDriver = -1;
 
-	SDL_Renderer *rendererContext = SDL_CreateRenderer(
-		window, bestDriver, SDL_RENDERER_ACCELERATED);
+	SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
+	if (rendererContext == nullptr)
+	{
+		DebugLogError("Couldn't create SDL_Renderer with driver \"" + std::to_string(bestDriver) + "\".");
+		return nullptr;
+	}
+
 	DebugAssertMsg(rendererContext != nullptr, "SDL_CreateRenderer");
 
+
+
 	// Set pixel interpolation hint.
-	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,
-		Renderer::DEFAULT_RENDER_SCALE_QUALITY);
+	SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, Renderer::DEFAULT_RENDER_SCALE_QUALITY);
 	if (status != SDL_TRUE)
 	{
 		DebugLogWarning("Could not set interpolation hint.");
@@ -95,7 +101,7 @@ SDL_Renderer *Renderer::createRenderer(SDL_Window *window)
 
 	// If this fails, we might not support hardware accelerated renderers for some reason
 	// (such as with Linux), so we retry with software.
-	if (!nativeSurface)
+	if (nativeSurface == nullptr)
 	{
 		DebugLogWarning("Failed to init accelerated SDL_Renderer, trying software fallback.");
 
@@ -509,13 +515,16 @@ Texture Renderer::createTextureFromSurface(const Surface &surface)
 	return texture;
 }
 
-void Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode,
+bool Renderer::init(int width, int height, WindowMode windowMode, int letterboxMode,
 	RendererSystemType2D systemType2D, RendererSystemType3D systemType3D)
 {
 	DebugLog("Initializing.");
 
-	DebugAssert(width > 0);
-	DebugAssert(height > 0);
+	if ((width <= 0) || (height <= 0))
+	{
+		DebugLogError("Invalid renderer dimensions \"" + std::to_string(width) + "x" + std::to_string(height) + "\"");
+		return false;
+	}
 
 	this->letterboxMode = letterboxMode;
 
@@ -545,10 +554,20 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 		return SDL_CreateWindow(title, position, position, width, height, flags);
 	}();
 
-	DebugAssertMsg(this->window != nullptr, "SDL_CreateWindow");
+	if (this->window == nullptr)
+	{
+		DebugLogError("Couldn't create SDL_Window (dimensions: " + std::to_string(width) + "x" + std::to_string(height) +
+			", window mode: " + std::to_string(static_cast<int>(windowMode)) + ").");
+		return false;
+	}
 
 	// Initialize renderer context.
 	this->renderer = Renderer::createRenderer(this->window);
+	if (this->renderer == nullptr)
+	{
+		DebugLogError("Couldn't create SDL_Renderer.");
+		return false;
+	}
 
 	// Initialize display modes list for the current window.
 	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
@@ -563,7 +582,7 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 			// know how to do that for all possible displays out there.
 			if (mode.format == SDL_PIXELFORMAT_RGB888)
 			{
-				this->displayModes.push_back(DisplayMode(mode.w, mode.h, mode.refresh_rate));
+				this->displayModes.emplace_back(DisplayMode(mode.w, mode.h, mode.refresh_rate));
 			}
 		}
 	}
@@ -575,8 +594,11 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	// Initialize native frame buffer.
 	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT,
 		SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	DebugAssertMsg(this->nativeTexture.get() != nullptr,
-		"Couldn't create native frame buffer, " + std::string(SDL_GetError()));
+	if (this->nativeTexture.get() == nullptr)
+	{
+		DebugLogError("Couldn't create SDL_Texture frame buffer (error: " + std::string(SDL_GetError()) + ").");
+		return false;
+	}
 
 	// Initialize 2D renderer resources.
 	this->renderer2D = [systemType2D]() -> std::unique_ptr<RendererSystem2D>
@@ -611,6 +633,8 @@ void Renderer::init(int width, int height, WindowMode windowMode, int letterboxM
 	// Don't initialize the game world buffer until the 3D renderer is initialized.
 	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->fullGameWindow = false;
+
+	return true;
 }
 
 void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)

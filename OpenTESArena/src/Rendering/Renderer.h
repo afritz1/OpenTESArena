@@ -168,7 +168,7 @@ public:
 	Texture createTexture(uint32_t format, int access, int w, int h);
 	Texture createTextureFromSurface(const Surface &surface);
 
-	void init(int width, int height, WindowMode windowMode, int letterboxMode,
+	bool init(int width, int height, WindowMode windowMode, int letterboxMode,
 		RendererSystemType2D systemType2D, RendererSystemType3D systemType3D);
 
 	// Resizes the renderer dimensions.

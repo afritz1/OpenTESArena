@@ -67,12 +67,15 @@ Game::Game()
 		DebugLogError("Couldn't init music library at \"" + musicLibraryPath + "\".");
 	}
 
-	// Initialize the SDL renderer and window with the given settings.
+	// Initialize the renderer and window with the given settings.
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
-	this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
+	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
-		this->options.getGraphics_LetterboxMode(), rendererSystemType2D, rendererSystemType3D);
+		this->options.getGraphics_LetterboxMode(), rendererSystemType2D, rendererSystemType3D))
+	{
+		throw DebugException("Couldn't init renderer.");
+	}
 
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
