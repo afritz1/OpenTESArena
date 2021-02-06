@@ -1972,7 +1972,7 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	double ceilingHeight, const VoxelGrid &voxelGrid)
 {
 	// Visible light lists are relative to the potentially visible chunks.
-	const ChunkCoord2D cameraChunkCoord = VoxelUtils::newVoxelToChunkCoord(
+	const CoordInt2 cameraChunkCoord = VoxelUtils::newVoxelToCoord(
 		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z));
 
 	ChunkInt2 minChunk, maxChunk;
@@ -2359,7 +2359,7 @@ const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
 	const NewInt2 newVoxel(voxelX, voxelZ);
 
 	// Visible light lists are relative to the potentially visible chunks.
-	const ChunkCoord2D cameraChunkCoord = VoxelUtils::newVoxelToChunkCoord(NewInt2(cameraVoxelX, cameraVoxelZ));
+	const CoordInt2 cameraChunkCoord = VoxelUtils::newVoxelToCoord(NewInt2(cameraVoxelX, cameraVoxelZ));
 
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);

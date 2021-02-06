@@ -25,23 +25,44 @@ using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0,
 using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
-struct ChunkCoord2D
+// Various coordinate structs for representing a unique voxel or point in the game world.
+struct CoordInt2
 {
 	ChunkInt2 chunk;
 	VoxelInt2 voxel;
 
-	ChunkCoord2D() = default;
-	ChunkCoord2D(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
+	CoordInt2() = default;
+	CoordInt2(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 		: chunk(chunk), voxel(voxel) { }
 };
 
-struct ChunkCoord3D
+struct CoordDouble2
+{
+	ChunkInt2 chunk;
+	VoxelDouble2 voxel;
+
+	CoordDouble2() = default;
+	CoordDouble2(const ChunkInt2 &chunk, const VoxelDouble2 &voxel)
+		: chunk(chunk), voxel(voxel) { }
+};
+
+struct CoordInt3
 {
 	ChunkInt2 chunk;
 	VoxelInt3 voxel;
 
-	ChunkCoord3D() = default;
-	ChunkCoord3D(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
+	CoordInt3() = default;
+	CoordInt3(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
+		: chunk(chunk), voxel(voxel) { }
+};
+
+struct CoordDouble3
+{
+	ChunkInt2 chunk;
+	VoxelDouble3 voxel;
+
+	CoordDouble3() = default;
+	CoordDouble3(const ChunkInt2 &chunk, const VoxelDouble3 &voxel)
 		: chunk(chunk), voxel(voxel) { }
 };
 
@@ -74,15 +95,15 @@ namespace VoxelUtils
 
 	// Converts a voxel from chunk space to new voxel grid space.
 	NewInt3 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
-	NewInt3 chunkCoordToNewVoxel(const ChunkCoord3D &coord);
+	NewInt3 coordToNewVoxel(const CoordInt3 &coord);
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
-	ChunkCoord3D newVoxelToChunkCoord(const NewInt3 &voxel);
-	ChunkCoord2D newVoxelToChunkCoord(const NewInt2 &voxel);
+	CoordInt3 newVoxelToCoord(const NewInt3 &voxel);
+	CoordInt2 newVoxelToCoord(const NewInt2 &voxel);
 
 	// Converts a voxel from level definition space to chunk voxel space.
-	ChunkCoord2D levelVoxelToChunkCoord(const LevelInt2 &voxel);
+	CoordInt2 levelVoxelToCoord(const LevelInt2 &voxel);
 
 	// Gets the chunk that a new voxel would be in.
 	ChunkInt2 newVoxelToChunk(const NewInt2 &voxel);

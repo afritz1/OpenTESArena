@@ -33,8 +33,8 @@ namespace ChunkUtils
 	// Calculates a valid chunk+voxel pair from the given values. This is useful when stepping through
 	// a chunk and the chunk edge may have been crossed (given by 'voxel' being outside the typical
 	// [0, CHUNK_DIM-1] range), requiring a new chunk look-up.
-	ChunkCoord2D recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
-	ChunkCoord3D recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
+	CoordInt2 recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
+	CoordInt3 recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
 }
 
 #endif

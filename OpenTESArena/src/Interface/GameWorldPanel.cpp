@@ -172,8 +172,8 @@ namespace
 								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
 							};
 
-							const ChunkCoord3D &coord = hit.getVoxelHit().coord;
-							const NewInt3 hitVoxel = VoxelUtils::chunkCoordToNewVoxel(coord);
+							const CoordInt3 &coord = hit.getVoxelHit().coord;
+							const NewInt3 hitVoxel = VoxelUtils::coordToNewVoxel(coord);
 							const int colorsIndex = std::min(hitVoxel.y, 4);
 							color = colors[colorsIndex];
 							break;
@@ -255,8 +255,8 @@ namespace
 			case Physics::Hit::Type::Voxel:
 			{
 				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-				const ChunkCoord3D &coord = voxelHit.coord;
-				const NewInt3 voxel = VoxelUtils::chunkCoordToNewVoxel(voxelHit.coord);
+				const CoordInt3 &coord = voxelHit.coord;
+				const NewInt3 voxel = VoxelUtils::coordToNewVoxel(voxelHit.coord);
 				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -1717,8 +1717,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-			const ChunkCoord3D &coord = voxelHit.coord;
-			const NewInt3 voxel = VoxelUtils::chunkCoordToNewVoxel(coord);
+			const CoordInt3 &coord = voxelHit.coord;
+			const NewInt3 voxel = VoxelUtils::coordToNewVoxel(coord);
 			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
@@ -2289,8 +2289,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 		if (isTransitionVoxel)
 		{
 			const bool isTransitionToInterior = ArenaVoxelUtils::menuLeadsToInterior(menuType);
-			const ChunkCoord3D &coord = voxelHit.coord;
-			const NewInt3 hitVoxel = VoxelUtils::chunkCoordToNewVoxel(coord);
+			const CoordInt3 &coord = voxelHit.coord;
+			const NewInt3 hitVoxel = VoxelUtils::coordToNewVoxel(coord);
 
 			if (isTransitionToInterior)
 			{

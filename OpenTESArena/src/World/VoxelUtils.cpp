@@ -26,7 +26,7 @@ NewInt3 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3
 	return baseVoxel + voxel;
 }
 
-NewInt3 VoxelUtils::chunkCoordToNewVoxel(const ChunkCoord3D &coord)
+NewInt3 VoxelUtils::coordToNewVoxel(const CoordInt3 &coord)
 {
 	return VoxelUtils::chunkVoxelToNewVoxel(coord.chunk, coord.voxel);
 }
@@ -36,34 +36,34 @@ NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
 }
 
-ChunkCoord3D VoxelUtils::newVoxelToChunkCoord(const NewInt3 &voxel)
+CoordInt3 VoxelUtils::newVoxelToCoord(const NewInt3 &voxel)
 {
-	ChunkCoord3D coord(
+	CoordInt3 coord(
 		ChunkInt2(voxel.x / ChunkUtils::CHUNK_DIM, voxel.z / ChunkUtils::CHUNK_DIM),
 		VoxelInt3(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y, voxel.z % ChunkUtils::CHUNK_DIM));
 	return coord;
 }
 
-ChunkCoord2D VoxelUtils::newVoxelToChunkCoord(const NewInt2 &voxel)
+CoordInt2 VoxelUtils::newVoxelToCoord(const NewInt2 &voxel)
 {
 	// @todo: need to handle voxel outside grid.
 	// @todo: probably want (int)Floor() instead of modulo.
 
-	ChunkCoord2D coord(
+	CoordInt2 coord(
 		ChunkInt2(voxel.x / ChunkUtils::CHUNK_DIM, voxel.y / ChunkUtils::CHUNK_DIM),
 		VoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM));
 	return coord;
 }
 
-ChunkCoord2D VoxelUtils::levelVoxelToChunkCoord(const LevelInt2 &voxel)
+CoordInt2 VoxelUtils::levelVoxelToCoord(const LevelInt2 &voxel)
 {
 	// @todo: make sure it handles negative coordinates.
-	return VoxelUtils::newVoxelToChunkCoord(voxel);
+	return VoxelUtils::newVoxelToCoord(voxel);
 }
 
 ChunkInt2 VoxelUtils::newVoxelToChunk(const NewInt2 &voxel)
 {
-	const ChunkCoord2D chunkCoord = VoxelUtils::newVoxelToChunkCoord(voxel);
+	const CoordInt2 chunkCoord = VoxelUtils::newVoxelToCoord(voxel);
 	return chunkCoord.chunk;
 }
 

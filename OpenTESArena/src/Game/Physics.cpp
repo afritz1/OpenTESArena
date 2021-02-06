@@ -205,7 +205,7 @@ namespace Physics
 			// Opaque walls are always hit.
 			const double t = (farPoint - rayStart).length();
 			const Double3 hitPoint = farPoint;
-			const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+			const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 			hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 			return true;
 		}
@@ -216,7 +216,7 @@ namespace Physics
 			{
 				const double t = (farPoint - rayStart).length();
 				const Double3 hitPoint = farPoint;
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 				return true;
 			}
@@ -232,7 +232,7 @@ namespace Physics
 			{
 				const double t = (farPoint - rayStart).length();
 				const Double3 hitPoint = farPoint;
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 				return true;
 			}
@@ -266,7 +266,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -287,7 +287,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -297,7 +297,7 @@ namespace Physics
 					// Hits the inside wall of the raised platform.
 					const double t = (farPoint - rayStart).length();
 					const Double3 hitPoint = farPoint;
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 					return true;
 				}
@@ -321,7 +321,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -350,7 +350,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -410,7 +410,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				hit.initVoxel(t, hitPoint, voxelID, coord, nullptr);
 				return true;
 			}
@@ -442,7 +442,7 @@ namespace Physics
 				{
 					const double t = (farPoint - rayStart).length();
 					const Double3 hitPoint = farPoint;
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 					return true;
 				}
@@ -500,7 +500,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -511,7 +511,7 @@ namespace Physics
 					// Hits a side wall.
 					const double t = (farPoint - rayStart).length();
 					const Double3 hitPoint = farPoint;
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					hit.initVoxel(t, hitPoint, voxelID, coord, &farFacing);
 					return true;
 				}
@@ -540,7 +540,7 @@ namespace Physics
 					DebugAssert(success);
 
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 					hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 					return true;
@@ -591,7 +591,7 @@ namespace Physics
 			// Opaque walls are always hit.
 			const double t = (nearPoint - rayStart).length();
 			const Double3 hitPoint = nearPoint;
-			const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+			const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 			hit.initVoxel(t, hitPoint, voxelID, coord, &nearFacing);
 			return true;
 		}
@@ -609,7 +609,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const VoxelFacing3D facing = VoxelFacing3D::PositiveY;
 				hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 				return true;
@@ -633,7 +633,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const VoxelFacing3D facing = VoxelFacing3D::NegativeY;
 				hit.initVoxel(t, hitPoint, voxelID, coord, &facing);
 				return true;
@@ -681,7 +681,7 @@ namespace Physics
 			if (closestT < Hit::MAX_T)
 			{
 				const Quad &closestQuad = quads[closestIndex];
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const Double3 normal = closestQuad.getNormal();
 				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
@@ -714,7 +714,7 @@ namespace Physics
 			if (success)
 			{
 				const double t = (hitPoint - rayStart).length();
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				hit.initVoxel(t, hitPoint, voxelID, coord, nullptr);
 				return true;
 			}
@@ -761,7 +761,7 @@ namespace Physics
 			if (closestT < Hit::MAX_T)
 			{
 				const Quad &closestQuad = quads[closestIndex];
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const Double3 normal = closestQuad.getNormal();
 				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
@@ -798,7 +798,7 @@ namespace Physics
 				if (success)
 				{
 					const double t = (hitPoint - rayStart).length();
-					const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+					const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 					const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(edge.facing);
 					hit.initVoxel(t, hitPoint, voxelID, coord, &edgeFacing3D);
 					return true;
@@ -853,7 +853,7 @@ namespace Physics
 			if (closestT < Hit::MAX_T)
 			{
 				const Quad &closestQuad = quads[closestIndex];
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const Double3 normal = closestQuad.getNormal();
 				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
@@ -916,7 +916,7 @@ namespace Physics
 			if (closestT < Hit::MAX_T)
 			{
 				const Quad &closestQuad = quads[closestIndex];
-				const ChunkCoord3D coord = VoxelUtils::newVoxelToChunkCoord(voxel);
+				const CoordInt3 coord = VoxelUtils::newVoxelToCoord(voxel);
 				const Double3 normal = closestQuad.getNormal();
 				VoxelFacing3D facing;
 				if (Physics::TryGetFacingFromNormal(normal, &facing))
@@ -1211,7 +1211,7 @@ namespace Physics
 	}
 }
 
-void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const ChunkCoord3D &coord,
+void Physics::Hit::initVoxel(double t, const Double3 &point, uint16_t id, const CoordInt3 &coord,
 	const VoxelFacing3D *facing)
 {
 	this->t = t;
