@@ -2115,9 +2115,9 @@ void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Iterate over chunks near the player.
-	for (SNInt chunkX = minChunk.x; chunkX != maxChunk.x; chunkX++)
+	for (SNInt chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
 	{
-		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
+		for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunk(chunkX, chunkZ);
 			LevelData::VoxelInstanceGroup *voxelInstGroup = activeLevel.tryGetVoxelInstances(chunk);

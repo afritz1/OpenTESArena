@@ -2310,9 +2310,9 @@ void LevelData::updateFadingVoxels(const ChunkInt2 &minChunk, const ChunkInt2 &m
 {
 	std::vector<NewInt3> completedVoxels;
 
-	for (SNInt chunkX = minChunk.x; chunkX != maxChunk.x; chunkX++)
+	for (SNInt chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
 	{
-		for (WEInt chunkZ = minChunk.y; chunkZ != maxChunk.y; chunkZ++)
+		for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
 		{
 			const ChunkInt2 chunk(chunkX, chunkZ);
 			VoxelInstanceGroup *voxelInstGroup = this->tryGetVoxelInstances(chunk);
