@@ -9,3 +9,8 @@ RendererSystem3D::ProfilerData::ProfilerData(int width, int height, int potentia
 	this->visFlatCount = visFlatCount;
 	this->visLightCount = visLightCount;
 }
+
+RendererSystem3D::~RendererSystem3D()
+{
+	// Do nothing.
+}

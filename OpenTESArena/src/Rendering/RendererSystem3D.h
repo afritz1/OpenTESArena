@@ -42,6 +42,8 @@ public:
 		ProfilerData(int width, int height, int potentiallyVisFlatCount, int visFlatCount, int visLightCount);
 	};
 
+	virtual ~RendererSystem3D();
+
 	virtual void init(const RenderInitSettings &settings) = 0;
 	virtual void shutdown() = 0;
 

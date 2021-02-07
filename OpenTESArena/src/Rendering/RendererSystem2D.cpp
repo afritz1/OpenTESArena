@@ -11,6 +11,11 @@ RendererSystem2D::RenderElement::RenderElement(UiTextureID id, double x, double 
 	this->height = height;
 }
 
+RendererSystem2D::~RendererSystem2D()
+{
+	// Do nothing.
+}
+
 void RendererSystem2D::draw(UiTextureID id, double x, double y, double width, double height,
 	RenderSpace renderSpace)
 {

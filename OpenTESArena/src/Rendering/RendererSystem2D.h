@@ -43,6 +43,8 @@ public:
 		RenderElement(UiTextureID id, double x, double y, double width, double height);
 	};
 
+	virtual ~RendererSystem2D();
+
 	virtual void init(SDL_Window *window) = 0;
 	virtual void shutdown() = 0;
 
