@@ -22,13 +22,13 @@
 #include "components/utilities/String.h"
 
 Player::Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	int portraitID, const Double3 &position, const Double3 &direction, const Double3 &velocity,
+	int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 	double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData)
 	: displayName(displayName), male(male), raceID(raceID), charClassDefID(charClassDefID),
 	portraitID(portraitID), camera(position, direction), velocity(velocity),
 	maxWalkSpeed(maxWalkSpeed), maxRunSpeed(maxRunSpeed), weaponAnimation(weaponID, exeData) { }
 
-const Double3 &Player::getPosition() const
+const CoordDouble3 &Player::getPosition() const
 {
 	return this->camera.position;
 }
@@ -73,7 +73,7 @@ Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
 	const int charClassDefID = random.next(charClassLibrary.getDefinitionCount());
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const int portraitID = random.next(10);
-	const Double3 position = Double3::Zero;
+	const CoordDouble3 position(ChunkInt2(0, 0), VoxelDouble3::Zero);
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	const Double3 velocity = Double3::Zero;
 	const int weaponID = [&random, &charClassDef]()
@@ -116,14 +116,6 @@ double Player::getJumpMagnitude() const
 	return Player::JUMP_VELOCITY;
 }
 
-NewInt3 Player::getVoxelPosition() const
-{
-	return NewInt3(
-		static_cast<int>(std::floor(this->camera.position.x)),
-		static_cast<int>(std::floor(this->camera.position.y)),
-		static_cast<int>(std::floor(this->camera.position.z)));
-}
-
 WeaponAnimation &Player::getWeaponAnimation()
 {
 	return this->weaponAnimation;
@@ -136,7 +128,8 @@ const WeaponAnimation &Player::getWeaponAnimation() const
 
 double Player::getFeetY() const
 {
-	return this->camera.position.y - Player::HEIGHT;
+	const double cameraY = this->camera.position.point.y;
+	return cameraY - Player::HEIGHT;
 }
 
 bool Player::onGround(const WorldData &worldData) const
@@ -179,7 +172,7 @@ bool Player::onGround(const WorldData &worldData) const
 	else return false;*/
 }
 
-void Player::teleport(const Double3 &position)
+void Player::teleport(const CoordDouble3 &position)
 {
 	this->camera.position = position;
 }
@@ -192,7 +185,7 @@ void Player::rotate(double dx, double dy, double hSensitivity, double vSensitivi
 		dy * (100.0 * vSensitivity), pitchLimit);
 }
 
-void Player::lookAt(const Double3 &point)
+void Player::lookAt(const CoordDouble3 &point)
 {
 	this->camera.lookAt(point);
 }
@@ -225,19 +218,20 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		this->getFeetY() / activeLevel.getCeilingHeight()));
 
 	// Get the voxel data for each voxel the player would touch on each axis.
-	const NewInt3 playerVoxel = this->getVoxelPosition();
+	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
+	const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPoint);
 	const NewInt3 xVoxel(
-		static_cast<int>(std::floor(this->camera.position.x + (this->velocity.x * dt))),
+		static_cast<SNInt>(std::floor(absolutePlayerPoint.x + (this->velocity.x * dt))),
 		feetVoxelY,
-		playerVoxel.z);
+		absolutePlayerVoxel.z);
 	const NewInt3 yVoxel(
-		playerVoxel.x,
+		absolutePlayerVoxel.x,
 		feetVoxelY,
-		playerVoxel.z);
+		absolutePlayerVoxel.z);
 	const NewInt3 zVoxel(
-		playerVoxel.x,
+		absolutePlayerVoxel.x,
 		feetVoxelY,
-		static_cast<int>(std::floor(this->camera.position.z + (this->velocity.z * dt))));
+		static_cast<WEInt>(std::floor(absolutePlayerPoint.z + (this->velocity.z * dt))));
 
 	const VoxelDefinition &xVoxelDef = getVoxelDef(xVoxel);
 	const VoxelDefinition &yVoxelDef = getVoxelDef(yVoxel);
@@ -327,6 +321,15 @@ void Player::setVelocityToZero()
 	this->velocity = Double3::Zero;
 }
 
+void Player::setDirectionToHorizon()
+{
+	const CoordDouble3 &coord = this->getPosition();
+	const NewDouble2 groundDirection = this->getGroundDirection();
+	const VoxelDouble3 lookAtPoint = coord.point + VoxelDouble3(groundDirection.x, 0.0, groundDirection.y);
+	const CoordDouble3 lookAtCoord(coord.chunk, lookAtPoint);
+	this->lookAt(lookAtCoord);
+}
+
 void Player::accelerate(const Double3 &direction, double magnitude,
 	bool isRunning, double dt)
 {
@@ -390,22 +393,23 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 		this->handleCollision(worldData, dt);
 
 		// Temp: keep camera Y fixed until Y collision is implemented.
-		this->camera.position.y = floorY + Player::HEIGHT;
+		this->camera.position.point.y = floorY + Player::HEIGHT;
 	}
 	else
 	{
 		// Keep the player's Y position constant, but otherwise let them act as a ghost.
-		this->camera.position.y = floorY + Player::HEIGHT;
+		this->camera.position.point.y = floorY + Player::HEIGHT;
 		this->velocity.y = 0.0;
 	}
 
 	// Simple Euler integration for updating the player's position.
-	Double3 newPosition = this->camera.position + (this->velocity * dt);
+	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
+	const Double3 newPosition = absolutePlayerPoint + (this->velocity * dt);
 
 	// Update the position if valid.
 	if (std::isfinite(newPosition.length()))
 	{
-		this->camera.position = newPosition;
+		this->camera.position = VoxelUtils::newPointToCoord(newPosition);
 	}
 
 	if (this->onGround(worldData))

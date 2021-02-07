@@ -1,9 +1,35 @@
+#include <cmath>
+
 #include "ChunkUtils.h"
 #include "VoxelFacing2D.h"
 #include "VoxelFacing3D.h"
 #include "VoxelUtils.h"
 
 #include "components/debug/Debug.h"
+
+CoordDouble3 CoordDouble3::operator+(const VoxelDouble3 &other) const
+{
+	return CoordDouble3(this->chunk, this->point + other);
+}
+
+VoxelDouble3 CoordDouble3::operator-(const CoordDouble3 &other) const
+{
+	// Combine three vectors:
+	// 1) Other chunk origin to other point.
+	// 2) Other chunk origin to chunk origin.
+	// 3) Point to chunk origin.
+	const VoxelDouble3 otherPointToOtherOrigin = -other.point;
+
+	const ChunkInt2 chunkDiff = this->chunk - other.chunk;
+	const VoxelDouble3 otherOriginToOrigin(
+		chunkDiff.x * static_cast<SNDouble>(ChunkUtils::CHUNK_DIM),
+		0.0,
+		chunkDiff.y * static_cast<WEDouble>(ChunkUtils::CHUNK_DIM));
+
+	const VoxelDouble3 originToPoint = this->point;
+
+	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
+}
 
 NewInt2 VoxelUtils::originalVoxelToNewVoxel(const OriginalInt2 &voxel)
 {
@@ -18,6 +44,14 @@ OriginalInt2 VoxelUtils::newVoxelToOriginalVoxel(const NewInt2 &voxel)
 Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)
 {
 	return Double2(voxel.y, voxel.x);
+}
+
+VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point)
+{
+	return VoxelInt3(
+		static_cast<SNInt>(std::floor(point.x)),
+		static_cast<int>(std::floor(point.y)),
+		static_cast<WEInt>(std::floor(point.z)));
 }
 
 NewDouble3 VoxelUtils::chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point)

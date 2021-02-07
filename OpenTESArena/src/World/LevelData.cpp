@@ -2727,8 +2727,7 @@ void LevelData::tick(Game &game, double dt)
 {
 	const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 	const auto &player = game.getGameData().getPlayer();
-	const NewInt3 playerVoxel = player.getVoxelPosition();
-	const ChunkInt2 playerChunk = VoxelUtils::newVoxelToChunk(NewInt2(playerVoxel.x, playerVoxel.z));
+	const ChunkInt2 &playerChunk = player.getPosition().chunk;
 	
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(playerChunk, chunkDistance, &minChunk, &maxChunk);

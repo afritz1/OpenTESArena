@@ -88,7 +88,7 @@ namespace
 	// position so the cursor's click area is closer to the tip of each arrow, as is
 	// done in the original game (slightly differently, though. I think the middle
 	// cursor was originally top-aligned, not middle-aligned, which is strange).
-	const std::array<CursorAlignment, 9> ArrowCursorAlignments =
+	constexpr std::array<CursorAlignment, 9> ArrowCursorAlignments =
 	{
 		CursorAlignment::TopLeft,
 		CursorAlignment::Top,
@@ -119,8 +119,8 @@ namespace
 		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
 		const auto &player = gameData.getPlayer();
-		const Double3 rayStart = player.getPosition();
-		const Double3 &cameraDirection = player.getDirection();
+		const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
+		const NewDouble3 &cameraDirection = player.getDirection();
 		const int viewWidth = windowDims.x;
 		const int viewHeight = renderer.getViewHeight();
 		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
@@ -203,7 +203,7 @@ namespace
 		const auto &player = gameData.getPlayer();
 		const Double3 &cameraDirection = player.getDirection();
 
-		const Double3 rayStart = player.getPosition();
+		const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
 		const Double3 rayDirection = [&game, &options, &cameraDirection]()
 		{
 			const auto &renderer = game.getRenderer();
@@ -608,7 +608,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const auto &player = gameData.getPlayer();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationInst = gameData.getLocationInstance();
-				const Double3 &position = player.getPosition();
+				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 
 				// Some places (like named/wild dungeons) do not display a name on the automap.
 				const std::string automapLocationName = [&gameData, &exeData, &locationDef, &locationInst]()
@@ -619,7 +619,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					return (isCity || isMainQuestDungeon) ? locationName : std::string();
 				}();
 
-				game.setPanel<AutomapPanel>(game, Double2(position.x, position.z), player.getGroundDirection(),
+				const NewDouble2 absolutePositionXZ(absolutePosition.x, absolutePosition.z);
+				game.setPanel<AutomapPanel>(game, absolutePositionXZ, player.getGroundDirection(),
 					level.getVoxelGrid(), level.getTransitions(), automapLocationName);
 			}
 			else
@@ -984,8 +985,9 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 			const OriginalInt2 displayedCoords = [&worldData, &player, &voxelGrid]()
 			{
-				const NewInt3 playerVoxel = player.getVoxelPosition();
-				const NewInt2 playerVoxelXZ(playerVoxel.x, playerVoxel.z);
+				const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(player.getPosition());
+				const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
+				const NewInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
 				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxelXZ);
 
 				// The displayed coordinates in the wilderness behave differently in the original
@@ -1668,8 +1670,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const auto &entityManager = level.getEntityManager();
 	const double ceilingHeight = level.getCeilingHeight();
 
-	const Double3 rayStart = player.getPosition();
-	const Double3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
+	const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
+	const NewDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
 	{
 		const auto &renderer = game.getRenderer();
 		const Int2 windowDims = renderer.getWindowDimensions();
@@ -2641,10 +2643,12 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 					game.getTextureManager(), game.getRenderer());
 
 				// Move the player to where they should be in the new level.
-				player.teleport(Double3(
+				const NewDouble3 playerDestinationPoint(
 					destinationXZ.x,
 					newActiveLevel.getCeilingHeight() + Player::HEIGHT,
-					destinationXZ.y));
+					destinationXZ.y);
+				const CoordDouble3 playerDestinationCoord = VoxelUtils::newPointToCoord(playerDestinationPoint);
+				player.teleport(playerDestinationCoord);
 				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
 			};
@@ -2655,10 +2659,12 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			{
 				// Move player to center of previous voxel in case they change their mind
 				// about fast traveling. Don't change their direction.
-				player.teleport(Double3(
+				const NewDouble3 playerDestinationPoint(
 					static_cast<SNDouble>(playerVoxel.x) + 0.50,
-					player.getPosition().y,
-					static_cast<WEDouble>(playerVoxel.y) + 0.50));
+					player.getPosition().point.y,
+					static_cast<WEDouble>(playerVoxel.y) + 0.50);
+				const CoordDouble3 playerDestinationCoord = VoxelUtils::newPointToCoord(playerDestinationPoint);
+				player.teleport(playerDestinationCoord);
 				player.setVelocityToZero();
 
 				game.setPanel<WorldMapPanel>(game, nullptr);
@@ -2817,7 +2823,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 		auto &gameData = game.getGameData();
 		const auto &player = gameData.getPlayer();
-		const Double3 &position = player.getPosition();
+		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 		const Double3 &direction = player.getDirection();
 
 		const std::string windowWidth = std::to_string(windowDims.x);
@@ -2827,9 +2833,9 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string renderHeight = std::to_string(renderDims.y);
 		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
 
-		const std::string posX = String::fixedPrecision(position.x, 2);
-		const std::string posY = String::fixedPrecision(position.y, 2);
-		const std::string posZ = String::fixedPrecision(position.z, 2);
+		const std::string posX = String::fixedPrecision(absolutePosition.x, 2);
+		const std::string posY = String::fixedPrecision(absolutePosition.y, 2);
+		const std::string posZ = String::fixedPrecision(absolutePosition.z, 2);
 		const std::string dirX = String::fixedPrecision(direction.x, 2);
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
@@ -2848,7 +2854,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			const auto &activeLevel = worldData.getActiveLevel();
 			const auto &voxelGrid = activeLevel.getVoxelGrid();
 
-			const NewInt3 playerVoxel = player.getVoxelPosition();
+			const NewInt3 playerVoxel = VoxelUtils::pointToVoxel(absolutePosition);
 			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
 				NewInt2(playerVoxel.x, playerVoxel.z));
 			const Int2 chunkCoord(
@@ -3082,16 +3088,17 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the player.
 	auto &player = gameData.getPlayer();
-	const NewInt3 oldPlayerVoxel = player.getVoxelPosition();
+	const CoordDouble3 oldPlayerPoint = player.getPosition();
 	player.tick(game, dt);
-	const NewInt3 newPlayerVoxel = player.getVoxelPosition();
+	const CoordDouble3 newPlayerPoint = player.getPosition();
 
 	// Handle input for the player's attack.
 	this->handlePlayerAttack(mouseDelta);
 
 	// Handle door animations.
-	const Double3 newPlayerPos = player.getPosition();
-	this->handleDoors(dt, Double2(newPlayerPos.x, newPlayerPos.z));
+	const NewDouble3 newAbsolutePlayerPoint = VoxelUtils::coordToNewPoint(newPlayerPoint);
+	const NewDouble2 newAbsolutePlayerPointXZ(newAbsolutePlayerPoint.x, newAbsolutePlayerPoint.z);
+	this->handleDoors(dt, newAbsolutePlayerPointXZ);
 
 	// Tick level data (entities, animated distant land, etc.).
 	auto &levelData = worldData.getActiveLevel();
@@ -3099,11 +3106,14 @@ void GameWorldPanel::tick(double dt)
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and
 	// sound events, and handle any level transition.
-	if ((newPlayerVoxel.x != oldPlayerVoxel.x) ||
-		(newPlayerVoxel.z != oldPlayerVoxel.z))
+	const NewDouble3 oldAbsolutePlayerPoint = VoxelUtils::coordToNewPoint(oldPlayerPoint);
+	const NewInt3 oldAbsolutePlayerVoxel = VoxelUtils::pointToVoxel(oldAbsolutePlayerPoint);
+	const NewInt3 newAbsolutePlayerVoxel = VoxelUtils::pointToVoxel(newAbsolutePlayerPoint);
+	if ((newAbsolutePlayerVoxel.x != oldAbsolutePlayerVoxel.x) ||
+		(newAbsolutePlayerVoxel.z != oldAbsolutePlayerVoxel.z))
 	{
-		const NewInt2 oldPlayerVoxelXZ(oldPlayerVoxel.x, oldPlayerVoxel.z);
-		const NewInt2 newPlayerVoxelXZ(newPlayerVoxel.x, newPlayerVoxel.z);
+		const NewInt2 oldPlayerVoxelXZ(oldAbsolutePlayerVoxel.x, oldAbsolutePlayerVoxel.z);
+		const NewInt2 newPlayerVoxelXZ(newAbsolutePlayerVoxel.x, newAbsolutePlayerVoxel.z);
 
 		// Don't handle triggers and level transitions if outside the voxel grid.
 		const bool inVoxelGrid = [&worldData, &newPlayerVoxelXZ]()
@@ -3162,11 +3172,11 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
-	const CoordDouble3 cameraEye = VoxelUtils::newPointToCoord(player.getPosition());
-	renderer.renderWorld(cameraEye, player.getDirection(), options.getGraphics_VerticalFOV(), ambientPercent,
-		gameData.getDaytimePercent(), gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(),
-		isExterior, options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
-		level, game.getEntityDefinitionLibrary(), defaultPalette);
+	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
+		ambientPercent, gameData.getDaytimePercent(), gameData.getChasmAnimPercent(), latitude,
+		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
+		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level, game.getEntityDefinitionLibrary(),
+		defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);

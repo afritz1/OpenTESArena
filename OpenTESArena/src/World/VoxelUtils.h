@@ -65,6 +65,9 @@ struct CoordDouble3
 	CoordDouble3() = default;
 	CoordDouble3(const ChunkInt2 &chunk, const VoxelDouble3 &point)
 		: chunk(chunk), point(point) { }
+
+	CoordDouble3 operator+(const VoxelDouble3 &other) const;
+	VoxelDouble3 operator-(const CoordDouble3 &other) const;
 };
 
 // These are here out of desperation after many months of confusing myself.
@@ -93,6 +96,9 @@ namespace VoxelUtils
 	NewInt2 originalVoxelToNewVoxel(const OriginalInt2 &voxel);
 	OriginalInt2 newVoxelToOriginalVoxel(const NewInt2 &voxel);
 	Double2 getTransformedVoxel(const Double2 &voxel);
+
+	// Gets the voxel a point is in.
+	VoxelInt3 pointToVoxel(const VoxelDouble3 &point);
 
 	// Converts a voxel from chunk space to new voxel grid space.
 	NewDouble3 chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point);

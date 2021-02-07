@@ -1002,11 +1002,8 @@ void EntityManager::tick(Game &game, double dt)
 	const ChunkInt2 playerChunk = [&game]()
 	{
 		auto &gameData = game.getGameData();
-		const Double3 &playerPosition = gameData.getPlayer().getPosition();
-		const NewInt2 playerVoxelXZ(
-			static_cast<SNInt>(std::floor(playerPosition.x)),
-			static_cast<WEInt>(std::floor(playerPosition.z)));
-		return VoxelUtils::newVoxelToChunk(playerVoxelXZ);
+		const CoordDouble3 &playerCoord = gameData.getPlayer().getPosition();
+		return playerCoord.chunk;
 	}();
 
 	const int chunkDistance = [&game]()

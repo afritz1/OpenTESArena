@@ -44,7 +44,7 @@ private:
 	void updatePhysics(const WorldData &worldData, bool collision, double dt);
 public:
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
-		int portraitID, const Double3 &position, const Double3 &direction, const Double3 &velocity,
+		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
 		double maxWalkSpeed, double maxRunSpeed, int weaponID, const ExeData &exeData);
 
 	// Distance from player's feet to head.
@@ -54,7 +54,7 @@ public:
 	static constexpr double DEFAULT_WALK_SPEED = 2.0;
 	static constexpr double DEFAULT_RUN_SPEED = 8.0;
 
-	const Double3 &getPosition() const;
+	const CoordDouble3 &getPosition() const;
 	const std::string &getDisplayName() const;
 	std::string getFirstName() const;
 	int getPortraitID() const;
@@ -78,9 +78,6 @@ public:
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
 
-	// Gets the voxel coordinates of the player.
-	NewInt3 getVoxelPosition() const;
-
 	// Gets the player's weapon animation for displaying on-screen.
 	WeaponAnimation &getWeaponAnimation();
 	const WeaponAnimation &getWeaponAnimation() const;
@@ -89,16 +86,19 @@ public:
 	bool onGround(const WorldData &worldData) const;
 
 	// Teleports the player to a point.
-	void teleport(const Double3 &position);
+	void teleport(const CoordDouble3 &position);
 
 	// Rotates the player's camera based on some change in X (left/right) and Y (up/down).
 	void rotate(double dx, double dy, double hSensitivity, double vSensitivity, double pitchLimit);
 
 	// Recalculates the player's view so they look at a point.
-	void lookAt(const Double3 &point);
+	void lookAt(const CoordDouble3 &point);
 
 	// Sets velocity vector to zero. Intended for stopping the player after level transitions.
 	void setVelocityToZero();
+
+	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
+	void setDirectionToHorizon();
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, 
 	// and delta time, as well as whether the player is running.

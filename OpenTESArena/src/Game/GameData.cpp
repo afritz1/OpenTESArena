@@ -113,6 +113,13 @@ bool GameData::nightLightsAreActive() const
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
+void GameData::setTransitionedPlayerPosition(const NewDouble3 &position)
+{
+	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
+	this->player.teleport(coord);
+	this->player.setVelocityToZero();
+}
+
 void GameData::clearWorldDatas()
 {
 	while (!this->worldDatas.empty())
@@ -154,9 +161,8 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
@@ -191,9 +197,8 @@ void GameData::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFil
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = interior.getStartPoints().front();
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Arbitrary interior fog. Do not change weather (@todo: save it maybe?).
 	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
@@ -227,9 +232,8 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 
 	// Set player starting position and velocity.
 	const Double2 startPoint = VoxelUtils::getVoxelCenter(returnVoxel);
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
 	const Buffer<uint32_t> skyPalette =
@@ -290,9 +294,8 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const Pro
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x + 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
@@ -344,9 +347,8 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x + 1.0, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Arbitrary interior weather and fog.
 	const double fogDistance = WeatherUtils::DEFAULT_INTERIOR_FOG_DIST;
@@ -401,9 +403,8 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 
 	// Set player starting position and velocity.
 	const Double2 &startPoint = worldData.getStartPoints().front();
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
 	const Buffer<uint32_t> skyPalette =
@@ -485,9 +486,8 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 		}
 	}();
 
-	this->player.teleport(Double3(
+	this->setTransitionedPlayerPosition(NewDouble3(
 		startPoint.x, activeLevel.getCeilingHeight() + Player::HEIGHT, startPoint.y));
-	this->player.setVelocityToZero();
 
 	// Regular sky palette based on weather.
 	const Buffer<uint32_t> skyPalette =

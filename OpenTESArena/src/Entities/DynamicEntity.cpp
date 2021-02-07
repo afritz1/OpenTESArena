@@ -251,9 +251,10 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 
 	// Distance to player is used for switching animation states.
 	constexpr double citizenIdleDistSqr = CitizenIdleDistance * CitizenIdleDistance;
+	const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(player.getPosition());
 	const NewDouble2 playerPosXZ(
-		player.getPosition().x,
-		player.getPosition().z);
+		absolutePlayerPosition.x,
+		absolutePlayerPosition.z);
 	const NewDouble2 dirToPlayer = playerPosXZ - this->position;
 	const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
@@ -326,8 +327,8 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	if (this->secondsTillCreatureSound <= 0.0)
 	{
 		// See if the NPC is withing hearing distance of the player.
-		const Double3 &playerPosition = gameData.getPlayer().getPosition();
-		if (this->withinHearingDistance(playerPosition, ceilingHeight))
+		const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(gameData.getPlayer().getPosition());
+		if (this->withinHearingDistance(absolutePlayerPosition, ceilingHeight))
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;

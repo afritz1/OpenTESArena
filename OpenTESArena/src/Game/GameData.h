@@ -92,6 +92,7 @@ private:
 	// behavior is to decrement the world's level index.
 	std::function<void(Game&)> onLevelUpVoxelEnter;
 
+	void setTransitionedPlayerPosition(const NewDouble3 &position);
 	void clearWorldDatas();
 public:
 	// Creates incomplete game data with no active world, to be further initialized later.

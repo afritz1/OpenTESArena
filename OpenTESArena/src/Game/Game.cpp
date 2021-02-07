@@ -604,9 +604,9 @@ void Game::loop()
 			const AudioManager::ListenerData listenerData = [this]()
 			{
 				const Player &player = this->getGameData().getPlayer();
-				const Double3 &position = player.getPosition();
-				const Double3 &direction = player.getDirection();
-				return AudioManager::ListenerData(position, direction);
+				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
+				const NewDouble3 &direction = player.getDirection();
+				return AudioManager::ListenerData(absolutePosition, direction);
 			}();
 
 			this->audioManager.update(dt, &listenerData);

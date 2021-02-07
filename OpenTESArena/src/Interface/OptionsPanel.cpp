@@ -483,10 +483,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		if (!isModernMode)
 		{
 			auto &player = game.getGameData().getPlayer();
-			const Double2 groundDirection = player.getGroundDirection();
-			const Double3 lookAtPoint = player.getPosition() +
-				Double3(groundDirection.x, 0.0, groundDirection.y);
-			player.lookAt(lookAtPoint);
+			player.setDirectionToHorizon();
 		}
 
 		// Resize the game world rendering.
@@ -615,10 +612,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 		// Reset player view to forward.
 		auto &player = game.getGameData().getPlayer();
-		const Double2 groundDirection = player.getGroundDirection();
-		const Double3 lookAtPoint = player.getPosition() +
-			Double3(groundDirection.x, 0.0, groundDirection.y);
-		player.lookAt(lookAtPoint);
+		player.setDirectionToHorizon();
 	}));
 
 	this->inputOptions.push_back(std::make_unique<BoolOption>(

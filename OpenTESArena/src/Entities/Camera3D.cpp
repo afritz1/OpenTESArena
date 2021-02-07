@@ -6,7 +6,7 @@
 
 #include "components/debug/Debug.h"
 
-Camera3D::Camera3D(const Double3 &position, const Double3 &direction)
+Camera3D::Camera3D(const CoordDouble3 &position, const Double3 &direction)
 	: forward(direction), right(forward.cross(Double3::UnitY).normalized()),
 	up(right.cross(forward).normalized()), position(position) { }
 
@@ -72,9 +72,9 @@ void Camera3D::rotate(double dx, double dy, double pitchLimit)
 	this->yaw(-lookRightRads/* / zoom*/);
 }
 
-void Camera3D::lookAt(const Double3 &point)
+void Camera3D::lookAt(const CoordDouble3 &coord)
 {
-	const Double3 newForward = (point - this->position).normalized();
+	const Double3 newForward = (coord - this->position).normalized();
 	const Double3 newRight = newForward.cross(Double3::UnitY).normalized();
 	const Double3 newUp = newRight.cross(newForward).normalized();
 
