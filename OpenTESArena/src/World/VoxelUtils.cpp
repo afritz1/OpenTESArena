@@ -20,10 +20,24 @@ Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)
 	return Double2(voxel.y, voxel.x);
 }
 
+NewDouble3 VoxelUtils::chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point)
+{
+	const NewDouble3 basePoint(
+		static_cast<SNDouble>(chunk.x) * ChunkUtils::CHUNK_DIM,
+		0.0,
+		static_cast<WEDouble>(chunk.y) * ChunkUtils::CHUNK_DIM);
+	return basePoint + point;
+}
+
 NewInt3 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
 {
 	const NewInt3 baseVoxel(chunk.x * ChunkUtils::CHUNK_DIM, 0, chunk.y * ChunkUtils::CHUNK_DIM);
 	return baseVoxel + voxel;
+}
+
+NewDouble3 VoxelUtils::coordToNewPoint(const CoordDouble3 &coord)
+{
+	return VoxelUtils::chunkPointToNewPoint(coord.chunk, coord.point);
 }
 
 NewInt3 VoxelUtils::coordToNewVoxel(const CoordInt3 &coord)
@@ -34,6 +48,18 @@ NewInt3 VoxelUtils::coordToNewVoxel(const CoordInt3 &coord)
 NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
+}
+
+CoordDouble3 VoxelUtils::newPointToCoord(const NewDouble3 &point)
+{
+	const ChunkInt2 chunk(
+		static_cast<SNInt>(point.x) / ChunkUtils::CHUNK_DIM,
+		static_cast<WEInt>(point.z) / ChunkUtils::CHUNK_DIM);
+	const VoxelDouble3 voxel(
+		std::fmod(point.x, static_cast<SNDouble>(ChunkUtils::CHUNK_DIM)),
+		point.y,
+		std::fmod(point.z, static_cast<WEDouble>(ChunkUtils::CHUNK_DIM)));
+	return CoordDouble3(chunk, voxel);
 }
 
 CoordInt3 VoxelUtils::newVoxelToCoord(const NewInt3 &voxel)

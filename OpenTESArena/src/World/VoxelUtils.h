@@ -22,6 +22,7 @@ using NewInt3 = Int3; // +X south, +Y up, +Z west (DEPRECATE THIS EVENTUALLY IN 
 using LevelInt3 = Int3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
+using NewDouble3 = Double3; // +X south, +Y up, +Z west (DEPRECATE THIS EVENTUALLY IN FAVOR OF ChunkInt2 + VoxelInt3).
 using LevelDouble3 = Double3; // +X south, +Y up, +Z west, used with level definitions (independent of chunks).
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
@@ -39,11 +40,11 @@ struct CoordInt2
 struct CoordDouble2
 {
 	ChunkInt2 chunk;
-	VoxelDouble2 voxel;
+	VoxelDouble2 point;
 
 	CoordDouble2() = default;
-	CoordDouble2(const ChunkInt2 &chunk, const VoxelDouble2 &voxel)
-		: chunk(chunk), voxel(voxel) { }
+	CoordDouble2(const ChunkInt2 &chunk, const VoxelDouble2 &point)
+		: chunk(chunk), point(point) { }
 };
 
 struct CoordInt3
@@ -59,11 +60,11 @@ struct CoordInt3
 struct CoordDouble3
 {
 	ChunkInt2 chunk;
-	VoxelDouble3 voxel;
+	VoxelDouble3 point;
 
 	CoordDouble3() = default;
-	CoordDouble3(const ChunkInt2 &chunk, const VoxelDouble3 &voxel)
-		: chunk(chunk), voxel(voxel) { }
+	CoordDouble3(const ChunkInt2 &chunk, const VoxelDouble3 &point)
+		: chunk(chunk), point(point) { }
 };
 
 // These are here out of desperation after many months of confusing myself.
@@ -94,11 +95,14 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Converts a voxel from chunk space to new voxel grid space.
+	NewDouble3 chunkPointToNewPoint(const ChunkInt2 &chunk, const VoxelDouble3 &point);
 	NewInt3 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt3 &voxel);
+	NewDouble3 coordToNewPoint(const CoordDouble3 &coord);
 	NewInt3 coordToNewVoxel(const CoordInt3 &coord);
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
+	CoordDouble3 newPointToCoord(const NewDouble3 &point);
 	CoordInt3 newVoxelToCoord(const NewInt3 &voxel);
 	CoordInt2 newVoxelToCoord(const NewInt2 &voxel);
 

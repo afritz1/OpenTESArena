@@ -93,7 +93,7 @@ public:
 	virtual void setNightLightsActive(bool active, const Palette &palette) = 0;
 	virtual void clearTexturesAndEntityRenderIDs() = 0;
 	virtual void clearDistantSky() = 0;
-	virtual void render(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
+	virtual void render(const NewDouble3 &eye, const Double3 &forward, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;

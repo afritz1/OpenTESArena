@@ -392,19 +392,28 @@ void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, in
 	texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), flipped, reflective);
 }
 
-SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
+SoftwareRenderer::Camera::Camera(const CoordDouble3 &eye, const VoxelDouble3 &direction,
 	Degrees fovY, double aspect, double projectionModifier)
 	: eye(eye), direction(direction)
 {
 	// Variations of eye position for certain voxel calculations.
-	this->eyeVoxelReal = Double3(
-		std::floor(eye.x),
-		std::floor(eye.y),
-		std::floor(eye.z));
-	this->eyeVoxel = NewInt3(
-		static_cast<int>(this->eyeVoxelReal.x),
-		static_cast<int>(this->eyeVoxelReal.y),
-		static_cast<int>(this->eyeVoxelReal.z));
+	this->eyeVoxelReal = [&eye]()
+	{
+		const VoxelDouble3 voxel(
+			std::floor(eye.point.x),
+			std::floor(eye.point.y),
+			std::floor(eye.point.z));
+		return CoordDouble3(eye.chunk, voxel);
+	}();
+
+	this->eyeVoxel = [this]()
+	{
+		const VoxelInt3 voxel(
+			static_cast<int>(this->eyeVoxelReal.point.x),
+			static_cast<int>(this->eyeVoxelReal.point.y),
+			static_cast<int>(this->eyeVoxelReal.point.z));
+		return CoordInt3(this->eyeVoxelReal.chunk, voxel);
+	}();
 
 	// Camera axes. We trick the 2.5D ray caster into thinking the player is always looking
 	// straight forward, but we use the Y component of the player's direction to offset 
@@ -418,7 +427,12 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 		// Global up vector, scaled by the projection modifier (i.e., to account for tall pixels).
 		const Double3 up = Double3::UnitY * projectionModifier;
 
-		const Matrix4d view = Matrix4d::view(eye, forwardXZ, rightXZ, up);
+		// Convert chunk point to absolute point (relative to chunk 0, 0).
+		// @todo: use eye point relative to the current chunk so all chunks' vertices can be relative to this.
+		// - ideally there is no 'absolute point'.
+		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(eye);
+		const Matrix4d view = Matrix4d::view(absoluteEye, forwardXZ, rightXZ, up);
+
 		const Matrix4d projection = Matrix4d::perspective(fovY, aspect,
 			SoftwareRenderer::NEAR_PLANE, SoftwareRenderer::FAR_PLANE);
 		return projection * view;
@@ -475,7 +489,7 @@ SoftwareRenderer::Camera::Camera(const Double3 &eye, const Double3 &direction,
 	this->horizonProjY = [this]()
 	{
 		// Project a point directly in front of the player in the XZ plane.
-		const Double3 horizonPoint = this->eye + Double3(this->direction.x, 0.0, this->direction.z);
+		const Double3 horizonPoint = this->eye.point + Double3(this->direction.x, 0.0, this->direction.z);
 		Double4 horizonProjPoint = this->transform * Double4(horizonPoint, 1.0);
 		horizonProjPoint = horizonProjPoint / horizonProjPoint.w;
 		return (0.50 + this->yShear) - (horizonProjPoint.y * 0.50);
@@ -489,7 +503,7 @@ Radians SoftwareRenderer::Camera::getXZAngleRadians() const
 
 int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
 {
-	return static_cast<int>(this->eye.y / ceilingHeight);
+	return static_cast<int>(this->eye.point.y / ceilingHeight);
 }
 
 SoftwareRenderer::Ray::Ray(SNDouble dirX, WEDouble dirZ)
@@ -1460,11 +1474,13 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 		const SkyTexture &texture, double xAngleRadians, double yAngleRadians, bool emissive,
 		Orientation orientation)
 	{
+		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+
 		const double objWidth = static_cast<double>(texture.width) / DistantSky::IDENTITY_DIM;
 		const double objHeight = static_cast<double>(texture.height) / DistantSky::IDENTITY_DIM;
 		const double objHalfWidth = objWidth * 0.50;
 
-		DrawRange drawRange = [yAngleRadians, orientation, objHeight, &camera, &frame]()
+		DrawRange drawRange = [yAngleRadians, orientation, &camera, &frame, &absoluteEye, objHeight]()
 		{
 			// Project the bottom first then add the object's height above it in screen-space
 			// to get the top. This keeps objects from appearing squished the higher they are
@@ -1475,7 +1491,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 				std::tan(yAngleRadians),
 				camera.forwardZ).normalized();
 
-			const Double3 objPointBottom = camera.eye + objDirBottom;
+			const Double3 objPointBottom = absoluteEye + objDirBottom;
 
 			const double yProjEnd = RendererUtils::getProjectedY(
 				objPointBottom, camera.transform, camera.yShear);
@@ -1500,7 +1516,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 			-std::cos(xAngleRadians));
 
 		// Create a point arbitrarily far away for the object's center in world space.
-		const Double3 objPoint = camera.eye + objDir;
+		const Double3 objPoint = absoluteEye + objDir;
 
 		// Project the center point on-screen and get its projected X coordinate.
 		const Double4 objProjPoint = camera.transform * Double4(objPoint, 1.0);
@@ -1725,8 +1741,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 	SNInt gridWidth, WEInt gridDepth, int chunkDistance, const EntityManager &entityManager,
 	std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount)
 {
-	const ChunkInt2 cameraChunk = VoxelUtils::newVoxelToChunk(
-		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z));
+	const ChunkInt2 &cameraChunk = camera.eye.chunk;
 
 	// Get the min and max chunk coordinates to loop over.
 	ChunkInt2 minChunk, maxChunk;
@@ -1823,14 +1838,15 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
-	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
 	const NewDouble2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	if (shadingInfo.playerHasLight)
 	{
 		// Add player light.
 		VisibleLight playerVisLight;
-		playerVisLight.init(camera.eye, 5.0);
+		playerVisLight.init(absoluteEye, 5.0);
 		this->visibleLights.push_back(std::move(playerVisLight));
 	}
 
@@ -1972,11 +1988,10 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	double ceilingHeight, const VoxelGrid &voxelGrid)
 {
 	// Visible light lists are relative to the potentially visible chunks.
-	const CoordInt2 cameraChunkCoord = VoxelUtils::newVoxelToCoord(
-		NewInt2(camera.eyeVoxel.x, camera.eyeVoxel.z));
+	const ChunkInt2 &cameraChunk = camera.eye.chunk;
 
 	ChunkInt2 minChunk, maxChunk;
-	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
+	ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
 	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
 	// relative chunk calculations.
@@ -2121,7 +2136,9 @@ VoxelFacing2D SoftwareRenderer::getInitialChasmFarFacing(SNInt voxelX, WEInt vox
 VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ, 
 	VoxelFacing2D nearFacing, const Camera &camera, const Ray &ray)
 {
-	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
+	const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
 	
 	// Angle of the ray from the camera eye.
 	const Radians angle = MathUtils::fullAtan2(-ray.dirX, -ray.dirZ);
@@ -2146,7 +2163,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 	if (nearFacing == VoxelFacing2D::PositiveX)
 	{
 		// Starts somewhere on (1.0, z).
-		if (camera.eyeVoxel.z > voxelZ)
+		if (absoluteEyeVoxel.z > voxelZ)
 		{
 			// Ignore bottom-left corner.
 			if (angle < upRightAngle)
@@ -2158,7 +2175,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 				return VoxelFacing2D::NegativeX;
 			}
 		}
-		else if (camera.eyeVoxel.z < voxelZ)
+		else if (absoluteEyeVoxel.z < voxelZ)
 		{
 			// Ignore bottom-right corner.
 			if (angle < upLeftAngle)
@@ -2189,7 +2206,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 	else if (nearFacing == VoxelFacing2D::NegativeX)
 	{
 		// Starts somewhere on (0.0, z).
-		if (camera.eyeVoxel.z > voxelZ)
+		if (absoluteEyeVoxel.z > voxelZ)
 		{
 			// Ignore top-left corner.
 			if ((angle < downRightAngle) && (angle > downLeftAngle))
@@ -2201,7 +2218,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 				return VoxelFacing2D::NegativeZ;
 			}
 		}
-		else if (camera.eyeVoxel.z < voxelZ)
+		else if (absoluteEyeVoxel.z < voxelZ)
 		{
 			// Ignore top-right corner.
 			if (angle < downLeftAngle)
@@ -2232,7 +2249,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 	else if (nearFacing == VoxelFacing2D::PositiveZ)
 	{
 		// Starts somewhere on (x, 1.0).
-		if (camera.eyeVoxel.x > voxelX)
+		if (absoluteEyeVoxel.x > voxelX)
 		{
 			// Ignore bottom-left corner.
 			if ((angle > upRightAngle) && (angle < upLeftAngle))
@@ -2244,7 +2261,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 				return VoxelFacing2D::NegativeZ;
 			}
 		}
-		else if (camera.eyeVoxel.x < voxelX)
+		else if (absoluteEyeVoxel.x < voxelX)
 		{
 			// Ignore top-left corner.
 			if ((angle < downRightAngle) && (angle > downLeftAngle))
@@ -2275,7 +2292,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 	else
 	{
 		// Starts somewhere on (x, 0.0).
-		if (camera.eyeVoxel.x > voxelX)
+		if (absoluteEyeVoxel.x > voxelX)
 		{
 			// Ignore bottom-right corner.
 			if (angle < upLeftAngle)
@@ -2287,7 +2304,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 				return VoxelFacing2D::PositiveZ;
 			}
 		}
-		else if (camera.eyeVoxel.x < voxelX)
+		else if (absoluteEyeVoxel.x < voxelX)
 		{
 			// Ignore top-right corner.
 			if (angle > downLeftAngle)
@@ -2477,7 +2494,7 @@ void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, doubl
 			// Direction from camera eye to the top of the sky gradient.
 			const Double3 gradientTopDir = (forward + (up * upPercent)).normalized();
 
-			return camera.eye + gradientTopDir;
+			return camera.eye.point + gradientTopDir;
 		}();
 
 		return RendererUtils::getProjectedY(gradientTopPoint, camera.transform, camera.yShear);
@@ -2485,7 +2502,7 @@ void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, doubl
 
 	projectedYBottom = [&camera, &forward]()
 	{
-		const Double3 gradientBottomPoint = camera.eye + forward;
+		const Double3 gradientBottomPoint = camera.eye.point + forward;
 		return RendererUtils::getProjectedY(gradientBottomPoint, camera.transform, camera.yShear);
 	}();
 }
@@ -2683,8 +2700,9 @@ bool SoftwareRenderer::findInitialEdgeIntersection(SNInt voxelX, WEInt voxelZ,
 	const Camera &camera, const Ray &ray, RayHit &hit)
 {
 	// Reuse the chasm facing code to find which face is intersected.
-	const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-		voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+	const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 
 	// If the edge facing and far facing match, there's an intersection.
 	if (edgeFacing == farFacing)
@@ -2837,7 +2855,8 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(SNInt voxelX, WEInt v
 
 	// Use back-face culling with swinging doors so it's not obstructing the player's
 	// view as much when it's opening.
-	const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
 	const bool isFrontFace = (eye2D - pivot).normalized().dot(doorVec.leftPerp()) > 0.0;
 
 	if (isFrontFace)
@@ -2929,10 +2948,10 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 
 	if (useFarFacing)
 	{
-		// Treat the door like a wall. Reuse the chasm facing code to find which face is
-		// intersected.
-		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
+		// Treat the door like a wall. Reuse the chasm facing code to find which face is intersected.
+		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+		const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 		const VoxelFacing2D doorFacing = xAxis ? VoxelFacing2D::PositiveX : VoxelFacing2D::PositiveZ;
 
 		if (doorFacing == farFacing)
@@ -4649,8 +4668,10 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
@@ -4658,19 +4679,19 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		// Draw inner ceiling, wall, and floor.
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			farCeilingPoint.y,
 			nearPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			voxelYReal,
 			farPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			farFloorPoint.y,
 			nearPoint.y);
@@ -4704,15 +4725,15 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 	else if (voxelDef.type == VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel if the camera is below it.
-		if (camera.eye.y < voxelYReal)
+		if (absoluteEye.y < voxelYReal)
 		{
 			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
-			const Double3 nearFloorPoint(
+			const NewDouble3 nearFloorPoint(
 				nearPoint.x,
 				voxelYReal,
 				nearPoint.y);
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -4731,20 +4752,20 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -4759,10 +4780,10 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				nearZ, Double3::UnitY, textures.getTexture(raisedData.ceilingTextureAssetRef), fadePercent,
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -4780,11 +4801,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		else
 		{
 			// Between top and bottom.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -4825,11 +4846,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -4862,11 +4883,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				edgeTopPoint.x,
 				voxelYReal + edgeData.yOffset,
 				edgeTopPoint.z);
@@ -4892,22 +4913,22 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			&chasmVoxelInst->getChasmState() : nullptr;
 
 		// Find which far face on the chasm was intersected.
-		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
+		const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			farCeilingPoint.y - chasmDepth,
 			farPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			farFloorPoint.y,
 			nearPoint.y);
@@ -4975,11 +4996,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -4995,11 +5016,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5019,11 +5040,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -5043,11 +5064,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5079,19 +5100,21 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -5115,11 +5138,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 		// Draw bottom of ceiling voxel.
 		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -5137,20 +5160,20 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -5165,10 +5188,10 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 				nearZ, Double3::UnitY, textures.getTexture(raisedData.ceilingTextureAssetRef), fadePercent,
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -5186,11 +5209,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 		else
 		{
 			// Between top and bottom.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -5231,11 +5254,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -5268,11 +5291,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				hit.point.x,
 				voxelYReal + edgeData.yOffset,
 				hit.point.y);
@@ -5304,11 +5327,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5324,11 +5347,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5348,11 +5371,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -5372,11 +5395,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5408,19 +5431,21 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			farCeilingPoint.y,
 			nearPoint.y);
@@ -5440,11 +5465,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		// Draw top of floor voxel.
 		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			farCeilingPoint.y,
 			nearPoint.y);
@@ -5467,20 +5492,20 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -5495,10 +5520,10 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				nearZ, Double3::UnitY, textures.getTexture(raisedData.ceilingTextureAssetRef), fadePercent,
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -5516,11 +5541,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		else
 		{
 			// Between top and bottom.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -5561,11 +5586,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -5598,11 +5623,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				hit.point.x,
 				voxelYReal + edgeData.yOffset,
 				hit.point.y);
@@ -5628,22 +5653,22 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			&chasmVoxelInst->getChasmState() : nullptr;
 
 		// Find which far face on the chasm was intersected.
-		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(
-			voxelX, voxelZ, NewDouble2(camera.eye.x, camera.eye.z), ray);
+		const NewDouble2 absoluteEye2D(absoluteEye.x, absoluteEye.z);
+		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			farCeilingPoint.y - chasmDepth,
 			farPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			farFloorPoint.y,
 			nearPoint.y);
@@ -5711,11 +5736,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5731,11 +5756,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5755,11 +5780,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -5779,11 +5804,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -5883,9 +5908,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
-
+	
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
@@ -5893,11 +5920,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		// Draw side.
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
@@ -5920,15 +5947,15 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 	else if (voxelDef.type == VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel if the camera is below it.
-		if (camera.eye.y < voxelYReal)
+		if (absoluteEye.y < voxelYReal)
 		{
 			const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
-			const Double3 nearFloorPoint(
+			const NewDouble3 nearFloorPoint(
 				nearPoint.x,
 				voxelYReal,
 				nearPoint.y);
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -5947,20 +5974,20 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -5982,10 +6009,10 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -6032,11 +6059,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -6058,11 +6085,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
@@ -6088,11 +6115,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				hit.point.x,
 				voxelYReal + edgeData.yOffset,
 				hit.point.y);
@@ -6126,19 +6153,19 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			nearCeilingPoint.y - chasmDepth,
 			nearPoint.y);
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			nearCeilingPoint.y,
 			farPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -6222,11 +6249,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6242,11 +6269,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6266,11 +6293,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -6290,11 +6317,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6325,23 +6352,25 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -6372,11 +6401,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Draw bottom of ceiling voxel.
 		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
 
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -6394,20 +6423,20 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -6429,10 +6458,10 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -6479,11 +6508,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -6505,11 +6534,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
@@ -6535,11 +6564,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				hit.point.x,
 				voxelYReal + edgeData.yOffset,
 				hit.point.y);
@@ -6571,11 +6600,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6591,11 +6620,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6615,11 +6644,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -6639,11 +6668,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -6674,23 +6703,25 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 	const double voxelHeight = ceilingHeight;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxelX, voxelZ, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
 	if (voxelDef.type == VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			farCeilingPoint.y,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
@@ -6717,11 +6748,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Draw top of floor voxel.
 		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
 
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			voxelYReal + voxelHeight,
 			farPoint.y);
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			farCeilingPoint.y,
 			nearPoint.y);
@@ -6743,20 +6774,20 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + ((raisedData.yOffset + raisedData.ySize) * voxelHeight),
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal + (raisedData.yOffset * voxelHeight),
 			nearPoint.y);
 
 		// Draw order depends on the player's Y position relative to the platform.
-		if (camera.eye.y > nearCeilingPoint.y)
+		if (absoluteEye.y > nearCeilingPoint.y)
 		{
 			// Above platform.
-			const Double3 farCeilingPoint(
+			const NewDouble3 farCeilingPoint(
 				farPoint.x,
 				nearCeilingPoint.y,
 				farPoint.y);
@@ -6778,10 +6809,10 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
-		else if (camera.eye.y < nearFloorPoint.y)
+		else if (absoluteEye.y < nearFloorPoint.y)
 		{
 			// Below platform.
-			const Double3 farFloorPoint(
+			const NewDouble3 farFloorPoint(
 				farPoint.x,
 				nearFloorPoint.y,
 				farPoint.y);
@@ -6828,11 +6859,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			const Double3 diagTopPoint(
+			const NewDouble3 diagTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight,
 				hit.point.y);
-			const Double3 diagBottomPoint(
+			const NewDouble3 diagBottomPoint(
 				diagTopPoint.x,
 				voxelYReal,
 				diagTopPoint.z);
@@ -6854,11 +6885,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			voxelYReal,
 			nearPoint.y);
@@ -6884,11 +6915,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			const Double3 edgeTopPoint(
+			const NewDouble3 edgeTopPoint(
 				hit.point.x,
 				voxelYReal + voxelHeight + edgeData.yOffset,
 				hit.point.y);
-			const Double3 edgeBottomPoint(
+			const NewDouble3 edgeBottomPoint(
 				hit.point.x,
 				voxelYReal + edgeData.yOffset,
 				hit.point.y);
@@ -6922,19 +6953,19 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		const VoxelFacing2D farFacing = SoftwareRenderer::getChasmFarFacing(
 			voxelX, voxelZ, nearFacing, camera, ray);
 
-		const Double3 nearCeilingPoint(
+		const NewDouble3 nearCeilingPoint(
 			nearPoint.x,
 			voxelYReal + voxelHeight,
 			nearPoint.y);
-		const Double3 nearFloorPoint(
+		const NewDouble3 nearFloorPoint(
 			nearPoint.x,
 			nearCeilingPoint.y - chasmDepth,
 			nearPoint.y);
-		const Double3 farCeilingPoint(
+		const NewDouble3 farCeilingPoint(
 			farPoint.x,
 			nearCeilingPoint.y,
 			farPoint.y);
-		const Double3 farFloorPoint(
+		const NewDouble3 farFloorPoint(
 			farPoint.x,
 			nearFloorPoint.y,
 			farPoint.y);
@@ -7018,11 +7049,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		{
 			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -7038,11 +7069,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -7062,11 +7093,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
 				const double raisedAmount = (voxelHeight * (1.0 - minVisible)) * percentOpen;
 
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal + raisedAmount,
 					doorTopPoint.z);
@@ -7086,11 +7117,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			}
 			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
 			{
-				const Double3 doorTopPoint(
+				const NewDouble3 doorTopPoint(
 					hit.point.x,
 					voxelYReal + voxelHeight,
 					hit.point.y);
-				const Double3 doorBottomPoint(
+				const NewDouble3 doorBottomPoint(
 					doorTopPoint.x,
 					voxelYReal,
 					doorTopPoint.z);
@@ -7222,8 +7253,8 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 		(flat.endX - flat.startX);
 
 	// Points interpolated between for per-column depth calculations in the XZ plane.
-	const Double3 startTopPoint = flat.topLeft.lerp(flat.topRight, startFlatPercent);
-	const Double3 endTopPoint = flat.topLeft.lerp(flat.topRight, endFlatPercent);
+	const NewDouble3 startTopPoint = flat.topLeft.lerp(flat.topRight, startFlatPercent);
+	const NewDouble3 endTopPoint = flat.topLeft.lerp(flat.topRight, endFlatPercent);
 
 	// Horizontal texture coordinates in the flat. Although the flat percent can be
 	// equal to 1.0, the texture coordinate needs to be less than 1.0.
@@ -7261,7 +7292,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 		// Horizontal texel position.
 		const int textureX = static_cast<int>(u * static_cast<double>(texture.width));
 
-		const Double3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
+		const NewDouble3 topPoint = startTopPoint.lerp(endTopPoint, xPercent);
 
 		// Get the true XZ distance for the depth.
 		const NewDouble2 topPointXZ(topPoint.x, topPoint.z);
@@ -7408,6 +7439,11 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	constexpr SNDouble axisLenX = 1.0;
 	constexpr WEDouble axisLenZ = 1.0;
 
+	// Camera position values in absolute coordinate space.
+	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+	const NewDouble3 absoluteEyeVoxelReal = VoxelUtils::coordToNewPoint(camera.eyeVoxelReal);
+	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
+
 	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 	const SNDouble deltaDistX = (NonNegativeDirX ? axisLenX : -axisLenX) / ray.dirX;
 	const WEDouble deltaDistZ = (NonNegativeDirZ ? axisLenZ : -axisLenZ) / ray.dirZ;
@@ -7415,11 +7451,11 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// The initial delta distances are percentages of the delta distances, dependent on the ray
 	// start position inside the voxel.
 	const SNDouble initialDeltaDistPercentX = NonNegativeDirX ?
-		(1.0 - ((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX)) :
-		((camera.eye.x - camera.eyeVoxelReal.x) / axisLenX);
+		(1.0 - ((absoluteEye.x - absoluteEyeVoxelReal.x) / axisLenX)) :
+		((absoluteEye.x - absoluteEyeVoxelReal.x) / axisLenX);
 	const WEDouble initialDeltaDistPercentZ = NonNegativeDirZ ?
-		(1.0 - ((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ)) :
-		((camera.eye.z - camera.eyeVoxelReal.z) / axisLenZ);
+		(1.0 - ((absoluteEye.z - absoluteEyeVoxelReal.z) / axisLenZ)) :
+		((absoluteEye.z - absoluteEyeVoxelReal.z) / axisLenZ);
 
 	// Initial delta distance is a fraction of delta distance based on the ray's position in
 	// the initial voxel.
@@ -7439,12 +7475,12 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 	// Verify that the initial voxel coordinate is within the world bounds.
 	bool voxelIsValid =
-		(camera.eyeVoxel.x >= 0) &&
-		(camera.eyeVoxel.y >= 0) &&
-		(camera.eyeVoxel.z >= 0) &&
-		(camera.eyeVoxel.x < gridWidth) &&
-		(camera.eyeVoxel.y < gridHeight) &&
-		(camera.eyeVoxel.z < gridDepth);
+		(absoluteEyeVoxel.x >= 0) &&
+		(absoluteEyeVoxel.y >= 0) &&
+		(absoluteEyeVoxel.z >= 0) &&
+		(absoluteEyeVoxel.x < gridWidth) &&
+		(absoluteEyeVoxel.y < gridHeight) &&
+		(absoluteEyeVoxel.z < gridDepth);
 
 	if (voxelIsValid)
 	{
@@ -7463,17 +7499,17 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 		// The initial near point is directly in front of the player in the near Z 
 		// camera plane.
 		const NewDouble2 initialNearPoint(
-			camera.eye.x + (ray.dirX * SoftwareRenderer::NEAR_PLANE),
-			camera.eye.z + (ray.dirZ * SoftwareRenderer::NEAR_PLANE));
+			absoluteEye.x + (ray.dirX * SoftwareRenderer::NEAR_PLANE),
+			absoluteEye.z + (ray.dirZ * SoftwareRenderer::NEAR_PLANE));
 
 		// The initial far point is the wall hit. This is used with the player's position 
 		// for drawing the initial floor and ceiling.
 		const NewDouble2 initialFarPoint(
-			camera.eye.x + (ray.dirX * zDistance),
-			camera.eye.z + (ray.dirZ * zDistance));
+			absoluteEye.x + (ray.dirX * zDistance),
+			absoluteEye.z + (ray.dirZ * zDistance));
 
 		// Draw all voxels in a column at the player's XZ coordinate.
-		SoftwareRenderer::drawInitialVoxelColumn(x, camera.eyeVoxel.x, camera.eyeVoxel.z,
+		SoftwareRenderer::drawInitialVoxelColumn(x, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE,
 			zDistance, shadingInfo, chunkDistance, ceilingHeight, levelData, visLights, visLightLists,
 			textures, chasmTextureGroups, occlusion, frame);
@@ -7481,7 +7517,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 	// The current voxel coordinate in the DDA loop. For all intents and purposes,
 	// the Y cell coordinate is constant.
-	NewInt3 cell(camera.eyeVoxel.x, camera.eyeVoxel.y, camera.eyeVoxel.z);
+	NewInt3 cell(absoluteEyeVoxel.x, absoluteEyeVoxel.y, absoluteEyeVoxel.z);
 	
 	// Delta distance sums in each component, starting at the initial wall hit. The lowest
 	// component is the candidate for the next DDA loop.
@@ -7496,7 +7532,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// distance for the current edge point.
 	// @optimization: constexpr values in a lambda capture (stepX, zDistance values) are not baked in!!
 	// - Only way to get the values baked in is 1) make template doDDAStep() method, or 2) no lambda.
-	auto doDDAStep = [&camera, &ray, stepX, stepZ, deltaDistX, deltaDistZ, gridWidth, gridDepth,
+	auto doDDAStep = [&ray, stepX, stepZ, &absoluteEye, deltaDistX, deltaDistZ, gridWidth, gridDepth,
 		&zDistance, &facing, &voxelIsValid, &cell, &deltaDistSumX, &deltaDistSumZ,
 		halfOneMinusStepXReal, halfOneMinusStepZReal]()
 	{
@@ -7506,7 +7542,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 			cell.x += stepX;
 			facing = NonNegativeDirX ? VoxelFacing2D::NegativeX : VoxelFacing2D::PositiveX;
 			voxelIsValid &= (cell.x >= 0) && (cell.x < gridWidth);
-			zDistance = (((static_cast<double>(cell.x) - camera.eye.x) + halfOneMinusStepXReal) / ray.dirX);
+			zDistance = (((static_cast<double>(cell.x) - absoluteEye.x) + halfOneMinusStepXReal) / ray.dirX);
 		}
 		else
 		{
@@ -7514,7 +7550,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 			cell.z += stepZ;
 			facing = NonNegativeDirZ ? VoxelFacing2D::NegativeZ : VoxelFacing2D::PositiveZ;
 			voxelIsValid &= (cell.z >= 0) && (cell.z < gridDepth);
-			zDistance = (((static_cast<double>(cell.z) - camera.eye.z) + halfOneMinusStepZReal) / ray.dirZ);
+			zDistance = (((static_cast<double>(cell.z) - absoluteEye.z) + halfOneMinusStepZReal) / ray.dirZ);
 		}
 	};
 
@@ -7540,11 +7576,11 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 		// Near and far points in the XZ plane. The near point is where the wall is, and 
 		// the far point is used with the near point for drawing the floor and ceiling.
 		const NewDouble2 nearPoint(
-			camera.eye.x + (ray.dirX * wallDistance),
-			camera.eye.z + (ray.dirZ * wallDistance));
+			absoluteEye.x + (ray.dirX * wallDistance),
+			absoluteEye.z + (ray.dirZ * wallDistance));
 		const NewDouble2 farPoint(
-			camera.eye.x + (ray.dirX * zDistance),
-			camera.eye.z + (ray.dirZ * zDistance));
+			absoluteEye.x + (ray.dirX * zDistance),
+			absoluteEye.z + (ray.dirZ * zDistance));
 
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
@@ -7767,8 +7803,10 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	// the screen.
 	for (const VisibleFlat &flat : visibleFlats)
 	{
-		const NewDouble2 eye2D(camera.eye.x, camera.eye.z);
-		const NewInt2 eyeVoxel2D(camera.eyeVoxel.x, camera.eyeVoxel.z);
+		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+		const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
+		const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
+		const NewInt2 eyeVoxel2D(absoluteEyeVoxel.x, absoluteEyeVoxel.z);
 
 		// Texture of the flat. It might be flipped horizontally as well, given by
 		// the "flat.flipped" value.
@@ -7892,7 +7930,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 	}
 }
 
-void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, double fovY, double ambient,
+void SoftwareRenderer::render(const NewDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
 	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
 	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
@@ -7906,7 +7944,7 @@ void SoftwareRenderer::render(const Double3 &eye, const Double3 &direction, doub
 	const double projectionModifier = ArenaRenderUtils::TALL_PIXEL_RATIO;
 
 	// 2.5D camera definition.
-	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
+	const Camera camera(VoxelUtils::newPointToCoord(eye), direction, fovY, aspect, projectionModifier);
 
 	// Normal of all flats (always facing the camera).
 	const Double3 flatNormal = Double3(-camera.forwardX, 0.0, -camera.forwardZ).normalized();

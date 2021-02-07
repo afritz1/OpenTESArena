@@ -140,10 +140,11 @@ private:
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
 	struct Camera
 	{
-		Double3 eye; // Camera position.
-		Double3 eyeVoxelReal; // 'eye' with each component floored.
-		Double3 direction; // 3D direction the camera is facing.
-		NewInt3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
+		// Eye position values. Slight redundancy in cached values for convenience.
+		CoordDouble3 eye; // Camera position.
+		CoordDouble3 eyeVoxelReal; // 'eye' with each component floored.
+		CoordInt3 eyeVoxel; // 'eyeVoxelReal' converted to integers.
+		VoxelDouble3 direction; // 3D direction the camera is facing.
 		Matrix4d transform; // Perspective transformation matrix.
 		
 		// Forward components.
@@ -176,7 +177,7 @@ private:
 		double yShear; // Projected Y-coordinate translation.
 		double horizonProjY; // Projected Y coordinate of horizon.
 
-		Camera(const Double3 &eye, const Double3 &direction, Degrees fovY, double aspect,
+		Camera(const CoordDouble3 &eye, const VoxelDouble3 &direction, Degrees fovY, double aspect,
 			double projectionModifier);
 
 		// Gets the angle of the camera's 2D forward vector. 0 is -Z, pi/2 is -X.
@@ -1002,7 +1003,7 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
-	void render(const Double3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
+	void render(const NewDouble3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
