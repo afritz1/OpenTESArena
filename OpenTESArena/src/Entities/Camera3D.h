@@ -36,9 +36,6 @@ public:
 	// ground (i.e., y == 0). Intended for strafing.
 	const Double3 &getRight() const;
 
-	// Generates a 4x4 view matrix for use with 3D transformations.
-	Matrix4d getViewMatrix() const;
-
 	// Pitches and yaws the camera relative to a fixed "global up" vector. "dx" affects 
 	// left/right, "dy" affects up/down, and "pitchLimit" affects how high or low the camera 
 	// can look in degrees.

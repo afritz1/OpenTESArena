@@ -20,24 +20,6 @@ const Double3 &Camera3D::getRight() const
 	return this->right;
 }
 
-Matrix4d Camera3D::getViewMatrix() const
-{
-	// Column vectors.
-	const Double4 rotationX(this->right.x, this->up.x, -this->forward.x, 0.0);
-	const Double4 rotationY(this->right.y, this->up.y, -this->forward.y, 0.0);
-	const Double4 rotationZ(this->right.z, this->up.z, -this->forward.z, 0.0);
-
-	const Matrix4d rotation(rotationX, rotationY, rotationZ, Double4::UnitW);
-
-	// Column vector.
-	const Double4 translationW(-this->position, 1.0);
-
-	const Matrix4d translation(Double4::UnitX, Double4::UnitY, 
-		Double4::UnitZ, translationW);
-
-	return rotation * translation;
-}
-
 void Camera3D::pitch(double radians)
 {
 	Quaternion q = Quaternion::fromAxisAngle(this->right, radians) *
