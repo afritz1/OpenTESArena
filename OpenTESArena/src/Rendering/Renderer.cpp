@@ -940,7 +940,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient,
+void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
 	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
 	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)

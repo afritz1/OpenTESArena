@@ -248,7 +248,7 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const Double3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
+	void renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);

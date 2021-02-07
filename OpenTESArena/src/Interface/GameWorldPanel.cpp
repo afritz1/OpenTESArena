@@ -3162,10 +3162,10 @@ void GameWorldPanel::render(Renderer &renderer)
 
 	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
-	renderer.renderWorld(player.getPosition(), player.getDirection(),
-		options.getGraphics_VerticalFOV(), ambientPercent, gameData.getDaytimePercent(),
-		gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(), isExterior,
-		options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
+	const CoordDouble3 cameraEye = VoxelUtils::newPointToCoord(player.getPosition());
+	renderer.renderWorld(cameraEye, player.getDirection(), options.getGraphics_VerticalFOV(), ambientPercent,
+		gameData.getDaytimePercent(), gameData.getChasmAnimPercent(), latitude, gameData.nightLightsAreActive(),
+		isExterior, options.getMisc_PlayerHasLight(), options.getMisc_ChunkDistance(), level.getCeilingHeight(),
 		level, game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =

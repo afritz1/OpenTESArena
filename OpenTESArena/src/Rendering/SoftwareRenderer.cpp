@@ -7930,7 +7930,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 	}
 }
 
-void SoftwareRenderer::render(const NewDouble3 &eye, const Double3 &direction, double fovY, double ambient,
+void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
 	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
 	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
@@ -7944,7 +7944,7 @@ void SoftwareRenderer::render(const NewDouble3 &eye, const Double3 &direction, d
 	const double projectionModifier = ArenaRenderUtils::TALL_PIXEL_RATIO;
 
 	// 2.5D camera definition.
-	const Camera camera(VoxelUtils::newPointToCoord(eye), direction, fovY, aspect, projectionModifier);
+	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
 
 	// Normal of all flats (always facing the camera).
 	const Double3 flatNormal = Double3(-camera.forwardX, 0.0, -camera.forwardZ).normalized();

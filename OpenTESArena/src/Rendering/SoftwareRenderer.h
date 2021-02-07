@@ -1003,7 +1003,7 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
-	void render(const NewDouble3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
+	void render(const CoordDouble3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingHeight, const LevelData &levelData,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
