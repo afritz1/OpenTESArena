@@ -16,6 +16,8 @@ class Vector2i
 public:
 	static_assert(std::is_integral<T>::value);
 
+	static const Vector2i<T> Zero;
+
 	T x, y;
 
 	Vector2i(T x, T y);
@@ -88,6 +90,9 @@ public:
 };
 
 // Unit vector definitions (can't be in .cpp file on Clang).
+template <typename T>
+const Vector2i<T> Vector2i<T>::Zero(static_cast<T>(0), static_cast<T>(0));
+
 template <typename T>
 const Vector2f<T> Vector2f<T>::Zero(static_cast<T>(0.0), static_cast<T>(0.0));
 

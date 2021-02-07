@@ -262,7 +262,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							// Initialize player data (independent of the world).
 							Player player = [this, &game, &exeData]()
 							{
-								const CoordDouble3 dummyPosition(ChunkInt2(0, 0), VoxelDouble3::Zero);
+								const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
 								const Double3 direction(
 									CardinalDirection::North.x,
 									0.0,

@@ -73,7 +73,7 @@ Player Player::makeRandom(const CharacterClassLibrary &charClassLibrary,
 	const int charClassDefID = random.next(charClassLibrary.getDefinitionCount());
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const int portraitID = random.next(10);
-	const CoordDouble3 position(ChunkInt2(0, 0), VoxelDouble3::Zero);
+	const CoordDouble3 position(ChunkInt2::Zero, VoxelDouble3::Zero);
 	const Double3 direction(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
 	const Double3 velocity = Double3::Zero;
 	const int weaponID = [&random, &charClassDef]()
