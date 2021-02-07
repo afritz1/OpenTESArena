@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "ChunkUtils.h"
 
 #include "components/debug/Debug.h"
@@ -59,11 +61,33 @@ bool ChunkUtils::isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &ot
 	return (xDiff <= chunkDistance) && (yDiff <= chunkDistance);
 }
 
+CoordDouble2 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelDouble2 &point)
+{
+	// @todo: verify that negative coordinates are supported here.
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	const VoxelInt2 voxel = VoxelUtils::pointToVoxel(point);
+	const SNInt chunkDiffX = ((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim;
+	const WEInt chunkDiffZ = ((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim;
+	const ChunkInt2 newChunk(chunk.x + chunkDiffX, chunk.y + chunkDiffZ);
+	const VoxelDouble2 newPoint(
+		std::fmod(point.x, static_cast<SNDouble>(chunkDim)),
+		std::fmod(point.y, static_cast<WEDouble>(chunkDim)));
+	return CoordDouble2(newChunk, newPoint);
+}
+
+CoordDouble3 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelDouble3 &point)
+{
+	const CoordDouble2 coord = ChunkUtils::recalculateCoord(chunk, VoxelDouble2(point.x, point.z));
+	const VoxelDouble2 &newPoint = coord.point;
+	return CoordDouble3(coord.chunk, VoxelDouble3(newPoint.x, point.y, newPoint.y));
+}
+
 CoordInt2 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
 	// @todo: verify that negative coordinates are supported here.
-	const SNInt chunkDiffX = ChunkUtils::getNextHigherChunkMultiple(voxel.x) / ChunkUtils::CHUNK_DIM;
-	const WEInt chunkDiffZ = ChunkUtils::getNextHigherChunkMultiple(voxel.y) / ChunkUtils::CHUNK_DIM;
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	const SNInt chunkDiffX = ((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim;
+	const WEInt chunkDiffZ = ((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim;
 	const ChunkInt2 newChunk(chunk.x + chunkDiffX, chunk.y + chunkDiffZ);
 	const VoxelInt2 newVoxel(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
 	return CoordInt2(newChunk, newVoxel);
@@ -71,8 +95,7 @@ CoordInt2 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &
 
 CoordInt3 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
 {
-	const CoordInt2 chunkCoord = ChunkUtils::recalculateCoord(chunk, VoxelInt2(voxel.x, voxel.z));
-	const ChunkInt2 &newChunk = chunkCoord.chunk;
-	const VoxelInt2 &newVoxel = chunkCoord.voxel;
-	return CoordInt3(newChunk, VoxelInt3(newVoxel.x, voxel.y, newVoxel.y));
+	const CoordInt2 coord = ChunkUtils::recalculateCoord(chunk, VoxelInt2(voxel.x, voxel.z));
+	const VoxelInt2 &newVoxel = coord.voxel;
+	return CoordInt3(coord.chunk, VoxelInt3(newVoxel.x, voxel.y, newVoxel.y));
 }
