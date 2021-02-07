@@ -82,7 +82,7 @@ namespace
 	};
 }
 
-AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
+AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const NewDouble2 &playerDirection,
 	const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName)
 	: Panel(game)
 {
@@ -116,9 +116,9 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 	}();
 
 	// Player's XZ voxel coordinate.
-	const NewInt2 playerVoxel(
-		static_cast<int>(std::floor(playerPosition.x)),
-		static_cast<int>(std::floor(playerPosition.y)));
+	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(playerPosition);
+	const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPoint);
+	const NewInt2 absolutePlayerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
 
 	const bool isWild = [&game]()
 	{
@@ -126,12 +126,12 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 		return worldData.getMapType() == MapType::Wilderness;
 	}();
 
-	this->mapTexture = [&game, &playerDirection, &voxelGrid, &transitions, &playerVoxel, isWild]()
+	this->mapTexture = [&game, &playerDirection, &voxelGrid, &transitions, &absolutePlayerVoxelXZ, isWild]()
 	{
 		const CardinalDirectionName playerDir = CardinalDirection::getDirectionName(playerDirection);
 
 		auto &renderer = game.getRenderer();
-		Surface surface = AutomapPanel::makeAutomap(playerVoxel, playerDir, isWild, voxelGrid, transitions);
+		Surface surface = AutomapPanel::makeAutomap(absolutePlayerVoxelXZ, playerDir, isWild, voxelGrid, transitions);
 		Texture texture = renderer.createTextureFromSurface(surface);
 
 		return texture;
@@ -157,7 +157,7 @@ AutomapPanel::AutomapPanel(Game &game, const Double2 &playerPosition, const Doub
 
 	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
 	this->automapOffset = AutomapPanel::makeAutomapOffset(
-		playerVoxel, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
+		absolutePlayerVoxelXZ, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
 }
 
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,

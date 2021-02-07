@@ -71,7 +71,7 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game &game, const Double2 &playerPosition, const Double2 &playerDirection,
+	AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const NewDouble2 &playerDirection,
 		const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 

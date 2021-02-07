@@ -608,7 +608,6 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				const auto &player = gameData.getPlayer();
 				const LocationDefinition &locationDef = gameData.getLocationDefinition();
 				const LocationInstance &locationInst = gameData.getLocationInstance();
-				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 
 				// Some places (like named/wild dungeons) do not display a name on the automap.
 				const std::string automapLocationName = [&gameData, &exeData, &locationDef, &locationInst]()
@@ -619,8 +618,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 					return (isCity || isMainQuestDungeon) ? locationName : std::string();
 				}();
 
-				const NewDouble2 absolutePositionXZ(absolutePosition.x, absolutePosition.z);
-				game.setPanel<AutomapPanel>(game, absolutePositionXZ, player.getGroundDirection(),
+				game.setPanel<AutomapPanel>(game, player.getPosition(), player.getGroundDirection(),
 					level.getVoxelGrid(), level.getTransitions(), automapLocationName);
 			}
 			else
