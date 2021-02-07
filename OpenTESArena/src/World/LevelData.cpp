@@ -2630,7 +2630,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			const EntityRenderID entityRenderID = renderer.makeEntityRenderID();
 
 			// Initialize each instance of the flat def.
-			for (const Int2 &position : flatDef.getPositions())
+			for (const NewInt2 &position : flatDef.getPositions())
 			{
 				EntityRef entityRef = this->entityManager.makeEntity(entityType);
 
@@ -2690,7 +2690,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 				// Note: since the entity pointer is being used directly, update the position last
 				// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 				const NewDouble2 positionXZ = VoxelUtils::getVoxelCenter(position);
-				entityPtr->setPosition(positionXZ, this->entityManager, this->voxelGrid);
+				const CoordDouble2 coord = VoxelUtils::newPointToCoord(positionXZ);
+				entityPtr->setPosition(coord, this->entityManager, this->voxelGrid);
 			}
 
 			// Initialize renderer buffers for the entity animation then populate all textures

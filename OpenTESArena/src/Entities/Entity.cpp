@@ -4,7 +4,7 @@
 #include "../Game/Game.h"
 
 Entity::Entity()
-	: position(Double2::Zero)
+	: position(ChunkInt2::Zero, VoxelDouble2::Zero)
 {
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
@@ -34,7 +34,7 @@ EntityRenderID Entity::getRenderID() const
 	return this->renderID;
 }
 
-const NewDouble2 &Entity::getPosition() const
+const CoordDouble2 &Entity::getPosition() const
 {
 	return this->position;
 }
@@ -59,7 +59,7 @@ void Entity::setRenderID(EntityRenderID id)
 	this->renderID = id;
 }
 
-void Entity::setPosition(const NewDouble2 &position, EntityManager &entityManager,
+void Entity::setPosition(const CoordDouble2 &position, EntityManager &entityManager,
 	const VoxelGrid &voxelGrid)
 {
 	this->position = position;
@@ -73,7 +73,7 @@ void Entity::reset()
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
 	this->renderID = EntityManager::NO_RENDER_ID;
-	this->position = Double2::Zero;
+	this->position = CoordDouble2(ChunkInt2::Zero, VoxelDouble2::Zero);
 	this->animInst.reset();
 }
 

@@ -173,7 +173,8 @@ void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, Entit
 		// Note: since the entity pointer is being used directly, update the position last
 		// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
 		const NewDouble2 positionXZ = VoxelUtils::getVoxelCenter(spawnPositionXZ);
-		dynamicEntity->setPosition(positionXZ, entityManager, voxelGrid);
+		const CoordDouble2 coord = VoxelUtils::newPointToCoord(positionXZ);
+		dynamicEntity->setPosition(coord, entityManager, voxelGrid);
 	}
 
 	// Initializes base male and female textures in the renderer.

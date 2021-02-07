@@ -33,7 +33,7 @@ private:
 	static double nextCreatureSoundWaitTime(Random &random);
 
 	// @todo: this should probably be a property of the listener, not this entity.
-	bool withinHearingDistance(const Double3 &point, double ceilingHeight);
+	bool withinHearingDistance(const CoordDouble3 &point, double ceilingHeight);
 
 	// Attempts to get the entity's creature sound filename (if any). Returns success.
 	bool tryGetCreatureSoundFilename(const EntityManager &entityManager,
@@ -77,7 +77,7 @@ public:
 	void rotate(double degrees);
 
 	// Faces the entity toward the given point.
-	void lookAt(const NewDouble2 &point);
+	void lookAt(const CoordDouble2 &point);
 
 	// Sets the entity's pathfinding destination and they will attempt to move towards
 	// it each frame depending on their AI. If the given point is null, their destination

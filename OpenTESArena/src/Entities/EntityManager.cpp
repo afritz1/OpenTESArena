@@ -728,7 +728,8 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 			// Dynamic entities are angle-dependent.
 			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
 			const NewDouble2 &entityDir = dynamicEntity.getDirection();
-			const NewDouble2 diffDir = (eye2D - entity.getPosition()).normalized();
+			const NewDouble2 absoluteEntityPosition = VoxelUtils::coordToNewPoint(entity.getPosition());
+			const NewDouble2 diffDir = (eye2D - absoluteEntityPosition).normalized();
 
 			const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 			const Radians diffAngle = MathUtils::fullAtan2(diffDir);
@@ -781,20 +782,15 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const double flatHeight = animDefKeyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
-	const NewDouble2 &entityPos = entity.getPosition();
-	const SNDouble entityPosX = entityPos.x;
-	const WEDouble entityPosZ = entityPos.y;
-
+	const NewDouble2 absoluteEntityPositionXZ = VoxelUtils::coordToNewPoint(entity.getPosition());
 	const int baseYOffset = EntityUtils::getYOffset(entityDef);
 	const double flatYOffset =  static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
-	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPos]()
+	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &absoluteEntityPositionXZ]()
 	{
-		const NewInt2 entityVoxelPos(
-			static_cast<SNInt>(entityPos.x),
-			static_cast<WEInt>(entityPos.y));
-		const uint16_t voxelID = voxelGrid.getVoxel(entityVoxelPos.x, 1, entityVoxelPos.y);
+		const NewInt2 absoluteEntityVoxelPosXZ = VoxelUtils::pointToVoxel(absoluteEntityPositionXZ);
+		const uint16_t voxelID = voxelGrid.getVoxel(absoluteEntityVoxelPosXZ.x, 1, absoluteEntityVoxelPosXZ.y);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
 		if (voxelDef.type == VoxelType::Raised)
@@ -811,9 +807,9 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 
 	// Bottom center of flat.
 	outVisData.flatPosition = Double3(
-		entityPosX,
+		absoluteEntityPositionXZ.x,
 		ceilingHeight + flatYOffset + raisedPlatformYOffset,
-		entityPosZ);
+		absoluteEntityPositionXZ.y);
 }
 
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
@@ -884,20 +880,14 @@ void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid
 		return false;
 	};
 
-	auto trySwapEntityGroup = [&oldChunkX, &oldChunkZ](Entity *entity,
-		auto &oldGroup, auto &entityGroups)
+	auto trySwapEntityGroup = [&oldChunkX, &oldChunkZ](Entity *entity, auto &oldGroup, auto &entityGroups)
 	{
 		auto swapEntityGroup = [](Entity *entity, auto &oldGroup, auto &newGroup)
 		{
 			newGroup.acquireEntity(entity->getID(), oldGroup);
 		};
 
-		const NewDouble2 &entityPos = entity->getPosition();
-		const NewInt2 entityVoxel(
-			static_cast<SNInt>(entityPos.x),
-			static_cast<WEInt>(entityPos.y));
-		const ChunkInt2 newChunk = VoxelUtils::newVoxelToChunk(entityVoxel);
-
+		const ChunkInt2 &newChunk = entity->getPosition().chunk;
 		const bool groupHasChanged = (newChunk.x != oldChunkX) || (newChunk.y != oldChunkZ);
 		if (groupHasChanged)
 		{

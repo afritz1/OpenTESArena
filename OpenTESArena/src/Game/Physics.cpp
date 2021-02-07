@@ -131,7 +131,8 @@ namespace Physics
 			const Entity &entity = *entityPtr;
 
 			// Skip any entities that are behind the camera.
-			NewDouble2 entityPosEyeDiff = entity.getPosition() - cameraPosXZ;
+			const NewDouble2 absoluteEntityPosition = VoxelUtils::coordToNewPoint(entity.getPosition());
+			NewDouble2 entityPosEyeDiff = absoluteEntityPosition - cameraPosXZ;
 			if (cameraDirXZ.dot(entityPosEyeDiff) < 0.0)
 			{
 				continue;

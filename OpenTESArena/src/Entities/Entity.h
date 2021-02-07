@@ -23,7 +23,7 @@ private:
 	EntityDefID defID;
 	EntityRenderID renderID;
 protected:
-	NewDouble2 position;
+	CoordDouble2 position;
 
 	// Initializes the entity state (some values are initialized separately).
 	void init(EntityDefID defID, const EntityAnimationInstance &animInst);
@@ -40,8 +40,8 @@ public:
 	// Gets the entity's render ID.
 	EntityRenderID getRenderID() const;
 
-	// Gets the XZ position of the entity.
-	const NewDouble2 &getPosition() const;
+	// Gets the chunk + point of the entity.
+	const CoordDouble2 &getPosition() const;
 
 	// Gets the entity's animation instance.
 	EntityAnimationInstance &getAnimInstance();
@@ -57,7 +57,7 @@ public:
 	void setRenderID(EntityRenderID id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
-	void setPosition(const NewDouble2 &position, EntityManager &entityManager,
+	void setPosition(const CoordDouble2 &position, EntityManager &entityManager,
 		const VoxelGrid &voxelGrid);
 
 	// Clears all entity data so it can be used for another entity of the same type.

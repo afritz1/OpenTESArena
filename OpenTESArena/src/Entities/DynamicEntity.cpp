@@ -139,10 +139,14 @@ double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
 	return 2.75 + (random.nextReal() * 4.50);
 }
 
-bool DynamicEntity::withinHearingDistance(const Double3 &point, double ceilingHeight)
+bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingHeight)
 {
-	const Double3 position3D(this->position.x, ceilingHeight * 1.50, this->position.y);
-	return (point - position3D).lengthSquared() < (HearingDistance * HearingDistance);
+	const CoordDouble3 position3D(
+		this->position.chunk,
+		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+	const VoxelDouble3 diff = point - position3D;
+	constexpr double hearingDistanceSqr = HearingDistance * HearingDistance;
+	return diff.lengthSquared() < hearingDistanceSqr;
 }
 
 bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManager,
@@ -176,8 +180,11 @@ void DynamicEntity::playCreatureSound(const std::string &soundFilename, double c
 	AudioManager &audioManager)
 {
 	// Centered inside the creature.
-	const Double3 soundPosition(this->position.x, ceilingHeight * 1.50, this->position.y);
-	audioManager.playSound(soundFilename, soundPosition);
+	const CoordDouble3 soundCoord(
+		this->position.chunk,
+		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+	const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
+	audioManager.playSound(soundFilename, absoluteSoundPosition);
 }
 
 void DynamicEntity::yaw(double radians)
@@ -206,7 +213,7 @@ void DynamicEntity::rotate(double degrees)
 	this->yaw(-lookRightRads);
 }
 
-void DynamicEntity::lookAt(const NewDouble2 &point)
+void DynamicEntity::lookAt(const CoordDouble2 &point)
 {
 	const NewDouble2 newDirection = (point - this->position).normalized();
 
@@ -250,12 +257,10 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 	// Distance to player is used for switching animation states.
-	constexpr double citizenIdleDistSqr = CitizenIdleDistance * CitizenIdleDistance;
-	const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(player.getPosition());
-	const NewDouble2 playerPosXZ(
-		absolutePlayerPosition.x,
-		absolutePlayerPosition.z);
-	const NewDouble2 dirToPlayer = playerPosXZ - this->position;
+	const CoordDouble3 &playerPosition = player.getPosition();
+	const CoordDouble2 playerPositionXZ(
+		playerPosition.chunk, VoxelDouble2(playerPosition.point.x, playerPosition.point.z));
+	const VoxelDouble2 dirToPlayer = playerPositionXZ - this->position;
 	const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 	// Get idle and walk state indices.
@@ -272,6 +277,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		return;
 	}
 
+	constexpr double citizenIdleDistSqr = CitizenIdleDistance * CitizenIdleDistance;
 	const auto &playerWeaponAnim = player.getWeaponAnimation();
 	EntityAnimationInstance &animInst = this->getAnimInstance();
 	const int curAnimStateIndex = animInst.getStateIndex();
@@ -327,8 +333,8 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	if (this->secondsTillCreatureSound <= 0.0)
 	{
 		// See if the NPC is withing hearing distance of the player.
-		const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(gameData.getPlayer().getPosition());
-		if (this->withinHearingDistance(absolutePlayerPosition, ceilingHeight))
+		const CoordDouble3 &playerPosition = gameData.getPlayer().getPosition();
+		if (this->withinHearingDistance(playerPosition, ceilingHeight))
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
@@ -380,19 +386,17 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 			// Integrate by delta time.
 			this->position = this->position + (this->velocity * dt);
 
-			const NewDouble2 position = this->getPosition();
+			const NewDouble2 absolutePosition = VoxelUtils::coordToNewPoint(this->getPosition());
 			const NewDouble2 &direction = this->getDirection();
 
-			auto getVoxelAtDistance = [&position](const NewDouble2 &checkDist)
+			auto getVoxelAtDistance = [&absolutePosition](const NewDouble2 &checkDist)
 			{
 				return NewInt2(
-					static_cast<SNInt>(std::floor(position.x + checkDist.x)),
-					static_cast<WEInt>(std::floor(position.y + checkDist.y)));
+					static_cast<SNInt>(std::floor(absolutePosition.x + checkDist.x)),
+					static_cast<WEInt>(std::floor(absolutePosition.y + checkDist.y)));
 			};
 
-			const NewInt2 curVoxel(
-				static_cast<SNInt>(std::floor(position.x)),
-				static_cast<WEInt>(std::floor(position.y)));
+			const NewInt2 curVoxel = VoxelUtils::pointToVoxel(absolutePosition);
 			const NewInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
 
 			if (nextVoxel != curVoxel)
