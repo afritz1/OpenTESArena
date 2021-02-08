@@ -7856,17 +7856,9 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 			{
 				lk.unlock();
 				threadData.condVar.notify_all();
+				return;
 			}
-			else
-			{
-				// Wait for other threads to finish.
-				threadData.condVar.wait(lk, [&threadData, &data]()
-				{
-					return data.threadsDone == threadData.totalThreads;
-				});
-
-				lk.unlock();
-			}
+			lk.unlock();
 		};
 
 		// Draw this thread's portion of the sky gradient.
