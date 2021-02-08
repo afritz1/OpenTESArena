@@ -2477,15 +2477,17 @@ std::array<SoftwareRenderer::DrawRange, 3> SoftwareRenderer::makeDrawRangeThreeP
 void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, double &projectedYTop,
 	double &projectedYBottom)
 {
+	const NewDouble3 absoluteEyePoint = VoxelUtils::coordToNewPoint(camera.eye);
+
 	// Get two points some arbitrary distance away from the camera to use as the top
 	// and bottom reference points of the sky gradient.
 	const Double3 forward = Double3(camera.forwardX, 0.0, camera.forwardZ).normalized();
 
 	// Determine the sky gradient's position on-screen by getting the projected Y percentages for
 	// the start and end. If these values are less than 0 or greater than 1, they are off-screen.
-	projectedYTop = [&camera, &forward]()
+	projectedYTop = [&camera, &absoluteEyePoint, &forward]()
 	{
-		const Double3 gradientTopPoint = [&camera, &forward]()
+		const Double3 gradientTopPoint = [&absoluteEyePoint, &forward]()
 		{
 			// Top of the sky gradient is some angle above the horizon.
 			const double gradientAngleRadians =
@@ -2498,15 +2500,15 @@ void SoftwareRenderer::getSkyGradientProjectedYRange(const Camera &camera, doubl
 			// Direction from camera eye to the top of the sky gradient.
 			const Double3 gradientTopDir = (forward + (up * upPercent)).normalized();
 
-			return camera.eye.point + gradientTopDir;
+			return absoluteEyePoint + gradientTopDir;
 		}();
 
 		return RendererUtils::getProjectedY(gradientTopPoint, camera.transform, camera.yShear);
 	}();
 
-	projectedYBottom = [&camera, &forward]()
+	projectedYBottom = [&camera, &absoluteEyePoint, &forward]()
 	{
-		const Double3 gradientBottomPoint = camera.eye.point + forward;
+		const Double3 gradientBottomPoint = absoluteEyePoint + forward;
 		return RendererUtils::getProjectedY(gradientBottomPoint, camera.transform, camera.yShear);
 	}();
 }
