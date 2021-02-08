@@ -119,7 +119,7 @@ namespace
 		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
 		const auto &player = gameData.getPlayer();
-		const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
+		const CoordDouble3 &rayStart = player.getPosition();
 		const NewDouble3 &cameraDirection = player.getDirection();
 		const int viewWidth = windowDims.x;
 		const int viewHeight = renderer.getViewHeight();
@@ -203,7 +203,7 @@ namespace
 		const auto &player = gameData.getPlayer();
 		const Double3 &cameraDirection = player.getDirection();
 
-		const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
+		const CoordDouble3 rayStart = player.getPosition();
 		const Double3 rayDirection = [&game, &options, &cameraDirection]()
 		{
 			const auto &renderer = game.getRenderer();
@@ -1668,7 +1668,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const auto &entityManager = level.getEntityManager();
 	const double ceilingHeight = level.getCeilingHeight();
 
-	const NewDouble3 rayStart = VoxelUtils::coordToNewPoint(player.getPosition());
+	const CoordDouble3 rayStart = player.getPosition();
 	const NewDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
 	{
 		const auto &renderer = game.getRenderer();
