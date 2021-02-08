@@ -23,7 +23,7 @@ namespace
 }
 
 EntityManager::EntityVisibilityData::EntityVisibilityData() :
-	flatPosition(Double3::Zero)
+	flatPosition(ChunkInt2::Zero, VoxelDouble3::Zero)
 {
 	this->entity = nullptr;
 	this->stateIndex = -1;
@@ -31,7 +31,7 @@ EntityManager::EntityVisibilityData::EntityVisibilityData() :
 	this->keyframeIndex = -1;
 }
 
-void EntityManager::EntityVisibilityData::init(const Entity *entity, const Double3 &flatPosition,
+void EntityManager::EntityVisibilityData::init(const Entity *entity, const CoordDouble3 &flatPosition,
 	int stateIndex, int angleIndex, int keyframeIndex)
 {
 	this->entity = entity;
@@ -699,7 +699,7 @@ EntityDefID EntityManager::addEntityDef(EntityDefinition &&def,
 	return defID;
 }
 
-void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
+void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
 	double ceilingHeight, const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
 	EntityVisibilityData &outVisData) const
 {
@@ -728,8 +728,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 			// Dynamic entities are angle-dependent.
 			const DynamicEntity &dynamicEntity = static_cast<const DynamicEntity&>(entity);
 			const NewDouble2 &entityDir = dynamicEntity.getDirection();
-			const NewDouble2 absoluteEntityPosition = VoxelUtils::coordToNewPoint(entity.getPosition());
-			const NewDouble2 diffDir = (eye2D - absoluteEntityPosition).normalized();
+			const VoxelDouble2 diffDir = (eye2D - dynamicEntity.getPosition()).normalized();
 
 			const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 			const Radians diffAngle = MathUtils::fullAtan2(diffDir);
@@ -782,13 +781,14 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	const double flatHeight = animDefKeyframe.getHeight();
 	const double flatHalfWidth = flatWidth * 0.50;
 
-	const NewDouble2 absoluteEntityPositionXZ = VoxelUtils::coordToNewPoint(entity.getPosition());
 	const int baseYOffset = EntityUtils::getYOffset(entityDef);
 	const double flatYOffset =  static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
-	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &absoluteEntityPositionXZ]()
+	const CoordDouble2 &entityPosition = entity.getPosition();
+	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPosition]()
 	{
+		const NewDouble2 absoluteEntityPositionXZ = VoxelUtils::coordToNewPoint(entityPosition);
 		const NewInt2 absoluteEntityVoxelPosXZ = VoxelUtils::pointToVoxel(absoluteEntityPositionXZ);
 		const uint16_t voxelID = voxelGrid.getVoxel(absoluteEntityVoxelPosXZ.x, 1, absoluteEntityVoxelPosXZ.y);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
@@ -806,10 +806,11 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const NewDoubl
 	}();
 
 	// Bottom center of flat.
-	outVisData.flatPosition = Double3(
-		absoluteEntityPositionXZ.x,
+	const VoxelDouble3 newCoordPoint(
+		entityPosition.point.x,
 		ceilingHeight + flatYOffset + raisedPlatformYOffset,
-		absoluteEntityPositionXZ.y);
+		entityPosition.point.y);
+	outVisData.flatPosition = CoordDouble3(entityPosition.chunk, newCoordPoint);
 }
 
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
@@ -826,23 +827,23 @@ const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(
 }
 
 void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
-	const EntityDefinitionLibrary &entityDefLibrary, Double3 *outMin, Double3 *outMax) const
+	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const
 {
 	// Get animation frame from visibility data.
-	const EntityAnimationDefinition::Keyframe &keyframe = this->getEntityAnimKeyframe(
-		entity, visData, entityDefLibrary);
+	const EntityAnimationDefinition::Keyframe &keyframe =
+		this->getEntityAnimKeyframe(entity, visData, entityDefLibrary);
 
 	// Start with bounding cylinder.
-	const double radius = keyframe.getWidth() / 2.0;
+	const double radius = keyframe.getWidth() * 0.50;
 	const double height = keyframe.getHeight();
 
-	// Convert bounding cylinder to axis-aligned bounding box.
-	outMin->x = visData.flatPosition.x - radius;
-	outMin->y = visData.flatPosition.y;
-	outMin->z = visData.flatPosition.z - radius;
-	outMax->x = visData.flatPosition.x + radius;
-	outMax->y = visData.flatPosition.y + height;
-	outMax->z = visData.flatPosition.z + radius;
+	// Convert bounding cylinder to axis-aligned bounding box. Need to calculate the resulting chunk coordinates
+	// since the bounding box might cross chunk boundaries.
+	const CoordDouble3 &flatPos = visData.flatPosition;
+	const VoxelDouble3 minPoint(flatPos.point.x - radius, flatPos.point.y, flatPos.point.z - radius);
+	const VoxelDouble3 maxPoint(flatPos.point.x + radius, flatPos.point.y + height, flatPos.point.z + radius);
+	*outMin = ChunkUtils::recalculateCoord(flatPos.chunk, minPoint);
+	*outMax = ChunkUtils::recalculateCoord(flatPos.chunk, maxPoint);
 }
 
 void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid)

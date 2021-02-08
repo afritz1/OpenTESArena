@@ -387,10 +387,11 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 	const Entity &entity = *visData.entity;
 
 	// Do a ray test to see if the ray intersects.
-	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, visData.flatPosition,
+	const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visData.flatPosition);
+	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, absoluteFlatPosition,
 		entityForward, outHitPoint))
 	{
-		const Double3 diff = (*outHitPoint) - visData.flatPosition;
+		const Double3 diff = (*outHitPoint) - absoluteFlatPosition;
 
 		// Get the texture coordinates. It's okay if they are outside the entity.
 		const Double2 uv(

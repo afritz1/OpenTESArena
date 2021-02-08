@@ -138,22 +138,26 @@ namespace Physics
 				continue;
 			}
 
+			const CoordDouble2 cameraCoordXZ = VoxelUtils::newPointToCoord(cameraPosXZ);
 			EntityManager::EntityVisibilityData visData;
-			entityManager.getEntityVisibilityData(entity, cameraPosXZ, ceilingHeight, voxelGrid,
+			entityManager.getEntityVisibilityData(entity, cameraCoordXZ, ceilingHeight, voxelGrid,
 				entityDefLibrary, visData);
 
 			// Use a bounding box to determine which voxels the entity could be in.
-			Double3 minPoint, maxPoint;
+			CoordDouble3 minPoint, maxPoint;
 			entityManager.getEntityBoundingBox(entity, visData, entityDefLibrary, &minPoint, &maxPoint);
+
+			const NewDouble3 absoluteMinPoint = VoxelUtils::coordToNewPoint(minPoint);
+			const NewDouble3 absoluteMaxPoint = VoxelUtils::coordToNewPoint(maxPoint);
 
 			// Only iterate over voxels the entity could be in (at least partially).
 			// This loop should always hit at least 1 voxel.
-			const SNInt startX = static_cast<SNInt>(std::floor(minPoint.x));
-			const SNInt endX = static_cast<SNInt>(std::floor(maxPoint.x));
-			const int startY = static_cast<int>(std::floor(minPoint.y / ceilingHeight));
-			const int endY = static_cast<int>(std::floor(maxPoint.y / ceilingHeight));
-			const WEInt startZ = static_cast<WEInt>(std::floor(minPoint.z));
-			const WEInt endZ = static_cast<WEInt>(std::floor(maxPoint.z));
+			const SNInt startX = static_cast<SNInt>(std::floor(absoluteMinPoint.x));
+			const SNInt endX = static_cast<SNInt>(std::floor(absoluteMaxPoint.x));
+			const int startY = static_cast<int>(std::floor(absoluteMinPoint.y / ceilingHeight));
+			const int endY = static_cast<int>(std::floor(absoluteMaxPoint.y / ceilingHeight));
+			const WEInt startZ = static_cast<WEInt>(std::floor(absoluteMinPoint.z));
+			const WEInt endZ = static_cast<WEInt>(std::floor(absoluteMaxPoint.z));
 
 			for (WEInt z = startZ; z <= endZ; z++)
 			{

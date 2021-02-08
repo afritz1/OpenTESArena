@@ -29,14 +29,14 @@ public:
 	struct EntityVisibilityData
 	{
 		const Entity *entity;
-		Double3 flatPosition;
+		CoordDouble3 flatPosition;
 		int stateIndex;
 		int angleIndex;
 		int keyframeIndex;
 
 		EntityVisibilityData();
 
-		void init(const Entity *entity, const Double3 &flatPosition, int stateIndex,
+		void init(const Entity *entity, const CoordDouble3 &flatPosition, int stateIndex,
 			int angleIndex, int keyframeIndex);
 	};
 private:
@@ -170,7 +170,7 @@ public:
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Gets the data necessary for rendering and ray cast selection.
-	void getEntityVisibilityData(const Entity &entity, const NewDouble2 &eye2D,
+	void getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
 		double ceilingHeight, const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
 		EntityVisibilityData &outVisData) const;
 
@@ -181,7 +181,7 @@ public:
 
 	// Gets the entity's 3D bounding box. This is view-dependent!
 	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
-		const EntityDefinitionLibrary &entityDefLibrary, Double3 *outMin, Double3 *outMax) const;
+		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
 
 	// Puts the entity into the chunk representative of their 3D position.
 	void updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid);

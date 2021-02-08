@@ -1838,8 +1838,11 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
+	const CoordDouble2 eyeXZ(
+		camera.eye.chunk,
+		VoxelDouble2(camera.eye.point.x, camera.eye.point.z));
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
+	const NewDouble2 absoluteEyeXZ(absoluteEye.x, absoluteEye.z);
 	const NewDouble2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	if (shadingInfo.playerHasLight)
@@ -1847,7 +1850,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		// Add player light.
 		VisibleLight playerVisLight;
 		playerVisLight.init(absoluteEye, 5.0);
-		this->visibleLights.push_back(std::move(playerVisLight));
+		this->visibleLights.emplace_back(std::move(playerVisLight));
 	}
 
 	// Potentially visible flat determination algorithm, given the current camera.
@@ -1866,7 +1869,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			entity->getDefinitionID(), entityDefLibrary);
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(*entity, eye2D, ceilingHeight, voxelGrid,
+		entityManager.getEntityVisibilityData(*entity, eyeXZ, ceilingHeight, voxelGrid,
 			entityDefLibrary, visData);
 
 		// Get entity animation state to determine render properties.
@@ -1891,13 +1894,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			lightIntensity = isActiveStreetLight ? streetLightIntensity : 0;
 		}
 
+		const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visData.flatPosition);
 		const bool isLight = lightIntensity > 0;
 		if (isLight)
 		{
 			// See if the light is visible.
 			SoftwareRenderer::LightVisibilityData lightVisData;
-			SoftwareRenderer::getLightVisibilityData(visData.flatPosition, flatHeight,
-				lightIntensity, eye2D, cameraDir, camera.fovX, fogDistance, &lightVisData);
+			SoftwareRenderer::getLightVisibilityData(absoluteFlatPosition, flatHeight,
+				lightIntensity, absoluteEyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
 
 			if (lightVisData.intersectsFrustum)
 			{
@@ -1908,10 +1912,10 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			}
 		}
 
-		const NewDouble2 flatPosition2D(visData.flatPosition.x, visData.flatPosition.z);
+		const NewDouble2 absoluteFlatPositionXZ(absoluteFlatPosition.x, absoluteFlatPosition.z);
 
 		// Check if the flat is somewhere in front of the camera.
-		const NewDouble2 flatEyeDiff = flatPosition2D - eye2D;
+		const NewDouble2 flatEyeDiff = absoluteFlatPositionXZ - absoluteEyeXZ;
 		const double flatEyeDiffLen = flatEyeDiff.length();
 		const NewDouble2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
 		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
@@ -1937,8 +1941,8 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			visFlat.animTextureID = visData.keyframeIndex;
 
 			// Calculate each corner of the flat in world space.
-			visFlat.bottomLeft = visData.flatPosition + flatRightScaled;
-			visFlat.bottomRight = visData.flatPosition - flatRightScaled;
+			visFlat.bottomLeft = absoluteFlatPosition + flatRightScaled;
+			visFlat.bottomRight = absoluteFlatPosition - flatRightScaled;
 			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
 			visFlat.topRight = visFlat.bottomRight + flatUpScaled;
 
@@ -3322,7 +3326,7 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 	}
 }
 
-void SoftwareRenderer::getLightVisibilityData(const Double3 &flatPosition, double flatHeight,
+void SoftwareRenderer::getLightVisibilityData(const NewDouble3 &flatPosition, double flatHeight,
 	int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
 	double viewDistance, LightVisibilityData *outVisData)
 {

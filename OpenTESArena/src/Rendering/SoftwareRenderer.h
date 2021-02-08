@@ -342,8 +342,8 @@ private:
 	{
 		// Corner points in world space relative to the camera. For texture coordinates, left
 		// is inclusive, right is exclusive.
-		Double3 topLeft, topRight;
-		Double3 bottomLeft, bottomRight;
+		NewDouble3 topLeft, topRight;
+		NewDouble3 bottomLeft, bottomRight;
 
 		// Projected screen-space coordinates.
 		double startX, endX;
@@ -698,7 +698,7 @@ private:
 		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.
-	static void getLightVisibilityData(const Double3 &flatPosition, double flatHeight,
+	static void getLightVisibilityData(const NewDouble3 &flatPosition, double flatHeight,
 		int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
 		double viewDistance, LightVisibilityData *outVisData);
 
