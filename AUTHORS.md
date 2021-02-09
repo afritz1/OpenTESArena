@@ -5,6 +5,7 @@ I started this project in 2016. Over time, several individuals have contributed 
 ### Programmers
     Aaron Fritz (afritz1)
     Allofich
+    Alucowie
     Chris Robinson (kcat)
     enderdrag64
     Malcolm Mallardi (mdmallardi)
