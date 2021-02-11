@@ -62,7 +62,6 @@
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
-#include "../World/VoxelType.h"
 #include "../World/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
@@ -1732,15 +1731,15 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 
 				if (hit.getT() <= maxSelectionDist)
 				{
-					if (voxelDef.type == VoxelType::Wall ||
-						voxelDef.type == VoxelType::Floor ||
-						voxelDef.type == VoxelType::Raised ||
-						voxelDef.type == VoxelType::Diagonal ||
-						voxelDef.type == VoxelType::TransparentWall)
+					if (voxelDef.type == ArenaTypes::VoxelType::Wall ||
+						voxelDef.type == ArenaTypes::VoxelType::Floor ||
+						voxelDef.type == ArenaTypes::VoxelType::Raised ||
+						voxelDef.type == ArenaTypes::VoxelType::Diagonal ||
+						voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 					{
 						if (!debugFadeVoxel)
 						{
-							if (voxelDef.type == VoxelType::Wall)
+							if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 							{
 								const LevelData::Transitions &transitions = level.getTransitions();
 								const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
@@ -1768,7 +1767,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							}
 						}
 					}
-					else if (voxelDef.type == VoxelType::Edge)
+					else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 					{
 						const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -1780,7 +1779,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							this->handleWorldTransition(hit, menuID);
 						}
 					}
-					else if (voxelDef.type == VoxelType::Door)
+					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 					{
 						const VoxelDefinition::DoorData &doorData = voxelDef.door;
 
@@ -1823,7 +1822,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			else
 			{
 				// Handle secondary click (i.e., right click).
-				if (voxelDef.type == VoxelType::Wall)
+				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
 					const LevelData::Transitions &transitions = level.getTransitions();
 					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
@@ -2567,7 +2566,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 	}();
 
 	// If the associated voxel data is a wall, then it might be a transition voxel.
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const LevelData::Transitions &transitions = level.getTransitions();
 		const auto transitionIter = transitions.find(transitionVoxel);

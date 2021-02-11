@@ -30,7 +30,6 @@
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 
 #include "components/debug/Debug.h"
 
@@ -164,27 +163,27 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
 	const NewInt2 &voxel, const LevelData::Transitions &transitions)
 {
-	const VoxelType floorType = floorDef.type;
-	const VoxelType wallType = wallDef.type;
+	const ArenaTypes::VoxelType floorType = floorDef.type;
+	const ArenaTypes::VoxelType wallType = wallDef.type;
 
-	if (floorType == VoxelType::Chasm)
+	if (floorType == ArenaTypes::VoxelType::Chasm)
 	{
 		const ArenaTypes::ChasmType chasmType = floorDef.chasm.type;
 
 		if (chasmType == ArenaTypes::ChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallType == VoxelType::Wall) ? AutomapRaised : AutomapDryChasm;
+			return (wallType == ArenaTypes::VoxelType::Wall) ? AutomapRaised : AutomapDryChasm;
 		}
 		else if (chasmType == ArenaTypes::ChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
+			return (wallType == ArenaTypes::VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
 		}
 		else if (chasmType == ArenaTypes::ChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
+			return (wallType == ArenaTypes::VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
 		}
 		else
 		{
@@ -193,15 +192,15 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 			return AutomapNotImplemented;
 		}
 	}
-	else if (floorType == VoxelType::Floor)
+	else if (floorType == ArenaTypes::VoxelType::Floor)
 	{
 		// If nothing is over the floor, return transparent. Otherwise, choose from
 		// a number of cases.
-		if (wallType == VoxelType::None)
+		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			return AutomapFloor;
 		}
-		else if (wallType == VoxelType::Wall)
+		else if (wallType == ArenaTypes::VoxelType::Wall)
 		{
 			const auto transitionIter = transitions.find(voxel);
 			if (transitionIter == transitions.end())
@@ -233,26 +232,26 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 				}
 			}
 		}
-		else if (wallType == VoxelType::Raised)
+		else if (wallType == ArenaTypes::VoxelType::Raised)
 		{
 			return AutomapRaised;
 		}
-		else if (wallType == VoxelType::Diagonal)
+		else if (wallType == ArenaTypes::VoxelType::Diagonal)
 		{
 			return AutomapFloor;
 		}
-		else if (wallType == VoxelType::Door)
+		else if (wallType == ArenaTypes::VoxelType::Door)
 		{
 			return AutomapDoor;
 		}
-		else if (wallType == VoxelType::TransparentWall)
+		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
 			// Transparent walls with collision (hedges) are shown, while
 			// ones without collision (archways) are not.
 			const VoxelDefinition::TransparentWallData &transparentWallData = wallDef.transparentWall;
 			return transparentWallData.collider ? AutomapWall : AutomapFloor;
 		}
-		else if (wallType == VoxelType::Edge)
+		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
 			return AutomapWall;
 		}
@@ -277,10 +276,10 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
 	// It's harder to make sense of in general compared to city and interior automaps,
 	// so the colors should probably be replaceable by an option or a mod at some point.
-	const VoxelType floorType = floorDef.type;
-	const VoxelType wallType = wallDef.type;
+	const ArenaTypes::VoxelType floorType = floorDef.type;
+	const ArenaTypes::VoxelType wallType = wallDef.type;
 
-	if (floorType == VoxelType::Chasm)
+	if (floorType == ArenaTypes::VoxelType::Chasm)
 	{
 		// The wilderness only has wet chasms, but support all of them just because.
 		const ArenaTypes::ChasmType chasmType = floorDef.chasm.type;
@@ -288,17 +287,17 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		if (chasmType == ArenaTypes::ChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
-			return (wallType == VoxelType::Wall) ? AutomapWildWall : AutomapDryChasm;
+			return (wallType == ArenaTypes::VoxelType::Wall) ? AutomapWildWall : AutomapDryChasm;
 		}
 		else if (chasmType == ArenaTypes::ChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
-			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapLavaChasm;
+			return (wallType == ArenaTypes::VoxelType::Raised) ? AutomapWildWall : AutomapLavaChasm;
 		}
 		else if (chasmType == ArenaTypes::ChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
-			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapWetChasm;
+			return (wallType == ArenaTypes::VoxelType::Raised) ? AutomapWildWall : AutomapWetChasm;
 		}
 		else
 		{
@@ -307,9 +306,9 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 			return AutomapNotImplemented;
 		}
 	}
-	else if (floorType == VoxelType::Floor)
+	else if (floorType == ArenaTypes::VoxelType::Floor)
 	{
-		if (wallType == VoxelType::None)
+		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
 			const VoxelDefinition::FloorData &floorData = floorDef.floor;
@@ -324,7 +323,7 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 				return AutomapWildWall;
 			}
 		}
-		else if (wallType == VoxelType::Wall)
+		else if (wallType == ArenaTypes::VoxelType::Wall)
 		{
 			const auto transitionIter = transitions.find(voxel);
 			if (transitionIter == transitions.end())
@@ -366,23 +365,23 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 				}
 			}			
 		}
-		else if (wallType == VoxelType::Raised)
+		else if (wallType == ArenaTypes::VoxelType::Raised)
 		{
 			return AutomapWildWall;
 		}
-		else if (wallType == VoxelType::Diagonal)
+		else if (wallType == ArenaTypes::VoxelType::Diagonal)
 		{
 			return AutomapFloor;
 		}
-		else if (wallType == VoxelType::Door)
+		else if (wallType == ArenaTypes::VoxelType::Door)
 		{
 			return AutomapWildDoor;
 		}
-		else if (wallType == VoxelType::TransparentWall)
+		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
 			return AutomapFloor;
 		}
-		else if (wallType == VoxelType::Edge)
+		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
 			const VoxelDefinition::EdgeData &edgeData = wallDef.edge;
 

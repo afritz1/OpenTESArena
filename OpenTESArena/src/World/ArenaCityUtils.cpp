@@ -9,7 +9,6 @@
 #include "ProvinceDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelGrid.h"
-#include "VoxelType.h"
 #include "WeatherType.h"
 #include "WeatherUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"

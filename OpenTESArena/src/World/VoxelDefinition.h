@@ -114,7 +114,7 @@ public:
 	};
 
 	// Determines how the voxel definition is accessed.
-	VoxelType type;
+	ArenaTypes::VoxelType type;
 
 	// Only one voxel type can be active at a time, given by "type". No longer a union due to the
 	// added complexity of texture asset references.

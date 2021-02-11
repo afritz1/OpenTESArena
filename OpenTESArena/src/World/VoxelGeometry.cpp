@@ -5,7 +5,6 @@
 #include "VoxelFacing2D.h"
 #include "VoxelGeometry.h"
 #include "VoxelInstance.h"
-#include "VoxelType.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Math/Quad.h"
 
@@ -427,31 +426,31 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance
 
 	switch (voxelDef.type)
 	{
-	case VoxelType::None:
+	case ArenaTypes::VoxelType::None:
 		maybeWrite(0);
 		break;
-	case VoxelType::Wall:
+	case ArenaTypes::VoxelType::Wall:
 		maybeWrite(6);
 		break;
-	case VoxelType::Floor:
+	case ArenaTypes::VoxelType::Floor:
 		maybeWrite(1);
 		break;
-	case VoxelType::Ceiling:
+	case ArenaTypes::VoxelType::Ceiling:
 		maybeWrite(1);
 		break;
-	case VoxelType::Raised:
+	case ArenaTypes::VoxelType::Raised:
 		maybeWrite(6);
 		break;
-	case VoxelType::Diagonal:
+	case ArenaTypes::VoxelType::Diagonal:
 		maybeWrite(1);
 		break;
-	case VoxelType::TransparentWall:
+	case ArenaTypes::VoxelType::TransparentWall:
 		maybeWrite(4);
 		break;
-	case VoxelType::Edge:
+	case ArenaTypes::VoxelType::Edge:
 		maybeWrite(1);
 		break;
-	case VoxelType::Chasm:
+	case ArenaTypes::VoxelType::Chasm:
 	{
 		// Chasm geometry depends on visible face count.
 		const int faceCount = [voxelInst]()
@@ -472,7 +471,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance
 		maybeWrite(faceCount);
 		break;
 	}
-	case VoxelType::Door:
+	case ArenaTypes::VoxelType::Door:
 		// Doors are an unusual case. Just pretend they're closed here.
 		maybeWrite(4);
 		break;
@@ -509,30 +508,30 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxe
 
 	switch (voxelDef.type)
 	{
-	case VoxelType::None:
+	case ArenaTypes::VoxelType::None:
 		break;
-	case VoxelType::Wall:
+	case ArenaTypes::VoxelType::Wall:
 		GenerateWall(voxelDef.wall, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Floor:
+	case ArenaTypes::VoxelType::Floor:
 		GenerateFloor(voxelDef.floor, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Ceiling:
+	case ArenaTypes::VoxelType::Ceiling:
 		GenerateCeiling(voxelDef.ceiling, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Raised:
+	case ArenaTypes::VoxelType::Raised:
 		GenerateRaised(voxelDef.raised, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Diagonal:
+	case ArenaTypes::VoxelType::Diagonal:
 		GenerateDiagonal(voxelDef.diagonal, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::TransparentWall:
+	case ArenaTypes::VoxelType::TransparentWall:
 		GenerateTransparentWall(voxelDef.transparentWall, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Edge:
+	case ArenaTypes::VoxelType::Edge:
 		GenerateEdge(voxelDef.edge, origin, ceilingHeight, quadView);
 		break;
-	case VoxelType::Chasm:
+	case ArenaTypes::VoxelType::Chasm:
 	{
 		const VoxelInstance::ChasmState *chasmState = [voxelInst]() -> const VoxelInstance::ChasmState*
 		{
@@ -547,7 +546,7 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxe
 		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmState, quadView);
 		break;
 	}
-	case VoxelType::Door:
+	case ArenaTypes::VoxelType::Door:
 		GenerateDoor(voxelDef.door, origin, ceilingHeight, quadView);
 		break;
 	default:

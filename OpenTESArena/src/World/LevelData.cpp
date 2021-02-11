@@ -14,7 +14,6 @@
 #include "ProvinceDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
-#include "VoxelType.h"
 #include "WorldData.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -986,7 +985,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 			// Ignore non-chasm voxels.
 			const uint16_t voxelID = this->voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
-			if (voxelDef.type != VoxelType::Chasm)
+			if (voxelDef.type != ArenaTypes::VoxelType::Chasm)
 			{
 				continue;
 			}
@@ -1821,7 +1820,7 @@ ArenaLevelUtils::MenuNamesList LevelData::generateBuildingNames(const LocationDe
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				if (voxelDef.type != VoxelType::Wall)
+				if (voxelDef.type != ArenaTypes::VoxelType::Wall)
 				{
 					return false;
 				}
@@ -1996,7 +1995,7 @@ ArenaLevelUtils::MenuNamesList LevelData::generateWildChunkBuildingNames(const V
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(dstPoint.x, 1, dstPoint.y);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				if (voxelDef.type != VoxelType::Wall)
+				if (voxelDef.type != ArenaTypes::VoxelType::Wall)
 				{
 					return false;
 				}
@@ -2080,7 +2079,7 @@ void LevelData::tryUpdateChasmVoxel(const NewInt3 &voxel)
 	const VoxelDefinition &voxelDef = this->voxelGrid.getVoxelDef(voxelID);
 
 	// Ignore if not a chasm (no faces to update).
-	if (voxelDef.type != VoxelType::Chasm)
+	if (voxelDef.type != ArenaTypes::VoxelType::Chasm)
 	{
 		return;
 	}
@@ -2223,9 +2222,9 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const NewInt3 &voxel)
 	const std::optional<uint16_t> optChasmID = this->voxelGrid.findVoxelDef(
 		[&newDef](const VoxelDefinition &voxelDef)
 	{
-		if (voxelDef.type == VoxelType::Chasm)
+		if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 		{
-			DebugAssert(newDef.type == VoxelType::Chasm);
+			DebugAssert(newDef.type == ArenaTypes::VoxelType::Chasm);
 			const VoxelDefinition::ChasmData &newChasmData = newDef.chasm;
 			const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 			return chasmData.matches(newChasmData);

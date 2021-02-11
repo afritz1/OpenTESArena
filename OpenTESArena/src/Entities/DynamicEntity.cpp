@@ -12,7 +12,6 @@
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
 #include "../Media/AudioManager.h"
-#include "../World/VoxelType.h"
 
 #include "components/utilities/String.h"
 
@@ -412,14 +411,14 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 					{
 						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
 						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-						return voxelDef.type == VoxelType::None;
+						return voxelDef.type == ArenaTypes::VoxelType::None;
 					};
 
 					auto isWalkableVoxel = [&voxelGrid](const NewInt2 &voxel)
 					{
 						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 0, voxel.y);
 						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-						return voxelDef.type == VoxelType::Floor;
+						return voxelDef.type == ArenaTypes::VoxelType::Floor;
 					};
 
 					return isValidVoxel(voxel) && isPassableVoxel(voxel) && isWalkableVoxel(voxel);

@@ -5,10 +5,10 @@
 #include "EntityType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../World/MapType.h"
-#include "../World/VoxelType.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -125,7 +125,8 @@ void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, Entit
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 				const VoxelDefinition &groundVoxelDef = voxelGrid.getVoxelDef(groundVoxelID);
 
-				if ((voxelDef.type == VoxelType::None) && (groundVoxelDef.type == VoxelType::Floor))
+				if ((voxelDef.type == ArenaTypes::VoxelType::None) &&
+					(groundVoxelDef.type == ArenaTypes::VoxelType::Floor))
 				{
 					foundSpawnPosition = true;
 					return voxel;

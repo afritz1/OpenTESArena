@@ -15,7 +15,6 @@
 #include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 #include "../World/WorldData.h"
 
 #include "components/debug/Debug.h"
@@ -244,13 +243,13 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 	//   We should be able to cover all collision cases in Arena now.
 	auto wouldCollideWithVoxel = [&activeLevel](const NewInt3 &voxel, const VoxelDefinition &voxelDef)
 	{
-		if (voxelDef.type == VoxelType::TransparentWall)
+		if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 		{
 			// Transparent wall collision.
 			const VoxelDefinition::TransparentWallData &transparent = voxelDef.transparentWall;
 			return transparent.collider;
 		}
-		else if (voxelDef.type == VoxelType::Edge)
+		else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 		{
 			// Edge collision.
 			// - @todo: treat as edge, not solid voxel.
@@ -260,10 +259,10 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		else
 		{
 			// General voxel collision.
-			const bool isEmpty = voxelDef.type == VoxelType::None;
+			const bool isEmpty = voxelDef.type == ArenaTypes::VoxelType::None;
 			const bool isOpenDoor = [&activeLevel, &voxel, &voxelDef]()
 			{
-				if (voxelDef.type == VoxelType::Door)
+				if (voxelDef.type == ArenaTypes::VoxelType::Door)
 				{
 					const VoxelInstance *doorInst = activeLevel.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
 					const bool isClosed = doorInst == nullptr;
@@ -279,7 +278,7 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 			// - @todo: replace with "on would enter voxel" event and near facing check.
 			const bool isLevelTransition = [&activeLevel, &voxel, &voxelDef]()
 			{
-				if (voxelDef.type == VoxelType::Wall)
+				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
 					const LevelData::Transitions &transitions = activeLevel.getTransitions();
 					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));

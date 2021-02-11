@@ -24,7 +24,6 @@
 #include "../World/ChunkUtils.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelGrid.h"
-#include "../World/VoxelType.h"
 #include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
@@ -2927,7 +2926,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 			{
 				const uint16_t voxelID = voxelGrid.getVoxel(x, 1, z);
 				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				return voxelDef.type == VoxelType::None;
+				return voxelDef.type == ArenaTypes::VoxelType::None;
 			}
 			else
 			{
@@ -4679,7 +4678,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		// Draw inner ceiling, wall, and floor.
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
@@ -4723,11 +4722,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 			farZ, nearZ, Double3::UnitY, textures.getTexture(wallData.floorTextureAssetRef),
 			fadePercent, visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Do nothing. Floors can only be seen from above.
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel if the camera is below it.
 		if (absoluteEye.y < voxelYReal)
@@ -4753,7 +4752,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -4839,7 +4838,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -4872,11 +4871,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Do nothing. Transparent walls have no back-faces.
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -4907,7 +4906,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
@@ -4988,7 +4987,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 				textures.getTexture(chasmData.textureAssetRef), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);
@@ -5111,7 +5110,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -5134,11 +5133,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 			farZ, -Double3::UnitY, textures.getTexture(wallData.floorTextureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Do nothing. Floors can only be seen from above.
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel.
 		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
@@ -5161,7 +5160,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 			farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -5247,7 +5246,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -5280,11 +5279,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Do nothing. Transparent walls have no back-faces.
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -5315,11 +5314,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Ignore. Chasms should never be above the player's voxel.
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);
@@ -5442,7 +5441,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -5465,7 +5464,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			nearZ, Double3::UnitY, textures.getTexture(wallData.ceilingTextureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Draw top of floor voxel.
 		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
@@ -5489,11 +5488,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 			nearZ, Double3::UnitY, textures.getTexture(floorData.textureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Do nothing. Ceilings can only be seen from below.
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -5579,7 +5578,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -5612,11 +5611,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Do nothing. Transparent walls have no back-faces.
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -5647,7 +5646,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Render back-face.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
@@ -5728,7 +5727,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 				textures.getTexture(chasmData.textureAssetRef), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);
@@ -5920,7 +5919,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		// Draw side.
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
@@ -5945,11 +5944,11 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			Constants::JustBelowOne, wallNormal, textures.getTexture(wallData.sideTextureAssetRef), fadePercent,
 			wallLightPercent, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Do nothing. Floors can only be seen from above.
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel if the camera is below it.
 		if (absoluteEye.y < voxelYReal)
@@ -5975,7 +5974,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				visLights, visLightList, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -6052,7 +6051,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -6085,7 +6084,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
@@ -6108,7 +6107,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
 			wallLightPercent, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -6139,7 +6138,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
@@ -6241,7 +6240,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 				textures.getTexture(chasmData.textureAssetRef), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);
@@ -6363,7 +6362,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -6397,11 +6396,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			nearZ, farZ, -Double3::UnitY, textures.getTexture(wallData.floorTextureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Do nothing. Floors can only be seen from above.
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Draw bottom of ceiling voxel.
 		const VoxelDefinition::CeilingData &ceilingData = voxelDef.ceiling;
@@ -6424,7 +6423,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -6501,7 +6500,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -6534,7 +6533,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
@@ -6557,7 +6556,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
 			wallLightPercent, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -6588,11 +6587,11 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Ignore. Chasms should never be above the player's voxel.
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);
@@ -6714,7 +6713,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 		visLightLists, voxelX, voxelZ, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 		voxelGrid.getWidth(), voxelGrid.getDepth(), chunkDistance);
 
-	if (voxelDef.type == VoxelType::Wall)
+	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
 		const VoxelDefinition::WallData &wallData = voxelDef.wall;
 
@@ -6748,7 +6747,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			Constants::JustBelowOne, wallNormal, textures.getTexture(wallData.sideTextureAssetRef), fadePercent,
 			wallLightPercent, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Floor)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Floor)
 	{
 		// Draw top of floor voxel.
 		const VoxelDefinition::FloorData &floorData = voxelDef.floor;
@@ -6771,11 +6770,11 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			nearZ, Double3::UnitY, textures.getTexture(floorData.textureAssetRef), fadePercent,
 			visLights, visLightList, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Ceiling)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 	{
 		// Do nothing. Ceilings can only be seen from below.
 	}
-	else if (voxelDef.type == VoxelType::Raised)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 	{
 		const VoxelDefinition::RaisedData &raisedData = voxelDef.raised;
 
@@ -6852,7 +6851,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Diagonal)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Diagonal)
 	{
 		const VoxelDefinition::DiagonalData &diagData = voxelDef.diagonal;
 
@@ -6885,7 +6884,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::TransparentWall)
+	else if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 	{
 		// Draw transparent side.
 		const VoxelDefinition::TransparentWallData &transparentWallData = voxelDef.transparentWall;
@@ -6908,7 +6907,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
 			wallLightPercent, shadingInfo, occlusion, frame);
 	}
-	else if (voxelDef.type == VoxelType::Edge)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
 	{
 		const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
 
@@ -6939,7 +6938,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Chasm)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
 	{
 		// Render front and back-faces.
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
@@ -7041,7 +7040,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 				textures.getTexture(chasmData.textureAssetRef), *chasmTexture, wallLightPercent, shadingInfo, occlusion, frame);
 		}
 	}
-	else if (voxelDef.type == VoxelType::Door)
+	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
 		const double percentOpen = RendererUtils::getDoorPercentOpen(voxelX, voxelZ, levelData);

@@ -18,7 +18,6 @@
 #include "TriggerDefinition.h"
 #include "VoxelDefinition.h"
 #include "VoxelFacing2D.h"
-#include "VoxelType.h"
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"

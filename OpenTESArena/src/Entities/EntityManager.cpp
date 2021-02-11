@@ -11,7 +11,6 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../World/ChunkUtils.h"
-#include "../World/VoxelType.h"
 
 #include "components/debug/Debug.h"
 
@@ -793,7 +792,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 		const uint16_t voxelID = voxelGrid.getVoxel(absoluteEntityVoxelPosXZ.x, 1, absoluteEntityVoxelPosXZ.y);
 		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
 
-		if (voxelDef.type == VoxelType::Raised)
+		if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 		{
 			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
 			return (raised.yOffset + raised.ySize) * ceilingHeight;
