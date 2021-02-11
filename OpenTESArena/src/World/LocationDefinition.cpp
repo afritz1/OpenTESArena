@@ -16,7 +16,7 @@ void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int model
 	this->menuNamesIndex = menuNamesIndex;
 }
 
-void LocationDefinition::CityDefinition::init(CityDefinition::Type type, const char *typeDisplayName,
+void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
 	uint32_t rulerSeed, uint32_t distantSkySeed, ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
@@ -86,7 +86,7 @@ void LocationDefinition::init(LocationDefinition::Type type, const std::string &
 }
 
 void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal, bool premade,
-	CityDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary)
+	ArenaTypes::CityType type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
@@ -109,11 +109,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		{
 			switch (type)
 			{
-			case CityDefinition::Type::CityState:
+			case ArenaTypes::CityType::CityState:
 				return 0;
-			case CityDefinition::Type::Town:
+			case ArenaTypes::CityType::Town:
 				return 1;
-			case CityDefinition::Type::Village:
+			case ArenaTypes::CityType::Village:
 				return 2;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
@@ -126,7 +126,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	}();
 
 	const int globalCityID = LocationUtils::getGlobalCityID(localCityID, provinceID);
-	const bool isCityState = type == LocationDefinition::CityDefinition::Type::CityState;
+	const bool isCityState = type == ArenaTypes::CityType::CityState;
 	const int templateCount = LocationUtils::getCityTemplateCount(coastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
@@ -135,11 +135,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	{
 		switch (type)
 		{
-		case CityDefinition::Type::CityState:
+		case ArenaTypes::CityType::CityState:
 			return LocationType::CityState;
-		case CityDefinition::Type::Town:
+		case ArenaTypes::CityType::Town:
 			return LocationType::Town;
-		case CityDefinition::Type::Village:
+		case ArenaTypes::CityType::Village:
 			return LocationType::Village;
 		default:
 			DebugUnhandledReturnMsg(LocationType, std::to_string(static_cast<int>(type)));
@@ -198,11 +198,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	{
 		switch (type)
 		{
-		case CityDefinition::Type::CityState:
+		case ArenaTypes::CityType::CityState:
 			return 6;
-		case CityDefinition::Type::Town:
+		case ArenaTypes::CityType::Town:
 			return 5;
-		case CityDefinition::Type::Village:
+		case ArenaTypes::CityType::Village:
 			return 4;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));

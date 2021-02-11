@@ -87,7 +87,7 @@ namespace MapGeneration
 	{
 		std::string mifName;
 		std::string cityTypeName;
-		LocationDefinition::CityDefinition::Type cityType;
+		ArenaTypes::CityType cityType;
 		uint32_t citySeed;
 		uint32_t rulerSeed;
 		int raceID;
@@ -106,9 +106,9 @@ namespace MapGeneration
 
 		int cityBlocksPerSide;
 
-		void init(std::string &&mifName, std::string &&cityTypeName,
-			LocationDefinition::CityDefinition::Type cityType, uint32_t citySeed, uint32_t rulerSeed,
-			int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
+		void init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType, uint32_t citySeed,
+			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon,
+			Buffer<uint8_t> &&reservedBlocks,
 			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> *mainQuestTempleOverride,
 			WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 	};
@@ -118,14 +118,13 @@ namespace MapGeneration
 	struct WildGenInfo
 	{
 		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs;
-		LocationDefinition::CityDefinition::Type cityType;
+		ArenaTypes::CityType cityType;
 		uint32_t fallbackSeed;
 		uint32_t rulerSeed;
 		bool palaceIsMainQuestDungeon;
 
-		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-			LocationDefinition::CityDefinition::Type cityType, uint32_t fallbackSeed, uint32_t rulerSeed,
-			bool palaceIsMainQuestDungeon);
+		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs, ArenaTypes::CityType cityType,
+			uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon);
 	};
 
 	// Building names in the wild are shared per-chunk.
@@ -159,12 +158,11 @@ namespace MapGeneration
 	void readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
-		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
-		LevelInfoDefinition *outLevelInfoDef);
+		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates levels from the random chunk .MIF file and converts them to the modern format.
 	// Also writes out the player start voxel.
@@ -181,7 +179,7 @@ namespace MapGeneration
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, bool palaceIsMainQuestDungeon, const BufferView<const uint8_t> &reservedBlocks,
 		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal,
-		const std::string_view &cityTypeName, LocationDefinition::CityDefinition::Type cityType,
+		const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -192,10 +190,10 @@ namespace MapGeneration
 	// level definition at the same index.
 	void generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
 		const BufferView2D<const int> &levelDefIndices, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-		LocationDefinition::CityDefinition::Type cityType, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+		ArenaTypes::CityType cityType, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+		LevelInfoDefinition *outLevelInfoDef,
 		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
 
 	void readMifLocks(const BufferView<const MIFFile::Level> &levels, const INFFile &inf,

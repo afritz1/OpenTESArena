@@ -110,7 +110,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
-		constexpr std::optional<LocationDefinition::CityDefinition::Type> cityType; // Not necessary for interiors.
+		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for interiors.
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
@@ -249,7 +249,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool palaceIsMainQuestDungeon,
-	const std::string_view &cityTypeName, LocationDefinition::CityDefinition::Type cityType,
+	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -298,7 +298,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 
 bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
 	uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-	LocationDefinition::CityDefinition::Type cityType, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
+	ArenaTypes::CityType cityType, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager)

@@ -46,8 +46,8 @@ namespace ArenaLevelUtils
 
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
-		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
-		MapType mapType, const ExeData &exeData);
+		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType,
+		const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.
 	int getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random);

@@ -163,8 +163,7 @@ namespace MapGeneration
 
 	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(ArenaTypes::InteriorType interiorType,
 		const LevelInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
-		bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type cityType,
-		MapType mapType, const ExeData &exeData)
+		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
 	{
 		const OriginalInt2 originalPos = VoxelUtils::newVoxelToOriginalVoxel(NewInt2(position.x, position.z));
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
@@ -823,9 +822,8 @@ namespace MapGeneration
 	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
 		const LevelInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
-		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
-		MapType mapType, const ExeData &exeData)
+		const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+		const std::optional<bool> &isArtifactDungeon, MapType mapType, const ExeData &exeData)
 	{
 		TransitionDefinition transitionDef;
 
@@ -958,7 +956,7 @@ namespace MapGeneration
 	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
+		const std::optional<ArenaTypes::CityType> &cityType,
 		const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -1327,7 +1325,7 @@ namespace MapGeneration
 
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for dungeons.
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for dungeons.
-		constexpr std::optional<LocationDefinition::CityDefinition::Type> cityType; // Not necessary for dungeons.
+		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for dungeons.
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
 
 		MapGeneration::readArenaMAP1(levelMap1View, mapType, interiorType, rulerSeed, rulerIsMale,
@@ -1835,9 +1833,9 @@ ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 	}
 }
 
-void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName,
-	LocationDefinition::CityDefinition::Type cityType, uint32_t citySeed, uint32_t rulerSeed,
-	int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
+void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,
+	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon,
+	Buffer<uint8_t> &&reservedBlocks,
 	const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> *mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
@@ -1858,8 +1856,7 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 }
 
 void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-	LocationDefinition::CityDefinition::Type cityType, uint32_t fallbackSeed, uint32_t rulerSeed,
-	bool palaceIsMainQuestDungeon)
+	ArenaTypes::CityType cityType, uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
 	this->cityType = cityType;
@@ -1925,9 +1922,8 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 void MapGeneration::readMifVoxels(const BufferView<const MIFFile::Level> &levels, MapType mapType,
 	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-	const std::optional<LocationDefinition::CityDefinition::Type> &cityType,
-	const LocationDefinition::DungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const std::optional<ArenaTypes::CityType> &cityType, const LocationDefinition::DungeonDefinition *dungeonDef,
+	const std::optional<bool> &isArtifactDungeon, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
 {
@@ -2054,7 +2050,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool palaceIsMainQuestDungeon, const BufferView<const uint8_t> &reservedBlocks,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal,
-	const std::string_view &cityTypeName, LocationDefinition::CityDefinition::Type cityType,
+	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -2120,10 +2116,9 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 
 void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
 	const BufferView2D<const int> &levelDefIndices, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-	LocationDefinition::CityDefinition::Type cityType, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+	ArenaTypes::CityType cityType, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos)
 {
 	DebugAssert(uniqueWildBlockIDs.getCount() == outLevelDefs.getCount());

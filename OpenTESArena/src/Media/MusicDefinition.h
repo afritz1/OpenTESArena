@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "../Assets/ArenaTypes.h"
 #include "../World/LocationDefinition.h"
 
 enum class ClimateType;
@@ -58,10 +59,10 @@ public:
 
 	struct JingleMusicDefinition
 	{
-		LocationDefinition::CityDefinition::Type cityType;
+		ArenaTypes::CityType cityType;
 		ClimateType climateType;
 
-		void init(LocationDefinition::CityDefinition::Type cityType, ClimateType climateType);
+		void init(ArenaTypes::CityType cityType, ClimateType climateType);
 	};
 
 	struct WeatherMusicDefinition
@@ -88,8 +89,7 @@ public:
 	void initCinematic(std::string &&filename, CinematicMusicDefinition::Type type);
 	void initDungeon(std::string &&filename);
 	void initInterior(std::string &&filename, InteriorMusicDefinition::Type type);
-	void initJingle(std::string &&filename, LocationDefinition::CityDefinition::Type cityType,
-		ClimateType climateType);
+	void initJingle(std::string &&filename, ArenaTypes::CityType cityType, ClimateType climateType);
 	void initMainMenu(std::string &&filename);
 	void initNight(std::string &&filename);
 	void initSwimming(std::string &&filename);

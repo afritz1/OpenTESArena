@@ -78,8 +78,7 @@ uint16_t ArenaLevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 }
 
 std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
-	bool palaceIsMainQuestDungeon, LocationDefinition::CityDefinition::Type locationType,
-	MapType mapType, const ExeData &exeData)
+	bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
 	const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, mapType);
@@ -95,15 +94,15 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 	}
 
 	// Get the prefix associated with the menu type.
-	const std::string menuName = [&exeData, locationType, menuType]()
+	const std::string menuName = [&exeData, cityType, menuType]()
 	{
-		const std::string name = [&exeData, locationType, menuType]() -> std::string
+		const std::string name = [&exeData, cityType, menuType]() -> std::string
 		{
 			// Mappings of menu types to menu .MIF prefix indices. Menus that have no .MIF
 			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
 			// since the palace type can be deduced from the current city type.
-			const int NO_INDEX = -1;
-			const std::array<std::pair<ArenaTypes::MenuType, int>, 12> MenuMifMappings =
+			constexpr int NO_INDEX = -1;
+			constexpr std::array<std::pair<ArenaTypes::MenuType, int>, 12> MenuMifMappings =
 			{
 				{
 					{ ArenaTypes::MenuType::CityGates, NO_INDEX },
@@ -136,26 +135,25 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 				{
 					// Get the menu's .MIF prefix index. If it's a palace, then decide which palace
 					// prefix to use based on the location type.
-					const int menuMifIndex = [locationType, menuType, index]()
+					const int menuMifIndex = [cityType, menuType, index]()
 					{
 						if (menuType == ArenaTypes::MenuType::Palace)
 						{
-							if (locationType == LocationDefinition::CityDefinition::Type::CityState)
+							if (cityType == ArenaTypes::CityType::CityState)
 							{
 								return 0;
 							}
-							else if (locationType == LocationDefinition::CityDefinition::Type::Town)
+							else if (cityType == ArenaTypes::CityType::Town)
 							{
 								return 8;
 							}
-							else if (locationType == LocationDefinition::CityDefinition::Type::Village)
+							else if (cityType == ArenaTypes::CityType::Village)
 							{
 								return 9;
 							}
 							else
 							{
-								DebugUnhandledReturnMsg(int,
-									std::to_string(static_cast<int>(locationType)));
+								DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(cityType)));
 							}
 						}
 						else

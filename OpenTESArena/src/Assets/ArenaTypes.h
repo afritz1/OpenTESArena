@@ -57,6 +57,14 @@ namespace ArenaTypes
 		Tower // TOWER
 	};
 
+	// Types of city locations in a world map province.
+	enum class CityType
+	{
+		CityState,
+		Town,
+		Village
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

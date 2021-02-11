@@ -120,20 +120,19 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseJingleCityType = [](const std::string_view &str,
-		LocationDefinition::CityDefinition::Type *outCityType)
+	auto tryParseJingleCityType = [](const std::string_view &str, ArenaTypes::CityType *outCityType)
 	{
 		if (str == "CityState")
 		{
-			*outCityType = LocationDefinition::CityDefinition::Type::CityState;
+			*outCityType = ArenaTypes::CityType::CityState;
 		}
 		else if (str == "Town")
 		{
-			*outCityType = LocationDefinition::CityDefinition::Type::Town;
+			*outCityType = ArenaTypes::CityType::Town;
 		}
 		else if (str == "Village")
 		{
-			*outCityType = LocationDefinition::CityDefinition::Type::Village;
+			*outCityType = ArenaTypes::CityType::Village;
 		}
 		else
 		{
@@ -260,7 +259,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	{
 		DebugAssert(strs.size() == 3);
 
-		LocationDefinition::CityDefinition::Type cityType;
+		ArenaTypes::CityType cityType;
 		if (!tryParseJingleCityType(strs[1], &cityType))
 		{
 			DebugLogWarning("Couldn't parse city type in jingle music definition \"" + std::string(valueStr) + "\".");

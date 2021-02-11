@@ -19,6 +19,7 @@
 #include "Texture.h"
 #include "WorldMapPanel.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/IMGFile.h"
@@ -684,11 +685,11 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 		{
 			switch (locationDef.getCityDefinition().type)
 			{
-			case LocationDefinition::CityDefinition::Type::CityState:
+			case ArenaTypes::CityType::CityState:
 				return *cityStateIconTextureBuilderID;
-			case LocationDefinition::CityDefinition::Type::Town:
+			case ArenaTypes::CityType::Town:
 				return *townIconTextureBuilderID;
-			case LocationDefinition::CityDefinition::Type::Village:
+			case ArenaTypes::CityType::Village:
 				return *villageIconTextureBuilderID;
 			default:
 				throw DebugException(std::to_string(
@@ -792,11 +793,11 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 
 			switch (cityDef.type)
 			{
-			case LocationDefinition::CityDefinition::Type::CityState:
+			case ArenaTypes::CityType::CityState:
 				return 0;
-			case LocationDefinition::CityDefinition::Type::Town:
+			case ArenaTypes::CityType::Town:
 				return 1;
-			case LocationDefinition::CityDefinition::Type::Village:
+			case ArenaTypes::CityType::Village:
 				return 2;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(cityDef.type)));

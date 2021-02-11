@@ -5,6 +5,7 @@
 #include <string>
 
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
 
 class BinaryAssetLibrary;
@@ -24,8 +25,6 @@ public:
 
 	struct CityDefinition
 	{
-		enum class Type { CityState, Town, Village };
-
 		// Used with a couple special-cased temple names in the original game.
 		struct MainQuestTempleOverride
 		{
@@ -36,7 +35,7 @@ public:
 			void init(int modelIndex, int suffixIndex, int menuNamesIndex);
 		};
 
-		Type type;
+		ArenaTypes::CityType type;
 		char typeDisplayName[16];
 		char mapFilename[16]; // .MIF name for most/all cases for now.
 
@@ -62,7 +61,7 @@ public:
 		bool rulerIsMale;
 		bool palaceIsMainQuestDungeon;
 
-		void init(CityDefinition::Type type, const char *typeDisplayName, const char *mapFilename,
+		void init(ArenaTypes::CityType type, const char *typeDisplayName, const char *mapFilename,
 			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
 			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
@@ -118,7 +117,7 @@ private:
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
-		CityDefinition::Type type, const BinaryAssetLibrary &binaryAssetLibrary);
+		ArenaTypes::CityType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	void initDungeon(int localDungeonID, int provinceID, 
 		const CityDataFile::ProvinceData::LocationData &locationData,
 		const CityDataFile::ProvinceData &provinceData);

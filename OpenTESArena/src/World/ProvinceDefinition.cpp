@@ -28,7 +28,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 	};
 
 	auto tryAddCity = [this, &binaryAssetLibrary, &provinceData, &canAddLocation](int localCityID,
-		int provinceID, bool coastal, bool premade, LocationDefinition::CityDefinition::Type type)
+		int provinceID, bool coastal, bool premade, ArenaTypes::CityType type)
 	{
 		const auto &locationData = provinceData.getLocationData(localCityID);
 
@@ -68,7 +68,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 	const ExeData::CityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
 	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
-		const auto &locations, LocationDefinition::CityDefinition::Type type, int startID)
+		const auto &locations, ArenaTypes::CityType type, int startID)
 	{
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
 		{
@@ -98,10 +98,10 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		}
 	};
 
-	tryAddCities(provinceData.cityStates, LocationDefinition::CityDefinition::Type::CityState, 0);
-	tryAddCities(provinceData.towns, LocationDefinition::CityDefinition::Type::Town,
+	tryAddCities(provinceData.cityStates, ArenaTypes::CityType::CityState, 0);
+	tryAddCities(provinceData.towns, ArenaTypes::CityType::Town,
 		static_cast<int>(provinceData.cityStates.size()));
-	tryAddCities(provinceData.villages, LocationDefinition::CityDefinition::Type::Village,
+	tryAddCities(provinceData.villages, ArenaTypes::CityType::Village,
 		static_cast<int>(provinceData.cityStates.size() + provinceData.towns.size()));
 
 	tryAddMainQuestDungeon(0, provinceID,

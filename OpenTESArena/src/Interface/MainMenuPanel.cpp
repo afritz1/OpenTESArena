@@ -101,7 +101,7 @@ namespace
 	}
 
 	const LocationDefinition *GetRandomCityLocationDefinitionIfType(const ProvinceDefinition &provinceDef,
-		LocationDefinition::CityDefinition::Type cityType)
+		ArenaTypes::CityType cityType)
 	{
 		// Iterate over locations in the province in a random order.
 		const std::vector<int> randomLocationIndices = MakeShuffledLocationIndices(provinceDef);
@@ -495,8 +495,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 							if (curLocationDef.getType() == LocationDefinition::Type::City)
 							{
 								const LocationDefinition::CityDefinition &cityDef = curLocationDef.getCityDefinition();
-								if ((cityDef.type == LocationDefinition::CityDefinition::Type::CityState) &&
-									cityDef.premade && cityDef.palaceIsMainQuestDungeon)
+								if ((cityDef.type == ArenaTypes::CityType::CityState) && cityDef.premade &&
+									cityDef.palaceIsMainQuestDungeon)
 								{
 									locationIndex = i;
 									break;
@@ -526,23 +526,23 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						return worldMapDef.getProvinceDef(provinceIndex);
 					}();
 
-					const LocationDefinition::CityDefinition::Type targetCityType = [&mifName]()
+					const ArenaTypes::CityType targetCityType = [&mifName]()
 					{
 						if (mifName == RandomCity)
 						{
-							return LocationDefinition::CityDefinition::Type::CityState;
+							return ArenaTypes::CityType::CityState;
 						}
 						else if (mifName == RandomTown)
 						{
-							return LocationDefinition::CityDefinition::Type::Town;
+							return ArenaTypes::CityType::Town;
 						}
 						else if (mifName == RandomVillage)
 						{
-							return LocationDefinition::CityDefinition::Type::Village;
+							return ArenaTypes::CityType::Village;
 						}
 						else
 						{
-							DebugUnhandledReturnMsg(LocationDefinition::CityDefinition::Type, mifName);
+							DebugUnhandledReturnMsg(ArenaTypes::CityType, mifName);
 						}
 					}();
 
