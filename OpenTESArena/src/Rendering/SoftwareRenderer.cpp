@@ -1206,7 +1206,7 @@ void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
 	}
 }
 
-void SoftwareRenderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType,
+void SoftwareRenderer::addChasmTexture(ArenaTypes::ChasmType chasmType,
 	const uint8_t *colors, int width, int height, const Palette &palette)
 {
 	const int chasmID = RendererUtils::getChasmIdFromType(chasmType);
@@ -2339,8 +2339,7 @@ VoxelFacing2D SoftwareRenderer::getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
 }
 
 void SoftwareRenderer::getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
-	VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
-	const ChasmTexture **outTexture)
+	ArenaTypes::ChasmType chasmType, double chasmAnimPercent, const ChasmTexture **outTexture)
 {
 	const int chasmID = RendererUtils::getChasmIdFromType(chasmType);
 	const auto groupIter = textureGroups.find(chasmID);
@@ -4923,7 +4922,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
-		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+		const double chasmDepth = (chasmData.type == ArenaTypes::ChasmType::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 		const NewDouble3 farCeilingPoint(
@@ -5663,7 +5662,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 		const VoxelFacing2D farFacing = SoftwareRenderer::getInitialChasmFarFacing(voxelX, voxelZ, absoluteEye2D, ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
-		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+		const double chasmDepth = (chasmData.type == ArenaTypes::ChasmType::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 		const NewDouble3 farCeilingPoint(
@@ -6156,7 +6155,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 			voxelX, voxelZ, nearFacing, camera, ray);
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
-		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+		const double chasmDepth = (chasmData.type == ArenaTypes::ChasmType::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 		const NewDouble3 nearCeilingPoint(
@@ -6951,7 +6950,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 			&chasmVoxelInst->getChasmState() : nullptr;
 
 		// Wet chasms and lava chasms are unaffected by ceiling height.
-		const double chasmDepth = (chasmData.type == VoxelDefinition::ChasmData::Type::Dry) ?
+		const double chasmDepth = (chasmData.type == ArenaTypes::ChasmType::Dry) ?
 			voxelHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 		// Find which faces on the chasm were intersected.

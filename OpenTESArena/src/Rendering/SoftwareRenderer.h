@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "RendererSystem3D.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Options.h"
 #include "../Math/MathUtils.h"
@@ -606,8 +607,7 @@ private:
 	// Tries to convert the chasm animation percent to the associated texture within the chasm
 	// texture group for the given chasm type.
 	static void getChasmTextureGroupTexture(const ChasmTextureGroups &textureGroups,
-		VoxelDefinition::ChasmData::Type chasmType, double chasmAnimPercent,
-		const ChasmTexture **outTexture);
+		ArenaTypes::ChasmType chasmType, double chasmAnimPercent, const ChasmTexture **outTexture);
 
 	// Looks up a light in the visible lights list given some light ID.
 	static const VisibleLight &getVisibleLightByID(const BufferView<const VisibleLight> &visLights,
@@ -965,7 +965,7 @@ public:
 	void setSkyPalette(const uint32_t *colors, int count) override;
 
 	// Adds a screen-space chasm texture to the given chasm type's texture list.
-	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) override;
 
 	// Gets the next available entity render ID to be assigned to entities in the engine.

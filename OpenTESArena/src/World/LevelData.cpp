@@ -866,7 +866,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		TextureAssetReference textureAssetRef(
 			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
-		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Dry);
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), ArenaTypes::ChasmType::Dry);
 	};
 
 	auto makeLavaChasmVoxelDef = [](const INFFile &inf)
@@ -889,7 +889,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		TextureAssetReference textureAssetRef(
 			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
-		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Lava);
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), ArenaTypes::ChasmType::Lava);
 	};
 
 	auto makeWetChasmVoxelDef = [](const INFFile &inf)
@@ -912,7 +912,7 @@ void LevelData::readFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, co
 		TextureAssetReference textureAssetRef(
 			ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
-		return VoxelDefinition::makeChasm(std::move(textureAssetRef), VoxelDefinition::ChasmData::Type::Wet);
+		return VoxelDefinition::makeChasm(std::move(textureAssetRef), ArenaTypes::ChasmType::Wet);
 	};
 
 	// Write the voxel IDs into the voxel grid.
@@ -2182,12 +2182,12 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const NewInt3 &voxel)
 	// even dry chasms, that determines what the destroyed floor becomes. This allows for oddities
 	// like creating a dry chasm next to lava, which results in continued oddities like having a
 	// big difference in chasm depth between the two (depending on ceiling height).
-	const VoxelDefinition::ChasmData::Type newChasmType = []()
+	const ArenaTypes::ChasmType newChasmType = []()
 	{
 		// @todo: include player position. If there are no chasms to pick from, then default to
 		// wet chasm.
 		// @todo: getNearestChasmType(const NewInt3 &voxel)
-		return VoxelDefinition::ChasmData::Type::Wet;
+		return ArenaTypes::ChasmType::Wet;
 	}();
 
 	const int newTextureID = [this, newChasmType]()
@@ -2196,13 +2196,13 @@ uint16_t LevelData::getChasmIdFromFadedFloorVoxel(const NewInt3 &voxel)
 
 		switch (newChasmType)
 		{
-		case VoxelDefinition::ChasmData::Type::Dry:
+		case ArenaTypes::ChasmType::Dry:
 			chasmIndex = this->inf.getDryChasmIndex();
 			break;
-		case VoxelDefinition::ChasmData::Type::Wet:
+		case ArenaTypes::ChasmType::Wet:
 			chasmIndex = this->inf.getWetChasmIndex();
 			break;
-		case VoxelDefinition::ChasmData::Type::Lava:
+		case ArenaTypes::ChasmType::Lava:
 			chasmIndex = this->inf.getLavaChasmIndex();
 			break;
 		default:
@@ -2434,12 +2434,12 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 
 		// Dry chasm (just a single color).
 		chasmBuffer.fill(ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR);
-		renderer.addChasmTexture(VoxelDefinition::ChasmData::Type::Dry, chasmBuffer.get(),
+		renderer.addChasmTexture(ArenaTypes::ChasmType::Dry, chasmBuffer.get(),
 			chasmWidth, chasmHeight, palette);
 
 		// Lambda for writing an .RCI animation to the renderer.
 		auto writeChasmAnim = [&textureManager, &renderer, &palette, chasmWidth, chasmHeight](
-			VoxelDefinition::ChasmData::Type chasmType, const std::string &rciName)
+			ArenaTypes::ChasmType chasmType, const std::string &rciName)
 		{
 			const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
 				textureManager.tryGetTextureBuilderIDs(rciName.c_str());
@@ -2461,8 +2461,8 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 			}
 		};
 
-		writeChasmAnim(VoxelDefinition::ChasmData::Type::Wet, "WATERANI.RCI");
-		writeChasmAnim(VoxelDefinition::ChasmData::Type::Lava, "LAVAANI.RCI");
+		writeChasmAnim(ArenaTypes::ChasmType::Wet, "WATERANI.RCI");
+		writeChasmAnim(ArenaTypes::ChasmType::Lava, "LAVAANI.RCI");
 	};
 
 	// Initializes entities from the flat defs list and write their textures to the renderer.

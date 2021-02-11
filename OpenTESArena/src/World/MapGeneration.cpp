@@ -319,7 +319,7 @@ namespace MapGeneration
 		else
 		{
 			int chasmID;
-			VoxelDefinition::ChasmData::Type chasmType;
+			ArenaTypes::ChasmType chasmType;
 			if (textureID == MIFUtils::DRY_CHASM)
 			{
 				const std::optional<int> &dryChasmIndex = inf.getDryChasmIndex();
@@ -333,7 +333,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				chasmType = VoxelDefinition::ChasmData::Type::Dry;
+				chasmType = ArenaTypes::ChasmType::Dry;
 			}
 			else if (textureID == MIFUtils::LAVA_CHASM)
 			{
@@ -348,7 +348,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				chasmType = VoxelDefinition::ChasmData::Type::Lava;
+				chasmType = ArenaTypes::ChasmType::Lava;
 			}
 			else if (textureID == MIFUtils::WET_CHASM)
 			{
@@ -363,7 +363,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				chasmType = VoxelDefinition::ChasmData::Type::Wet;
+				chasmType = ArenaTypes::ChasmType::Wet;
 			}
 			else
 			{

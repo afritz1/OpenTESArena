@@ -1,6 +1,7 @@
 #ifndef VOXEL_DEFINITION_H
 #define VOXEL_DEFINITION_H
 
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureAssetReference.h"
 
 #include "components/utilities/Buffer.h"
@@ -13,6 +14,9 @@ enum class VoxelType;
 class VoxelDefinition
 {
 public:
+	// @todo: to be more data-driven, all structs here could be changed to lists of rectangles with texture asset references.
+	// - think of each struct as implicitly defining a set of rectangles that are calculated elsewhere (which is bad/hardcoded!).
+
 	// Regular wall with height equal to ceiling height.
 	struct WallData
 	{
@@ -93,12 +97,10 @@ public:
 	// Each face is front-facing and back-facing.
 	struct ChasmData
 	{
-		enum class Type { Dry, Wet, Lava };
-
 		TextureAssetReference textureAssetRef;
-		Type type;
+		ArenaTypes::ChasmType type;
 
-		void init(TextureAssetReference &&textureAssetRef, Type type);
+		void init(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type);
 
 		bool matches(const ChasmData &other) const;
 	};
@@ -143,7 +145,7 @@ public:
 	static VoxelDefinition makeTransparentWall(TextureAssetReference &&textureAssetRef, bool collider);
 	static VoxelDefinition makeEdge(TextureAssetReference &&textureAssetRef, double yOffset, bool collider,
 		bool flipped, VoxelFacing2D facing);
-	static VoxelDefinition makeChasm(TextureAssetReference &&textureAssetRef, ChasmData::Type type);
+	static VoxelDefinition makeChasm(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type);
 	static VoxelDefinition makeDoor(TextureAssetReference &&textureAssetRef, DoorData::Type type);
 
 	// Whether this voxel definition contributes to a chasm having a wall face.

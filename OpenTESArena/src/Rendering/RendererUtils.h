@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "../Assets/ArenaTypes.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector3.h"
@@ -19,10 +20,10 @@ namespace RendererUtils
 	int getRenderThreadsFromMode(int mode);
 
 	// Converts the given chasm type to its chasm ID.
-	int getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType);
+	int getChasmIdFromType(ArenaTypes::ChasmType chasmType);
 
 	// Returns whether the chasm type is emissive and ignores ambient shading.
-	bool isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType);
+	bool isChasmEmissive(ArenaTypes::ChasmType chasmType);
 
 	// Gets the world space coordinates of the given voxel's four corners from a top-down perspective.
 	void getVoxelCorners2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *outTopLeftCorner,

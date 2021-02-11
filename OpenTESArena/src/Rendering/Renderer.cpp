@@ -826,7 +826,7 @@ void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimat
 	this->renderer3D->setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
 }
 
-void Renderer::addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 	int width, int height, const Palette &palette)
 {
 	DebugAssert(this->renderer3D->isInited());

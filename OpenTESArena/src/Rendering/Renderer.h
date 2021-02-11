@@ -9,6 +9,7 @@
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -222,7 +223,7 @@ public:
 	EntityRenderID makeEntityRenderID();
 	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager);
-	void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
 		TextureManager &textureManager);

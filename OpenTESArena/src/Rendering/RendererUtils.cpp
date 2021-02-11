@@ -47,29 +47,29 @@ int RendererUtils::getRenderThreadsFromMode(int mode)
 	}
 }
 
-int RendererUtils::getChasmIdFromType(VoxelDefinition::ChasmData::Type chasmType)
+int RendererUtils::getChasmIdFromType(ArenaTypes::ChasmType chasmType)
 {
 	switch (chasmType)
 	{
-	case VoxelDefinition::ChasmData::Type::Dry:
+	case ArenaTypes::ChasmType::Dry:
 		return 0;
-	case VoxelDefinition::ChasmData::Type::Wet:
+	case ArenaTypes::ChasmType::Wet:
 		return 1;
-	case VoxelDefinition::ChasmData::Type::Lava:
+	case ArenaTypes::ChasmType::Lava:
 		return 2;
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(chasmType)));
 	}
 }
 
-bool RendererUtils::isChasmEmissive(VoxelDefinition::ChasmData::Type chasmType)
+bool RendererUtils::isChasmEmissive(ArenaTypes::ChasmType chasmType)
 {
 	switch (chasmType)
 	{
-	case VoxelDefinition::ChasmData::Type::Dry:
-	case VoxelDefinition::ChasmData::Type::Wet:
+	case ArenaTypes::ChasmType::Dry:
+	case ArenaTypes::ChasmType::Wet:
 		return false;
-	case VoxelDefinition::ChasmData::Type::Lava:
+	case ArenaTypes::ChasmType::Lava:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));

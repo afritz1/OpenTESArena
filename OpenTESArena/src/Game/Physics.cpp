@@ -460,7 +460,7 @@ namespace Physics
 		{
 			// The chasm type determines the depth relative to the top of the voxel.
 			const VoxelDefinition::ChasmData &chasm = voxelDef.chasm;
-			const bool isDryChasm = chasm.type == VoxelDefinition::ChasmData::Type::Dry;
+			const bool isDryChasm = chasm.type == ArenaTypes::ChasmType::Dry;
 			const double voxelHeight = isDryChasm ? ceilingHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 
 			const double chasmYTop = static_cast<double>(voxel.y + 1) * ceilingHeight;

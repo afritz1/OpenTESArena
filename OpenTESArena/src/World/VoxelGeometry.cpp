@@ -6,6 +6,7 @@
 #include "VoxelGeometry.h"
 #include "VoxelInstance.h"
 #include "VoxelType.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Math/Quad.h"
 
 #include "components/debug/Debug.h"
@@ -301,7 +302,7 @@ namespace
 		const int faceCount = outView.getCount();
 		DebugAssert(faceCount > 0);
 
-		const double chasmDepth = (chasm.type == VoxelDefinition::ChasmData::Type::Dry) ?
+		const double chasmDepth = (chasm.type == ArenaTypes::ChasmType::Dry) ?
 			ceilingHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
 		const Double3 chasmOrigin = origin + Double3(0.0, ceilingHeight - chasmDepth, 0.0);
 

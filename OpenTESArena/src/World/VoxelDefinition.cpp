@@ -59,7 +59,7 @@ void VoxelDefinition::EdgeData::init(TextureAssetReference &&textureAssetRef, do
 	this->facing = facing;
 }
 
-void VoxelDefinition::ChasmData::init(TextureAssetReference &&textureAssetRef, Type type)
+void VoxelDefinition::ChasmData::init(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type)
 {
 	this->textureAssetRef = std::move(textureAssetRef);
 	this->type = type;
@@ -144,7 +144,7 @@ VoxelDefinition VoxelDefinition::makeEdge(TextureAssetReference &&textureAssetRe
 	return voxelDef;
 }
 
-VoxelDefinition VoxelDefinition::makeChasm(TextureAssetReference &&textureAssetRef, ChasmData::Type type)
+VoxelDefinition VoxelDefinition::makeChasm(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type)
 {
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Chasm;

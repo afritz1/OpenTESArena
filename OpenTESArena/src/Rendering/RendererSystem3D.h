@@ -5,6 +5,7 @@
 #include <optional>
 
 #include "RenderTextureUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityUtils.h" // @todo: remove dependency on this
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
@@ -87,7 +88,7 @@ public:
 	virtual EntityRenderID makeEntityRenderID() = 0;
 	virtual void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
 		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager) = 0;
-	virtual void addChasmTexture(VoxelDefinition::ChasmData::Type chasmType, const uint8_t *colors,
+	virtual void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) = 0;
 	virtual void setDistantSky(const DistantSky &distantSky, const Palette &palette,
 		TextureManager &textureManager) = 0;

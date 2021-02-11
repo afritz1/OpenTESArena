@@ -11,6 +11,7 @@
 #include "Surface.h"
 #include "TextBox.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -168,19 +169,19 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 
 	if (floorType == VoxelType::Chasm)
 	{
-		const VoxelDefinition::ChasmData::Type chasmType = floorDef.chasm.type;
+		const ArenaTypes::ChasmType chasmType = floorDef.chasm.type;
 
-		if (chasmType == VoxelDefinition::ChasmData::Type::Dry)
+		if (chasmType == ArenaTypes::ChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
 			return (wallType == VoxelType::Wall) ? AutomapRaised : AutomapDryChasm;
 		}
-		else if (chasmType == VoxelDefinition::ChasmData::Type::Lava)
+		else if (chasmType == ArenaTypes::ChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
 			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapLavaChasm;
 		}
-		else if (chasmType == VoxelDefinition::ChasmData::Type::Wet)
+		else if (chasmType == ArenaTypes::ChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
 			return (wallType == VoxelType::Raised) ? AutomapRaised : AutomapWetChasm;
@@ -282,19 +283,19 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 	if (floorType == VoxelType::Chasm)
 	{
 		// The wilderness only has wet chasms, but support all of them just because.
-		const VoxelDefinition::ChasmData::Type chasmType = floorDef.chasm.type;
+		const ArenaTypes::ChasmType chasmType = floorDef.chasm.type;
 
-		if (chasmType == VoxelDefinition::ChasmData::Type::Dry)
+		if (chasmType == ArenaTypes::ChasmType::Dry)
 		{
 			// Dry chasms are a different color if a wall is over them.
 			return (wallType == VoxelType::Wall) ? AutomapWildWall : AutomapDryChasm;
 		}
-		else if (chasmType == VoxelDefinition::ChasmData::Type::Lava)
+		else if (chasmType == ArenaTypes::ChasmType::Lava)
 		{
 			// Lava chasms ignore all but raised platforms.
 			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapLavaChasm;
 		}
-		else if (chasmType == VoxelDefinition::ChasmData::Type::Wet)
+		else if (chasmType == ArenaTypes::ChasmType::Wet)
 		{
 			// Water chasms ignore all but raised platforms.
 			return (wallType == VoxelType::Raised) ? AutomapWildWall : AutomapWetChasm;

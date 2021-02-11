@@ -65,6 +65,13 @@ namespace ArenaTypes
 		Village
 	};
 
+	enum class ChasmType
+	{
+		Dry,
+		Wet,
+		Lava
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;
