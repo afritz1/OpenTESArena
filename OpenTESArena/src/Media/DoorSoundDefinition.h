@@ -1,6 +1,7 @@
 #ifndef DOOR_SOUND_DEFINITION_H
 #define DOOR_SOUND_DEFINITION_H
 
+#include "../Assets/ArenaTypes.h"
 #include "../World/VoxelDefinition.h"
 
 class DoorSoundDefinition
@@ -34,19 +35,19 @@ public:
 		void init(CloseType closeType, int soundIndex);
 	};
 private:
-	VoxelDefinition::DoorData::Type doorType;
+	ArenaTypes::DoorType doorType;
 	Type type;
 	OpenDef open;
 	CloseDef close;
 
-	void init(VoxelDefinition::DoorData::Type doorType, Type type);
+	void init(ArenaTypes::DoorType doorType, Type type);
 public:
 	DoorSoundDefinition();
 
-	void initOpen(VoxelDefinition::DoorData::Type doorType, int soundIndex);
-	void initClose(VoxelDefinition::DoorData::Type doorType, CloseType closeType, int soundIndex);
+	void initOpen(ArenaTypes::DoorType doorType, int soundIndex);
+	void initClose(ArenaTypes::DoorType doorType, CloseType closeType, int soundIndex);
 
-	VoxelDefinition::DoorData::Type getDoorType() const;
+	ArenaTypes::DoorType getDoorType() const;
 	Type getType() const;
 	const OpenDef &getOpen() const;
 	const CloseDef &getClose() const;

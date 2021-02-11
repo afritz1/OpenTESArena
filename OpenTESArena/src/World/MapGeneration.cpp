@@ -586,27 +586,27 @@ namespace MapGeneration
 			{
 				// Door voxel.
 				const int textureIndex = (map1Voxel & 0x003F) - 1;
-				const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
+				const ArenaTypes::DoorType doorType = [map1Voxel]()
 				{
 					const int type = (map1Voxel & 0x00C0) >> 4;
 					if (type == 0x0)
 					{
-						return VoxelDefinition::DoorData::Type::Swinging;
+						return ArenaTypes::DoorType::Swinging;
 					}
 					else if (type == 0x4)
 					{
-						return VoxelDefinition::DoorData::Type::Sliding;
+						return ArenaTypes::DoorType::Sliding;
 					}
 					else if (type == 0x8)
 					{
-						return VoxelDefinition::DoorData::Type::Raising;
+						return ArenaTypes::DoorType::Raising;
 					}
 					else
 					{
 						// Arena doesn't seem to have splitting doors, but they are supported.
 						DebugLogWarning("Unrecognized door type \"" + std::to_string(type) +
 							"\", treating as splitting.");
-						return VoxelDefinition::DoorData::Type::Splitting;
+						return ArenaTypes::DoorType::Splitting;
 					}
 				}();
 

@@ -18,25 +18,25 @@ DoorSoundDefinition::DoorSoundDefinition()
 	this->type = static_cast<DoorSoundDefinition::Type>(-1);
 }
 
-void DoorSoundDefinition::init(VoxelDefinition::DoorData::Type doorType, Type type)
+void DoorSoundDefinition::init(ArenaTypes::DoorType doorType, Type type)
 {
 	this->doorType = doorType;
 	this->type = type;
 }
 
-void DoorSoundDefinition::initOpen(VoxelDefinition::DoorData::Type doorType, int soundIndex)
+void DoorSoundDefinition::initOpen(ArenaTypes::DoorType doorType, int soundIndex)
 {
 	this->init(doorType, DoorSoundDefinition::Type::Open);
 	this->open.init(soundIndex);
 }
 
-void DoorSoundDefinition::initClose(VoxelDefinition::DoorData::Type doorType, CloseType closeType, int soundIndex)
+void DoorSoundDefinition::initClose(ArenaTypes::DoorType doorType, CloseType closeType, int soundIndex)
 {
 	this->init(doorType, DoorSoundDefinition::Type::Close);
 	this->close.init(closeType, soundIndex);
 }
 
-VoxelDefinition::DoorData::Type DoorSoundDefinition::getDoorType() const
+ArenaTypes::DoorType DoorSoundDefinition::getDoorType() const
 {
 	return this->doorType;
 }

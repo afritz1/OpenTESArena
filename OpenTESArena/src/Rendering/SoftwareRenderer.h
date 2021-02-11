@@ -681,7 +681,7 @@ private:
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
 	static bool findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
-		VoxelDefinition::DoorData::Type doorType, double percentOpen, const NewDouble2 &nearPoint,
+		ArenaTypes::DoorType doorType, double percentOpen, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, const Camera &camera, const Ray &ray, const VoxelGrid &voxelGrid,
 		RayHit &hit);
 
@@ -694,7 +694,7 @@ private:
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
 	static bool findDoorIntersection(SNInt voxelX, WEInt voxelZ,
-		VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing2D nearFacing,
+		ArenaTypes::DoorType doorType, double percentOpen, VoxelFacing2D nearFacing,
 		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.

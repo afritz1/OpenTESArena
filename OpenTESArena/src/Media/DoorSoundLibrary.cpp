@@ -7,25 +7,25 @@
 
 namespace
 {
-	constexpr std::array<VoxelDefinition::DoorData::Type, 4> DoorTypes =
+	constexpr std::array<ArenaTypes::DoorType, 4> DoorTypes =
 	{
-		VoxelDefinition::DoorData::Type::Swinging,
-		VoxelDefinition::DoorData::Type::Sliding,
-		VoxelDefinition::DoorData::Type::Raising,
-		VoxelDefinition::DoorData::Type::Splitting
+		ArenaTypes::DoorType::Swinging,
+		ArenaTypes::DoorType::Sliding,
+		ArenaTypes::DoorType::Raising,
+		ArenaTypes::DoorType::Splitting
 	};
 
-	std::optional<int> TryGetOpenSoundIndex(VoxelDefinition::DoorData::Type type)
+	std::optional<int> TryGetOpenSoundIndex(ArenaTypes::DoorType type)
 	{
-		if (type == VoxelDefinition::DoorData::Type::Swinging)
+		if (type == ArenaTypes::DoorType::Swinging)
 		{
 			return 6;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Sliding)
+		else if (type == ArenaTypes::DoorType::Sliding)
 		{
 			return 14;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Raising)
+		else if (type == ArenaTypes::DoorType::Raising)
 		{
 			return 15;
 		}
@@ -35,17 +35,17 @@ namespace
 		}
 	}
 
-	std::optional<int> TryGetCloseSoundIndex(VoxelDefinition::DoorData::Type type)
+	std::optional<int> TryGetCloseSoundIndex(ArenaTypes::DoorType type)
 	{
-		if (type == VoxelDefinition::DoorData::Type::Swinging)
+		if (type == ArenaTypes::DoorType::Swinging)
 		{
 			return 5;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Sliding)
+		else if (type == ArenaTypes::DoorType::Sliding)
 		{
 			return 14;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Raising)
+		else if (type == ArenaTypes::DoorType::Raising)
 		{
 			return 15;
 		}
@@ -55,17 +55,17 @@ namespace
 		}
 	}
 
-	std::optional<DoorSoundDefinition::CloseType> TryGetCloseSoundType(VoxelDefinition::DoorData::Type type)
+	std::optional<DoorSoundDefinition::CloseType> TryGetCloseSoundType(ArenaTypes::DoorType type)
 	{
-		if (type == VoxelDefinition::DoorData::Type::Swinging)
+		if (type == ArenaTypes::DoorType::Swinging)
 		{
 			return DoorSoundDefinition::CloseType::OnClosed;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Sliding)
+		else if (type == ArenaTypes::DoorType::Sliding)
 		{
 			return DoorSoundDefinition::CloseType::OnClosing;
 		}
-		else if (type == VoxelDefinition::DoorData::Type::Raising)
+		else if (type == ArenaTypes::DoorType::Raising)
 		{
 			return DoorSoundDefinition::CloseType::OnClosing;
 		}
@@ -81,7 +81,7 @@ void DoorSoundLibrary::init()
 	// Generate open and close definitions for each door type. Unfortunately this library can't
 	// store sound filenames because the mappings are defined per-level in the game (therefore,
 	// maybe door sounds should be defined in LevelInfoDefinition instead of this library).
-	for (const VoxelDefinition::DoorData::Type doorType : DoorTypes)
+	for (const ArenaTypes::DoorType doorType : DoorTypes)
 	{
 		const std::optional<int> openSoundIndex = TryGetOpenSoundIndex(doorType);
 		if (openSoundIndex.has_value())
@@ -113,7 +113,7 @@ const DoorSoundDefinition &DoorSoundLibrary::getDef(int index) const
 	return this->defs[index];
 }
 
-std::optional<int> DoorSoundLibrary::tryGetDefIndex(VoxelDefinition::DoorData::Type doorType,
+std::optional<int> DoorSoundLibrary::tryGetDefIndex(ArenaTypes::DoorType doorType,
 	DoorSoundDefinition::Type type) const
 {
 	for (int i = 0; i < static_cast<int>(this->defs.size()); i++)

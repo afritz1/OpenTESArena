@@ -72,6 +72,16 @@ namespace ArenaTypes
 		Lava
 	};
 
+	// Each type of door. Most doors swing open, while others raise up or slide to the side.
+	// Splitting doors do not appear in the original game but are supposedly supported.
+	enum class DoorType
+	{
+		Swinging,
+		Sliding,
+		Raising,
+		Splitting
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

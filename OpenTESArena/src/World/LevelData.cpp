@@ -1374,27 +1374,26 @@ void LevelData::readMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, co
 			auto makeTypeBVoxelData = [&inf, map1Voxel]()
 			{
 				const int textureIndex = (map1Voxel & 0x003F) - 1;
-				const VoxelDefinition::DoorData::Type doorType = [map1Voxel]()
+				const ArenaTypes::DoorType doorType = [map1Voxel]()
 				{
 					const int type = (map1Voxel & 0x00C0) >> 4;
 					if (type == 0x0)
 					{
-						return VoxelDefinition::DoorData::Type::Swinging;
+						return ArenaTypes::DoorType::Swinging;
 					}
 					else if (type == 0x4)
 					{
-						return VoxelDefinition::DoorData::Type::Sliding;
+						return ArenaTypes::DoorType::Sliding;
 					}
 					else if (type == 0x8)
 					{
-						return VoxelDefinition::DoorData::Type::Raising;
+						return ArenaTypes::DoorType::Raising;
 					}
 					else
 					{
 						// I don't believe any doors in Arena split (but they are
 						// supported by the engine).
-						DebugUnhandledReturnMsg(
-							VoxelDefinition::DoorData::Type, std::to_string(type));
+						DebugUnhandledReturnMsg(ArenaTypes::DoorType, std::to_string(type));
 					}
 				}();
 

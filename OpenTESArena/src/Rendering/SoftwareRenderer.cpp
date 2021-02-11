@@ -2910,7 +2910,7 @@ bool SoftwareRenderer::findInitialSwingingDoorIntersection(SNInt voxelX, WEInt v
 }
 
 bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
-	VoxelDefinition::DoorData::Type doorType, double percentOpen, const NewDouble2 &nearPoint,
+	ArenaTypes::DoorType doorType, double percentOpen, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, const Camera &camera, const Ray &ray,
 	const VoxelGrid &voxelGrid, RayHit &hit)
 {
@@ -2946,9 +2946,9 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 	{
 		const bool isClosed = percentOpen == 0.0;
 		return isClosed ||
-			(doorType == VoxelDefinition::DoorData::Type::Sliding) ||
-			(doorType == VoxelDefinition::DoorData::Type::Raising) ||
-			(doorType == VoxelDefinition::DoorData::Type::Splitting);
+			(doorType == ArenaTypes::DoorType::Sliding) ||
+			(doorType == ArenaTypes::DoorType::Raising) ||
+			(doorType == ArenaTypes::DoorType::Splitting);
 	}();
 
 	if (useFarFacing)
@@ -2980,7 +2980,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 				return std::clamp(uVal, 0.0, Constants::JustBelowOne);
 			}();
 
-			if (doorType == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorType == ArenaTypes::DoorType::Swinging)
 			{
 				// Treat like a wall.
 				hit.innerZ = (farPoint - nearPoint).length();
@@ -2989,7 +2989,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 				hit.normal = -VoxelUtils::getNormal(farFacing);
 				return true;
 			}
-			else if (doorType == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorType == ArenaTypes::DoorType::Sliding)
 			{
 				// If far U coordinate is within percent closed, it's a hit. At 100% open,
 				// a sliding door is still partially visible.
@@ -3009,7 +3009,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 					return false;
 				}
 			}
-			else if (doorType == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorType == ArenaTypes::DoorType::Raising)
 			{
 				// Raising doors are always hit.
 				hit.innerZ = (farPoint - nearPoint).length();
@@ -3018,7 +3018,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 				hit.normal = -VoxelUtils::getNormal(farFacing);
 				return true;
 			}
-			else if (doorType == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorType == ArenaTypes::DoorType::Splitting)
 			{
 				// If far U coordinate is within percent closed on left or right half, it's a hit.
 				// At 100% open, a splitting door is still partially visible.
@@ -3097,7 +3097,7 @@ bool SoftwareRenderer::findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
 			return false;
 		}
 	}
-	else if (doorType == VoxelDefinition::DoorData::Type::Swinging)
+	else if (doorType == ArenaTypes::DoorType::Swinging)
 	{
 		return SoftwareRenderer::findInitialSwingingDoorIntersection(voxelX, voxelZ, percentOpen,
 			nearPoint, farPoint, xAxis, camera, ray, hit);
@@ -3204,7 +3204,7 @@ bool SoftwareRenderer::findSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ,
 }
 
 bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ, 
-	VoxelDefinition::DoorData::Type doorType, double percentOpen, VoxelFacing2D nearFacing,
+	ArenaTypes::DoorType doorType, double percentOpen, VoxelFacing2D nearFacing,
 	const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit)
 {
 	// Check trivial case first: whether the door is closed.
@@ -3219,12 +3219,12 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 		hit.normal = VoxelUtils::getNormal(nearFacing);
 		return true;
 	}
-	else if (doorType == VoxelDefinition::DoorData::Type::Swinging)
+	else if (doorType == ArenaTypes::DoorType::Swinging)
 	{
 		return SoftwareRenderer::findSwingingDoorIntersection(voxelX, voxelZ, percentOpen,
 			nearFacing, nearPoint, farPoint, nearU, hit);
 	}
-	else if (doorType == VoxelDefinition::DoorData::Type::Sliding)
+	else if (doorType == ArenaTypes::DoorType::Sliding)
 	{
 		// If near U coordinate is within percent closed, it's a hit. At 100% open,
 		// a sliding door is still partially visible.
@@ -3244,7 +3244,7 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 			return false;
 		}
 	}
-	else if (doorType == VoxelDefinition::DoorData::Type::Raising)
+	else if (doorType == ArenaTypes::DoorType::Raising)
 	{
 		// Raising doors are always hit.
 		hit.innerZ = 0.0;
@@ -3253,7 +3253,7 @@ bool SoftwareRenderer::findDoorIntersection(SNInt voxelX, WEInt voxelZ,
 		hit.normal = VoxelUtils::getNormal(nearFacing);
 		return true;
 	}
-	else if (doorType == VoxelDefinition::DoorData::Type::Splitting)
+	else if (doorType == ArenaTypes::DoorType::Splitting)
 	{
 		// If near U coordinate is within percent closed on left or right half, it's a hit.
 		// At 100% open, a splitting door is still partially visible.
@@ -4999,7 +4999,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5019,7 +5019,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5039,7 +5039,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -5067,7 +5067,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
 					textures.getTexture(doorData.textureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5330,7 +5330,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5350,7 +5350,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5370,7 +5370,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -5398,7 +5398,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
 					textures.getTexture(doorData.textureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5739,7 +5739,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5759,7 +5759,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -5779,7 +5779,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -5807,7 +5807,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
 					textures.getTexture(doorData.textureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6252,7 +6252,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6272,7 +6272,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6292,7 +6292,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -6320,7 +6320,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
 					shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6603,7 +6603,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6623,7 +6623,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -6643,7 +6643,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -6671,7 +6671,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
 					shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -7052,7 +7052,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 
 		if (success)
 		{
-			if (doorData.type == VoxelDefinition::DoorData::Type::Swinging)
+			if (doorData.type == ArenaTypes::DoorType::Swinging)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -7072,7 +7072,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Sliding)
+			else if (doorData.type == ArenaTypes::DoorType::Sliding)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,
@@ -7092,7 +7092,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
 					wallLightPercent, shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Raising)
+			else if (doorData.type == ArenaTypes::DoorType::Raising)
 			{
 				// Top point is fixed, bottom point depends on percent open.
 				const double minVisible = ArenaRenderUtils::DOOR_MIN_VISIBLE;
@@ -7120,7 +7120,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
 					shadingInfo, occlusion, frame);
 			}
-			else if (doorData.type == VoxelDefinition::DoorData::Type::Splitting)
+			else if (doorData.type == ArenaTypes::DoorType::Splitting)
 			{
 				const NewDouble3 doorTopPoint(
 					hit.point.x,

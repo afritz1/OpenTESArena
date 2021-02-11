@@ -107,14 +107,10 @@ public:
 
 	struct DoorData
 	{
-		// Each type of door. Most doors swing open, while others raise up or slide to the side.
-		// Splitting doors are unused in the original game.
-		enum class Type { Swinging, Sliding, Raising, Splitting };
-
 		TextureAssetReference textureAssetRef;
-		Type type;
+		ArenaTypes::DoorType type;
 
-		void init(TextureAssetReference &&textureAssetRef, Type type);
+		void init(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type);
 	};
 
 	// Determines how the voxel definition is accessed.
@@ -146,7 +142,7 @@ public:
 	static VoxelDefinition makeEdge(TextureAssetReference &&textureAssetRef, double yOffset, bool collider,
 		bool flipped, VoxelFacing2D facing);
 	static VoxelDefinition makeChasm(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type);
-	static VoxelDefinition makeDoor(TextureAssetReference &&textureAssetRef, DoorData::Type type);
+	static VoxelDefinition makeDoor(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type);
 
 	// Whether this voxel definition contributes to a chasm having a wall face.
 	bool allowsChasmFace() const;

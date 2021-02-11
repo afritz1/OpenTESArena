@@ -70,7 +70,7 @@ bool VoxelDefinition::ChasmData::matches(const ChasmData &other) const
 	return (this->textureAssetRef == other.textureAssetRef) && (this->type == other.type);
 }
 
-void VoxelDefinition::DoorData::init(TextureAssetReference &&textureAssetRef, Type type)
+void VoxelDefinition::DoorData::init(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type)
 {
 	this->textureAssetRef = std::move(textureAssetRef);
 	this->type = type;
@@ -152,7 +152,7 @@ VoxelDefinition VoxelDefinition::makeChasm(TextureAssetReference &&textureAssetR
 	return voxelDef;
 }
 
-VoxelDefinition VoxelDefinition::makeDoor(TextureAssetReference &&textureAssetRef, DoorData::Type type)
+VoxelDefinition VoxelDefinition::makeDoor(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type)
 {
 	VoxelDefinition voxelDef;
 	voxelDef.type = VoxelType::Door;

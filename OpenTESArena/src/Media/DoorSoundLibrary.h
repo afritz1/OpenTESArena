@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "DoorSoundDefinition.h"
+#include "../Assets/ArenaTypes.h"
 #include "../World/VoxelDefinition.h"
 
 class DoorSoundLibrary
@@ -16,8 +17,7 @@ public:
 
 	int getDefCount() const;
 	const DoorSoundDefinition &getDef(int index) const;
-	std::optional<int> tryGetDefIndex(VoxelDefinition::DoorData::Type doorType,
-		DoorSoundDefinition::Type type) const;
+	std::optional<int> tryGetDefIndex(ArenaTypes::DoorType doorType, DoorSoundDefinition::Type type) const;
 };
 
 #endif
