@@ -5,7 +5,7 @@
 
 #include "SDL.h"
 
-#include "ClockLibrary.h"
+#include "ArenaClockUtils.h"
 #include "Game.h"
 #include "GameData.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -100,16 +100,16 @@ GameData::~GameData()
 bool GameData::nightMusicIsActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange = clockTime < ClockLibrary::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange = clockTime >= ClockLibrary::MusicSwitchToNight.getPreciseTotalSeconds();
+	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
 	return beforeDayMusicChange || afterNightMusicChange;
 }
 
 bool GameData::nightLightsAreActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate = clockTime < ClockLibrary::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate = clockTime >= ClockLibrary::LamppostActivate.getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
@@ -626,10 +626,10 @@ double GameData::getAmbientPercent() const
 
 		// Time ranges where the ambient light changes. The start times are inclusive,
 		// and the end times are exclusive.
-		const double startBrighteningTime = ClockLibrary::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime = ClockLibrary::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime = ClockLibrary::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime = ClockLibrary::AmbientEndDimming.getPreciseTotalSeconds();
+		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getPreciseTotalSeconds();
+		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
+		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
+		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getPreciseTotalSeconds();
 
 		// In Arena, the min ambient is 0 and the max ambient is 1, but we're using
 		// some values here that make testing easier.
