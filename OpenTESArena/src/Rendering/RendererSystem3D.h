@@ -38,9 +38,11 @@ public:
 	struct ProfilerData
 	{
 		int width, height;
+		int threadCount;
 		int potentiallyVisFlatCount, visFlatCount, visLightCount;
 
-		ProfilerData(int width, int height, int potentiallyVisFlatCount, int visFlatCount, int visLightCount);
+		ProfilerData(int width, int height, int threadCount, int potentiallyVisFlatCount,
+			int visFlatCount, int visLightCount);
 	};
 
 	virtual ~RendererSystem3D();

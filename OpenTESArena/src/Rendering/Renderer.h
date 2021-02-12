@@ -59,6 +59,8 @@ public:
 		// Internal renderer resolution.
 		int width, height;
 
+		int threadCount;
+
 		// Visible flats and lights.
 		int potentiallyVisFlatCount, visFlatCount, visLightCount;
 

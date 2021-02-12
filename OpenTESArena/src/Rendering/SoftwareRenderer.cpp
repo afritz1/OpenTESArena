@@ -1010,8 +1010,9 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 {
 	// @todo: make this a member of SoftwareRenderer eventually when it is capturing more
 	// information in render(), etc..
-	return ProfilerData(this->width, this->height, static_cast<int>(this->potentiallyVisibleFlats.size()), 
-		static_cast<int>(this->visibleFlats.size()), static_cast<int>(this->visibleLights.size()));
+	return ProfilerData(this->width, this->height, this->renderThreads.getCount(),
+		static_cast<int>(this->potentiallyVisibleFlats.size()), static_cast<int>(this->visibleFlats.size()),
+		static_cast<int>(this->visibleLights.size()));
 }
 
 bool SoftwareRenderer::isValidEntityRenderID(EntityRenderID id) const

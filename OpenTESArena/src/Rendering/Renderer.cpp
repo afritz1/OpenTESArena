@@ -33,11 +33,12 @@ Renderer::DisplayMode::DisplayMode(int width, int height, int refreshRate)
 
 Renderer::ProfilerData::ProfilerData()
 {
-	this->width = 0;
-	this->height = 0;
-	this->potentiallyVisFlatCount = 0;
-	this->visFlatCount = 0;
-	this->visLightCount = 0;
+	this->width = -1;
+	this->height = -1;
+	this->threadCount = -1;
+	this->potentiallyVisFlatCount = -1;
+	this->visFlatCount = -1;
+	this->visLightCount = -1;
 	this->frameTime = 0.0;
 }
 
@@ -969,6 +970,7 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, doub
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
 	this->profilerData.width = swProfilerData.width;
 	this->profilerData.height = swProfilerData.height;
+	this->profilerData.threadCount = swProfilerData.threadCount;
 	this->profilerData.potentiallyVisFlatCount = swProfilerData.potentiallyVisFlatCount;
 	this->profilerData.visFlatCount = swProfilerData.visFlatCount;
 	this->profilerData.visLightCount = swProfilerData.visLightCount;

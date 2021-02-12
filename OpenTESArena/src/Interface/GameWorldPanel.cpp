@@ -2829,6 +2829,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string renderWidth = std::to_string(renderDims.x);
 		const std::string renderHeight = std::to_string(renderDims.y);
 		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
+		const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 
 		const std::string posX = String::fixedPrecision(absolutePosition.x, 2);
 		const std::string posY = String::fixedPrecision(absolutePosition.y, 2);
@@ -2839,7 +2840,8 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 		std::string text =
 			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
-			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
+			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
+			renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 			"Pos: " + posX + ", " + posY + ", " + posZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
