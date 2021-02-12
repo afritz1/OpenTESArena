@@ -14,9 +14,9 @@ CoordDouble2 CoordDouble2::operator-(const VoxelDouble2 &other) const
 VoxelDouble2 CoordDouble2::operator-(const CoordDouble2 &other) const
 {
 	// Combine three vectors:
-	// 1) Other chunk origin to other point.
-	// 2) Other chunk origin to chunk origin.
-	// 3) Point to chunk origin.
+	// 1) Other chunk point to other chunk origin.
+	// 2) Other chunk origin to local chunk origin.
+	// 3) Local chunk origin to local point.
 	const VoxelDouble2 otherPointToOtherOrigin = -other.point;
 
 	const ChunkInt2 chunkDiff = this->chunk - other.chunk;
@@ -37,9 +37,9 @@ CoordDouble3 CoordDouble3::operator+(const VoxelDouble3 &other) const
 VoxelDouble3 CoordDouble3::operator-(const CoordDouble3 &other) const
 {
 	// Combine three vectors:
-	// 1) Other chunk origin to other point.
-	// 2) Other chunk origin to chunk origin.
-	// 3) Point to chunk origin.
+	// 1) Other chunk point to other chunk origin.
+	// 2) Other chunk origin to local chunk origin.
+	// 3) Local chunk origin to local point.
 	const VoxelDouble3 otherPointToOtherOrigin = -other.point;
 
 	const ChunkInt2 chunkDiff = this->chunk - other.chunk;
