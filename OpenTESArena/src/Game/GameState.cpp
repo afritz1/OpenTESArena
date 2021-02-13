@@ -46,6 +46,12 @@ namespace
 	const Color EffectTextShadowColor(190, 113, 0);
 }
 
+void GameState::MapPair::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance)
+{
+	this->definition = std::move(mapDefinition);
+	this->instance = std::move(mapInstance);
+}
+
 GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
 	: player(std::move(player))
 {
@@ -97,19 +103,179 @@ GameState::~GameState()
 	DebugLog("Closing.");
 }
 
-void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
+bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
+	int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapPair *outMapPair)
 {
-	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
-	this->player.teleport(coord);
-	this->player.setVelocityToZero();
+	// Decide how to load and instantiate the map.
+	const LocationDefinition::Type locationType = locationDef.getType();
+	if (locationType == LocationDefinition::Type::City)
+	{
+		const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+		Buffer<uint8_t> reservedBlocks = [&cityDef]()
+		{
+			DebugAssert(cityDef.reservedBlocks != nullptr);
+			Buffer<uint8_t> buffer(cityDef.reservedBlocks->size());
+			std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.get());
+			return buffer;
+		}();
+		
+		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+		{
+			if (cityDef.hasMainQuestTempleOverride)
+			{
+				return cityDef.mainQuestTempleOverride;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}();
+
+		MapGeneration::CityGenInfo cityGenInfo;
+		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+			cityDef.citySeed, cityDef.rulerSeed, raceID, cityDef.premade, cityDef.coastal,
+			cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
+			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+
+		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+			cityDef.distantSkySeed, provinceHasAnimatedLand);
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
+			binaryAssetLibrary, textAssetLibrary, textureManager))
+		{
+			DebugLogError("Couldn't init city map for location \"" + locationDef.getName() + "\".");
+			return false;
+		}
+
+		MapInstance mapInstance;
+		mapInstance.init(mapDefinition, textureManager);
+		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+	}
+	else if (locationType == LocationDefinition::Type::Dungeon)
+	{
+		const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
+
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+		constexpr bool isArtifactDungeon = false; // @todo: not supported yet.
+		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
+			binaryAssetLibrary, textureManager))
+		{
+			DebugLogError("Couldn't init dungeon map for location \"" + locationDef.getName() + "\".");
+			return false;
+		}
+
+		MapInstance mapInstance;
+		mapInstance.init(mapDefinition, textureManager);
+		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+	}
+	else if (locationType == LocationDefinition::Type::MainQuestDungeon)
+	{
+		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+			locationDef.getMainQuestDungeonDefinition();
+
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+		constexpr std::optional<bool> rulerIsMale; // Unused for main quest dungeons.
+		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename),
+			ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+
+		MapDefinition mapDefinition;
+		if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
+			binaryAssetLibrary, textureManager))
+		{
+			DebugLogError("Couldn't init main quest dungeon map for location \"" + locationDef.getName() + "\".");
+			return false;
+		}
+
+		MapInstance mapInstance;
+		mapInstance.init(mapDefinition, textureManager);
+		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(locationType)));
+	}
+
+	return true;
 }
 
-void GameState::clearMaps()
+bool GameState::trySetMap(int provinceID, int locationID, WeatherType weatherType, int currentDay, int starCount,
+	const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
-	while (!this->maps.empty())
+	// Get the province and location definitions.
+	if ((provinceID < 0) || (provinceID >= this->worldMapDef.getProvinceCount()))
 	{
-		this->maps.pop();
+		DebugLogError("Invalid province ID \"" + std::to_string(provinceID) + "\".");
+		return false;
 	}
+
+	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceID);
+	if ((locationID < 0) || (locationID >= provinceDef.getLocationCount()))
+	{
+		DebugLogError("Invalid location ID \"" + std::to_string(locationID) + "\" for province \"" + provinceDef.getName() + "\".");
+		return false;
+	}
+
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
+
+	MapPair mapPair;
+	if (!GameState::tryMakeMapFromLocation(locationDef, provinceDef.getRaceID(), weatherType, currentDay,
+		starCount, provinceDef.hasAnimatedDistantLand(), charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textAssetLibrary, textureManager, &mapPair))
+	{
+		DebugLogError("Couldn't make map from location \"" + locationDef.getName() + "\" in province \"" + provinceDef.getName() + "\".");
+		return false;
+	}
+
+	this->clearMaps();
+	this->maps.emplace(std::move(mapPair));
+
+	// @todo: set level active.
+	const MapInstance &activeMapInst = this->getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	DebugNotImplemented();
+
+	// @todo: set player starting position and velocity.
+	DebugNotImplemented();
+
+	// @todo: set weather, fog, and night lights.
+	this->weatherType = weatherType;
+	DebugNotImplemented();
+
+	return true;
+}
+
+bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo)
+{
+	DebugNotImplemented();
+	return true;
+}
+
+bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo)
+{
+	DebugNotImplemented();
+	return true;
+}
+
+bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo)
+{
+	DebugNotImplemented();
+	return true;
+}
+
+bool GameState::tryPopMap()
+{
+	DebugNotImplemented();
+	return true;
 }
 
 bool GameState::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
@@ -805,6 +971,21 @@ void GameState::resetActionText()
 void GameState::resetEffectText()
 {
 	this->effectText.reset();
+}
+
+void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
+{
+	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
+	this->player.teleport(coord);
+	this->player.setVelocityToZero();
+}
+
+void GameState::clearMaps()
+{
+	while (!this->maps.empty())
+	{
+		this->maps.pop();
+	}
 }
 
 void GameState::updateWeather(const ExeData &exeData)

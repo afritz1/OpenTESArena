@@ -109,7 +109,7 @@ namespace MapGeneration
 		void init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType, uint32_t citySeed,
 			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon,
 			Buffer<uint8_t> &&reservedBlocks,
-			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> *mainQuestTempleOverride,
+			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
 			WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 	};
 

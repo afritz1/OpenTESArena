@@ -58,6 +58,8 @@ private:
 	{
 		MapDefinition definition;
 		MapInstance instance;
+		
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance);
 	};
 
 	// Determines length of a real-time second in-game. For the original game, one real
@@ -99,6 +101,12 @@ private:
 	double chasmAnimSeconds;
 	WeatherType weatherType;
 
+	// Helper function for generating a map definition and instance from the given world map location.
+	static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
+		int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapPair *outMapPair);
+
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
 	void clearMaps();
 public:
@@ -107,8 +115,31 @@ public:
 	GameState(GameState&&) = default;
 	~GameState();
 
+	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
+	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
+	// @todo: try not to have the caller give the weather type. It should be determined internally.
+	bool trySetMap(int provinceID, int locationID, WeatherType weatherType, int currentDay, int starCount,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+		TextureManager &textureManager);
+
+	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
+	// info. This can only be used when there is at least one existing map, and it preserves those maps for later when
+	// the interior is exited.
+	bool tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo);
+
+	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
+	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo);
+
+	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
+	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo);
+
+	// Pops the top-most map from the stack and sets the next map active. This fails if there would be no available map
+	// to switch to (meaning that there must always be an active map).
+	bool tryPopMap();
+
 	// Reads in data from an interior .MIF file and writes it to the game state.
-	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+	/*bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
@@ -154,7 +185,7 @@ public:
 		const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos,
 		WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary, 
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);
+		Random &random, TextureManager &textureManager, Renderer &renderer);*/
 
 	Player &getPlayer();
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
