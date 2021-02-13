@@ -14,12 +14,10 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Media/TextureUtils.h"
-#include "../World/LevelData.h"
 
 // Container for 2D and 3D rendering operations.
 
 class Color;
-class DistantSky;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;

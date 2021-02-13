@@ -8,7 +8,6 @@
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureUtils.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel

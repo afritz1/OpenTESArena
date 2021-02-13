@@ -12,10 +12,8 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelGrid.h"
-#include "../World/WorldData.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

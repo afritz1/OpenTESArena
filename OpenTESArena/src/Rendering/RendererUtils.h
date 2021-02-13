@@ -12,8 +12,6 @@
 
 #include "components/utilities/BufferView.h"
 
-class LevelData;
-
 namespace RendererUtils
 {
 	// Gets the number of render threads to use based on the given mode.

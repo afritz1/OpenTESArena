@@ -17,7 +17,6 @@
 #include "../Interface/TimedTextBox.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
-#include "../World/WorldData.h"
 #include "../World/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 

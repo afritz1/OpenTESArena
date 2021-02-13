@@ -56,7 +56,6 @@
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
-#include "../World/LevelData.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/MapType.h"

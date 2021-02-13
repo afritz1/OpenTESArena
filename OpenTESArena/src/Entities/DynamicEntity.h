@@ -16,7 +16,6 @@ class AudioManager;
 class EntityDefinitionLibrary;
 class EntityManager;
 class ExeData;
-class WorldData;
 
 enum class CardinalDirectionName;
 

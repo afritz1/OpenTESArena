@@ -9,7 +9,6 @@ class CharacterClassLibrary;
 class ExeData;
 class Game;
 class Random;
-class WorldData;
 
 class Player
 {

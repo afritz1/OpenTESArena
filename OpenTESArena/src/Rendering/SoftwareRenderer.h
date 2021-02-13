@@ -20,8 +20,6 @@
 #include "../Math/Vector3.h"
 #include "../Math/Vector4.h"
 #include "../Media/Palette.h"
-#include "../World/DistantSky.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 

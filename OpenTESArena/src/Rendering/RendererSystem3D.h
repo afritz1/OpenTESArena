@@ -10,14 +10,12 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"
 #include "../Media/Palette.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelDefinition.h"
 
 // Abstract base class for 3D renderer.
 
 // @todo: clean up this API since it currently contains leftovers from the previous design.
 
-class DistantSky;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;

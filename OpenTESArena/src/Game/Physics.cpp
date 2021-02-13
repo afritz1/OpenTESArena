@@ -12,7 +12,6 @@
 #include "../Math/Quad.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkUtils.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelFacing3D.h"
 #include "../World/VoxelGeometry.h"
 #include "../World/VoxelGrid.h"
