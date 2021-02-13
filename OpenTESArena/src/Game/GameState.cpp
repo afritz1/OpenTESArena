@@ -120,11 +120,11 @@ void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
 	this->player.setVelocityToZero();
 }
 
-void GameState::clearWorldDatas()
+void GameState::clearMaps()
 {
-	while (!this->worldDatas.empty())
+	while (!this->maps.empty())
 	{
-		this->worldDatas.pop();
+		this->maps.pop();
 	}
 }
 
@@ -148,7 +148,7 @@ bool GameState::loadInterior(const LocationDefinition &locationDef, const Provin
 
 	// Call interior WorldData loader.
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	this->clearWorldDatas();
+	this->clearMaps();
 	this->worldDatas.push(std::make_unique<WorldData>(
 		WorldData::loadInterior(interiorType, mif, exeData)));
 
@@ -280,7 +280,7 @@ bool GameState::loadNamedDungeon(const LocationDefinition &locationDef, const Pr
 
 	// Call dungeon WorldData loader with parameters specific to named dungeons.
 	const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
-	this->clearWorldDatas();
+	this->clearMaps();
 	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadDungeon(
 		dungeonDef.dungeonSeed, dungeonDef.widthChunkCount, dungeonDef.heightChunkCount,
 		isArtifactDungeon, binaryAssetLibrary.getExeData())));
@@ -334,7 +334,7 @@ bool GameState::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const WEInt widthChunks = LocationUtils::WILD_DUNGEON_WIDTH_CHUNK_COUNT;
 	const SNInt depthChunks = LocationUtils::WILD_DUNGEON_HEIGHT_CHUNK_COUNT;
 	const bool isArtifactDungeon = false;
-	this->clearWorldDatas();
+	this->clearMaps();
 	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadDungeon(
 		wildDungeonSeed, widthChunks, depthChunks, isArtifactDungeon, exeData)));
 
@@ -389,7 +389,7 @@ bool GameState::loadCity(const LocationDefinition &locationDef, const ProvinceDe
 	}
 
 	// Call city WorldData loader.
-	this->clearWorldDatas();
+	this->clearMaps();
 	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadCity(
 		locationDef, provinceDef, mif, weatherType, this->date.getDay(), starCount,
 		binaryAssetLibrary, textAssetLibrary, textureManager)));
@@ -450,7 +450,7 @@ bool GameState::loadWilderness(const LocationDefinition &locationDef, const Prov
 	}
 
 	// Call wilderness WorldData loader.
-	this->clearWorldDatas();
+	this->clearMaps();
 	this->worldDatas.push(std::make_unique<WorldData>(WorldData::loadWilderness(
 		locationDef, provinceDef, weatherType, this->date.getDay(), starCount,
 		binaryAssetLibrary, textureManager)));
@@ -518,15 +518,30 @@ Player &GameState::getPlayer()
 	return this->player;
 }
 
-WorldData &GameState::getActiveWorld()
+const MapDefinition &GameState::getActiveMapDef() const
 {
-	DebugAssert(!this->worldDatas.empty());
-	return *this->worldDatas.top();
+	DebugAssert(!this->maps.empty());
+	const MapPair &pair = this->maps.top();
+	return pair.definition;
 }
 
-bool GameState::isActiveWorldNested() const
+MapInstance &GameState::getActiveMapInst()
 {
-	return this->worldDatas.size() >= 2;
+	DebugAssert(!this->maps.empty());
+	MapPair &pair = this->maps.top();
+	return pair.instance;
+}
+
+const MapInstance &GameState::getActiveMapInst() const
+{
+	DebugAssert(!this->maps.empty());
+	const MapPair &pair = this->maps.top();
+	return pair.instance;
+}
+
+bool GameState::isActiveMapNested() const
+{
+	return this->maps.size() >= 2;
 }
 
 CitizenManager &GameState::getCitizenManager()

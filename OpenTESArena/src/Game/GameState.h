@@ -17,6 +17,8 @@
 #include "../Interface/TimedTextBox.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
+#include "../World/MapDefinition.h"
+#include "../World/MapInstance.h"
 #include "../World/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 
@@ -52,15 +54,21 @@ public:
 	// One weather for each of the 36 province quadrants (updated hourly).
 	using WeatherList = std::array<WeatherType, 36>;
 private:
+	struct MapPair
+	{
+		MapDefinition definition;
+		MapInstance instance;
+	};
+
 	// Determines length of a real-time second in-game. For the original game, one real
 	// second is twenty in-game seconds.
 	static constexpr double TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
 	Player player;
 
-	// Stack of world data instances. Multiple ones can exist at the same time when the player is inside
-	// an interior in a city or wilderness, but ultimately the size should never exceed 2.
-	std::stack<std::unique_ptr<WorldData>> worldDatas;
+	// Stack of map definitions and instances. Multiple ones can exist at the same time when the player is
+	// inside an interior in a city or wilderness, but ultimately the size should never exceed 2.
+	std::stack<MapPair> maps;
 	std::optional<NewInt2> returnVoxel; // Available if in an interior that's in an exterior.
 
 	CitizenManager citizenManager; // Tracks active citizens and spawning.
@@ -92,7 +100,7 @@ private:
 	WeatherType weatherType;
 
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
-	void clearWorldDatas();
+	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
 	GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
@@ -155,8 +163,10 @@ public:
 		Random &random, TextureManager &textureManager, Renderer &renderer);
 
 	Player &getPlayer();
-	WorldData &getActiveWorld(); // @todo: this is bad practice since leaveInterior() can delete the active world.
-	bool isActiveWorldNested() const; // True if the active interior is inside an exterior.
+	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
+	MapInstance &getActiveMapInst(); // @todo: this is bad practice since it becomes dangling when changing the active map.
+	const MapInstance &getActiveMapInst() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
+	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
 	CitizenManager &getCitizenManager();
 	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
