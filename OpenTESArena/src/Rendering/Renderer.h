@@ -67,6 +67,9 @@ public:
 		double frameTime;
 
 		ProfilerData();
+
+		void init(int width, int height, int threadCount, int potentiallyVisFlatCount,
+			int visFlatCount, int visLightCount, double frameTime);
 	};
 private:
 	struct TextureInstance

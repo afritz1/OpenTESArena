@@ -42,6 +42,18 @@ Renderer::ProfilerData::ProfilerData()
 	this->frameTime = 0.0;
 }
 
+void Renderer::ProfilerData::init(int width, int height, int threadCount, int potentiallyVisFlatCount,
+	int visFlatCount, int visLightCount, double frameTime)
+{
+	this->width = width;
+	this->height = height;
+	this->threadCount = threadCount;
+	this->potentiallyVisFlatCount = potentiallyVisFlatCount;
+	this->visFlatCount = visFlatCount;
+	this->visLightCount = visLightCount;
+	this->frameTime = frameTime;
+}
+
 void Renderer::TextureInstance::init(TextureBuilderID textureBuilderID, PaletteID paletteID, Texture &&texture)
 {
 	this->textureBuilderID = textureBuilderID;
@@ -965,17 +977,13 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, doub
 		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight, levelData,
 		entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
+	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 
 	// Update profiler stats.
 	const RendererSystem3D::ProfilerData swProfilerData = this->renderer3D->getProfilerData();
-	this->profilerData.width = swProfilerData.width;
-	this->profilerData.height = swProfilerData.height;
-	this->profilerData.threadCount = swProfilerData.threadCount;
-	this->profilerData.potentiallyVisFlatCount = swProfilerData.potentiallyVisFlatCount;
-	this->profilerData.visFlatCount = swProfilerData.visFlatCount;
-	this->profilerData.visLightCount = swProfilerData.visLightCount;
-	this->profilerData.frameTime = static_cast<double>((endTime - startTime).count()) /
-		static_cast<double>(std::nano::den);
+	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
+		swProfilerData.potentiallyVisFlatCount, swProfilerData.visFlatCount, swProfilerData.visLightCount,
+		frameTime);
 
 	// Update the game world texture with the new ARGB8888 pixels.
 	SDL_UnlockTexture(this->gameWorldTexture.get());
