@@ -107,12 +107,6 @@ public:
 	GameState(GameState&&) = default;
 	~GameState();
 
-	// Returns whether the current music should be for day or night.
-	bool nightMusicIsActive() const;
-
-	// Returns whether night lights (i.e., lampposts) should currently be active.
-	bool nightLightsAreActive() const;
-
 	// Reads in data from an interior .MIF file and writes it to the game state.
 	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		ArenaTypes::InteriorType interiorType, const MIFFile &mif,
@@ -196,6 +190,12 @@ public:
 
 	// A more gradual ambient percent function (maybe useful on the side sometime).
 	double getBetterAmbientPercent() const;
+
+	// Returns whether the current music should be for day or night.
+	bool nightMusicIsActive() const;
+
+	// Returns whether night lights (i.e., lampposts) should currently be active.
+	bool nightLightsAreActive() const;
 
 	// Gets the custom function for the *LEVELUP voxel enter event.
 	std::function<void(Game&)> &getOnLevelUpVoxelEnter();

@@ -97,22 +97,6 @@ GameState::~GameState()
 	DebugLog("Closing.");
 }
 
-bool GameState::nightMusicIsActive() const
-{
-	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
-	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
-	return beforeDayMusicChange || afterNightMusicChange;
-}
-
-bool GameState::nightLightsAreActive() const
-{
-	const double clockTime = this->clock.getPreciseTotalSeconds();
-	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
-	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
-	return beforeLamppostDeactivate || afterLamppostActivate;
-}
-
 void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
 {
 	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
@@ -689,6 +673,22 @@ double GameState::getBetterAmbientPercent() const
 	const double diff = maxAmbient - minAmbient;
 	const double center = minAmbient + (diff / 2.0);
 	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * Constants::Pi)));
+}
+
+bool GameState::nightMusicIsActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
+	const bool afterNightMusicChange = clockTime >= ArenaClockUtils::MusicSwitchToNight.getPreciseTotalSeconds();
+	return beforeDayMusicChange || afterNightMusicChange;
+}
+
+bool GameState::nightLightsAreActive() const
+{
+	const double clockTime = this->clock.getPreciseTotalSeconds();
+	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
+	const bool afterLamppostActivate = clockTime >= ArenaClockUtils::LamppostActivate.getPreciseTotalSeconds();
+	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
 std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
