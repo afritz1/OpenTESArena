@@ -22,7 +22,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
 #include "../Interface/RichTextString.h"
@@ -337,14 +337,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			// Game data instance, to be initialized further by one of the loading methods below.
 			// Create a player with random data for testing.
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-			auto gameData = std::make_unique<GameData>(Player::makeRandom(
+			auto gameState = std::make_unique<GameState>(Player::makeRandom(
 				game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
 				binaryAssetLibrary);
 
 			const int starCount = SkyUtils::getStarCountFromDensity(
 				options.getMisc_StarDensity());
 
-			// Load the selected level based on world type (writing into active game data).
+			// Load the selected level based on world type (writing into active game state).
 			if (mapType == MapType::Interior)
 			{
 				if (testType != TestType_Dungeon)
@@ -355,8 +355,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 					}
 
-					const Player &player = gameData->getPlayer();
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const Player &player = gameState->getPlayer();
+					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 
 					// Set some interior location data for testing, depending on whether it's a
 					// main quest dungeon.
@@ -412,7 +412,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					DebugAssert(optInteriorType.has_value());
 					const ArenaTypes::InteriorType interiorType = *optInteriorType;
-					if (!gameData->loadInterior(locationDef, provinceDef, interiorType, mif,
+					if (!gameState->loadInterior(locationDef, provinceDef, interiorType, mif,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getRandom(), game.getTextureManager(), renderer))
 					{
@@ -422,7 +422,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				else
 				{
 					// Pick a random dungeon based on the dungeon type.
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 					{
 						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
@@ -437,7 +437,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						DebugAssertMsg(locationDefPtr != nullptr,
 							"Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
-						if (!gameData->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
+						if (!gameState->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
 							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							binaryAssetLibrary, game.getRandom(), game.getTextureManager(), renderer))
 						{
@@ -445,7 +445,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 
 						// Set random named dungeon name and visibility for testing.
-						LocationInstance &locationInst = gameData->getLocationInstance();
+						LocationInstance &locationInst = gameState->getLocationInstance();
 						locationInst.setNameOverride("Test Dungeon");
 
 						if (!locationInst.isVisible())
@@ -462,7 +462,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const int locationIndex = GetRandomCityLocationIndex(provinceDef);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
-						if (!gameData->loadWildernessDungeon(locationDef, provinceDef, wildBlockX, wildBlockY,
+						if (!gameState->loadWildernessDungeon(locationDef, provinceDef, wildBlockX, wildBlockY,
 							binaryAssetLibrary.getCityDataFile(), game.getEntityDefinitionLibrary(),
 							game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 							game.getTextureManager(), renderer))
@@ -482,9 +482,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// are randomly generated.
 				if (mifName == ImperialMIF)
 				{
-					// Load city into game data.
+					// Load city into game state.
 					const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 					const LocationDefinition &locationDef = [&mifName, &provinceDef]()
 					{
@@ -508,7 +508,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						return provinceDef.getLocationDef(locationIndex);
 					}();
 
-					if (!gameData->loadCity(locationDef, provinceDef, weatherType, starCount,
+					if (!gameState->loadCity(locationDef, provinceDef, weatherType, starCount,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
 						game.getTextureManager(), renderer))
@@ -519,7 +519,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				else
 				{
 					// Pick a random location based on the .MIF name, excluding the center province.
-					const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 					{
 						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
@@ -553,8 +553,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const WeatherType filteredWeatherType =
 						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
-					// Load city into game data. Location data is loaded, too.
-					if (!gameData->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
+					// Load city into game state. Location data is loaded, too.
+					if (!gameState->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
 						game.getTextureManager(), renderer))
@@ -566,7 +566,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			else if (mapType == MapType::Wilderness)
 			{
 				// Pick a random location and province.
-				const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+				const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 				const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
 				{
 					const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
@@ -580,9 +580,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const WeatherType filteredWeatherType =
 					WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
-				// Load wilderness into game data. Location data is loaded, too.
+				// Load wilderness into game state. Location data is loaded, too.
 				const bool ignoreGatePos = true;
-				if (!gameData->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
+				if (!gameState->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
 					filteredWeatherType, starCount, game.getEntityDefinitionLibrary(),
 					game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 					game.getTextureManager(), renderer))
@@ -597,12 +597,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			}
 
 			// Set clock to 5:45am.
-			auto &clock = gameData->getClock();
+			auto &clock = gameState->getClock();
 			clock = Clock(5, 45, 0);
 
 			// Get the music that should be active on start.
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = [&game, &mifName, mapType, &gameData, &musicLibrary]()
+			const MusicDefinition *musicDef = [&game, &mifName, mapType, &gameState, &musicLibrary]()
 			{
 				const bool isExterior = (mapType == MapType::City) ||
 					(mapType == MapType::Wilderness);
@@ -611,10 +611,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				// on the current location's .MIF name (if any).
 				if (isExterior)
 				{
-					// Make sure to get updated weather type from game data and not local variable
+					// Make sure to get updated weather type from game state and not local variable
 					// so it gets the filtered weather type.
-					const WeatherType weatherType = gameData->getWeatherType();
-					if (!gameData->nightMusicIsActive())
+					const WeatherType weatherType = gameState->getWeatherType();
+					if (!gameState->nightMusicIsActive())
 					{
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 							game.getRandom(), [weatherType](const MusicDefinition &def)
@@ -653,10 +653,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				}
 			}();
 
-			const MusicDefinition *jingleMusicDef = [&game, mapType, &gameData, &musicLibrary]()
+			const MusicDefinition *jingleMusicDef = [&game, mapType, &gameState, &musicLibrary]()
 				-> const MusicDefinition*
 			{
-				const LocationDefinition &locationDef = gameData->getLocationDefinition();
+				const LocationDefinition &locationDef = gameState->getLocationDefinition();
 				const bool isCity = (mapType == MapType::City) &&
 					(locationDef.getType() == LocationDefinition::Type::City);
 
@@ -683,8 +683,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				DebugLogWarning("Missing start music.");
 			}
 
-			// Set the game data before constructing the game world panel.
-			game.setGameData(std::move(gameData));
+			// Set the game state before constructing the game world panel.
+			game.setGameState(std::move(gameState));
 
 			// Initialize game world panel.
 			game.setPanel<GameWorldPanel>(game);
@@ -923,8 +923,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->testIndex2 = 1;
 	this->testWeather = 0;
 
-	// The game data should not be active on the main menu.
-	DebugAssert(!game.gameDataIsActive());
+	// The game state should not be active on the main menu.
+	DebugAssert(!game.gameStateIsActive());
 }
 
 std::string MainMenuPanel::getSelectedTestName() const

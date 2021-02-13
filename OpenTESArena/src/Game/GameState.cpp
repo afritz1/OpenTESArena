@@ -7,7 +7,7 @@
 
 #include "ArenaClockUtils.h"
 #include "Game.h"
-#include "GameData.h"
+#include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
@@ -46,7 +46,7 @@ namespace
 	const Color EffectTextShadowColor(190, 113, 0);
 }
 
-GameData::GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
+GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
 	: player(std::move(player))
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
@@ -92,12 +92,12 @@ GameData::GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary
 	this->chasmAnimSeconds = 0.0;
 }
 
-GameData::~GameData()
+GameState::~GameState()
 {
 	DebugLog("Closing.");
 }
 
-bool GameData::nightMusicIsActive() const
+bool GameState::nightMusicIsActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
 	const bool beforeDayMusicChange = clockTime < ArenaClockUtils::MusicSwitchToDay.getPreciseTotalSeconds();
@@ -105,7 +105,7 @@ bool GameData::nightMusicIsActive() const
 	return beforeDayMusicChange || afterNightMusicChange;
 }
 
-bool GameData::nightLightsAreActive() const
+bool GameState::nightLightsAreActive() const
 {
 	const double clockTime = this->clock.getPreciseTotalSeconds();
 	const bool beforeLamppostDeactivate = clockTime < ArenaClockUtils::LamppostDeactivate.getPreciseTotalSeconds();
@@ -113,14 +113,14 @@ bool GameData::nightLightsAreActive() const
 	return beforeLamppostDeactivate || afterLamppostActivate;
 }
 
-void GameData::setTransitionedPlayerPosition(const NewDouble3 &position)
+void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
 {
 	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
 	this->player.teleport(coord);
 	this->player.setVelocityToZero();
 }
 
-void GameData::clearWorldDatas()
+void GameState::clearWorldDatas()
 {
 	while (!this->worldDatas.empty())
 	{
@@ -128,7 +128,7 @@ void GameData::clearWorldDatas()
 	}
 }
 
-bool GameData::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+bool GameState::loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	ArenaTypes::InteriorType interiorType, const MIFFile &mif, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, Renderer &renderer)
@@ -173,7 +173,7 @@ bool GameData::loadInterior(const LocationDefinition &locationDef, const Provinc
 	return true;
 }
 
-void GameData::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
+void GameState::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif, const Int2 &returnVoxel,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 	Renderer &renderer)
@@ -206,7 +206,7 @@ void GameData::enterInterior(ArenaTypes::InteriorType interiorType, const MIFFil
 	renderer.setFogDistance(fogDistance);
 }
 
-void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
+void GameState::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	Random &random, TextureManager &textureManager, Renderer &renderer)
 {
@@ -256,7 +256,7 @@ void GameData::leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
 	renderer.setNightLightsActive(this->nightLightsAreActive(), palette);
 }
 
-bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+bool GameState::loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	bool isArtifactDungeon, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary, Random &random,
 	TextureManager &textureManager, Renderer &renderer)
@@ -306,7 +306,7 @@ bool GameData::loadNamedDungeon(const LocationDefinition &locationDef, const Pro
 	return true;
 }
 
-bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
+bool GameState::loadWildernessDungeon(const LocationDefinition &locationDef,
 	const ProvinceDefinition &provinceDef, int wildBlockX, int wildBlockY, const CityDataFile &cityData,
 	const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
@@ -359,7 +359,7 @@ bool GameData::loadWildernessDungeon(const LocationDefinition &locationDef,
 	return true;
 }
 
-bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+bool GameState::loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, Random &random, TextureManager &textureManager,
@@ -430,7 +430,7 @@ bool GameData::loadCity(const LocationDefinition &locationDef, const ProvinceDef
 	return true;
 }
 
-bool GameData::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
+bool GameState::loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 	const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos, WeatherType weatherType,
 	int starCount, const EntityDefinitionLibrary &entityDefLibrary,
 	const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -513,102 +513,102 @@ bool GameData::loadWilderness(const LocationDefinition &locationDef, const Provi
 	return true;
 }
 
-const GameData::WeatherList &GameData::getWeathersArray() const
+const GameState::WeatherList &GameState::getWeathersArray() const
 {
 	return this->weathers;
 }
 
-Player &GameData::getPlayer()
+Player &GameState::getPlayer()
 {
 	return this->player;
 }
 
-WorldData &GameData::getActiveWorld()
+WorldData &GameState::getActiveWorld()
 {
 	DebugAssert(!this->worldDatas.empty());
 	return *this->worldDatas.top();
 }
 
-bool GameData::isActiveWorldNested() const
+bool GameState::isActiveWorldNested() const
 {
 	return this->worldDatas.size() >= 2;
 }
 
-CitizenManager &GameData::getCitizenManager()
+CitizenManager &GameState::getCitizenManager()
 {
 	return this->citizenManager;
 }
 
-WorldMapInstance &GameData::getWorldMapInstance()
+WorldMapInstance &GameState::getWorldMapInstance()
 {
 	return this->worldMapInst;
 }
 
-const WorldMapDefinition &GameData::getWorldMapDefinition() const
+const WorldMapDefinition &GameState::getWorldMapDefinition() const
 {
 	return this->worldMapDef;
 }
 
-const ProvinceDefinition &GameData::getProvinceDefinition() const
+const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
 	return this->worldMapDef.getProvinceDef(this->provinceIndex);
 }
 
-const LocationDefinition &GameData::getLocationDefinition() const
+const LocationDefinition &GameState::getLocationDefinition() const
 {
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 	return provinceDef.getLocationDef(this->locationIndex);
 }
 
-ProvinceInstance &GameData::getProvinceInstance()
+ProvinceInstance &GameState::getProvinceInstance()
 {
 	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
 }
 
-LocationInstance &GameData::getLocationInstance()
+LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
 	return provinceInst.getLocationInstance(this->locationIndex);
 }
 
-Date &GameData::getDate()
+Date &GameState::getDate()
 {
 	return this->date;
 }
 
-Clock &GameData::getClock()
+Clock &GameState::getClock()
 {
 	return this->clock;
 }
 
-ArenaRandom &GameData::getRandom()
+ArenaRandom &GameState::getRandom()
 {
 	return this->arenaRandom;
 }
 
-double GameData::getDaytimePercent() const
+double GameState::getDaytimePercent() const
 {
 	return this->clock.getPreciseTotalSeconds() /
 		static_cast<double>(Clock::SECONDS_IN_A_DAY);
 }
 
-double GameData::getChasmAnimPercent() const
+double GameState::getChasmAnimPercent() const
 {
 	const double percent = this->chasmAnimSeconds / ArenaVoxelUtils::CHASM_ANIM_SECONDS;
 	return std::clamp(percent, 0.0, Constants::JustBelowOne);
 }
 
-double GameData::getFogDistance() const
+double GameState::getFogDistance() const
 {
 	return this->fogDistance;
 }
 
-WeatherType GameData::getWeatherType() const
+WeatherType GameState::getWeatherType() const
 {
 	return this->weatherType;
 }
 
-double GameData::getAmbientPercent() const
+double GameState::getAmbientPercent() const
 {
 	DebugAssert(!this->worldDatas.empty());
 	const WorldData &activeWorld = *this->worldDatas.top();
@@ -666,7 +666,7 @@ double GameData::getAmbientPercent() const
 	}
 }
 
-double GameData::getBetterAmbientPercent() const
+double GameState::getBetterAmbientPercent() const
 {
 	const double daytimePercent = this->getDaytimePercent();
 	const double minAmbient = 0.20;
@@ -676,27 +676,27 @@ double GameData::getBetterAmbientPercent() const
 	return center + ((diff / 2.0) * -std::cos(daytimePercent * (2.0 * Constants::Pi)));
 }
 
-std::function<void(Game&)> &GameData::getOnLevelUpVoxelEnter()
+std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
 {
 	return this->onLevelUpVoxelEnter;
 }
 
-bool GameData::triggerTextIsVisible() const
+bool GameState::triggerTextIsVisible() const
 {
 	return this->triggerText.hasRemainingDuration();
 }
 
-bool GameData::actionTextIsVisible() const
+bool GameState::actionTextIsVisible() const
 {
 	return this->actionText.hasRemainingDuration();
 }
 
-bool GameData::effectTextIsVisible() const
+bool GameState::effectTextIsVisible() const
 {
 	return this->effectText.hasRemainingDuration();
 }
 
-void GameData::getTriggerTextRenderInfo(const Texture **outTexture) const
+void GameState::getTriggerTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
@@ -704,7 +704,7 @@ void GameData::getTriggerTextRenderInfo(const Texture **outTexture) const
 	}
 }
 
-void GameData::getActionTextRenderInfo(const Texture **outTexture) const
+void GameState::getActionTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
@@ -712,7 +712,7 @@ void GameData::getActionTextRenderInfo(const Texture **outTexture) const
 	}
 }
 
-void GameData::getEffectTextRenderInfo(const Texture **outTexture) const
+void GameState::getEffectTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
@@ -720,7 +720,7 @@ void GameData::getEffectTextRenderInfo(const Texture **outTexture) const
 	}
 }
 
-void GameData::setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const int lineSpacing = 1;
 	const RichTextString richText(
@@ -747,7 +747,7 @@ void GameData::setTriggerText(const std::string &text, FontLibrary &fontLibrary,
 	this->triggerText = TimedTextBox(duration, std::move(textBox));
 }
 
-void GameData::setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	const RichTextString richText(
 		text,
@@ -772,27 +772,27 @@ void GameData::setActionText(const std::string &text, FontLibrary &fontLibrary, 
 	this->actionText = TimedTextBox(duration, std::move(textBox));
 }
 
-void GameData::setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
 	// @todo
 }
 
-void GameData::resetTriggerText()
+void GameState::resetTriggerText()
 {
 	this->triggerText.reset();
 }
 
-void GameData::resetActionText()
+void GameState::resetActionText()
 {
 	this->actionText.reset();
 }
 
-void GameData::resetEffectText()
+void GameState::resetEffectText()
 {
 	this->effectText.reset();
 }
 
-void GameData::updateWeather(const ExeData &exeData)
+void GameState::updateWeather(const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
 
@@ -835,13 +835,13 @@ void GameData::updateWeather(const ExeData &exeData)
 	}
 }
 
-void GameData::tick(double dt, Game &game)
+void GameState::tick(double dt, Game &game)
 {
 	DebugAssert(dt >= 0.0);
 
 	// Tick the game clock.
 	const int oldHour = this->clock.getHours24();
-	this->clock.tick(dt * GameData::TIME_SCALE);
+	this->clock.tick(dt * GameState::TIME_SCALE);
 	const int newHour = this->clock.getHours24();
 
 	// Check if the hour changed.

@@ -13,7 +13,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Game/DateUtils.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
@@ -71,7 +71,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 	const std::string text = [this, &game]()
 	{
-		auto &gameData = game.getGameData();
+		auto &gameState = game.getGameState();
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -79,11 +79,11 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		const int provinceID = this->travelData.provinceID;
 		const int localCityID = this->travelData.locationID;
 
-		const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
-		const std::string locationString = [this, &gameData, &exeData, provinceID, localCityID,
+		const std::string locationString = [this, &gameState, &exeData, provinceID, localCityID,
 			&provinceDef, &locationDef]()
 		{
 			if (provinceID != LocationUtils::CENTER_PROVINCE_ID)
@@ -133,10 +133,10 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			}
 		}();
 
-		const std::string dateString = [&gameData, &exeData]()
+		const std::string dateString = [&gameState, &exeData]()
 		{
 			return exeData.travel.arrivalPopUpDate +
-				DateUtils::getDateString(gameData.getDate(), exeData);
+				DateUtils::getDateString(gameState.getDate(), exeData);
 		}();
 
 		const std::string daysString = [this, &exeData]()
@@ -151,7 +151,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 		}();
 
 		const auto &textAssetLibrary = game.getTextAssetLibrary();
-		const std::string locationDescriptionString = [&game, &gameData, &binaryAssetLibrary,
+		const std::string locationDescriptionString = [&game, &gameState, &binaryAssetLibrary,
 			&textAssetLibrary, &exeData, provinceID, localCityID, &locationDef]()
 		{
 			const LocationType locationType = LocationUtils::getCityType(localCityID);
@@ -159,7 +159,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 			// Get the description for the local location. If it's a town or village, choose
 			// one of the three substrings randomly. Otherwise, get the city description text
 			// directly.
-			const std::string description = [&gameData, &binaryAssetLibrary, &textAssetLibrary,
+			const std::string description = [&gameState, &binaryAssetLibrary, &textAssetLibrary,
 				&exeData, provinceID, localCityID, &locationDef, locationType]()
 			{
 				// City descriptions start at #0600. The three town descriptions are at #1422,
@@ -200,7 +200,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 				}
 				else
 				{
-					ArenaRandom &random = gameData.getRandom();
+					ArenaRandom &random = gameState.getRandom();
 					std::string description = [&random, &templateDatTexts]()
 					{
 						return templateDatTexts.at(random.next() % templateDatTexts.size());
@@ -322,17 +322,17 @@ std::optional<Panel::CursorData> FastTravelSubPanel::getCurrentCursor() const
 void FastTravelSubPanel::tickTravelTime(Random &random) const
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 
 	// Tick the game date by the number of travel days.
-	auto &date = gameData.getDate();
+	auto &date = gameState.getDate();
 	for (int i = 0; i < this->travelData.travelDays; i++)
 	{
 		date.incrementDay();
 	}
 
 	// Add between 0 and 22 random hours to the clock time.
-	auto &clock = gameData.getClock();
+	auto &clock = gameState.getClock();
 	const int randomHours = random.next(23);
 	for (int i = 0; i < randomHours; i++)
 	{
@@ -350,24 +350,24 @@ void FastTravelSubPanel::switchToNextPanel()
 {
 	// Handle fast travel behavior and decide which panel to switch to.
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
 	// Update game clock.
 	this->tickTravelTime(game.getRandom());
 
 	// Update weathers.
-	gameData.updateWeather(exeData);
+	gameState.updateWeather(exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
-	gameData.resetTriggerText();
+	gameState.resetTriggerText();
 
 	// Clear any on-voxel-enter event to avoid things like fast travelling out of the
 	// starting dungeon then being teleported to a random city when going through any
 	// subsequent LEVELUP voxel.
-	gameData.getOnLevelUpVoxelEnter() = std::function<void(Game&)>();
+	gameState.getOnLevelUpVoxelEnter() = std::function<void(Game&)>();
 
 	// Pop this sub-panel on the next game loop. The game loop pops old sub-panels before
 	// pushing new ones, so call order doesn't matter.
@@ -379,9 +379,9 @@ void FastTravelSubPanel::switchToNextPanel()
 	// Decide how to load the location.
 	if (travelLocationDef.getType() == LocationDefinition::Type::City)
 	{
-		// Get weather type from game data.
+		// Get weather type from game state.
 		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const WeatherType weatherType = [this, &game, &gameData, &binaryAssetLibrary,
+		const WeatherType weatherType = [this, &game, &gameState, &binaryAssetLibrary,
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
@@ -391,7 +391,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const int globalQuarter = LocationUtils::getGlobalQuarter(globalPoint, cityData);
 
-			const auto &weathersArray = gameData.getWeathersArray();
+			const auto &weathersArray = gameState.getWeathersArray();
 			DebugAssertIndex(weathersArray, globalQuarter);
 			return WeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
 		}();
@@ -400,7 +400,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			game.getOptions().getMisc_StarDensity());
 
 		// Load the destination city.
-		if (!gameData.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
+		if (!gameState.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
 			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
 			game.getTextAssetLibrary(), game.getRandom(), game.getTextureManager(),
 			game.getRenderer()))
@@ -410,9 +410,9 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Choose time-based music and enter the game world.
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-		const MusicDefinition *musicDef = [&game, &gameData, weatherType, &musicLibrary]()
+		const MusicDefinition *musicDef = [&game, &gameState, weatherType, &musicLibrary]()
 		{
-			if (!gameData.nightMusicIsActive())
+			if (!gameState.nightMusicIsActive())
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [weatherType](const MusicDefinition &def)
@@ -464,7 +464,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
 
-		if (!gameData.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
+		if (!gameState.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
 			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
 			game.getRandom(), game.getTextureManager(), game.getRenderer()))
 		{
@@ -500,7 +500,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 		}
 
-		if (!gameData.loadInterior(travelLocationDef, travelProvinceDef,
+		if (!gameState.loadInterior(travelLocationDef, travelProvinceDef,
 			ArenaTypes::InteriorType::Dungeon, mif, game.getEntityDefinitionLibrary(),
 			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
 			game.getTextureManager(), game.getRenderer()))

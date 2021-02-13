@@ -1,5 +1,5 @@
-#ifndef GAME_DATA_H
-#define GAME_DATA_H
+#ifndef GAME_STATE_H
+#define GAME_STATE_H
 
 #include <functional>
 #include <memory>
@@ -23,10 +23,10 @@
 // Intended to be a container for the player and world data that is currently active 
 // while a player is loaded (i.e., not in the main menu).
 
-// The GameData object will be initialized only upon loading of the player, and 
+// The GameState object will be initialized only upon loading of the player, and 
 // will be uninitialized when the player goes to the main menu (thus unloading
 // the character resources). Whichever entry points into the "game" there are, they
-// need to load data into the game data object.
+// need to load data into the game state object.
 
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
@@ -47,7 +47,7 @@ class TextureManager;
 enum class MapType;
 enum class WeatherType;
 
-class GameData
+class GameState
 {
 public:
 	// One weather for each of the 36 province quadrants (updated hourly).
@@ -95,10 +95,10 @@ private:
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
 	void clearWorldDatas();
 public:
-	// Creates incomplete game data with no active world, to be further initialized later.
-	GameData(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
-	GameData(GameData&&) = default;
-	~GameData();
+	// Creates incomplete game state with no active world, to be further initialized later.
+	GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
+	GameState(GameState&&) = default;
+	~GameState();
 
 	// Returns whether the current music should be for day or night.
 	bool nightMusicIsActive() const;
@@ -106,7 +106,7 @@ public:
 	// Returns whether night lights (i.e., lampposts) should currently be active.
 	bool nightLightsAreActive() const;
 
-	// Reads in data from an interior .MIF file and writes it to the game data.
+	// Reads in data from an interior .MIF file and writes it to the game state.
 	bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		ArenaTypes::InteriorType interiorType, const MIFFile &mif,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
@@ -127,28 +127,28 @@ public:
 		Random &random, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
-	// to the game data. This modifies the current map location.
+	// to the game state. This modifies the current map location.
 	bool loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		bool isArtifactDungeon, const EntityDefinitionLibrary &entityDefLibrary,
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		Random &random, TextureManager &textureManager, Renderer &renderer);
 
 	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
-	// game data. This does not modify the current map location.
+	// game state. This does not modify the current map location.
 	bool loadWildernessDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		int wildBlockX, int wildBlockY, const CityDataFile &cityData,
 		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
 		Renderer &renderer);
 
-	// Reads in data from a city after determining its .MIF file, and writes it to the game data.
+	// Reads in data from a city after determining its .MIF file, and writes it to the game state.
 	bool loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary,
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, Random &random, TextureManager &textureManager,
 		Renderer &renderer);
 
-	// Reads in data from wilderness and writes it to the game data.
+	// Reads in data from wilderness and writes it to the game state.
 	bool loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
 		const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos,
 		WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary, 

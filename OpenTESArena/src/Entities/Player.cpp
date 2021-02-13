@@ -8,7 +8,7 @@
 #include "Player.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
@@ -429,7 +429,7 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	const WorldData &worldData = game.getGameData().getActiveWorld();
+	const WorldData &worldData = game.getGameState().getActiveWorld();
 	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
 
 	// Tick weapon animation.

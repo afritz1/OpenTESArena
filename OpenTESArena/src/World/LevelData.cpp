@@ -2725,7 +2725,7 @@ void LevelData::setActive(bool nightLightsAreActive, const WorldData &worldData,
 void LevelData::tick(Game &game, double dt)
 {
 	const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
-	const auto &player = game.getGameData().getPlayer();
+	const auto &player = game.getGameState().getPlayer();
 	const ChunkInt2 &playerChunk = player.getPosition().chunk;
 	
 	ChunkInt2 minChunk, maxChunk;

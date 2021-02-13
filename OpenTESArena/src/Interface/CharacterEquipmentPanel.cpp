@@ -13,7 +13,7 @@
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/Player.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Media/FontLibrary.h"
@@ -35,7 +35,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameData().getPlayer().getDisplayName(),
+			game.getGameState().getPlayer().getDisplayName(),
 			FontName::Arena,
 			Color(199, 199, 199),
 			TextAlignment::Left,
@@ -49,7 +49,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		const int x = 10;
 		const int y = 17;
 
-		const auto &player = game.getGameData().getPlayer();
+		const auto &player = game.getGameState().getPlayer();
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 		const std::string &text = exeData.races.singularNames.at(player.getRaceID());
 
@@ -71,7 +71,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 
 		const auto &charClassDef = [&game]() -> const CharacterClassDefinition&
 		{
-			const auto &player = game.getGameData().getPlayer();
+			const auto &player = game.getGameState().getPlayer();
 			const int playerCharClassDefID = player.getCharacterClassDefID();
 			const auto &charClassLibrary = game.getCharacterClassLibrary();
 			return charClassLibrary.getDefinition(playerCharClassDefID);
@@ -193,7 +193,7 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 	}();
 
 	// Get pixel offsets for each head.
-	const auto &player = this->getGame().getGameData().getPlayer();
+	const auto &player = this->getGame().getGameState().getPlayer();
 	const std::string &headsFilename = PortraitFile::getHeads(
 		player.isMale(), player.getRaceID(), false);
 
@@ -269,14 +269,14 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 
 void CharacterEquipmentPanel::render(Renderer &renderer)
 {
-	DebugAssert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameStateIsActive());
 
 	// Clear full screen.
 	renderer.clear();
 
 	// Get the filenames for the portrait and clothes.
 	auto &game = this->getGame();
-	const auto &player = game.getGameData().getPlayer();
+	const auto &player = game.getGameState().getPlayer();
 	const auto &charClassDef = [&game, &player]() -> const CharacterClassDefinition&
 	{
 		const auto &charClassLibrary = game.getCharacterClassLibrary();

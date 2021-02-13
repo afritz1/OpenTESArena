@@ -27,8 +27,8 @@ bool CitizenManager::shouldSpawn(Game &game) const
 
 	// Only worry about tick-related spawning; spawning at level start is handled by level loading.
 	return false;
-	/*auto &gameData = game.getGameData();
-	auto &worldData = gameData.getActiveWorld();
+	/*auto &gameState = game.getGameState();
+	auto &worldData = gameState.getActiveWorld();
 	const MapType activeMapType = worldData.getActiveMapType();
 	return (activeMapType == MapType::City) || (activeMapType == MapType::Wilderness);*/
 }
@@ -226,13 +226,13 @@ void CitizenManager::tick(Game &game)
 	{
 		if (this->shouldSpawn(game))
 		{
-			auto &gameData = game.getGameData();
-			auto &worldData = gameData.getActiveWorld();
+			auto &gameState = game.getGameState();
+			auto &worldData = gameState.getActiveWorld();
 			auto &levelData = worldData.getActiveLevel();
 			const auto &voxelGrid = levelData.getVoxelGrid();
 			auto &entityManager = levelData.getEntityManager();
-			const auto &provinceDef = gameData.getProvinceDefinition();
-			const auto &locationDef = gameData.getLocationDefinition();
+			const auto &provinceDef = gameState.getProvinceDefinition();
+			const auto &locationDef = gameState.getLocationDefinition();
 			const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			auto &random = game.getRandom();

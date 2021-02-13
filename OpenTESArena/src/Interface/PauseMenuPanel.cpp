@@ -18,7 +18,7 @@
 #include "../Entities/CharacterClassDefinition.h"
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/Player.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
@@ -42,7 +42,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameData().getPlayer().getFirstName(),
+			game.getGameState().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
@@ -135,7 +135,7 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		const int y = 118;
 		auto function = [](Game &game)
 		{
-			game.setGameData(nullptr);
+			game.setGameState(nullptr);
 			game.setPanel<MainMenuPanel>(game);
 
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -431,7 +431,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 		0, ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilder.getHeight(), textureManager);
 
 	// Draw player portrait.
-	const auto &player = this->getGame().getGameData().getPlayer();
+	const auto &player = this->getGame().getGameState().getPlayer();
 	const PaletteID portraitPaletteID = gameWorldInterfacePaletteID;
 	const TextureBuilderID portraitTextureBuilderID = [this, &textureManager, &player]()
 	{

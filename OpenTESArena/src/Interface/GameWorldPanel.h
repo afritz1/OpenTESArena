@@ -94,7 +94,7 @@ private:
 	// Draws some debug profiler text.
 	void drawProfiler(int profilerLevel, Renderer &renderer);
 public:
-	// Constructs the game world panel. The GameData object in Game must be initialized.
+	// Constructs the game world panel. The GameState object in Game must be initialized.
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
 

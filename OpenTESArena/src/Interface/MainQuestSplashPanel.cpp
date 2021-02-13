@@ -7,7 +7,7 @@
 #include "Texture.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Math/Random.h"
 #include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"

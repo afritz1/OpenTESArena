@@ -13,7 +13,7 @@
 #include "Texture.h"
 #include "../Entities/Player.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
 #include "../Media/AudioManager.h"
@@ -482,7 +482,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		const bool isModernMode = value;
 		if (!isModernMode)
 		{
-			auto &player = game.getGameData().getPlayer();
+			auto &player = game.getGameState().getPlayer();
 			player.setDirectionToHorizon();
 		}
 
@@ -611,7 +611,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setInput_CameraPitchLimit(value);
 
 		// Reset player view to forward.
-		auto &player = game.getGameData().getPlayer();
+		auto &player = game.getGameState().getPlayer();
 		player.setDirectionToHorizon();
 	}));
 

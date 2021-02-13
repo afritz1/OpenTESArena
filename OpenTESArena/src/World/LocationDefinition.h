@@ -112,7 +112,7 @@ private:
 		MainQuestDungeonDefinition mainQuest;
 	};
 
-	// Internal init method for original game data.
+	// Internal init method for original game state.
 	void init(LocationDefinition::Type type, const std::string &name, int x, int y, double latitude);
 public:
 	// Initialize from original game data.

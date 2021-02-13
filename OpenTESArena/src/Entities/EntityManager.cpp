@@ -991,8 +991,8 @@ void EntityManager::tick(Game &game, double dt)
 	// Only want to tick entities near the player, so get the chunks near the player.
 	const ChunkInt2 playerChunk = [&game]()
 	{
-		auto &gameData = game.getGameData();
-		const CoordDouble3 &playerCoord = gameData.getPlayer().getPosition();
+		auto &gameState = game.getGameState();
+		const CoordDouble3 &playerCoord = gameState.getPlayer().getPosition();
 		return playerCoord.chunk;
 	}();
 

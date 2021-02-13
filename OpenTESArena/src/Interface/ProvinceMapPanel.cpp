@@ -170,12 +170,12 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
-	const ProvinceDefinition &currentProvinceDef = gameData.getProvinceDefinition();
-	const LocationDefinition &currentLocationDef = gameData.getLocationDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const ProvinceDefinition &currentProvinceDef = gameState.getProvinceDefinition();
+	const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
 
 	const ProvinceDefinition &selectedProvinceDef = worldMapDef.getProvinceDef(this->provinceID);
 	const LocationDefinition &selectedLocationDef = selectedProvinceDef.getLocationDef(selectedLocationID);
@@ -187,11 +187,11 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	if (!matchesPlayerLocation)
 	{
 		// Set the travel data for the selected location and reset the blink timer.
-		const Date &currentDate = gameData.getDate();
+		const Date &currentDate = gameState.getDate();
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
-		ArenaRandom tempRandom = gameData.getRandom();
+		ArenaRandom tempRandom = gameState.getRandom();
 
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
@@ -202,7 +202,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		const Int2 srcGlobalPoint = makeGlobalPoint(currentLocationDef, currentProvinceDef);
 		const Int2 dstGlobalPoint = makeGlobalPoint(selectedLocationDef, selectedProvinceDef);
 		const int travelDays = LocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
-			currentDate.getMonth(), gameData.getWeathersArray(), tempRandom, binaryAssetLibrary);
+			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
 
 		this->travelData = std::make_unique<TravelData>(selectedLocationID, this->provinceID, travelDays);
 		this->blinkTimer = 0.0;
@@ -216,11 +216,11 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	else
 	{
 		// Cannot travel to the player's current location. Create an error pop-up.
-		const std::string errorText = [&gameData, &binaryAssetLibrary, &currentLocationDef]()
+		const std::string errorText = [&gameState, &binaryAssetLibrary, &currentLocationDef]()
 		{
-			const std::string &currentLocationName = [&gameData, &currentLocationDef]() -> const std::string&
+			const std::string &currentLocationName = [&gameState, &currentLocationDef]() -> const std::string&
 			{
-				const LocationInstance &currentLocationInst = gameData.getLocationInstance();
+				const LocationInstance &currentLocationInst = gameState.getLocationInstance();
 				return currentLocationInst.getName(currentLocationDef);
 			}();
 
@@ -326,13 +326,13 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 	// Look through all visible locations to find the one closest to the mouse.
 	int closestIndex = -1;
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 
-	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	for (int i = 0; i < provinceInst.getLocationCount(); i++)
@@ -361,21 +361,21 @@ std::string ProvinceMapPanel::makeTravelText(const LocationDefinition &srcLocati
 	const ProvinceMapPanel::TravelData &travelData) const
 {
 	auto &game = this->getGame();
-	auto &gameData = this->getGame().getGameData();
+	auto &gameState = this->getGame().getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const LocationInstance &dstLocationInst = dstProvinceInst.getLocationInstance(dstLocationIndex);
 
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const int dstProvinceDefIndex = dstProvinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &dstProvinceDef = worldMapDef.getProvinceDef(dstProvinceDefIndex);
 	const int dstLocationDefIndex = dstLocationInst.getLocationDefIndex();
 	const LocationDefinition &dstLocationDef = dstProvinceDef.getLocationDef(dstLocationDefIndex);
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
 
-	const Date &currentDate = gameData.getDate();
+	const Date &currentDate = gameState.getDate();
 	const Date destinationDate = [&currentDate, &travelData]()
 	{
 		Date newDate = currentDate;
@@ -572,7 +572,7 @@ std::string ProvinceMapPanel::makeTravelText(const LocationDefinition &srcLocati
 std::unique_ptr<Panel> ProvinceMapPanel::makeTextPopUp(const std::string &text) const
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 
 	const Int2 center(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const Color color(52, 24, 8);
@@ -666,12 +666,12 @@ void ProvinceMapPanel::drawVisibleLocations(const std::string &backgroundFilenam
 	DebugAssert(dungeonIconTextureBuilderID.has_value());
 
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	// Gets the displayed icon texture ID for a location.
@@ -906,11 +906,11 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
-	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	auto &gameState = game.getGameState();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 	const LocationInstance &locationInst = provinceInst.getLocationInstance(locationID);
 	const int locationDefIndex = locationInst.getLocationDefIndex();
@@ -962,7 +962,7 @@ void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer
 
 void ProvinceMapPanel::render(Renderer &renderer)
 {
-	DebugAssert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameStateIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -991,15 +991,15 @@ void ProvinceMapPanel::render(Renderer &renderer)
 	// Draw visible location icons.
 	this->drawVisibleLocations(backgroundFilename, textureManager, renderer);
 
-	const auto &gameData = this->getGame().getGameData();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+	const auto &gameState = this->getGame().getGameState();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
-	const ProvinceDefinition &playerProvinceDef = gameData.getProvinceDefinition();
+	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 
 	// If the player is in the current province, highlight their current location.
 	if (provinceDef.matches(playerProvinceDef))
 	{
-		const LocationDefinition &locationDef = gameData.getLocationDefinition();
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const auto highlightType = ProvinceMapPanel::LocationHighlightType::Current;
 		this->drawLocationHighlight(locationDef, highlightType, backgroundFilename,
 			textureManager, renderer);

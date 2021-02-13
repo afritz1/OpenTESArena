@@ -33,7 +33,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/DateUtils.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
@@ -110,21 +110,21 @@ namespace
 		constexpr int xOffset = 16;
 		constexpr int yOffset = 16;
 
-		auto &gameData = game.getGameData();
+		auto &gameState = game.getGameState();
 		
 		const auto &options = game.getOptions();
 		const int chunkDistance = options.getMisc_ChunkDistance();
 		const double verticalFOV = options.getGraphics_VerticalFOV();
 		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
-		const auto &player = gameData.getPlayer();
+		const auto &player = gameState.getPlayer();
 		const CoordDouble3 &rayStart = player.getPosition();
 		const NewDouble3 &cameraDirection = player.getDirection();
 		const int viewWidth = windowDims.x;
 		const int viewHeight = renderer.getViewHeight();
 		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
 
-		const auto &worldData = gameData.getActiveWorld();
+		const auto &worldData = gameState.getActiveWorld();
 		const auto &levelData = worldData.getActiveLevel();
 		const auto &entityManager = levelData.getEntityManager();
 		const auto &voxelGrid = levelData.getVoxelGrid();
@@ -197,9 +197,9 @@ namespace
 		// ray cast out from center and display hit info (faster/better than console logging).
 		DEBUG_ColorRaycastPixel(game, renderer);
 
-		auto &gameData = game.getGameData();
+		auto &gameState = game.getGameState();
 		const auto &options = game.getOptions();
-		const auto &player = gameData.getPlayer();
+		const auto &player = gameState.getPlayer();
 		const Double3 &cameraDirection = player.getDirection();
 
 		const CoordDouble3 rayStart = player.getPosition();
@@ -223,7 +223,7 @@ namespace
 				options.getGraphics_VerticalFOV(), viewAspectRatio);
 		}();
 
-		const auto &worldData = gameData.getActiveWorld();
+		const auto &worldData = gameState.getActiveWorld();
 		const auto &levelData = worldData.getActiveLevel();
 		const auto &entityManager = levelData.getEntityManager();
 		const auto &voxelGrid = levelData.getVoxelGrid();
@@ -320,7 +320,7 @@ namespace
 GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game)
 {
-	DebugAssert(game.gameDataIsActive());
+	DebugAssert(game.gameStateIsActive());
 
 	this->playerNameTextBox = [&game]()
 	{
@@ -329,7 +329,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameData().getPlayer().getFirstName(),
+			game.getGameState().getPlayer().getFirstName(),
 			FontName::Char,
 			Color(215, 121, 8),
 			TextAlignment::Left,
@@ -388,22 +388,22 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 			const std::string text = [&game]()
 			{
-				auto &gameData = game.getGameData();
+				auto &gameState = game.getGameState();
 				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 				const auto &exeData = binaryAssetLibrary.getExeData();
-				const LocationDefinition &locationDef = gameData.getLocationDefinition();
-				const LocationInstance &locationInst = gameData.getLocationInstance();
+				const LocationDefinition &locationDef = gameState.getLocationDefinition();
+				const LocationInstance &locationInst = gameState.getLocationInstance();
 				const std::string &locationName = locationInst.getName(locationDef);
 
-				const std::string timeString = [&game, &gameData, &exeData]()
+				const std::string timeString = [&game, &gameState, &exeData]()
 				{
-					const Clock &clock = gameData.getClock();
+					const Clock &clock = gameState.getClock();
 					const int hours = clock.getHours12();
 					const int minutes = clock.getMinutes();
 					const std::string clockTimeString = std::to_string(hours) + ":" +
 						((minutes < 10) ? "0" : "") + std::to_string(minutes);
 
-					const int timeOfDayIndex = [&gameData]()
+					const int timeOfDayIndex = [&gameState]()
 					{
 						// Arena has eight time ranges for each time of day. They aren't
 						// uniformly distributed -- midnight and noon are only one minute.
@@ -419,7 +419,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 							std::make_pair(ArenaClockUtils::Night2, 5)
 						};
 
-						const Clock &presentClock = gameData.getClock();
+						const Clock &presentClock = gameState.getClock();
 
 						// Reverse iterate, checking which range the active clock is in.
 						const auto pairIter = std::find_if(
@@ -455,7 +455,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				std::string dateString = DateUtils::getDateString(gameData.getDate(), exeData);
+				std::string dateString = DateUtils::getDateString(gameState.getDate(), exeData);
 				dateString.back() = '\n'; // Replace \r with \n.
 
 				index = baseText.find("%s", index);
@@ -600,16 +600,16 @@ GameWorldPanel::GameWorldPanel(Game &game)
 		{
 			if (goToAutomap)
 			{
-				auto &gameData = game.getGameData();
+				auto &gameState = game.getGameState();
 				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-				const auto &worldData = gameData.getActiveWorld();
+				const auto &worldData = gameState.getActiveWorld();
 				const auto &level = worldData.getActiveLevel();
-				const auto &player = gameData.getPlayer();
-				const LocationDefinition &locationDef = gameData.getLocationDefinition();
-				const LocationInstance &locationInst = gameData.getLocationInstance();
+				const auto &player = gameState.getPlayer();
+				const LocationDefinition &locationDef = gameState.getLocationDefinition();
+				const LocationInstance &locationInst = gameState.getLocationInstance();
 
 				// Some places (like named/wild dungeons) do not display a name on the automap.
-				const std::string automapLocationName = [&gameData, &exeData, &locationDef, &locationInst]()
+				const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
 				{
 					const std::string &locationName = locationInst.getName(locationDef);
 					const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
@@ -635,7 +635,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	// Load all the weapon offsets for the player's currently equipped weapon. If the
 	// player can ever change weapons in-game (i.e., with a hotkey), then this will
 	// need to be moved into update() instead.
-	const auto &weaponAnimation = game.getGameData().getPlayer().getWeaponAnimation();
+	const auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
 	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 
 	if (!weaponAnimation.isRanged())
@@ -905,7 +905,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
 	auto &options = game.getOptions();
-	auto &player = game.getGameData().getPlayer();
+	auto &player = game.getGameState().getPlayer();
 	const auto &inputManager = game.getInputManager();
 	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	const bool f4Pressed = inputManager.keyPressed(e, SDLK_F4);
@@ -973,7 +973,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Refresh player coordinates display (probably intended for debugging in the
 		// original game). These coordinates are in Arena's coordinate system.
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const auto &worldData = game.getGameData().getActiveWorld();
+		const auto &worldData = game.getGameState().getActiveWorld();
 
 		const std::string text = [&worldData, &player, &exeData]()
 		{
@@ -1015,8 +1015,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 			return str;
 		}();
 
-		auto &gameData = game.getGameData();
-		gameData.setActionText(text, game.getFontLibrary(), game.getRenderer());
+		auto &gameState = game.getGameState();
+		gameState.setActionText(text, game.getFontLibrary(), game.getRenderer());
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -1165,7 +1165,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.getGameData().getPlayer();
+		auto &player = game.getGameState().getPlayer();
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -1251,7 +1251,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 
-		auto &player = game.getGameData().getPlayer();
+		auto &player = game.getGameState().getPlayer();
 		const auto &weaponAnim = player.getWeaponAnimation();
 		const bool turning = ((dx != 0) || (dy != 0)) && (weaponAnim.isSheathed() || !rightClick);
 
@@ -1286,7 +1286,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	const double walkSpeed = 15.0;
 	const double runSpeed = 30.0;
 
-	const auto &worldData = game.getGameData().getActiveWorld();
+	const auto &worldData = game.getGameState().getActiveWorld();
 
 	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
 	if (!modernInterface)
@@ -1313,7 +1313,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameData().getPlayer();
+		auto &player = game.getGameState().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -1463,7 +1463,7 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 		// relevant to do anyway (at least for development).
 		bool isRunning = inputManager.keyIsDown(SDL_SCANCODE_LSHIFT);
 
-		auto &player = game.getGameData().getPlayer();
+		auto &player = game.getGameState().getPlayer();
 
 		// Get some relevant player direction data (getDirection() isn't necessary here
 		// because the Y component is intentionally truncated).
@@ -1528,7 +1528,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 	// maybe the game loop could call a "Panel::fixedTick()" method.
 
 	// Only handle attacking if the player's weapon is currently idle.
-	auto &weaponAnimation = this->getGame().getGameData().getPlayer().getWeaponAnimation();
+	auto &weaponAnimation = this->getGame().getGameState().getPlayer().getWeaponAnimation();
 	if (weaponAnimation.isIdle())
 	{
 		const auto &inputManager = this->getGame().getInputManager();
@@ -1657,11 +1657,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	bool debugFadeVoxel)
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
-	auto &player = gameData.getPlayer();
+	auto &player = gameState.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
-	auto &worldData = gameData.getActiveWorld();
+	auto &worldData = gameState.getActiveWorld();
 	auto &level = worldData.getActiveLevel();
 	auto &voxelGrid = level.getVoxelGrid();
 	const auto &entityManager = level.getEntityManager();
@@ -1922,8 +1922,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								}
 							}();
 
-							auto &gameData = game.getGameData();
-							gameData.setActionText(menuName, game.getFontLibrary(), game.getRenderer());
+							auto &gameState = game.getGameState();
+							gameState.setActionText(menuName, game.getFontLibrary(), game.getRenderer());
 						}
 					}
 				}
@@ -1971,8 +1971,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						EntityUtils::defTypeToString(entityDef) + ")";
 				}
 
-				auto &gameData = game.getGameData();
-				gameData.setActionText(text, game.getFontLibrary(), game.getRenderer());
+				auto &gameState = game.getGameState();
+				gameState.setActionText(text, game.getFontLibrary(), game.getRenderer());
 			}
 		}
 		else
@@ -1986,8 +1986,8 @@ void GameWorldPanel::handleNightLightChange(bool active)
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();
-	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getActiveWorld();
+	auto &gameState = game.getGameState();
+	auto &worldData = gameState.getActiveWorld();
 	auto &levelData = worldData.getActiveLevel();
 	auto &entityManager = levelData.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -2037,7 +2037,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 {
 	auto &game = this->getGame();
-	auto &worldData = game.getGameData().getActiveWorld();
+	auto &worldData = game.getGameState().getActiveWorld();
 
 	// Only interior levels have triggers.
 	if (worldData.getMapType() == MapType::Interior)
@@ -2059,8 +2059,8 @@ void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 				const std::string text = textTrigger->getText().substr(
 					0, textTrigger->getText().size() - 1);
 
-				auto &gameData = game.getGameData();
-				gameData.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
+				auto &gameState = game.getGameState();
+				gameState.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
 
 				// Set the text trigger as activated (regardless of whether or not it's
 				// single-shot, just for consistency).
@@ -2082,8 +2082,8 @@ void GameWorldPanel::handleTriggers(const NewInt2 &voxel)
 void GameWorldPanel::handleDoors(double dt, const Double2 &playerPos)
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
-	auto &worldData = gameData.getActiveWorld();
+	auto &gameState = game.getGameState();
+	auto &worldData = gameState.getActiveWorld();
 	auto &activeLevel = worldData.getActiveLevel();
 
 	// Lambda for playing a sound by .INF sound index if the close sound types match.
@@ -2199,14 +2199,14 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
 
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-	auto &worldData = gameData.getActiveWorld();
+	auto &worldData = gameState.getActiveWorld();
 	auto &activeLevel = worldData.getActiveLevel();
 	const MapType activeMapType = worldData.getMapType();
 
-	const LocationDefinition &locationDef = gameData.getLocationDefinition();
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
 	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
@@ -2214,7 +2214,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	if (activeMapType == MapType::Interior)
 	{
 		// @temp: temporary condition while test interiors are allowed on the main menu.
-		if (!gameData.isActiveWorldNested())
+		if (!gameState.isActiveWorldNested())
 		{
 			DebugLogWarning("Test interiors have no exterior.");
 			return;
@@ -2222,18 +2222,18 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		gameData.leaveInterior(game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
+		gameState.leaveInterior(game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 			binaryAssetLibrary, game.getRandom(), textureManager, renderer);
 
 		// Change to exterior music.
-		const auto &clock = gameData.getClock();
+		const auto &clock = gameState.getClock();
 		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-			gameData.getWeatherType(), cityDef.climateType);
+			gameState.getWeatherType(), cityDef.climateType);
 
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-		const MusicDefinition *musicDef = [&game, &gameData, filteredWeatherType, &musicLibrary]()
+		const MusicDefinition *musicDef = [&game, &gameState, filteredWeatherType, &musicLibrary]()
 		{
-			if (!gameData.nightMusicIsActive())
+			if (!gameState.nightMusicIsActive())
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 					game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
@@ -2257,7 +2257,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 		// Only play jingle if the exterior is inside the city.
 		const MusicDefinition *jingleMusicDef = nullptr;
-		if (gameData.getActiveWorld().getMapType() == MapType::City)
+		if (gameState.getActiveWorld().getMapType() == MapType::City)
 		{
 			jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
 				game.getRandom(), [&cityDef](const MusicDefinition &def)
@@ -2370,7 +2370,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const std::optional<ArenaTypes::InteriorType> interiorType =
 						ArenaInteriorUtils::menuTypeToInteriorType(menuType);
 					DebugAssert(interiorType.has_value());
-					gameData.enterInterior(*interiorType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
+					gameState.enterInterior(*interiorType, mif, NewInt2(returnVoxel.x, returnVoxel.z),
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getRandom(), game.getTextureManager(),
 						game.getRenderer());
@@ -2417,8 +2417,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			{
 				// City gate transition.
 				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-				const ProvinceDefinition &provinceDef = gameData.getProvinceDefinition();
-				const LocationDefinition &locationDef = gameData.getLocationDefinition();
+				const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+				const LocationDefinition &locationDef = gameState.getLocationDefinition();
 				const int starCount = SkyUtils::getStarCountFromDensity(
 					game.getOptions().getMisc_StarDensity());
 
@@ -2456,8 +2456,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					}();
 
 					const bool ignoreGatePos = false;
-					if (!gameData.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
-						ignoreGatePos, gameData.getWeatherType(), starCount,
+					if (!gameState.loadWilderness(locationDef, provinceDef, gatePos, transitionDir,
+						ignoreGatePos, gameState.getWeatherType(), starCount,
 						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getRandom(), textureManager, renderer))
 					{
@@ -2467,7 +2467,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 				else if (activeMapType == MapType::Wilderness)
 				{
 					// From wilderness to city.
-					if (!gameData.loadCity(locationDef, provinceDef, gameData.getWeatherType(),
+					if (!gameState.loadCity(locationDef, provinceDef, gameState.getWeatherType(),
 						starCount, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(), textureManager,
 						renderer))
@@ -2484,14 +2484,14 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 				// Reset the current music (even if it's the same one).
 				const MusicLibrary &musicLibrary = game.getMusicLibrary();
-				const MusicDefinition *musicDef = [&game, &gameData, &locationDef, &musicLibrary]()
+				const MusicDefinition *musicDef = [&game, &gameState, &locationDef, &musicLibrary]()
 				{
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					const ClimateType climateType = cityDef.climateType;
 					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-						gameData.getWeatherType(), climateType);
+						gameState.getWeatherType(), climateType);
 
-					if (!gameData.nightMusicIsActive())
+					if (!gameState.nightMusicIsActive())
 					{
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 							game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
@@ -2542,12 +2542,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const NewInt2 &transitionVoxel)
 {
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 
 	// Level transitions are always between interiors.
-	auto &interior = [&gameData]() -> WorldData&
+	auto &interior = [&gameState]() -> WorldData&
 	{
-		auto &worldData = gameData.getActiveWorld();
+		auto &worldData = gameState.getActiveWorld();
 		DebugAssert(worldData.getMapType() == MapType::Interior);
 		return worldData;
 	}();
@@ -2613,14 +2613,14 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			}();
 
 			// Player destination after going through a level up/down voxel.
-			auto &player = gameData.getPlayer();
+			auto &player = gameState.getPlayer();
 			const NewDouble2 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionVoxel);
 			const NewDouble2 destinationXZ(
 				transitionVoxelCenter.x + dirToNewVoxel.x,
 				transitionVoxelCenter.y + dirToNewVoxel.z);
 
 			// Lambda for transitioning the player to the given level.
-			auto switchToLevel = [&game, &gameData, &interior, &player, &destinationXZ,
+			auto switchToLevel = [&game, &gameState, &interior, &player, &destinationXZ,
 				&dirToNewVoxel](int levelIndex)
 			{
 				// Clear all open doors and fading voxels in the level the player is switching away from.
@@ -2633,10 +2633,10 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 
 				// Set the new level active in the renderer.
 				auto &newActiveLevel = interior.getActiveLevel();
-				newActiveLevel.setActive(gameData.nightLightsAreActive(), interior,
-					gameData.getProvinceDefinition(), gameData.getLocationDefinition(),
+				newActiveLevel.setActive(gameState.nightLightsAreActive(), interior,
+					gameState.getProvinceDefinition(), gameState.getLocationDefinition(),
 					game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-					game.getBinaryAssetLibrary(), game.getRandom(), gameData.getCitizenManager(),
+					game.getBinaryAssetLibrary(), game.getRandom(), gameState.getCitizenManager(),
 					game.getTextureManager(), game.getRenderer());
 
 				// Move the player to where they should be in the new level.
@@ -2677,7 +2677,7 @@ void GameWorldPanel::handleLevelTransition(const NewInt2 &playerVoxel, const New
 			else if (transition.getType() == LevelData::Transition::Type::LevelUp)
 			{
 				// If the custom function has a target, call it and reset it.
-				auto &onLevelUpVoxelEnter = gameData.getOnLevelUpVoxelEnter();
+				auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
 
 				if (onLevelUpVoxelEnter)
 				{
@@ -2818,8 +2818,8 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const Int2 renderDims(profilerData.width, profilerData.height);
 		const double resolutionScale = options.getGraphics_ResolutionScale();
 
-		auto &gameData = game.getGameData();
-		const auto &player = gameData.getPlayer();
+		auto &gameState = game.getGameState();
+		const auto &player = gameState.getPlayer();
 		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 		const Double3 &direction = player.getDirection();
 
@@ -2846,7 +2846,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
 		// Add any wilderness-specific info.
-		const auto &worldData = game.getGameData().getActiveWorld();
+		const auto &worldData = game.getGameState().getActiveWorld();
 		const MapType mapType = worldData.getMapType();
 		if (mapType == MapType::Wilderness)
 		{
@@ -2989,7 +2989,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 void GameWorldPanel::tick(double dt)
 {
 	auto &game = this->getGame();
-	DebugAssert(game.gameDataIsActive());
+	DebugAssert(game.gameStateIsActive());
 
 	// Get the relative mouse state.
 	const auto &inputManager = game.getInputManager();
@@ -3000,11 +3000,11 @@ void GameWorldPanel::tick(double dt)
 	this->handlePlayerMovement(dt);
 
 	// Tick the game world clock time.
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	const bool debugFastForwardClock = inputManager.keyIsDown(SDL_SCANCODE_R); // @todo: camp button
-	const Clock oldClock = gameData.getClock();
-	gameData.tick(debugFastForwardClock ? (dt * 250.0) : dt, game);
-	const Clock newClock = gameData.getClock();
+	const Clock oldClock = gameState.getClock();
+	gameState.tick(debugFastForwardClock ? (dt * 250.0) : dt, game);
+	const Clock newClock = gameState.getClock();
 
 	auto &renderer = game.getRenderer();
 
@@ -3029,7 +3029,7 @@ void GameWorldPanel::tick(double dt)
 		this->handleNightLightChange(false);
 	}
 
-	auto &worldData = gameData.getActiveWorld();
+	auto &worldData = gameState.getActiveWorld();
 	const MapType mapType = worldData.getMapType();
 
 	// Check for changes in exterior music depending on the time.
@@ -3048,10 +3048,10 @@ void GameWorldPanel::tick(double dt)
 
 		if (changeToDayMusic)
 		{
-			const LocationDefinition &locationDef = gameData.getLocationDefinition();
+			const LocationDefinition &locationDef = gameState.getLocationDefinition();
 			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 			const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-				gameData.getWeatherType(), cityDef.climateType);
+				gameState.getWeatherType(), cityDef.climateType);
 
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 				MusicDefinition::Type::Weather, game.getRandom(),
@@ -3086,7 +3086,7 @@ void GameWorldPanel::tick(double dt)
 	}
 
 	// Tick the player.
-	auto &player = gameData.getPlayer();
+	auto &player = gameState.getPlayer();
 	const CoordDouble3 oldPlayerPoint = player.getPosition();
 	player.tick(game, dt);
 	const CoordDouble3 newPlayerPoint = player.getPosition();
@@ -3136,7 +3136,7 @@ void GameWorldPanel::tick(double dt)
 
 void GameWorldPanel::render(Renderer &renderer)
 {
-	DebugAssert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameStateIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -3145,16 +3145,16 @@ void GameWorldPanel::render(Renderer &renderer)
 	// might not completely fill up the native buffer (bottom corners), so
 	// clearing the native buffer beforehand is still necessary.
 	auto &game = this->getGame();
-	auto &gameData = game.getGameData();
-	auto &player = gameData.getPlayer();
-	const auto &worldData = gameData.getActiveWorld();
+	auto &gameState = game.getGameState();
+	auto &player = gameState.getPlayer();
+	const auto &worldData = gameState.getActiveWorld();
 	const auto &level = worldData.getActiveLevel();
 	const auto &options = game.getOptions();
-	const double ambientPercent = gameData.getAmbientPercent();
+	const double ambientPercent = gameState.getAmbientPercent();
 
-	const double latitude = [&gameData]()
+	const double latitude = [&gameState]()
 	{
-		const LocationDefinition &locationDef = gameData.getLocationDefinition();
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		return locationDef.getLatitude();
 	}();
 
@@ -3172,8 +3172,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	const Palette &defaultPalette = textureManager.getPaletteHandle(*defaultPaletteID);
 
 	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
-		ambientPercent, gameData.getDaytimePercent(), gameData.getChasmAnimPercent(), latitude,
-		gameData.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
+		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
+		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level, game.getEntityDefinitionLibrary(),
 		defaultPalette);
 
@@ -3228,10 +3228,10 @@ void GameWorldPanel::render(Renderer &renderer)
 
 void GameWorldPanel::renderSecondary(Renderer &renderer)
 {
-	DebugAssert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameStateIsActive());
 	
-	auto &gameData = this->getGame().getGameData();
-	auto &player = gameData.getPlayer();
+	auto &gameState = this->getGame().getGameState();
+	auto &player = gameState.getPlayer();
 	const auto &options = this->getGame().getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
@@ -3330,10 +3330,10 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	// Draw each pop-up text if its duration is positive.
 	// - @todo: maybe give delta time to render()? Or store in tick()? I want to avoid
 	//   subtracting the time in tick() because it would always be one frame shorter then.
-	if (gameData.triggerTextIsVisible())
+	if (gameState.triggerTextIsVisible())
 	{
 		const Texture *triggerTextTexture;
-		gameData.getTriggerTextRenderInfo(&triggerTextTexture);
+		gameState.getTriggerTextRenderInfo(&triggerTextTexture);
 
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
@@ -3348,17 +3348,17 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		renderer.drawOriginal(*triggerTextTexture, centerX, centerY);
 	}
 
-	if (gameData.actionTextIsVisible())
+	if (gameState.actionTextIsVisible())
 	{
 		const Texture *actionTextTexture;
-		gameData.getActionTextRenderInfo(&actionTextTexture);
+		gameState.getActionTextRenderInfo(&actionTextTexture);
 
 		const int textX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (actionTextTexture->getWidth() / 2);
 		const int textY = 20;
 		renderer.drawOriginal(*actionTextTexture, textX, textY);
 	}
 
-	if (gameData.effectTextIsVisible())
+	if (gameState.effectTextIsVisible())
 	{
 		// @todo: draw "effect text".
 	}

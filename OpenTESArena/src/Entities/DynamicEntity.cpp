@@ -243,10 +243,10 @@ void DynamicEntity::setDestination(const NewDouble2 *point)
 
 void DynamicEntity::updateCitizenState(Game &game, double dt)
 {
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	auto &random = game.getRandom();
-	const auto &player = gameData.getPlayer();
-	const auto &worldData = gameData.getActiveWorld();
+	const auto &player = gameState.getPlayer();
+	const auto &worldData = gameState.getActiveWorld();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const auto &entityManager = levelData.getEntityManager();
@@ -317,8 +317,8 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 
 void DynamicEntity::updateCreatureState(Game &game, double dt)
 {
-	auto &gameData = game.getGameData();
-	const auto &worldData = gameData.getActiveWorld();
+	auto &gameState = game.getGameState();
+	const auto &worldData = gameState.getActiveWorld();
 	const auto &levelData = worldData.getActiveLevel();
 	const auto &entityManager = levelData.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -332,7 +332,7 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	if (this->secondsTillCreatureSound <= 0.0)
 	{
 		// See if the NPC is withing hearing distance of the player.
-		const CoordDouble3 &playerPosition = gameData.getPlayer().getPosition();
+		const CoordDouble3 &playerPosition = gameState.getPlayer().getPosition();
 		if (this->withinHearingDistance(playerPosition, ceilingHeight))
 		{
 			// See if the NPC has a creature sound.
@@ -506,7 +506,7 @@ void DynamicEntity::tick(Game &game, double dt)
 
 	// Update physics/pathfinding/etc..
 	// @todo: add a check here if updating the entity state has put them in a non-physics state.
-	const auto &worldData = game.getGameData().getActiveWorld();
+	const auto &worldData = game.getGameState().getActiveWorld();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 	this->updatePhysics(worldData, entityDefLibrary, game.getRandom(), dt);
 }

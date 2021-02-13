@@ -22,7 +22,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
@@ -255,7 +255,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							fullGameWindow,
 							options.getGraphics_RenderThreadsMode());
 
-						std::unique_ptr<GameData> gameData = [this, &game, &binaryAssetLibrary]()
+						std::unique_ptr<GameState> gameState = [this, &game, &binaryAssetLibrary]()
 						{
 							const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -290,12 +290,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									exeData);
 							}();
 
-							return std::make_unique<GameData>(std::move(player), binaryAssetLibrary);
+							return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
 						}();
 
 						// Find starting dungeon location definition.
 						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
-						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+						const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 						const LocationDefinition *locationDefPtr = nullptr;
@@ -328,7 +328,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
 						}
 
-						if (!gameData->loadInterior(*locationDefPtr, provinceDef, ArenaTypes::InteriorType::Dungeon,
+						if (!gameState->loadInterior(*locationDefPtr, provinceDef, ArenaTypes::InteriorType::Dungeon,
 							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
 							renderer))
@@ -336,8 +336,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
 						}
 
-						// Set the game data before constructing the game world panel.
-						game.setGameData(std::move(gameData));
+						// Set the game state before constructing the game world panel.
+						game.setGameState(std::move(gameState));
 					};
 
 					auto cinematicFunction = [gameDataFunction](Game &game)
@@ -351,14 +351,14 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							auto onLevelUpVoxelEnter = [](Game &game)
 							{
 								// Teleport the player to a random location based on their race.
-								auto &gameData = game.getGameData();
-								auto &player = gameData.getPlayer();
+								auto &gameState = game.getGameState();
+								auto &player = gameState.getPlayer();
 								player.setVelocityToZero();
 
 								const int localCityID = game.getRandom().next(32);
-								const int provinceID = gameData.getPlayer().getRaceID();
+								const int provinceID = gameState.getPlayer().getRaceID();
 
-								const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+								const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 								const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
@@ -388,7 +388,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									game.getOptions().getMisc_StarDensity());
 
 								auto &renderer = game.getRenderer();
-								if (!gameData.loadCity(locationDef, provinceDef, weatherType, starCount,
+								if (!gameState.loadCity(locationDef, provinceDef, weatherType, starCount,
 									game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
 									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getRandom(),
 									game.getTextureManager(), renderer))
@@ -397,10 +397,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								}
 
 								// Set music based on weather and time.
-								const MusicDefinition *musicDef = [&game, &gameData, weatherType]()
+								const MusicDefinition *musicDef = [&game, &gameState, weatherType]()
 								{
 									const MusicLibrary &musicLibrary = game.getMusicLibrary();
-									if (!gameData.nightMusicIsActive())
+									if (!gameState.nightMusicIsActive())
 									{
 										return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 											game.getRandom(), [weatherType](const MusicDefinition &def)
@@ -427,8 +427,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							};
 
 							// Set the *LEVELUP voxel enter event.
-							auto &gameData = game.getGameData();
-							gameData.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
+							auto &gameState = game.getGameState();
+							gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
 
 							// Initialize the game world panel.
 							auto gameWorldPanel = std::make_unique<GameWorldPanel>(game);

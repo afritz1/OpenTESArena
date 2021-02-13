@@ -10,7 +10,7 @@
 // - spawning N townspeople entities with some conditions (during the day, no enemies nearby).
 // - iteration over entities of a certain type for turning them on/off due to a crime
 
-// @todo: not sure yet if this should be in the level or GameData or Game.
+// @todo: not sure yet if this should be in the level or GameState or Game.
 
 class BinaryAssetLibrary;
 class EntityAnimationDefinition;

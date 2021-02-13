@@ -122,7 +122,7 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const
 
 	const bool isWild = [&game]()
 	{
-		const auto &worldData = game.getGameData().getActiveWorld();
+		const auto &worldData = game.getGameState().getActiveWorld();
 		return worldData.getMapType() == MapType::Wilderness;
 	}();
 
