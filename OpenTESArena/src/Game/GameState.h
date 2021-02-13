@@ -57,15 +57,6 @@ private:
 	// second is twenty in-game seconds.
 	static constexpr double TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
-	// Game world interface display texts with their associated time remaining. These values 
-	// are stored here so they are not destroyed when switching away from the game world panel.
-	// - Trigger text: lore message from voxel trigger
-	// - Action text: description of the player's current action
-	// - Effect text: effect on the player (disease, drunk, silence, etc.)
-	TimedTextBox triggerText, actionText, effectText;
-
-	WeatherList weathers;
-
 	Player player;
 
 	// Stack of world data instances. Multiple ones can exist at the same time when the player is inside
@@ -81,16 +72,25 @@ private:
 	int provinceIndex;
 	int locationIndex;
 
+	// Game world interface display texts with their associated time remaining. These values 
+	// are stored here so they are not destroyed when switching away from the game world panel.
+	// - Trigger text: lore message from voxel trigger
+	// - Action text: description of the player's current action
+	// - Effect text: effect on the player (disease, drunk, silence, etc.)
+	TimedTextBox triggerText, actionText, effectText;
+
+	WeatherList weathers;
+
+	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
+	// behavior is to decrement the world's level index.
+	std::function<void(Game&)> onLevelUpVoxelEnter;
+
 	Date date;
 	Clock clock;
 	ArenaRandom arenaRandom;
 	double fogDistance;
 	double chasmAnimSeconds;
 	WeatherType weatherType;
-
-	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
-	// behavior is to decrement the world's level index.
-	std::function<void(Game&)> onLevelUpVoxelEnter;
 
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
 	void clearWorldDatas();
@@ -155,8 +155,6 @@ public:
 		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		Random &random, TextureManager &textureManager, Renderer &renderer);
 
-	const WeatherList &getWeathersArray() const;
-
 	Player &getPlayer();
 	WorldData &getActiveWorld(); // @todo: this is bad practice since leaveInterior() can delete the active world.
 	bool isActiveWorldNested() const; // True if the active interior is inside an exterior.
@@ -167,6 +165,7 @@ public:
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
+	const WeatherList &getWeathersArray() const;
 	Date &getDate();
 	Clock &getClock();
 	ArenaRandom &getRandom();

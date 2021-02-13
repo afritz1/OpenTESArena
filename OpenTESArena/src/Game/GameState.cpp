@@ -513,11 +513,6 @@ bool GameState::loadWilderness(const LocationDefinition &locationDef, const Prov
 	return true;
 }
 
-const GameState::WeatherList &GameState::getWeathersArray() const
-{
-	return this->weathers;
-}
-
 Player &GameState::getPlayer()
 {
 	return this->player;
@@ -569,6 +564,11 @@ LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
 	return provinceInst.getLocationInstance(this->locationIndex);
+}
+
+const GameState::WeatherList &GameState::getWeathersArray() const
+{
+	return this->weathers;
 }
 
 Date &GameState::getDate()
