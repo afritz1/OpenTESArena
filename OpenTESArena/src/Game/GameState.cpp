@@ -208,10 +208,10 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 	return true;
 }
 
-bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDay, int starCount,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::optional<WeatherType> &overrideWeather,
+	int currentDay, int starCount, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	// Get the province and location definitions.
 	if ((provinceID < 0) || (provinceID >= this->worldMapDef.getProvinceCount()))
@@ -245,7 +245,33 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 
-	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate weather type here, but only if it's an exterior. Interiors are always clear?
+	const WeatherType weatherType = [&overrideWeather, &activeMapDef]()
+	{
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return *overrideWeather;
+		}
+		else
+		{
+			// Determine weather from the map.
+			const MapType mapType = activeMapDef.getMapType();
+			if (mapType == MapType::Interior)
+			{
+				// Interiors are always clear.
+				return WeatherType::Clear;
+			}
+			else if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
+			{
+				// @todo: generate weather based on the location.
+				return WeatherType::Clear;
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(WeatherType, std::to_string(static_cast<int>(mapType)));
+			}
+		}
+	}();
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
@@ -310,9 +336,10 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 }
 
 bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	MapDefinition mapDefinition;
 	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
@@ -335,7 +362,18 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 
-	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate the weather for this location.
+	const WeatherType weatherType = [&overrideWeather]()
+	{
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return *overrideWeather;
+		}
+		else
+		{
+			return WeatherType::Clear; // @todo: generate the weather for this location.
+		}
+	}();
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
@@ -352,9 +390,10 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 }
 
 bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-	const std::optional<CoordInt3> &startVoxel, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
+	const std::optional<CoordInt3> &startVoxel, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	// @todo: try to get gate position if current active map is for city -- need to have saved it from when the
 	// gate was clicked in GameWorldPanel.
@@ -380,7 +419,18 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 
-	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate the weather for this location.
+	const WeatherType weatherType = [&overrideWeather]()
+	{
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return *overrideWeather;
+		}
+		else
+		{
+			return WeatherType::Clear; // @todo: generate the weather for this location.
+		}
+	}();
 
 	// Wilderness start point depends on city gate the player is coming out of.
 	DebugAssert(activeMapDef.getStartPointCount() == 0);

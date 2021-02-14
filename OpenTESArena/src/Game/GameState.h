@@ -121,10 +121,10 @@ public:
 
 	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
 	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
-	bool trySetFromWorldMap(int provinceID, int locationID, int currentDay, int starCount,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+	bool trySetFromWorldMap(int provinceID, int locationID, const std::optional<WeatherType> &overrideWeather,
+		int currentDay, int starCount, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This preserves existing maps for later when the interior is exited.
@@ -135,13 +135,14 @@ public:
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		const std::optional<WeatherType> &overrideWeather, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
-	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo, const std::optional<CoordInt3> &startVoxel,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
+		const std::optional<CoordInt3> &startVoxel, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
