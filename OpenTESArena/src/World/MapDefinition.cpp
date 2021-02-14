@@ -446,8 +446,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	}
 	else
 	{
-		DebugCrash("Unrecognized interior generation type \"" +
-			std::to_string(static_cast<int>(interiorType)) + "\".");
+		DebugNotImplemented(std::to_string(static_cast<int>(interiorType)));
 	}
 	
 	return true;

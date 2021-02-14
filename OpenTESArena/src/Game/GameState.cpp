@@ -46,10 +46,12 @@ namespace
 	const Color EffectTextShadowColor(190, 113, 0);
 }
 
-void GameState::MapPair::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance)
+void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
+	const std::optional<CoordInt3> &returnVoxel)
 {
 	this->definition = std::move(mapDefinition);
 	this->instance = std::move(mapInstance);
+	this->returnVoxel = returnVoxel;
 }
 
 GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
@@ -106,7 +108,7 @@ GameState::~GameState()
 bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
 	int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapPair *outMapPair)
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState)
 {
 	// Decide how to load and instantiate the map.
 	const LocationDefinition::Type locationType = locationDef.getType();
@@ -154,7 +156,7 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 
 		MapInstance mapInstance;
 		mapInstance.init(mapDefinition, textureManager);
-		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+		outMapState->init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
 	}
 	else if (locationType == LocationDefinition::Type::Dungeon)
 	{
@@ -174,7 +176,7 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 
 		MapInstance mapInstance;
 		mapInstance.init(mapDefinition, textureManager);
-		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+		outMapState->init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
 	}
 	else if (locationType == LocationDefinition::Type::MainQuestDungeon)
 	{
@@ -196,7 +198,7 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 
 		MapInstance mapInstance;
 		mapInstance.init(mapDefinition, textureManager);
-		outMapPair->init(std::move(mapDefinition), std::move(mapInstance));
+		outMapState->init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
 	}
 	else
 	{
@@ -227,17 +229,17 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
-	MapPair mapPair;
+	MapState mapState;
 	if (!GameState::tryMakeMapFromLocation(locationDef, provinceDef.getRaceID(), weatherType, currentDay,
 		starCount, provinceDef.hasAnimatedDistantLand(), charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-		textAssetLibrary, textureManager, &mapPair))
+		textAssetLibrary, textureManager, &mapState))
 	{
 		DebugLogError("Couldn't make map from location \"" + locationDef.getName() + "\" in province \"" + provinceDef.getName() + "\".");
 		return false;
 	}
 
 	this->clearMaps();
-	this->maps.emplace(std::move(mapPair));
+	this->maps.emplace(std::move(mapState));
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
@@ -246,7 +248,7 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate weather type here, but only if it's an exterior. Interiors are always clear?
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
-	const NewDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
 
 	// Set level active in the renderer.
 	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
@@ -258,10 +260,50 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 	return true;
 }
 
-bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo)
+bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+	const std::optional<CoordInt3> &returnVoxel, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
-	// @todo: save returnVoxel
-	DebugNotImplemented();
+	MapDefinition mapDefinition;
+	if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager))
+	{
+		DebugLogError("Couldn't init interior map from generation info.");
+		return false;
+	}
+
+	MapInstance mapInstance;
+	mapInstance.init(mapDefinition, textureManager);
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
+
+	// Save return voxel to the current exterior (if any).
+	if (this->maps.size() > 0)
+	{
+		MapState &activeMapState = this->maps.top();
+		activeMapState.returnVoxel = returnVoxel;
+	}
+
+	this->maps.emplace(std::move(mapState));
+
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	MapInstance &activeMapInst = this->getActiveMapInst();
+	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+
+	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
+
+	DebugAssert(activeMapDef.getStartPointCount() > 0);
+	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+
+	// Set level active in the renderer.
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set level active in the renderer for generated interior.");
+		return false;
+	}
+
 	return true;
 }
 
@@ -282,6 +324,8 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo)
 
 bool GameState::tryPopMap()
 {
+	// @todo: use returnVoxel as the start point if the now-activated map has it.
+
 	DebugNotImplemented();
 	return true;
 }
@@ -294,22 +338,22 @@ Player &GameState::getPlayer()
 const MapDefinition &GameState::getActiveMapDef() const
 {
 	DebugAssert(!this->maps.empty());
-	const MapPair &pair = this->maps.top();
-	return pair.definition;
+	const MapState &activeMapState = this->maps.top();
+	return activeMapState.definition;
 }
 
 MapInstance &GameState::getActiveMapInst()
 {
 	DebugAssert(!this->maps.empty());
-	MapPair &pair = this->maps.top();
-	return pair.instance;
+	MapState &activeMapState = this->maps.top();
+	return activeMapState.instance;
 }
 
 const MapInstance &GameState::getActiveMapInst() const
 {
 	DebugAssert(!this->maps.empty());
-	const MapPair &pair = this->maps.top();
-	return pair.instance;
+	const MapState &activeMapState = this->maps.top();
+	return activeMapState.instance;
 }
 
 bool GameState::isActiveMapNested() const
@@ -598,7 +642,7 @@ void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
 	this->player.setVelocityToZero();
 }
 
-bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble2 &startPoint,
+bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const LevelDouble2 &startPoint,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const NewDouble3 playerPos(

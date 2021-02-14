@@ -54,12 +54,13 @@ public:
 	// One weather for each of the 36 province quadrants (updated hourly).
 	using WeatherList = std::array<WeatherType, 36>;
 private:
-	struct MapPair
+	struct MapState
 	{
 		MapDefinition definition;
 		MapInstance instance;
+		std::optional<CoordInt3> returnVoxel; // Available when returning from inside an interior.
 		
-		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance);
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, const std::optional<CoordInt3> &returnVoxel);
 	};
 
 	// Determines length of a real-time second in-game. For the original game, one real
@@ -70,8 +71,7 @@ private:
 
 	// Stack of map definitions and instances. Multiple ones can exist at the same time when the player is
 	// inside an interior in a city or wilderness, but ultimately the size should never exceed 2.
-	std::stack<MapPair> maps;
-	std::optional<NewInt2> returnVoxel; // Available if in an interior that's in an exterior.
+	std::stack<MapState> maps;
 
 	CitizenManager citizenManager; // Tracks active citizens and spawning.
 	
@@ -104,12 +104,12 @@ private:
 	static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
 		int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapPair *outMapPair);
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);
 
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
-	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble2 &startPoint,
+	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const LevelDouble2 &startPoint,
 		TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
@@ -127,9 +127,11 @@ public:
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
-	// info. This can only be used when there is at least one existing map, and it preserves those maps for later when
-	// the interior is exited.
-	bool tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo);
+	// info. This preserves existing maps for later when the interior is exited.
+	bool tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+		const std::optional<CoordInt3> &returnVoxel, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo);
