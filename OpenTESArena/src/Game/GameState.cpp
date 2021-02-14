@@ -468,6 +468,11 @@ bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 	}
 
 	this->maps.pop();
+	if (this->maps.size() == 0)
+	{
+		DebugLogError("No map available to set active.");
+		return false;
+	}
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
