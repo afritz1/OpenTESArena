@@ -2,6 +2,8 @@
 #include "MapDefinition.h"
 #include "MapType.h"
 #include "WeatherUtils.h"
+#include "../Assets/ArenaPaletteName.h"
+#include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
@@ -63,8 +65,17 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
 	renderer.setFogDistance(fogDistance);
 
-	// @todo: set renderer night lights active via ArenaPaletteName::Default as the night light palette
-	DebugNotImplemented();
+	// Set night lights active/inactive.
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette \"" + paletteName + "\".");
+		return false;
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	renderer.setNightLightsActive(nightLightsAreActive, palette);
 
 	// @todo: see LevelData::setActive() for reference
 	// - load voxel textures
