@@ -148,7 +148,7 @@ public:
 
 	// Pops the top-most map from the stack and sets the next map active. This fails if there would be no available map
 	// to switch to (meaning that there must always be an active map).
-	bool tryPopMap();
+	bool tryPopMap(TextureManager &textureManager, Renderer &renderer);
 
 	Player &getPlayer();
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.

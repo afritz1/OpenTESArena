@@ -459,11 +459,46 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	return true;
 }
 
-bool GameState::tryPopMap()
+bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 {
-	// @todo: use returnVoxel as the start point if the now-activated map has it.
+	if (this->maps.size() == 0)
+	{
+		DebugLogError("No map available to pop.");
+		return false;
+	}
 
-	DebugNotImplemented();
+	this->maps.pop();
+
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	MapInstance &activeMapInst = this->getActiveMapInst();
+	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const std::optional<CoordInt3> &returnVoxel = this->maps.top().returnVoxel;
+
+	// @todo: should the map state save its weather beforehand so it can be restored here? What if the player sleeps in an interior?
+	// - probably need a condition to determine if we need to recalculate the weather.
+	const WeatherType weatherType = WeatherType::Clear;
+
+	const CoordInt2 startCoord = [&activeMapDef, &returnVoxel]()
+	{
+		// Use the return voxel as the start point if the now-activated map has one.
+		if (returnVoxel.has_value())
+		{
+			return CoordInt2(returnVoxel->chunk, VoxelInt2(returnVoxel->voxel.x, returnVoxel->voxel.z));
+		}
+		else
+		{
+			// Too complex to determine (based on interior/city/wild), so just don't support for now.
+			DebugUnhandledReturn(CoordInt2);
+		}
+	}();
+
+	// Set level active in the renderer.
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set level active in the renderer for previously active level.");
+		return false;
+	}
+
 	return true;
 }
 
