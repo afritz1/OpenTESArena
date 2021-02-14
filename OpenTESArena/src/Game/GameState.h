@@ -134,10 +134,16 @@ public:
 		TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
-	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo);
+	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
-	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo);
+	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo, const std::optional<CoordInt3> &startVoxel,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Pops the top-most map from the stack and sets the next map active. This fails if there would be no available map
 	// to switch to (meaning that there must always be an active map).

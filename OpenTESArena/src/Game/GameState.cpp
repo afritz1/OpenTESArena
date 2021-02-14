@@ -307,18 +307,92 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	return true;
 }
 
-bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo)
+bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
-	DebugNotImplemented();
+	MapDefinition mapDefinition;
+	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textAssetLibrary, textureManager))
+	{
+		DebugLogError("Couldn't init city map from generation info.");
+		return false;
+	}
+
+	MapInstance mapInstance;
+	mapInstance.init(mapDefinition, textureManager);
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
+
+	this->clearMaps();
+	this->maps.emplace(std::move(mapState));
+
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	MapInstance &activeMapInst = this->getActiveMapInst();
+	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+
+	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate the weather for this location.
+
+	DebugAssert(activeMapDef.getStartPointCount() > 0);
+	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+
+	// Set level active in the renderer.
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set level active in the renderer for generated city.");
+		return false;
+	}
+
 	return true;
 }
 
-bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo)
+bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
+	const std::optional<CoordInt3> &startVoxel, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	// @todo: try to get gate position if current active map is for city -- need to have saved it from when the
 	// gate was clicked in GameWorldPanel.
+	
+	MapDefinition mapDefinition;
+	if (!mapDefinition.initWild(wildGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager))
+	{
+		DebugLogError("Couldn't init wild map from generation info.");
+		return false;
+	}
 
-	DebugNotImplemented();
+	MapInstance mapInstance;
+	mapInstance.init(mapDefinition, textureManager);
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
+
+	this->clearMaps();
+	this->maps.emplace(std::move(mapState));
+
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	MapInstance &activeMapInst = this->getActiveMapInst();
+	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+
+	constexpr WeatherType weatherType = WeatherType::Clear; // @todo: generate the weather for this location.
+
+	// Wilderness start point depends on city gate the player is coming out of.
+	DebugAssert(activeMapDef.getStartPointCount() == 0);
+	const LevelDouble2 startPoint = [&startVoxel]() // @todo: this should be a Coord struct
+	{
+		DebugUnhandledReturn(LevelDouble2);
+	}();
+
+	// Set level active in the renderer.
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
+		return false;
+	}
+
 	return true;
 }
 
