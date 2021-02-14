@@ -247,13 +247,9 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const NewDouble2 &startPoint = activeMapDef.getStartPoint(0);
-	const NewDouble3 newPlayerPos(
-		startPoint.x,// @todo: may need some per-map-definition or map-type offset. Just +1.0 for procedural dungeons.
-		activeLevelInst.getCeilingScale() + Player::HEIGHT,
-		startPoint.y);
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, newPlayerPos, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for location \"" + locationDef.getName() + "\".");
 		return false;
@@ -602,10 +598,14 @@ void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
 	this->player.setVelocityToZero();
 }
 
-bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble3 &playerPosition,
+bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble2 &startPoint,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	this->setTransitionedPlayerPosition(playerPosition);
+	const NewDouble3 playerPos(
+		startPoint.x,
+		levelInst.getCeilingScale() + Player::HEIGHT,
+		startPoint.y);
+	this->setTransitionedPlayerPosition(playerPos);
 	this->weatherType = weatherType;
 
 	if (!levelInst.trySetActive(weatherType, this->nightLightsAreActive(), textureManager, renderer))

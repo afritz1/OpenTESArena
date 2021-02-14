@@ -109,7 +109,7 @@ private:
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
-	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble3 &playerPosition,
+	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble2 &startPoint,
 		TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
