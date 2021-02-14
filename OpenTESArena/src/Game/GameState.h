@@ -97,7 +97,6 @@ private:
 	Date date;
 	Clock clock;
 	ArenaRandom arenaRandom;
-	double fogDistance;
 	double chasmAnimSeconds;
 	WeatherType weatherType;
 
@@ -108,6 +107,11 @@ private:
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapPair *outMapPair);
 
 	void setTransitionedPlayerPosition(const NewDouble3 &position);
+
+	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
+	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const NewDouble3 &playerPosition,
+		TextureManager &textureManager, Renderer &renderer);
+
 	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
@@ -117,11 +121,10 @@ public:
 
 	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
 	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
-	// @todo: try not to have the caller give the weather type. It should be determined internally.
-	bool trySetMap(int provinceID, int locationID, WeatherType weatherType, int currentDay, int starCount,
+	bool trySetFromWorldMap(int provinceID, int locationID, int currentDay, int starCount,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-		TextureManager &textureManager);
+		TextureManager &textureManager, Renderer &renderer);
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This can only be used when there is at least one existing map, and it preserves those maps for later when
@@ -137,55 +140,6 @@ public:
 	// Pops the top-most map from the stack and sets the next map active. This fails if there would be no available map
 	// to switch to (meaning that there must always be an active map).
 	bool tryPopMap();
-
-	// Reads in data from an interior .MIF file and writes it to the game state.
-	/*bool loadInterior(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		ArenaTypes::InteriorType interiorType, const MIFFile &mif,
-		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-		Renderer &renderer);
-
-	// Reads in data from an interior .MIF file and inserts it into the active exterior data.
-	// Only call this method if the player is in an exterior location (city or wilderness).
-	void enterInterior(ArenaTypes::InteriorType interiorType, const MIFFile &mif,
-		const Int2 &returnVoxel, const EntityDefinitionLibrary &entityDefLibrary,
-		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);
-
-	// Leaves the current interior and returns to the exterior. Only call this method if the
-	// player is in an interior that has an outside area to return to.
-	void leaveInterior(const EntityDefinitionLibrary &entityDefLibrary,
-		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);
-
-	// Reads in data from RANDOM1.MIF based on the given dungeon ID and parameters and writes it
-	// to the game state. This modifies the current map location.
-	bool loadNamedDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		bool isArtifactDungeon, const EntityDefinitionLibrary &entityDefLibrary,
-		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);
-
-	// Reads in data from RANDOM1.MIF based on the given location parameters and writes it to the
-	// game state. This does not modify the current map location.
-	bool loadWildernessDungeon(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		int wildBlockX, int wildBlockY, const CityDataFile &cityData,
-		const EntityDefinitionLibrary &entityDefLibrary, const CharacterClassLibrary &charClassLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-		Renderer &renderer);
-
-	// Reads in data from a city after determining its .MIF file, and writes it to the game state.
-	bool loadCity(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary,
-		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, Random &random, TextureManager &textureManager,
-		Renderer &renderer);
-
-	// Reads in data from wilderness and writes it to the game state.
-	bool loadWilderness(const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef,
-		const NewInt2 &gatePos, const NewInt2 &transitionDir, bool debug_ignoreGatePos,
-		WeatherType weatherType, int starCount, const EntityDefinitionLibrary &entityDefLibrary, 
-		const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager, Renderer &renderer);*/
 
 	Player &getPlayer();
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
@@ -211,7 +165,6 @@ public:
 	// Gets a percentage representing the current progress through the looping chasm animation.
 	double getChasmAnimPercent() const;
 
-	double getFogDistance() const;
 	WeatherType getWeatherType() const;
 
 	// Gets the current ambient light percent, based on the current clock time and 

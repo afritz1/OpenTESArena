@@ -1,8 +1,6 @@
 #ifndef LEVEL_INSTANCE_H
 #define LEVEL_INSTANCE_H
 
-#include <optional>
-
 #include "ChunkManager.h"
 #include "../Entities/EntityManager.h"
 
@@ -10,6 +8,7 @@
 // and depends on one or more level definitions for its population.
 
 class MapDefinition;
+class Renderer;
 
 enum class MapType;
 
@@ -19,6 +18,8 @@ private:
 	ChunkManager chunkManager;
 	EntityManager entityManager;
 	double ceilingScale;
+
+	// @todo: probably store the table of TextureAssetReferences -> VoxelTextureID/EntityTextureID/etc. in this class.
 public:
 	LevelInstance();
 
@@ -28,13 +29,13 @@ public:
 	const ChunkManager &getChunkManager() const;
 	EntityManager &getEntityManager();
 	const EntityManager &getEntityManager() const;
+	double getCeilingScale() const;
+
+	bool trySetActive(WeatherType weatherType, bool nightLightsAreActive, TextureManager &textureManager,
+		Renderer &renderer);
 
 	void update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
 		const MapDefinition &mapDefinition, int chunkDistance);
-
-	// @todo: some "setActive()" like LevelData so the renderer can be initialized with this level's data.
-	// Probably also store the table of asset filenames/ImageIDs/etc. -> voxel/entity/etc. texture IDs in
-	// this class.
 };
 
 #endif
