@@ -249,9 +249,10 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, int currentDa
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for location \"" + locationDef.getName() + "\".");
 		return false;
@@ -296,9 +297,10 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated interior.");
 		return false;
@@ -337,9 +339,10 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 
 	DebugAssert(activeMapDef.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated city.");
 		return false;
@@ -381,9 +384,19 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 
 	// Wilderness start point depends on city gate the player is coming out of.
 	DebugAssert(activeMapDef.getStartPointCount() == 0);
-	const LevelDouble2 startPoint = [&startVoxel]() // @todo: this should be a Coord struct
+	const CoordInt2 startPoint = [&startVoxel]()
 	{
-		DebugUnhandledReturn(LevelDouble2);
+		if (startVoxel.has_value())
+		{
+			return CoordInt2(startVoxel->chunk, VoxelInt2(startVoxel->voxel.x, startVoxel->voxel.z));
+		}
+		else
+		{
+			// Don't have a city gate reference. Just pick somewhere in the center of the wilderness.
+			return CoordInt2(
+				ChunkInt2(ArenaWildUtils::WILD_WIDTH / 2, ArenaWildUtils::WILD_HEIGHT / 2),
+				VoxelInt2::Zero);
+		}
 	}();
 
 	// Set level active in the renderer.
@@ -709,20 +722,19 @@ void GameState::resetEffectText()
 	this->effectText.reset();
 }
 
-void GameState::setTransitionedPlayerPosition(const NewDouble3 &position)
+void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
 {
-	const CoordDouble3 coord = VoxelUtils::newPointToCoord(position);
-	this->player.teleport(coord);
+	this->player.teleport(position);
 	this->player.setVelocityToZero();
 }
 
-bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const LevelDouble2 &startPoint,
+bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const CoordInt2 &startCoord,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const NewDouble3 playerPos(
-		startPoint.x,
-		levelInst.getCeilingScale() + Player::HEIGHT,
-		startPoint.y);
+	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
+	const CoordDouble3 playerPos(
+		startCoord.chunk,
+		VoxelDouble3(startVoxelReal.x, levelInst.getCeilingScale() + Player::HEIGHT, startVoxelReal.y));
 	this->setTransitionedPlayerPosition(playerPos);
 	this->weatherType = weatherType;
 

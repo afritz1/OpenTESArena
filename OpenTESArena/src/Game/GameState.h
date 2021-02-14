@@ -106,10 +106,10 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);
 
-	void setTransitionedPlayerPosition(const NewDouble3 &position);
+	void setTransitionedPlayerPosition(const CoordDouble3 &position);
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
-	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const LevelDouble2 &startPoint,
+	bool trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const CoordInt2 &startCoord,
 		TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
