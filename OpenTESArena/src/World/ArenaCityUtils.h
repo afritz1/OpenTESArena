@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "ArenaLevelUtils.h"
-#include "LevelData.h"
 #include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
