@@ -845,7 +845,7 @@ void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisib
 	*outMax = ChunkUtils::recalculateCoord(flatPos.chunk, maxPoint);
 }
 
-void EntityManager::updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid)
+void EntityManager::updateEntityChunk(Entity *entity)
 {
 	if (entity == nullptr)
 	{

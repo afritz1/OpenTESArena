@@ -184,7 +184,7 @@ public:
 		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
 
 	// Puts the entity into the chunk representative of their 3D position.
-	void updateEntityChunk(Entity *entity, const VoxelGrid &voxelGrid);
+	void updateEntityChunk(Entity *entity);
 
 	// Deletes an entity.
 	void remove(EntityID id);

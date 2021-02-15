@@ -33,10 +33,10 @@ bool CitizenManager::shouldSpawn(Game &game) const
 	return (activeMapType == MapType::City) || (activeMapType == MapType::Wilderness);*/
 }
 
-void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, EntityManager &entityManager,
-	const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
-	Renderer &renderer)
+void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, const ChunkManager &chunkManager,
+	EntityManager &entityManager, const LocationDefinition &locationDef,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary, Random &random,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const ClimateType climateType = [&locationDef]()
 	{
@@ -105,44 +105,54 @@ void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, Entit
 		return textureManager.getPaletteHandle(*paletteID);
 	}();
 
-	constexpr int citizenCount = 150; // Arbitrary.
+	// Chunk coordinates around the player that citizens can spawn in.
+	ChunkInt2 minSpawnChunk, maxSpawnChunk;
+	constexpr int spawnChunkDistance = 1; // Don't spawn citizens farther away than one chunk.
+	ChunkUtils::getSurroundingChunks(playerChunk, spawnChunkDistance, &minSpawnChunk, &maxSpawnChunk);
+
+	constexpr int citizenCount = 150; // Arbitrary. @todo: maybe change this to citizens per chunk?
 	for (int i = 0; i < citizenCount; i++)
 	{
 		// Find suitable spawn position; might not succeed if there is no available spot.
-		bool foundSpawnPosition = false;
-		const NewInt2 spawnPositionXZ = [&voxelGrid, &random, &foundSpawnPosition]()
+		const std::optional<CoordInt2> spawnCoord = [&chunkManager, &random, &minSpawnChunk, &maxSpawnChunk]()
+			-> std::optional<CoordInt2>
 		{
 			constexpr int spawnTriesCount = 50;
 			for (int spawnTry = 0; spawnTry < spawnTriesCount; spawnTry++)
 			{
-				const NewInt2 voxel(
-					random.next() % voxelGrid.getWidth(),
-					random.next() % voxelGrid.getDepth());
+				const ChunkInt2 spawnChunk(
+					minSpawnChunk.x + random.next((maxSpawnChunk.x - minSpawnChunk.x) + 1),
+					minSpawnChunk.y + random.next((maxSpawnChunk.y - minSpawnChunk.y) + 1));
+				const VoxelInt2 spawnVoxel(
+					random.next(Chunk::WIDTH),
+					random.next(Chunk::DEPTH));
 
-				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
-				const uint16_t groundVoxelID = voxelGrid.getVoxel(voxel.x, 0, voxel.y);
+				const Chunk *chunk = chunkManager.tryGetChunk(spawnChunk);
+				DebugAssert(chunk != nullptr);
 
-				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-				const VoxelDefinition &groundVoxelDef = voxelGrid.getVoxelDef(groundVoxelID);
+				const Chunk::VoxelID voxelID = chunk->getVoxel(spawnVoxel.x, 1, spawnVoxel.y);
+				const Chunk::VoxelID groundVoxelID = chunk->getVoxel(spawnVoxel.x, 0, spawnVoxel.y);
+				const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+				const VoxelDefinition &groundVoxelDef = chunk->getVoxelDef(groundVoxelID);
 
 				if ((voxelDef.type == ArenaTypes::VoxelType::None) &&
 					(groundVoxelDef.type == ArenaTypes::VoxelType::Floor))
 				{
-					foundSpawnPosition = true;
-					return voxel;
+					return CoordInt2(spawnChunk, spawnVoxel);
 				}
 			}
 
-			return NewInt2();
+			// No spawn position found.
+			return std::nullopt;
 		}();
 
-		if (!foundSpawnPosition)
+		if (!spawnCoord.has_value())
 		{
 			DebugLogWarning("Couldn't find spawn position for citizen " + std::to_string(i) + ".");
 			continue;
 		}
 
-		const bool male = (random.next() % 2) == 0;
+		const bool male = random.next(2) == 0;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
@@ -173,9 +183,8 @@ void CitizenManager::spawnCitizens(int raceID, const VoxelGrid &voxelGrid, Entit
 
 		// Note: since the entity pointer is being used directly, update the position last
 		// in scope to avoid a dangling pointer problem in case it changes chunks (from 0, 0).
-		const NewDouble2 positionXZ = VoxelUtils::getVoxelCenter(spawnPositionXZ);
-		const CoordDouble2 coord = VoxelUtils::newPointToCoord(positionXZ);
-		dynamicEntity->setPosition(coord, entityManager, voxelGrid);
+		const CoordDouble2 spawnCoordReal(spawnCoord->chunk, VoxelUtils::getVoxelCenter(spawnCoord->voxel));
+		dynamicEntity->setPosition(spawnCoordReal, entityManager);
 	}
 
 	// Initializes base male and female textures in the renderer.
@@ -227,10 +236,11 @@ void CitizenManager::tick(Game &game)
 		if (this->shouldSpawn(game))
 		{
 			auto &gameState = game.getGameState();
-			auto &worldData = gameState.getActiveWorld();
-			auto &levelData = worldData.getActiveLevel();
-			const auto &voxelGrid = levelData.getVoxelGrid();
-			auto &entityManager = levelData.getEntityManager();
+			const auto &player = gameState.getPlayer();
+			auto &mapInst = gameState.getActiveMapInst();
+			auto &levelInst = mapInst.getActiveLevel();
+			const auto &chunkManager = levelInst.getChunkManager();
+			auto &entityManager = levelInst.getEntityManager();
 			const auto &provinceDef = gameState.getProvinceDefinition();
 			const auto &locationDef = gameState.getLocationDefinition();
 			const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
@@ -238,8 +248,8 @@ void CitizenManager::tick(Game &game)
 			auto &random = game.getRandom();
 			auto &textureManager = game.getTextureManager();
 			auto &renderer = game.getRenderer();
-			this->spawnCitizens(provinceDef.getRaceID(), voxelGrid, entityManager, locationDef, entityDefLibrary,
-				binaryAssetLibrary, random, textureManager, renderer);
+			this->spawnCitizens(provinceDef.getRaceID(), player.getPosition().chunk, chunkManager, entityManager,
+				locationDef, entityDefLibrary, binaryAssetLibrary, random, textureManager, renderer);
 
 			this->stateType = StateType::HasSpawned;
 		}

@@ -59,11 +59,10 @@ void Entity::setRenderID(EntityRenderID id)
 	this->renderID = id;
 }
 
-void Entity::setPosition(const CoordDouble2 &position, EntityManager &entityManager,
-	const VoxelGrid &voxelGrid)
+void Entity::setPosition(const CoordDouble2 &position, EntityManager &entityManager)
 {
 	this->position = position;
-	entityManager.updateEntityChunk(this, voxelGrid);
+	entityManager.updateEntityChunk(this);
 }
 
 void Entity::reset()

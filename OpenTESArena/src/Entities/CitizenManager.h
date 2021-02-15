@@ -5,6 +5,7 @@
 
 #include "EntityUtils.h"
 #include "../Media/Palette.h"
+#include "../World/Coord.h"
 
 // @todo: things to throw in here:
 // - spawning N townspeople entities with some conditions (during the day, no enemies nearby).
@@ -13,6 +14,7 @@
 // @todo: not sure yet if this should be in the level or GameState or Game.
 
 class BinaryAssetLibrary;
+class ChunkManager;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
@@ -40,9 +42,10 @@ private:
 public:
 	CitizenManager();
 
-	void spawnCitizens(int raceID, const VoxelGrid &voxelGrid, EntityManager &entityManager,
-		const LocationDefinition &locationDef, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, Random &random, TextureManager &textureManager,
+	void spawnCitizens(int raceID, const ChunkInt2 &playerChunk, const ChunkManager &chunkManager,
+		EntityManager &entityManager, const LocationDefinition &locationDef,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		Random &random, TextureManager &textureManager,
 		Renderer &renderer);
 	void clearCitizens(EntityManager &entityManager);
 	void tick(Game &game);

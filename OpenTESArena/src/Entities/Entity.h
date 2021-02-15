@@ -56,8 +56,7 @@ public:
 	void setRenderID(EntityRenderID id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
-	void setPosition(const CoordDouble2 &position, EntityManager &entityManager,
-		const VoxelGrid &voxelGrid);
+	void setPosition(const CoordDouble2 &position, EntityManager &entityManager);
 
 	// Clears all entity data so it can be used for another entity of the same type.
 	virtual void reset();
