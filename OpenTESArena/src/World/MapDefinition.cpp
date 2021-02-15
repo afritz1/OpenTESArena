@@ -446,7 +446,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	}
 	else
 	{
-		DebugNotImplemented(std::to_string(static_cast<int>(interiorType)));
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(interiorType)));
 	}
 	
 	return true;
