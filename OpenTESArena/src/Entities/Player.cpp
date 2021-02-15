@@ -12,6 +12,7 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
+#include "../World/LevelUtils.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelGrid.h"
 
@@ -287,27 +288,10 @@ void Player::handleCollision(const LevelInstance &activeLevel, const LevelDefini
 				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
 					// Check if there is a level change transition definition for this voxel.
-					// @todo: this is kludgy because we shouldn't have to convert chunk coordinates to level
-					// coordinates for collision checks like this. It also means that a transition can't be
-					// changed in the level instance. Copy the transition defs to the chunk instead?
-					const LevelInt3 coordAsLevelVoxel = VoxelUtils::coordToNewVoxel(coord);
-					const TransitionDefinition *transitionDef = nullptr;
-					for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
-					{
-						const auto &placementDef = levelDef.getTransitionPlacementDef(i);
-						for (int j = 0; j < static_cast<int>(placementDef.positions.size()); j++)
-						{
-							const LevelInt3 &placementPos = placementDef.positions[j];
-							if (coordAsLevelVoxel == placementPos)
-							{
-								transitionDef = &levelInfoDef.getTransitionDef(placementDef.id);
-								break;
-							}
-						}
-					}
-
-					return (transitionDef != nullptr) &&
-						(transitionDef->getType() == TransitionType::LevelChange);
+					const LevelInt3 levelVoxel = VoxelUtils::coordToNewVoxel(coord);
+					const TransitionDefinition *transitionDef =
+						LevelUtils::tryGetTransition(levelVoxel, levelDef, levelInfoDef);
+					return (transitionDef != nullptr) && (transitionDef->getType() == TransitionType::LevelChange);
 				}
 				else
 				{
