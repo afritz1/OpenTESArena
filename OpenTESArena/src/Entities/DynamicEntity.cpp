@@ -138,11 +138,11 @@ double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
 	return 2.75 + (random.nextReal() * 4.50);
 }
 
-bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingHeight)
+bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingScale)
 {
 	const CoordDouble3 position3D(
 		this->position.chunk,
-		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
 	const VoxelDouble3 diff = point - position3D;
 	constexpr double hearingDistanceSqr = HearingDistance * HearingDistance;
 	return diff.lengthSquared() < hearingDistanceSqr;
@@ -246,10 +246,9 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	auto &gameState = game.getGameState();
 	auto &random = game.getRandom();
 	const auto &player = gameState.getPlayer();
-	const auto &worldData = gameState.getActiveWorld();
-	const auto &levelData = worldData.getActiveLevel();
-	const auto &voxelGrid = levelData.getVoxelGrid();
-	const auto &entityManager = levelData.getEntityManager();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const auto &entityManager = activeLevelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 	const EntityDefinition &entityDef = entityManager.getEntityDef(
 		this->getDefinitionID(), entityDefLibrary);
@@ -318,11 +317,11 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 void DynamicEntity::updateCreatureState(Game &game, double dt)
 {
 	auto &gameState = game.getGameState();
-	const auto &worldData = gameState.getActiveWorld();
-	const auto &levelData = worldData.getActiveLevel();
-	const auto &entityManager = levelData.getEntityManager();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const auto &entityManager = activeLevelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
-	const double ceilingHeight = levelData.getCeilingHeight();
+	const double ceilingScale = activeLevelInst.getCeilingScale();
 
 	// @todo: creature AI
 
@@ -333,14 +332,14 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	{
 		// See if the NPC is withing hearing distance of the player.
 		const CoordDouble3 &playerPosition = gameState.getPlayer().getPosition();
-		if (this->withinHearingDistance(playerPosition, ceilingHeight))
+		if (this->withinHearingDistance(playerPosition, ceilingScale))
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
 			if (this->tryGetCreatureSoundFilename(entityManager, entityDefLibrary, &creatureSoundFilename))
 			{
 				auto &audioManager = game.getAudioManager();
-				this->playCreatureSound(creatureSoundFilename, ceilingHeight, audioManager);
+				this->playCreatureSound(creatureSoundFilename, ceilingScale, audioManager);
 
 				const double creatureSoundWaitTime =
 					DynamicEntity::nextCreatureSoundWaitTime(game.getRandom());
@@ -355,17 +354,16 @@ void DynamicEntity::updateProjectileState(Game &game, double dt)
 	// @todo: projectile motion + collision
 }
 
-void DynamicEntity::updatePhysics(const WorldData &worldData,
+void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 	const EntityDefinitionLibrary &entityDefLibrary, Random &random, double dt)
 {
-	const auto &levelData = worldData.getActiveLevel();
+	const ChunkManager &chunkManager = activeLevel.getChunkManager();
+	const EntityManager &entityManager = activeLevel.getEntityManager();
 	const DynamicEntityType dynamicEntityType = this->getDerivedType();
 
 	if (dynamicEntityType == DynamicEntityType::Citizen)
 	{
 		// Update citizen position and change facing if about to hit something.
-		const auto &voxelGrid = levelData.getVoxelGrid();
-		const auto &entityManager = levelData.getEntityManager();
 		const EntityDefinition &entityDef = entityManager.getEntityDef(
 			this->getDefinitionID(), entityDefLibrary);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
@@ -388,40 +386,43 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 			const NewDouble2 absolutePosition = VoxelUtils::coordToNewPoint(this->getPosition());
 			const NewDouble2 &direction = this->getDirection();
 
-			auto getVoxelAtDistance = [&absolutePosition](const NewDouble2 &checkDist)
+			auto getVoxelAtDistance = [&absolutePosition](const NewDouble2 &checkDist) -> CoordInt2
 			{
-				return NewInt2(
-					static_cast<SNInt>(std::floor(absolutePosition.x + checkDist.x)),
-					static_cast<WEInt>(std::floor(absolutePosition.y + checkDist.y)));
+				const NewDouble2 point = absolutePosition + checkDist;
+				return VoxelUtils::newVoxelToCoord(VoxelUtils::pointToVoxel(point));
 			};
 
-			const NewInt2 curVoxel = VoxelUtils::pointToVoxel(absolutePosition);
-			const NewInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
+			const CoordInt2 curVoxel = VoxelUtils::newVoxelToCoord(VoxelUtils::pointToVoxel(absolutePosition));
+			const CoordInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
 
 			if (nextVoxel != curVoxel)
 			{
-				auto isSuitableVoxel = [&voxelGrid](const NewInt2 &voxel)
+				auto isSuitableVoxel = [&chunkManager](const CoordInt2 &coord)
 				{
-					auto isValidVoxel = [&voxelGrid](const NewInt2 &voxel)
+					const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+
+					auto isValidVoxel = [chunk]()
 					{
-						return voxelGrid.coordIsValid(voxel.x, 1, voxel.y);
+						return chunk != nullptr;
 					};
 
-					auto isPassableVoxel = [&voxelGrid](const NewInt2 &voxel)
+					auto isPassableVoxel = [&coord, chunk]()
 					{
-						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
-						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
+						const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 						return voxelDef.type == ArenaTypes::VoxelType::None;
 					};
 
-					auto isWalkableVoxel = [&voxelGrid](const NewInt2 &voxel)
+					auto isWalkableVoxel = [&coord, chunk]()
 					{
-						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 0, voxel.y);
-						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
+						const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 						return voxelDef.type == ArenaTypes::VoxelType::Floor;
 					};
 
-					return isValidVoxel(voxel) && isPassableVoxel(voxel) && isWalkableVoxel(voxel);
+					return isValidVoxel() && isPassableVoxel() && isWalkableVoxel();
 				};
 
 				if (!isSuitableVoxel(nextVoxel))
@@ -446,7 +447,7 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 						if (cardinalDirectionName != curDirectionName)
 						{
 							const NewDouble2 &direction = directionPair.second;
-							const NewInt2 voxel = getVoxelAtDistance(direction * 0.50);
+							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
 							if (isSuitableVoxel(voxel))
 							{
 								return true;
@@ -506,7 +507,9 @@ void DynamicEntity::tick(Game &game, double dt)
 
 	// Update physics/pathfinding/etc..
 	// @todo: add a check here if updating the entity state has put them in a non-physics state.
-	const auto &worldData = game.getGameState().getActiveWorld();
-	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
-	this->updatePhysics(worldData, entityDefLibrary, game.getRandom(), dt);
+	const GameState &gameState = game.getGameState();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	this->updatePhysics(activeLevelInst, entityDefLibrary, game.getRandom(), dt);
 }

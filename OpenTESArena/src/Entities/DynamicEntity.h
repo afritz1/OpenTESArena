@@ -16,6 +16,7 @@ class AudioManager;
 class EntityDefinitionLibrary;
 class EntityManager;
 class ExeData;
+class LevelInstance;
 
 enum class CardinalDirectionName;
 
@@ -32,7 +33,7 @@ private:
 	static double nextCreatureSoundWaitTime(Random &random);
 
 	// @todo: this should probably be a property of the listener, not this entity.
-	bool withinHearingDistance(const CoordDouble3 &point, double ceilingHeight);
+	bool withinHearingDistance(const CoordDouble3 &point, double ceilingScale);
 
 	// Attempts to get the entity's creature sound filename (if any). Returns success.
 	bool tryGetCreatureSoundFilename(const EntityManager &entityManager,
@@ -51,7 +52,7 @@ private:
 	void updateProjectileState(Game &game, double dt);
 
 	// Updates the entity's physics in the world (if any).
-	void updatePhysics(const WorldData &worldData, const EntityDefinitionLibrary &entityDefLibrary,
+	void updatePhysics(const LevelInstance &activeLevel, const EntityDefinitionLibrary &entityDefLibrary,
 		Random &random, double dt);
 public:
 	DynamicEntity();
