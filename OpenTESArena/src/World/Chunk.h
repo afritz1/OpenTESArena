@@ -71,6 +71,10 @@ public:
 	VoxelInstance &getVoxelInst(int index);
 	const VoxelInstance &getVoxelInst(int index) const;
 
+	// Convenience functions for attempting to get a voxel instance at the given voxel.
+	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
+	const VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
+
 	// Sets the voxel at the given coordinate.
 	void setVoxel(SNInt x, int y, WEInt z, VoxelID id);
 

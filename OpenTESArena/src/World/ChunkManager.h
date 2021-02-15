@@ -50,6 +50,10 @@ public:
 	const Chunk &getChunk(int index) const;
 	std::optional<int> tryGetChunkIndex(const ChunkInt2 &coord) const;
 
+	// Convenience functions for attempting to obtain a chunk from the given chunk coordinate.
+	Chunk *tryGetChunk(const ChunkInt2 &coord);
+	const Chunk *tryGetChunk(const ChunkInt2 &coord) const;
+
 	// Index of the chunk all other active chunks surround.
 	int getCenterChunkIndex() const;
 

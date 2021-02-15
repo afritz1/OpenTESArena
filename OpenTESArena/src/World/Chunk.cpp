@@ -65,6 +65,36 @@ const VoxelInstance &Chunk::getVoxelInst(int index) const
 	return this->voxelInsts[index];
 }
 
+VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
+{
+	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
+	{
+		VoxelInstance &inst = this->voxelInsts[i];
+		if ((inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
+			(inst.getType() == type))
+		{
+			return &inst;
+		}
+	}
+
+	return nullptr;
+}
+
+const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const
+{
+	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
+	{
+		const VoxelInstance &inst = this->voxelInsts[i];
+		if ((inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
+			(inst.getType() == type))
+		{
+			return &inst;
+		}
+	}
+
+	return nullptr;
+}
+
 void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
 {
 	this->voxels.set(x, y, z, value);

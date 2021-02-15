@@ -51,6 +51,18 @@ std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &coord) const
 	}
 }
 
+Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &coord)
+{
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(coord);
+	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
+}
+
+const Chunk *ChunkManager::tryGetChunk(const ChunkInt2 &coord) const
+{
+	const std::optional<int> chunkIndex = this->tryGetChunkIndex(coord);
+	return chunkIndex.has_value() ? &this->getChunk(*chunkIndex) : nullptr;
+}
+
 int ChunkManager::getCenterChunkIndex() const
 {
 	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunk);
