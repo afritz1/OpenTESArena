@@ -11,7 +11,6 @@
 
 class BinaryAssetLibrary;
 class LocationDefinition;
-class VoxelGrid;
 
 enum class ClimateType;
 enum class WeatherType;

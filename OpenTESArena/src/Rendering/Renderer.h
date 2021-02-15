@@ -25,7 +25,6 @@ class EntityManager;
 class Rect;
 class Surface;
 class TextureManager;
-class VoxelGrid;
 
 enum class CursorAlignment;
 

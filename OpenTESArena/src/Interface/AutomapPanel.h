@@ -29,7 +29,6 @@ class Renderer;
 class Surface;
 class TextBox;
 class VoxelDefinition;
-class VoxelGrid;
 
 enum class CardinalDirectionName;
 

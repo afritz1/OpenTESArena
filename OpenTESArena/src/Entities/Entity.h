@@ -11,7 +11,6 @@
 
 class EntityManager;
 class Game;
-class VoxelGrid;
 
 enum class EntityType;
 

@@ -22,7 +22,6 @@ class LocationDefinition;
 class Random;
 class Renderer;
 class TextureManager;
-class VoxelGrid;
 
 class CitizenManager
 {

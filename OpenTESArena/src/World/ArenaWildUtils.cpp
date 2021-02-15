@@ -7,7 +7,6 @@
 #include "LocationDefinition.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
-#include "VoxelGrid.h"
 #include "WeatherUtils.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"

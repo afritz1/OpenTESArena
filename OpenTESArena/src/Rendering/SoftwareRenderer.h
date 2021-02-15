@@ -30,7 +30,6 @@
 // CPU-based 2.5D rendering.
 
 class Entity;
-class VoxelGrid;
 
 enum class VoxelFacing2D;
 

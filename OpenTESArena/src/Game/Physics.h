@@ -15,8 +15,6 @@
 
 // Namespace for physics-related calculations like ray casting.
 
-class VoxelGrid;
-
 namespace Physics
 {
 	// Intersection data for ray casts.
