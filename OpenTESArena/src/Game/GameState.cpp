@@ -28,7 +28,6 @@
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"
 #include "../World/MapType.h"
-#include "../World/VoxelGrid.h"
 #include "../World/WeatherType.h"
 #include "../World/WeatherUtils.h"
 

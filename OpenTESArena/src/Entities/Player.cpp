@@ -14,7 +14,6 @@
 #include "../Math/Random.h"
 #include "../World/LevelUtils.h"
 #include "../World/VoxelDefinition.h"
-#include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

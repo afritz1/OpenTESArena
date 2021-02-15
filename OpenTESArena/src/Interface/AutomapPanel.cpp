@@ -29,7 +29,6 @@
 #include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
-#include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
 

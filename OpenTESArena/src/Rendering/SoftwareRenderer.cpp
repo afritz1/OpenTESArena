@@ -23,7 +23,6 @@
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/VoxelFacing2D.h"
-#include "../World/VoxelGrid.h"
 #include "../World/VoxelUtils.h"
 
 #include "components/debug/Debug.h"

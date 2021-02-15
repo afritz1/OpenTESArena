@@ -14,7 +14,6 @@
 #include "../World/ChunkUtils.h"
 #include "../World/VoxelFacing3D.h"
 #include "../World/VoxelGeometry.h"
-#include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
 

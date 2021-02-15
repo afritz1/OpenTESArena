@@ -19,7 +19,6 @@
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Utilities/Platform.h"
-#include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
