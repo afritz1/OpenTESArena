@@ -1,6 +1,16 @@
 #include "ChunkUtils.h"
 #include "Coord.h"
 
+bool CoordInt2::operator==(const CoordInt2 &other) const
+{
+	return (this->chunk == other.chunk) && (this->voxel == other.voxel);
+}
+
+bool CoordInt2::operator!=(const CoordInt2 &other) const
+{
+	return (this->chunk != other.chunk) || (this->voxel != other.voxel);
+}
+
 CoordDouble2 CoordDouble2::operator+(const VoxelDouble2 &other) const
 {
 	return CoordDouble2(this->chunk, this->point + other);

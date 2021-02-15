@@ -33,6 +33,9 @@ struct CoordInt2
 	CoordInt2() = default;
 	CoordInt2(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 		: chunk(chunk), voxel(voxel) { }
+
+	bool operator==(const CoordInt2 &other) const;
+	bool operator!=(const CoordInt2 &other) const;
 };
 
 struct CoordDouble2
