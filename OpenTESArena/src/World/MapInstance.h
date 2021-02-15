@@ -31,6 +31,7 @@ public:
 	int getLevelCount() const;
 	LevelInstance &getLevel(int index);
 	const LevelInstance &getLevel(int index) const;
+	int getActiveLevelIndex() const; // For indexing into map definition.
 	LevelInstance &getActiveLevel();
 	const LevelInstance &getActiveLevel() const;
 	

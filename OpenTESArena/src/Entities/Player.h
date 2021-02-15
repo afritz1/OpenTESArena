@@ -8,6 +8,9 @@
 class CharacterClassLibrary;
 class ExeData;
 class Game;
+class LevelDefinition;
+class LevelInfoDefinition;
+class LevelInstance;
 class Random;
 
 class Player
@@ -37,10 +40,12 @@ private:
 	double getFeetY() const;
 
 	// Changes the player's velocity based on collision with objects in the world.
-	void handleCollision(const WorldData &worldData, double dt);
+	void handleCollision(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
+		const LevelInfoDefinition &levelInfoDef, double dt);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const WorldData &worldData, bool collision, double dt);
+	void updatePhysics(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
+		const LevelInfoDefinition &levelInfoDef, bool collision, double dt);
 public:
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
@@ -82,7 +87,7 @@ public:
 	const WeaponAnimation &getWeaponAnimation() const;
 
 	// Returns whether the player is standing on ground and with no Y velocity.
-	bool onGround(const WorldData &worldData) const;
+	bool onGround(const LevelInstance &activeLevel) const;
 
 	// Teleports the player to a point.
 	void teleport(const CoordDouble3 &position);
