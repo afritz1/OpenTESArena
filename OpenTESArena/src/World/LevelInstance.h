@@ -11,6 +11,7 @@ class MapDefinition;
 class Renderer;
 
 enum class MapType;
+enum class WeatherType;
 
 class LevelInstance
 {
