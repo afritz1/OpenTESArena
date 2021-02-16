@@ -75,6 +75,12 @@ NewInt3 VoxelUtils::coordToNewVoxel(const CoordInt3 &coord)
 	return VoxelUtils::chunkVoxelToNewVoxel(coord.chunk, coord.voxel);
 }
 
+NewInt2 VoxelUtils::coordToNewVoxel(const CoordInt2 &coord)
+{
+	const NewInt3 voxel3D = VoxelUtils::chunkVoxelToNewVoxel(coord.chunk, VoxelInt3(coord.voxel.x, 0, coord.voxel.y));
+	return NewInt2(voxel3D.x, voxel3D.z);
+}
+
 NewInt2 VoxelUtils::chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;

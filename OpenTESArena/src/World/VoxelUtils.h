@@ -35,6 +35,7 @@ namespace VoxelUtils
 	NewDouble3 coordToNewPoint(const CoordDouble3 &coord);
 	NewDouble2 coordToNewPoint(const CoordDouble2 &coord);
 	NewInt3 coordToNewVoxel(const CoordInt3 &coord);
+	NewInt2 coordToNewVoxel(const CoordInt2 &coord);
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.

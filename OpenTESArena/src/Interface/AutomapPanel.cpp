@@ -26,6 +26,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../World/ArenaWildUtils.h"
+#include "../World/LevelUtils.h"
 #include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
@@ -39,6 +40,9 @@ namespace
 
 	// Size of each automap pixel in the automap texture.
 	constexpr int AutomapPixelSize = 3;
+
+	// Number of chunks away from the player to display in the automap.
+	constexpr int AutomapChunkDistance = 1;
 
 	// Click areas for compass directions.
 	const Rect UpRegion(264, 23, 14, 14);
@@ -81,8 +85,9 @@ namespace
 	};
 }
 
-AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const NewDouble2 &playerDirection,
-	const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName)
+AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const NewDouble2 &playerDirection,
+	const ChunkManager &chunkManager, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef,
+	const std::string &locationName)
 	: Panel(game)
 {
 	this->locationTextBox = [&game, &locationName]()
@@ -114,23 +119,22 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const
 		return Button<Game&>(center, width, height, function);
 	}();
 
-	// Player's XZ voxel coordinate.
-	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(playerPosition);
-	const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPoint);
-	const NewInt2 absolutePlayerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
-
 	const bool isWild = [&game]()
 	{
-		const auto &worldData = game.getGameState().getActiveWorld();
-		return worldData.getMapType() == MapType::Wilderness;
+		const GameState &gameState = game.getGameState();
+		const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+		return activeMapDef.getMapType() == MapType::Wilderness;
 	}();
 
-	this->mapTexture = [&game, &playerDirection, &voxelGrid, &transitions, &absolutePlayerVoxelXZ, isWild]()
+	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
+	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
+	this->mapTexture = [&game, &playerDirection, &chunkManager, &levelDef, &levelInfoDef, isWild, &playerCoordXZ]()
 	{
-		const CardinalDirectionName playerDir = CardinalDirection::getDirectionName(playerDirection);
+		const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
 
 		auto &renderer = game.getRenderer();
-		Surface surface = AutomapPanel::makeAutomap(absolutePlayerVoxelXZ, playerDir, isWild, voxelGrid, transitions);
+		Surface surface = AutomapPanel::makeAutomap(playerCoordXZ, playerCompassDir, isWild, chunkManager,
+			levelDef, levelInfoDef);
 		Texture texture = renderer.createTextureFromSurface(surface);
 
 		return texture;
@@ -155,12 +159,11 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const
 	}
 
 	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
-	this->automapOffset = AutomapPanel::makeAutomapOffset(
-		absolutePlayerVoxelXZ, isWild, voxelGrid.getWidth(), voxelGrid.getDepth());
+	this->automapOffset = AutomapPanel::makeAutomapOffset(playerCoordXZ, isWild);
 }
 
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-	const NewInt2 &voxel, const LevelData::Transitions &transitions)
+	const LevelInt2 &voxel, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef)
 {
 	const ArenaTypes::VoxelType floorType = floorDef.type;
 	const ArenaTypes::VoxelType wallType = wallDef.type;
@@ -201,27 +204,27 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 		}
 		else if (wallType == ArenaTypes::VoxelType::Wall)
 		{
-			const auto transitionIter = transitions.find(voxel);
-			if (transitionIter == transitions.end())
+			const LevelInt3 transitionVoxel(voxel.x, 1, voxel.y);
+			const TransitionDefinition *transitionDef =
+				LevelUtils::tryGetTransition(transitionVoxel, levelDef, levelInfoDef);
+			if (transitionDef == nullptr)
 			{
 				// Not a transition.
 				return AutomapWall;
 			}
 			else
 			{
-				const LevelData::Transition::Type transitionType = transitionIter->second.getType();
-				if (transitionType == LevelData::Transition::Type::LevelUp)
+				const TransitionType transitionType = transitionDef->getType();
+				if ((transitionType == TransitionType::CityGate) ||
+					(transitionType == TransitionType::EnterInterior) ||
+					(transitionType == TransitionType::ExitInterior))
 				{
-					return AutomapLevelUp;
-				}
-				else if (transitionType == LevelData::Transition::Type::LevelDown)
-				{
-					return AutomapLevelDown;
-				}
-				else if (transitionType == LevelData::Transition::Type::Menu)
-				{
-					// *MENU blocks are the same color as doors.
 					return AutomapDoor;
+				}
+				else if (transitionType == TransitionType::LevelChange)
+				{
+					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					return levelChangeDef.isLevelUp ? AutomapLevelUp : AutomapLevelDown;
 				}
 				else
 				{
@@ -270,7 +273,7 @@ const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const 
 }
 
 const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-	const NewInt2 &voxel, const LevelData::Transitions &transitions)
+	const LevelInt2 &voxel, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef)
 {
 	// The wilderness automap focuses more on displaying floor voxels than wall voxels.
 	// It's harder to make sense of in general compared to city and interior automaps,
@@ -324,42 +327,35 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 		}
 		else if (wallType == ArenaTypes::VoxelType::Wall)
 		{
-			const auto transitionIter = transitions.find(voxel);
-			if (transitionIter == transitions.end())
+			const LevelInt3 transitionVoxel(voxel.x, 1, voxel.y);
+			const TransitionDefinition *transitionDef =
+				LevelUtils::tryGetTransition(transitionVoxel, levelDef, levelInfoDef);
+			if (transitionDef == nullptr)
 			{
 				return AutomapWildWall;
 			}
 			else
 			{
-				const LevelData::Transition &transition = transitionIter->second;
-				const LevelData::Transition::Type transitionType = transition.getType();
-				if (transitionType == LevelData::Transition::Type::LevelUp)
+				const TransitionType transitionType = transitionDef->getType();
+				if ((transitionType == TransitionType::CityGate) ||
+					(transitionType == TransitionType::EnterInterior) ||
+					(transitionType == TransitionType::ExitInterior))
 				{
-					return AutomapLevelUp;
+					// Certain wilderness voxels are rendered like walls.
+					// @todo: may need to revisit this for the new VoxelDefinition design (see ArenaWildUtils::menuIsDisplayedInWildAutomap()).
+					// - can't just rely on the new floor.isWildWallColored?
+					const bool isHidden = false; // @todo
+					return isHidden ? AutomapWildWall : AutomapWildDoor;
 				}
-				else if (transitionType == LevelData::Transition::Type::LevelDown)
+				else if (transitionType == TransitionType::LevelChange)
 				{
-					return AutomapLevelDown;
-				}
-				else if (transitionType == LevelData::Transition::Type::Menu)
-				{
-					// Certain wilderness *MENU blocks are rendered like walls.
-					const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
-					const bool isHiddenMenu = !ArenaWildUtils::menuIsDisplayedInWildAutomap(transitionMenu.id);
-
-					if (isHiddenMenu)
-					{
-						return AutomapWildWall;
-					}
-					else
-					{
-						return AutomapWildDoor;
-					}
+					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					return levelChangeDef.isLevelUp ? AutomapLevelUp : AutomapLevelDown;
 				}
 				else
 				{
-					DebugLogWarning("Unrecognized wall type \"" +
-						std::to_string(static_cast<int>(wallType)) + "\".");
+					DebugLogWarning("Unrecognized transition type \"" +
+						std::to_string(static_cast<int>(transitionType)) + "\".");
 					return AutomapNotImplemented;
 				}
 			}			
@@ -413,16 +409,15 @@ const Color &AutomapPanel::getWildPixelColor(const VoxelDefinition &floorDef, co
 	}
 }
 
-Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-	bool isWild, const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions)
+Surface AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
+	bool isWild, const ChunkManager &chunkManager, const LevelDefinition &levelDef,
+	const LevelInfoDefinition &levelInfoDef)
 {
-	// Create scratch surface triple the size of the voxel area to display so that all directions
-	// of the player's arrow are representable in the same texture. This may change in the future
-	// for memory optimization.
-	const int maxSurfaceSize = (RMDFile::WIDTH * 2) * AutomapPixelSize;
-	Surface surface = Surface::createWithFormat(
-		std::min(voxelGrid.getDepth() * AutomapPixelSize, maxSurfaceSize),
-		std::min(voxelGrid.getWidth() * AutomapPixelSize, maxSurfaceSize),
+	// Create scratch surface triple the size of the voxel area so that all directions of the player's arrow
+	// are representable in the same texture. This may change in the future for memory optimization.
+	constexpr int automapDim = ChunkUtils::CHUNK_DIM * ((AutomapChunkDistance * 2) + 1);
+	constexpr int surfaceDim = automapDim * AutomapPixelSize;
+	Surface surface = Surface::createWithFormat(surfaceDim, surfaceDim,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 	// Fill with transparent color first (used by floor voxels).
@@ -450,61 +445,47 @@ Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionN
 		}
 	};
 
-	auto getVoxelDef = [&voxelGrid](SNInt x, int y, WEInt z) -> const VoxelDefinition&
-	{
-		const uint16_t voxelID = voxelGrid.getVoxel(x, y, z);
-		return voxelGrid.getVoxelDef(voxelID);
-	};
+	const ChunkInt2 &playerChunk = playerCoord.chunk;
+	ChunkInt2 minChunk, maxChunk;
+	ChunkUtils::getSurroundingChunks(playerChunk, AutomapChunkDistance, &minChunk, &maxChunk);
 
-	// Calculate voxel grid loop values based on whether it's the wilderness.
-	SNInt startX;
-	WEInt startZ;
-	SNInt loopWidth;
-	WEInt loopDepth;
-	if (!isWild)
+	// Fill in squares on the automap.
+	for (SNInt chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
 	{
-		startX = 0;
-		startZ = 0;
-		loopWidth = voxelGrid.getWidth();
-		loopDepth = voxelGrid.getDepth();
-	}
-	else
-	{
-		// Get relative wild origin in new coordinate system (bottom left corner).
-		const NewInt2 wildOrigin = AutomapPanel::makeRelativeWildOrigin(
-			playerVoxel, voxelGrid.getWidth(), voxelGrid.getDepth());
-
-		startX = wildOrigin.x;
-		startZ = wildOrigin.y;
-
-		const int offsetDist = RMDFile::WIDTH * 2;
-		loopWidth = offsetDist;
-		loopDepth = offsetDist;
-	}
-
-	// For each voxel, start at the lowest Y and walk upwards.
-	for (SNInt x = 0; x < loopWidth; x++)
-	{
-		for (WEInt z = 0; z < loopDepth; z++)
+		for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
 		{
-			const SNInt voxelX = startX + x;
-			const WEInt voxelZ = startZ + z;
+			const ChunkInt2 chunkPos(chunkX, chunkZ);
+			const Chunk *chunk = chunkManager.tryGetChunk(chunkPos);
+			DebugAssert(chunk != nullptr);
 
-			const VoxelDefinition &floorDef = getVoxelDef(voxelX, 0, voxelZ);
-			const VoxelDefinition &wallDef = getVoxelDef(voxelX, 1, voxelZ);
+			for (SNInt x = 0; x < ChunkUtils::CHUNK_DIM; x++)
+			{
+				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
+				{
+					const Chunk::VoxelID floorVoxelID = chunk->getVoxel(x, 0, z);
+					const Chunk::VoxelID wallVoxelID = chunk->getVoxel(x, 1, z);
+					const VoxelDefinition &floorVoxelDef = chunk->getVoxelDef(floorVoxelID);
+					const VoxelDefinition &wallVoxelDef = chunk->getVoxelDef(wallVoxelID);
 
-			// Decide which color to use for the automap pixel.
-			const NewInt2 voxel(voxelX, voxelZ);
-			const Color &color = !isWild ?
-				AutomapPanel::getPixelColor(floorDef, wallDef, voxel, transitions) :
-				AutomapPanel::getWildPixelColor(floorDef, wallDef, voxel, transitions);
+					// @todo: this is going to break for the wilderness; probably need MapDefinition/MapInfoDefinition
+					// as makeAutomap() parameters instead so the proper wilderness chunk LevelDefinition can be obtained.
+					// Maybe make a utils function for that (dependent on MapType). Could also determine isWild from
+					// the MapDefinition instead.
+					DebugNotImplemented();
+					const LevelInt2 levelVoxel = VoxelUtils::coordToNewVoxel(CoordInt2(chunkPos, VoxelInt2(x, z)));
 
-			// Convert world XZ coordinates to automap XY coordinates.
-			const int automapX = (loopDepth - 1) - z;
-			const int automapY = x;
+					// Decide which color to use for the automap pixel.
+					const Color &color = !isWild ?
+						AutomapPanel::getPixelColor(floorVoxelDef, wallVoxelDef, levelVoxel, levelDef, levelInfoDef) :
+						AutomapPanel::getWildPixelColor(floorVoxelDef, wallVoxelDef, levelVoxel, levelDef, levelInfoDef);
 
-			// Fill in the automap square.
-			drawSquare(automapX, automapY, color);
+					// Convert chunk coordinates to automap coordinates and draw. The min chunk origin is at the top
+					// right corner of the texture. +X is south, +Z is west.
+					const int automapX = ((chunkZ - minChunk.y) * ChunkUtils::CHUNK_DIM) + z;
+					const int automapY = ((chunkX - minChunk.x) * ChunkUtils::CHUNK_DIM) + x;
+					drawSquare(automapX, automapY, color);
+				}
+			}
 		}
 	}
 
@@ -526,56 +507,30 @@ Surface AutomapPanel::makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionN
 		}
 	};
 
-	// Calculate player voxel in automap. Depends on the relative origin if in the wilderness.
-	SNInt playerX;
-	WEInt playerZ;
-	if (!isWild)
-	{
-		playerX = playerVoxel.x;
-		playerZ = playerVoxel.y;
-	}
-	else
-	{
-		playerX = playerVoxel.x - startX;
-		playerZ = playerVoxel.y - startZ;
-	}
-
-	// Draw player last. Verify that the player is within the bounds of the map before drawing.
-	if ((playerX >= 0) && (playerX < loopWidth) && (playerZ >= 0) && (playerZ < loopDepth))
-	{
-		drawPlayer(playerX, playerZ, playerDir);
-	}
+	// Player will always be rendered in the center chunk.
+	static_assert(AutomapChunkDistance == 1);
+	const SNInt playerLocalX = ChunkUtils::CHUNK_DIM + playerCoord.voxel.x; // "Local" to the rendered chunks.
+	const WEInt playerLocalZ = ChunkUtils::CHUNK_DIM + playerCoord.voxel.y;
+	drawPlayer(playerLocalX, playerLocalZ, playerCompassDir);
 
 	return surface;
 }
 
-Double2 AutomapPanel::makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-	SNInt gridWidth, WEInt gridDepth)
+Double2 AutomapPanel::makeAutomapOffset(const CoordInt2 &playerCoord, bool isWild)
 {
-	const NewDouble2 worldOffset = [&playerVoxel, isWild, gridWidth, gridDepth]()
-	{
-		if (!isWild)
-		{
-			// Cities/interiors, offset from (0, 0) of the level.
-			return NewDouble2(
-				static_cast<double>(playerVoxel.x) + 0.50,
-				static_cast<double>((gridDepth - 1) - playerVoxel.y) + 0.50);
-		}
-		else
-		{
-			// Wilderness, offset from the relative 2x2 wild origin, dependent on player position.
-			const NewInt2 relativeOrigin =
-				AutomapPanel::makeRelativeWildOrigin(playerVoxel, gridWidth, gridDepth);
+	// Get player distance in voxels from the top-rightmost chunk.
+	// @todo: is there a better way? Like bottom-leftmost chunk?
+	const ChunkInt2 &playerChunk = playerCoord.chunk;
+	const ChunkInt2 relativeOriginChunk(
+		playerChunk.x - AutomapChunkDistance,
+		playerChunk.y - AutomapChunkDistance);
+	const VoxelInt2 distance(
+		(playerCoord.voxel.x + (playerChunk.x * ChunkUtils::CHUNK_DIM)) - (relativeOriginChunk.x * ChunkUtils::CHUNK_DIM),
+		(playerCoord.voxel.y + (playerChunk.y * ChunkUtils::CHUNK_DIM)) - (relativeOriginChunk.y * ChunkUtils::CHUNK_DIM));
 
-			// The returned value should be within [32, 95] because that's where the player loops
-			// between in the original coordinates.
-			return NewDouble2(
-				static_cast<double>(playerVoxel.x - relativeOrigin.x) + 0.50,
-				static_cast<double>(((RMDFile::WIDTH * 2) - 1) - (playerVoxel.y - relativeOrigin.y)) + 0.50);
-		}
-	}();
-
-	return Double2(-worldOffset.y, -worldOffset.x);
+	// Convert to real since the automap scrolling is in vector space.
+	const VoxelDouble2 distanceReal = VoxelUtils::getVoxelCenter(distance);
+	return -distanceReal; // @todo: verify
 }
 
 NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)

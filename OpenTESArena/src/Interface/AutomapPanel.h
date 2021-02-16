@@ -24,7 +24,10 @@
 // - Int2 getChunkPixelPosition(??Int chunkX, ??Int chunkY); // position on-screen in original render coords
 // - just get the surrounding 3x3 chunks. Does it really matter that it's 2x2 like the original game?
 
+class ChunkManager;
 class Color;
+class LevelDefinition;
+class LevelInfoDefinition;
 class Renderer;
 class Surface;
 class TextBox;
@@ -49,17 +52,17 @@ private:
 	// a wall, door, water, etc., and some context-sensitive cases like whether a dry chasm
 	// has a wall over it.
 	static const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const NewInt2 &voxel, const LevelData::Transitions &transitions);
+		const LevelInt2 &voxel, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef);
 	static const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const NewInt2 &voxel, const LevelData::Transitions &transitions);
+		const LevelInt2 &voxel, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef);
 
 	// Generates a surface of the automap to be converted to a texture for rendering.
-	static Surface makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-		bool isWild, const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions);
+	static Surface makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
+		bool isWild, const ChunkManager &chunkManager, const LevelDefinition &levelDef,
+		const LevelInfoDefinition &levelInfoDef);
 
-	// Calculates screen offset of automap for rendering.
-	static Double2 makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-		SNInt gridWidth, WEInt gridDepth);
+	// Calculates automap screen offset in pixels for rendering.
+	static Double2 makeAutomapOffset(const CoordInt2 &playerVoxel, bool isWild);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
 	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
@@ -69,8 +72,9 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const NewDouble2 &playerDirection,
-		const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName);
+	AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const NewDouble2 &playerDirection,
+		const ChunkManager &chunkManager, const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef,
+		const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
