@@ -699,7 +699,7 @@ EntityDefID EntityManager::addEntityDef(EntityDefinition &&def,
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
-	double ceilingHeight, const VoxelGrid &voxelGrid, const EntityDefinitionLibrary &entityDefLibrary,
+	double ceilingHeight, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
@@ -784,13 +784,19 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 	const double flatYOffset =  static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
-	const CoordDouble2 &entityPosition = entity.getPosition();
-	const double raisedPlatformYOffset = [ceilingHeight, &voxelGrid, &entityPosition]()
+	const CoordDouble2 &entityCoord = entity.getPosition();
+	const double raisedPlatformYOffset = [ceilingHeight, &chunkManager, &entityCoord]()
 	{
-		const NewDouble2 absoluteEntityPositionXZ = VoxelUtils::coordToNewPoint(entityPosition);
-		const NewInt2 absoluteEntityVoxelPosXZ = VoxelUtils::pointToVoxel(absoluteEntityPositionXZ);
-		const uint16_t voxelID = voxelGrid.getVoxel(absoluteEntityVoxelPosXZ.x, 1, absoluteEntityVoxelPosXZ.y);
-		const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+		const CoordInt2 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
+		const Chunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
+		if (chunk == nullptr)
+		{
+			// Not sure this is ever reachable, but handle just in case.
+			return 0.0;
+		}
+
+		const Chunk::VoxelID voxelID = chunk->getVoxel(entityVoxelCoord.voxel.x, 1, entityVoxelCoord.voxel.y);
+		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 
 		if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 		{
@@ -806,10 +812,10 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 
 	// Bottom center of flat.
 	const VoxelDouble3 newCoordPoint(
-		entityPosition.point.x,
+		entityCoord.point.x,
 		ceilingHeight + flatYOffset + raisedPlatformYOffset,
-		entityPosition.point.y);
-	outVisData.flatPosition = CoordDouble3(entityPosition.chunk, newCoordPoint);
+		entityCoord.point.y);
+	outVisData.flatPosition = CoordDouble3(entityCoord.chunk, newCoordPoint);
 }
 
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
