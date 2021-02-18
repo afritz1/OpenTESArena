@@ -19,6 +19,7 @@
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
+class LevelInstance;
 class RenderCamera;
 class RenderDefinitionGroup;
 class RenderFrameSettings;
