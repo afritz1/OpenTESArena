@@ -955,7 +955,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
-	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
 	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
 {
 	// The 3D renderer must be initialized.
@@ -973,7 +973,7 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, doub
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->renderer3D->render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
-		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight, levelData,
+		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingScale, levelInst,
 		entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);

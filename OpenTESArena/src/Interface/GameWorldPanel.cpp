@@ -3146,8 +3146,9 @@ void GameWorldPanel::render(Renderer &renderer)
 	auto &game = this->getGame();
 	auto &gameState = game.getGameState();
 	auto &player = gameState.getPlayer();
-	const auto &worldData = gameState.getActiveWorld();
-	const auto &level = worldData.getActiveLevel();
+	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const auto &options = game.getOptions();
 	const double ambientPercent = gameState.getAmbientPercent();
 
@@ -3157,7 +3158,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		return locationDef.getLatitude();
 	}();
 
-	const bool isExterior = worldData.getMapType() != MapType::Interior;
+	const bool isExterior = activeMapDef.getMapType() != MapType::Interior;
 
 	auto &textureManager = game.getTextureManager();
 	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
@@ -3173,8 +3174,8 @@ void GameWorldPanel::render(Renderer &renderer)
 	renderer.renderWorld(player.getPosition(), player.getDirection(), options.getGraphics_VerticalFOV(),
 		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
 		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
-		options.getMisc_ChunkDistance(), level.getCeilingHeight(), level, game.getEntityDefinitionLibrary(),
-		defaultPalette);
+		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst,
+		game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);

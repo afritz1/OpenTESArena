@@ -954,8 +954,7 @@ public:
 	void setFogDistance(double fogDistance) override;
 
 	// Sets textures for the distant sky (mountains, clouds, etc.).
-	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
-		TextureManager &textureManager) override;
+	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager) override;
 
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
@@ -980,8 +979,8 @@ public:
 	// Zeroes out all renderer textures and entity render ID mappings to textures.
 	void clearTexturesAndEntityRenderIDs() override;
 
-	// Removes all distant sky objects.
-	void clearDistantSky() override;
+	// Removes all sky objects.
+	void clearSky() override;
 
 	void init(const RenderInitSettings &settings) override;
 	void shutdown() override;
@@ -1002,7 +1001,7 @@ public:
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
 	void render(const CoordDouble3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from

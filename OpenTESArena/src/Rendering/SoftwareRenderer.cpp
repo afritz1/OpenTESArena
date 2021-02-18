@@ -1184,7 +1184,7 @@ void SoftwareRenderer::setFogDistance(double fogDistance)
 	this->fogDistance = fogDistance;
 }
 
-void SoftwareRenderer::setDistantSky(const DistantSky &distantSky, const Palette &palette,
+void SoftwareRenderer::setSky(const SkyInstance &skyInstance, const Palette &palette,
 	TextureManager &textureManager)
 {
 	// Clear old distant sky data.
@@ -1244,7 +1244,7 @@ void SoftwareRenderer::clearTexturesAndEntityRenderIDs()
 	this->chasmTextureGroups.clear();
 }
 
-void SoftwareRenderer::clearDistantSky()
+void SoftwareRenderer::clearSky()
 {
 	this->distantObjects.clear();
 }
@@ -7928,7 +7928,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
-	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
 	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
@@ -7959,7 +7959,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	this->threadData.init(this->renderThreads.getCount(), camera, shadingInfo, frame);
 	this->threadData.skyGradient.init(gradientProjYTop, gradientProjYBottom, this->skyGradientRowCache);
 	this->threadData.distantSky.init(this->visDistantObjs, this->skyTextures);
-	this->threadData.voxels.init(chunkDistance, ceilingHeight, levelData, this->visibleLights,
+	this->threadData.voxels.init(chunkDistance, ceilingScale, levelData, this->visibleLights,
 		this->visLightLists, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights, this->visLightLists,
 		this->flatTextureGroups);

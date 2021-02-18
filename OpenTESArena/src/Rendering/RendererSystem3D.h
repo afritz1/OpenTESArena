@@ -24,6 +24,7 @@ class RenderDefinitionGroup;
 class RenderFrameSettings;
 class RenderInitSettings;
 class RenderInstanceGroup;
+class SkyInstance;
 class TextureBuilder;
 class TextureManager;
 
@@ -90,15 +91,14 @@ public:
 		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager) = 0;
 	virtual void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) = 0;
-	virtual void setDistantSky(const DistantSky &distantSky, const Palette &palette,
-		TextureManager &textureManager) = 0;
+	virtual void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager) = 0;
 	virtual void setSkyPalette(const uint32_t *colors, int count) = 0;
 	virtual void setNightLightsActive(bool active, const Palette &palette) = 0;
 	virtual void clearTexturesAndEntityRenderIDs() = 0;
-	virtual void clearDistantSky() = 0;
+	virtual void clearSky() = 0;
 	virtual void render(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
-		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelInstance &levelInst,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame

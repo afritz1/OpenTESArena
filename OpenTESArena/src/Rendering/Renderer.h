@@ -227,12 +227,11 @@ public:
 		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager);
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
-	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
-		TextureManager &textureManager);
+	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active, const Palette &palette);
 	void clearTexturesAndEntityRenderIDs();
-	void clearDistantSky();
+	void clearSky();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
@@ -253,7 +252,7 @@ public:
 	// If the renderer is uninitialized, this causes a crash.
 	void renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
