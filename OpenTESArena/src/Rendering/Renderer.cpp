@@ -391,19 +391,21 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 }
 
 bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-	const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
-	double entityWidth, double entityHeight, const Double3 &rayPoint, const Double3 &rayDirection,
-	bool pixelPerfect, const Palette &palette, Double3 *outHitPoint) const
+	const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
+	double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
+	bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
 {
 	DebugAssert(this->renderer3D->isInited());
 	const Entity &entity = *visData.entity;
 
 	// Do a ray test to see if the ray intersects.
+	const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayPoint);
 	const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visData.flatPosition);
-	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, absoluteFlatPosition,
-		entityForward, outHitPoint))
+	NewDouble3 absoluteHitPoint;
+	if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
+		entityForward, &absoluteHitPoint))
 	{
-		const Double3 diff = (*outHitPoint) - absoluteFlatPosition;
+		const NewDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
 
 		// Get the texture coordinates. It's okay if they are outside the entity.
 		const Double2 uv(
@@ -417,6 +419,7 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 			entity.getRenderID(), visData.stateIndex, visData.angleIndex, visData.keyframeIndex,
 			pixelPerfect, palette, &isSelected);
 
+		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
 		return withinEntity && isSelected;
 	}
 	else

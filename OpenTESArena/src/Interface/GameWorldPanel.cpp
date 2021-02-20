@@ -112,22 +112,21 @@ namespace
 		auto &gameState = game.getGameState();
 		
 		const auto &options = game.getOptions();
-		const int chunkDistance = options.getMisc_ChunkDistance();
 		const double verticalFOV = options.getGraphics_VerticalFOV();
 		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
 
 		const auto &player = gameState.getPlayer();
 		const CoordDouble3 &rayStart = player.getPosition();
-		const NewDouble3 &cameraDirection = player.getDirection();
+		const VoxelDouble3 &cameraDirection = player.getDirection();
 		const int viewWidth = windowDims.x;
 		const int viewHeight = renderer.getViewHeight();
 		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
 
-		const auto &worldData = gameState.getActiveWorld();
-		const auto &levelData = worldData.getActiveLevel();
-		const auto &entityManager = levelData.getEntityManager();
-		const auto &voxelGrid = levelData.getVoxelGrid();
-		const double ceilingHeight = levelData.getCeilingHeight();
+		const MapInstance &mapInst = gameState.getActiveMapInst();
+		const LevelInstance &levelInst = mapInst.getActiveLevel();
+		const ChunkManager &chunkManager = levelInst.getChunkManager();
+		const EntityManager &entityManager = levelInst.getEntityManager();
+		const double ceilingScale = levelInst.getCeilingScale();
 
 		const std::string &paletteFilename = ArenaPaletteName::Default;
 		auto &textureManager = game.getTextureManager();
@@ -151,12 +150,12 @@ namespace
 
 				// Not registering entities with ray cast hits for efficiency since this debug
 				// visualization is for voxels.
-				const bool includeEntities = false;
+				constexpr bool includeEntities = false;
 
 				Physics::Hit hit;
-				const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
-					cameraDirection, pixelPerfect, palette, includeEntities, levelData,
-					game.getEntityDefinitionLibrary(), renderer, hit);
+				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
+					pixelPerfect, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
+					renderer, hit);
 
 				if (success)
 				{
@@ -170,9 +169,8 @@ namespace
 								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
 							};
 
-							const CoordInt3 &coord = hit.getVoxelHit().coord;
-							const NewInt3 hitVoxel = VoxelUtils::coordToNewVoxel(coord);
-							const int colorsIndex = std::min(hitVoxel.y, 4);
+							const VoxelInt3 &voxel = hit.getVoxelHit().voxel;
+							const int colorsIndex = std::min(voxel.y, 4);
 							color = colors[colorsIndex];
 							break;
 						}
@@ -202,7 +200,7 @@ namespace
 		const Double3 &cameraDirection = player.getDirection();
 
 		const CoordDouble3 rayStart = player.getPosition();
-		const Double3 rayDirection = [&game, &options, &cameraDirection]()
+		const VoxelDouble3 rayDirection = [&game, &options, &cameraDirection]()
 		{
 			const auto &renderer = game.getRenderer();
 			const Int2 windowDims = renderer.getWindowDimensions();
@@ -222,10 +220,11 @@ namespace
 				options.getGraphics_VerticalFOV(), viewAspectRatio);
 		}();
 
-		const auto &worldData = gameState.getActiveWorld();
-		const auto &levelData = worldData.getActiveLevel();
-		const auto &entityManager = levelData.getEntityManager();
-		const auto &voxelGrid = levelData.getVoxelGrid();
+		const MapInstance &mapInst = gameState.getActiveMapInst();
+		const LevelInstance &levelInst = mapInst.getActiveLevel();
+		const ChunkManager &chunkManager = levelInst.getChunkManager();
+		const EntityManager &entityManager = levelInst.getEntityManager();
+		const double ceilingScale = levelInst.getCeilingScale();
 
 		const std::string &paletteFilename = ArenaPaletteName::Default;
 		auto &textureManager = game.getTextureManager();
@@ -240,9 +239,8 @@ namespace
 		const bool includeEntities = true;
 
 		Physics::Hit hit;
-		const bool success = Physics::rayCast(rayStart, rayDirection,
-			options.getMisc_ChunkDistance(), levelData.getCeilingHeight(), cameraDirection,
-			options.getInput_PixelPerfectSelection(), palette, includeEntities, levelData,
+		const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
+			options.getInput_PixelPerfectSelection(), palette, includeEntities, levelInst,
 			game.getEntityDefinitionLibrary(), renderer, hit);
 
 		std::string text;
@@ -252,14 +250,16 @@ namespace
 			{
 			case Physics::Hit::Type::Voxel:
 			{
-				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-				const CoordInt3 &coord = voxelHit.coord;
-				const NewInt3 voxel = VoxelUtils::coordToNewVoxel(voxelHit.coord);
-				const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-				const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+				const ChunkInt2 chunk = hit.getCoord().chunk;
+				const Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
+				DebugAssert(chunkPtr != nullptr);
 
-				text = "Voxel: (" + voxel.toString() + "), " +
-					std::to_string(static_cast<int>(voxelDef.type)) +
+				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
+				const VoxelInt3 &voxel = voxelHit.voxel;
+				const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
+				const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
+
+				text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelDef.type)) +
 					' ' + std::to_string(hit.getT());
 				break;
 			}
@@ -1660,11 +1660,11 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const auto &options = game.getOptions();
 	auto &player = gameState.getPlayer();
 	const Double3 &cameraDirection = player.getDirection();
-	auto &worldData = gameState.getActiveWorld();
-	auto &level = worldData.getActiveLevel();
-	auto &voxelGrid = level.getVoxelGrid();
-	const auto &entityManager = level.getEntityManager();
-	const double ceilingHeight = level.getCeilingHeight();
+	const MapInstance &mapInst = gameState.getActiveMapInst();
+	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	const ChunkManager &chunkManager = levelInst.getChunkManager();
+	const EntityManager &entityManager = levelInst.getEntityManager();
+	const double ceilingScale = levelInst.getCeilingScale();
 
 	const CoordDouble3 rayStart = player.getPosition();
 	const NewDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
@@ -1687,8 +1687,6 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			options.getGraphics_VerticalFOV(), viewAspectRatio);
 	}();
 
-	const int chunkDistance = options.getMisc_ChunkDistance();
-
 	// Pixel-perfect selection determines whether an entity's texture is used in the
 	// selection calculation.
 	const bool pixelPerfectSelection = options.getInput_PixelPerfectSelection();
@@ -1702,23 +1700,26 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	const bool includeEntities = true;
+	constexpr bool includeEntities = true;
 
 	Physics::Hit hit;
-	const bool success = Physics::rayCast(rayStart, rayDirection, chunkDistance, ceilingHeight,
-		cameraDirection, pixelPerfectSelection, palette, includeEntities, level,
-		game.getEntityDefinitionLibrary(), game.getRenderer(), hit);
+	const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
+		pixelPerfectSelection, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
+		game.getRenderer(), hit);
 
 	// See if the ray hit anything.
 	if (success)
 	{
 		if (hit.getType() == Physics::Hit::Type::Voxel)
 		{
+			const ChunkInt2 chunk = hit.getCoord().chunk;
+			const Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
+			DebugAssert(chunkPtr != nullptr);
+
 			const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-			const CoordInt3 &coord = voxelHit.coord;
-			const NewInt3 voxel = VoxelUtils::coordToNewVoxel(coord);
-			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+			const VoxelInt3 &voxel = voxelHit.voxel;
+			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
 
 			// Primary click handles selection in the game world. Secondary click handles
 			// reading names of things.

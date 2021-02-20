@@ -15,6 +15,8 @@
 
 // Namespace for physics-related calculations like ray casting.
 
+class LevelInstance;
+
 namespace Physics
 {
 	// Intersection data for ray casts.
@@ -26,7 +28,7 @@ namespace Physics
 		struct VoxelHit
 		{
 			uint16_t id;
-			CoordInt3 coord;
+			VoxelInt3 voxel;
 			std::optional<VoxelFacing3D> facing;
 		};
 
@@ -37,7 +39,7 @@ namespace Physics
 		};
 	private:
 		double t;
-		Double3 point;
+		CoordDouble3 coord; // Hit point in 3D space.
 		Hit::Type type;
 
 		// Not in a union so VoxelHit can use std::optional.
@@ -46,13 +48,13 @@ namespace Physics
 	public:
 		static constexpr double MAX_T = std::numeric_limits<double>::infinity();
 
-		void initVoxel(double t, const Double3 &point, uint16_t id, const CoordInt3 &coord,
+		void initVoxel(double t, const CoordDouble3 &coord, uint16_t id, const VoxelInt3 &voxel,
 			const VoxelFacing3D *facing);
-		void initEntity(double t, const Double3 &point, EntityID id, EntityType type);
+		void initEntity(double t, const CoordDouble3 &coord, EntityID id, EntityType type);
 
 		double getT() const;
 		double getTSqr() const;
-		const Double3 &getPoint() const;
+		const CoordDouble3 &getCoord() const;
 		Hit::Type getType() const;
 		const VoxelHit &getVoxelHit() const;
 		const EntityHit &getEntityHit() const;
@@ -62,16 +64,15 @@ namespace Physics
 
 	// @todo: bit mask elements for each voxel data type.
 
-	// Casts a ray through the world and writes any intersection data into the output
-	// parameter. Returns true if the ray hit something.
-	bool rayCast(const CoordDouble3 &rayStart, const NewDouble3 &rayDirection, int chunkDistance,
-		double ceilingHeight, const NewDouble3 &cameraForward, bool pixelPerfect, const Palette &palette,
-		bool includeEntities, const LevelData &levelData, const EntityDefinitionLibrary &entityDefLibrary,
-		const Renderer &renderer, Physics::Hit &hit);
-	bool rayCast(const CoordDouble3 &rayStart, const NewDouble3 &rayDirection, int chunkDistance,
-		const NewDouble3 &cameraForward, bool pixelPerfect, const Palette &palette, bool includeEntities,
-		const LevelData &levelData, const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer,
+	// Casts a ray through the world and writes any intersection data into the output parameter. Returns true
+	// if the ray hit something.
+	bool rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
+		const VoxelDouble3 &cameraForward, bool pixelPerfect, const Palette &palette, bool includeEntities,
+		const LevelInstance &levelInst, const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer,
 		Physics::Hit &hit);
+	bool rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
+		bool pixelPerfect, const Palette &palette, bool includeEntities, const LevelInstance &levelInst,
+		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit);
 };
 
 #endif
