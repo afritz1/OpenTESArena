@@ -60,6 +60,8 @@ struct CoordInt3
 	CoordInt3() = default;
 	CoordInt3(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
 		: chunk(chunk), voxel(voxel) { }
+
+	VoxelInt3 operator-(const CoordInt3 &other) const;
 };
 
 struct CoordDouble3
