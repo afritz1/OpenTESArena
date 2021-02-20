@@ -1476,9 +1476,10 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 	return hit.getT() < Hit::MAX_T;
 }
 
-bool Physics::rayCast(const CoordDouble3 &rayStart, const NewDouble3 &rayDirection, const NewDouble3 &cameraForward,
-	bool pixelPerfect, const Palette &palette, bool includeEntities, const LevelInstance &levelInst,
-	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
+bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection,
+	const VoxelDouble3 &cameraForward, bool pixelPerfect, const Palette &palette, bool includeEntities,
+	const LevelInstance &levelInst, const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer,
+	Physics::Hit &hit)
 {
 	constexpr double ceilingScale = 1.0;
 	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, pixelPerfect, palette,
