@@ -117,7 +117,7 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 		Buffer<uint8_t> reservedBlocks = [&cityDef]()
 		{
 			DebugAssert(cityDef.reservedBlocks != nullptr);
-			Buffer<uint8_t> buffer(cityDef.reservedBlocks->size());
+			Buffer<uint8_t> buffer(static_cast<int>(cityDef.reservedBlocks->size()));
 			std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.get());
 			return buffer;
 		}();

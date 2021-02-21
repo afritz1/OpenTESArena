@@ -71,18 +71,15 @@ private:
 
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
-	void handleTriggers(const NewInt2 &voxel);
-
-	// Handles updating of doors that are not closed.
-	void handleDoors(double dt, const Double2 &playerPos);
+	void handleTriggers(const CoordInt2 &coord);
 
 	// Handles the behavior for when the player activates a *MENU block and transitions
 	// from one world to another (i.e., from an interior to an exterior).
 	void handleWorldTransition(const Physics::Hit &hit, int menuID);
 
-	// Checks the given voxel to see if it's a transition voxel (i.e., level up/down),
+	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down),
 	// and changes the current level if it is.
-	void handleLevelTransition(const NewInt2 &playerVoxel, const NewInt2 &transitionVoxel);
+	void handleLevelTransition(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
