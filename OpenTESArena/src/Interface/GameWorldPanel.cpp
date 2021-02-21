@@ -2768,7 +2768,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const Int2 renderDims(profilerData.width, profilerData.height);
 		const double resolutionScale = options.getGraphics_ResolutionScale();
 
-		auto &gameState = game.getGameState();
+		GameState &gameState = game.getGameState();
 		const auto &player = gameState.getPlayer();
 		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 		const Double3 &direction = player.getDirection();
@@ -2796,7 +2796,6 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
 		// Add any wilderness-specific info.
-		const GameState &gameState = game.getGameState();
 		const MapDefinition &mapDef = gameState.getActiveMapDef();
 		const MapType mapType = mapDef.getMapType();
 		if (mapType == MapType::Wilderness)
