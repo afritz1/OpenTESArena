@@ -81,6 +81,9 @@ public:
 	// Attempts to add a voxel definition and returns its assigned ID.
 	bool tryAddVoxelDef(VoxelDefinition &&voxelDef, VoxelID *outID);
 
+	// Adds a voxel instance to the chunk.
+	void addVoxelInst(VoxelInstance &&voxelInst);
+
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
 	void removeVoxelDef(VoxelID id);
 

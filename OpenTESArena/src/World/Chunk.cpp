@@ -118,6 +118,11 @@ bool Chunk::tryAddVoxelDef(VoxelDefinition &&voxelDef, Chunk::VoxelID *outID)
 	return true;
 }
 
+void Chunk::addVoxelInst(VoxelInstance &&voxelInst)
+{
+	this->voxelInsts.emplace_back(std::move(voxelInst));
+}
+
 void Chunk::removeVoxelDef(VoxelID id)
 {
 	DebugAssert(id < this->voxelDefs.size());
@@ -140,6 +145,15 @@ void Chunk::update(double dt)
 	{
 		VoxelInstance &voxelInst = this->voxelInsts[i];
 		voxelInst.update(dt);
+
+		// @todo: handle doors that just closed
+		// - delete voxel instance and conditionally play onClosed sound at center of voxel.
+		DebugNotImplemented();
+
+		// @todo: handle doors far enough from the player to close.
+		// - ArenaLevelUtils::DOOR_CLOSE_DISTANCE
+		// - if player is far enough, then set to closing and conditionally play onClosing sound at center of voxel.
+		DebugNotImplemented();
 
 		// See if the voxel instance can be removed because it no longer has interesting state.
 		if (!voxelInst.hasRelevantState())
