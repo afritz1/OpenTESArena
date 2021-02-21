@@ -65,7 +65,7 @@ VoxelInt3 CoordInt3::operator-(const CoordInt3 &other) const
 	const ChunkInt2 chunkDiff = this->chunk - other.chunk;
 	const VoxelInt3 otherOriginToOrigin(
 		chunkDiff.x * ChunkUtils::CHUNK_DIM,
-		0.0,
+		0,
 		chunkDiff.y * ChunkUtils::CHUNK_DIM);
 
 	const VoxelInt3 originToPoint = this->voxel;
