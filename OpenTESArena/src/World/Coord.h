@@ -61,6 +61,9 @@ struct CoordInt3
 	CoordInt3(const ChunkInt2 &chunk, const VoxelInt3 &voxel)
 		: chunk(chunk), voxel(voxel) { }
 
+	bool operator==(const CoordInt3 &other) const;
+	bool operator!=(const CoordInt3 &other) const;
+	CoordInt3 operator+(const VoxelInt3 &other) const;
 	VoxelInt3 operator-(const CoordInt3 &other) const;
 };
 

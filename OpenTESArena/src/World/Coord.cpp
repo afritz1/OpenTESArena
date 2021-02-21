@@ -39,9 +39,19 @@ VoxelDouble2 CoordDouble2::operator-(const CoordDouble2 &other) const
 	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
 }
 
-CoordDouble3 CoordDouble3::operator+(const VoxelDouble3 &other) const
+bool CoordInt3::operator==(const CoordInt3 &other) const
 {
-	return CoordDouble3(this->chunk, this->point + other);
+	return (this->chunk == other.chunk) && (this->voxel == other.voxel);
+}
+
+bool CoordInt3::operator!=(const CoordInt3 &other) const
+{
+	return (this->chunk != other.chunk) || (this->voxel != other.voxel);
+}
+
+CoordInt3 CoordInt3::operator+(const VoxelInt3 &other) const
+{
+	return ChunkUtils::recalculateCoord(this->chunk, this->voxel + other);
 }
 
 VoxelInt3 CoordInt3::operator-(const CoordInt3 &other) const
@@ -61,6 +71,11 @@ VoxelInt3 CoordInt3::operator-(const CoordInt3 &other) const
 	const VoxelInt3 originToPoint = this->voxel;
 
 	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
+}
+
+CoordDouble3 CoordDouble3::operator+(const VoxelDouble3 &other) const
+{
+	return ChunkUtils::recalculateCoord(this->chunk, this->point + other);
 }
 
 VoxelDouble3 CoordDouble3::operator-(const CoordDouble3 &other) const
