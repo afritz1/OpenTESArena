@@ -46,11 +46,11 @@ namespace
 }
 
 void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
-	const std::optional<CoordInt3> &returnVoxel)
+	const std::optional<CoordInt3> &returnCoord)
 {
 	this->definition = std::move(mapDefinition);
 	this->instance = std::move(mapInstance);
-	this->returnVoxel = returnVoxel;
+	this->returnCoord = returnCoord;
 }
 
 GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
@@ -287,7 +287,7 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 }
 
 bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-	const std::optional<CoordInt3> &returnVoxel, const CharacterClassLibrary &charClassLibrary,
+	const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -309,7 +309,7 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	if (this->maps.size() > 0)
 	{
 		MapState &activeMapState = this->maps.top();
-		activeMapState.returnVoxel = returnVoxel;
+		activeMapState.returnCoord = returnCoord;
 	}
 
 	this->maps.emplace(std::move(mapState));
@@ -332,6 +332,17 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	}
 
 	return true;
+}
+
+bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+{
+	this->clearMaps();
+
+	constexpr std::optional<CoordInt3> returnCoord; // Not needed.
+	return this->tryPushInterior(interiorGenInfo, returnCoord, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager, renderer);
 }
 
 bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
@@ -390,7 +401,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 
 bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
-	const std::optional<CoordInt3> &startVoxel, const CharacterClassLibrary &charClassLibrary,
+	const std::optional<CoordInt3> &startCoord, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -433,11 +444,11 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 
 	// Wilderness start point depends on city gate the player is coming out of.
 	DebugAssert(activeMapDef.getStartPointCount() == 0);
-	const CoordInt2 startPoint = [&startVoxel]()
+	const CoordInt2 startPoint = [&startCoord]()
 	{
-		if (startVoxel.has_value())
+		if (startCoord.has_value())
 		{
-			return CoordInt2(startVoxel->chunk, VoxelInt2(startVoxel->voxel.x, startVoxel->voxel.z));
+			return CoordInt2(startCoord->chunk, VoxelInt2(startCoord->voxel.x, startCoord->voxel.z));
 		}
 		else
 		{
@@ -476,18 +487,18 @@ bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	const std::optional<CoordInt3> &returnVoxel = this->maps.top().returnVoxel;
+	const std::optional<CoordInt3> &returnCoord = this->maps.top().returnCoord;
 
 	// @todo: should the map state save its weather beforehand so it can be restored here? What if the player sleeps in an interior?
 	// - probably need a condition to determine if we need to recalculate the weather.
 	const WeatherType weatherType = WeatherType::Clear;
 
-	const CoordInt2 startCoord = [&activeMapDef, &returnVoxel]()
+	const CoordInt2 startCoord = [&activeMapDef, &returnCoord]()
 	{
 		// Use the return voxel as the start point if the now-activated map has one.
-		if (returnVoxel.has_value())
+		if (returnCoord.has_value())
 		{
-			return CoordInt2(returnVoxel->chunk, VoxelInt2(returnVoxel->voxel.x, returnVoxel->voxel.z));
+			return CoordInt2(returnCoord->chunk, VoxelInt2(returnCoord->voxel.x, returnCoord->voxel.z));
 		}
 		else
 		{

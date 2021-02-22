@@ -58,9 +58,9 @@ private:
 	{
 		MapDefinition definition;
 		MapInstance instance;
-		std::optional<CoordInt3> returnVoxel; // Available when returning from inside an interior.
+		std::optional<CoordInt3> returnCoord; // Available when returning from inside an interior.
 		
-		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, const std::optional<CoordInt3> &returnVoxel);
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, const std::optional<CoordInt3> &returnCoord);
 	};
 
 	// Determines length of a real-time second in-game. For the original game, one real
@@ -129,9 +129,16 @@ public:
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This preserves existing maps for later when the interior is exited.
 	bool tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-		const std::optional<CoordInt3> &returnVoxel, const CharacterClassLibrary &charClassLibrary,
+		const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
+
+	// Clears all maps and attempts to generate an interior and set it active based on the given generation info.
+	// This is simpler than pushing an interior since there is no exterior to return to. Intended for world map
+	// dungeons.
+	bool trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
@@ -142,7 +149,7 @@ public:
 	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
 	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
-		const std::optional<CoordInt3> &startVoxel, const CharacterClassLibrary &charClassLibrary,
+		const std::optional<CoordInt3> &startCoord, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
