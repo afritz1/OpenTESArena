@@ -10,6 +10,7 @@
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Entities/EntityManager.h"
 #include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"

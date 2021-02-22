@@ -54,7 +54,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 
 	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTexturesAndEntityRenderIDs();
-	renderer.clearDistantSky();
+	renderer.clearSky();
 	this->entityManager.clear();
 
 	// @todo: set renderer sky palette

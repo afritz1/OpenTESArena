@@ -848,11 +848,10 @@ void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *c
 	this->renderer3D->addChasmTexture(chasmType, colors, width, height, palette);
 }
 
-void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette,
-	TextureManager &textureManager)
+void Renderer::setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setDistantSky(distantSky, palette, textureManager);
+	this->renderer3D->setSky(skyInstance, palette, textureManager);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
@@ -873,10 +872,10 @@ void Renderer::clearTexturesAndEntityRenderIDs()
 	this->renderer3D->clearTexturesAndEntityRenderIDs();
 }
 
-void Renderer::clearDistantSky()
+void Renderer::clearSky()
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearDistantSky();
+	this->renderer3D->clearSky();
 }
 
 void Renderer::clear(const Color &color)
