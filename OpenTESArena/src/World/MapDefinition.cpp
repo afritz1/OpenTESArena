@@ -102,7 +102,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 		levelInfoDef.init(ceilingScale);
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
@@ -205,7 +205,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
@@ -274,7 +274,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	levelDef.init(levelDepth, levelHeight, levelWidth);
 
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
@@ -348,7 +348,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(

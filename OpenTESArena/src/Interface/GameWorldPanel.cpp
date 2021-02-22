@@ -100,7 +100,7 @@ namespace
 	};
 
 	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
 	void DEBUG_ColorRaycastPixel(Game &game, Renderer &renderer)
 	{
 		const int selectionDim = 3;
@@ -188,7 +188,7 @@ namespace
 	}
 
 	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
 	void DEBUG_PhysicsRaycast(Game &game, Renderer &renderer)
 	{
 		// ray cast out from center and display hit info (faster/better than console logging).
@@ -1817,10 +1817,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								/*const auto &inf = level.getInfFile();
 								auto &audioManager = game.getAudioManager();
 								const std::string &soundFilename = inf.getSound(openDoorSoundDef.soundIndex);
-								const double ceilingHeight = level.getCeilingHeight();
+								const double ceilingScale = level.getCeilingScale();
 								const Double3 soundPosition(
 									static_cast<SNDouble>(voxel.x) + 0.50,
-									(static_cast<double>(voxel.y) * ceilingHeight) + (ceilingHeight * 0.50),
+									(static_cast<double>(voxel.y) * ceilingScale) + (ceilingScale * 0.50),
 									static_cast<WEDouble>(voxel.z) + 0.50);
 
 								audioManager.playSound(soundFilename, soundPosition);*/
@@ -2592,7 +2592,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				// Move the player to where they should be in the new level.
 				const NewDouble3 playerDestinationPoint(
 					destinationXZ.x,
-					newActiveLevel.getCeilingHeight() + Player::HEIGHT,
+					newActiveLevel.getCeilingScale() + Player::HEIGHT,
 					destinationXZ.y);
 				const CoordDouble3 playerDestinationCoord = VoxelUtils::newPointToCoord(playerDestinationPoint);
 				player.teleport(playerDestinationCoord);
@@ -3366,7 +3366,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	}
 
 	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingHeight < 1.0, and same with ceiling blue dots).
+	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
 	if (profilerLevel == Options::MAX_PROFILER_LEVEL)
 	{
 		DEBUG_PhysicsRaycast(this->getGame(), renderer);

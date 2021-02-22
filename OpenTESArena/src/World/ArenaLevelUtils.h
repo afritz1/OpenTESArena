@@ -28,8 +28,8 @@ namespace ArenaLevelUtils
 	// Display names for *MENU transition voxels in cities and the wilderness.
 	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
 
-	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 per voxel).
-	double convertArenaCeilingHeight(int ceilingHeight);
+	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 by default).
+	double convertCeilingHeightToScale(int ceilingHeight);
 
 	// Gets the number of voxels a MAP2 voxel occupies vertically (at least 1).
 	int getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel);

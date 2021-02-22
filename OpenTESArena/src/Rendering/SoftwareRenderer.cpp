@@ -499,9 +499,9 @@ Radians SoftwareRenderer::Camera::getXZAngleRadians() const
 	return MathUtils::fullAtan2(-this->forwardX, -this->forwardZ);
 }
 
-int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingHeight) const
+int SoftwareRenderer::Camera::getAdjustedEyeVoxelY(double ceilingScale) const
 {
-	return static_cast<int>(this->eye.point.y / ceilingHeight);
+	return static_cast<int>(this->eye.point.y / ceilingScale);
 }
 
 SoftwareRenderer::Ray::Ray(SNDouble dirX, WEDouble dirZ)
@@ -933,14 +933,14 @@ void SoftwareRenderer::RenderThreadData::DistantSky::init(const VisDistantObject
 	this->doneVisTesting = false;
 }
 
-void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double ceilingHeight,
+void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double ceilingScale,
 	const LevelData &levelData, const std::vector<VisibleLight> &visLights,
 	const Buffer2D<VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
 	const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion)
 {
 	this->threadsDone = 0;
 	this->chunkDistance = chunkDistance;
-	this->ceilingHeight = ceilingHeight;
+	this->ceilingScale = ceilingScale;
 	this->levelData = &levelData;
 	this->visLights = &visLights;
 	this->visLightLists = &visLightLists;
@@ -1820,7 +1820,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera,
 }
 
 void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo,
-	int chunkDistance, double ceilingHeight, const VoxelGrid &voxelGrid,
+	int chunkDistance, double ceilingScale, const VoxelGrid &voxelGrid,
 	const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	this->visibleFlats.clear();
@@ -1868,7 +1868,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			entity->getDefinitionID(), entityDefLibrary);
 
 		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(*entity, eyeXZ, ceilingHeight, voxelGrid,
+		entityManager.getEntityVisibilityData(*entity, eyeXZ, ceilingScale, voxelGrid,
 			entityDefLibrary, visData);
 
 		// Get entity animation state to determine render properties.
@@ -1988,7 +1988,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 }
 
 void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDistance,
-	double ceilingHeight, const VoxelGrid &voxelGrid)
+	double ceilingScale, const VoxelGrid &voxelGrid)
 {
 	// Visible light lists are relative to the potentially visible chunks.
 	const ChunkInt2 &cameraChunk = camera.eye.chunk;
@@ -2088,7 +2088,7 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 				// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
 				const Double3 voxelColumnPoint(
 					static_cast<SNDouble>(voxel.x) + 0.50,
-					ceilingHeight * 1.50,
+					ceilingScale * 1.50,
 					static_cast<WEDouble>(voxel.y) + 0.50);
 
 				visLightList.sortByNearest(voxelColumnPoint, visLightsView);
@@ -4661,7 +4661,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale, const LevelData &levelData,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
@@ -4669,7 +4669,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -5093,7 +5093,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY
 void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale, const LevelData &levelData,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
@@ -5101,7 +5101,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -5424,7 +5424,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WE
 void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
-	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale, const LevelData &levelData,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups,
 	OcclusionData &occlusion, const FrameView &frame)
@@ -5432,7 +5432,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -5832,7 +5832,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WE
 
 void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
-	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
@@ -5875,18 +5875,18 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ,
 	const Double3 wallNormal = -VoxelUtils::getNormal(facing);
 
 	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
-	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
+	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
 	// Draw the player's current voxel first.
 	SoftwareRenderer::drawInitialVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray, facing,
-		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
+		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
 		levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the player's voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawInitialVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight, levelData,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, levelData,
 			visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 
@@ -5895,7 +5895,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ,
 	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		SoftwareRenderer::drawInitialVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight, levelData,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, levelData,
 			visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
@@ -5903,14 +5903,14 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ,
 void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
-	double ceilingHeight, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+	double ceilingScale, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 	
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -6346,14 +6346,14 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt
 void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
-	double ceilingHeight, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+	double ceilingScale, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -6697,14 +6697,14 @@ void SoftwareRenderer::drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt vox
 void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
-	double ceilingHeight, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+	double ceilingScale, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const auto &voxelGrid = levelData.getVoxelGrid();
 	const uint16_t voxelID = voxelGrid.getVoxel(voxelX, voxelY, voxelZ);
 	const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
-	const double voxelHeight = ceilingHeight;
+	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxelY) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
@@ -7145,7 +7145,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt vox
 
 void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
-	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight,
+	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
@@ -7195,18 +7195,18 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 	const Double3 wallNormal = VoxelUtils::getNormal(facing);
 
 	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
-	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingHeight);
+	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
 	// Draw voxel straight ahead first.
 	SoftwareRenderer::drawVoxelSameFloor(x, voxelX, adjustedVoxelY, voxelZ, camera, ray, facing,
-		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
+		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
 		levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the voxel.
 	for (int voxelY = (adjustedVoxelY - 1); voxelY >= 0; voxelY--)
 	{
 		SoftwareRenderer::drawVoxelBelow(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
 			levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 
@@ -7215,7 +7215,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const 
 	for (int voxelY = (adjustedVoxelY + 1); voxelY < voxelGrid.getHeight(); voxelY++)
 	{
 		SoftwareRenderer::drawVoxelAbove(x, voxelX, voxelY, voxelZ, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingHeight,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
 			levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
@@ -7422,7 +7422,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 
 template <bool NonNegativeDirX, bool NonNegativeDirZ>
 void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
-	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale, const LevelData &levelData,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
@@ -7515,7 +7515,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 		// Draw all voxels in a column at the player's XZ coordinate.
 		SoftwareRenderer::drawInitialVoxelColumn(x, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
 			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE,
-			zDistance, shadingInfo, chunkDistance, ceilingHeight, levelData, visLights, visLightLists,
+			zDistance, shadingInfo, chunkDistance, ceilingScale, levelData, visLights, visLightLists,
 			textures, chasmTextureGroups, occlusion, frame);
 	}
 
@@ -7588,13 +7588,13 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
-			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance, ceilingHeight,
+			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance, ceilingScale,
 			levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray, const ShadingInfo &shadingInfo,
-	int chunkDistance, double ceilingHeight, const LevelData &levelData,
+	int chunkDistance, double ceilingScale, const LevelData &levelData,
 	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
@@ -7609,12 +7609,12 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray, co
 		if (nonNegativeDirZ)
 		{
 			SoftwareRenderer::rayCast2DInternal<true, true>(x, camera, ray, shadingInfo, chunkDistance,
-				ceilingHeight, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+				ceilingScale, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 		}
 		else
 		{
 			SoftwareRenderer::rayCast2DInternal<true, false>(x, camera, ray, shadingInfo, chunkDistance,
-				ceilingHeight, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+				ceilingScale, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 		}
 	}
 	else
@@ -7622,12 +7622,12 @@ void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray, co
 		if (nonNegativeDirZ)
 		{
 			SoftwareRenderer::rayCast2DInternal<false, true>(x, camera, ray, shadingInfo, chunkDistance,
-				ceilingHeight, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+				ceilingScale, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 		}
 		else
 		{
 			SoftwareRenderer::rayCast2DInternal<false, false>(x, camera, ray, shadingInfo, chunkDistance,
-				ceilingHeight, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+				ceilingScale, levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 		}
 	}
 }
@@ -7767,7 +7767,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, const VisDistantObje
 }
 
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
-	double ceilingHeight, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+	double ceilingScale, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
 	const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
@@ -7791,7 +7791,7 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera, 
 		const Ray ray(direction.x, direction.y);
 
 		// Cast the 2D ray and fill in the column's pixels with color.
-		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, chunkDistance, ceilingHeight, levelData,
+		SoftwareRenderer::rayCast2D(x, camera, ray, shadingInfo, chunkDistance, ceilingScale, levelData,
 			visLights, visLightLists, voxelTextures, chasmTextureGroups, occlusion.get(x), frame);
 	}
 }
@@ -7898,7 +7898,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		const BufferView2D<const VisibleLightList> voxelsVisLightListsView(voxels.visLightLists->get(),
 			voxels.visLightLists->getWidth(), voxels.visLightLists->getHeight());
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera, voxels.chunkDistance,
-			voxels.ceilingHeight, *voxels.levelData, voxelsVisLightsView, voxelsVisLightListsView,
+			voxels.ceilingScale, *voxels.levelData, voxelsVisLightsView, voxelsVisLightListsView,
 			*voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion, *threadData.shadingInfo,
 			*threadData.frame);
 
@@ -7997,11 +7997,11 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	// it by depth.
 	const VoxelGrid &voxelGrid = levelData.getVoxelGrid();
 	const EntityManager &entityManager = levelData.getEntityManager();
-	this->updateVisibleFlats(camera, shadingInfo, chunkDistance, ceilingHeight,
+	this->updateVisibleFlats(camera, shadingInfo, chunkDistance, ceilingScale,
 		voxelGrid, entityManager, entityDefLibrary);
 
 	// Refresh visible light lists used for shading voxels and entities efficiently.
-	this->updateVisibleLightLists(camera, chunkDistance, ceilingHeight, voxelGrid);
+	this->updateVisibleLightLists(camera, chunkDistance, ceilingScale, voxelGrid);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

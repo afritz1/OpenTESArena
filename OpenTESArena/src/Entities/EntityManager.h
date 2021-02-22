@@ -171,7 +171,7 @@ public:
 
 	// Gets the data necessary for rendering and ray cast selection.
 	void getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
-		double ceilingHeight, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+		double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 		EntityVisibilityData &outVisData) const;
 
 	// Convenience function for getting the active keyframe from an entity, given some

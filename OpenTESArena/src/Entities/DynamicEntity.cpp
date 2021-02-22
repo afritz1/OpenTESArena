@@ -175,13 +175,13 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 	return true;
 }
 
-void DynamicEntity::playCreatureSound(const std::string &soundFilename, double ceilingHeight,
+void DynamicEntity::playCreatureSound(const std::string &soundFilename, double ceilingScale,
 	AudioManager &audioManager)
 {
 	// Centered inside the creature.
 	const CoordDouble3 soundCoord(
 		this->position.chunk,
-		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
 	const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 	audioManager.playSound(soundFilename, absoluteSoundPosition);
 }

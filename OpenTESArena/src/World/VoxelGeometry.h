@@ -19,7 +19,7 @@ namespace VoxelGeometry
 
 	// Writes out quads for the given voxel definition, instance info, and origin offset
 	// in world space. Returns number of quads written.
-	int getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxel, double ceilingHeight,
+	int getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxel, double ceilingScale,
 		const VoxelInstance *voxelInst, Quad *outQuads, int bufferSize);
 }
 

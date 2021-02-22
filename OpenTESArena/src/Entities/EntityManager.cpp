@@ -699,7 +699,7 @@ EntityDefID EntityManager::addEntityDef(EntityDefinition &&def,
 }
 
 void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
-	double ceilingHeight, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+	double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	EntityVisibilityData &outVisData) const
 {
 	outVisData.entity = &entity;
@@ -785,7 +785,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
 	const CoordDouble2 &entityCoord = entity.getPosition();
-	const double raisedPlatformYOffset = [ceilingHeight, &chunkManager, &entityCoord]()
+	const double raisedPlatformYOffset = [ceilingScale, &chunkManager, &entityCoord]()
 	{
 		const CoordInt2 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
 		const Chunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
@@ -801,7 +801,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 		if (voxelDef.type == ArenaTypes::VoxelType::Raised)
 		{
 			const VoxelDefinition::RaisedData &raised = voxelDef.raised;
-			return (raised.yOffset + raised.ySize) * ceilingHeight;
+			return (raised.yOffset + raised.ySize) * ceilingScale;
 		}
 		else
 		{
@@ -813,7 +813,7 @@ void EntityManager::getEntityVisibilityData(const Entity &entity, const CoordDou
 	// Bottom center of flat.
 	const VoxelDouble3 newCoordPoint(
 		entityCoord.point.x,
-		ceilingHeight + flatYOffset + raisedPlatformYOffset,
+		ceilingScale + flatYOffset + raisedPlatformYOffset,
 		entityCoord.point.y);
 	outVisData.flatPosition = CoordDouble3(entityCoord.chunk, newCoordPoint);
 }

@@ -40,7 +40,7 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, std::string *outFilename) const;
 
 	// Plays the given creature sound on the entity.
-	void playCreatureSound(const std::string &soundFilename, double ceilingHeight,
+	void playCreatureSound(const std::string &soundFilename, double ceilingScale,
 		AudioManager &audioManager);
 
 	// Helper method for rotating.

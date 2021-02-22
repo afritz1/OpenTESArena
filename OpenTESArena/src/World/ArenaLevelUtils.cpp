@@ -14,7 +14,7 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
-double ArenaLevelUtils::convertArenaCeilingHeight(int ceilingHeight)
+double ArenaLevelUtils::convertCeilingHeightToScale(int ceilingHeight)
 {
 	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
 }
