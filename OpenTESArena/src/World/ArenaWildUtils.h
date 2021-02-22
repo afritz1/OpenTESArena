@@ -26,6 +26,10 @@ namespace ArenaWildUtils
 	// Max height of .RMD with highest MAP2 extension.
 	constexpr int LEVEL_HEIGHT = 6;
 
+	// Number of dungeon chunks (32x32) wide and tall wild dungeons are.
+	constexpr int WILD_DUNGEON_WIDTH_CHUNKS = 2;
+	constexpr int WILD_DUNGEON_HEIGHT_CHUNKS = WILD_DUNGEON_WIDTH_CHUNKS;
+
 	// Generates the .INF name for the wilderness given a climate and current weather.
 	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
 
