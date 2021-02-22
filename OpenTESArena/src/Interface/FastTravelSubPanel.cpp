@@ -431,7 +431,7 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-			cityDef.distantSkySeed, travelProvinceDef.hasAnimatedDistantLand());
+			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
 		// Load the destination city.
 		const std::optional<WeatherType> overrideWeather = weatherType;

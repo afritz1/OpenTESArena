@@ -420,7 +420,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 								SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 								skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-									cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+									cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 								
 								const std::optional<WeatherType> overrideWeather = weatherType;
 								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather,

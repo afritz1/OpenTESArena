@@ -143,7 +143,7 @@ bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, in
 
 		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-			cityDef.distantSkySeed, provinceHasAnimatedLand);
+			cityDef.skySeed, provinceHasAnimatedLand);
 
 		MapDefinition mapDefinition;
 		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,

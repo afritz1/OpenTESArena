@@ -2360,7 +2360,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					// Use current weather.
 					const std::optional<WeatherType> overrideWeather = weatherType;
@@ -2409,7 +2409,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 
 					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					// Use current weather.
 					const std::optional<WeatherType> overrideWeather = weatherType;

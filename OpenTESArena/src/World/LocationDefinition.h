@@ -43,7 +43,7 @@ public:
 		uint32_t wildSeed;
 		uint32_t provinceSeed; // Used with wilderness dungeons.
 		uint32_t rulerSeed;
-		uint32_t distantSkySeed;
+		uint32_t skySeed;
 
 		ClimateType climateType;
 
@@ -63,7 +63,7 @@ public:
 
 		void init(ArenaTypes::CityType type, const char *typeDisplayName, const char *mapFilename,
 			uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
-			uint32_t distantSkySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
+			uint32_t skySeed, ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 			WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
 			int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
