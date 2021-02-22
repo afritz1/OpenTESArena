@@ -328,9 +328,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						MapGeneration::InteriorGenInfo interiorGenInfo;
 						interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
-						const std::optional<CoordInt3> returnCoord; // Not needed.
-
-						if (!gameState->tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
+						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
 							game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
 							game.getRenderer()))
 						{
