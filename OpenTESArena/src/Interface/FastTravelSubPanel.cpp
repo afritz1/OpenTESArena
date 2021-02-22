@@ -396,14 +396,48 @@ void FastTravelSubPanel::switchToNextPanel()
 			return WeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
 		}();
 
-		const int starCount = SkyUtils::getStarCountFromDensity(
-			game.getOptions().getMisc_StarDensity());
+		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
+
+		// Get city generation values.
+		Buffer<uint8_t> reservedBlocks = [&cityDef]()
+		{
+			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+			DebugAssert(cityReservedBlocks != nullptr);
+			Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+			return buffer;
+		}();
+
+		const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() ->std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+		{
+			if (cityDef.hasMainQuestTempleOverride)
+			{
+				return cityDef.mainQuestTempleOverride;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}();
+
+		MapGeneration::CityGenInfo cityGenInfo;
+		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+			cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
+			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+
+		const int currentDay = gameState.getDate().getDay();
+
+		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+			cityDef.distantSkySeed, travelProvinceDef.hasAnimatedDistantLand());
 
 		// Load the destination city.
-		if (!gameState.loadCity(travelLocationDef, travelProvinceDef, weatherType, starCount,
-			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
-			game.getTextAssetLibrary(), game.getRandom(), game.getTextureManager(),
-			game.getRenderer()))
+		const std::optional<WeatherType> overrideWeather = weatherType;
+		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
+			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextAssetLibrary(),
+			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}
@@ -460,13 +494,17 @@ void FastTravelSubPanel::switchToNextPanel()
 	else if (travelLocationDef.getType() == LocationDefinition::Type::Dungeon)
 	{
 		// Random named dungeon.
-		const bool isArtifactDungeon = false;
+		constexpr bool isArtifactDungeon = false;
 		const auto &travelProvinceDef = worldMapDef.getProvinceDef(this->travelData.provinceID);
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(this->travelData.locationID);
+		const LocationDefinition::DungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
-		if (!gameState.loadNamedDungeon(travelLocationDef, travelProvinceDef, isArtifactDungeon,
-			game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(), binaryAssetLibrary,
-			game.getRandom(), game.getTextureManager(), game.getRenderer()))
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+
+		if (!gameState.trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
+			game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
 		}
@@ -488,24 +526,21 @@ void FastTravelSubPanel::switchToNextPanel()
 	}
 	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
 	{
-		// Main quest dungeon. The staff dungeons have a splash image before going
-		// to the game world panel.
+		// Main quest dungeon. The staff dungeons have a splash image before going to the game world panel.
 		const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
 			travelLocationDef.getMainQuestDungeonDefinition();
-		const std::string mifName = mainQuestDungeonDef.mapFilename;
 
-		MIFFile mif;
-		if (!mif.init(mifName.c_str()))
-		{
-			DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-		}
+		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
-		if (!gameState.loadInterior(travelLocationDef, travelProvinceDef,
-			ArenaTypes::InteriorType::Dungeon, mif, game.getEntityDefinitionLibrary(),
-			game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
-			game.getTextureManager(), game.getRenderer()))
+		MapGeneration::InteriorGenInfo interiorGenInfo;
+		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename),
+			ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+
+		if (!gameState.trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
+			game.getRenderer()))
 		{
-			DebugCrash("Couldn't load interior \"" + travelLocationDef.getName() + "\".");
+			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");
 		}
 
 		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)

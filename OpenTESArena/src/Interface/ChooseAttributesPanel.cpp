@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 
 #include "SDL.h"
@@ -322,18 +323,18 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							locationDefPtr->getMainQuestDungeonDefinition();
 						const std::string mifName = mainQuestDungeonDef.mapFilename;
 
-						MIFFile mif;
-						if (!mif.init(mifName.c_str()))
-						{
-							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-						}
+						constexpr std::optional<bool> rulerIsMale; // Not needed.
 
-						if (!gameState->loadInterior(*locationDefPtr, provinceDef, ArenaTypes::InteriorType::Dungeon,
-							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
-							renderer))
+						MapGeneration::InteriorGenInfo interiorGenInfo;
+						interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+
+						const std::optional<CoordInt3> returnCoord; // Not needed.
+
+						if (!gameState->tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
+							game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
+							game.getRenderer()))
 						{
-							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
+							DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 						}
 
 						// Set the game state before constructing the game world panel.
@@ -346,8 +347,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 						auto gameFunction = [](Game &game)
 						{
-							// Create the function that will be called when the player leaves
-							// the starting dungeon.
+							// Create the function that will be called when the player leaves the starting dungeon.
 							auto onLevelUpVoxelEnter = [](Game &game)
 							{
 								// Teleport the player to a random location based on their race.
@@ -363,8 +363,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
 								// Random weather for now.
-								// - @todo: make it depend on the location (no need to prevent
-								//   deserts from having snow since the climates are still hardcoded).
+								// - @todo: make it depend on the location (no need to prevent deserts from having snow
+								//   since the climates are still hardcoded).
 								const WeatherType weatherType = [&game]()
 								{
 									constexpr std::array<WeatherType, 8> Weathers =
@@ -384,14 +384,49 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									return Weathers[index];
 								}();
 
-								const int starCount = SkyUtils::getStarCountFromDensity(
-									game.getOptions().getMisc_StarDensity());
-
+								const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 								auto &renderer = game.getRenderer();
-								if (!gameState.loadCity(locationDef, provinceDef, weatherType, starCount,
-									game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getRandom(),
-									game.getTextureManager(), renderer))
+
+								const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+								Buffer<uint8_t> reservedBlocks = [&cityDef]()
+								{
+									const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+									DebugAssert(cityReservedBlocks != nullptr);
+									Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+									std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+									return buffer;
+								}();
+
+								const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+									[&cityDef]() ->std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+								{
+									if (cityDef.hasMainQuestTempleOverride)
+									{
+										return cityDef.mainQuestTempleOverride;
+									}
+									else
+									{
+										return std::nullopt;
+									}
+								}();
+
+								MapGeneration::CityGenInfo cityGenInfo;
+								cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+									cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+									cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
+									cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+
+								const int currentDay = gameState.getDate().getDay();
+
+								SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+								skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+									cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+								
+								const std::optional<WeatherType> overrideWeather = weatherType;
+								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather,
+									game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getTextureManager(),
+									renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}

@@ -341,20 +341,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
 				binaryAssetLibrary);
 
-			const int starCount = SkyUtils::getStarCountFromDensity(
-				options.getMisc_StarDensity());
+			const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
 
 			// Load the selected level based on world type (writing into active game state).
 			if (mapType == MapType::Interior)
 			{
 				if (testType != TestType_Dungeon)
 				{
-					MIFFile mif;
-					if (!mif.init(mifName.c_str()))
-					{
-						DebugCrash("Could not init .MIF file \"" + mifName + "\".");
-					}
-
 					const Player &player = gameState->getPlayer();
 					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 
@@ -412,9 +405,26 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					DebugAssert(optInteriorType.has_value());
 					const ArenaTypes::InteriorType interiorType = *optInteriorType;
-					if (!gameState->loadInterior(locationDef, provinceDef, interiorType, mif,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getRandom(), game.getTextureManager(), renderer))
+
+					const std::optional<bool> rulerIsMale = [&locationDef]()
+					{
+						if (locationDef.getType() == LocationDefinition::Type::City)
+						{
+							const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+							return cityDef.rulerIsMale;
+						}
+						else
+						{
+							return false;
+						}
+					}();
+
+					MapGeneration::InteriorGenInfo interiorGenInfo;
+					interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
+
+					if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+						game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+						game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
 					}
@@ -437,9 +447,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						DebugAssertMsg(locationDefPtr != nullptr,
 							"Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
-						if (!gameState->loadNamedDungeon(*locationDefPtr, provinceDef, isArtifactDungeon,
-							game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							binaryAssetLibrary, game.getRandom(), game.getTextureManager(), renderer))
+						const LocationDefinition::DungeonDefinition &dungeonDef = locationDefPtr->getDungeonDefinition();
+
+						MapGeneration::InteriorGenInfo interiorGenInfo;
+						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+
+						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(), 
+							game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+							game.getTextureManager(), game.getRenderer()))
 						{
 							DebugCrash("Couldn't load named dungeon \"" + locationDefPtr->getName() + "\".");
 						}
@@ -456,16 +471,27 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					else if (mifName == RandomWildDungeon)
 					{
 						Random &random = game.getRandom();
-						const int wildBlockX = random.next(RMDFile::WIDTH);
-						const int wildBlockY = random.next(RMDFile::DEPTH);
+						const int wildBlockX = random.next(ArenaWildUtils::WILD_WIDTH);
+						const int wildBlockY = random.next(ArenaWildUtils::WILD_HEIGHT);
 
 						const int locationIndex = GetRandomCityLocationIndex(provinceDef);
 						const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
+						const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 
-						if (!gameState->loadWildernessDungeon(locationDef, provinceDef, wildBlockX, wildBlockY,
-							binaryAssetLibrary.getCityDataFile(), game.getEntityDefinitionLibrary(),
-							game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
-							game.getTextureManager(), renderer))
+						const uint32_t dungeonSeed = cityDef.getWildDungeonSeed(wildBlockX, wildBlockY);
+						constexpr int widthChunkCount = ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS;
+						constexpr int heightChunkCount = ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS;
+
+						// Need to generate dungeon definition here since we don't have the wild chunk itself.
+						LocationDefinition::DungeonDefinition dungeonDef;
+						dungeonDef.init(dungeonSeed, widthChunkCount, heightChunkCount);
+
+						MapGeneration::InteriorGenInfo interiorGenInfo;
+						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+
+						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+							game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextureManager(),
+							renderer))
 						{
 							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
 						}
@@ -480,6 +506,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				// There is only one "premade" city (used by the center province). All others
 				// are randomly generated.
+				// @todo: the IMPERIAL.MIF and random city/town/village branches could be merged a bit.
 				if (mifName == ImperialMIF)
 				{
 					// Load city into game state.
@@ -508,9 +535,44 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						return provinceDef.getLocationDef(locationIndex);
 					}();
 
-					if (!gameState->loadCity(locationDef, provinceDef, weatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+					Buffer<uint8_t> reservedBlocks = [&cityDef]()
+					{
+						const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+						DebugAssert(cityReservedBlocks != nullptr);
+						Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+						std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+						return buffer;
+					}();
+
+					const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+						[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+					{
+						if (cityDef.hasMainQuestTempleOverride)
+						{
+							return cityDef.mainQuestTempleOverride;
+						}
+						else
+						{
+							return std::nullopt;
+						}
+					}();
+
+					MapGeneration::CityGenInfo cityGenInfo;
+					cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
+						cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+						cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosX, cityDef.blockStartPosX);
+
+					const int currentDay = gameState->getDate().getDay();
+
+					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+						cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+
+					const std::optional<WeatherType> overrideWeather = weatherType;
+					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
+						game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
 						game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
@@ -553,10 +615,44 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const WeatherType filteredWeatherType =
 						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
-					// Load city into game state. Location data is loaded, too.
-					if (!gameState->loadCity(*locationDefPtr, provinceDef, filteredWeatherType, starCount,
-						game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-						binaryAssetLibrary, game.getTextAssetLibrary(), game.getRandom(),
+					Buffer<uint8_t> reservedBlocks = [&cityDef]()
+					{
+						const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+						DebugAssert(cityReservedBlocks != nullptr);
+						Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+						std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+						return buffer;
+					}();
+
+					const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+						[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+					{
+						if (cityDef.hasMainQuestTempleOverride)
+						{
+							return cityDef.mainQuestTempleOverride;
+						}
+						else
+						{
+							return std::nullopt;
+						}
+					}();
+
+					MapGeneration::CityGenInfo cityGenInfo;
+					cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
+						cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+						cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosX, cityDef.blockStartPosX);
+
+					const int currentDay = gameState->getDate().getDay();
+
+					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+					skyGenInfo.init(cityDef.climateType, filteredWeatherType, currentDay, starCount, cityDef.citySeed,
+						cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+
+					// Load city into game state.
+					const std::optional<WeatherType> overrideWeather = filteredWeatherType;
+					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
+						game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
 						game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
@@ -580,11 +676,28 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const WeatherType filteredWeatherType =
 					WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
-				// Load wilderness into game state. Location data is loaded, too.
-				const bool ignoreGatePos = true;
-				if (!gameState->loadWilderness(locationDef, provinceDef, Int2(), Int2(), ignoreGatePos,
-					filteredWeatherType, starCount, game.getEntityDefinitionLibrary(),
-					game.getCharacterClassLibrary(), binaryAssetLibrary, game.getRandom(),
+				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs; // @todo: maybe get from an Arena utils function? MapGeneration?
+				DebugNotImplemented();
+
+				MapGeneration::WildGenInfo wildGenInfo;
+				wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+					cityDef.palaceIsMainQuestDungeon);
+
+				const int currentDay = gameState->getDate().getDay();
+
+				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				skyGenInfo.init(cityDef.climateType, filteredWeatherType, currentDay, starCount, cityDef.citySeed,
+					cityDef.distantSkySeed, provinceDef.hasAnimatedDistantLand());
+
+				// Use current weather.
+				const std::optional<WeatherType> overrideWeather = filteredWeatherType;
+
+				// No previous start coordinate available. Let the loader decide.
+				constexpr std::optional<CoordInt3> startCoord;
+
+				// Load wilderness into game state.
+				if (!gameState->trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
+					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
 					game.getTextureManager(), renderer))
 				{
 					DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");

@@ -2366,9 +2366,9 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					const std::optional<WeatherType> overrideWeather = weatherType;
 
 					// @todo: calculate for wilderness based on the gate's voxel in the city.
-					constexpr std::optional<CoordInt3> startVoxel;
+					constexpr std::optional<CoordInt3> startCoord;
 
-					if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startVoxel,
+					if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
 						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
 						textureManager, renderer))
 					{
