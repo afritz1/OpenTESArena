@@ -22,10 +22,12 @@
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
 #include "../Utilities/Platform.h"
+#include "../World/ArenaSkyUtils.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
+#include "../World/SkyInstance.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelUtils.h"
 
@@ -612,207 +614,149 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->heightReal = static_cast<double>(height);
 }
 
-template <typename T>
-SoftwareRenderer::DistantObject<T>::DistantObject(const T &obj, int textureIndex)
-	: obj(obj)
+SoftwareRenderer::DistantObject::DistantObject(const Double3 &direction, int textureIndex)
+	: direction(direction)
 {
 	this->textureIndex = textureIndex;
 }
 
-SoftwareRenderer::DistantObjects::DistantObjects()
-{
-	this->sunTextureIndex = DistantObjects::NO_SUN;
-}
-
-void SoftwareRenderer::DistantObjects::init(const DistantSky &distantSky,
-	std::vector<SkyTexture> &skyTextures, const Palette &palette, TextureManager &textureManager)
+void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std::vector<SkyTexture> &skyTextures,
+	const Palette &palette, TextureManager &textureManager)
 {
 	DebugAssert(skyTextures.size() == 0);
 
-	this->distantSky = &distantSky;
-	this->textureManager = &textureManager;
+	// Mappings to skyTextures list indices.
+	std::unordered_map<TextureBuilderID, int> skyTextureIndexCache;
+	std::unordered_map<uint32_t, int> smallStarTextureIndexCache;
 
 	// Creates a render texture from the given 8-bit image ID, adds it to the sky textures list,
 	// and returns its index in the sky textures list.
-	auto addSkyTexture = [&skyTextures, &palette, &textureManager](TextureBuilderID textureBuilderID)
+	auto getOrAddSkyTextureIndex = [&skyTextures, &palette, &textureManager, &skyTextureIndexCache](
+		TextureBuilderID textureBuilderID)
 	{
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+		const auto iter = skyTextureIndexCache.find(textureBuilderID);
+		if (iter != skyTextureIndexCache.end())
+		{
+			return iter->second;
+		}
+		else
+		{
+			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
 
-		// @todo: decide how to handle texture builder format -- this renderer will probably
-		// eventually only be 8-bit, but it is 32-bit for now.
-		DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
-		const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
-		const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+			// @todo: decide how to handle texture builder format -- this renderer will probably
+			// eventually only be 8-bit, but it is 32-bit for now.
+			DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
+			const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+			const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
 
-		skyTextures.push_back(SkyTexture());
-		SkyTexture &texture = skyTextures.back();
-		texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), palette);
+			skyTextures.emplace_back(SkyTexture());
+			SkyTexture &texture = skyTextures.back();
+			texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), palette);
 
-		return static_cast<int>(skyTextures.size()) - 1;
+			const int textureIndex = static_cast<int>(skyTextures.size()) - 1;
+			skyTextureIndexCache.emplace(textureBuilderID, textureIndex);
+			return textureIndex;
+		}
 	};
 
 	// Creates a render texture with a single texel for small stars.
-	auto addSmallStarTexture = [&skyTextures](uint32_t color)
+	auto getOrAddSmallStarTextureIndex = [&skyTextures, &smallStarTextureIndexCache](uint32_t color)
 	{
-		skyTextures.push_back(SkyTexture());
-		SkyTexture &texture = skyTextures.back();
-		texture.texels = std::vector<SkyTexel>(1);
-		texture.width = 1;
-		texture.height = 1;
+		const auto iter = smallStarTextureIndexCache.find(color);
+		if (iter != smallStarTextureIndexCache.end())
+		{
+			return iter->second;
+		}
+		else
+		{
+			skyTextures.emplace_back(SkyTexture());
+			SkyTexture &texture = skyTextures.back();
+			texture.texels = std::vector<SkyTexel>(1);
+			texture.width = 1;
+			texture.height = 1;
 
-		// Small stars are never transparent in the original game; this is just using the
-		// same storage representation as clouds which can have some transparencies.
-		const Double4 srcColor = Double4::fromARGB(color);
-		SkyTexel &dstTexel = texture.texels.front();
-		dstTexel.r = srcColor.x;
-		dstTexel.g = srcColor.y;
-		dstTexel.b = srcColor.z;
-		dstTexel.a = srcColor.w;
+			// Small stars are never transparent in the original game; this is just using the
+			// same storage representation as clouds which can have some transparencies.
+			const Double4 srcColor = Double4::fromARGB(color);
+			SkyTexel &dstTexel = texture.texels.front();
+			dstTexel.r = srcColor.x;
+			dstTexel.g = srcColor.y;
+			dstTexel.b = srcColor.z;
+			dstTexel.a = srcColor.w;
 
-		return static_cast<int>(skyTextures.size()) - 1;
+			const int textureIndex = static_cast<int>(skyTextures.size()) - 1;
+			smallStarTextureIndexCache.emplace(color, textureIndex);
+			return textureIndex;
+		}
 	};
 
-	// Reverse iterate through each distant object type in the distant sky, creating associations
-	// between the distant sky object and its render texture. Order of insertion matters.
-	for (int i = distantSky.getLandObjectCount() - 1; i >= 0; i--)
+	auto addGeneralObject = [&skyInstance, &getOrAddSkyTextureIndex](int skyInstObjectIndex,
+		std::vector<DistantObject> &outObjects)
 	{
-		const DistantSky::LandObject &landObject = distantSky.getLandObject(i);
-		const int entryIndex = landObject.getTextureEntryIndex();
-		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
+		Double3 direction;
+		TextureBuilderID textureBuilderID;
+		double width, height;
+		skyInstance.getObject(skyInstObjectIndex, &direction, &textureBuilderID, &width, &height);
 
-		const int textureIndex = addSkyTexture(*textureBuilderID);
-		this->lands.push_back(DistantObject<DistantSky::LandObject>(landObject, textureIndex));
+		const int textureIndex = getOrAddSkyTextureIndex(textureBuilderID);
+		outObjects.emplace_back(DistantObject(direction, textureIndex));
+	};
+
+	auto addSmallStarObject = [&skyInstance, &palette, &getOrAddSmallStarTextureIndex](int skyInstObjectIndex,
+		std::vector<DistantObject> &outObjects)
+	{
+		Double3 direction;
+		uint8_t paletteIndex;
+		double width, height;
+		skyInstance.getObjectSmallStar(skyInstObjectIndex, &direction, &paletteIndex, &width, &height);
+
+		const Color &color = palette[paletteIndex];
+		const int textureIndex = getOrAddSmallStarTextureIndex(color.toARGB());
+		outObjects.emplace_back(DistantObject(direction, textureIndex));
+	};
+
+	// Reverse iterate through each sky object type, creating associations between it and its render texture.
+	// Order of insertion matters.
+	for (int i = skyInstance.getLandEndIndex() - 1; i >= skyInstance.getLandStartIndex(); i--)
+	{
+		addGeneralObject(i, this->lands);
 	}
 
-	for (int i = distantSky.getAnimatedLandObjectCount() - 1; i >= 0; i--)
+	for (int i = skyInstance.getAirEndIndex() - 1; i >= skyInstance.getAirStartIndex(); i--)
 	{
-		const DistantSky::AnimatedLandObject &animLandObject = distantSky.getAnimatedLandObject(i);
-		const int setEntryIndex = animLandObject.getTextureSetEntryIndex();
-		const std::string &setEntryFilename = distantSky.getTextureSetFilename(setEntryIndex);
-		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-			textureManager.tryGetTextureBuilderIDs(setEntryFilename.c_str());
-		if (!textureBuilderIDs.has_value())
-		{
-			DebugLogError("Couldn't get texture builder IDs for \"" + setEntryFilename + "\".");
-			continue;
-		}
-
-		const int setEntryCount = textureBuilderIDs->getCount();
-		if (setEntryCount == 0)
-		{
-			DebugLogError("Need at least one animated land texture from \"" + setEntryFilename + "\".");
-			continue;
-		}
-
-		// Add first texture to get the start index of the animated textures.
-		const int textureIndex = addSkyTexture(textureBuilderIDs->getID(0));
-
-		for (int j = 1; j < setEntryCount; j++)
-		{
-			addSkyTexture(textureBuilderIDs->getID(j));
-		}
-
-		this->animLands.push_back(DistantObject<DistantSky::AnimatedLandObject>(animLandObject, textureIndex));
+		addGeneralObject(i, this->airs);
 	}
 
-	for (int i = distantSky.getAirObjectCount() - 1; i >= 0; i--)
+	for (int i = skyInstance.getMoonEndIndex() - 1; i >= skyInstance.getMoonStartIndex(); i--)
 	{
-		const DistantSky::AirObject &airObject = distantSky.getAirObject(i);
-		const int entryIndex = airObject.getTextureEntryIndex();
-		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const int textureIndex = addSkyTexture(*textureBuilderID);
-		this->airs.push_back(DistantObject<DistantSky::AirObject>(airObject, textureIndex));
+		addGeneralObject(i, this->moons);
 	}
 
-	for (int i = distantSky.getMoonObjectCount() - 1; i >= 0; i--)
+	for (int i = skyInstance.getSunEndIndex() - 1; i >= skyInstance.getSunStartIndex(); i--)
 	{
-		const DistantSky::MoonObject &moonObject = distantSky.getMoonObject(i);
-		const int entryIndex = moonObject.getTextureEntryIndex();
-		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const int textureIndex = addSkyTexture(*textureBuilderID);
-		this->moons.push_back(DistantObject<DistantSky::MoonObject>(moonObject, textureIndex));
+		addGeneralObject(i, this->suns);
 	}
 
-	for (int i = distantSky.getStarObjectCount() - 1; i >= 0; i--)
+	for (int i = skyInstance.getStarEndIndex() - 1; i >= skyInstance.getStarStartIndex(); i--)
 	{
-		const DistantSky::StarObject &starObject = distantSky.getStarObject(i);
-		const int textureIndex = [&distantSky, &textureManager, &addSkyTexture, &addSmallStarTexture, &starObject]()
+		if (skyInstance.isObjectSmallStar(i))
 		{
-			if (starObject.getType() == DistantSky::StarObject::Type::Small)
-			{
-				const DistantSky::StarObject::SmallStar &smallStar = starObject.getSmallStar();
-				return addSmallStarTexture(smallStar.color);
-			}
-			else if (starObject.getType() == DistantSky::StarObject::Type::Large)
-			{
-				const DistantSky::StarObject::LargeStar &largeStar = starObject.getLargeStar();
-				const int entryIndex = largeStar.entryIndex;
-				const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(entryIndex);
-				const std::optional<TextureBuilderID> textureBuilderID =
-					textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
-				if (!textureBuilderID.has_value())
-				{
-					DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-				}
-
-				return addSkyTexture(*textureBuilderID);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(starObject.getType())));
-			}
-		}();
-
-		this->stars.push_back(DistantObject<DistantSky::StarObject>(starObject, textureIndex));
-	}
-
-	if (distantSky.hasSun())
-	{
-		// Add the sun to the sky textures and assign its texture index.
-		const int sunEntryIndex = distantSky.getSunEntryIndex();
-		const TextureAssetReference &textureAssetRef = distantSky.getTextureAssetRef(sunEntryIndex);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef.filename.c_str());
-		if (!textureBuilderID.has_value())
-		{
-			DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			addSmallStarObject(i, this->stars);
 		}
-
-		this->sunTextureIndex = addSkyTexture(*textureBuilderID);
+		else
+		{
+			addGeneralObject(i, this->stars);
+		}
 	}
 }
 
 void SoftwareRenderer::DistantObjects::clear()
 {
 	this->lands.clear();
-	this->animLands.clear();
 	this->airs.clear();
 	this->moons.clear();
+	this->suns.clear();
 	this->stars.clear();
-	this->sunTextureIndex = DistantObjects::NO_SUN;
 }
 
 SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange,
@@ -831,8 +775,6 @@ SoftwareRenderer::VisDistantObjects::VisDistantObjects()
 {
 	this->landStart = 0;
 	this->landEnd = 0;
-	this->animLandStart = 0;
-	this->animLandEnd = 0;
 	this->airStart = 0;
 	this->airEnd = 0;
 	this->moonStart = 0;
@@ -848,8 +790,6 @@ void SoftwareRenderer::VisDistantObjects::clear()
 	this->objs.clear();
 	this->landStart = 0;
 	this->landEnd = 0;
-	this->animLandStart = 0;
-	this->animLandEnd = 0;
 	this->airStart = 0;
 	this->airEnd = 0;
 	this->moonStart = 0;
@@ -1196,7 +1136,7 @@ void SoftwareRenderer::setSky(const SkyInstance &skyInstance, const Palette &pal
 	this->skyTextures.clear();
 
 	// Create distant objects and set the sky textures.
-	this->distantObjects.init(distantSky, this->skyTextures, palette, textureManager);
+	this->distantObjects.init(skyInstance, this->skyTextures, palette, textureManager);
 }
 
 void SoftwareRenderer::setSkyPalette(const uint32_t *colors, int count)
@@ -1240,11 +1180,7 @@ void SoftwareRenderer::clearTexturesAndEntityRenderIDs()
 {
 	this->voxelTextures.clear();
 	this->flatTextureGroups.clear();
-
-	// Distant sky textures are cleared because the vector size is managed internally.
 	this->skyTextures.clear();
-	this->distantObjects.sunTextureIndex = SoftwareRenderer::DistantObjects::NO_SUN;
-
 	this->chasmTextureGroups.clear();
 }
 
@@ -1474,16 +1410,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	// Lambda for checking if the given object properties make it appear on-screen, and if
 	// so, adding it to the visible objects list.
 	auto tryAddObject = [this, &camera, &frame, &forward, &frustumLeftPerp, &frustumRightPerp](
-		const SkyTexture &texture, double xAngleRadians, double yAngleRadians, bool emissive,
-		Orientation orientation)
+		const SkyTexture &texture, const Double3 &direction, bool emissive, Orientation orientation)
 	{
 		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 
-		const double objWidth = static_cast<double>(texture.width) / DistantSky::IDENTITY_DIM;
-		const double objHeight = static_cast<double>(texture.height) / DistantSky::IDENTITY_DIM;
+		const double objWidth = static_cast<double>(texture.width) / ArenaSkyUtils::IDENTITY_DIM;
+		const double objHeight = static_cast<double>(texture.height) / ArenaSkyUtils::IDENTITY_DIM;
 		const double objHalfWidth = objWidth * 0.50;
 
-		DrawRange drawRange = [yAngleRadians, orientation, &camera, &frame, &absoluteEye, objHeight]()
+		DrawRange drawRange = [direction, orientation, &camera, &frame, &absoluteEye, objHeight]()
 		{
 			// Project the bottom first then add the object's height above it in screen-space
 			// to get the top. This keeps objects from appearing squished the higher they are
@@ -1491,7 +1426,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 			// the start and end projections will both be off-screen (i.e., +inf or -inf).
 			const Double3 objDirBottom = Double3(
 				camera.forwardX,
-				std::tan(yAngleRadians),
+				std::tan(direction.getYAngleRadians()),
 				camera.forwardZ).normalized();
 
 			const Double3 objPointBottom = absoluteEye + objDirBottom;
@@ -1513,13 +1448,8 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 		}();
 
 		// Calculate the object's position based on its midpoint like the original game.
-		const Double3 objDir(
-			-std::sin(xAngleRadians), // Negative for +X south/+Z west.
-			0.0,
-			-std::cos(xAngleRadians));
-
 		// Create a point arbitrarily far away for the object's center in world space.
-		const Double3 objPoint = absoluteEye + objDir;
+		const Double3 objPoint = absoluteEye + direction;
 
 		// Project the center point on-screen and get its projected X coordinate.
 		const Double4 objProjPoint = camera.transform * Double4(objPoint, 1.0);
@@ -1535,16 +1465,14 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 		const double xProjStart = xProjCenter - objProjHalfWidth;
 		const double xProjEnd = xProjCenter + objProjHalfWidth;
 
-		const NewDouble2 objDir2D(objDir.x, objDir.z);
+		const NewDouble2 objDir2D(direction.x, direction.z);
 		const bool onScreen = (objDir2D.dot(forward) > 0.0) && (xProjStart <= 1.0) && (xProjEnd >= 0.0);
 
 		if (onScreen)
 		{
 			// Get the start and end X pixel coordinates.
-			const int xDrawStart = RendererUtils::getLowerBoundedPixel(
-				xProjStart * frame.widthReal, frame.width);
-			const int xDrawEnd = RendererUtils::getUpperBoundedPixel(
-				xProjEnd * frame.widthReal, frame.width);
+			const int xDrawStart = RendererUtils::getLowerBoundedPixel(xProjStart * frame.widthReal, frame.width);
+			const int xDrawEnd = RendererUtils::getUpperBoundedPixel(xProjEnd * frame.widthReal, frame.width);
 
 			this->visDistantObjs.objs.push_back(VisDistantObject(
 				texture, std::move(drawRange), xProjStart, xProjEnd, xDrawStart, xDrawEnd, emissive));
@@ -1556,185 +1484,61 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	// different types of shading.
 	this->visDistantObjs.landStart = 0;
 
-	for (const auto &land : this->distantObjects.lands)
+	for (const DistantObject &land : this->distantObjects.lands)
 	{
 		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
-		const Radians xAngleRadians = land.obj.getAngle();
-		const Radians yAngleRadians = 0.0;
-		const bool emissive = false;
-		const Orientation orientation = Orientation::Bottom;
-
-		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+		const Double3 &direction = land.direction;
+		constexpr bool emissive = false;
+		constexpr Orientation orientation = Orientation::Bottom;
+		tryAddObject(texture, direction, emissive, orientation);
 	}
 
 	this->visDistantObjs.landEnd = static_cast<int>(this->visDistantObjs.objs.size());
-	this->visDistantObjs.animLandStart = this->visDistantObjs.landEnd;
+	this->visDistantObjs.airStart = this->visDistantObjs.landEnd;
 
-	for (const auto &animLand : this->distantObjects.animLands)
+	for (const DistantObject &air : this->distantObjects.airs)
 	{
-		const DistantSky::AnimatedLandObject &animLandObj = animLand.obj;
-
-		// Need to see how many frames the animated land has.
-		const std::string &animLandFilename =
-			this->distantObjects.distantSky->getTextureSetFilename(animLandObj.getTextureSetEntryIndex());
-		const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-			this->distantObjects.textureManager->tryGetTextureBuilderIDs(animLandFilename.c_str());
-		if (!textureBuilderIDs.has_value())
-		{
-			DebugLogError("Couldn't get texture builder IDs for \"" + animLandFilename + "\".");
-			continue;
-		}
-
-		const int animTextureCount = textureBuilderIDs->getCount();
-		const double animPercent = animLandObj.getAnimPercent();
-		const int curAnimTextureIndex = std::clamp(
-			static_cast<int>(static_cast<double>(animTextureCount) * animPercent), 0, animTextureCount - 1);
-
-		const int skyTextureIndex = DebugMakeIndex(this->skyTextures, animLand.textureIndex + curAnimTextureIndex);
-		const SkyTexture &texture = this->skyTextures[skyTextureIndex];
-		const Radians xAngleRadians = animLand.obj.getAngle();
-		const Radians yAngleRadians = 0.0;
-		const bool emissive = true;
-		const Orientation orientation = Orientation::Bottom;
-
-		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
-	}
-
-	this->visDistantObjs.animLandEnd = static_cast<int>(this->visDistantObjs.objs.size());
-	this->visDistantObjs.airStart = this->visDistantObjs.animLandEnd;
-
-	for (const auto &air : this->distantObjects.airs)
-	{
-		const SkyTexture &texture = skyTextures.at(air.textureIndex);
-		const Radians xAngleRadians = air.obj.getAngle();
-		const Radians yAngleRadians = [&air]()
-		{
-			// 0 is at horizon, 1 is at top of distant cloud height limit.
-			const double gradientPercent = air.obj.getHeight();
-			return gradientPercent * (SoftwareRenderer::DISTANT_CLOUDS_MAX_ANGLE * Constants::DegToRad);
-		}();
-
-		const bool emissive = false;
-		const Orientation orientation = Orientation::Bottom;
-
-		tryAddObject(texture, xAngleRadians, yAngleRadians, emissive, orientation);
+		const SkyTexture &texture = this->skyTextures.at(air.textureIndex);
+		const Double3 &direction = air.direction;
+		constexpr bool emissive = false;
+		constexpr Orientation orientation = Orientation::Bottom;
+		tryAddObject(texture, direction, emissive, orientation);
 	}
 
 	this->visDistantObjs.airEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
-	// Objects in space have their position modified by latitude and time of day.
-	// My quaternions are broken or something, so use matrix multiplication instead.
-	const Matrix4d &timeRotation = shadingInfo.timeRotation;
-	const Matrix4d &latitudeRotation = shadingInfo.latitudeRotation;
-
-	auto getSpaceCorrectedAngles = [&timeRotation, &latitudeRotation](Radians xAngleRadians,
-		Radians yAngleRadians, Radians &newXAngleRadians, Radians &newYAngleRadians)
+	for (const DistantObject &moon : this->distantObjects.moons)
 	{
-		// Direction towards the space object.
-		const Double3 direction = Double3(
-			-std::sin(xAngleRadians), // Negative for +X south/+Z west.
-			std::tan(yAngleRadians),
-			-std::cos(xAngleRadians)).normalized();
-
-		// Rotate the direction based on latitude and time of day.
-		const Double4 dir = latitudeRotation * (timeRotation * Double4(direction, 0.0));
-
-		// Don't negate for +X south/+Z west, they are negated when added to the draw list.
-		newXAngleRadians = std::atan2(dir.x, dir.z);
-		newYAngleRadians = std::asin(dir.y);
-	};
-
-	for (const auto &moon : this->distantObjects.moons)
-	{
-		const SkyTexture &texture = skyTextures.at(moon.textureIndex);
-
-		// These moon directions are roughly correct, based on the original game.
-		const Double3 direction = [&moon]()
-		{
-			const DistantSky::MoonObject::Type type = moon.obj.getType();
-
-			double bonusLatitude;
-			const Double3 baseDir = [type, &bonusLatitude]()
-			{
-				if (type == DistantSky::MoonObject::Type::First)
-				{
-					bonusLatitude = 15.0 / 100.0;
-					return Double3(0.0, -57536.0, 0.0).normalized();
-				}
-				else if (type == DistantSky::MoonObject::Type::Second)
-				{
-					bonusLatitude = 30.0 / 100.0;
-					return Double3(-3000.0, -53536.0, 0.0).normalized();
-				}
-				else
-				{
-					DebugUnhandledReturnMsg(Double3, std::to_string(static_cast<int>(type)));
-				}
-			}();
-
-			// The moon's position in the sky is modified by its current phase.
-			const double phaseModifier = moon.obj.getPhasePercent() + bonusLatitude;
-			const Matrix4d moonRotation = RendererUtils::getLatitudeRotation(phaseModifier);
-			const Double4 dir = moonRotation * Double4(baseDir, 0.0);
-			return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negative for +X south/+Z west.
-		}();
-
-		const Radians xAngleRadians = MathUtils::fullAtan2(-direction.x, -direction.z);
-		const Radians yAngleRadians = direction.getYAngleRadians();
-		const bool emissive = true;
-		const Orientation orientation = Orientation::Top;
-
-		// Modify angle based on latitude and time of day.
-		Radians newXAngleRadians, newYAngleRadians;
-		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
-
-		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
+		const SkyTexture &texture = this->skyTextures.at(moon.textureIndex);
+		const Double3 &direction = moon.direction;
+		constexpr bool emissive = true;
+		constexpr Orientation orientation = Orientation::Top;
+		tryAddObject(texture, direction, emissive, orientation);
 	}
 
 	this->visDistantObjs.moonEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.sunStart = this->visDistantObjs.moonEnd;
 
-	// Try to add the sun to the visible distant objects.
-	if (this->distantObjects.sunTextureIndex != SoftwareRenderer::DistantObjects::NO_SUN)
+	for (const DistantObject &sun : this->distantObjects.suns)
 	{
-		const SkyTexture &sunTexture = this->skyTextures.at(this->distantObjects.sunTextureIndex);
-
-		// The sun direction is already corrected for latitude and time of day since the same
-		// variable is reused with shading.
-		const Double3 &sunDirection = shadingInfo.sunDirection;
-		const Radians sunXAngleRadians = MathUtils::fullAtan2(-sunDirection.x, -sunDirection.z);
-
-		// When the sun is directly above or below, it might cause the X angle to be undefined.
-		// We want to filter this out before we try projecting it on-screen.
-		if (std::isfinite(sunXAngleRadians))
-		{
-			const Radians sunYAngleRadians = sunDirection.getYAngleRadians();
-			const bool sunEmissive = true;
-			const Orientation sunOrientation = Orientation::Top;
-
-			tryAddObject(sunTexture, sunXAngleRadians, sunYAngleRadians, sunEmissive, sunOrientation);
-		}
+		const SkyTexture &texture = this->skyTextures.at(sun.textureIndex);
+		const Double3 &direction = sun.direction;
+		constexpr bool emissive = true;
+		constexpr Orientation orientation = Orientation::Top;
+		tryAddObject(texture, direction, emissive, orientation);
 	}
 
 	this->visDistantObjs.sunEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.starStart = this->visDistantObjs.sunEnd;
 
-	for (const auto &star : this->distantObjects.stars)
+	for (const DistantObject &star : this->distantObjects.stars)
 	{
 		const SkyTexture &texture = skyTextures.at(star.textureIndex);
-
-		const Double3 &direction = star.obj.getDirection();
-		const Radians xAngleRadians = MathUtils::fullAtan2(-direction.x, -direction.z);
-		const Radians yAngleRadians = direction.getYAngleRadians();
-		const bool emissive = true;
-		const Orientation orientation = Orientation::Bottom;
-
-		// Modify angle based on latitude and time of day.
-		Radians newXAngleRadians, newYAngleRadians;
-		getSpaceCorrectedAngles(xAngleRadians, yAngleRadians, newXAngleRadians, newYAngleRadians);
-
-		tryAddObject(texture, newXAngleRadians, newYAngleRadians, emissive, orientation);
+		const Double3 &direction = star.direction;
+		constexpr bool emissive = true;
+		constexpr Orientation orientation = Orientation::Bottom;
+		tryAddObject(texture, direction, emissive, orientation);
 	}
 
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
@@ -7791,7 +7595,6 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, const VisDistantObje
 	drawDistantObjRange(visDistantObjs.sunStart, visDistantObjs.sunEnd, DistantRenderType::General);
 	drawDistantObjRange(visDistantObjs.moonStart, visDistantObjs.moonEnd, DistantRenderType::Moon);
 	drawDistantObjRange(visDistantObjs.airStart, visDistantObjs.airEnd, DistantRenderType::General);
-	drawDistantObjRange(visDistantObjs.animLandStart, visDistantObjs.animLandEnd, DistantRenderType::General);
 	drawDistantObjRange(visDistantObjs.landStart, visDistantObjs.landEnd, DistantRenderType::General);
 }
 

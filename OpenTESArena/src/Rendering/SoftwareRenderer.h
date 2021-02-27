@@ -360,37 +360,24 @@ private:
 		int animTextureID;
 	};
 
-	// Pairs together a distant sky object with its render texture index. If it's an animation,
-	// then the index points to the start of its textures.
-	template <typename T>
 	struct DistantObject
 	{
-		const T &obj;
-		int textureIndex;
+		// @todo: this doesn't work because the current design only inits DistantObjects once, not per frame.
+		// Need to change so animated lands get their new texture every frame and so the sun/moon/stars get
+		// their direction updated from SkyInstance::update().
 
-		DistantObject(const T &obj, int textureIndex);
+		Double3 direction; // Position in sky.
+		int textureIndex; // Points into skyTextures list.
+
+		DistantObject(const Double3 &direction, int textureIndex);
 	};
 
 	// Collection of all distant objects.
 	struct DistantObjects
 	{
-		// Default index if no sun exists in the world.
-		static constexpr int NO_SUN = -1;
+		std::vector<DistantObject> lands, airs, moons, suns, stars;
 
-		std::vector<DistantObject<DistantSky::LandObject>> lands;
-		std::vector<DistantObject<DistantSky::AnimatedLandObject>> animLands;
-		std::vector<DistantObject<DistantSky::AirObject>> airs;
-		std::vector<DistantObject<DistantSky::MoonObject>> moons;
-		std::vector<DistantObject<DistantSky::StarObject>> stars;
-		int sunTextureIndex; // Points into skyTextures if the sun exists, or NO_SUN if it doesn't.
-
-		// @temp hack to assist with animated land texture count determination.
-		const DistantSky *distantSky;
-		TextureManager *textureManager;
-
-		DistantObjects();
-
-		void init(const DistantSky &distantSky, std::vector<SkyTexture> &skyTextures,
+		void init(const SkyInstance &skyInstance, std::vector<SkyTexture> &skyTextures,
 			const Palette &palette, TextureManager &textureManager);
 
 		void clear();
@@ -415,8 +402,7 @@ private:
 
 		// Need to store start and end indices for each range so we can call different 
 		// shading methods on some of them. End indices are exclusive.
-		int landStart, landEnd, animLandStart, animLandEnd, airStart, airEnd, moonStart, moonEnd,
-			sunStart, sunEnd, starStart, starEnd;
+		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
 
 		VisDistantObjects();
 

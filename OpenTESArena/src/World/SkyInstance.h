@@ -23,8 +23,8 @@ private:
 	class ObjectInstance
 	{
 	public:
-		// Slight breakage of the design since small stars don't have a 'texture'; in the future this should
-		// allocate a renderer texture ID instead of assuming 8-bit image handles.
+		// Slight breakage of the design since small stars don't have a 'texture'. In the future this should
+		// allocate a renderer texture ID.
 		enum class Type
 		{
 			General,
