@@ -29,6 +29,8 @@
 
 // CPU-based 2.5D rendering.
 
+class Chunk;
+class ChunkManager;
 class Entity;
 
 enum class VoxelFacing2D;
@@ -486,7 +488,7 @@ private:
 		struct Voxels
 		{
 			int threadsDone;
-			const LevelData *levelData;
+			const ChunkManager *chunkManager;
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
 			const VoxelTextures *voxelTextures;
@@ -496,7 +498,7 @@ private:
 			int chunkDistance;
 			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
-			void init(int chunkDistance, double ceilingScale, const LevelData &levelData,
+			void init(int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 				const std::vector<VisibleLight> &visLights, const Buffer2D<VisibleLightList> &visLightLists,
 				const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 				Buffer<OcclusionData> &occlusion);
@@ -582,24 +584,21 @@ private:
 
 	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
 	// calculation).
-	static void updatePotentiallyVisibleFlats(const Camera &camera, SNInt gridWidth, WEInt gridDepth,
-		int chunkDistance, const EntityManager &entityManager,
-		std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount);
+	static void updatePotentiallyVisibleFlats(const Camera &camera,int chunkDistance,
+		const EntityManager &entityManager, std::vector<const Entity*> *outPotentiallyVisFlats, int *outEntityCount);
 
 	// Refreshes the list of flats to be drawn.
 	void updateVisibleFlats(const Camera &camera, const ShadingInfo &shadingInfo, int chunkDistance,
-		double ceilingScale, const VoxelGrid &voxelGrid, const EntityManager &entityManager,
+		double ceilingScale, const ChunkManager &chunkManager, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary);
 
 	// Refreshes the visible light lists in each voxel column in the view frustum.
-	void updateVisibleLightLists(const Camera &camera, int chunkDistance, double ceilingScale,
-		const VoxelGrid &voxelGrid);
+	void updateVisibleLightLists(const Camera &camera, int chunkDistance, double ceilingScale);
 	
 	// Gets the facing value for the far side of a chasm.
-	static VoxelFacing2D getInitialChasmFarFacing(SNInt voxelX, WEInt voxelZ,
-		const NewDouble2 &eye, const Ray &ray);
-	static VoxelFacing2D getChasmFarFacing(SNInt voxelX, WEInt voxelZ,
-		VoxelFacing2D nearFacing, const Camera &camera, const Ray &ray);
+	static VoxelFacing2D getInitialChasmFarFacing(const CoordInt2 &coord, const NewDouble2 &eye, const Ray &ray);
+	static VoxelFacing2D getChasmFarFacing(const CoordInt2 &coord, VoxelFacing2D nearFacing,
+		const Camera &camera, const Ray &ray);
 
 	// Tries to convert the chasm animation percent to the associated texture within the chasm
 	// texture group for the given chasm type.
@@ -613,8 +612,7 @@ private:
 	// Gets the visible light list associated with some voxel column.
 	static const VisibleLightList &getVisibleLightList(
 		const BufferView2D<const VisibleLightList> &visLightLists, SNInt voxelX, WEInt voxelZ,
-		SNInt cameraVoxelX, WEInt cameraVoxelZ, SNInt gridWidth, WEInt gridDepth,
-		int chunkDistance);
+		SNInt cameraVoxelX, WEInt cameraVoxelZ, int chunkDistance);
 
 	// Generates a vertical draw range on-screen from two vertices in world space.
 	static DrawRange makeDrawRange(const Double3 &startPoint, const Double3 &endPoint,
@@ -648,51 +646,50 @@ private:
 	// Gathers potential intersection data from a voxel containing a "diagonal 1" ID; the 
 	// diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns whether an 
 	// intersection occurred within the voxel.
-	static bool findDiag1Intersection(SNInt voxelX, WEInt voxelZ, const NewDouble2 &nearPoint,
+	static bool findDiag1Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a "diagonal 2" ID; the
 	// diagonal starting at (farX, nearZ) and ending at (nearX, farZ). Returns whether an
 	// intersection occurred within the voxel.
-	static bool findDiag2Intersection(SNInt voxelX, WEInt voxelZ, const NewDouble2 &nearPoint,
+	static bool findDiag2Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, RayHit &hit);
 
 	// Gathers potential intersection data from an initial voxel containing an edge ID. The
 	// facing determines which edge of the voxel an intersection can occur on.
-	static bool findInitialEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing2D edgeFacing,
+	static bool findInitialEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
 		bool flipped, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing an edge ID. The facing
 	// determines which edge of the voxel an intersection can occur on. This function is separate
 	// from the initial case since it's a trivial solution when the edge and near facings match.
-	static bool findEdgeIntersection(SNInt voxelX, WEInt voxelZ, VoxelFacing2D edgeFacing,
+	static bool findEdgeIntersection(const CoordInt2 &coord, VoxelFacing2D edgeFacing,
 		bool flipped, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearU, const Camera &camera, const Ray &ray, RayHit &hit);
 
 	// Helper method for findInitialDoorIntersection() for swinging doors.
-	static bool findInitialSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ, double percentOpen,
+	static bool findInitialSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
 		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, bool xAxis, const Camera &camera,
 		const Ray &ray, RayHit &hit);
 	
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection.
-	static bool findInitialDoorIntersection(SNInt voxelX, WEInt voxelZ,
-		ArenaTypes::DoorType doorType, double percentOpen, const NewDouble2 &nearPoint,
-		const NewDouble2 &farPoint, const Camera &camera, const Ray &ray, const VoxelGrid &voxelGrid,
-		RayHit &hit);
+	static bool findInitialDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
+		double percentOpen, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, const Camera &camera,
+		const Ray &ray, const ChunkManager &chunkManager, RayHit &hit);
 
 	// Helper method for findDoorIntersection() for swinging doors.
-	static bool findSwingingDoorIntersection(SNInt voxelX, WEInt voxelZ, double percentOpen,
+	static bool findSwingingDoorIntersection(const CoordInt2 &coord, double percentOpen,
 		VoxelFacing2D nearFacing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearU, RayHit &hit);
 
 	// Gathers potential intersection data from a voxel containing a door ID. The door
 	// type determines what kind of door formula to calculate for the intersection. Raising doors
 	// are always hit, so they do not need a specialized method.
-	static bool findDoorIntersection(SNInt voxelX, WEInt voxelZ,
-		ArenaTypes::DoorType doorType, double percentOpen, VoxelFacing2D nearFacing,
-		const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearU, RayHit &hit);
+	static bool findDoorIntersection(const CoordInt2 &coord, ArenaTypes::DoorType doorType,
+		double percentOpen, VoxelFacing2D nearFacing, const NewDouble2 &nearPoint,
+		const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.
 	static void getLightVisibilityData(const NewDouble3 &flatPosition, double flatHeight,
@@ -807,64 +804,64 @@ private:
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Helper functions for drawing the initial voxel column.
-	static void drawInitialVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	static void drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawInitialVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	static void drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawInitialVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ,
+	static void drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
-	static void drawInitialVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
+	static void drawInitialVoxelColumn(int x, const CoordInt2 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper functions for drawing a voxel column.
-	static void drawVoxelSameFloor(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	static void drawVoxelSameFloor(int x, const CoordInt3 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingScale, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawVoxelAbove(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	static void drawVoxelAbove(int x, const CoordInt3 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingScale, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawVoxelBelow(int x, SNInt voxelX, int voxelY, WEInt voxelZ, const Camera &camera,
+	static void drawVoxelBelow(int x, const CoordInt3 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingScale, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
-	static void drawVoxelColumn(int x, SNInt voxelX, WEInt voxelZ, const Camera &camera,
+	static void drawVoxelColumn(int x, const CoordInt2 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
@@ -874,21 +871,21 @@ private:
 		const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 		const Palette *overridePalette, int chunkDistance, const FlatTexture &texture,
 		const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
-		SNInt gridWidth, WEInt gridDepth, const FrameView &frame);
+		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels
 	// in the XZ column of each voxel.
 	template <bool NonNegativeDirX, bool NonNegativeDirZ>
 	static void rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
-		const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper method for internal ray casting function that takes template parameters for better
 	// code generation.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray, const ShadingInfo &shadingInfo,
-		int chunkDistance, double ceilingScale, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
@@ -907,7 +904,7 @@ private:
 
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
-		double ceilingScale, const LevelData &levelData, const BufferView<const VisibleLight> &visLights,
+		double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
 		const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
@@ -916,8 +913,7 @@ private:
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
 		const std::vector<VisibleFlat> &visibleFlats, const FlatTextureGroups &flatTextureGroups,
 		const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, SNInt gridWidth, WEInt gridDepth,
-		const FrameView &frame);
+		const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
