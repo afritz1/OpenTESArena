@@ -2368,9 +2368,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// @todo: calculate for wilderness based on the gate's voxel in the city.
 					const std::optional<CoordInt3> startCoord;
 
+					// No need to change world map location here.
+					const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
+
 					if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-						textureManager, renderer))
+						worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+						binaryAssetLibrary, textureManager, renderer))
 					{
 						DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
 						return;
@@ -2414,9 +2417,12 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 					// Use current weather.
 					const std::optional<WeatherType> overrideWeather = weatherType;
 
-					if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
-						game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
-						textureManager, renderer))
+					// No need to change world map location here.
+					const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
+
+					if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+						game.getTextAssetLibrary(), textureManager, renderer))
 					{
 						DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
 						return;

@@ -45,6 +45,12 @@ namespace
 	const Color EffectTextShadowColor(190, 113, 0);
 }
 
+GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
+{
+	this->provinceID = provinceID;
+	this->locationID = locationID;
+}
+
 void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
 	const std::optional<CoordInt3> &returnCoord)
 {
@@ -335,17 +341,28 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 }
 
 bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
+	const WorldMapLocationIDs &worldMapLocationIDs, const CharacterClassLibrary &charClassLibrary,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	this->clearMaps();
 
-	return this->tryPushInterior(interiorGenInfo, std::nullopt, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, renderer);
+	const bool success = this->tryPushInterior(interiorGenInfo, std::nullopt, charClassLibrary,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
+
+	if (success)
+	{
+		// Update world map location.
+		this->provinceIndex = worldMapLocationIDs.provinceID;
+		this->locationIndex = worldMapLocationIDs.locationID;
+	}
+
+	return success;
 }
 
 bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
+	const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -395,14 +412,21 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 		return false;
 	}
 
+	if (newWorldMapLocationIDs.has_value())
+	{
+		// Update world map location.
+		this->provinceIndex = newWorldMapLocationIDs->provinceID;
+		this->locationIndex = newWorldMapLocationIDs->locationID;
+	}
+
 	return true;
 }
 
 bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherType> &overrideWeather,
-	const std::optional<CoordInt3> &startCoord, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	// @todo: try to get gate position if current active map is for city -- need to have saved it from when the
 	// gate was clicked in GameWorldPanel.
@@ -463,6 +487,13 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
 		return false;
+	}
+
+	if (newWorldMapLocationIDs.has_value())
+	{
+		// Update world map location.
+		this->provinceIndex = newWorldMapLocationIDs->provinceID;
+		this->locationIndex = newWorldMapLocationIDs->locationID;
 	}
 
 	return true;

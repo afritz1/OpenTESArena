@@ -100,7 +100,7 @@ namespace
 		return indices;
 	}
 
-	const LocationDefinition *GetRandomCityLocationDefinitionIfType(const ProvinceDefinition &provinceDef,
+	std::optional<int> GetRandomCityLocationDefIndexIfType(const ProvinceDefinition &provinceDef,
 		ArenaTypes::CityType cityType)
 	{
 		// Iterate over locations in the province in a random order.
@@ -114,12 +114,12 @@ namespace
 				const auto &curCityDef = curLocationDef.getCityDefinition();
 				if (curCityDef.type == cityType)
 				{
-					return &curLocationDef;
+					return locationIndex;
 				}
 			}
 		}
 
-		return nullptr;
+		return std::nullopt;
 	}
 
 	int GetRandomCityLocationIndex(const ProvinceDefinition &provinceDef)
@@ -139,7 +139,7 @@ namespace
 		return -1;
 	}
 
-	const LocationDefinition *GetRandomDungeonLocationDefinition(const ProvinceDefinition &provinceDef)
+	std::optional<int> GetRandomDungeonLocationDefIndex(const ProvinceDefinition &provinceDef)
 	{
 		// Iterate over locations in the province in a random order.
 		const std::vector<int> randomLocationIndices = MakeShuffledLocationIndices(provinceDef);
@@ -149,11 +149,11 @@ namespace
 			const LocationDefinition &curLocationDef = provinceDef.getLocationDef(locationIndex);
 			if (curLocationDef.getType() == LocationDefinition::Type::Dungeon)
 			{
-				return &curLocationDef;
+				return locationIndex;
 			}
 		}
 
-		return nullptr;
+		return std::nullopt;
 	}
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
@@ -422,8 +422,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					MapGeneration::InteriorGenInfo interiorGenInfo;
 					interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
 
-					if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
-						game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
+					if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
+						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
 						game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
@@ -433,30 +434,29 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Pick a random dungeon based on the dungeon type.
 					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
-					{
-						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
-						return worldMapDef.getProvinceDef(provinceIndex);
-					}();
+
+					const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 					constexpr bool isArtifactDungeon = false;
 
 					if (mifName == RandomNamedDungeon)
 					{
-						const LocationDefinition *locationDefPtr = GetRandomDungeonLocationDefinition(provinceDef);
-						DebugAssertMsg(locationDefPtr != nullptr,
-							"Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
+						const std::optional<int> locationIndex = GetRandomDungeonLocationDefIndex(provinceDef);
+						DebugAssertMsg(locationIndex.has_value(), "Couldn't find named dungeon in \"" + provinceDef.getName() + "\".");
 
-						const LocationDefinition::DungeonDefinition &dungeonDef = locationDefPtr->getDungeonDefinition();
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+						const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
 						MapGeneration::InteriorGenInfo interiorGenInfo;
 						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
-						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(), 
-							game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
 							game.getTextureManager(), game.getRenderer()))
 						{
-							DebugCrash("Couldn't load named dungeon \"" + locationDefPtr->getName() + "\".");
+							DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
 						}
 
 						// Set random named dungeon name and visibility for testing.
@@ -489,9 +489,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						MapGeneration::InteriorGenInfo interiorGenInfo;
 						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
-						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
-							game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextureManager(),
-							renderer))
+						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
+						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+							game.getTextureManager(), renderer))
 						{
 							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
 						}
@@ -513,9 +514,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
 					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-					const LocationDefinition &locationDef = [&mifName, &provinceDef]()
+					const std::optional<int> locationIndex = [&mifName, &provinceDef]() -> std::optional<int>
 					{
-						int locationIndex = -1;
 						for (int i = 0; i < provinceDef.getLocationCount(); i++)
 						{
 							const LocationDefinition &curLocationDef = provinceDef.getLocationDef(i);
@@ -525,15 +525,16 @@ MainMenuPanel::MainMenuPanel(Game &game)
 								if ((cityDef.type == ArenaTypes::CityType::CityState) && cityDef.premade &&
 									cityDef.palaceIsMainQuestDungeon)
 								{
-									locationIndex = i;
-									break;
+									return i;
 								}
 							}
 						}
 
-						DebugAssertMsg(locationIndex != -1, "Couldn't find location for \"" + mifName + "\".");
-						return provinceDef.getLocationDef(locationIndex);
+						return std::nullopt;
 					}();
+
+					DebugAssertMsg(locationIndex.has_value(), "Couldn't find premade city with main quest palace dungeon.");
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					Buffer<uint8_t> reservedBlocks = [&cityDef]()
@@ -571,9 +572,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					const std::optional<WeatherType> overrideWeather = weatherType;
-					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
-						game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
-						game.getTextureManager(), renderer))
+					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+						game.getTextAssetLibrary(), game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
@@ -582,11 +584,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Pick a random location based on the .MIF name, excluding the center province.
 					const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
-					const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
-					{
-						const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
-						return worldMapDef.getProvinceDef(provinceIndex);
-					}();
+					const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+					const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 					const ArenaTypes::CityType targetCityType = [&mifName]()
 					{
@@ -608,10 +607,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						}
 					}();
 
-					const LocationDefinition *locationDefPtr = GetRandomCityLocationDefinitionIfType(provinceDef, targetCityType);
-					DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find city for \"" + mifName + "\".");
+					const std::optional<int> locationIndex = GetRandomCityLocationDefIndexIfType(provinceDef, targetCityType);
+					DebugAssertMsg(locationIndex.has_value(), "Couldn't find city for \"" + mifName + "\".");
 
-					const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 					const WeatherType filteredWeatherType =
 						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
@@ -651,11 +651,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					// Load city into game state.
 					const std::optional<WeatherType> overrideWeather = filteredWeatherType;
-					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
-						game.getEntityDefinitionLibrary(), binaryAssetLibrary, game.getTextAssetLibrary(),
-						game.getTextureManager(), renderer))
+					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+						game.getTextAssetLibrary(), game.getTextureManager(), renderer))
 					{
-						DebugCrash("Couldn't load city \"" + locationDefPtr->getName() + "\".");
+						DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 					}
 				}
 			}
@@ -663,11 +664,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			{
 				// Pick a random location and province.
 				const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
-				const ProvinceDefinition &provinceDef = [&game, &worldMapDef]()
-				{
-					const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
-					return worldMapDef.getProvinceDef(provinceIndex);
-				}();
+				const int provinceIndex = game.getRandom().next(worldMapDef.getProvinceCount() - 1);
+				const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
 				const int locationIndex = GetRandomCityLocationIndex(provinceDef);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
@@ -696,9 +694,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const std::optional<CoordInt3> startCoord;
 
 				// Load wilderness into game state.
+				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 				if (!gameState->trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-					game.getTextureManager(), renderer))
+					worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+					binaryAssetLibrary, game.getTextureManager(), renderer))
 				{
 					DebugCrash("Couldn't load wilderness \"" + locationDef.getName() + "\".");
 				}

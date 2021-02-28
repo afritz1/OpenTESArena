@@ -298,29 +298,32 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
 						const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-
-						const LocationDefinition *locationDefPtr = nullptr;
-						for (int i = 0; i < provinceDef.getLocationCount(); i++)
+						const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
 						{
-							const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-							if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+							for (int i = 0; i < provinceDef.getLocationCount(); i++)
 							{
-								const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-									locationDef.getMainQuestDungeonDefinition();
-
-								if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+								const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
+								if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
 								{
-									locationDefPtr = &locationDef;
-									break;
+									const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+										locationDef.getMainQuestDungeonDefinition();
+
+									if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+									{
+										return i;
+									}
 								}
 							}
-						}
 
-						DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find start dungeon location definition.");
+							return std::nullopt;
+						}();
+
+						DebugAssertMsg(locationIndex.has_value(), "Couldn't find start dungeon location definition.");
 
 						// Load starting dungeon.
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-							locationDefPtr->getMainQuestDungeonDefinition();
+							locationDef.getMainQuestDungeonDefinition();
 						const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 						constexpr std::optional<bool> rulerIsMale; // Not needed.
@@ -328,9 +331,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						MapGeneration::InteriorGenInfo interiorGenInfo;
 						interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
-						if (!gameState->trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
-							game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
-							game.getRenderer()))
+						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+							game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 						{
 							DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 						}
@@ -353,12 +357,12 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								auto &player = gameState.getPlayer();
 								player.setVelocityToZero();
 
-								const int localCityID = game.getRandom().next(32);
 								const int provinceID = gameState.getPlayer().getRaceID();
+								const int locationID = game.getRandom().next(32);
 
 								const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 								const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+								const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
 								// Random weather for now.
 								// - @todo: make it depend on the location (no need to prevent deserts from having snow
@@ -421,7 +425,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 								
 								const std::optional<WeatherType> overrideWeather = weatherType;
-								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather,
+								const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
+								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 									game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
 									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getTextureManager(),
 									renderer))

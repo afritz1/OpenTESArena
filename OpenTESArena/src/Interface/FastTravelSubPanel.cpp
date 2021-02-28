@@ -435,9 +435,10 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Load the destination city.
 		const std::optional<WeatherType> overrideWeather = weatherType;
-		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, game.getCharacterClassLibrary(),
-			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextAssetLibrary(),
-			game.getTextureManager(), game.getRenderer()))
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
+		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getTextAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load city \"" + travelLocationDef.getName() + "\".");
 		}
@@ -502,7 +503,8 @@ void FastTravelSubPanel::switchToNextPanel()
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
-		if (!gameState.trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
+		if (!gameState.trySetInterior(interiorGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
 			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
 			game.getRenderer()))
 		{
@@ -536,7 +538,8 @@ void FastTravelSubPanel::switchToNextPanel()
 		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename),
 			ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
-		if (!gameState.trySetInterior(interiorGenInfo, game.getCharacterClassLibrary(),
+		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
+		if (!gameState.trySetInterior(interiorGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
 			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
 			game.getRenderer()))
 		{
