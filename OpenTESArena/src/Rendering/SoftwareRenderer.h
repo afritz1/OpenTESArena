@@ -859,8 +859,7 @@ private:
 		const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
 		const FrameView &frame);
 
-	// Casts a 2D ray that steps through the current floor, rendering all voxels
-	// in the XZ column of each voxel.
+	// Casts a 2D ray that steps through the current floor, rendering all voxels in the XZ column of each voxel.
 	template <bool NonNegativeDirX, bool NonNegativeDirZ>
 	static void rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,

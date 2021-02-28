@@ -7271,15 +7271,15 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// -> (int)floor(-0.8) == -1
 	// -> (int)ceil(-0.8) == 0
 
+	const VoxelDouble3 &eyePoint = camera.eye.point;
+	const VoxelDouble2 eyePoint2D(eyePoint.x, eyePoint.z);
+	const VoxelDouble3 &eyeVoxelReal = camera.eyeVoxelReal.point;
+	const VoxelInt3 &eyeVoxel = camera.eyeVoxel.voxel;
+
 	constexpr SNInt stepX = NonNegativeDirX ? 1 : -1;
 	constexpr WEInt stepZ = NonNegativeDirZ ? 1 : -1;
 	constexpr SNDouble axisLenX = 1.0;
 	constexpr WEDouble axisLenZ = 1.0;
-
-	// Camera position values in absolute coordinate space.
-	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewDouble3 absoluteEyeVoxelReal = VoxelUtils::coordToNewPoint(camera.eyeVoxelReal);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 
 	// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 	const SNDouble deltaDistX = (NonNegativeDirX ? axisLenX : -axisLenX) / ray.dirX;
@@ -7288,76 +7288,79 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// The initial delta distances are percentages of the delta distances, dependent on the ray
 	// start position inside the voxel.
 	const SNDouble initialDeltaDistPercentX = NonNegativeDirX ?
-		(1.0 - ((absoluteEye.x - absoluteEyeVoxelReal.x) / axisLenX)) :
-		((absoluteEye.x - absoluteEyeVoxelReal.x) / axisLenX);
+		(1.0 - ((eyePoint.x - eyeVoxelReal.x) / axisLenX)) :
+		((eyePoint.x - eyeVoxelReal.x) / axisLenX);
 	const WEDouble initialDeltaDistPercentZ = NonNegativeDirZ ?
-		(1.0 - ((absoluteEye.z - absoluteEyeVoxelReal.z) / axisLenZ)) :
-		((absoluteEye.z - absoluteEyeVoxelReal.z) / axisLenZ);
+		(1.0 - ((eyePoint.z - eyeVoxelReal.z) / axisLenZ)) :
+		((eyePoint.z - eyeVoxelReal.z) / axisLenZ);
 
 	// Initial delta distance is a fraction of delta distance based on the ray's position in
 	// the initial voxel.
 	const SNDouble initialDeltaDistX = deltaDistX * initialDeltaDistPercentX;
 	const WEDouble initialDeltaDistZ = deltaDistZ * initialDeltaDistPercentZ;
 
-	const VoxelGrid &voxelGrid = levelData.getVoxelGrid();
-	const SNInt gridWidth = voxelGrid.getWidth();
-	const int gridHeight = voxelGrid.getHeight();
-	const WEInt gridDepth = voxelGrid.getDepth();
-
-	// The Z distance from the camera to the wall, and the X or Z normal of the intersected
-	// voxel face. The first Z distance is a special case, so it's brought outside the 
+	// The ray distance from the camera to the wall, and the X or Z normal of the intersected
+	// voxel face. The first ray distance is a special case, so it's brought outside the 
 	// DDA loop.
-	double zDistance;
+	double rayDistance;
 	VoxelFacing2D facing;
 
-	// Verify that the initial voxel coordinate is within the world bounds.
-	bool voxelIsValid =
-		(absoluteEyeVoxel.x >= 0) &&
-		(absoluteEyeVoxel.y >= 0) &&
-		(absoluteEyeVoxel.z >= 0) &&
-		(absoluteEyeVoxel.x < gridWidth) &&
-		(absoluteEyeVoxel.y < gridHeight) &&
-		(absoluteEyeVoxel.z < gridDepth);
+	// Visible voxel facings for each axis depending on ray direction. The facing is opposite
+	// to the direction (i.e. negative X face if stepping south).
+	constexpr std::array<VoxelFacing2D, 2> visibleWallFacings =
+	{
+		NonNegativeDirX ? VoxelFacing2D::NegativeX : VoxelFacing2D::PositiveX,
+		NonNegativeDirZ ? VoxelFacing2D::NegativeZ : VoxelFacing2D::PositiveZ
+	};
 
-	if (voxelIsValid)
+	// Check whether the initial voxel is in a loaded chunk.
+	ChunkInt2 currentChunk = camera.eye.chunk;
+	const Chunk *currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
+
+	if (currentChunkPtr != nullptr)
 	{
 		// Decide how far the wall is, and which voxel face was hit.
 		if (initialDeltaDistX < initialDeltaDistZ)
 		{
-			zDistance = initialDeltaDistX;
-			facing = NonNegativeDirX ? VoxelFacing2D::NegativeX : VoxelFacing2D::PositiveX;
+			rayDistance = initialDeltaDistX;
+			facing = visibleWallFacings[0];
 		}
 		else
 		{
-			zDistance = initialDeltaDistZ;
-			facing = NonNegativeDirZ ? VoxelFacing2D::NegativeZ : VoxelFacing2D::PositiveZ;
+			rayDistance = initialDeltaDistZ;
+			facing = visibleWallFacings[1];
 		}
 
-		// The initial near point is directly in front of the player in the near Z 
-		// camera plane.
-		const NewDouble2 initialNearPoint(
-			absoluteEye.x + (ray.dirX * SoftwareRenderer::NEAR_PLANE),
-			absoluteEye.z + (ray.dirZ * SoftwareRenderer::NEAR_PLANE));
+		// The initial near point is directly in front of the player in the near Z camera plane
+		// with a (hacky?) bias for the near clipping plane.
+		const VoxelDouble2 initialNearPointBias(
+			ray.dirX * SoftwareRenderer::NEAR_PLANE,
+			ray.dirZ * SoftwareRenderer::NEAR_PLANE);
+		const VoxelDouble2 initialNearPoint = eyePoint2D + initialNearPointBias;
 
-		// The initial far point is the wall hit. This is used with the player's position 
-		// for drawing the initial floor and ceiling.
-		const NewDouble2 initialFarPoint(
-			absoluteEye.x + (ray.dirX * zDistance),
-			absoluteEye.z + (ray.dirZ * zDistance));
+		// The initial far point is the wall hit. This is used with the player's position for
+		// drawing the initial floor and ceiling.
+		const VoxelDouble2 initialFarPoint = eyePoint2D + 
+			VoxelDouble2(ray.dirX * rayDistance, ray.dirZ * rayDistance);
 
 		// Draw all voxels in a column at the player's XZ coordinate.
-		SoftwareRenderer::drawInitialVoxelColumn(x, absoluteEyeVoxel.x, absoluteEyeVoxel.z,
-			camera, ray, facing, initialNearPoint, initialFarPoint, SoftwareRenderer::NEAR_PLANE,
-			zDistance, shadingInfo, chunkDistance, ceilingScale, levelData, visLights, visLightLists,
-			textures, chasmTextureGroups, occlusion, frame);
+		const CoordInt2 initialVoxelColumnCoord(currentChunk, VoxelUtils::pointToVoxel(eyePoint2D));
+		const NewDouble2 absoluteInitialNearPoint =
+			VoxelUtils::coordToNewPoint(CoordDouble2(currentChunk, initialNearPoint));
+		const NewDouble2 absoluteInitialFarPoint =
+			VoxelUtils::coordToNewPoint(CoordDouble2(currentChunk, initialFarPoint));
+		SoftwareRenderer::drawInitialVoxelColumn(x, initialVoxelColumnCoord, camera, ray, facing,
+			absoluteInitialNearPoint, absoluteInitialFarPoint, SoftwareRenderer::NEAR_PLANE, rayDistance,
+			shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights, visLightLists, textures,
+			chasmTextureGroups, occlusion, frame);
 	}
 
-	// The current voxel coordinate in the DDA loop. For all intents and purposes,
-	// the Y cell coordinate is constant.
-	NewInt3 cell(absoluteEyeVoxel.x, absoluteEyeVoxel.y, absoluteEyeVoxel.z);
+	// The current voxel coordinate in the DDA loop. For all intents and purposes here, the Y coordinate
+	// is constant.
+	VoxelInt2 currentVoxel(eyeVoxel.x, eyeVoxel.z);
 	
-	// Delta distance sums in each component, starting at the initial wall hit. The lowest
-	// component is the candidate for the next DDA loop.
+	// Delta distance sums in each component, starting at the initial wall hit. The lowest component is
+	// the candidate for the next DDA loop.
 	SNDouble deltaDistSumX = initialDeltaDistX;
 	WEDouble deltaDistSumZ = initialDeltaDistZ;
 
@@ -7369,60 +7372,107 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 	// distance for the current edge point.
 	// @optimization: constexpr values in a lambda capture (stepX, zDistance values) are not baked in!!
 	// - Only way to get the values baked in is 1) make template doDDAStep() method, or 2) no lambda.
-	auto doDDAStep = [&ray, stepX, stepZ, &absoluteEye, deltaDistX, deltaDistZ, gridWidth, gridDepth,
-		&zDistance, &facing, &voxelIsValid, &cell, &deltaDistSumX, &deltaDistSumZ,
-		halfOneMinusStepXReal, halfOneMinusStepZReal]()
+	auto doDDAStep = [&camera, &ray, &chunkManager, &eyePoint, stepX, stepZ, deltaDistX, deltaDistZ,
+		&rayDistance, &facing, &visibleWallFacings, &currentChunk, &currentChunkPtr, &currentVoxel,
+		&deltaDistSumX, &deltaDistSumZ, halfOneMinusStepXReal, halfOneMinusStepZReal]()
 	{
+		const ChunkInt2 oldChunk = currentChunk;
+
 		if (deltaDistSumX < deltaDistSumZ)
 		{
 			deltaDistSumX += deltaDistX;
-			cell.x += stepX;
-			facing = NonNegativeDirX ? VoxelFacing2D::NegativeX : VoxelFacing2D::PositiveX;
-			voxelIsValid &= (cell.x >= 0) && (cell.x < gridWidth);
-			zDistance = (((static_cast<double>(cell.x) - absoluteEye.x) + halfOneMinusStepXReal) / ray.dirX);
+			currentVoxel.x += stepX;
+
+			if (NonNegativeDirX)
+			{
+				if (currentVoxel.x >= ChunkUtils::CHUNK_DIM)
+				{
+					currentVoxel.x = 0;
+					currentChunk.x++;
+				}
+			}
+			else
+			{
+				if (currentVoxel.x < 0)
+				{
+					currentVoxel.x = ChunkUtils::CHUNK_DIM - 1;
+					currentChunk.x--;
+				}
+			}
+
+			facing = visibleWallFacings[0];
+
+			const SNDouble combinedStepDistX = static_cast<SNDouble>(currentVoxel.x) +
+				static_cast<SNDouble>((currentChunk.x - camera.eye.chunk.x) * ChunkUtils::CHUNK_DIM);
+			rayDistance = ((combinedStepDistX - eyePoint.x) + halfOneMinusStepXReal) / ray.dirX;
 		}
 		else
 		{
 			deltaDistSumZ += deltaDistZ;
-			cell.z += stepZ;
-			facing = NonNegativeDirZ ? VoxelFacing2D::NegativeZ : VoxelFacing2D::PositiveZ;
-			voxelIsValid &= (cell.z >= 0) && (cell.z < gridDepth);
-			zDistance = (((static_cast<double>(cell.z) - absoluteEye.z) + halfOneMinusStepZReal) / ray.dirZ);
+			currentVoxel.y += stepZ;
+			
+			if (NonNegativeDirZ)
+			{
+				if (currentVoxel.y >= ChunkUtils::CHUNK_DIM)
+				{
+					currentVoxel.y = 0;
+					currentChunk.y++;
+				}
+			}
+			else
+			{
+				if (currentVoxel.y < 0)
+				{
+					currentVoxel.y = ChunkUtils::CHUNK_DIM - 1;
+					currentChunk.y--;
+				}
+			}
+
+			facing = visibleWallFacings[1];
+			
+			const WEDouble combinedStepDistZ = static_cast<SNDouble>(currentVoxel.y) +
+				static_cast<WEDouble>((currentChunk.y - camera.eye.chunk.y) * ChunkUtils::CHUNK_DIM);
+			rayDistance = ((combinedStepDistZ - eyePoint.z) + halfOneMinusStepZReal) / ray.dirZ;
+		}
+
+		if (currentChunk != oldChunk)
+		{
+			currentChunkPtr = chunkManager.tryGetChunk(currentChunk);
 		}
 	};
 
 	// Step forward in the grid once to leave the initial voxel and update the Z distance.
 	doDDAStep();
 
-	// Step through the voxel grid while the current coordinate is valid, the 
-	// distance stepped is less than the distance at which fog is maximum, and
-	// the column is not completely occluded.
-	while (voxelIsValid && (zDistance < shadingInfo.fogDistance) &&
-		(occlusion.yMin != occlusion.yMax))
+	// Step through the voxel grid while the current chunk is valid and the column is not
+	// completely occluded.
+	while ((currentChunkPtr != nullptr) && (occlusion.yMin != occlusion.yMax))
 	{
-		// Store the cell coordinates, axis, and Z distance for wall rendering. The
-		// loop needs to do another DDA step to calculate the far point.
-		const SNInt savedCellX = cell.x;
-		const WEInt savedCellZ = cell.z;
+		// Store part of the current DDA state. The loop needs to do another DDA step to calculate
+		// the point on the far side of this voxel.
+		const CoordInt2 savedVoxelCoord(currentChunk, currentVoxel);
 		const VoxelFacing2D savedFacing = facing;
-		const double wallDistance = zDistance;
+		const double savedDistance = rayDistance;
 
-		// Decide which voxel in the XZ plane to step to next, and update the Z distance.
+		// Decide which voxel in the XZ plane to step to next, and update the ray distance.
 		doDDAStep();
 
-		// Near and far points in the XZ plane. The near point is where the wall is, and 
-		// the far point is used with the near point for drawing the floor and ceiling.
-		const NewDouble2 nearPoint(
-			absoluteEye.x + (ray.dirX * wallDistance),
-			absoluteEye.z + (ray.dirZ * wallDistance));
-		const NewDouble2 farPoint(
-			absoluteEye.x + (ray.dirX * zDistance),
-			absoluteEye.z + (ray.dirZ * zDistance));
+		// Near and far points in the XZ plane. The near point is where the voxel was hit before, and
+		// the far point is where the voxel was just hit on the far side.
+		const VoxelDouble2 nearPoint = eyePoint2D +
+			VoxelDouble2(ray.dirX * savedDistance, ray.dirZ * savedDistance);
+		const VoxelDouble2 farPoint = eyePoint2D +
+			VoxelDouble2(ray.dirX * rayDistance, ray.dirZ * rayDistance);
+
+		const NewDouble2 absoluteNearPoint =
+			VoxelUtils::coordToNewPoint(CoordDouble2(savedVoxelCoord.chunk, nearPoint));
+		const NewDouble2 absoluteFarPoint =
+			VoxelUtils::coordToNewPoint(CoordDouble2(savedVoxelCoord.chunk, farPoint));
 
 		// Draw all voxels in a column at the given XZ coordinate.
-		SoftwareRenderer::drawVoxelColumn(x, savedCellX, savedCellZ, camera, ray, savedFacing,
-			nearPoint, farPoint, wallDistance, zDistance, shadingInfo, chunkDistance, ceilingScale,
-			levelData, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+		SoftwareRenderer::drawVoxelColumn(x, savedVoxelCoord, camera, ray, savedFacing, absoluteNearPoint,
+			absoluteFarPoint, savedDistance, rayDistance, shadingInfo, chunkDistance, ceilingScale,
+			chunkManager, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
