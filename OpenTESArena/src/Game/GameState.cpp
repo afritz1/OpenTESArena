@@ -340,7 +340,7 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 {
 	this->clearMaps();
 
-	constexpr std::optional<CoordInt3> returnCoord; // Not needed.
+	constexpr std::optional<CoordInt3> returnCoord = std::nullopt; // Not needed (can't use default constructor on GCC/Clang).
 	return this->tryPushInterior(interiorGenInfo, returnCoord, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textureManager, renderer);
 }
