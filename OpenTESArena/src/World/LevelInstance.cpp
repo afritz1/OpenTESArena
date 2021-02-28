@@ -16,10 +16,6 @@ LevelInstance::LevelInstance()
 void LevelInstance::init(double ceilingScale)
 {
 	this->ceilingScale = ceilingScale;
-
-	// @todo: remove fixed-size grid dependency in entity manager.
-	DebugNotImplemented();
-	//this->entityManager.init(-1, -1);
 }
 
 ChunkManager &LevelInstance::getChunkManager()
