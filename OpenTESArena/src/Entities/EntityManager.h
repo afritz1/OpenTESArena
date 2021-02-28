@@ -80,8 +80,8 @@ private:
 		// Inserts a new entity and assigns it the given ID.
 		T *addEntity(EntityID id);
 
-		// Moves an entity from the old group to this group.
-		void acquireEntity(EntityID id, EntityGroup<T> &oldGroup);
+		// Moves an entity from the old group to this group if able.
+		bool tryAcquireEntity(EntityID id, EntityGroup<T> &oldGroup);
 
 		// Removes an entity from the group.
 		void remove(EntityID id);

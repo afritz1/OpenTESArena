@@ -195,18 +195,26 @@ T *EntityManager::EntityGroup<T>::addEntity(EntityID id)
 }
 
 template <typename T>
-void EntityManager::EntityGroup<T>::acquireEntity(EntityID id, EntityGroup<T> &oldGroup)
+bool EntityManager::EntityGroup<T>::tryAcquireEntity(EntityID id, EntityGroup<T> &oldGroup)
 {
-	DebugAssert(id != EntityManager::NO_ID);
+	if (id == EntityManager::NO_ID)
+	{
+		DebugLogWarning("Cannot acquire invalid entity.");
+		return false;
+	}
 
 	// Entity ID must not already be in use.
-	DebugAssert(!this->getEntityIndex(id).has_value());
+	if (this->getEntityIndex(id).has_value())
+	{
+		DebugLogWarning("Entity \"" + std::to_string(id) + "\" already in this group.");
+		return false;
+	}
 
 	std::optional<int> oldEntityIndex = oldGroup.getEntityIndex(id);
 	if (!oldEntityIndex.has_value())
 	{
 		DebugLogWarning("Entity \"" + std::to_string(id) + "\" not in old group.");
-		return;
+		return false;
 	}
 
 	// Move entity from old group to new group.
@@ -219,6 +227,8 @@ void EntityManager::EntityGroup<T>::acquireEntity(EntityID id, EntityGroup<T> &o
 	oldGroup.validEntities[*oldEntityIndex] = false;
 	oldGroup.indices.erase(id);
 	oldGroup.freeIndices.push_back(*oldEntityIndex);
+
+	return true;
 }
 
 template <typename T>
@@ -890,7 +900,10 @@ void EntityManager::updateEntityChunk(Entity *entity)
 	{
 		auto swapEntityGroup = [](Entity *entity, auto &oldGroup, auto &newGroup)
 		{
-			newGroup.acquireEntity(entity->getID(), oldGroup);
+			if (!newGroup.tryAcquireEntity(entity->getID(), oldGroup))
+			{
+				DebugCrash("Couldn't move entity \"" + std::to_string(entity->getID()) + "\" from old to new group.");
+			}
 		};
 
 		const ChunkInt2 &newChunk = entity->getPosition().chunk;
