@@ -693,7 +693,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const std::optional<WeatherType> overrideWeather = filteredWeatherType;
 
 				// No previous start coordinate available. Let the loader decide.
-				constexpr std::optional<CoordInt3> startCoord;
+				const std::optional<CoordInt3> startCoord;
 
 				// Load wilderness into game state.
 				if (!gameState->trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
