@@ -86,7 +86,7 @@ int ChunkManager::spawnChunk()
 	return static_cast<int>(this->activeChunks.size()) - 1;
 }
 
-void ChunkManager::recycleChunk(int index, EntityManager &entityManager)
+void ChunkManager::recycleChunk(int index)
 {
 	DebugAssertIndex(this->activeChunks, index);
 	ChunkPtr &chunkPtr = this->activeChunks[index];
@@ -99,9 +99,6 @@ void ChunkManager::recycleChunk(int index, EntityManager &entityManager)
 	chunkPtr->clear();
 	this->chunkPool.emplace_back(std::move(chunkPtr));
 	this->activeChunks.erase(this->activeChunks.begin() + index);
-
-	// Notify entity manager that the chunk is being cleared.
-	entityManager.clearChunk(coord);
 }
 
 void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
@@ -225,7 +222,10 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLev
 		const ChunkInt2 &coord = chunkPtr->getCoord();
 		if (!ChunkUtils::isWithinActiveRange(centerChunk, coord, chunkDistance))
 		{
-			this->recycleChunk(i, entityManager);
+			this->recycleChunk(i);
+
+			// Notify entity manager that the chunk is being recycled.
+			entityManager.removeChunk(coord);
 		}
 	}
 
@@ -246,7 +246,11 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLev
 				{
 					DebugLogError("Couldn't populate chunk \"" + std::to_string(spawnIndex) +
 						"\" at (" + coord.toString() + ").");
+					continue;
 				}
+
+				// Notify the entity manager about the new chunk.
+				entityManager.addChunk(coord);
 			}
 		}
 	}

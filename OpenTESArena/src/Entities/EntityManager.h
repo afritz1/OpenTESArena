@@ -90,9 +90,21 @@ private:
 		void clear();
 	};
 
-	// One group per chunk, split into static and dynamic types.
-	Buffer2D<EntityGroup<StaticEntity>> staticGroups;
-	Buffer2D<EntityGroup<DynamicEntity>> dynamicGroups;
+	// All entities for a particular chunk.
+	struct EntityChunk
+	{
+		ChunkInt2 chunk;
+		EntityGroup<StaticEntity> staticGroup;
+		EntityGroup<DynamicEntity> dynamicGroup;
+
+		void init(const ChunkInt2 &chunk);
+
+		void clear();
+	};
+
+	// One set of entity groups per chunk, split into static and dynamic types. The chunks here are driven
+	// by the chunk manager.
+	std::vector<EntityChunk> entityChunks;
 
 	// Entity definitions for the currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
@@ -106,23 +118,24 @@ private:
 	// if no previously owned IDs are available to reuse.
 	EntityID nextFreeID();
 
-	bool isValidChunk(const ChunkInt2 &chunk) const;
-
 	// Helper functions for looking up an entity in the given group by ID.
 	template <typename T>
-	Entity *getInternal(EntityID id, EntityGroup<T> &group);
+	T *getInternal(EntityID id, EntityGroup<T> &group);
 	template <typename T>
-	const Entity *getInternal(EntityID id, const EntityGroup<T> &group) const;
+	const T *getInternal(EntityID id, const EntityGroup<T> &group) const;
+
+	// Gets the entity chunk index if it exists.
+	std::optional<int> tryGetChunkIndex(const ChunkInt2 &chunk) const;
 public:
 	// The default ID for entities with no ID.
 	static constexpr EntityID NO_ID = -1;
 	static constexpr EntityDefID NO_DEF_ID = -1;
 	static constexpr EntityRenderID NO_RENDER_ID = -1;
 
-	// Requires the chunks per X and Z side in the voxel grid for allocating entity groups.
-	void init(SNInt chunkCountX, WEInt chunkCountZ);
+	EntityManager();
 
-	// Factory functions. These assign the entity an available ID.
+	// Factory function. This assigns the new entity an available ID. For simplicity of initialization,
+	// there must be at least one active chunk, and this entity is default-assigned to that chunk.
 	EntityRef makeEntity(EntityType type);
 
 	// Gets a raw entity handle, given their ID and an optional entity type for faster look-up.
@@ -139,7 +152,7 @@ public:
 	EntityRef getEntityRef(EntityID id);
 	ConstEntityRef getEntityRef(EntityID id) const;
 
-	// Gets number of entities of the given type in the manager.
+	// Gets the number of entities of the given type in the manager.
 	int getCount(EntityType entityType) const;
 
 	// Gets total number of entities in a chunk.
@@ -192,8 +205,11 @@ public:
 	// Deletes all entities and data in the manager.
 	void clear();
 
-	// Deletes all entities in the given chunk.
-	void clearChunk(const ChunkInt2 &coord);
+	// Adds a new chunk entry to the manager.
+	void addChunk(const ChunkInt2 &chunk);
+
+	// Deletes all entities in the given chunk and removes it from the manager.
+	void removeChunk(const ChunkInt2 &chunk);
 
 	// Ticks the entity manager by delta time.
 	void tick(Game &game, double dt);

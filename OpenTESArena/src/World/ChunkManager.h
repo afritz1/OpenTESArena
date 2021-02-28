@@ -33,8 +33,8 @@ private:
 	// Takes a chunk from the chunk pool, moves it to the active chunks, and returns its index.
 	int spawnChunk();
 
-	// Clears the chunk, including entities, and removes it from the active chunks.
-	void recycleChunk(int index, EntityManager &entityManager);
+	// Clears the chunk and removes it from the active chunks.
+	void recycleChunk(int index);
 
 	// Helper function for setting the chunk's voxels and definitions from the given level. This might
 	// not touch all voxels in the chunk because it does not fully overlap the level.
