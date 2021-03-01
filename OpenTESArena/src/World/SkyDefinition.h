@@ -91,7 +91,7 @@ public:
 	void init(Buffer<Color> &&skyColors);
 
 	int getSkyColorCount() const;
-	const Color &getSkyColor(int index);
+	const Color &getSkyColor(int index) const;
 
 	int getLandPlacementDefCount() const;
 	const LandPlacementDef &getLandPlacementDef(int index) const;
