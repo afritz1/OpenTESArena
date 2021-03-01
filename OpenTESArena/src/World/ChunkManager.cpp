@@ -142,7 +142,9 @@ void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &l
 					continue;
 				}
 
-				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelID);
+				// Add one to account for the air voxel definition being ID 0.
+				const Chunk::VoxelID correctedVoxelID = voxelID + 1;
+				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
 			}
 		}
 	}
