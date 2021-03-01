@@ -2049,7 +2049,8 @@ void GameWorldPanel::handleTriggers(const CoordInt2 &coord)
 		LevelInstance &levelInst = mapInst.getActiveLevel();
 
 		// @todo: get triggers from Chunk.
-		DebugNotImplemented();
+		DebugLogError("handleTriggers() not implemented.");
+		return;
 
 		// See if there's a text trigger.
 		/*LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);

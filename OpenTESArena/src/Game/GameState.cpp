@@ -248,7 +248,8 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
+	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
 
 	const WeatherType weatherType = [&overrideWeather, &activeMapDef]()
 	{
@@ -283,7 +284,8 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for location \"" + locationDef.getName() + "\".");
 		return false;
@@ -322,7 +324,8 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
+	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
 
 	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
 
@@ -331,7 +334,8 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated interior.");
 		return false;
@@ -386,7 +390,8 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
+	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
 
 	const WeatherType weatherType = [&overrideWeather]()
 	{
@@ -406,7 +411,8 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated city.");
 		return false;
@@ -482,8 +488,12 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		}
 	}();
 
+	// No active level index in the wilderness.
+	const std::optional<int> activeLevelIndex;
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startPoint, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint,
+		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
 		return false;
@@ -516,6 +526,7 @@ bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
+	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const std::optional<CoordInt3> &returnCoord = this->maps.top().returnCoord;
 
@@ -538,7 +549,8 @@ bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 	}();
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, weatherType, startCoord, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -858,8 +870,9 @@ void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
 	this->player.setVelocityToZero();
 }
 
-bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherType, const CoordInt2 &startCoord,
-	TextureManager &textureManager, Renderer &renderer)
+bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
+	WeatherType weatherType, const CoordInt2 &startCoord, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
 	const CoordDouble3 playerPos(
@@ -868,7 +881,11 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, WeatherType weatherT
 	this->setTransitionedPlayerPosition(playerPos);
 	this->weatherType = weatherType;
 
-	if (!levelInst.trySetActive(weatherType, this->nightLightsAreActive(), textureManager, renderer))
+	DebugAssert(this->maps.size() > 0);
+	const MapDefinition &mapDefinition = this->maps.top().definition;
+
+	if (!levelInst.trySetActive(weatherType, this->nightLightsAreActive(), activeLevelIndex,
+		mapDefinition, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer.");
 		return false;

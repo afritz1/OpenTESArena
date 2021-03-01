@@ -32,8 +32,9 @@ public:
 	const EntityManager &getEntityManager() const;
 	double getCeilingScale() const;
 
-	bool trySetActive(WeatherType weatherType, bool nightLightsAreActive, TextureManager &textureManager,
-		Renderer &renderer);
+	bool trySetActive(WeatherType weatherType, bool nightLightsAreActive,
+		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
 		const MapDefinition &mapDefinition, int chunkDistance);

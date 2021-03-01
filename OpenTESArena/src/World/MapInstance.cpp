@@ -124,9 +124,6 @@ const LevelInstance &MapInstance::getLevel(int index) const
 
 int MapInstance::getActiveLevelIndex() const
 {
-	// @todo: verify this value is compatible with MapDefinition (probably not for wilderness).
-	DebugNotImplemented();
-
 	return this->activeLevelIndex;
 }
 
