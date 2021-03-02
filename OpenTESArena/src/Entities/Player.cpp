@@ -402,13 +402,12 @@ void Player::updatePhysics(const LevelInstance &activeLevel, const LevelDefiniti
 	}
 
 	// Simple Euler integration for updating the player's position.
-	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
-	const Double3 newPosition = absolutePlayerPoint + (this->velocity * dt);
+	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);
 
 	// Update the position if valid.
-	if (std::isfinite(newPosition.length()))
+	if (std::isfinite(newPoint.length()))
 	{
-		this->camera.position = VoxelUtils::newPointToCoord(newPosition);
+		this->camera.position = ChunkUtils::recalculateCoord(this->camera.position.chunk, newPoint);
 	}
 
 	if (this->onGround(activeLevel))
