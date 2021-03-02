@@ -36,10 +36,13 @@ private:
 	// Clears the chunk and removes it from the active chunks.
 	void recycleChunk(int index);
 
-	// Helper function for setting the chunk's voxels and definitions from the given level. This might
-	// not touch all voxels in the chunk because it does not fully overlap the level.
-	void populateChunkFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
+	// Helper function for setting the chunk's voxel definitions.
+	void populateChunkVoxelDefsFromLevel(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition);
+
+	// Helper function for setting the chunk's voxels for the given level. This might not touch all voxels
+	// in the chunk because it does not fully overlap the level.
+	void populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInt2 &levelOffset);
 
 	// Fills the chunk with the data required based on its position and the world type.
 	bool populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,

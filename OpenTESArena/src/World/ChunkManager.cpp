@@ -101,8 +101,7 @@ void ChunkManager::recycleChunk(int index)
 	this->activeChunks.erase(this->activeChunks.begin() + index);
 }
 
-void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
-	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset)
+void ChunkManager::populateChunkVoxelDefsFromLevel(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition)
 {
 	// Add voxel definitions.
 	for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
@@ -115,7 +114,11 @@ void ChunkManager::populateChunkFromLevel(Chunk &chunk, const LevelDefinition &l
 				std::to_string(static_cast<int>(voxelDefinition.type)) + "\".");
 		}
 	}
+}
 
+void ChunkManager::populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+	const LevelInt2 &levelOffset)
+{
 	// Iterate only the portion of the level that the chunk overlaps.
 	const SNInt startX = levelOffset.x;
 	const SNInt endX = std::min(startX + Chunk::WIDTH, levelDefinition.getWidth());
@@ -162,15 +165,46 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(activeLevelIndex);
 		chunk.init(coord, levelDefinition.getHeight());
+		this->populateChunkVoxelDefsFromLevel(chunk, levelInfoDefinition);
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
 		// - probably get from MapDefinition::Interior eventually.
+		constexpr Chunk::VoxelID floorVoxelID = 2;
+		const Chunk::VoxelID ceilingVoxelID = [&levelInfoDefinition]()
+		{
+			// Find ceiling voxel definition.
+			for (int i = 0; i < levelInfoDefinition.getVoxelDefCount(); i++)
+			{
+				const VoxelDefinition &voxelDef = levelInfoDefinition.getVoxelDef(i);
+				if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
+				{
+					// Add 1 to account for air voxel definition at ID 0.
+					return i + 1;
+				}
+			}
+
+			// No ceiling found, use air instead.
+			return 0;
+		}();
+
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				chunk.setVoxel(x, 0, z, floorVoxelID);
+
+				if (chunk.getHeight() > 2)
+				{
+					chunk.setVoxel(x, 2, z, ceilingVoxelID);
+				}
+			}
+		}
 
 		if (ChunkUtils::touchesLevelDimensions(coord, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
-			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -178,6 +212,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 		chunk.init(coord, levelDefinition.getHeight());
+		this->populateChunkVoxelDefsFromLevel(chunk, levelInfoDefinition);
 
 		// @todo: chunks outside the level are wrapped but only have floor voxels.
 		// - just need to wrap based on level definitions, not chunk dimensions. So a 96x96 city
@@ -187,7 +222,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 		{
 			// Populate chunk from the part of the level it overlaps.
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
-			this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -197,11 +232,12 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
 		chunk.init(coord, levelDefinition.getHeight());
+		this->populateChunkVoxelDefsFromLevel(chunk, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
 		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
-		this->populateChunkFromLevel(chunk, levelDefinition, levelInfoDefinition, LevelInt2(0, 0));
+		this->populateChunkVoxelsFromLevel(chunk, levelDefinition, LevelInt2(0, 0));
 	}
 	else
 	{
