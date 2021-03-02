@@ -63,15 +63,15 @@ bool ChunkUtils::isWithinActiveRange(const ChunkInt2 &chunk, const ChunkInt2 &ot
 
 CoordDouble2 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelDouble2 &point)
 {
-	// @todo: verify that negative coordinates are supported here.
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	const VoxelInt2 voxel = VoxelUtils::pointToVoxel(point);
 	const SNInt chunkDiffX = ((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim;
 	const WEInt chunkDiffZ = ((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim;
 	const ChunkInt2 newChunk(chunk.x + chunkDiffX, chunk.y + chunkDiffZ);
+	// @todo: this could be more robust for negative point values < -64.
 	const VoxelDouble2 newPoint(
-		std::fmod(point.x, static_cast<SNDouble>(chunkDim)),
-		std::fmod(point.y, static_cast<WEDouble>(chunkDim)));
+		std::fmod((point.x >= 0.0) ? point.x : (point.x + ChunkUtils::CHUNK_DIM), static_cast<SNDouble>(chunkDim)),
+		std::fmod((point.y >= 0.0) ? point.y : (point.y + ChunkUtils::CHUNK_DIM), static_cast<WEDouble>(chunkDim)));
 	return CoordDouble2(newChunk, newPoint);
 }
 
@@ -84,12 +84,14 @@ CoordDouble3 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelDou
 
 CoordInt2 ChunkUtils::recalculateCoord(const ChunkInt2 &chunk, const VoxelInt2 &voxel)
 {
-	// @todo: verify that negative coordinates are supported here.
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	const SNInt chunkDiffX = ((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim;
 	const WEInt chunkDiffZ = ((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim;
 	const ChunkInt2 newChunk(chunk.x + chunkDiffX, chunk.y + chunkDiffZ);
-	const VoxelInt2 newVoxel(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
+	// @todo: this could be more robust for negative voxel values < -64.
+	const VoxelInt2 newVoxel(
+		((voxel.x >= 0) ? voxel.x : (voxel.x + chunkDim)) % chunkDim,
+		((voxel.y >= 0) ? voxel.y : (voxel.y + chunkDim)) % chunkDim);
 	return CoordInt2(newChunk, newVoxel);
 }
 
