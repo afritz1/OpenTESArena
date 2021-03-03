@@ -7459,15 +7459,15 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 		// Near and far points in the XZ plane. The near point is where the voxel was hit before, and
 		// the far point is where the voxel was just hit on the far side.
-		const VoxelDouble2 nearPoint = eyePoint2D +
-			VoxelDouble2(ray.dirX * savedDistance, ray.dirZ * savedDistance);
-		const VoxelDouble2 farPoint = eyePoint2D +
-			VoxelDouble2(ray.dirX * rayDistance, ray.dirZ * rayDistance);
+		const CoordDouble2 nearCoord(
+			camera.eye.chunk,
+			eyePoint2D + VoxelDouble2(ray.dirX * savedDistance, ray.dirZ * savedDistance));
+		const CoordDouble2 farCoord(
+			camera.eye.chunk,
+			eyePoint2D + VoxelDouble2(ray.dirX * rayDistance, ray.dirZ * rayDistance));
 
-		const NewDouble2 absoluteNearPoint =
-			VoxelUtils::coordToNewPoint(CoordDouble2(savedVoxelCoord.chunk, nearPoint));
-		const NewDouble2 absoluteFarPoint =
-			VoxelUtils::coordToNewPoint(CoordDouble2(savedVoxelCoord.chunk, farPoint));
+		const NewDouble2 absoluteNearPoint = VoxelUtils::coordToNewPoint(nearCoord);
+		const NewDouble2 absoluteFarPoint = VoxelUtils::coordToNewPoint(farCoord);
 
 		// Draw all voxels in a column at the given XZ coordinate.
 		SoftwareRenderer::drawVoxelColumn(x, savedVoxelCoord, camera, ray, savedFacing, absoluteNearPoint,
