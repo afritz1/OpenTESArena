@@ -257,7 +257,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLev
 	for (int i = static_cast<int>(this->activeChunks.size()) - 1; i >= 0; i--)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		const ChunkInt2 &coord = chunkPtr->getCoord();
+		const ChunkInt2 coord = chunkPtr->getCoord();
 		if (!ChunkUtils::isWithinActiveRange(centerChunk, coord, chunkDistance))
 		{
 			this->recycleChunk(i);

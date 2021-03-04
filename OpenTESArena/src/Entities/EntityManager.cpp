@@ -1008,7 +1008,7 @@ void EntityManager::addChunk(const ChunkInt2 &chunk)
 {
 	if (this->tryGetChunkIndex(chunk).has_value())
 	{
-		DebugLogWarning("Chunk \"" + chunk.toString() + "\" already exists.");
+		DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" already exists.");
 		return;
 	}
 
@@ -1023,7 +1023,7 @@ void EntityManager::removeChunk(const ChunkInt2 &chunk)
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunk);
 	if (!chunkIndex.has_value())
 	{
-		DebugLogWarning("No chunk \"" + chunk.toString() + "\" to remove.");
+		DebugLogWarning("No entity chunk \"" + chunk.toString() + "\" to remove.");
 		return;
 	}
 
