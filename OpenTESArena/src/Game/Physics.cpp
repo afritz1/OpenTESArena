@@ -626,6 +626,9 @@ namespace Physics
 		const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 		const ArenaTypes::VoxelType voxelType = voxelDef.type;
 
+		// Use absolute voxel when generating quads for ray intersection.
+		const NewInt3 absoluteVoxel = VoxelUtils::coordToNewVoxel(voxelCoord);
+
 		// @todo: decide later if all voxel types can just use one VoxelGeometry block of code
 		// instead of branching on type here.
 
@@ -646,7 +649,7 @@ namespace Physics
 		{
 			// Intersect the floor as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale, nullptr, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
@@ -671,7 +674,7 @@ namespace Physics
 		{
 			// Intersect the ceiling as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale, nullptr, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
@@ -699,7 +702,7 @@ namespace Physics
 			VoxelGeometry::getInfo(voxelDef, nullptr, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale,
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
 				nullptr, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
@@ -753,7 +756,7 @@ namespace Physics
 		{
 			// Intersect the diagonal as a quad.
 			Quad quad;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale, nullptr, &quad, 1);
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
 			DebugAssert(quadsWritten == 1);
 
 			const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
@@ -780,7 +783,7 @@ namespace Physics
 			VoxelGeometry::getInfo(voxelDef, nullptr, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale,
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
 				nullptr, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
@@ -838,7 +841,7 @@ namespace Physics
 			{
 				// Intersect the edge as a quad.
 				Quad quad;
-				const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale, nullptr, &quad, 1);
+				const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale, nullptr, &quad, 1);
 				DebugAssert(quadsWritten == 1);
 
 				const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayCoord);
@@ -873,7 +876,7 @@ namespace Physics
 			VoxelGeometry::getInfo(voxelDef, voxelInst, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale,
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
 				voxelInst, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
@@ -936,7 +939,7 @@ namespace Physics
 			VoxelGeometry::getInfo(voxelDef, voxelInst, &quadCount);
 
 			std::array<Quad, VoxelGeometry::MAX_QUADS> quads;
-			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, voxel, ceilingScale,
+			const int quadsWritten = VoxelGeometry::getQuads(voxelDef, absoluteVoxel, ceilingScale,
 				voxelInst, quads.data(), static_cast<int>(quads.size()));
 			DebugAssert(quadsWritten == quadCount);
 
