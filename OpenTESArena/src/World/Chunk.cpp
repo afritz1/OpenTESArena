@@ -95,6 +95,66 @@ const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstanc
 	return nullptr;
 }
 
+const TransitionDefinition *Chunk::tryGetTransition(const VoxelInt3 &voxel) const
+{
+	const auto iter = this->transitionDefIndices.find(voxel);
+	if (iter != this->transitionDefIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->transitionDefs, index);
+		return &this->transitionDefs[index];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const TriggerDefinition *Chunk::tryGetTrigger(const VoxelInt3 &voxel) const
+{
+	const auto iter = this->triggerDefIndices.find(voxel);
+	if (iter != this->triggerDefIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->triggerDefs, index);
+		return &this->triggerDefs[index];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const LockDefinition *Chunk::tryGetLock(const VoxelInt3 &voxel) const
+{
+	const auto iter = this->lockDefIndices.find(voxel);
+	if (iter != this->lockDefIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->lockDefs, index);
+		return &this->lockDefs[index];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const std::string *Chunk::tryGetBuildingName(const VoxelInt3 &voxel) const
+{
+	const auto iter = this->buildingNameIndices.find(voxel);
+	if (iter != this->buildingNameIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->buildingNames, index);
+		return &this->buildingNames[index];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
 {
 	this->voxels.set(x, y, z, value);
@@ -123,6 +183,58 @@ void Chunk::addVoxelInst(VoxelInstance &&voxelInst)
 	this->voxelInsts.emplace_back(std::move(voxelInst));
 }
 
+Chunk::TransitionID Chunk::addTransition(TransitionDefinition &&transition)
+{
+	const TransitionID id = static_cast<int>(this->transitionDefs.size());
+	this->transitionDefs.emplace_back(std::move(transition));
+	return id;
+}
+
+Chunk::TriggerID Chunk::addTrigger(TriggerDefinition &&trigger)
+{
+	const TriggerID id = static_cast<int>(this->triggerDefs.size());
+	this->triggerDefs.emplace_back(std::move(trigger));
+	return id;
+}
+
+Chunk::LockID Chunk::addLock(LockDefinition &&lock)
+{
+	const LockID id = static_cast<int>(this->lockDefs.size());
+	this->lockDefs.emplace_back(std::move(lock));
+	return id;
+}
+
+Chunk::BuildingNameID Chunk::addBuildingName(std::string &&buildingName)
+{
+	const BuildingNameID id = static_cast<int>(this->buildingNames.size());
+	this->buildingNames.emplace_back(std::move(buildingName));
+	return id;
+}
+
+void Chunk::addTransitionPosition(Chunk::TransitionID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
+	this->transitionDefIndices.emplace(voxel, id);
+}
+
+void Chunk::addTriggerPosition(Chunk::TriggerID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->triggerDefIndices.find(voxel) == this->triggerDefIndices.end());
+	this->triggerDefIndices.emplace(voxel, id);
+}
+
+void Chunk::addLockPosition(Chunk::LockID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->lockDefIndices.find(voxel) == this->lockDefIndices.end());
+	this->lockDefIndices.emplace(voxel, id);
+}
+
+void Chunk::addBuildingNamePosition(Chunk::BuildingNameID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->buildingNameIndices.find(voxel) == this->buildingNameIndices.end());
+	this->buildingNameIndices.emplace(voxel, id);
+}
+
 void Chunk::removeVoxelDef(VoxelID id)
 {
 	DebugAssert(id < this->voxelDefs.size());
@@ -136,6 +248,14 @@ void Chunk::clear()
 	this->voxelDefs.fill(VoxelDefinition());
 	this->activeVoxelDefs.fill(false);
 	this->voxelInsts.clear();
+	this->transitionDefs.clear();
+	this->triggerDefs.clear();
+	this->lockDefs.clear();
+	this->buildingNames.clear();
+	this->transitionDefIndices.clear();
+	this->triggerDefIndices.clear();
+	this->lockDefIndices.clear();
+	this->buildingNameIndices.clear();
 	this->coord = ChunkInt2();
 }
 

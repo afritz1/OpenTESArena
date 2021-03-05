@@ -44,6 +44,10 @@ private:
 	void populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInt2 &levelOffset);
 
+	// Helper function for setting the chunk's secondary voxel data (transitions, triggers, etc.).
+	void populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
+
 	// Fills the chunk with the data required based on its position and the world type.
 	bool populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,
 		const MapDefinition &mapDefinition);

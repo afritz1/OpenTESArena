@@ -10,6 +10,21 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 
+namespace
+{
+	// For iterating only the portion of a level that the chunk overlaps.
+	void GetChunkWritingRanges(const LevelInt2 &levelOffset, SNInt levelWidth, int levelHeight, WEInt levelDepth,
+		SNInt *outStartX, int *outStartY, WEInt *outStartZ, SNInt *outEndX, int *outEndY, WEInt *outEndZ)
+	{
+		*outStartX = levelOffset.x;
+		*outEndX = std::min(*outStartX + Chunk::WIDTH, levelWidth);
+		*outStartY = 0;
+		*outEndY = levelHeight;
+		*outStartZ = levelOffset.y;
+		*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
+	}
+}
+
 int ChunkManager::getChunkCount() const
 {
 	return static_cast<int>(this->activeChunks.size());
@@ -119,13 +134,11 @@ void ChunkManager::populateChunkVoxelDefsFromLevel(Chunk &chunk, const LevelInfo
 void ChunkManager::populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInt2 &levelOffset)
 {
-	// Iterate only the portion of the level that the chunk overlaps.
-	const SNInt startX = levelOffset.x;
-	const SNInt endX = std::min(startX + Chunk::WIDTH, levelDefinition.getWidth());
-	const int startY = 0;
-	const int endY = levelDefinition.getHeight();
-	const WEInt startZ = levelOffset.y;
-	const WEInt endZ = std::min(startZ + Chunk::DEPTH, levelDefinition.getDepth());
+	SNInt startX, endX;
+	int startY, endY;
+	WEInt startZ, endZ;
+	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
 	// Set voxels.
 	for (WEInt z = startZ; z < endZ; z++)
@@ -148,6 +161,115 @@ void ChunkManager::populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinit
 				// Add one to account for the air voxel definition being ID 0.
 				const Chunk::VoxelID correctedVoxelID = voxelID + 1;
 				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
+			}
+		}
+	}
+}
+
+void ChunkManager::populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset)
+{
+	SNInt startX, endX;
+	int startY, endY;
+	WEInt startZ, endZ;
+	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
+
+	auto isInChunk = [startX, endX, startY, endY, startZ, endZ](const LevelInt3 &position)
+	{
+		return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
+			(position.z >= startZ) && (position.z < endZ);
+	};
+
+	auto makeChunkPosition = [startX, startY, startZ](const LevelInt3 &position)
+	{
+		return VoxelInt3(position.x - startX, position.y - startY, position.z - startZ);
+	};
+
+	// Add transitions.
+	for (int i = 0; i < levelDefinition.getTransitionPlacementDefCount(); i++)
+	{
+		const LevelDefinition::TransitionPlacementDef &placementDef = levelDefinition.getTransitionPlacementDef(i);
+		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
+		
+		std::optional<Chunk::TransitionID> transitionID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (isInChunk(position))
+			{
+				if (!transitionID.has_value())
+				{
+					transitionID = chunk.addTransition(TransitionDefinition(transitionDef));
+				}
+
+				const VoxelInt3 voxel = makeChunkPosition(position);
+				chunk.addTransitionPosition(*transitionID, voxel);
+			}
+		}
+	}
+
+	// Add triggers.
+	for (int i = 0; i < levelDefinition.getTriggerPlacementDefCount(); i++)
+	{
+		const LevelDefinition::TriggerPlacementDef &placementDef = levelDefinition.getTriggerPlacementDef(i);
+		const TriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
+		
+		std::optional<Chunk::TriggerID> triggerID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (isInChunk(position))
+			{
+				if (!triggerID.has_value())
+				{
+					triggerID = chunk.addTrigger(TriggerDefinition(triggerDef));
+				}
+
+				const VoxelInt3 voxel = makeChunkPosition(position);
+				chunk.addTriggerPosition(*triggerID, voxel);
+			}
+		}
+	}
+
+	// Add locks.
+	for (int i = 0; i < levelDefinition.getLockPlacementDefCount(); i++)
+	{
+		const LevelDefinition::LockPlacementDef &placementDef = levelDefinition.getLockPlacementDef(i);
+		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
+		
+		std::optional<Chunk::LockID> lockID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (isInChunk(position))
+			{
+				if (!lockID.has_value())
+				{
+					lockID = chunk.addLock(LockDefinition(lockDef));
+				}
+
+				const VoxelInt3 voxel = makeChunkPosition(position);
+				chunk.addLockPosition(*lockID, voxel);
+			}
+		}
+	}
+
+	// Add building names.
+	for (int i = 0; i < levelDefinition.getBuildingNamePlacementDefCount(); i++)
+	{
+		const LevelDefinition::BuildingNamePlacementDef &placementDef = levelDefinition.getBuildingNamePlacementDef(i);
+		const std::string &buildingName = levelInfoDefinition.getBuildingName(placementDef.id);
+		
+		std::optional<Chunk::BuildingNameID> buildingNameID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (isInChunk(position))
+			{
+				if (!buildingNameID.has_value())
+				{
+					buildingNameID = chunk.addBuildingName(std::string(buildingName));
+				}
+
+				const VoxelInt3 voxel = makeChunkPosition(position);
+				chunk.addBuildingNamePosition(*buildingNameID, voxel);
 			}
 		}
 	}
@@ -205,6 +327,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 			// Populate chunk from the part of the level it overlaps.
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
+			this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -223,6 +346,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 			// Populate chunk from the part of the level it overlaps.
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
+			this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -237,7 +361,9 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 		// Copy level definition directly into chunk.
 		DebugAssert(levelDefinition.getWidth() == Chunk::WIDTH);
 		DebugAssert(levelDefinition.getDepth() == Chunk::DEPTH);
-		this->populateChunkVoxelsFromLevel(chunk, levelDefinition, LevelInt2(0, 0));
+		const LevelInt2 levelOffset = LevelInt2::Zero;
+		this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
+		this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 	}
 	else
 	{
