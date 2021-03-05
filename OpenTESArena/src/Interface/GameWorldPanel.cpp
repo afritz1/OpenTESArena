@@ -1821,100 +1821,12 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Handle secondary click (i.e., right click).
 				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
-					// @todo: get transition from chunkPtr, and get building name.
-					DebugNotImplemented();
-
-					/*const LevelData::Transitions &transitions = level.getTransitions();
-					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
-					const bool isMenu = (transitionIter != transitions.end()) &&
-						(transitionIter->second.getType() == LevelData::Transition::Type::Menu);
-					const bool isInterior = worldData.getMapType() == MapType::Interior;
-
-					// Print interior display name if *MENU block is clicked in an exterior.
-					if (isMenu && !isInterior)
+					const std::string *buildingName = chunkPtr->tryGetBuildingName(voxel);
+					if (buildingName != nullptr)
 					{
-						const LevelData::Transition::Menu &transitionMenu = transitionIter->second.getMenu();
-						const MapType mapType = worldData.getMapType();
-						const auto menuType = ArenaVoxelUtils::getMenuType(transitionMenu.id, mapType);
-
-						if (ArenaVoxelUtils::menuHasDisplayName(menuType))
-						{
-							// Get interior name from the clicked voxel.
-							const std::string menuName = [&game, &level, &voxel, mapType, menuType]()
-							{
-								const NewInt2 voxelXZ(voxel.x, voxel.z);
-
-								if (mapType == MapType::City)
-								{
-									// City interior name.
-									const auto &menuNames = level.getMenuNames();
-									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
-									{
-										return pair.first == voxelXZ;
-									});
-
-									const bool foundName = iter != menuNames.end();
-
-									if (foundName)
-									{
-										return iter->second;
-									}
-									else
-									{
-										// If no menu name was generated, then see if it's a mage's guild.
-										if (menuType == ArenaTypes::MenuType::MagesGuild)
-										{
-											const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-											const auto &exeData = binaryAssetLibrary.getExeData();
-											return exeData.cityGen.magesGuildMenuName;
-										}
-										else
-										{
-											// This should only happen if the player created a new *MENU voxel,
-											// which shouldn't occur in regular play.
-											DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
-												", " + std::to_string(voxelXZ.y) + ").");
-											return std::string();
-										}
-									}
-								}
-								else if (mapType == MapType::Wilderness)
-								{
-									// Wilderness interior name.
-									const auto &menuNames = level.getMenuNames();
-									const auto iter = std::find_if(menuNames.begin(), menuNames.end(),
-										[&voxelXZ](const std::pair<NewInt2, std::string> &pair)
-									{
-										return pair.first == voxelXZ;
-									});
-
-									const bool foundName = iter != menuNames.end();
-
-									if (foundName)
-									{
-										return iter->second;
-									}
-									else
-									{
-										// This should only happen if the player created a new *MENU voxel,
-										// which shouldn't occur in regular play.
-										DebugLogWarning("No *MENU name at (" + std::to_string(voxelXZ.x) +
-											", " + std::to_string(voxelXZ.y) + ").");
-										return std::string();
-									}
-								}
-								else
-								{
-									DebugUnhandledReturnMsg(std::string,
-										std::to_string(static_cast<int>(mapType)));
-								}
-							}();
-
-							auto &gameState = game.getGameState();
-							gameState.setActionText(menuName, game.getFontLibrary(), game.getRenderer());
-						}
-					}*/
+						auto &gameState = game.getGameState();
+						gameState.setActionText(*buildingName, game.getFontLibrary(), game.getRenderer());
+					}
 				}
 			}
 		}
