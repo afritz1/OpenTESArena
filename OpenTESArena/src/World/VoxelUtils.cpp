@@ -146,6 +146,14 @@ VoxelInt2 VoxelUtils::wrapVoxelCoord(const VoxelInt2 &voxel)
 	return VoxelInt2(voxel.x % ChunkUtils::CHUNK_DIM, voxel.y % ChunkUtils::CHUNK_DIM);
 }
 
+Double3 VoxelUtils::getVoxelCenter(const Int3 &voxel)
+{
+	return Double3(
+		static_cast<double>(voxel.x) + 0.50,
+		static_cast<double>(voxel.y) + 0.50,
+		static_cast<double>(voxel.z) + 0.50);
+}
+
 Double2 VoxelUtils::getVoxelCenter(const Int2 &voxel)
 {
 	return Double2(

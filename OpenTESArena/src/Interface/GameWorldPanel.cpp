@@ -61,6 +61,7 @@
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
+#include "../World/WeatherType.h"
 #include "../World/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
@@ -1820,8 +1821,9 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 				// Handle secondary click (i.e., right click).
 				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
-					// @todo: get transition from chunkPtr.
+					// @todo: get transition from chunkPtr, and get building name.
 					DebugNotImplemented();
+
 					/*const LevelData::Transitions &transitions = level.getTransitions();
 					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
 					const bool isMenu = (transitionIter != transitions.end()) &&
@@ -2437,13 +2439,12 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 	MapInstance &interiorMapInst = gameState.getActiveMapInst();
 	const LevelInstance &level = interiorMapInst.getActiveLevel();
 	const ChunkManager &chunkManager = level.getChunkManager();
+	const Chunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
+	DebugAssert(chunkPtr != nullptr);
 
 	// Get the voxel definition associated with the voxel.
-	const VoxelDefinition &voxelDef = [&transitionCoord, &chunkManager]()
+	const VoxelDefinition &voxelDef = [&transitionCoord, chunkPtr]()
 	{
-		const Chunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
-		DebugAssert(chunkPtr != nullptr);
-
 		const Chunk::VoxelID voxelID = chunkPtr->getVoxel(
 			transitionCoord.voxel.x,
 			transitionCoord.voxel.y,
@@ -2454,20 +2455,15 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 	// If the associated voxel data is a wall, then it might be a transition voxel.
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
-		// @todo: use transition from Chunk
-		DebugNotImplemented();
-
-		/*const LevelData::Transitions &transitions = level.getTransitions();
-		const auto transitionIter = transitions.find(transitionVoxel);
-		if (transitionIter != transitions.end())
+		const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(transitionCoord.voxel);
+		if (transitionDef != nullptr)
 		{
 			// The direction from a level up/down voxel to where the player should end up after
 			// going through. In other words, it points to the destination voxel adjacent to the
 			// level up/down voxel.
-			auto dirToNewVoxel = [&playerVoxel, &transitionVoxel]()
+			const VoxelDouble3 dirToNewVoxel = [&playerCoord, &transitionCoord]()
 			{
-				const SNInt diffX = transitionVoxel.x - playerVoxel.x;
-				const WEInt diffZ = transitionVoxel.y - playerVoxel.y;
+				const VoxelInt3 diff = transitionCoord - playerCoord;
 
 				// @todo: this probably isn't robust enough. Maybe also check the player's angle
 				// of velocity with angles to the voxel's corners to get the "arrival vector"
@@ -2475,22 +2471,22 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				// handle the player coming in at a diagonal.
 
 				// Check which way the player is going and get the reverse of it.
-				if (diffX > 0)
+				if (diff.x > 0)
 				{
 					// From south to north.
 					return -Double3::UnitX;
 				}
-				else if (diffX < 0)
+				else if (diff.x < 0)
 				{
 					// From north to south.
 					return Double3::UnitX;
 				}
-				else if (diffZ > 0)
+				else if (diff.z > 0)
 				{
 					// From west to east.
 					return -Double3::UnitZ;
 				}
-				else if (diffZ < 0)
+				else if (diff.z < 0)
 				{
 					// From east to west.
 					return Double3::UnitZ;
@@ -2503,37 +2499,40 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 
 			// Player destination after going through a level up/down voxel.
 			auto &player = gameState.getPlayer();
-			const NewDouble2 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionVoxel);
-			const NewDouble2 destinationXZ(
-				transitionVoxelCenter.x + dirToNewVoxel.x,
-				transitionVoxelCenter.y + dirToNewVoxel.z);
+			const VoxelDouble3 transitionVoxelCenter = VoxelUtils::getVoxelCenter(transitionCoord.voxel);
+			const CoordDouble3 destinationCoord = ChunkUtils::recalculateCoord(
+				transitionCoord.chunk, transitionVoxelCenter + dirToNewVoxel);
 
 			// Lambda for transitioning the player to the given level.
-			auto switchToLevel = [&game, &gameState, &interior, &player, &destinationXZ,
+			auto switchToLevel = [&game, &gameState, &interiorMapDef, &interiorMapInst, &player, &destinationCoord,
 				&dirToNewVoxel](int levelIndex)
 			{
 				// Clear all open doors and fading voxels in the level the player is switching away from.
 				// @todo: why wouldn't it just clear them when it gets switched to in setActive()?
-				auto &oldActiveLevel = interior.getActiveLevel();
-				oldActiveLevel.clearTemporaryVoxelInstances();
+				auto &oldActiveLevel = interiorMapInst.getActiveLevel();
+				
+				// @todo: find a modern equivalent for this w/ either the LevelInstance or ChunkManager.
+				//oldActiveLevel.clearTemporaryVoxelInstances();
 
 				// Select the new level.
-				interior.setActiveLevelIndex(levelIndex);
+				interiorMapInst.setActiveLevelIndex(levelIndex);
 
 				// Set the new level active in the renderer.
-				auto &newActiveLevel = interior.getActiveLevel();
-				newActiveLevel.setActive(gameState.nightLightsAreActive(), interior,
-					gameState.getProvinceDefinition(), gameState.getLocationDefinition(),
-					game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-					game.getBinaryAssetLibrary(), game.getRandom(), gameState.getCitizenManager(),
-					game.getTextureManager(), game.getRenderer());
+				auto &newActiveLevel = interiorMapInst.getActiveLevel();
+
+				constexpr WeatherType weatherType = WeatherType::Clear;
+				if (!newActiveLevel.trySetActive(weatherType, gameState.nightLightsAreActive(), levelIndex,
+					interiorMapDef, game.getTextureManager(), game.getRenderer()))
+				{
+					DebugCrash("Couldn't set new level active in renderer.");
+				}
 
 				// Move the player to where they should be in the new level.
-				const NewDouble3 playerDestinationPoint(
-					destinationXZ.x,
+				const VoxelDouble3 playerDestinationPoint(
+					destinationCoord.point.x,
 					newActiveLevel.getCeilingScale() + Player::HEIGHT,
-					destinationXZ.y);
-				const CoordDouble3 playerDestinationCoord = VoxelUtils::newPointToCoord(playerDestinationPoint);
+					destinationCoord.point.z);
+				const CoordDouble3 playerDestinationCoord(destinationCoord.chunk, playerDestinationPoint);
 				player.teleport(playerDestinationCoord);
 				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
@@ -2541,31 +2540,30 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 
 			// Lambda for opening the world map when the player enters a transition voxel
 			// that will "lead to the surface of the dungeon".
-			auto switchToWorldMap = [&playerVoxel, &game, &player]()
+			auto switchToWorldMap = [&playerCoord, &game, &player]()
 			{
 				// Move player to center of previous voxel in case they change their mind
 				// about fast traveling. Don't change their direction.
-				const NewDouble3 playerDestinationPoint(
-					static_cast<SNDouble>(playerVoxel.x) + 0.50,
+				const VoxelInt2 playerVoxelXZ(playerCoord.voxel.x, playerCoord.voxel.z);
+				const VoxelDouble2 playerVoxelCenterXZ = VoxelUtils::getVoxelCenter(playerVoxelXZ);
+				const VoxelDouble3 playerDestinationPoint(
+					playerVoxelCenterXZ.x,
 					player.getPosition().point.y,
-					static_cast<WEDouble>(playerVoxel.y) + 0.50);
-				const CoordDouble3 playerDestinationCoord = VoxelUtils::newPointToCoord(playerDestinationPoint);
+					playerVoxelCenterXZ.y);
+				const CoordDouble3 playerDestinationCoord(playerCoord.chunk, playerDestinationPoint);
 				player.teleport(playerDestinationCoord);
 				player.setVelocityToZero();
 
 				game.setPanel<WorldMapPanel>(game, nullptr);
 			};
 
-			// Check the voxel type to determine what it is exactly.
-			const LevelData::Transition &transition = transitionIter->second;
-			if (transition.getType() == LevelData::Transition::Type::Menu)
+			// See if it's a level up or level down transition.
+			DebugAssert(transitionDef->getType() == TransitionType::LevelChange);
+			const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+			if (levelChangeDef.isLevelUp)
 			{
-				const LevelData::Transition::Menu &transitionMenu = transition.getMenu();
-				DebugLog("Entered *MENU " + std::to_string(transitionMenu.id) + ".");
-			}
-			else if (transition.getType() == LevelData::Transition::Type::LevelUp)
-			{
-				// If the custom function has a target, call it and reset it.
+				// Level up transition. If the custom function has a target, call it and reset it (necessary
+				// for main quest start dungeon).
 				auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
 
 				if (onLevelUpVoxelEnter)
@@ -2573,29 +2571,30 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 					onLevelUpVoxelEnter(game);
 					onLevelUpVoxelEnter = std::function<void(Game&)>();
 				}
-				else if (interior.getActiveLevelIndex() > 0)
+				else if (interiorMapInst.getActiveLevelIndex() > 0)
 				{
 					// Decrement the world's level index and activate the new level.
-					switchToLevel(interior.getActiveLevelIndex() - 1);
+					switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
 				}
 				else
 				{
 					switchToWorldMap();
 				}
 			}
-			else if (transition.getType() == LevelData::Transition::Type::LevelDown)
+			else
 			{
-				if (interior.getActiveLevelIndex() < (interior.getLevelCount() - 1))
+				// Level down transition.
+				if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
 				{
 					// Increment the world's level index and activate the new level.
-					switchToLevel(interior.getActiveLevelIndex() + 1);
+					switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
 				}
 				else
 				{
 					switchToWorldMap();
 				}
 			}
-		}*/
+		}
 	}
 }
 
