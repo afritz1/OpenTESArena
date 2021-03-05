@@ -22,6 +22,7 @@
 class Player;
 class Renderer;
 class TextureManager;
+class TransitionDefinition;
 
 class GameWorldPanel : public Panel
 {
@@ -73,9 +74,10 @@ private:
 	// sound events.
 	void handleTriggers(const CoordInt2 &coord);
 
-	// Handles the behavior for when the player activates a *MENU block and transitions
-	// from one world to another (i.e., from an interior to an exterior).
-	void handleWorldTransition(const Physics::Hit &hit, int menuID);
+	// Handles the behavior for when the player activates a map transition block and transitions
+	// from one map to another (i.e., from an interior to an exterior). This does not handle
+	// level transitions.
+	void handleMapTransition(const Physics::Hit &hit, const TransitionDefinition &transitionDef);
 
 	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down),
 	// and changes the current level if it is.

@@ -65,8 +65,13 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		{
 			// Choose random dungeon music and enter game world.
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-				MusicDefinition::Type::Dungeon, game.getRandom());
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+				return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+			});
 
 			if (musicDef == nullptr)
 			{

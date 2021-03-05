@@ -714,7 +714,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			// Get the music that should be active on start.
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = [&game, &mifName, mapType, &gameState, &musicLibrary]()
+			const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &musicLibrary]()
 			{
 				const bool isExterior = (mapType == MapType::City) ||
 					(mapType == MapType::Wilderness);
@@ -744,24 +744,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				}
 				else
 				{
-					MusicDefinition::InteriorMusicDefinition::Type interiorMusicType;
-					if (MusicUtils::tryGetInteriorMusicType(mifName, &interiorMusicType))
+					DebugAssert(optInteriorType.has_value());
+					const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
+						MusicUtils::getInteriorMusicType(*optInteriorType);
+					
+					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
+						game.getRandom(), [interiorMusicType](const MusicDefinition &def)
 					{
-						// Non-dungeon interior.
-						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
-							game.getRandom(), [interiorMusicType](const MusicDefinition &def)
-						{
-							DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-							const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-							return interiorMusicDef.type == interiorMusicType;
-						});
-					}
-					else
-					{
-						// Dungeon.
-						return musicLibrary.getRandomMusicDefinition(
-							MusicDefinition::Type::Dungeon, game.getRandom());
-					}
+						DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+						const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+						return interiorMusicDef.type == interiorMusicType;
+					});
 				}
 			}();
 

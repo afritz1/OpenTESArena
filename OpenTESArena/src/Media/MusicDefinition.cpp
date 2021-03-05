@@ -40,11 +40,6 @@ void MusicDefinition::initCinematic(std::string &&filename, CinematicMusicDefini
 	this->cinematic.init(type);
 }
 
-void MusicDefinition::initDungeon(std::string &&filename)
-{
-	this->init(std::move(filename), Type::Dungeon);
-}
-
 void MusicDefinition::initInterior(std::string &&filename, InteriorMusicDefinition::Type type)
 {
 	this->init(std::move(filename), Type::Interior);

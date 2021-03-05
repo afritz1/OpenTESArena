@@ -1671,7 +1671,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const double ceilingScale = levelInst.getCeilingScale();
 
 	const CoordDouble3 rayStart = player.getPosition();
-	const NewDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
+	const VoxelDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
 	{
 		const auto &renderer = game.getRenderer();
 		const Int2 windowDims = renderer.getWindowDimensions();
@@ -1739,25 +1739,23 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 						voxelDef.type == ArenaTypes::VoxelType::Floor ||
 						voxelDef.type == ArenaTypes::VoxelType::Raised ||
 						voxelDef.type == ArenaTypes::VoxelType::Diagonal ||
-						voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
+						voxelDef.type == ArenaTypes::VoxelType::TransparentWall ||
+						voxelDef.type == ArenaTypes::VoxelType::Edge)
 					{
 						if (!debugFadeVoxel)
 						{
-							if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+							const bool isWall = voxelDef.type == ArenaTypes::VoxelType::Wall;
+
+							// The only edge voxels with a transition should be should be palace entrances (with collision).
+							const bool isEdge = (voxelDef.type == ArenaTypes::VoxelType::Edge) && voxelDef.edge.collider;
+
+							if (isWall || isEdge)
 							{
-								// @todo: get transition from chunkPtr.
-								DebugNotImplemented();
-
-								/*const LevelData::Transitions &transitions = level.getTransitions();
-								const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
-								const bool isMenu = (transitionIter != transitions.end()) &&
-									(transitionIter->second.getType() == LevelData::Transition::Type::Menu);
-
-								if (isMenu)
+								const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(voxel);
+								if (transitionDef != nullptr)
 								{
-									const LevelData::Transition::Menu &transitionMenu = transitionIter->second.getMenu();
-									this->handleWorldTransition(hit, transitionMenu.id);
-								}*/
+									this->handleMapTransition(hit, *transitionDef);
+								}
 							}
 						}
 						else
@@ -1772,18 +1770,6 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 									voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
 								chunkPtr->addVoxelInst(std::move(newFadingVoxelInst));
 							}
-						}
-					}
-					else if (voxelDef.type == ArenaTypes::VoxelType::Edge)
-					{
-						const VoxelDefinition::EdgeData &edgeData = voxelDef.edge;
-
-						if (edgeData.collider)
-						{
-							// The only collidable edges in cities should be palace voxels. Not sure
-							// how the original game handles the menu ID since it's a type 0xA voxel.
-							constexpr int menuID = 11;
-							this->handleWorldTransition(hit, menuID);
 						}
 					}
 					else if (voxelDef.type == ArenaTypes::VoxelType::Door)
@@ -2087,9 +2073,10 @@ void GameWorldPanel::handleTriggers(const CoordInt2 &coord)
 	}
 }
 
-void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
+void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const TransitionDefinition &transitionDef)
 {
-	// @todo: maybe will need to change this to account for wilderness dens?
+	const TransitionType transitionType = transitionDef.getType();
+	DebugAssert(transitionType != TransitionType::LevelChange);
 
 	DebugAssert(hit.getType() == Physics::Hit::Type::Voxel);
 	const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
@@ -2111,6 +2098,8 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	// Decide based on the active world type.
 	if (activeMapType == MapType::Interior)
 	{
+		DebugAssert(transitionType == TransitionType::ExitInterior);
+
 		// @temp: temporary condition while test interiors are allowed on the main menu.
 		if (!gameState.isActiveMapNested())
 		{
@@ -2145,8 +2134,7 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 			}
 			else
 			{
-				return musicLibrary.getRandomMusicDefinition(
-					MusicDefinition::Type::Night, game.getRandom());
+				return musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
 			}
 		}();
 
@@ -2179,316 +2167,260 @@ void GameWorldPanel::handleWorldTransition(const Physics::Hit &hit, int menuID)
 	}
 	else
 	{
-		// Either city or wilderness. If the menu ID is for an interior, enter it. If it's
-		// the city gates, toggle between city and wilderness. If it's "none", then do nothing.
-		const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, activeMapType);
-		const bool isTransitionVoxel = menuType != ArenaTypes::MenuType::None;
+		// Either city or wilderness. If the transition is for an interior, enter it. If it's the city gates,
+		// toggle between city and wilderness.
+		const NewInt3 newHitVoxel = VoxelUtils::coordToNewVoxel(hitCoord);
+		const NewInt2 newHitVoxelXZ(newHitVoxel.x, newHitVoxel.z);
 
-		// Make sure the voxel will actually lead somewhere first.
-		if (isTransitionVoxel)
+		if (transitionType == TransitionType::EnterInterior)
 		{
-			const bool isTransitionToInterior = ArenaVoxelUtils::menuLeadsToInterior(menuType);
-			const NewInt3 newHitVoxel = VoxelUtils::coordToNewVoxel(hitCoord);
-			const NewInt2 newHitVoxelXZ(newHitVoxel.x, newHitVoxel.z);
-
-			if (isTransitionToInterior)
+			const CoordInt3 returnCoord = [&voxelHit, &hitCoord]()
 			{
-				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(newHitVoxelXZ);
-				const OriginalInt2 doorVoxel = [activeMapType, &originalVoxel]()
+				const VoxelInt3 delta = [&voxelHit, &hitCoord]()
 				{
-					if (activeMapType == MapType::City)
+					// Assuming this is a wall voxel.
+					DebugAssert(voxelHit.facing.has_value());
+					const VoxelFacing3D facing = *voxelHit.facing;
+
+					if (facing == VoxelFacing3D::PositiveX)
 					{
-						return originalVoxel;
+						return VoxelInt3(1, 0, 0);
 					}
-					else if (activeMapType == MapType::Wilderness)
+					else if (facing == VoxelFacing3D::NegativeX)
 					{
-						// Get the door voxel using the relative wilderness origin near the player
-						// as the reference.
-						const OriginalInt2 relativeOrigin = ArenaWildUtils::getRelativeWildOrigin(originalVoxel);
-						const OriginalInt2 relativeVoxel = originalVoxel - relativeOrigin;
-						return relativeVoxel;
+						return VoxelInt3(-1, 0, 0);
+					}
+					else if (facing == VoxelFacing3D::PositiveZ)
+					{
+						return VoxelInt3(0, 0, 1);
+					}
+					else if (facing == VoxelFacing3D::NegativeZ)
+					{
+						return VoxelInt3(0, 0, -1);
 					}
 					else
 					{
-						DebugUnhandledReturnMsg(OriginalInt2, std::to_string(static_cast<int>(activeMapType)));
+						DebugUnhandledReturnMsg(VoxelInt3, std::to_string(static_cast<int>(facing)));
 					}
 				}();
 
-				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-				const auto &exeData = binaryAssetLibrary.getExeData();
-				const std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(doorVoxel.x, doorVoxel.y,
-					menuID, cityDef.rulerSeed, cityDef.palaceIsMainQuestDungeon, cityDef.type,
-					activeMapType, exeData);
+				return hitCoord + delta;
+			}();
 
-				// @todo: the return data needs to include chunk coordinates when in the wilderness. Maybe
-				// make that a discriminated union: "city return" and "wild return".
-				const CoordInt3 returnCoord = [&voxelHit, &hitCoord]()
+			const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef.getInteriorEntrance();
+			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+
+			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+			if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
+				game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
+			{
+				DebugLogError("Couldn't push new interior.");
+				return;
+			}
+
+			// Change to interior music.
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition::InteriorMusicDefinition::Type interiorMusicType =
+				MusicUtils::getInteriorMusicType(interiorGenInfo.getInteriorType());
+			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+				MusicDefinition::Type::Interior, game.getRandom(), [interiorMusicType](const MusicDefinition &def)
+			{
+				DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+				const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+				return interiorMusicDef.type == interiorMusicType;
+			});
+
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing interior music.");
+			}
+
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef);
+		}
+		else if (transitionType == TransitionType::CityGate)
+		{
+			// City gate transition.
+			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const WeatherType weatherType = gameState.getWeatherType();
+			const int currentDay = gameState.getDate().getDay();
+			const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
+
+			if (activeMapType == MapType::City)
+			{
+				// From city to wilderness. Use the gate position to determine where to put the
+				// player in the wilderness.
+				const NewInt2 gatePos = newHitVoxelXZ;
+				const NewInt2 transitionDir = [&voxelHit]()
 				{
-					const VoxelInt3 delta = [&voxelHit, &hitCoord]()
+					// Assuming this is a wall voxel.
+					DebugAssert(voxelHit.facing.has_value());
+					const VoxelFacing3D facing = *voxelHit.facing;
+
+					if (facing == VoxelFacing3D::PositiveX)
 					{
-						// Assuming this is a wall voxel.
-						DebugAssert(voxelHit.facing.has_value());
-						const VoxelFacing3D facing = *voxelHit.facing;
-
-						if (facing == VoxelFacing3D::PositiveX)
-						{
-							return VoxelInt3(1, 0, 0);
-						}
-						else if (facing == VoxelFacing3D::NegativeX)
-						{
-							return VoxelInt3(-1, 0, 0);
-						}
-						else if (facing == VoxelFacing3D::PositiveZ)
-						{
-							return VoxelInt3(0, 0, 1);
-						}
-						else if (facing == VoxelFacing3D::NegativeZ)
-						{
-							return VoxelInt3(0, 0, -1);
-						}
-						else
-						{
-							DebugUnhandledReturnMsg(VoxelInt3, std::to_string(static_cast<int>(facing)));
-						}
-					}();
-
-					return hitCoord + delta;
-				}();
-
-				// Enter the interior location if the .MIF name is valid.
-				if (mifName.size() > 0)
-				{
-					const std::optional<ArenaTypes::InteriorType> interiorType =
-						ArenaInteriorUtils::menuTypeToInteriorType(menuType);
-					DebugAssert(interiorType.has_value());
-					
-					MapGeneration::InteriorGenInfo interiorGenInfo;
-					interiorGenInfo.initPrefab(std::string(mifName), *interiorType, cityDef.rulerIsMale);
-
-					if (!gameState.tryPushInterior(interiorGenInfo, returnCoord, game.getCharacterClassLibrary(),
-						game.getEntityDefinitionLibrary(), binaryAssetLibrary, textureManager, renderer))
-					{
-						DebugLogError("Couldn't enter interior \"" + mifName + "\".");
-						return;
+						return VoxelUtils::North;
 					}
-
-					// Change to interior music.
-					const MusicLibrary &musicLibrary = game.getMusicLibrary();
-					const MusicDefinition *musicDef = nullptr;
-					MusicDefinition::InteriorMusicDefinition::Type interiorMusicType;
-					if (MusicUtils::tryGetInteriorMusicType(mifName, &interiorMusicType))
+					else if (facing == VoxelFacing3D::NegativeX)
 					{
-						// Non-dungeon interior.
-						musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Interior,
-							game.getRandom(), [interiorMusicType](const MusicDefinition &def)
-						{
-							DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-							const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-							return interiorMusicDef.type == interiorMusicType;
-						});
+						return VoxelUtils::South;
+					}
+					else if (facing == VoxelFacing3D::PositiveZ)
+					{
+						return VoxelUtils::East;
+					}
+					else if (facing == VoxelFacing3D::NegativeZ)
+					{
+						return VoxelUtils::West;
 					}
 					else
 					{
-						// Dungeon.
-						musicDef = musicLibrary.getRandomMusicDefinition(
-							MusicDefinition::Type::Dungeon, game.getRandom());
+						DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(facing)));
 					}
+				}();
 
-					if (musicDef == nullptr)
-					{
-						DebugLogWarning("Missing interior music.");
-					}
+				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs; // @todo: maybe get from an Arena utils function? MapGeneration?
+				DebugNotImplemented();
 
-					AudioManager &audioManager = game.getAudioManager();
-					audioManager.setMusic(musicDef);
+				MapGeneration::WildGenInfo wildGenInfo;
+				wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
+					cityDef.palaceIsMainQuestDungeon);
+
+				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+
+				// Use current weather.
+				const std::optional<WeatherType> overrideWeather = weatherType;
+
+				// @todo: calculate for wilderness based on the gate's voxel in the city.
+				const std::optional<CoordInt3> startCoord;
+
+				// No need to change world map location here.
+				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
+
+				if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
+					worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+					binaryAssetLibrary, textureManager, renderer))
+				{
+					DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
+					return;
 				}
-				else
+			}
+			else if (activeMapType == MapType::Wilderness)
+			{
+				// From wilderness to city.
+				Buffer<uint8_t> reservedBlocks = [&cityDef]()
 				{
-					// @todo: handle wilderness dungeon .MIF names differently than just with an empty string?
-					DebugLogWarning("Empty .MIF name at voxel (" + std::to_string(newHitVoxelXZ.x) + ", " +
-						std::to_string(newHitVoxelXZ.y) + ").");
+					DebugAssert(cityDef.reservedBlocks != nullptr);
+					Buffer<uint8_t> buffer(static_cast<int>(cityDef.reservedBlocks->size()));
+					std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.get());
+					return buffer;
+				}();
+
+				const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+					[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+				{
+					if (cityDef.hasMainQuestTempleOverride)
+					{
+						return cityDef.mainQuestTempleOverride;
+					}
+					else
+					{
+						return std::nullopt;
+					}
+				}();
+
+				MapGeneration::CityGenInfo cityGenInfo;
+				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
+					cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
+					cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
+					cityDef.cityBlocksPerSide);
+
+				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+
+				// Use current weather.
+				const std::optional<WeatherType> overrideWeather = weatherType;
+
+				// No need to change world map location here.
+				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
+
+				if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+					game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
+					game.getTextAssetLibrary(), textureManager, renderer))
+				{
+					DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
+					return;
 				}
 			}
 			else
 			{
-				// City gate transition.
-				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-				const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
-				const LocationDefinition &locationDef = gameState.getLocationDefinition();
-				const WeatherType weatherType = gameState.getWeatherType();
-				const int currentDay = gameState.getDate().getDay();
-				const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
+				DebugLogError("Map type \"" + std::to_string(static_cast<int>(activeMapType)) +
+					"\" does not support city gate transitions.");
+				return;
+			}
 
-				if (activeMapType == MapType::City)
+			// Reset the current music (even if it's the same one).
+			const MusicLibrary &musicLibrary = game.getMusicLibrary();
+			const MusicDefinition *musicDef = [&game, &gameState, &locationDef, &musicLibrary]()
+			{
+				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+				const ClimateType climateType = cityDef.climateType;
+				const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
+					gameState.getWeatherType(), climateType);
+
+				if (!gameState.nightMusicIsActive())
 				{
-					// From city to wilderness. Use the gate position to determine where to put the
-					// player in the wilderness.
-					const NewInt2 gatePos = newHitVoxelXZ;
-					const NewInt2 transitionDir = [&voxelHit]()
+					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
+						game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
 					{
-						// Assuming this is a wall voxel.
-						DebugAssert(voxelHit.facing.has_value());
-						const VoxelFacing3D facing = *voxelHit.facing;
-
-						if (facing == VoxelFacing3D::PositiveX)
-						{
-							return VoxelUtils::North;
-						}
-						else if (facing == VoxelFacing3D::NegativeX)
-						{
-							return VoxelUtils::South;
-						}
-						else if (facing == VoxelFacing3D::PositiveZ)
-						{
-							return VoxelUtils::East;
-						}
-						else if (facing == VoxelFacing3D::NegativeZ)
-						{
-							return VoxelUtils::West;
-						}
-						else
-						{
-							DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(facing)));
-						}
-					}();
-
-					Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs; // @todo: maybe get from an Arena utils function? MapGeneration?
-					DebugNotImplemented();
-
-					MapGeneration::WildGenInfo wildGenInfo;
-					wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-						cityDef.palaceIsMainQuestDungeon);
-
-					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-					// Use current weather.
-					const std::optional<WeatherType> overrideWeather = weatherType;
-
-					// @todo: calculate for wilderness based on the gate's voxel in the city.
-					const std::optional<CoordInt3> startCoord;
-
-					// No need to change world map location here.
-					const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
-
-					if (!gameState.trySetWilderness(wildGenInfo, skyGenInfo, overrideWeather, startCoord,
-						worldMapLocationIDs, game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
-						binaryAssetLibrary, textureManager, renderer))
-					{
-						DebugLogError("Couldn't switch from city to wilderness for \"" + locationDef.getName() + "\".");
-						return;
-					}
-				}
-				else if (activeMapType == MapType::Wilderness)
-				{
-					// From wilderness to city.
-					Buffer<uint8_t> reservedBlocks = [&cityDef]()
-					{
-						DebugAssert(cityDef.reservedBlocks != nullptr);
-						Buffer<uint8_t> buffer(static_cast<int>(cityDef.reservedBlocks->size()));
-						std::copy(cityDef.reservedBlocks->begin(), cityDef.reservedBlocks->end(), buffer.get());
-						return buffer;
-					}();
-
-					const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-						[&cityDef]() -> std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
-					{
-						if (cityDef.hasMainQuestTempleOverride)
-						{
-							return cityDef.mainQuestTempleOverride;
-						}
-						else
-						{
-							return std::nullopt;
-						}
-					}();
-
-					MapGeneration::CityGenInfo cityGenInfo;
-					cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
-						cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
-						cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
-						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
-						cityDef.cityBlocksPerSide);
-
-					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-					// Use current weather.
-					const std::optional<WeatherType> overrideWeather = weatherType;
-
-					// No need to change world map location here.
-					const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
-
-					if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
-						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-						game.getTextAssetLibrary(), textureManager, renderer))
-					{
-						DebugLogError("Couldn't switch from wilderness to city for \"" + locationDef.getName() + "\".");
-						return;
-					}
+						DebugAssert(def.getType() == MusicDefinition::Type::Weather);
+						const auto &weatherMusicDef = def.getWeatherMusicDefinition();
+						return weatherMusicDef.type == filteredWeatherType;
+					});
 				}
 				else
 				{
-					DebugLogError("Map type \"" + std::to_string(static_cast<int>(activeMapType)) +
-						"\" does not support city gate transitions.");
-					return;
+					return musicLibrary.getRandomMusicDefinition(
+						MusicDefinition::Type::Night, game.getRandom());
 				}
+			}();
 
-				// Reset the current music (even if it's the same one).
-				const MusicLibrary &musicLibrary = game.getMusicLibrary();
-				const MusicDefinition *musicDef = [&game, &gameState, &locationDef, &musicLibrary]()
-				{
-					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-					const ClimateType climateType = cityDef.climateType;
-					const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
-						gameState.getWeatherType(), climateType);
-
-					if (!gameState.nightMusicIsActive())
-					{
-						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-							game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
-						{
-							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-							return weatherMusicDef.type == filteredWeatherType;
-						});
-					}
-					else
-					{
-						return musicLibrary.getRandomMusicDefinition(
-							MusicDefinition::Type::Night, game.getRandom());
-					}
-				}();
-
-				if (musicDef == nullptr)
-				{
-					DebugLogWarning("Missing exterior music.");
-				}
-
-				// Only play jingle when going wilderness to city.
-				const MusicDefinition *jingleMusicDef = nullptr;
-				if (activeMapType == MapType::Wilderness)
-				{
-					jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
-						game.getRandom(), [&cityDef](const MusicDefinition &def)
-					{
-						DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
-						const auto &jingleMusicDef = def.getJingleMusicDefinition();
-						return (jingleMusicDef.cityType == cityDef.type) &&
-							(jingleMusicDef.climateType == cityDef.climateType);
-					});
-
-					if (jingleMusicDef == nullptr)
-					{
-						DebugLogWarning("Missing jingle music.");
-					}
-				}
-
-				AudioManager &audioManager = game.getAudioManager();
-				audioManager.setMusic(musicDef, jingleMusicDef);
+			if (musicDef == nullptr)
+			{
+				DebugLogWarning("Missing exterior music.");
 			}
+
+			// Only play jingle when going wilderness to city.
+			const MusicDefinition *jingleMusicDef = nullptr;
+			if (activeMapType == MapType::Wilderness)
+			{
+				jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Jingle,
+					game.getRandom(), [&cityDef](const MusicDefinition &def)
+				{
+					DebugAssert(def.getType() == MusicDefinition::Type::Jingle);
+					const auto &jingleMusicDef = def.getJingleMusicDefinition();
+					return (jingleMusicDef.cityType == cityDef.type) &&
+						(jingleMusicDef.climateType == cityDef.climateType);
+				});
+
+				if (jingleMusicDef == nullptr)
+				{
+					DebugLogWarning("Missing jingle music.");
+				}
+			}
+
+			AudioManager &audioManager = game.getAudioManager();
+			audioManager.setMusic(musicDef, jingleMusicDef);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(transitionType)));
 		}
 	}
 }

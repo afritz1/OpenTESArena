@@ -16,7 +16,6 @@ public:
 	{
 		CharacterCreation,
 		Cinematic,
-		Dungeon,
 		Interior,
 		Jingle,
 		MainMenu,
@@ -44,6 +43,7 @@ public:
 	{
 		enum class Type
 		{
+			Dungeon,
 			Equipment,
 			House,
 			MagesGuild,
@@ -87,7 +87,6 @@ private:
 public:
 	void initCharacterCreation(std::string &&filename);
 	void initCinematic(std::string &&filename, CinematicMusicDefinition::Type type);
-	void initDungeon(std::string &&filename);
 	void initInterior(std::string &&filename, InteriorMusicDefinition::Type type);
 	void initJingle(std::string &&filename, ArenaTypes::CityType cityType, ClimateType climateType);
 	void initMainMenu(std::string &&filename);

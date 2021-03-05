@@ -13,23 +13,21 @@
 3=VISION.XMI,DreamBad
 4=EVLINTRO.XMI,Ending
 
-[Dungeon]
-1=DUNGEON1.XFM
-2=DUNGEON2.XMI
-3=DUNGEON3.XMI
-4=DUNGEON4.XMI
-5=DUNGEON5.XMI
-
 # Interior musics
-# - Type: Equipment, House, MagesGuild, Palace, Tavern, Temple
+# - Type: Dungeon, Equipment, House, MagesGuild, Palace, Tavern, Temple
 [Interior]
-1=EQUIPMNT.XMI,Equipment
-2=MAGIC_2.XMI,MagesGuild
-3=PALACE.XMI,Palace
-4=SNEAKING.XMI,House
-5=SQUARE.XMI,Tavern
-6=TAVERN.XMI,Tavern
-7=TEMPLE.XMI,Temple
+1=DUNGEON1.XFM,Dungeon
+2=DUNGEON2.XMI,Dungeon
+3=DUNGEON3.XMI,Dungeon
+4=DUNGEON4.XMI,Dungeon
+5=DUNGEON5.XMI,Dungeon
+6=EQUIPMNT.XMI,Equipment
+7=MAGIC_2.XMI,MagesGuild
+8=PALACE.XMI,Palace
+9=SNEAKING.XMI,House
+10=SQUARE.XMI,Tavern
+11=TAVERN.XMI,Tavern
+12=TEMPLE.XMI,Temple
 
 # Jingle musics
 # - City type: CityState, Town, Village

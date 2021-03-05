@@ -1,52 +1,42 @@
-#include <array>
-
 #include "MusicUtils.h"
 
 #include "components/debug/Debug.h"
 
-bool MusicUtils::tryGetInteriorMusicType(const std::string_view &mifName,
-	MusicDefinition::InteriorMusicDefinition::Type *outType)
+MusicDefinition::InteriorMusicDefinition::Type MusicUtils::getInteriorMusicType(ArenaTypes::InteriorType interiorType)
 {
-	// Check against all of the non-dungeon interiors first.
-	const bool isEquipmentStore = mifName.find("EQUIP") != std::string::npos;
-	const bool isHouse = (mifName.find("BS") != std::string::npos) ||
-		(mifName.find("NOBLE") != std::string::npos);
-	const bool isMagesGuild = mifName.find("MAGE") != std::string::npos;
-	const bool isPalace = (mifName.find("PALACE") != std::string::npos) ||
-		(mifName.find("TOWNPAL") != std::string::npos) ||
-		(mifName.find("VILPAL") != std::string::npos);
-	const bool isTavern = mifName.find("TAVERN") != std::string::npos;
-	const bool isTemple = mifName.find("TEMPLE") != std::string::npos;
-
-	if (isEquipmentStore)
+	if ((interiorType == ArenaTypes::InteriorType::Crypt) ||
+		(interiorType == ArenaTypes::InteriorType::Dungeon))
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::Equipment;
+		return MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
 	}
-	else if (isHouse)
+	else if (interiorType == ArenaTypes::InteriorType::Equipment)
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::House;
+		return MusicDefinition::InteriorMusicDefinition::Type::Equipment;
 	}
-	else if (isMagesGuild)
+	else if ((interiorType == ArenaTypes::InteriorType::House) ||
+		(interiorType == ArenaTypes::InteriorType::Noble))
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::MagesGuild;
+		return MusicDefinition::InteriorMusicDefinition::Type::House;
 	}
-	else if (isPalace)
+	else if (interiorType == ArenaTypes::InteriorType::MagesGuild)
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::Palace;
+		return MusicDefinition::InteriorMusicDefinition::Type::MagesGuild;
 	}
-	else if (isTavern)
+	else if (interiorType == ArenaTypes::InteriorType::Palace)
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::Tavern;
+		return MusicDefinition::InteriorMusicDefinition::Type::Palace;
 	}
-	else if (isTemple)
+	else if (interiorType == ArenaTypes::InteriorType::Tavern)
 	{
-		*outType = MusicDefinition::InteriorMusicDefinition::Type::Temple;
+		return MusicDefinition::InteriorMusicDefinition::Type::Tavern;
+	}
+	else if (interiorType == ArenaTypes::InteriorType::Temple)
+	{
+		return MusicDefinition::InteriorMusicDefinition::Type::Temple;
 	}
 	else
 	{
-		// Not a special interior -- it's a dungeon.
-		return false;
+		DebugUnhandledReturnMsg(MusicDefinition::InteriorMusicDefinition::Type,
+			std::to_string(static_cast<int>(interiorType)));
 	}
-
-	return true;
 }
