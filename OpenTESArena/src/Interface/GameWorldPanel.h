@@ -72,7 +72,7 @@ private:
 
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
-	void handleTriggers(const CoordInt2 &coord);
+	void handleTriggers(const CoordInt3 &coord);
 
 	// Handles the behavior for when the player activates a map transition block and transitions
 	// from one map to another (i.e., from an interior to an exterior). This does not handle

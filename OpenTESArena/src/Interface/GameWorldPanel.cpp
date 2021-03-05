@@ -1935,55 +1935,50 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	renderer.setNightLightsActive(active, palette);
 }
 
-void GameWorldPanel::handleTriggers(const CoordInt2 &coord)
+void GameWorldPanel::handleTriggers(const CoordInt3 &coord)
 {
 	auto &game = this->getGame();
 	GameState &gameState = game.getGameState();
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const MapType mapType = mapDef.getMapType();
+	MapInstance &mapInst = gameState.getActiveMapInst();
+	LevelInstance &levelInst = mapInst.getActiveLevel();
+	ChunkManager &chunkManager = levelInst.getChunkManager();
+	Chunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
+	DebugAssert(chunkPtr != nullptr);
 
-	// Only interior levels have triggers.
-	if (mapType == MapType::Interior)
+	const TriggerDefinition *triggerDef = chunkPtr->tryGetTrigger(coord.voxel);
+	if (triggerDef != nullptr)
 	{
-		MapInstance &mapInst = gameState.getActiveMapInst();
-		LevelInstance &levelInst = mapInst.getActiveLevel();
+		// @todo: Chunk::triggerInsts
 
-		// @todo: get triggers from Chunk.
-		DebugLogError("handleTriggers() not implemented.");
-		return;
-
-		// See if there's a text trigger.
-		/*LevelData::TextTrigger *textTrigger = level.getTextTrigger(voxel);
-		if (textTrigger != nullptr)
+		if (triggerDef->hasSoundDef())
 		{
-			// Only display it if it should be displayed (i.e., not already displayed
-			// if it's a single-display text).
-			const bool canDisplay = !textTrigger->isSingleDisplay() ||
-				(textTrigger->isSingleDisplay() && !textTrigger->hasBeenDisplayed());
+			const TriggerDefinition::SoundDef &soundDef = triggerDef->getSoundDef();
+			const std::string &soundFilename = soundDef.getFilename();
+
+			// Play the sound.
+			auto &audioManager = game.getAudioManager();
+			audioManager.playSound(soundFilename);
+		}
+
+		if (triggerDef->hasTextDef())
+		{
+			const TriggerDefinition::TextDef &textDef = triggerDef->getTextDef();
+			const bool hasBeenDisplayed = false; // @todo: TriggerInstance
+			const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenDisplayed;
 
 			if (canDisplay)
 			{
 				// Ignore the newline at the end.
-				const std::string text = textTrigger->getText().substr(
-					0, textTrigger->getText().size() - 1);
+				const std::string &textDefText = textDef.getText();
+				const std::string text = textDefText.substr(0, textDefText.size() - 1);
 
-				auto &gameState = game.getGameState();
 				gameState.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
 
 				// Set the text trigger as activated (regardless of whether or not it's
 				// single-shot, just for consistency).
-				textTrigger->setPreviouslyDisplayed(true);
+				//textTrigger->setPreviouslyDisplayed(true); // @todo: TriggerInstance
 			}
 		}
-
-		// See if there's a sound trigger.
-		const std::string *soundTrigger = level.getSoundTrigger(voxel);
-		if (soundTrigger != nullptr)
-		{
-			// Play the sound.
-			auto &audioManager = game.getAudioManager();
-			audioManager.playSound(*soundTrigger);
-		}*/
 	}
 }
 
@@ -2903,10 +2898,7 @@ void GameWorldPanel::tick(double dt)
 	const CoordInt3 newPlayerVoxelCoord(newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point));
 	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
 	{
-		const CoordInt2 newPlayerVoxelCoordXZ(
-			newPlayerVoxelCoord.chunk,
-			VoxelInt2(newPlayerVoxelCoord.voxel.x, newPlayerVoxelCoord.voxel.z));
-		this->handleTriggers(newPlayerVoxelCoordXZ);
+		this->handleTriggers(newPlayerVoxelCoord);
 
 		if (mapType == MapType::Interior)
 		{
