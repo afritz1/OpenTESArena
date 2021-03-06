@@ -49,7 +49,7 @@ private:
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	bool populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,
+	bool populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition);
 public:
 	int getChunkCount() const;
@@ -64,10 +64,13 @@ public:
 	// Index of the chunk all other active chunks surround.
 	int getCenterChunkIndex() const;
 
-	// Updates the chunk manager with the given chunk as the current center of the game world.
-	// This invalidates all active chunk references and they must be looked up again.
-	void update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
-		const MapDefinition &mapDefinition, int chunkDistance, EntityManager &entityManager);
+	// Updates the chunk manager with the given chunk as the current center of the game world. This invalidates
+	// all active chunk references and they must be looked up again. The 'updateChunkStates' parameter tells
+	// whether to update the real-time state of chunks; this should be false during the frame of a level's
+	// initialization, and true for all other cases (otherwise the world would be one update step ahead of the
+	// player, which isn't a big deal but is poor design).
+	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates, EntityManager &entityManager);
 };
 
 #endif

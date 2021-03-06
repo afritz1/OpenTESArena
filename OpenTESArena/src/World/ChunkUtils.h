@@ -8,6 +8,9 @@ namespace ChunkUtils
 	// Number of voxels per side on a chunk.
 	constexpr int CHUNK_DIM = 64;
 
+	// Smallest number of chunks away from the player allowed (1 results in a 3x3 grid).
+	constexpr int MIN_CHUNK_DISTANCE = 1;
+
 	// I.e., given 23, returns 64.
 	int getNextHigherChunkMultiple(int coord);
 

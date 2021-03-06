@@ -2889,8 +2889,9 @@ void GameWorldPanel::tick(double dt)
 	}();
 
 	// Tick active map (entities, animated distant land, etc.).
+	constexpr bool updateChunkStates = true;
 	mapInst.update(dt, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance());
+		game.getOptions().getMisc_ChunkDistance(), updateChunkStates);
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.

@@ -891,6 +891,13 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 		return false;
 	}
 
+	// Tick the level's chunk manager once during initialization so the renderer is passed valid chunks this
+	// frame. This doesn't update chunk states since they would have animated one frame earlier than the
+	// player gets to.
+	constexpr int chunkDistance = ChunkUtils::MIN_CHUNK_DISTANCE; // @todo: get from options
+	constexpr bool updateChunkStates = false;
+	levelInst.update(0.0, startCoord.chunk, activeLevelIndex, mapDefinition, chunkDistance, updateChunkStates);
+
 	return true;
 }
 

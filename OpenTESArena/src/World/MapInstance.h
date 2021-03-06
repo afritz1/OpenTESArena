@@ -44,7 +44,7 @@ public:
 	void setActiveLevelIndex(int levelIndex);
 
 	void update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
-		double latitude, double daytimePercent, int chunkDistance);
+		double latitude, double daytimePercent, int chunkDistance, bool updateChunkStates);
 };
 
 #endif

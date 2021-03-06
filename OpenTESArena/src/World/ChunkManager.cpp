@@ -275,7 +275,7 @@ void ChunkManager::populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDef
 	}
 }
 
-bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLevelIndex,
+bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition)
 {
 	Chunk &chunk = this->getChunk(index);
@@ -284,8 +284,9 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	const MapType mapType = mapDefinition.getMapType();
 	if (mapType == MapType::Interior)
 	{
-		const LevelDefinition &levelDefinition = mapDefinition.getLevel(activeLevelIndex);
-		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(activeLevelIndex);
+		DebugAssert(activeLevelIndex.has_value());
+		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
+		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
 		chunk.init(coord, levelDefinition.getHeight());
 		this->populateChunkVoxelDefsFromLevel(chunk, levelInfoDefinition);
 
@@ -332,6 +333,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	}
 	else if (mapType == MapType::City)
 	{
+		DebugAssert(activeLevelIndex.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 		chunk.init(coord, levelDefinition.getHeight());
@@ -351,6 +353,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	}
 	else if (mapType == MapType::Wilderness)
 	{
+		DebugAssert(!activeLevelIndex.has_value());
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(coord);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
@@ -374,8 +377,8 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, int activeLe
 	return true;
 }
 
-void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
-	const MapDefinition &mapDefinition, int chunkDistance, EntityManager &entityManager)
+void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -423,10 +426,13 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, int activeLev
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
-	// Update each chunk so they can animate/destroy faded voxel instances, etc..
-	for (int i = 0; i < static_cast<int>(this->activeChunks.size()) - 1; i++)
+	if (updateChunkStates)
 	{
-		ChunkPtr &chunkPtr = this->activeChunks[i];
-		chunkPtr->update(dt);
+		// Update each chunk so they can animate/destroy faded voxel instances, etc..
+		for (int i = 0; i < static_cast<int>(this->activeChunks.size()) - 1; i++)
+		{
+			ChunkPtr &chunkPtr = this->activeChunks[i];
+			chunkPtr->update(dt);
+		}
 	}
 }

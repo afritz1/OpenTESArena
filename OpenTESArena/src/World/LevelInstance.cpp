@@ -192,9 +192,9 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	return true;
 }
 
-void LevelInstance::update(double dt, const ChunkInt2 &centerChunk, int activeLevelIndex,
-	const MapDefinition &mapDefinition, int chunkDistance)
+void LevelInstance::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates)
 {
 	this->chunkManager.update(dt, centerChunk, activeLevelIndex, mapDefinition, chunkDistance,
-		this->entityManager);
+		updateChunkStates, this->entityManager);
 }
