@@ -2473,41 +2473,43 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				game.setPanel<WorldMapPanel>(game, nullptr);
 			};
 
-			// See if it's a level up or level down transition.
-			DebugAssert(transitionDef->getType() == TransitionType::LevelChange);
-			const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
-			if (levelChangeDef.isLevelUp)
+			// See if it's a level up or level down transition. Ignore other transition types.
+			if (transitionDef->getType() == TransitionType::LevelChange)
 			{
-				// Level up transition. If the custom function has a target, call it and reset it (necessary
-				// for main quest start dungeon).
-				auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
+				const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+				if (levelChangeDef.isLevelUp)
+				{
+					// Level up transition. If the custom function has a target, call it and reset it (necessary
+					// for main quest start dungeon).
+					auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
 
-				if (onLevelUpVoxelEnter)
-				{
-					onLevelUpVoxelEnter(game);
-					onLevelUpVoxelEnter = std::function<void(Game&)>();
-				}
-				else if (interiorMapInst.getActiveLevelIndex() > 0)
-				{
-					// Decrement the world's level index and activate the new level.
-					switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
-				}
-				else
-				{
-					switchToWorldMap();
-				}
-			}
-			else
-			{
-				// Level down transition.
-				if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
-				{
-					// Increment the world's level index and activate the new level.
-					switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
+					if (onLevelUpVoxelEnter)
+					{
+						onLevelUpVoxelEnter(game);
+						onLevelUpVoxelEnter = std::function<void(Game&)>();
+					}
+					else if (interiorMapInst.getActiveLevelIndex() > 0)
+					{
+						// Decrement the world's level index and activate the new level.
+						switchToLevel(interiorMapInst.getActiveLevelIndex() - 1);
+					}
+					else
+					{
+						switchToWorldMap();
+					}
 				}
 				else
 				{
-					switchToWorldMap();
+					// Level down transition.
+					if (interiorMapInst.getActiveLevelIndex() < (interiorMapInst.getLevelCount() - 1))
+					{
+						// Increment the world's level index and activate the new level.
+						switchToLevel(interiorMapInst.getActiveLevelIndex() + 1);
+					}
+					else
+					{
+						switchToWorldMap();
+					}
 				}
 			}
 		}
