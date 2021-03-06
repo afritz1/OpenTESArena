@@ -411,13 +411,22 @@ Texture AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectio
 	// Fill with transparent color first (used by floor voxels).
 	surface.fill(AutomapFloor.toARGB());
 
-	// Lambda for filling in a square in the map surface. It is provided an XY pixel which is
-	// expanded into a square.
-	auto drawSquare = [&surface](int x, int y, const Color &color)
+	const ChunkInt2 &playerChunk = playerCoord.chunk;
+	ChunkInt2 minChunk, maxChunk;
+	ChunkUtils::getSurroundingChunks(playerChunk, AutomapChunkDistance, &minChunk, &maxChunk);
+
+	// Lambda for filling in a chunk voxel in the map surface.
+	auto drawSquare = [&surface, &minChunk, &maxChunk](const CoordInt2 &coord, const Color &color)
 	{
+		// The min chunk origin is at the top right corner of the texture. +X is south, +Z is west
+		// (strangely, flipping the horizontal coordinate here does not mirror the resulting texture,
+		// therefore the mirroring is done in the pixel drawing loop).
+		const int automapX = ((coord.chunk.y - minChunk.y) * ChunkUtils::CHUNK_DIM) + coord.voxel.y;
+		const int automapY = ((coord.chunk.x - minChunk.x) * ChunkUtils::CHUNK_DIM) + coord.voxel.x;
+
 		const int surfaceWidth = surface.getWidth();
-		const int xOffset = x * AutomapPixelSize;
-		const int yOffset = y * AutomapPixelSize;
+		const int xOffset = automapX * AutomapPixelSize;
+		const int yOffset = automapY * AutomapPixelSize;
 		const uint32_t colorARGB = color.toARGB();
 		uint32_t *pixels = static_cast<uint32_t*>(surface.getPixels());
 
@@ -427,15 +436,11 @@ Texture AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectio
 			for (int w = 0; w < AutomapPixelSize; w++)
 			{
 				const int xCoord = xOffset + w;
-				const int index = xCoord + (yCoord * surfaceWidth);
+				const int index = (surfaceWidth - xCoord - 1) + (yCoord * surfaceWidth);
 				pixels[index] = colorARGB;
 			}
 		}
 	};
-
-	const ChunkInt2 &playerChunk = playerCoord.chunk;
-	ChunkInt2 minChunk, maxChunk;
-	ChunkUtils::getSurroundingChunks(playerChunk, AutomapChunkDistance, &minChunk, &maxChunk);
 
 	// Fill in squares on the automap.
 	for (SNInt chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
@@ -461,11 +466,7 @@ Texture AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectio
 						AutomapPanel::getPixelColor(floorVoxelDef, wallVoxelDef, transitionDef) :
 						AutomapPanel::getWildPixelColor(floorVoxelDef, wallVoxelDef, transitionDef);
 
-					// Convert chunk coordinates to automap coordinates and draw. The min chunk origin is at the top
-					// right corner of the texture. +X is south, +Z is west.
-					const int automapX = ((chunkZ - minChunk.y) * ChunkUtils::CHUNK_DIM) + z;
-					const int automapY = ((chunkX - minChunk.x) * ChunkUtils::CHUNK_DIM) + x;
-					drawSquare(automapX, automapY, color);
+					drawSquare(CoordInt2(chunkPos, VoxelInt2(x, z)), color);
 				}
 			}
 		}
