@@ -622,7 +622,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				}();
 
 				game.setPanel<AutomapPanel>(game, player.getPosition(), player.getGroundDirection(),
-					levelInst.getChunkManager(), levelDef, levelInfoDef, automapLocationName);
+					levelInst.getChunkManager(), automapLocationName);
 			}
 			else
 			{
