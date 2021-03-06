@@ -490,10 +490,9 @@ Texture AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectio
 		}
 	};
 
-	// Player will always be rendered in the center chunk.
-	static_assert(AutomapChunkDistance == 1);
-	const SNInt playerLocalX = ChunkUtils::CHUNK_DIM + playerCoord.voxel.x; // "Local" to the rendered chunks.
-	const WEInt playerLocalZ = ChunkUtils::CHUNK_DIM + playerCoord.voxel.y;
+	// Player will always be rendered in the center chunk, "local" to the rendered chunks.
+	const SNInt playerLocalX = (AutomapChunkDistance * ChunkUtils::CHUNK_DIM) + playerCoord.voxel.x;
+	const WEInt playerLocalZ = (AutomapChunkDistance * ChunkUtils::CHUNK_DIM) + playerCoord.voxel.y;
 	drawPlayer(playerLocalX, playerLocalZ, playerCompassDir);
 
 	return renderer.createTextureFromSurface(surface);
