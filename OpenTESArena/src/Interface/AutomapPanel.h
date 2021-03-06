@@ -55,7 +55,7 @@ private:
 		bool isWild, const ChunkManager &chunkManager, Renderer &renderer);
 
 	// Calculates automap screen offset in pixels for rendering.
-	static Double2 makeAutomapOffset(const CoordInt2 &playerVoxel, bool isWild);
+	static Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
 	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
@@ -65,7 +65,7 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const NewDouble2 &playerDirection,
+	AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 		const ChunkManager &chunkManager, const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 

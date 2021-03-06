@@ -85,7 +85,7 @@ namespace
 	};
 }
 
-AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const NewDouble2 &playerDirection,
+AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 	const ChunkManager &chunkManager, const std::string &locationName)
 	: Panel(game)
 {
@@ -118,18 +118,18 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const Ne
 		return Button<Game&>(center, width, height, function);
 	}();
 
-	const bool isWild = [&game]()
-	{
-		const GameState &gameState = game.getGameState();
-		const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-		return activeMapDef.getMapType() == MapType::Wilderness;
-	}();
-
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
-	this->mapTexture = [&game, &playerDirection, &chunkManager, isWild, &playerCoordXZ]()
+	this->mapTexture = [&game, &playerDirection, &chunkManager, &playerCoordXZ]()
 	{
 		const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
+		const bool isWild = [&game]()
+		{
+			const GameState &gameState = game.getGameState();
+			const MapDefinition &activeMapDef = gameState.getActiveMapDef();
+			return activeMapDef.getMapType() == MapType::Wilderness;
+		}();
+
 		Texture texture = AutomapPanel::makeAutomap(playerCoordXZ, playerCompassDir, isWild,
 			chunkManager, game.getRenderer());
 		return texture;
@@ -154,7 +154,7 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const Ne
 	}
 
 	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
-	this->automapOffset = AutomapPanel::makeAutomapOffset(playerCoordXZ, isWild);
+	this->automapOffset = AutomapPanel::makeAutomapOffset(playerCoordXZ.voxel);
 }
 
 const Color &AutomapPanel::getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
@@ -499,21 +499,21 @@ Texture AutomapPanel::makeAutomap(const CoordInt2 &playerCoord, CardinalDirectio
 	return renderer.createTextureFromSurface(surface);
 }
 
-Double2 AutomapPanel::makeAutomapOffset(const CoordInt2 &playerCoord, bool isWild)
+Double2 AutomapPanel::makeAutomapOffset(const VoxelInt2 &playerVoxel)
 {
-	// Get player distance in voxels from the top-rightmost chunk.
-	// @todo: is there a better way? Like bottom-leftmost chunk?
-	const ChunkInt2 &playerChunk = playerCoord.chunk;
-	const ChunkInt2 relativeOriginChunk(
-		playerChunk.x - AutomapChunkDistance,
-		playerChunk.y - AutomapChunkDistance);
-	const VoxelInt2 distance(
-		(playerCoord.voxel.x + (playerChunk.x * ChunkUtils::CHUNK_DIM)) - (relativeOriginChunk.x * ChunkUtils::CHUNK_DIM),
-		(playerCoord.voxel.y + (playerChunk.y * ChunkUtils::CHUNK_DIM)) - (relativeOriginChunk.y * ChunkUtils::CHUNK_DIM));
+	// Offsets from the top-left corner of the automap texture. Always at least one full chunk because
+	// the player is in the middle of the active chunks.
+	const VoxelInt2 chunkOffset(
+		AutomapChunkDistance * ChunkUtils::CHUNK_DIM,
+		AutomapChunkDistance * ChunkUtils::CHUNK_DIM);
+	const VoxelInt2 playerVoxelOffset(ChunkUtils::CHUNK_DIM - playerVoxel.y - 1, playerVoxel.x);
 
 	// Convert to real since the automap scrolling is in vector space.
-	const VoxelDouble2 distanceReal = VoxelUtils::getVoxelCenter(distance);
-	return -distanceReal; // @todo: verify
+	const Double2 offsetReal = VoxelUtils::getVoxelCenter(chunkOffset + playerVoxelOffset);
+
+	// Negate the offset so it's how much the automap is pushed. It's the vector opposite of the automap
+	// origin to the player's position.
+	return -offsetReal;
 }
 
 NewInt2 AutomapPanel::makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth)
