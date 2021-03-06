@@ -162,14 +162,12 @@ const SkyInstance &MapInstance::getActiveSky() const
 	return this->skies.get(this->activeSkyIndex);
 }
 
-void MapInstance::setActiveLevelIndex(int levelIndex)
+void MapInstance::setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition)
 {
 	DebugAssert(levelIndex >= 0);
 	DebugAssert(levelIndex < this->levels.getCount());
-	this->activeLevelIndex = levelIndex;
-	
-	// @todo: update sky level index
-	DebugNotImplemented();
+	this->activeLevelIndex = levelIndex;	
+	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(levelIndex);
 }
 
 void MapInstance::update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,

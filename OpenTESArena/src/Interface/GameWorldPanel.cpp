@@ -2422,7 +2422,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				//oldActiveLevel.clearTemporaryVoxelInstances();
 
 				// Select the new level.
-				interiorMapInst.setActiveLevelIndex(levelIndex);
+				interiorMapInst.setActiveLevelIndex(levelIndex, interiorMapDef);
 
 				// Set the new level active in the renderer.
 				auto &newActiveLevel = interiorMapInst.getActiveLevel();
