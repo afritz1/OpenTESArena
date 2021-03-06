@@ -1173,8 +1173,8 @@ namespace MapGeneration
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaTriggerMappingCache *triggerMappings)
 	{
-		// Get trigger def ID from cache or create a new one.
-		LevelDefinition::TriggerDefID triggerDefID;
+		// See if the trigger has already been added. Prevent duplicate triggers since they exist in at least
+		// one of the original game's main quest dungeons.
 		const auto iter = std::find_if(triggerMappings->begin(), triggerMappings->end(),
 			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID> &pair)
 		{
@@ -1183,22 +1183,18 @@ namespace MapGeneration
 				(mifTrigger.textIndex == trigger.textIndex) && (mifTrigger.soundIndex == trigger.soundIndex);
 		});
 
-		if (iter != triggerMappings->end())
+		if (iter == triggerMappings->end())
 		{
-			triggerDefID = iter->second;
-		}
-		else
-		{
-			TriggerDefinition triggerDef = MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf);
-			triggerDefID = outLevelInfoDef->addTriggerDef(std::move(triggerDef));
-			triggerMappings->push_back(std::make_pair(trigger, triggerDefID));
-		}
+			const LevelDefinition::TriggerDefID triggerDefID = outLevelInfoDef->addTriggerDef(
+				MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf));
+			triggerMappings->emplace_back(std::make_pair(trigger, triggerDefID));
 
-		const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
-		const SNInt x = triggerDef.getX();
-		const int y = triggerDef.getY();
-		const WEInt z = triggerDef.getZ();
-		outLevelDef->addTrigger(triggerDefID, LevelInt3(x, y, z));
+			const TriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
+			const SNInt x = triggerDef.getX();
+			const int y = triggerDef.getY();
+			const WEInt z = triggerDef.getZ();
+			outLevelDef->addTrigger(triggerDefID, LevelInt3(x, y, z));
+		}
 	}
 
 	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
