@@ -2443,6 +2443,15 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				player.teleport(playerDestinationCoord);
 				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
+
+				// Tick the level's chunk manager once during initialization so the renderer is passed valid
+				// chunks this frame. This doesn't update chunk states since they would have animated one frame
+				// earlier than the player gets to.
+				constexpr double dummyDeltaTime = 0.0;
+				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
+				constexpr bool updateChunkStates = false;
+				newActiveLevel.update(dummyDeltaTime, player.getPosition().chunk, levelIndex, interiorMapDef,
+					chunkDistance, updateChunkStates);
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
