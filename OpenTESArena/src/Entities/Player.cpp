@@ -187,8 +187,7 @@ void Player::lookAt(const CoordDouble3 &point)
 	this->camera.lookAt(point);
 }
 
-void Player::handleCollision(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
-	const LevelInfoDefinition &levelInfoDef, double dt)
+void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 {
 	const ChunkManager &chunkManager = activeLevel.getChunkManager();
 
@@ -241,8 +240,7 @@ void Player::handleCollision(const LevelInstance &activeLevel, const LevelDefini
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&activeLevel, &levelDef, &levelInfoDef](const CoordInt3 &coord,
-		const VoxelDefinition &voxelDef)
+	auto wouldCollideWithVoxel = [&chunkManager](const CoordInt3 &coord, const VoxelDefinition &voxelDef)
 	{
 		if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 		{
@@ -259,15 +257,13 @@ void Player::handleCollision(const LevelInstance &activeLevel, const LevelDefini
 		}
 		else
 		{
-			const ChunkManager &chunkManager = activeLevel.getChunkManager();
+			const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+			DebugAssert(chunk != nullptr);
 
 			// General voxel collision.
 			const bool isEmpty = voxelDef.type == ArenaTypes::VoxelType::None;
-			const bool isOpenDoor = [&coord, &voxelDef, &chunkManager]()
+			const bool isOpenDoor = [&coord, &voxelDef, chunk]()
 			{
-				const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-				DebugAssert(chunk != nullptr);
-
 				if (voxelDef.type == ArenaTypes::VoxelType::Door)
 				{
 					const VoxelInstance *doorInst = chunk->tryGetVoxelInst(coord.voxel, VoxelInstance::Type::OpenDoor);
@@ -282,14 +278,12 @@ void Player::handleCollision(const LevelInstance &activeLevel, const LevelDefini
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&levelDef, &levelInfoDef, &coord, &voxelDef]()
+			const bool isLevelTransition = [&coord, &voxelDef, chunk]()
 			{
 				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
 					// Check if there is a level change transition definition for this voxel.
-					const LevelInt3 levelVoxel = VoxelUtils::coordToNewVoxel(coord);
-					const TransitionDefinition *transitionDef =
-						LevelUtils::tryGetTransition(levelVoxel, levelDef, levelInfoDef);
+					const TransitionDefinition *transitionDef = chunk->tryGetTransition(coord.voxel);
 					return (transitionDef != nullptr) && (transitionDef->getType() == TransitionType::LevelChange);
 				}
 				else
@@ -377,8 +371,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
-	const LevelInfoDefinition &levelInfoDef, bool collision, double dt)
+void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, double dt)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
@@ -389,7 +382,7 @@ void Player::updatePhysics(const LevelInstance &activeLevel, const LevelDefiniti
 	// Change the player's velocity based on collision.
 	if (collision)
 	{
-		this->handleCollision(activeLevel, levelDef, levelInfoDef, dt);
+		this->handleCollision(activeLevel, dt);
 
 		// Temp: keep camera Y fixed until Y collision is implemented.
 		this->camera.position.point.y = floorY + Player::HEIGHT;
@@ -429,14 +422,10 @@ void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
 	const GameState &gameState = game.getGameState();
-	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
-	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
-	const LevelDefinition &activeLevelDef = activeMapDef.getLevel(activeLevelIndex);
-	const LevelInfoDefinition &activeLevelInfoDef = activeMapDef.getLevelInfoForLevel(activeLevelIndex);
-	const LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const bool collisionEnabled = game.getOptions().getMisc_Collision();
-	this->updatePhysics(activeLevelInst, activeLevelDef, activeLevelInfoDef, collisionEnabled, dt);
+	this->updatePhysics(activeLevelInst, collisionEnabled, dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

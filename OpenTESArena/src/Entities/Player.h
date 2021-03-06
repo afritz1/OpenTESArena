@@ -40,12 +40,10 @@ private:
 	double getFeetY() const;
 
 	// Changes the player's velocity based on collision with objects in the world.
-	void handleCollision(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
-		const LevelInfoDefinition &levelInfoDef, double dt);
+	void handleCollision(const LevelInstance &activeLevel, double dt);
 
 	// Updates the player's position and velocity based on interactions with the world.
-	void updatePhysics(const LevelInstance &activeLevel, const LevelDefinition &levelDef,
-		const LevelInfoDefinition &levelInfoDef, bool collision, double dt);
+	void updatePhysics(const LevelInstance &activeLevel, bool collision, double dt);
 public:
 	Player(const std::string &displayName, bool male, int raceID, int charClassDefID,
 		int portraitID, const CoordDouble3 &position, const Double3 &direction, const Double3 &velocity,
