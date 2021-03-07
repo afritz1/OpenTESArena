@@ -213,27 +213,32 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		this->getFeetY() / activeLevel.getCeilingScale()));
 
 	// Get the voxel data for each voxel the player would touch on each axis.
-	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
-	const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPoint);
-	const NewInt3 xVoxel(
-		static_cast<SNInt>(std::floor(absolutePlayerPoint.x + (this->velocity.x * dt))),
-		feetVoxelY,
-		absolutePlayerVoxel.z);
-	const NewInt3 yVoxel(
-		absolutePlayerVoxel.x,
-		feetVoxelY,
-		absolutePlayerVoxel.z);
-	const NewInt3 zVoxel(
-		absolutePlayerVoxel.x,
-		feetVoxelY,
-		static_cast<WEInt>(std::floor(absolutePlayerPoint.z + (this->velocity.z * dt))));
+	const CoordDouble3 curPlayerPoint = this->getPosition();
 
-	const CoordInt3 xCoord = VoxelUtils::newVoxelToCoord(xVoxel);
-	const CoordInt3 yCoord = VoxelUtils::newVoxelToCoord(yVoxel);
-	const CoordInt3 zCoord = VoxelUtils::newVoxelToCoord(zVoxel);
-	const VoxelDefinition *xVoxelDef = tryGetVoxelDef(xCoord);
-	const VoxelDefinition *yVoxelDef = tryGetVoxelDef(yCoord);
-	const VoxelDefinition *zVoxelDef = tryGetVoxelDef(zCoord);
+	// Regular old Euler integration in XZ plane.
+	const VoxelDouble3 deltaPosition(this->velocity.x * dt, 0.0, this->velocity.z * dt);
+	const CoordDouble3 nextPlayerPoint = curPlayerPoint + deltaPosition;
+
+	// The next voxels in X/Y/Z directions based on player movement.
+	const VoxelInt3 nextXVoxel(
+		static_cast<SNInt>(std::floor(nextPlayerPoint.point.x)),
+		feetVoxelY,
+		static_cast<WEInt>(std::floor(curPlayerPoint.point.z)));
+	const VoxelInt3 nextYVoxel(
+		static_cast<SNInt>(std::floor(curPlayerPoint.point.x)),
+		nextXVoxel.y,
+		nextXVoxel.z);
+	const VoxelInt3 nextZVoxel(
+		nextYVoxel.x,
+		nextYVoxel.y,
+		static_cast<WEInt>(std::floor(nextPlayerPoint.point.z)));
+
+	const CoordInt3 nextXCoord(nextPlayerPoint.chunk, nextXVoxel);
+	const CoordInt3 nextYCoord(nextPlayerPoint.chunk, nextYVoxel);
+	const CoordInt3 nextZCoord(nextPlayerPoint.chunk, nextZVoxel);
+	const VoxelDefinition *xVoxelDef = tryGetVoxelDef(nextXCoord);
+	const VoxelDefinition *yVoxelDef = tryGetVoxelDef(nextYCoord);
+	const VoxelDefinition *zVoxelDef = tryGetVoxelDef(nextZCoord);
 
 	// Check horizontal collisions.
 
@@ -296,12 +301,12 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 		}
 	};
 
-	if ((xVoxelDef != nullptr) && wouldCollideWithVoxel(xCoord, *xVoxelDef))
+	if ((xVoxelDef != nullptr) && wouldCollideWithVoxel(nextXCoord, *xVoxelDef))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if ((zVoxelDef != nullptr) && wouldCollideWithVoxel(zCoord, *zVoxelDef))
+	if ((zVoxelDef != nullptr) && wouldCollideWithVoxel(nextZCoord, *zVoxelDef))
 	{
 		this->velocity.z = 0.0;
 	}
