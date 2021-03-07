@@ -30,6 +30,10 @@ private:
 	std::vector<ChunkPtr> activeChunks;
 	ChunkInt2 centerChunk;
 
+	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
+	void getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefinition **outNorth,
+		const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest);
+
 	// Takes a chunk from the chunk pool, moves it to the active chunks, and returns its index.
 	int spawnChunk();
 
@@ -48,9 +52,16 @@ private:
 	void populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
 
+	// Adds any voxel instances to a chunk that should exist at level generation time. Mostly intended for chasms.
+	void populateChunkVoxelInsts(Chunk &chunk);
+
 	// Fills the chunk with the data required based on its position and the world type.
 	bool populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition);
+
+	// Updates context-sensitive voxels (such as chasms) on a chunk's perimeter that may be affected by
+	// adjacent chunks.
+	void updateChunkPerimeter(Chunk &chunk);
 public:
 	int getChunkCount() const;
 	Chunk &getChunk(int index);

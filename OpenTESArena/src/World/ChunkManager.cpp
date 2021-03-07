@@ -4,6 +4,7 @@
 #include "ChunkUtils.h"
 #include "MapDefinition.h"
 #include "MapType.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityManager.h"
 #include "../Game/Game.h"
 
@@ -83,6 +84,42 @@ int ChunkManager::getCenterChunkIndex() const
 	const std::optional<int> index = this->tryGetChunkIndex(this->centerChunk);
 	DebugAssert(index.has_value());
 	return *index;
+}
+
+void ChunkManager::getAdjacentVoxelDefs(const CoordInt3 &coord, const VoxelDefinition **outNorth,
+	const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest)
+{
+	auto getAdjacentCoord = [&coord](const VoxelInt2 &direction)
+	{
+		const VoxelInt3 diff(direction.x, 0, direction.y);
+		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + diff);
+	};
+
+	auto tryWriteVoxelDef = [](const Chunk *chunkPtr, const VoxelInt3 &voxel, const VoxelDefinition **outDef)
+	{
+		if (chunkPtr != nullptr)
+		{
+			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
+			*outDef = &chunkPtr->getVoxelDef(voxelID);
+		}
+		else
+		{
+			*outDef = nullptr;
+		}
+	};
+
+	const CoordInt3 northCoord = getAdjacentCoord(VoxelUtils::North);
+	const CoordInt3 eastCoord = getAdjacentCoord(VoxelUtils::East);
+	const CoordInt3 southCoord = getAdjacentCoord(VoxelUtils::South);
+	const CoordInt3 westCoord = getAdjacentCoord(VoxelUtils::West);
+	const Chunk *northChunkPtr = this->tryGetChunk(northCoord.chunk);
+	const Chunk *eastChunkPtr = this->tryGetChunk(eastCoord.chunk);
+	const Chunk *southChunkPtr = this->tryGetChunk(southCoord.chunk);
+	const Chunk *westChunkPtr = this->tryGetChunk(westCoord.chunk);
+	tryWriteVoxelDef(northChunkPtr, northCoord.voxel, outNorth);
+	tryWriteVoxelDef(eastChunkPtr, eastCoord.voxel, outEast);
+	tryWriteVoxelDef(southChunkPtr, southCoord.voxel, outSouth);
+	tryWriteVoxelDef(westChunkPtr, westCoord.voxel, outWest);
 }
 
 int ChunkManager::spawnChunk()
@@ -275,6 +312,38 @@ void ChunkManager::populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDef
 	}
 }
 
+void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
+{
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				const Chunk::VoxelID voxelID = chunk.getVoxel(x, y, z);
+				const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
+				if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+				{
+					const VoxelInt3 voxel(x, y, z);
+					const CoordInt3 coord(chunk.getCoord(), voxel);
+					DebugAssert(chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Chasm) == nullptr);
+
+					const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
+					this->getAdjacentVoxelDefs(coord, &northDef, &eastDef, &southDef, &westDef);
+
+					const bool hasNorthFace = (northDef != nullptr) && northDef->allowsChasmFace();
+					const bool hasEastFace = (eastDef != nullptr) && eastDef->allowsChasmFace();
+					const bool hasSouthFace = (southDef != nullptr) && southDef->allowsChasmFace();
+					const bool hasWestFace = (westDef != nullptr) && westDef->allowsChasmFace();
+					VoxelInstance voxelInst = VoxelInstance::makeChasm(
+						x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+					chunk.addVoxelInst(std::move(voxelInst));
+				}
+			}
+		}
+	}
+}
+
 bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition)
 {
@@ -329,6 +398,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxelInsts(chunk);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -349,6 +419,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+			this->populateChunkVoxelInsts(chunk);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -367,6 +438,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 		const LevelInt2 levelOffset = LevelInt2::Zero;
 		this->populateChunkVoxelsFromLevel(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecoratorsFromLevel(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+		this->populateChunkVoxelInsts(chunk);
 	}
 	else
 	{
@@ -375,6 +447,73 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 	}
 
 	return true;
+}
+
+void ChunkManager::updateChunkPerimeter(Chunk &chunk)
+{
+	auto tryUpdateChasm = [this, &chunk](const VoxelInt3 &voxel)
+	{
+		const CoordInt3 coord(chunk.getCoord(), voxel);
+		auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
+		{
+			const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
+			this->getAdjacentVoxelDefs(coord, &northDef, &eastDef, &southDef, &westDef);
+			*outNorth = (northDef != nullptr) && northDef->allowsChasmFace();
+			*outEast = (eastDef != nullptr) && eastDef->allowsChasmFace();
+			*outSouth = (southDef != nullptr) && southDef->allowsChasmFace();
+			*outWest = (westDef != nullptr) && westDef->allowsChasmFace();
+		};
+		
+		VoxelInstance *chasmInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Chasm);
+		if (chasmInst != nullptr)
+		{
+			// The chasm already exists. Update its chasm walls.
+			bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
+			getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
+
+			VoxelInstance::ChasmState &chasmState = chasmInst->getChasmState();
+			chasmState.init(hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+		}
+		else
+		{
+			// No voxel instance yet. If it's a chasm, add a new voxel instance.
+			const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+			const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
+			if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+			{
+				bool hasNorthFace, hasEastFace, hasSouthFace, hasWestFace;
+				getChasmFaces(&hasNorthFace, &hasEastFace, &hasSouthFace, &hasWestFace);
+
+				VoxelInstance voxelInst = VoxelInstance::makeChasm(
+					voxel.x, voxel.y, voxel.z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+				chunk.addVoxelInst(std::move(voxelInst));
+			}
+		}
+	};
+
+	// North and south sides.
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			constexpr SNInt northX = 0;
+			constexpr SNInt southX = Chunk::WIDTH - 1;
+			tryUpdateChasm(VoxelInt3(northX, y, z));
+			tryUpdateChasm(VoxelInt3(southX, y, z));
+		}
+	}
+
+	// East and west sides, minus the corners.
+	for (SNInt x = 1; x < (Chunk::WIDTH - 1); x++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			constexpr WEInt eastZ = 0;
+			constexpr WEInt westZ = Chunk::DEPTH - 1;
+			tryUpdateChasm(VoxelInt3(x, y, eastZ));
+			tryUpdateChasm(VoxelInt3(x, y, westZ));
+		}
+	}
 }
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
@@ -426,13 +565,24 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::op
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
+	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
 	if (updateChunkStates)
 	{
 		// Update each chunk so they can animate/destroy faded voxel instances, etc..
-		for (int i = 0; i < static_cast<int>(this->activeChunks.size()) - 1; i++)
+		for (int i = 0; i < activeChunkCount; i++)
 		{
 			ChunkPtr &chunkPtr = this->activeChunks[i];
 			chunkPtr->update(dt);
 		}
+	}
+
+	// Update chunk perimeters in case voxels on the edge of one chunk affect context-sensitive
+	// voxels in adjacent chunks. It might be a little inefficient to do this every frame, but
+	// it easily handles cases of modified voxels on a chunk edge, and it is only updating chunk
+	// edges, so it should be very fast.
+	for (int i = 0; i < activeChunkCount; i++)
+	{
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		this->updateChunkPerimeter(*chunkPtr);
 	}
 }
