@@ -242,6 +242,20 @@ void Chunk::removeVoxelDef(VoxelID id)
 	this->activeVoxelDefs[id] = false;
 }
 
+void Chunk::removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
+{
+	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
+	{
+		const VoxelInstance &voxelInst = this->voxelInsts[i];
+		if ((voxelInst.getX() == voxel.x) && (voxelInst.getY() == voxel.y) &&
+			(voxelInst.getZ() == voxel.z) && (voxelInst.getType() == type))
+		{
+			this->voxelInsts.erase(this->voxelInsts.begin() + i);
+			break;
+		}
+	}
+}
+
 void Chunk::clear()
 {
 	this->voxels.clear();

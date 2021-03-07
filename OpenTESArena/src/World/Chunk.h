@@ -126,6 +126,10 @@ public:
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
 	void removeVoxelDef(VoxelID id);
 
+	// Removes a certain type of voxel instance from the given voxel (if any). This might be useful when
+	// updating a chunk edge due to adjacent chunks changing.
+	void removeVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
+
 	// Clears all chunk state.
 	void clear();
 
