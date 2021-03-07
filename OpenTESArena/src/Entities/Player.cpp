@@ -212,30 +212,27 @@ void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 	const int feetVoxelY = static_cast<int>(std::floor(
 		this->getFeetY() / activeLevel.getCeilingScale()));
 
-	// Get the voxel data for each voxel the player would touch on each axis.
-	const CoordDouble3 curPlayerPoint = this->getPosition();
-
 	// Regular old Euler integration in XZ plane.
+	const CoordDouble3 curPlayerCoord = this->getPosition();
 	const VoxelDouble3 deltaPosition(this->velocity.x * dt, 0.0, this->velocity.z * dt);
-	const CoordDouble3 nextPlayerPoint = curPlayerPoint + deltaPosition;
 
 	// The next voxels in X/Y/Z directions based on player movement.
 	const VoxelInt3 nextXVoxel(
-		static_cast<SNInt>(std::floor(nextPlayerPoint.point.x)),
+		static_cast<SNInt>(std::floor(curPlayerCoord.point.x + deltaPosition.x)),
 		feetVoxelY,
-		static_cast<WEInt>(std::floor(curPlayerPoint.point.z)));
+		static_cast<WEInt>(std::floor(curPlayerCoord.point.z)));
 	const VoxelInt3 nextYVoxel(
-		static_cast<SNInt>(std::floor(curPlayerPoint.point.x)),
+		static_cast<SNInt>(std::floor(curPlayerCoord.point.x)),
 		nextXVoxel.y,
 		nextXVoxel.z);
 	const VoxelInt3 nextZVoxel(
 		nextYVoxel.x,
 		nextYVoxel.y,
-		static_cast<WEInt>(std::floor(nextPlayerPoint.point.z)));
+		static_cast<WEInt>(std::floor(curPlayerCoord.point.z + deltaPosition.z)));
 
-	const CoordInt3 nextXCoord(nextPlayerPoint.chunk, nextXVoxel);
-	const CoordInt3 nextYCoord(nextPlayerPoint.chunk, nextYVoxel);
-	const CoordInt3 nextZCoord(nextPlayerPoint.chunk, nextZVoxel);
+	const CoordInt3 nextXCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextXVoxel);
+	const CoordInt3 nextYCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextYVoxel);
+	const CoordInt3 nextZCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextZVoxel);
 	const VoxelDefinition *xVoxelDef = tryGetVoxelDef(nextXCoord);
 	const VoxelDefinition *yVoxelDef = tryGetVoxelDef(nextYCoord);
 	const VoxelDefinition *zVoxelDef = tryGetVoxelDef(nextZCoord);
