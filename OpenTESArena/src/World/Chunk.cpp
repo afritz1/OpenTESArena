@@ -65,22 +65,7 @@ const VoxelInstance &Chunk::getVoxelInst(int index) const
 	return this->voxelInsts[index];
 }
 
-VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
-{
-	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
-	{
-		VoxelInstance &inst = this->voxelInsts[i];
-		if ((inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
-			(inst.getType() == type))
-		{
-			return &inst;
-		}
-	}
-
-	return nullptr;
-}
-
-const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const
+std::optional<int> Chunk::tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const
 {
 	for (int i = 0; i < static_cast<int>(this->voxelInsts.size()); i++)
 	{
@@ -88,11 +73,23 @@ const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstanc
 		if ((inst.getX() == voxel.x) && (inst.getY() == voxel.y) && (inst.getZ() == voxel.z) &&
 			(inst.getType() == type))
 		{
-			return &inst;
+			return i;
 		}
 	}
 
-	return nullptr;
+	return std::nullopt;
+}
+
+VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type)
+{
+	const std::optional<int> index = this->tryGetVoxelInstIndex(voxel, type);
+	return index.has_value() ? &this->voxelInsts[*index] : nullptr;
+}
+
+const VoxelInstance *Chunk::tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const
+{
+	const std::optional<int> index = this->tryGetVoxelInstIndex(voxel, type);
+	return index.has_value() ? &this->voxelInsts[*index] : nullptr;
 }
 
 const TransitionDefinition *Chunk::tryGetTransition(const VoxelInt3 &voxel) const
@@ -153,6 +150,41 @@ const std::string *Chunk::tryGetBuildingName(const VoxelInt3 &voxel) const
 	{
 		return nullptr;
 	}
+}
+
+void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
+	const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest)
+{
+	auto getAdjacentVoxel = [&voxel](const VoxelInt2 &direction)
+	{
+		const VoxelInt3 diff(direction.x, 0, direction.y);
+		return voxel + diff;
+	};
+
+	auto tryWriteVoxelDef = [this](const VoxelInt3 &voxel, const VoxelDefinition **outDef)
+	{
+		const bool isValidVoxel = (voxel.x >= 0) && (voxel.x < Chunk::WIDTH) && (voxel.y >= 0) &&
+			(voxel.y < this->getHeight()) && (voxel.z >= 0) && (voxel.z < Chunk::DEPTH);
+
+		if (isValidVoxel)
+		{
+			const Chunk::VoxelID voxelID = this->getVoxel(voxel.x, voxel.y, voxel.z);
+			*outDef = &this->getVoxelDef(voxelID);
+		}
+		else
+		{
+			*outDef = nullptr;
+		}
+	};
+
+	const VoxelInt3 northVoxel = getAdjacentVoxel(VoxelUtils::North);
+	const VoxelInt3 eastVoxel = getAdjacentVoxel(VoxelUtils::East);
+	const VoxelInt3 southVoxel = getAdjacentVoxel(VoxelUtils::South);
+	const VoxelInt3 westVoxel = getAdjacentVoxel(VoxelUtils::West);
+	tryWriteVoxelDef(northVoxel, outNorth);
+	tryWriteVoxelDef(eastVoxel, outEast);
+	tryWriteVoxelDef(southVoxel, outSouth);
+	tryWriteVoxelDef(westVoxel, outWest);
 }
 
 void Chunk::setVoxel(SNInt x, int y, WEInt z, VoxelID value)
@@ -273,49 +305,237 @@ void Chunk::clear()
 	this->coord = ChunkInt2();
 }
 
+void Chunk::handleVoxelInstState(VoxelInstance &voxelInst)
+{
+	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
+	{
+		// @todo: handle doors far enough from the player to close.
+		// - ArenaLevelUtils::DOOR_CLOSE_DISTANCE
+		// - if player is far enough, then set to closing and conditionally play onClosing sound at center of voxel.
+		DebugNotImplemented();
+	}
+}
+
+void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst)
+{
+	const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+
+	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
+	{
+		// @todo: handle door that just closed
+		// - delete voxel instance and conditionally play onClosed sound at center of voxel.
+		DebugNotImplemented();
+	}
+	else if (voxelInst.getType() == VoxelInstance::Type::Fading)
+	{
+		// Convert the faded voxel to air or a chasm depending on the Y coordinate.
+		if (voxel.y == 0)
+		{
+			// Replace floor voxel with chasm.
+			const std::optional<VoxelID> replacementVoxelID = [this]() -> std::optional<VoxelID>
+			{
+				// Try to get from existing voxel defs.
+				for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
+				{
+					if (this->activeVoxelDefs[i])
+					{
+						const VoxelDefinition &voxelDef = this->voxelDefs[i];
+						if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+						{
+							const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
+							if (chasmData.type == ArenaTypes::ChasmType::Wet)
+							{
+								return static_cast<VoxelID>(i);
+							}
+						}
+					}
+				}
+
+				// No existing water chasm voxel definition. Make a new one?
+				// @todo: This could be handled better, since walls are just one choice for the texture.
+				// - maybe need a 'fallbackWaterChasm' texture asset ref in LevelInfoDefinition.
+				const TextureAssetReference *replacementTextureAssetRef = [this]() -> const TextureAssetReference*
+				{
+					for (int i = 0; i < static_cast<int>(this->voxelDefs.size()); i++)
+					{
+						if (this->activeVoxelDefs[i])
+						{
+							const VoxelDefinition &voxelDef = this->voxelDefs[i];
+							if (voxelDef.type == ArenaTypes::VoxelType::Wall)
+							{
+								const VoxelDefinition::WallData &wallData = voxelDef.wall;
+								return &wallData.sideTextureAssetRef;
+							}
+						}
+					}
+
+					return nullptr;
+				}();
+
+				DebugAssert(replacementTextureAssetRef != nullptr);
+				VoxelDefinition voxelDef = VoxelDefinition::makeChasm(
+					TextureAssetReference(*replacementTextureAssetRef), ArenaTypes::ChasmType::Wet);
+
+				VoxelID voxelID;
+				if (this->tryAddVoxelDef(std::move(voxelDef), &voxelID))
+				{
+					return voxelID;
+				}
+				else
+				{
+					return std::nullopt;
+				}
+			}();
+
+			DebugAssertMsg(replacementVoxelID.has_value(), "Couldn't find replacement for faded chasm voxel.");
+			this->setVoxel(voxel.x, voxel.y, voxel.z, *replacementVoxelID);
+		}
+		else
+		{
+			// Air voxel.
+			this->setVoxel(voxel.x, voxel.y, voxel.z, Chunk::AIR_VOXEL_ID);
+		}
+	}
+}
+
+void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<int> &voxelInstIndicesToDestroy)
+{
+	if (voxelInst.getType() == VoxelInstance::Type::Fading)
+	{
+		if (voxelInst.getY() == 0)
+		{
+			// Need to handle the voxel instance for the new chasm in this voxel, and update any adjacent
+			// chasms too.
+			auto tryUpdateAdjacentVoxel = [this, &voxelInst, &voxelInstIndicesToDestroy](const VoxelInt2 &direction)
+			{
+				const VoxelInt3 voxel(
+					voxelInst.getX() + direction.x,
+					voxelInst.getY(),
+					voxelInst.getZ() + direction.y);
+				const bool isValidVoxel = (voxel.x >= 0) && (voxel.x < Chunk::WIDTH) && (voxel.y >= 0) &&
+					(voxel.y < this->getHeight()) && (voxel.z >= 0) && (voxel.z < Chunk::DEPTH);
+				
+				if (isValidVoxel)
+				{
+					const Chunk::VoxelID voxelID = this->getVoxel(voxel.x, voxel.y, voxel.z);
+					const VoxelDefinition &voxelDef = this->getVoxelDef(voxelID);
+					if (voxelDef.type == ArenaTypes::VoxelType::Chasm)
+					{
+						const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
+						this->getAdjacentVoxelDefs(voxel, &northDef, &eastDef, &southDef, &westDef);
+
+						const bool hasNorthFace = (northDef != nullptr) && northDef->allowsChasmFace();
+						const bool hasEastFace = (eastDef != nullptr) && eastDef->allowsChasmFace();
+						const bool hasSouthFace = (southDef != nullptr) && southDef->allowsChasmFace();
+						const bool hasWestFace = (westDef != nullptr) && westDef->allowsChasmFace();
+						const bool hasAnyFaces = hasNorthFace || hasEastFace || hasSouthFace || hasWestFace;
+
+						constexpr VoxelInstance::Type voxelInstType = VoxelInstance::Type::Chasm;
+						const std::optional<int> existingVoxelInstIndex = this->tryGetVoxelInstIndex(voxel, voxelInstType);
+						if (existingVoxelInstIndex.has_value())
+						{
+							if (hasAnyFaces)
+							{
+								// Update existing voxel instance.
+								VoxelInstance &existingVoxelInst = this->voxelInsts[*existingVoxelInstIndex];
+								VoxelInstance::ChasmState &chasmState = existingVoxelInst.getChasmState();
+								chasmState.init(hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+							}
+							else
+							{
+								// Delete unneeded voxel instance (duplicate indices to destroy are handled later).
+								voxelInstIndicesToDestroy.push_back(*existingVoxelInstIndex);
+							}
+						}
+						else
+						{
+							if (hasAnyFaces)
+							{
+								// Add new voxel instance for the adjacent chasm.
+								VoxelInstance newVoxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z,
+									hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+								this->addVoxelInst(std::move(newVoxelInst));
+							}
+						}
+					}
+				}
+			};
+
+			// This voxel's definition has been changed to a chasm. Need to add a new voxel instance for the chasm
+			// if there are chasm walls, AND update adjacent voxels if they are chasms too. This needs to be done
+			// after all fading voxels that finish this frame have finished because they might be adjacent to each other.
+			const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+			const VoxelDefinition *northDef, *eastDef, *southDef, *westDef;
+			this->getAdjacentVoxelDefs(voxel, &northDef, &eastDef, &southDef, &westDef);
+
+			const bool hasNorthFace = (northDef != nullptr) && northDef->allowsChasmFace();
+			const bool hasEastFace = (eastDef != nullptr) && eastDef->allowsChasmFace();
+			const bool hasSouthFace = (southDef != nullptr) && southDef->allowsChasmFace();
+			const bool hasWestFace = (westDef != nullptr) && westDef->allowsChasmFace();
+			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
+			{
+				VoxelInstance chasmVoxelInst = VoxelInstance::makeChasm(voxel.x, voxel.y, voxel.z,
+					hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
+				this->addVoxelInst(std::move(chasmVoxelInst));
+			}
+
+			tryUpdateAdjacentVoxel(VoxelUtils::North);
+			tryUpdateAdjacentVoxel(VoxelUtils::East);
+			tryUpdateAdjacentVoxel(VoxelUtils::South);
+			tryUpdateAdjacentVoxel(VoxelUtils::West);
+		}
+	}
+}
+
 void Chunk::update(double dt)
 {
+	// Need to track voxel instances that finished fading because certain ones are converted to
+	// context-sensitive voxels on completion.
+	std::vector<VoxelInstance*> voxelInstsToPostFinish;
+	std::vector<int> voxelInstIndicesToDestroy;
+
 	for (int i = static_cast<int>(this->voxelInsts.size()) - 1; i >= 0; i--)
 	{
 		VoxelInstance &voxelInst = this->voxelInsts[i];
 		voxelInst.update(dt);
 
-		// @todo: handle doors that just closed
-		// - delete voxel instance and conditionally play onClosed sound at center of voxel.
-		DebugNotImplemented();
-
-		// @todo: handle doors far enough from the player to close.
-		// - ArenaLevelUtils::DOOR_CLOSE_DISTANCE
-		// - if player is far enough, then set to closing and conditionally play onClosing sound at center of voxel.
-		DebugNotImplemented();
-
-		// See if the voxel instance can be removed because it no longer has interesting state.
-		if (!voxelInst.hasRelevantState())
+		// See if the voxel instance is in a state that needs more behavior to be run, or if it can be
+		// removed because it no longer has interesting state.
+		if (voxelInst.hasRelevantState())
 		{
-			const VoxelInstance::Type voxelInstType = voxelInst.getType();
-			
-			// Do the voxel instance's "on destroy" action (if any).
-			if (voxelInstType == VoxelInstance::Type::Fading)
+			this->handleVoxelInstState(voxelInst);
+		}
+		else
+		{
+			// Do the voxel instance's "on destroy" action, if any.
+			this->handleVoxelInstFinished(voxelInst);
+
+			// Certain voxel instances need another step of shutdown since they need to run after all
+			// other voxel instances have been updated this frame, due to being context-sensitive.
+			const bool needsPostShutdown = (voxelInst.getType() == VoxelInstance::Type::Fading) && (voxelInst.getY() == 0);
+			if (needsPostShutdown)
 			{
-				// Convert the faded voxel to air or a chasm depending on the Y coordinate.
-				const int voxelY = voxelInst.getY();
-				if (voxelY == 0)
-				{
-					// Chasm voxel.
-					// @todo: may need to store vector<Int3> of all faded voxels here so their adjacent
-					// chasms can be updated properly in the next for loop. I say "may" because voxel
-					// instances might be separate enough now from the old context-sensitive voxel
-					// definitions. Need to re-evaluate it.
-					DebugNotImplemented();
-				}
-				else
-				{
-					// Air voxel.
-					this->setVoxel(voxelInst.getX(), voxelY, voxelInst.getZ(), Chunk::AIR_VOXEL_ID);
-				}
+				voxelInstsToPostFinish.push_back(&voxelInst);
 			}
 
-			this->voxelInsts.erase(this->voxelInsts.begin() + i);
+			voxelInstIndicesToDestroy.push_back(i);
 		}
+	}
+
+	for (VoxelInstance *voxelInst : voxelInstsToPostFinish)
+	{
+		this->handleVoxelInstPostFinished(*voxelInst, voxelInstIndicesToDestroy);
+	}
+
+	// Due to the extra complexity of adjacent voxel instances potentially being destroyed during post-finish,
+	// need to do some sanitization here on the indices to destroy.
+	std::sort(voxelInstIndicesToDestroy.begin(), voxelInstIndicesToDestroy.end());
+	const auto uniqueIter = std::unique(voxelInstIndicesToDestroy.begin(), voxelInstIndicesToDestroy.end());
+	voxelInstIndicesToDestroy.erase(uniqueIter, voxelInstIndicesToDestroy.end());
+
+	for (int i = static_cast<int>(voxelInstIndicesToDestroy.size()) - 1; i >= 0; i--)
+	{
+		const int index = voxelInstIndicesToDestroy[i];
+		this->voxelInsts.erase(this->voxelInsts.begin() + index);
 	}
 }

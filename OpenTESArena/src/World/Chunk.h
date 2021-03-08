@@ -65,6 +65,24 @@ private:
 
 	// Chunk coordinates in the world.
 	ChunkInt2 coord;
+
+	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
+	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
+	// a result, voxels on a chunk edge must be updated by the chunk manager).
+	void getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
+		const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest);
+
+	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
+	// instance itself.
+	void handleVoxelInstState(VoxelInstance &voxelInst);
+
+	// Runs any voxel instance shutdown behavior required by the given voxel instance type.
+	void handleVoxelInstFinished(VoxelInstance &voxelInst);
+
+	// Runs any context-sensitive voxel instance shutdown behavior based on its current state that cannot
+	// be done by the voxel instance itself. This is needed because of chasms that rely on adjacent voxels
+	// for which chasm faces they have.
+	void handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<int> &voxelInstIndicesToDestroy);
 public:
 	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
 	static constexpr WEInt DEPTH = WIDTH;
@@ -94,6 +112,7 @@ public:
 	const VoxelInstance &getVoxelInst(int index) const;
 
 	// Convenience functions for attempting to get a voxel instance at the given voxel.
+	std::optional<int> tryGetVoxelInstIndex(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 	VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type);
 	const VoxelInstance *tryGetVoxelInst(const VoxelInt3 &voxel, VoxelInstance::Type type) const;
 
@@ -134,6 +153,8 @@ public:
 	void clear();
 
 	// Animates the chunk's voxels by delta time.
+	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity
+	// of chunk perimeters, etc. and the amount of almost-identical problem solving between the two classes.
 	void update(double dt);
 };
 
