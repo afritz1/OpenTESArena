@@ -22,12 +22,18 @@ Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)
 	return Double2(voxel.y, voxel.x);
 }
 
-VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point)
+VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point, double ceilingScale)
 {
 	return VoxelInt3(
 		static_cast<SNInt>(std::floor(point.x)),
-		static_cast<int>(std::floor(point.y)),
+		static_cast<int>(std::floor(point.y / ceilingScale)),
 		static_cast<WEInt>(std::floor(point.z)));
+}
+
+VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point)
+{
+	constexpr double ceilingScale = 1.0;
+	return VoxelUtils::pointToVoxel(point, ceilingScale);
 }
 
 VoxelInt2 VoxelUtils::pointToVoxel(const VoxelDouble2 &point)

@@ -25,7 +25,7 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Gets the voxel a point is in.
-	// @todo: be careful with Y values being influenced by ceilingScale. Consider a "VoxelDouble3 axisLengths" parameter.
+	VoxelInt3 pointToVoxel(const VoxelDouble3 &point, double ceilingScale);
 	VoxelInt3 pointToVoxel(const VoxelDouble3 &point);
 	VoxelInt2 pointToVoxel(const VoxelDouble2 &point);
 

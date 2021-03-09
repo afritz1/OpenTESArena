@@ -2906,8 +2906,12 @@ void GameWorldPanel::tick(double dt)
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.
-	const CoordInt3 oldPlayerVoxelCoord(oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point));
-	const CoordInt3 newPlayerVoxelCoord(newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point));
+	const LevelInstance &levelInst = mapInst.getActiveLevel();
+	const double ceilingScale = levelInst.getCeilingScale();
+	const CoordInt3 oldPlayerVoxelCoord(
+		oldPlayerCoord.chunk, VoxelUtils::pointToVoxel(oldPlayerCoord.point, ceilingScale));
+	const CoordInt3 newPlayerVoxelCoord(
+		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
 	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
 	{
 		this->handleTriggers(newPlayerVoxelCoord);
