@@ -97,7 +97,8 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());	
 	// @todo: renderer.setSky();
 
-	// Load voxel textures.
+	// Load textures known at level load time.
+	// @todo: this should definitely do duplicate texture checking since RAM would easily run out for the wilderness.
 	auto loadLevelDefTextures = [&mapDefinition, &textureManager, &renderer](int levelIndex)
 	{
 		const LevelInfoDefinition &levelInfoDef = mapDefinition.getLevelInfoForLevel(levelIndex);
@@ -108,9 +109,35 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 			for (int j = 0; j < voxelDef.getTextureAssetReferenceCount(); j++)
 			{
 				const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(j);
+				// @todo: duplicate texture check in some LevelInstance::rendererVoxelTextureCache
 				if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
 				{
 					DebugLogError("Couldn't create renderer voxel texture for \"" + textureAssetRef.filename + "\".");
+				}
+			}
+		}
+
+		for (int defIndex = 0; defIndex < levelInfoDef.getEntityDefCount(); defIndex++)
+		{
+			const EntityDefinition &entityDef = levelInfoDef.getEntityDef(defIndex);
+			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			for (int i = 0; i < animDef.getStateCount(); i++)
+			{
+				const EntityAnimationDefinition::State &state = animDef.getState(i);
+				for (int j = 0; j < state.getKeyframeListCount(); j++)
+				{
+					const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
+					const bool flipped = keyframeList.isFlipped();
+					for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+					{
+						const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
+						const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
+						// @todo: duplicate texture check in some LevelInstance::rendererEntityTextureCache
+						if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, textureManager))
+						{
+							DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
+						}
+					}
 				}
 			}
 		}
