@@ -137,6 +137,31 @@ private:
 		void clear();
 	};
 
+	// @temp: this is a temporary solution to entity texture allocation management -- ideally the renderer
+	// would take texture builders and return texture handles and those would be bound to instance entity
+	// geometry.
+	struct EntityTextureMapping
+	{
+		TextureAssetReference textureAssetRef;
+		bool flipped;
+
+		int textureIndex; // Index in entity textures list.
+
+		EntityTextureMapping(TextureAssetReference &&textureAssetRef, bool flipped, int textureIndex);
+	};
+
+	struct EntityTextures
+	{
+		std::vector<FlatTexture> textures;
+		std::vector<EntityTextureMapping> mappings;
+
+		void addTexture(FlatTexture &&texture, TextureAssetReference &&textureAssetRef, bool flipped);
+
+		const FlatTexture &getTexture(const TextureAssetReference &textureAssetRef, bool flipped) const;
+
+		void clear();
+	};
+
 	// Camera for 2.5D ray casting (with some pre-calculated values to avoid duplicating work).
 	struct Camera
 	{
@@ -969,13 +994,13 @@ public:
 
 	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) override;
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
 		TextureManager &textureManager) override;
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) override;
 
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef) override;
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef) override;
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped) override;
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef) override;
 
 	// Draws the scene to the output color buffer in ARGB8888 format.

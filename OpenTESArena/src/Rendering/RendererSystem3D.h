@@ -58,7 +58,7 @@ public:
 	// geometry instead of relying on VoxelDefinition/etc. for texture look-ups.
 	virtual bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) = 0;
-	virtual bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
+	virtual bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
 		TextureManager &textureManager) = 0;
 	virtual bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) = 0;
@@ -66,7 +66,7 @@ public:
 	// Texture handle freeing functions for each texture type.
 	// @todo: ideally these would take VoxelTextureID/etc..
 	virtual void freeVoxelTexture(const TextureAssetReference &textureAssetRef) = 0;
-	virtual void freeEntityTexture(const TextureAssetReference &textureAssetRef) = 0;
+	virtual void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped) = 0;
 	virtual void freeSkyTexture(const TextureAssetReference &textureAssetRef) = 0;
 
 	virtual void resize(int width, int height) = 0;

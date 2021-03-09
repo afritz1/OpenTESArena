@@ -210,14 +210,15 @@ public:
 	// Texture handle allocation functions.
 	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
 	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
+		TextureManager &textureManager);
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 
 	// Texture handle freeing functions.
 	// @todo: see RendererSystem3D -- these should take texture IDs instead.
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef);
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped);
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
 	void freeUiTexture(const TextureAssetReference &textureAssetRef);
 

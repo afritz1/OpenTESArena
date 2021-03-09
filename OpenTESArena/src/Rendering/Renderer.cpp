@@ -788,9 +788,10 @@ bool Renderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRe
 	return this->renderer3D->tryCreateVoxelTexture(textureAssetRef, textureManager);
 }
 
-bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
+bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
+	TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, textureManager);
+	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, flipped, textureManager);
 }
 
 bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
@@ -808,9 +809,9 @@ void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
 	this->renderer3D->freeVoxelTexture(textureAssetRef);
 }
 
-void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef)
+void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped)
 {
-	this->renderer3D->freeEntityTexture(textureAssetRef);
+	this->renderer3D->freeEntityTexture(textureAssetRef, flipped);
 }
 
 void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)

@@ -304,6 +304,47 @@ void SoftwareRenderer::VoxelTextures::clear()
 	this->mappings.clear();
 }
 
+SoftwareRenderer::EntityTextureMapping::EntityTextureMapping(TextureAssetReference &&textureAssetRef,
+	bool flipped, int textureIndex)
+	: textureAssetRef(std::move(textureAssetRef))
+{
+	this->flipped = flipped;
+	this->textureIndex = textureIndex;
+}
+
+void SoftwareRenderer::EntityTextures::addTexture(FlatTexture &&texture,
+	TextureAssetReference &&textureAssetRef, bool flipped)
+{
+	this->textures.emplace_back(std::move(texture));
+
+	const int index = static_cast<int>(this->textures.size()) - 1;
+	this->mappings.emplace_back(EntityTextureMapping(std::move(textureAssetRef), flipped, index));
+}
+
+const SoftwareRenderer::FlatTexture &SoftwareRenderer::EntityTextures::getTexture(
+	const TextureAssetReference &textureAssetRef, bool flipped) const
+{
+	int index = -1;
+	for (int i = 0; i < static_cast<int>(this->mappings.size()); i++)
+	{
+		const EntityTextureMapping &mapping = this->mappings[i];
+		if ((mapping.textureAssetRef == textureAssetRef) && (mapping.flipped == flipped))
+		{
+			index = mapping.textureIndex;
+			break;
+		}
+	}
+
+	DebugAssertIndex(this->textures, index);
+	return this->textures[index];
+}
+
+void SoftwareRenderer::EntityTextures::clear()
+{
+	this->textures.clear();
+	this->mappings.clear();
+}
+
 bool SoftwareRenderer::FlatTextureGroup::isValidLookup(int stateID, int angleID, int textureID) const
 {
 	if (!DebugValidIndex(this->states, stateID))
@@ -1254,7 +1295,7 @@ bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textur
 	}
 }
 
-bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef,
+bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
 	TextureManager &textureManager)
 {
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
@@ -1315,7 +1356,7 @@ void SoftwareRenderer::freeVoxelTexture(const TextureAssetReference &textureAsse
 	DebugNotImplemented();
 }
 
-void SoftwareRenderer::freeEntityTexture(const TextureAssetReference &textureAssetRef)
+void SoftwareRenderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped)
 {
 	DebugNotImplemented();
 }
