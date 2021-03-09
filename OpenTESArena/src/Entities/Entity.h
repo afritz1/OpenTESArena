@@ -20,7 +20,6 @@ private:
 	EntityAnimationInstance animInst;
 	EntityID id;
 	EntityDefID defID;
-	EntityRenderID renderID;
 protected:
 	CoordDouble2 position;
 
@@ -36,9 +35,6 @@ public:
 	// Gets the entity's definition ID.
 	EntityDefID getDefinitionID() const;
 
-	// Gets the entity's render ID.
-	EntityRenderID getRenderID() const;
-
 	// Gets the chunk + point of the entity.
 	const CoordDouble2 &getPosition() const;
 
@@ -51,9 +47,6 @@ public:
 
 	// Sets the entity's ID.
 	void setID(EntityID id);
-
-	// Sets the entity's render ID which may be shared with other identical-looking entities.
-	void setRenderID(EntityRenderID id);
 
 	// Sets the XZ position of the entity. The entity manager needs to know about position changes.
 	void setPosition(const CoordDouble2 &position, EntityManager &entityManager);

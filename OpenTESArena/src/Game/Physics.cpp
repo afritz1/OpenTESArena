@@ -1024,7 +1024,7 @@ namespace Physics
 				const double flatHeight = animKeyframe.getHeight();
 
 				CoordDouble3 hitCoord;
-				if (renderer.getEntityRayIntersection(visData, flatForward, flatRight, flatUp,
+				if (renderer.getEntityRayIntersection(visData, entityDef, flatForward, flatRight, flatUp,
 					flatWidth, flatHeight, rayCoord, rayDirection, pixelPerfect, palette, &hitCoord))
 				{
 					const double distance = (hitCoord - rayCoord).length();

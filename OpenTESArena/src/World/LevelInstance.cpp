@@ -49,7 +49,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
-	renderer.clearTexturesAndEntityRenderIDs();
+	renderer.clearTextures();
 	renderer.clearSky();
 	this->entityManager.clear();
 
@@ -121,6 +121,9 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 		{
 			const EntityDefinition &entityDef = levelInfoDef.getEntityDef(defIndex);
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+			const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) &&
+				entityDef.getDoodad().puddle;
+
 			for (int i = 0; i < animDef.getStateCount(); i++)
 			{
 				const EntityAnimationDefinition::State &state = animDef.getState(i);
@@ -133,7 +136,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 						const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
 						const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
 						// @todo: duplicate texture check in some LevelInstance::rendererEntityTextureCache
-						if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, textureManager))
+						if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
 						{
 							DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
 						}

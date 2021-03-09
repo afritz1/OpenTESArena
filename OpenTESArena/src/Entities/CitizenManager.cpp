@@ -88,10 +88,6 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 		return;
 	}
 
-	// Male and female citizen resource handles for animation frames.
-	const EntityRenderID maleEntityRenderID = renderer.makeEntityRenderID();
-	const EntityRenderID femaleEntityRenderID = renderer.makeEntityRenderID();
-
 	// Base palette for citizens to generate from.
 	const Palette &basePalette = [&textureManager]() -> const Palette&
 	{
@@ -164,7 +160,6 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 		EntityRef entityRef = entityManager.makeEntity(EntityType::Dynamic);
 		DynamicEntity *dynamicEntity = entityRef.getDerived<DynamicEntity>();
 		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst, CardinalDirectionName::North);
-		dynamicEntity->setRenderID(male ? maleEntityRenderID : femaleEntityRenderID);
 
 		// Idle animation by default.
 		int defaultStateIndex;
@@ -188,17 +183,32 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 	}
 
 	// Initializes base male and female textures in the renderer.
-	auto writeTextures = [&entityDefLibrary, &textureManager, &renderer, maleEntityDefID, femaleEntityDefID,
-		maleEntityRenderID, femaleEntityRenderID, &maleAnimInst, &femaleAnimInst](bool male)
+	auto writeTextures = [&entityDefLibrary, &textureManager, &renderer, maleEntityDefID, femaleEntityDefID](bool male)
 	{
-		const EntityRenderID entityRenderID = male ? maleEntityRenderID : femaleEntityRenderID;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
 		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-		const EntityAnimationInstance &animInst = male ? maleAnimInst : femaleAnimInst;
-		constexpr bool isPuddle = false;
 
-		renderer.setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
+		for (int i = 0; i < animDef.getStateCount(); i++)
+		{
+			const EntityAnimationDefinition::State &state = animDef.getState(i);
+			for (int j = 0; j < state.getKeyframeListCount(); j++)
+			{
+				const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
+				const bool flipped = keyframeList.isFlipped();
+				for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+				{
+					const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
+					const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
+					constexpr bool reflective = false; // Citizens are not puddles.
+					// @todo: duplicate texture check in some CitizenManager::rendererEntityTextureCache
+					if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
+					{
+						DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
+					}
+				}
+			}
+		}
 	};
 
 	writeTextures(true);

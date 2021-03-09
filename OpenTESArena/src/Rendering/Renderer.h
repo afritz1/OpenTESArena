@@ -146,9 +146,9 @@ public:
 	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
 	// function because the exact method of testing may depend on the 3D representation of the entity.
 	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
-		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-		bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;
+		const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
+		const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
+		const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;
 
 	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
 	// dependent on renderer details.
@@ -210,7 +210,7 @@ public:
 	// Texture handle allocation functions.
 	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
 	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
 		TextureManager &textureManager);
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
@@ -218,21 +218,18 @@ public:
 	// Texture handle freeing functions.
 	// @todo: see RendererSystem3D -- these should take texture IDs instead.
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped);
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective);
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
 	void freeUiTexture(const TextureAssetReference &textureAssetRef);
 
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
-	EntityRenderID makeEntityRenderID();
-	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager);
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active, const Palette &palette);
-	void clearTexturesAndEntityRenderIDs();
+	void clearTextures();
 	void clearSky();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.

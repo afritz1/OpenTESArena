@@ -391,9 +391,9 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 }
 
 bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-	const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
-	double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-	bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
+	const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
+	const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
+	const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
 {
 	DebugAssert(this->renderer3D->isInited());
 	const Entity &entity = *visData.entity;
@@ -412,12 +412,19 @@ bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityDat
 			0.5 - (diff.dot(entityRight) / entityWidth),
 			1.0 - (diff.dot(entityUp) / entityHeight));
 
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+		const EntityAnimationDefinition::State &animState = animDef.getState(visData.stateIndex);
+		const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visData.angleIndex);
+		const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visData.keyframeIndex);
+		const TextureAssetReference &textureAssetRef = animKeyframe.getTextureAssetRef();
+		const bool flipped = animKeyframeList.isFlipped();
+		const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
+
 		// See if the ray successfully hit a point on the entity, and that point is considered
 		// selectable (i.e. it's not transparent).
 		bool isSelected;
-		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv,
-			entity.getRenderID(), visData.stateIndex, visData.angleIndex, visData.keyframeIndex,
-			pixelPerfect, palette, &isSelected);
+		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped,
+			reflective, pixelPerfect, palette, &isSelected);
 
 		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
 		return withinEntity && isSelected;
@@ -789,9 +796,9 @@ bool Renderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRe
 }
 
 bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
-	TextureManager &textureManager)
+	bool reflective, TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, flipped, textureManager);
+	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager);
 }
 
 bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
@@ -809,9 +816,9 @@ void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
 	this->renderer3D->freeVoxelTexture(textureAssetRef);
 }
 
-void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped)
+void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective)
 {
-	this->renderer3D->freeEntityTexture(textureAssetRef, flipped);
+	this->renderer3D->freeEntityTexture(textureAssetRef, flipped, reflective);
 }
 
 void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
@@ -827,19 +834,6 @@ void Renderer::freeUiTexture(const TextureAssetReference &textureAssetRef)
 void Renderer::setFogDistance(double fogDistance)
 {
 	this->renderer3D->setFogDistance(fogDistance);
-}
-
-EntityRenderID Renderer::makeEntityRenderID()
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->makeEntityRenderID();
-}
-
-void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-	const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
 }
 
 void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
@@ -867,10 +861,10 @@ void Renderer::setNightLightsActive(bool active, const Palette &palette)
 	this->renderer3D->setNightLightsActive(active, palette);
 }
 
-void Renderer::clearTexturesAndEntityRenderIDs()
+void Renderer::clearTextures()
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearTexturesAndEntityRenderIDs();
+	this->renderer3D->clearTextures();
 }
 
 void Renderer::clearSky()

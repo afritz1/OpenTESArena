@@ -130,7 +130,6 @@ public:
 	// The default ID for entities with no ID.
 	static constexpr EntityID NO_ID = -1;
 	static constexpr EntityDefID NO_DEF_ID = -1;
-	static constexpr EntityRenderID NO_RENDER_ID = -1;
 
 	EntityManager();
 

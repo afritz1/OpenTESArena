@@ -305,30 +305,32 @@ void SoftwareRenderer::VoxelTextures::clear()
 }
 
 SoftwareRenderer::EntityTextureMapping::EntityTextureMapping(TextureAssetReference &&textureAssetRef,
-	bool flipped, int textureIndex)
+	bool flipped, bool reflective, int textureIndex)
 	: textureAssetRef(std::move(textureAssetRef))
 {
 	this->flipped = flipped;
+	this->reflective = reflective;
 	this->textureIndex = textureIndex;
 }
 
 void SoftwareRenderer::EntityTextures::addTexture(FlatTexture &&texture,
-	TextureAssetReference &&textureAssetRef, bool flipped)
+	TextureAssetReference &&textureAssetRef, bool flipped, bool reflective)
 {
 	this->textures.emplace_back(std::move(texture));
 
 	const int index = static_cast<int>(this->textures.size()) - 1;
-	this->mappings.emplace_back(EntityTextureMapping(std::move(textureAssetRef), flipped, index));
+	this->mappings.emplace_back(EntityTextureMapping(std::move(textureAssetRef), flipped, reflective, index));
 }
 
 const SoftwareRenderer::FlatTexture &SoftwareRenderer::EntityTextures::getTexture(
-	const TextureAssetReference &textureAssetRef, bool flipped) const
+	const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const
 {
 	int index = -1;
 	for (int i = 0; i < static_cast<int>(this->mappings.size()); i++)
 	{
 		const EntityTextureMapping &mapping = this->mappings[i];
-		if ((mapping.textureAssetRef == textureAssetRef) && (mapping.flipped == flipped))
+		if ((mapping.textureAssetRef == textureAssetRef) && (mapping.flipped == flipped) &&
+			(mapping.reflective == reflective))
 		{
 			index = mapping.textureIndex;
 			break;
@@ -343,98 +345,6 @@ void SoftwareRenderer::EntityTextures::clear()
 {
 	this->textures.clear();
 	this->mappings.clear();
-}
-
-bool SoftwareRenderer::FlatTextureGroup::isValidLookup(int stateID, int angleID, int textureID) const
-{
-	if (!DebugValidIndex(this->states, stateID))
-	{
-		DebugLogWarning("Invalid state ID \"" + std::to_string(stateID) +
-			"\" (states: " + std::to_string(this->states.size()) + ").");
-		return false;
-	}
-
-	const State &state = this->states[stateID];
-	if (!DebugValidIndex(state, angleID))
-	{
-		DebugLogWarning("Invalid angle ID \"" + std::to_string(angleID) + "\" (state " +
-			std::to_string(stateID) + ", angles: " + std::to_string(state.size()) + ").");
-		return false;
-	}
-
-	const FlatTextureGroup::TextureList &textureList = state[angleID];
-	if (!DebugValidIndex(textureList, textureID))
-	{
-		DebugLogWarning("Invalid texture ID \"" + std::to_string(textureID) + "\" (state " +
-			std::to_string(stateID) + ", angle " + std::to_string(angleID) + ", textures: " +
-			std::to_string(textureList.size()) + ").");
-		return false;
-	}
-
-	return true;
-}
-
-const SoftwareRenderer::FlatTexture &SoftwareRenderer::FlatTextureGroup::getTexture(
-	int stateID, int angleID, int textureID) const
-{
-	DebugAssert(this->isValidLookup(stateID, angleID, textureID));
-	const State &state = this->states[stateID];
-	const FlatTextureGroup::TextureList &textureList = state[angleID];
-	const FlatTexture &texture = textureList[textureID];
-	return texture;
-}
-
-void SoftwareRenderer::FlatTextureGroup::init(const EntityAnimationInstance &animInst)
-{
-	// Resize each state/keyframe buffer to fit all entity animation keyframes.
-	const int stateCount = animInst.getStateCount();
-	this->states.resize(stateCount);
-	for (int stateIndex = 0; stateIndex < stateCount; stateIndex++)
-	{
-		const EntityAnimationInstance::State &animState = animInst.getState(stateIndex);
-		const int keyframeListCount = animState.getKeyframeListCount();
-
-		FlatTextureGroup::State &flatState = this->states[stateIndex];
-		flatState.resize(keyframeListCount);
-		for (int listIndex = 0; listIndex < keyframeListCount; listIndex++)
-		{
-			const EntityAnimationInstance::KeyframeList &animKeyframeList = animState.getKeyframeList(listIndex);
-			const int keyframeCount = animKeyframeList.getKeyframeCount();
-
-			FlatTextureGroup::TextureList &flatTextureList = flatState[listIndex];
-			flatTextureList.resize(keyframeCount);
-			for (FlatTexture &flatTexture : flatTextureList)
-			{
-				// Set texture to empty, to be initialized by caller next.
-				flatTexture.width = 0;
-				flatTexture.height = 0;
-				flatTexture.texels.resize(0);
-			}
-		}
-	}
-}
-
-void SoftwareRenderer::FlatTextureGroup::setTexture(int stateID, int angleID, int textureID,
-	bool flipped, const TextureBuilder &textureBuilder, bool reflective)
-{
-	if (!this->isValidLookup(stateID, angleID, textureID))
-	{
-		DebugLogWarning("Invalid flat texture group look-up (" + std::to_string(stateID) +
-			", " + std::to_string(angleID) + ", " + std::to_string(textureID) + ").");
-		return;
-	}
-
-	FlatTextureGroup::State &state = this->states[stateID];
-	FlatTextureGroup::TextureList &textureList = state[angleID];
-	FlatTexture &texture = textureList[textureID];
-
-	// @todo: figure out how the texture type should be handled in the long term. This renderer might
-	// end up being strictly 8-bit.
-	DebugAssert(textureBuilder.getType() == TextureBuilder::Type::Paletted);
-	const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
-	const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
-
-	texture.init(srcTexels.getWidth(), srcTexels.getHeight(), srcTexels.get(), flipped, reflective);
 }
 
 SoftwareRenderer::Camera::Camera(const CoordDouble3 &eye, const VoxelDouble3 &direction,
@@ -937,14 +847,14 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double 
 
 void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
 	const std::vector<VisibleFlat> &visibleFlats, const std::vector<VisibleLight> &visLights,
-	const Buffer2D<VisibleLightList> &visLightLists, const FlatTextureGroups &flatTextureGroups)
+	const Buffer2D<VisibleLightList> &visLightLists, const EntityTextures &entityTextures)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
 	this->visibleFlats = &visibleFlats;
 	this->visLights = &visLights;
 	this->visLightLists = &visLightLists;
-	this->flatTextureGroups = &flatTextureGroups;
+	this->entityTextures = &entityTextures;
 	this->doneSorting = false;
 }
 
@@ -999,22 +909,14 @@ SoftwareRenderer::ProfilerData SoftwareRenderer::getProfilerData() const
 		static_cast<int>(this->visibleLights.size()));
 }
 
-bool SoftwareRenderer::isValidEntityRenderID(EntityRenderID id) const
-{
-	return (id >= 0) && (id < static_cast<int>(this->flatTextureGroups.size()));
-}
-
-bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
-	int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect, const Palette &palette,
-	bool *outIsSelected) const
+bool SoftwareRenderer::tryGetEntitySelectionData(const Double2 &uv, const TextureAssetReference &textureAssetRef,
+	bool flipped, bool reflective, bool pixelPerfect, const Palette &palette, bool *outIsSelected) const
 {
 	// Branch depending on whether the selection request needs to include texture data.
 	if (pixelPerfect)
 	{
 		// Get the texture list from the texture group at the given animation state and angle.
-		DebugAssert(this->isValidEntityRenderID(entityRenderID));
-		const FlatTextureGroup &textureGroup = this->flatTextureGroups[entityRenderID];
-		const FlatTexture &texture = textureGroup.getTexture(animStateID, animAngleID, animKeyframeID);
+		const FlatTexture &texture = this->entityTextures.getTexture(textureAssetRef, flipped, reflective);
 
 		// Convert texture coordinates to a texture index. Don't need to clamp; just return
 		// failure if it's out-of-bounds.
@@ -1087,7 +989,7 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 
 	// Initialize texture containers.
 	this->voxelTextures = VoxelTextures();
-	this->flatTextureGroups = FlatTextureGroups();
+	this->entityTextures = EntityTextures();
 
 	this->width = settings.getWidth();
 	this->height = settings.getHeight();
@@ -1113,55 +1015,6 @@ void SoftwareRenderer::setRenderThreadsMode(int mode)
 	// Re-initialize render threads.
 	const int threadCount = RendererUtils::getRenderThreadsFromMode(renderThreadsMode);
 	this->initRenderThreads(this->width, this->height, threadCount);
-}
-
-EntityRenderID SoftwareRenderer::makeEntityRenderID()
-{
-	this->flatTextureGroups.push_back(FlatTextureGroup());
-	return static_cast<EntityRenderID>(this->flatTextureGroups.size()) - 1;
-}
-
-void SoftwareRenderer::setFlatTextures(EntityRenderID entityRenderID,
-	const EntityAnimationDefinition &animDef, const EntityAnimationInstance &animInst,
-	bool isPuddle, TextureManager &textureManager)
-{
-	DebugAssert(this->isValidEntityRenderID(entityRenderID));
-	FlatTextureGroup &flatTextureGroup = this->flatTextureGroups[entityRenderID];
-	flatTextureGroup.init(animInst);
-
-	for (int stateIndex = 0; stateIndex < animInst.getStateCount(); stateIndex++)
-	{
-		const EntityAnimationDefinition::State &defState = animDef.getState(stateIndex);
-		const EntityAnimationInstance::State &instState = animInst.getState(stateIndex);
-		const int keyframeListCount = defState.getKeyframeListCount();
-
-		for (int keyframeListIndex = 0; keyframeListIndex < keyframeListCount; keyframeListIndex++)
-		{
-			const EntityAnimationDefinition::KeyframeList &defKeyframeList =
-				defState.getKeyframeList(keyframeListIndex);
-			const EntityAnimationInstance::KeyframeList &instKeyframeList =
-				instState.getKeyframeList(keyframeListIndex);
-			const int keyframeCount = defKeyframeList.getKeyframeCount();
-			const bool flipped = defKeyframeList.isFlipped();
-
-			for (int keyframeIndex = 0; keyframeIndex < keyframeCount; keyframeIndex++)
-			{
-				const EntityAnimationDefinition::Keyframe &defKeyframe =
-					defKeyframeList.getKeyframe(keyframeIndex);
-				const EntityAnimationInstance::Keyframe &instKeyframe =
-					instKeyframeList.getKeyframe(keyframeIndex);
-				const int stateID = stateIndex;
-				const int angleID = keyframeListIndex;
-				const int keyframeID = keyframeIndex;
-
-				// Get the associated texture and write texture data.
-				const TextureBuilder &textureBuilder =
-					instKeyframe.getTextureBuilderHandle(defKeyframe, textureManager);
-				const int textureID = keyframeID;
-				flatTextureGroup.setTexture(stateID, angleID, textureID, flipped, textureBuilder, isPuddle);
-			}
-		}
-	}
 }
 
 void SoftwareRenderer::setFogDistance(double fogDistance)
@@ -1217,10 +1070,10 @@ void SoftwareRenderer::setNightLightsActive(bool active, const Palette &palette)
 	}
 }
 
-void SoftwareRenderer::clearTexturesAndEntityRenderIDs()
+void SoftwareRenderer::clearTextures()
 {
 	this->voxelTextures.clear();
-	this->flatTextureGroups.clear();
+	this->entityTextures.clear();
 	this->skyTextures.clear();
 	this->chasmTextureGroups.clear();
 }
@@ -1296,7 +1149,7 @@ bool SoftwareRenderer::tryCreateVoxelTexture(const TextureAssetReference &textur
 }
 
 bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
-	TextureManager &textureManager)
+	bool reflective, TextureManager &textureManager)
 {
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
 	if (!textureBuilderID.has_value())
@@ -1309,7 +1162,14 @@ bool SoftwareRenderer::tryCreateEntityTexture(const TextureAssetReference &textu
 	const TextureBuilder::Type textureBuilderType = textureBuilder.getType();
 	if (textureBuilderType == TextureBuilder::Type::Paletted)
 	{
-		DebugNotImplemented();
+		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+
+		FlatTexture flatTexture;
+		flatTexture.init(textureBuilder.getWidth(), textureBuilder.getHeight(),
+			palettedTexture.texels.get(), flipped, reflective);
+
+		this->entityTextures.addTexture(std::move(flatTexture), TextureAssetReference(textureAssetRef),
+			flipped, reflective);
 		return true;
 	}
 	else if (textureBuilderType == TextureBuilder::Type::TrueColor)
@@ -1356,7 +1216,8 @@ void SoftwareRenderer::freeVoxelTexture(const TextureAssetReference &textureAsse
 	DebugNotImplemented();
 }
 
-void SoftwareRenderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped)
+void SoftwareRenderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
+	bool reflective)
 {
 	DebugNotImplemented();
 }
@@ -1782,21 +1643,12 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 			// Determine if the flat is potentially visible to the camera.
 			VisibleFlat visFlat;
-			visFlat.entityRenderID = entity->getRenderID();
-			visFlat.animStateID = visData.stateIndex;
-			visFlat.animAngleID = visData.angleIndex;
-			visFlat.animTextureID = visData.keyframeIndex;
 
 			// Calculate each corner of the flat in world space.
 			visFlat.bottomLeft = absoluteFlatPosition + flatRightScaled;
 			visFlat.bottomRight = absoluteFlatPosition - flatRightScaled;
 			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
 			visFlat.topRight = visFlat.bottomRight + flatUpScaled;
-
-			// Add palette override if it is a citizen entity.
-			const EntityAnimationInstance &animInst = entity->getAnimInstance();
-			const EntityAnimationInstance::CitizenParams *citizenParams = animInst.getCitizenParams();
-			visFlat.overridePalette = (citizenParams != nullptr) ? &citizenParams->palette : nullptr;
 
 			// Now project two of the flat's opposing corner points into camera space.
 			// The Z value is used with flat sorting (not rendering), and the X and Y values 
@@ -1824,8 +1676,21 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 
 			if (inScreenX && inScreenY && inPlanes)
 			{
+				// Texture values.
+				// @todo: eventually get the EntityTextureID from the animation instance keyframe.
+				const TextureAssetReference &textureAssetRef = animDefKeyframe.getTextureAssetRef();
+				const bool flipped = animDefKeyframeList.isFlipped();
+				const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) &&
+					entityDef.getDoodad().puddle;
+				visFlat.texture = &this->entityTextures.getTexture(textureAssetRef, flipped, reflective);
+
+				// Add palette override if it is a citizen entity.
+				const EntityAnimationInstance &animInst = entity->getAnimInstance();
+				const EntityAnimationInstance::CitizenParams *citizenParams = animInst.getCitizenParams();
+				visFlat.overridePalette = (citizenParams != nullptr) ? &citizenParams->palette : nullptr;
+
 				// Add the flat data to the draw list.
-				this->visibleFlats.push_back(std::move(visFlat));
+				this->visibleFlats.emplace_back(std::move(visFlat));
 			}
 		}
 	}
@@ -7721,7 +7586,7 @@ void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera, 
 
 void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
-	const FlatTextureGroups &flatTextureGroups, const ShadingInfo &shadingInfo, int chunkDistance,
+	const EntityTextures &entityTextures, const ShadingInfo &shadingInfo, int chunkDistance,
 	const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame)
 {
@@ -7733,13 +7598,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 		const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
 		const NewDouble2 eye2D(absoluteEye.x, absoluteEye.z);
 		const NewInt2 eyeVoxel2D(absoluteEyeVoxel.x, absoluteEyeVoxel.z);
-
-		// Texture of the flat. It might be flipped horizontally as well, given by
-		// the "flat.flipped" value.
-		const EntityRenderID entityRenderID = flat.entityRenderID;
-		const FlatTextureGroup &textureGroup = flatTextureGroups[entityRenderID];
-		const FlatTexture &texture = textureGroup.getTexture(
-			flat.animStateID, flat.animAngleID, flat.animTextureID);
+		const FlatTexture &texture = *flat.texture;
 
 		SoftwareRenderer::drawFlat(startX, endX, flat, flatNormal, eye2D, eyeVoxel2D, camera.horizonProjY,
 			shadingInfo, flat.overridePalette, chunkDistance, texture, visLights, visLightLists, frame);
@@ -7838,7 +7697,7 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		const BufferView2D<const VisibleLightList> flatsVisLightListsView(flats.visLightLists->get(),
 			flats.visLightLists->getWidth(), flats.visLightLists->getHeight());
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal, *flats.visibleFlats,
-			*flats.flatTextureGroups, *threadData.shadingInfo, voxels.chunkDistance, flatsVisLightsView,
+			*flats.entityTextures, *threadData.shadingInfo, voxels.chunkDistance, flatsVisLightsView,
 			flatsVisLightListsView, *threadData.frame);
 
 		// Wait for other threads to finish flats.
@@ -7857,7 +7716,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	const double aspect = widthReal / heightReal;
 
 	// To account for tall pixels.
-	const double projectionModifier = ArenaRenderUtils::TALL_PIXEL_RATIO;
+	constexpr double projectionModifier = ArenaRenderUtils::TALL_PIXEL_RATIO;
 
 	// 2.5D camera definition.
 	const Camera camera(eye, direction, fovY, aspect, projectionModifier);
@@ -7882,7 +7741,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	this->threadData.voxels.init(chunkDistance, ceilingScale, levelInst.getChunkManager(), this->visibleLights,
 		this->visLightLists, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights, this->visLightLists,
-		this->flatTextureGroups);
+		this->entityTextures);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.

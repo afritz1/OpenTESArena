@@ -144,10 +144,10 @@ private:
 	{
 		TextureAssetReference textureAssetRef;
 		bool flipped;
-
+		bool reflective;
 		int textureIndex; // Index in entity textures list.
 
-		EntityTextureMapping(TextureAssetReference &&textureAssetRef, bool flipped, int textureIndex);
+		EntityTextureMapping(TextureAssetReference &&textureAssetRef, bool flipped, bool reflective, int textureIndex);
 	};
 
 	struct EntityTextures
@@ -155,9 +155,9 @@ private:
 		std::vector<FlatTexture> textures;
 		std::vector<EntityTextureMapping> mappings;
 
-		void addTexture(FlatTexture &&texture, TextureAssetReference &&textureAssetRef, bool flipped);
+		void addTexture(FlatTexture &&texture, TextureAssetReference &&textureAssetRef, bool flipped, bool reflective);
 
-		const FlatTexture &getTexture(const TextureAssetReference &textureAssetRef, bool flipped) const;
+		const FlatTexture &getTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) const;
 
 		void clear();
 	};
@@ -324,39 +324,6 @@ private:
 		FrameView(uint32_t *colorBuffer, double *depthBuffer, int width, int height);
 	};
 
-	// Each renderable entity ID has a set of animation state mappings to groups of texture
-	// lists ordered by entity angle.
-	class FlatTextureGroup
-	{
-	private:
-		// Slimmed-down copies of entity animation definitions for rendering. One texture list
-		// per facing/direction, stored clockwise.
-		using TextureList = std::vector<FlatTexture>;
-		using State = std::vector<TextureList>;
-
-		// Accessible like entity animations. Index of state is determined by anim state name.
-		std::vector<State> states;
-
-		bool isValidLookup(int stateID, int angleID, int textureID) const;
-	public:
-		// State ID points into states list, angle ID points into texture lists, and texture ID
-		// points into texture list.
-		const FlatTexture &getTexture(int stateID, int angleID, int textureID) const;
-
-		// Initializes internal buffers to fit each discrete frame of the given entity animation.
-		// Basically "I want to allocate space for this animation, and textures will come next".
-		// Each keyframe's texture should be populated immediately afterwards by the caller.
-		void init(const EntityAnimationInstance &animInst);
-
-		// Sets the given texture's data. It is expected that the caller uses the entity animation
-		// instance to determine which textures to loop over.
-		void setTexture(int stateID, int angleID, int textureID, bool flipped,
-			const TextureBuilder &textureBuilder, bool reflective);
-	};
-
-	// Each flat texture group is indexed by the entity render ID.
-	using FlatTextureGroups = std::vector<FlatTextureGroup>;
-
 	// Each chasm texture group contains one animation's worth of textures.
 	using ChasmTextureGroup = std::vector<ChasmTexture>;
 	using ChasmTextureGroups = std::unordered_map<int, ChasmTextureGroup>;
@@ -377,12 +344,9 @@ private:
 		// Camera Z for depth sorting.
 		double z;
 
-		// Entity animation texture look-up values.
+		// Entity texture values.
+		const FlatTexture *texture;
 		const Palette *overridePalette; // For citizen variations.
-		EntityRenderID entityRenderID;
-		int animStateID;
-		int animAngleID;
-		int animTextureID;
 	};
 
 	struct DistantObject
@@ -522,13 +486,12 @@ private:
 			const std::vector<VisibleFlat> *visibleFlats;
 			const std::vector<VisibleLight> *visLights;
 			const Buffer2D<VisibleLightList> *visLightLists;
-			const FlatTextureGroups *flatTextureGroups;
+			const EntityTextures *entityTextures;
 			bool doneSorting; // True when render threads can start rendering flats.
 
 			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 				const std::vector<VisibleLight> &visLights,
-				const Buffer2D<VisibleLightList> &visLightLists,
-				const FlatTextureGroups &flatTextureGroups);
+				const Buffer2D<VisibleLightList> &visLightLists, const EntityTextures &entityTextures);
 		};
 
 		SkyGradient skyGradient;
@@ -570,7 +533,7 @@ private:
 	Buffer2D<VisibleLightList> visLightLists; // Potentially-visible voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	VoxelTextures voxelTextures; // Voxel textures and their mappings.
-	FlatTextureGroups flatTextureGroups; // Entity anim textures accessed by entity render ID.
+	EntityTextures entityTextures; // Entity textures and their mappings.
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
 	std::vector<Double3> skyPalette; // Colors for each time of day.
@@ -921,7 +884,7 @@ private:
 
 	// Handles drawing all flats for the current frame.
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
-		const std::vector<VisibleFlat> &visibleFlats, const FlatTextureGroups &flatTextureGroups,
+		const std::vector<VisibleFlat> &visibleFlats, const EntityTextures &entityTextures,
 		const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame);
 
@@ -940,14 +903,10 @@ public:
 	// Gets profiling information about renderer internals.
 	ProfilerData getProfilerData() const override;
 
-	// Returns whether the given entity render ID points to a valid entry.
-	bool isValidEntityRenderID(EntityRenderID id) const;
-
 	// Tries to write out selection data for the given entity. Returns whether selection data was
 	// successfully written.
-	bool tryGetEntitySelectionData(const Double2 &uv, EntityRenderID entityRenderID,
-		int animStateID, int animAngleID, int animKeyframeID, bool pixelPerfect,
-		const Palette &palette, bool *outIsSelected) const override;
+	bool tryGetEntitySelectionData(const Double2 &uv, const TextureAssetReference &textureAssetRef,
+		bool flipped, bool reflective, bool pixelPerfect, const Palette &palette, bool *outIsSelected) const override;
 
 	// Converts a screen point to a ray into the game world.
 	Double3 screenPointToRay(double xPercent, double yPercent, const Double3 &cameraDirection,
@@ -970,20 +929,13 @@ public:
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) override;
 
-	// Gets the next available entity render ID to be assigned to entities in the engine.
-	EntityRenderID makeEntityRenderID() override;
-
-	// Populates an entity's animation render buffers with textures.
-	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager) override;
-
 	// Sets whether night lights and night textures are active. This only needs to be set for
 	// exterior locations (i.e., cities and wilderness) because those are the only places
 	// with time-dependent light sources and textures.
 	void setNightLightsActive(bool active, const Palette &palette) override;
 
 	// Zeroes out all renderer textures and entity render ID mappings to textures.
-	void clearTexturesAndEntityRenderIDs() override;
+	void clearTextures() override;
 
 	// Removes all sky objects.
 	void clearSky() override;
@@ -995,12 +947,12 @@ public:
 	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) override;
 	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
-		TextureManager &textureManager) override;
+		bool reflective, TextureManager &textureManager) override;
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef,
 		TextureManager &textureManager) override;
 
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef) override;
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped) override;
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective) override;
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef) override;
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
