@@ -1948,8 +1948,6 @@ void GameWorldPanel::handleTriggers(const CoordInt3 &coord)
 	const TriggerDefinition *triggerDef = chunkPtr->tryGetTrigger(coord.voxel);
 	if (triggerDef != nullptr)
 	{
-		// @todo: Chunk::triggerInsts
-
 		if (triggerDef->hasSoundDef())
 		{
 			const TriggerDefinition::SoundDef &soundDef = triggerDef->getSoundDef();
@@ -1963,7 +1961,9 @@ void GameWorldPanel::handleTriggers(const CoordInt3 &coord)
 		if (triggerDef->hasTextDef())
 		{
 			const TriggerDefinition::TextDef &textDef = triggerDef->getTextDef();
-			const bool hasBeenDisplayed = false; // @todo: TriggerInstance
+			const VoxelInt3 &voxel = coord.voxel;
+			const VoxelInstance *triggerInst = chunkPtr->tryGetVoxelInst(voxel, VoxelInstance::Type::Trigger);
+			const bool hasBeenDisplayed = (triggerInst != nullptr) && triggerInst->getTriggerState().isTriggered();
 			const bool canDisplay = !textDef.isDisplayedOnce() || !hasBeenDisplayed;
 
 			if (canDisplay)
@@ -1974,9 +1974,14 @@ void GameWorldPanel::handleTriggers(const CoordInt3 &coord)
 
 				gameState.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
 
-				// Set the text trigger as activated (regardless of whether or not it's
-				// single-shot, just for consistency).
-				//textTrigger->setPreviouslyDisplayed(true); // @todo: TriggerInstance
+				// Set the text trigger as activated (regardless of whether or not it's single-shot, just
+				// for consistency).
+				if (triggerInst == nullptr)
+				{
+					constexpr bool triggered = true;
+					VoxelInstance newTriggerInst = VoxelInstance::makeTrigger(voxel.x, voxel.y, voxel.z, triggered);
+					chunkPtr->addVoxelInst(std::move(newTriggerInst));
+				}
 			}
 		}
 	}

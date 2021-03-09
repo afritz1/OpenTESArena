@@ -161,6 +161,16 @@ void VoxelInstance::FadeState::update(double dt)
 	}
 }
 
+void VoxelInstance::TriggerState::init(bool triggered)
+{
+	this->triggered = triggered;
+}
+
+bool VoxelInstance::TriggerState::isTriggered() const
+{
+	return this->triggered;
+}
+
 VoxelInstance::VoxelInstance()
 {
 	this->x = 0;
@@ -219,6 +229,14 @@ VoxelInstance VoxelInstance::makeFading(SNInt x, int y, WEInt z, double speed)
 	return VoxelInstance::makeFading(x, y, z, speed, percentFaded);
 }
 
+VoxelInstance VoxelInstance::makeTrigger(SNInt x, int y, WEInt z, bool triggered)
+{
+	VoxelInstance voxelInst;
+	voxelInst.init(x, y, z, Type::Trigger);
+	voxelInst.trigger.init(triggered);
+	return voxelInst;
+}
+
 SNInt VoxelInstance::getX() const
 {
 	return this->x;
@@ -275,6 +293,18 @@ const VoxelInstance::FadeState &VoxelInstance::getFadeState() const
 	return this->fade;
 }
 
+VoxelInstance::TriggerState &VoxelInstance::getTriggerState()
+{
+	DebugAssert(this->type == Type::Trigger);
+	return this->trigger;
+}
+
+const VoxelInstance::TriggerState &VoxelInstance::getTriggerState() const
+{
+	DebugAssert(this->type == Type::Trigger);
+	return this->trigger;
+}
+
 bool VoxelInstance::hasRelevantState() const
 {
 	if (this->type == Type::Chasm)
@@ -291,6 +321,11 @@ bool VoxelInstance::hasRelevantState() const
 	{
 		const VoxelInstance::FadeState &fadeState = this->fade;
 		return !fadeState.isDoneFading();
+	}
+	else if (this->type == Type::Trigger)
+	{
+		const VoxelInstance::TriggerState &triggerState = this->trigger;
+		return triggerState.isTriggered();
 	}
 	else
 	{
