@@ -147,8 +147,9 @@ public:
 	// Whether this voxel definition contributes to a chasm having a wall face.
 	bool allowsChasmFace() const;
 
-	// Gets all the texture asset references from the voxel definition based on its type.
-	Buffer<TextureAssetReference> getTextureAssetReferences() const;
+	// Gets the texture asset references and count from the voxel definition based on its type.
+	int getTextureAssetReferenceCount() const;
+	const TextureAssetReference &getTextureAssetReference(int index) const;
 };
 
 #endif

@@ -164,67 +164,121 @@ bool VoxelDefinition::allowsChasmFace() const
 	return (this->type != ArenaTypes::VoxelType::None) && (this->type != ArenaTypes::VoxelType::Chasm);
 }
 
-Buffer<TextureAssetReference> VoxelDefinition::getTextureAssetReferences() const
+int VoxelDefinition::getTextureAssetReferenceCount() const
 {
-	Buffer<TextureAssetReference> buffer;
-
 	if (this->type == ArenaTypes::VoxelType::None)
 	{
-		// Do nothing.
+		return 0;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Wall)
 	{
-		buffer.init(3);
-		buffer.set(0, this->wall.sideTextureAssetRef);
-		buffer.set(1, this->wall.floorTextureAssetRef);
-		buffer.set(2, this->wall.ceilingTextureAssetRef);
+		return 3;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Floor)
 	{
-		buffer.init(1);
-		buffer.set(0, this->floor.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Ceiling)
 	{
-		buffer.init(1);
-		buffer.set(0, this->ceiling.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Raised)
 	{
-		buffer.init(3);
-		buffer.set(0, this->raised.sideTextureAssetRef);
-		buffer.set(1, this->raised.floorTextureAssetRef);
-		buffer.set(2, this->raised.ceilingTextureAssetRef);
+		return 3;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Diagonal)
 	{
-		buffer.init(1);
-		buffer.set(0, this->diagonal.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::TransparentWall)
 	{
-		buffer.init(1);
-		buffer.set(0, this->transparentWall.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Edge)
 	{
-		buffer.init(1);
-		buffer.set(0, this->edge.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Chasm)
 	{
-		buffer.init(1);
-		buffer.set(0, this->chasm.textureAssetRef);
+		return 1;
 	}
 	else if (this->type == ArenaTypes::VoxelType::Door)
 	{
-		buffer.init(1);
-		buffer.set(0, this->door.textureAssetRef);
+		return 1;
 	}
 	else
 	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->type)));
+		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
 	}
+}
 
-	return buffer;
+const TextureAssetReference &VoxelDefinition::getTextureAssetReference(int index) const
+{
+	if (this->type == ArenaTypes::VoxelType::None)
+	{
+		throw DebugException("Can't get texture asset reference from None voxel definition.");
+	}
+	else if (this->type == ArenaTypes::VoxelType::Wall)
+	{
+		const std::array<const TextureAssetReference*, 3> ptrs =
+		{
+			&this->wall.sideTextureAssetRef,
+			&this->wall.floorTextureAssetRef,
+			&this->wall.ceilingTextureAssetRef
+		};
+
+		DebugAssertIndex(ptrs, index);
+		return *ptrs[index];
+	}
+	else if (this->type == ArenaTypes::VoxelType::Floor)
+	{
+		DebugAssert(index == 0);
+		return this->floor.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::Ceiling)
+	{
+		DebugAssert(index == 0);
+		return this->ceiling.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::Raised)
+	{
+		const std::array<const TextureAssetReference*, 3> ptrs =
+		{
+			&this->raised.sideTextureAssetRef,
+			&this->raised.floorTextureAssetRef,
+			&this->raised.ceilingTextureAssetRef
+		};
+
+		DebugAssertIndex(ptrs, index);
+		return *ptrs[index];
+	}
+	else if (this->type == ArenaTypes::VoxelType::Diagonal)
+	{
+		DebugAssert(index == 0);
+		return this->diagonal.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::TransparentWall)
+	{
+		DebugAssert(index == 0);
+		return this->transparentWall.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::Edge)
+	{
+		DebugAssert(index == 0);
+		return this->edge.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::Chasm)
+	{
+		DebugAssert(index == 0);
+		return this->chasm.textureAssetRef;
+	}
+	else if (this->type == ArenaTypes::VoxelType::Door)
+	{
+		DebugAssert(index == 0);
+		return this->door.textureAssetRef;
+	}
+	else
+	{
+		throw DebugException("Unrecognized voxel type \"" + std::to_string(static_cast<int>(this->type)) + "\".");
+	}
 }

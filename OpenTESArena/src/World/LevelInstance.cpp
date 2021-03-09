@@ -105,10 +105,9 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 		for (int i = 0; i < levelInfoDef.getVoxelDefCount(); i++)
 		{
 			const VoxelDefinition &voxelDef = levelInfoDef.getVoxelDef(i);
-			const Buffer<TextureAssetReference> textureAssetRefs = voxelDef.getTextureAssetReferences();
-			for (int j = 0; j < textureAssetRefs.getCount(); j++)
+			for (int j = 0; j < voxelDef.getTextureAssetReferenceCount(); j++)
 			{
-				const TextureAssetReference &textureAssetRef = textureAssetRefs.get(j);
+				const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(j);
 				if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
 				{
 					DebugLogError("Couldn't create renderer voxel texture for \"" + textureAssetRef.filename + "\".");
