@@ -1753,7 +1753,8 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							if (isWall || isEdge)
 							{
 								const TransitionDefinition *transitionDef = chunkPtr->tryGetTransition(voxel);
-								if (transitionDef != nullptr)
+								if ((transitionDef != nullptr) &&
+									(transitionDef->getType() != TransitionType::LevelChange))
 								{
 									this->handleMapTransition(hit, *transitionDef);
 								}
