@@ -2,7 +2,29 @@
 #include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
 #include "EntityDefinitionLibrary.h"
+#include "EntityType.h"
 #include "EntityUtils.h"
+
+#include "components/debug/Debug.h"
+
+EntityType EntityUtils::getEntityTypeFromDefType(EntityDefinition::Type defType)
+{
+	switch (defType)
+	{
+	case EntityDefinition::Type::StaticNPC:
+	case EntityDefinition::Type::Item:
+	case EntityDefinition::Type::Container:
+	case EntityDefinition::Type::Transition:
+	case EntityDefinition::Type::Doodad:
+		return EntityType::Static;
+	case EntityDefinition::Type::Enemy:
+	case EntityDefinition::Type::Citizen:
+	case EntityDefinition::Type::Projectile:
+		return EntityType::Dynamic;
+	default:
+		DebugUnhandledReturnMsg(EntityType, std::to_string(static_cast<int>(defType)));
+	}
+}
 
 std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 {

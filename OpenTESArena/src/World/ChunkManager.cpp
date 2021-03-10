@@ -6,6 +6,9 @@
 #include "MapType.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityManager.h"
+#include "../Entities/EntityType.h"
+#include "../Game/CardinalDirection.h"
+#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
@@ -23,6 +26,29 @@ namespace
 		*outEndY = levelHeight;
 		*outStartZ = levelOffset.y;
 		*outEndZ = std::min(*outStartZ + Chunk::DEPTH, levelDepth);
+	}
+
+	bool IsInChunkWritingRange(const LevelInt3 &position, SNInt startX, SNInt endX, int startY, int endY,
+		WEInt startZ, WEInt endZ)
+	{
+		return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
+			(position.z >= startZ) && (position.z < endZ);
+	}
+
+	VoxelInt3 MakeChunkVoxelFromLevel(const LevelInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+	{
+		return VoxelInt3(
+			levelPosition.x - chunkStartX,
+			levelPosition.y - chunkStartY,
+			levelPosition.z - chunkStartZ);
+	}
+
+	VoxelDouble3 MakeChunkPointFromLevel(const LevelDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+	{
+		return VoxelDouble3(
+			levelPosition.x - static_cast<SNDouble>(chunkStartX),
+			levelPosition.y - static_cast<double>(chunkStartY),
+			levelPosition.z - static_cast<WEDouble>(chunkStartZ));
 	}
 }
 
@@ -212,17 +238,6 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
-	auto isInChunk = [startX, endX, startY, endY, startZ, endZ](const LevelInt3 &position)
-	{
-		return (position.x >= startX) && (position.x < endX) && (position.y >= startY) && (position.y < endY) &&
-			(position.z >= startZ) && (position.z < endZ);
-	};
-
-	auto makeChunkPosition = [startX, startY, startZ](const LevelInt3 &position)
-	{
-		return VoxelInt3(position.x - startX, position.y - startY, position.z - startZ);
-	};
-
 	// Add transitions.
 	for (int i = 0; i < levelDefinition.getTransitionPlacementDefCount(); i++)
 	{
@@ -232,14 +247,14 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		std::optional<Chunk::TransitionID> transitionID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (isInChunk(position))
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!transitionID.has_value())
 				{
 					transitionID = chunk.addTransition(TransitionDefinition(transitionDef));
 				}
 
-				const VoxelInt3 voxel = makeChunkPosition(position);
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addTransitionPosition(*transitionID, voxel);
 			}
 		}
@@ -254,14 +269,14 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		std::optional<Chunk::TriggerID> triggerID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (isInChunk(position))
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!triggerID.has_value())
 				{
 					triggerID = chunk.addTrigger(TriggerDefinition(triggerDef));
 				}
 
-				const VoxelInt3 voxel = makeChunkPosition(position);
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addTriggerPosition(*triggerID, voxel);
 			}
 		}
@@ -276,14 +291,14 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		std::optional<Chunk::LockID> lockID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (isInChunk(position))
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!lockID.has_value())
 				{
 					lockID = chunk.addLock(LockDefinition(lockDef));
 				}
 
-				const VoxelInt3 voxel = makeChunkPosition(position);
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addLockPosition(*lockID, voxel);
 			}
 		}
@@ -298,14 +313,14 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		std::optional<Chunk::BuildingNameID> buildingNameID;
 		for (const LevelInt3 &position : placementDef.positions)
 		{
-			if (isInChunk(position))
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
 				if (!buildingNameID.has_value())
 				{
 					buildingNameID = chunk.addBuildingName(std::string(buildingName));
 				}
 
-				const VoxelInt3 voxel = makeChunkPosition(position);
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addBuildingNamePosition(*buildingNameID, voxel);
 			}
 		}
@@ -314,6 +329,8 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 
 void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 {
+	// @todo: only iterate over chunk writing ranges
+
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
@@ -347,10 +364,118 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 	}
 }
 
-bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition)
+void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
+	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset, EntityManager &entityManager)
+{
+	SNInt startX, endX;
+	int startY, endY;
+	WEInt startZ, endZ;
+	GetChunkWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
+		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
+
+	// Cosmetic random (initial creature sound timing, etc.).
+	Random random;
+
+	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
+	{
+		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
+		const LevelDefinition::EntityDefID entityDefID = placementDef.id; // Equivalent to a EntityDefinitionLibrary EntityDefID as far as I'm aware?
+		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(entityDefID);
+		const EntityDefinition::Type entityDefType = entityDef.getType();
+		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
+
+		for (const LevelDouble3 &position : placementDef.positions)
+		{
+			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, levelInfoDefinition.getCeilingScale());
+			if (IsInChunkWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
+			{
+				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
+
+				// @todo: put most of this in EntityGeneration.
+
+				EntityRef entity = entityManager.makeEntity(entityType); // @todo: decide if chunk should be an argument too
+				Entity *entityPtr = entity.get();
+
+				EntityAnimationInstance animInst; // @todo: populate from anim def and set to the correct state for the entity
+				// @todo: let the entity acquire the anim inst instead of copying
+				// @todo: set streetlight anim state if night lights are active
+				// @todo: set puddle anim state if raining?
+
+				if (entityType == EntityType::Static)
+				{
+					StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
+					if (entityDefType == EntityDefinition::Type::StaticNPC)
+					{
+						staticEntity->initNPC(entityDefID, animInst);
+					}
+					else if (entityDefType == EntityDefinition::Type::Item)
+					{
+						// @todo: initialize as an item
+						staticEntity->initDoodad(entityDefID, animInst);
+						DebugLogError("Item entity initialization not implemented.");
+					}
+					else if (entityDefType == EntityDefinition::Type::Container)
+					{
+						staticEntity->initContainer(entityDefID, animInst);
+					}
+					else if (entityDefType == EntityDefinition::Type::Transition)
+					{
+						staticEntity->initTransition(entityDefID, animInst);
+					}
+					else if (entityDefType == EntityDefinition::Type::Doodad)
+					{
+						staticEntity->initDoodad(entityDefID, animInst);
+					}
+					else
+					{
+						DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
+					}
+				}
+				else if (entityType == EntityType::Dynamic)
+				{
+					DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
+					const VoxelDouble2 direction = CardinalDirection::North;
+					const CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(direction);
+
+					if (entityDefType == EntityDefinition::Type::Enemy)
+					{
+						dynamicEntity->initCreature(entityDefID, animInst, direction, random);
+					}
+					else if (entityDefType == EntityDefinition::Type::Citizen)
+					{
+						dynamicEntity->initCitizen(entityDefID, animInst, cardinalDirection);
+					}
+					else if (entityDefType == EntityDefinition::Type::Projectile)
+					{
+						dynamicEntity->initProjectile(entityDefID, animInst, direction);
+					}
+					else
+					{
+						DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
+					}
+				}
+				else
+				{
+					DebugNotImplementedMsg(std::to_string(static_cast<int>(entityType)));
+				}
+
+				DebugNotImplemented();
+				// @todo: make entity animation instance? or is it already in the entity
+				// @todo: set entity animation state
+				// @todo: set entity direction to north if dynamic
+				// @todo: set entity position in chunk
+			}
+		}
+	}
+}
+
+void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
+	const MapDefinition &mapDefinition, EntityManager &entityManager)
 {
 	Chunk &chunk = this->getChunk(index);
+	
+	// Notify the entity manager about the new chunk so entities can be spawned in it.
+	entityManager.addChunk(coord);
 
 	// Populate all or part of the chunk from a level definition depending on the world type.
 	const MapType mapType = mapDefinition.getMapType();
@@ -402,6 +527,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -423,6 +549,7 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -442,14 +569,12 @@ bool ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		this->populateChunkVoxelInsts(chunk);
+		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
 	}
 	else
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(mapType)));
-		return false;
 	}
-
-	return true;
 }
 
 void ChunkManager::updateChunkPerimeter(Chunk &chunk)
@@ -564,15 +689,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::op
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				if (!this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition))
-				{
-					DebugLogError("Couldn't populate chunk \"" + std::to_string(spawnIndex) +
-						"\" at (" + coord.toString() + ").");
-					continue;
-				}
-
-				// Notify the entity manager about the new chunk.
-				entityManager.addChunk(coord);
+				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityManager);
 			}
 		}
 	}

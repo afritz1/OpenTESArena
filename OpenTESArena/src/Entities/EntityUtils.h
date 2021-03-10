@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "EntityDefinition.h"
+
 // Entity instance handle.
 using EntityID = int;
 
@@ -10,11 +12,14 @@ using EntityID = int;
 using EntityDefID = int;
 
 class CharacterClassLibrary;
-class EntityDefinition;
 class EntityDefinitionLibrary;
+
+enum class EntityType;
 
 namespace EntityUtils
 {
+	EntityType getEntityTypeFromDefType(EntityDefinition::Type defType);
+
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
 

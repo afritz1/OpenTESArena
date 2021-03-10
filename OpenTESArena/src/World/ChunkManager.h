@@ -55,9 +55,13 @@ private:
 	// Adds any voxel instances to a chunk that should exist at level generation time. Mostly intended for chasms.
 	void populateChunkVoxelInsts(Chunk &chunk);
 
+	// Adds entities from the level to the chunk.
+	void populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
+		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset, EntityManager &entityManager);
+
 	// Fills the chunk with the data required based on its position and the world type.
-	bool populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition);
+	void populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
+		const MapDefinition &mapDefinition, EntityManager &entityManager);
 
 	// Updates context-sensitive voxels (such as chasms) on a chunk's perimeter that may be affected by
 	// adjacent chunks.
