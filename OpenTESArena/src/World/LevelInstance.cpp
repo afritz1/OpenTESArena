@@ -148,13 +148,13 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 
 	if ((mapType == MapType::Interior) || (mapType == MapType::City))
 	{
-		// Load voxel textures for the active level.
+		// Load textures for the active level.
 		DebugAssert(activeLevelIndex.has_value());
 		loadLevelDefTextures(*activeLevelIndex);
 	}
 	else if (mapType == MapType::Wilderness)
 	{
-		// Load voxel textures for all wilderness chunks.
+		// Load textures for all wilderness chunks.
 		for (int i = 0; i < mapDefinition.getLevelCount(); i++)
 		{
 			loadLevelDefTextures(i);
@@ -209,9 +209,6 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 
 	writeChasmTextures(ArenaTypes::ChasmType::Wet);
 	writeChasmTextures(ArenaTypes::ChasmType::Lava);
-
-	// @todo: see LevelData::setActive() for reference
-	// - instantiate level entities and load entity textures via renderer.tryCreateEntityTexture()
 
 	// Set renderer fog distance and night lights.
 	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
