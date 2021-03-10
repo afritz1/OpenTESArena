@@ -94,7 +94,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 		skyColors.set(i, color.toARGB());
 	}
 
-	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());	
+	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());
 	// @todo: renderer.setSky();
 
 	// Load textures known at level load time.

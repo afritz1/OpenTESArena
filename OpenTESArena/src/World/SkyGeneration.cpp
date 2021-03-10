@@ -555,6 +555,10 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 {
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
+	// Generate sky colors.
+	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherType, textureManager);
+	outSkyDef->init(std::move(skyColors));
+
 	// Generate static land and air objects.
 	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherType,
 		skyGenInfo.currentDay, skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
