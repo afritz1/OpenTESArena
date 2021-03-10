@@ -387,7 +387,8 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 		for (const LevelDouble3 &position : placementDef.positions)
 		{
-			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, levelInfoDefinition.getCeilingScale());
+			const double ceilingScale = levelInfoDefinition.getCeilingScale();
+			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
 			if (IsInChunkWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
 			{
 				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
@@ -399,6 +400,16 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 				EntityAnimationInstance animInst;
 				animInst.init(animDef);
+
+				const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(
+					EntityAnimationUtils::STATE_IDLE.c_str());
+				if (!defaultStateIndex.has_value())
+				{
+					DebugLogWarning("Couldn't get default state index for entity at \"" + position.toString() + "\".");
+					continue;
+				}
+
+				animInst.setStateIndex(*defaultStateIndex);
 				// @todo: set anim inst to the correct state for the entity
 				// @todo: let the entity acquire the anim inst instead of copying
 				// @todo: set streetlight anim state if night lights are active
@@ -453,8 +464,10 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 					DebugNotImplementedMsg(std::to_string(static_cast<int>(entityType)));
 				}
 
-				DebugNotImplemented();
-				// @todo: set entity position in chunk
+				// Set entity position in chunk last. This has the potential to change the entity's chunk
+				// and invalidate the local entity pointer.
+				const CoordDouble2 coord(chunk.getCoord(), VoxelDouble2(point.x, point.z));
+				entityPtr->setPosition(coord, entityManager);
 			}
 		}
 	}
