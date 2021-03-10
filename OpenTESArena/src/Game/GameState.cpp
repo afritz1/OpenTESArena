@@ -284,7 +284,7 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for location \"" + locationDef.getName() + "\".");
@@ -334,7 +334,7 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated interior.");
@@ -411,7 +411,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated city.");
@@ -492,7 +492,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	const std::optional<int> activeLevelIndex;
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint,
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint, entityDefLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
@@ -509,7 +509,8 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	return true;
 }
 
-bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
+bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	if (this->maps.size() == 0)
 	{
@@ -549,7 +550,7 @@ bool GameState::tryPopMap(TextureManager &textureManager, Renderer &renderer)
 	}();
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord,
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
@@ -871,8 +872,8 @@ void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
 }
 
 bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	WeatherType weatherType, const CoordInt2 &startCoord, TextureManager &textureManager,
-	Renderer &renderer)
+	WeatherType weatherType, const CoordInt2 &startCoord, const EntityDefinitionLibrary &entityDefLibrary,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
 	const CoordDouble3 playerPos(
@@ -896,7 +897,8 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	// player gets to.
 	constexpr int chunkDistance = ChunkUtils::MIN_CHUNK_DISTANCE; // @todo: get from options
 	constexpr bool updateChunkStates = false;
-	levelInst.update(0.0, startCoord.chunk, activeLevelIndex, mapDefinition, chunkDistance, updateChunkStates);
+	levelInst.update(0.0, startCoord.chunk, activeLevelIndex, mapDefinition, chunkDistance,
+		updateChunkStates, entityDefLibrary);
 
 	return true;
 }

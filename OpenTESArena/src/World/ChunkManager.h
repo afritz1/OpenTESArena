@@ -13,6 +13,7 @@
 // the entity manager so the entities in it are handled correctly (marked for deletion one way or
 // another).
 
+class EntityDefinitionLibrary;
 class EntityManager;
 class Game;
 class LevelDefinition;
@@ -57,11 +58,13 @@ private:
 
 	// Adds entities from the level to the chunk.
 	void populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset, EntityManager &entityManager);
+		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+		const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
 	void populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, EntityManager &entityManager);
+		const MapDefinition &mapDefinition, const EntityDefinitionLibrary &entityDefLibrary,
+		EntityManager &entityManager);
 
 	// Updates context-sensitive voxels (such as chasms) on a chunk's perimeter that may be affected by
 	// adjacent chunks.
@@ -85,7 +88,8 @@ public:
 	// initialization, and true for all other cases (otherwise the world would be one update step ahead of the
 	// player, which isn't a big deal but is poor design).
 	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates, EntityManager &entityManager);
+		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
+		const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager);
 };
 
 #endif

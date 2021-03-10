@@ -119,8 +119,8 @@ private:
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-		WeatherType weatherType, const CoordInt2 &startCoord, TextureManager &textureManager,
-		Renderer &renderer);
+		WeatherType weatherType, const CoordInt2 &startCoord, const EntityDefinitionLibrary &entityDefLibrary,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void clearMaps();
 public:
@@ -166,7 +166,8 @@ public:
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Pops the top-most map from the stack and sets the next map active if there is one available.
-	bool tryPopMap(TextureManager &textureManager, Renderer &renderer);
+	bool tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
+		Renderer &renderer);
 
 	Player &getPlayer();
 	const MapDefinition &getActiveMapDef() const; // @todo: this is bad practice since it becomes dangling when changing the active map.

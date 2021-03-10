@@ -7,6 +7,7 @@
 // Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
 // and depends on one or more level definitions for its population.
 
+class EntityDefinitionLibrary;
 class MapDefinition;
 class Renderer;
 
@@ -37,7 +38,8 @@ public:
 		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates);
+		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
+		const EntityDefinitionLibrary &entityDefLibrary);
 };
 
 #endif

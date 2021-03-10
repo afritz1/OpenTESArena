@@ -365,7 +365,8 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 }
 
 void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
-	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset, EntityManager &entityManager)
+	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+	const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -379,18 +380,24 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 	for (int i = 0; i < levelDefinition.getEntityPlacementDefCount(); i++)
 	{
 		const LevelDefinition::EntityPlacementDef &placementDef = levelDefinition.getEntityPlacementDef(i);
-		const LevelDefinition::EntityDefID entityDefID = placementDef.id; // Equivalent to a EntityDefinitionLibrary EntityDefID as far as I'm aware?
-		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(entityDefID);
+		const LevelDefinition::EntityDefID levelEntityDefID = placementDef.id;
+		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinition::Type entityDefType = entityDef.getType();
 		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
+		std::optional<EntityDefID> entityDefID;
 		for (const LevelDouble3 &position : placementDef.positions)
 		{
 			const double ceilingScale = levelInfoDefinition.getCeilingScale();
 			const LevelInt3 voxelPosition = VoxelUtils::pointToVoxel(position, ceilingScale);
 			if (IsInChunkWritingRange(voxelPosition, startX, endX, startY, endY, startZ, endZ))
 			{
+				if (!entityDefID.has_value())
+				{
+					entityDefID = entityManager.addEntityDef(EntityDefinition(entityDef), entityDefLibrary);
+				}
+
 				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
 
 				// @todo: put most of this in EntityGeneration.
@@ -419,25 +426,25 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 					StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
 					if (entityDefType == EntityDefinition::Type::StaticNPC)
 					{
-						staticEntity->initNPC(entityDefID, animInst);
+						staticEntity->initNPC(*entityDefID, animInst);
 					}
 					else if (entityDefType == EntityDefinition::Type::Item)
 					{
 						// @todo: initialize as an item
-						staticEntity->initDoodad(entityDefID, animInst);
+						staticEntity->initDoodad(*entityDefID, animInst);
 						DebugLogError("Item entity initialization not implemented.");
 					}
 					else if (entityDefType == EntityDefinition::Type::Container)
 					{
-						staticEntity->initContainer(entityDefID, animInst);
+						staticEntity->initContainer(*entityDefID, animInst);
 					}
 					else if (entityDefType == EntityDefinition::Type::Transition)
 					{
-						staticEntity->initTransition(entityDefID, animInst);
+						staticEntity->initTransition(*entityDefID, animInst);
 					}
 					else if (entityDefType == EntityDefinition::Type::Doodad)
 					{
-						staticEntity->initDoodad(entityDefID, animInst);
+						staticEntity->initDoodad(*entityDefID, animInst);
 					}
 					else
 					{
@@ -452,7 +459,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 					if (entityDefType == EntityDefinition::Type::Enemy)
 					{
-						dynamicEntity->initCreature(entityDefID, animInst, direction, random);
+						dynamicEntity->initCreature(*entityDefID, animInst, direction, random);
 					}
 					else
 					{
@@ -474,7 +481,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 }
 
 void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, EntityManager &entityManager)
+	const MapDefinition &mapDefinition, const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
 {
 	Chunk &chunk = this->getChunk(index);
 	
@@ -531,7 +538,8 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+				entityDefLibrary, entityManager);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -553,7 +561,8 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+				entityDefLibrary, entityManager);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -573,7 +582,8 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		this->populateChunkVoxelInsts(chunk);
-		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityManager);
+		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+			entityDefLibrary, entityManager);
 	}
 	else
 	{
@@ -662,7 +672,8 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 }
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates, EntityManager &entityManager)
+	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
+	const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -693,7 +704,8 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::op
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityManager);
+				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition,
+					entityDefLibrary, entityManager);
 			}
 		}
 	}

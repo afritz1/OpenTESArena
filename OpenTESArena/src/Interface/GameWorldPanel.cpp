@@ -2024,7 +2024,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		if (!gameState.tryPopMap(textureManager, renderer))
+		if (!gameState.tryPopMap(game.getEntityDefinitionLibrary(), textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -2457,7 +2457,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 				constexpr bool updateChunkStates = false;
 				newActiveLevel.update(dummyDeltaTime, player.getPosition().chunk, levelIndex, interiorMapDef,
-					chunkDistance, updateChunkStates);
+					chunkDistance, updateChunkStates, game.getEntityDefinitionLibrary());
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
@@ -2908,7 +2908,7 @@ void GameWorldPanel::tick(double dt)
 	// Tick active map (entities, animated distant land, etc.).
 	constexpr bool updateChunkStates = true;
 	mapInst.update(dt, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), updateChunkStates);
+		game.getOptions().getMisc_ChunkDistance(), updateChunkStates, game.getEntityDefinitionLibrary());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.
