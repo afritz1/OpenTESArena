@@ -41,15 +41,15 @@ private:
 	void recycleChunk(int index);
 
 	// Helper function for setting the chunk's voxel definitions.
-	void populateChunkVoxelDefsFromLevel(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition);
+	void populateChunkVoxelDefs(Chunk &chunk, const LevelInfoDefinition &levelInfoDefinition);
 
 	// Helper function for setting the chunk's voxels for the given level. This might not touch all voxels
 	// in the chunk because it does not fully overlap the level.
-	void populateChunkVoxelsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+	void populateChunkVoxels(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInt2 &levelOffset);
 
 	// Helper function for setting the chunk's secondary voxel data (transitions, triggers, etc.).
-	void populateChunkDecoratorsFromLevel(Chunk &chunk, const LevelDefinition &levelDefinition,
+	void populateChunkDecorators(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
 
 	// Adds any voxel instances to a chunk that should exist at level generation time. Mostly intended for chasms.
