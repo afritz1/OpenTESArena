@@ -104,6 +104,32 @@ EntityAnimationInstance &EntityAnimationInstance::operator=(const EntityAnimatio
 	return *this;
 }
 
+void EntityAnimationInstance::init(const EntityAnimationDefinition &animDef)
+{
+	for (int i = 0; i < animDef.getStateCount(); i++)
+	{
+		const EntityAnimationDefinition::State &defState = animDef.getState(i);
+		EntityAnimationInstance::State instState;
+
+		for (int j = 0; j < defState.getKeyframeListCount(); j++)
+		{
+			const EntityAnimationDefinition::KeyframeList &defKeyframeList = defState.getKeyframeList(j);
+			EntityAnimationInstance::KeyframeList instKeyframeList;
+
+			for (int k = 0; k < defKeyframeList.getKeyframeCount(); k++)
+			{
+				EntityAnimationInstance::Keyframe instKeyframe;
+				// @todo: this will eventually get renderer entity texture handles
+				instKeyframeList.addKeyframe(std::move(instKeyframe));
+			}
+
+			instState.addKeyframeList(std::move(instKeyframeList));
+		}
+
+		this->states.emplace_back(std::move(instState));
+	}
+}
+
 int EntityAnimationInstance::getStateCount() const
 {
 	return static_cast<int>(this->states.size());

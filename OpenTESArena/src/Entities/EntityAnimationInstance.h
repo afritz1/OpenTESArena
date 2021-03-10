@@ -82,6 +82,8 @@ public:
 
 	EntityAnimationInstance &operator=(const EntityAnimationInstance &other);
 
+	void init(const EntityAnimationDefinition &animDef);
+
 	int getStateCount() const;
 	const State &getState(int index) const;
 	const CitizenParams *getCitizenParams() const;

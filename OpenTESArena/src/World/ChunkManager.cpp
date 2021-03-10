@@ -396,7 +396,9 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 				EntityRef entity = entityManager.makeEntity(entityType); // @todo: decide if chunk should be an argument too
 				Entity *entityPtr = entity.get();
 
-				EntityAnimationInstance animInst; // @todo: populate from anim def and set to the correct state for the entity
+				EntityAnimationInstance animInst;
+				animInst.init(entityDef.getAnimDef());
+				// @todo: set anim inst to the correct state for the entity
 				// @todo: let the entity acquire the anim inst instead of copying
 				// @todo: set streetlight anim state if night lights are active
 				// @todo: set puddle anim state if raining?
