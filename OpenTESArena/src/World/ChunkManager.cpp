@@ -401,7 +401,6 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 				// @todo: set anim inst to the correct state for the entity
 				// @todo: let the entity acquire the anim inst instead of copying
 				// @todo: set streetlight anim state if night lights are active
-				// @todo: set puddle anim state if raining?
 
 				if (entityType == EntityType::Static)
 				{
@@ -442,14 +441,6 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 					if (entityDefType == EntityDefinition::Type::Enemy)
 					{
 						dynamicEntity->initCreature(entityDefID, animInst, direction, random);
-					}
-					else if (entityDefType == EntityDefinition::Type::Citizen)
-					{
-						dynamicEntity->initCitizen(entityDefID, animInst, cardinalDirection);
-					}
-					else if (entityDefType == EntityDefinition::Type::Projectile)
-					{
-						dynamicEntity->initProjectile(entityDefID, animInst, direction);
 					}
 					else
 					{
