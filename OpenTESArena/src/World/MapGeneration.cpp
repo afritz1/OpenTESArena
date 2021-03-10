@@ -214,8 +214,9 @@ namespace MapGeneration
 			}
 
 			// The entity can only be instantiated if there is at least an idle animation.
-			int idleStateIndex;
-			if (!entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
+				EntityAnimationUtils::STATE_IDLE.c_str());
+			if (!idleStateIndex.has_value())
 			{
 				DebugLogWarning("Missing static entity idle anim state for flat \"" +
 					std::to_string(flatIndex) + "\".");
@@ -236,8 +237,9 @@ namespace MapGeneration
 			}
 
 			// Must have at least an idle animation.
-			int idleStateIndex;
-			if (!entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
+				EntityAnimationUtils::STATE_IDLE.c_str());
+			if (!idleStateIndex.has_value())
 			{
 				DebugLogWarning("Missing dynamic entity idle anim state for flat \"" +
 					std::to_string(flatIndex) + "\".");

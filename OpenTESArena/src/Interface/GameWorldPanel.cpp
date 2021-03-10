@@ -1912,15 +1912,15 @@ void GameWorldPanel::handleNightLightChange(bool active)
 				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
 
 			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-			int newStateIndex;
-			if (!animDef.tryGetStateIndex(newStateName.c_str(), &newStateIndex))
+			const std::optional<int> newStateIndex = animDef.tryGetStateIndex(newStateName.c_str());
+			if (!newStateIndex.has_value())
 			{
 				DebugLogWarning("Missing entity animation state \"" + newStateName + "\".");
 				continue;
 			}
 
 			EntityAnimationInstance &animInst = entity->getAnimInstance();
-			animInst.setStateIndex(newStateIndex);
+			animInst.setStateIndex(*newStateIndex);
 		}
 	}
 

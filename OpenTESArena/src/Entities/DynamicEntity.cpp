@@ -262,14 +262,15 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 	// Get idle and walk state indices.
-	int idleStateIndex, walkStateIndex;
-	if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+	const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	if (!idleStateIndex.has_value())
 	{
 		DebugLogWarning("Couldn't get citizen idle state index.");
 		return;
 	}
 
-	if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str(), &walkStateIndex))
+	const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+	if (!walkStateIndex.has_value())
 	{
 		DebugLogWarning("Couldn't get citizen walk state index.");
 		return;
@@ -289,7 +290,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		// the center of the voxel. Basically need to store cardinal direction as internal state.
 		if (shouldChangeToWalking)
 		{
-			animInst.setStateIndex(walkStateIndex);
+			animInst.setStateIndex(*walkStateIndex);
 			const int citizenDirectionIndex = GetRandomCitizenDirectionIndex(random);
 			const auto &citizenDirection = CitizenDirections[citizenDirectionIndex];
 			this->direction = citizenDirection.second;
@@ -308,7 +309,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 
 		if (shouldChangeToIdle)
 		{
-			animInst.setStateIndex(idleStateIndex);
+			animInst.setStateIndex(*idleStateIndex);
 			this->velocity = NewDouble2::Zero;
 		}
 	}
@@ -369,8 +370,8 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		// If citizen and walking, continue walking until next block is not air.
-		int walkStateIndex;
-		if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str(), &walkStateIndex))
+		const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		if (!walkStateIndex.has_value())
 		{
 			DebugLogWarning("Couldn't get citizen walk state index.");
 			return;
@@ -378,7 +379,7 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 
 		const EntityAnimationInstance &animInst = this->getAnimInstance();
 		const int curAnimStateIndex = animInst.getStateIndex();
-		if (curAnimStateIndex == walkStateIndex)
+		if (curAnimStateIndex == *walkStateIndex)
 		{
 			// Integrate by delta time.
 			this->position = this->position + (this->velocity * dt);

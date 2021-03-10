@@ -383,6 +383,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(entityDefID);
 		const EntityDefinition::Type entityDefType = entityDef.getType();
 		const EntityType entityType = EntityUtils::getEntityTypeFromDefType(entityDefType);
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		for (const LevelDouble3 &position : placementDef.positions)
 		{
@@ -397,7 +398,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 				Entity *entityPtr = entity.get();
 
 				EntityAnimationInstance animInst;
-				animInst.init(entityDef.getAnimDef());
+				animInst.init(animDef);
 				// @todo: set anim inst to the correct state for the entity
 				// @todo: let the entity acquire the anim inst instead of copying
 				// @todo: set streetlight anim state if night lights are active
@@ -453,9 +454,6 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 				}
 
 				DebugNotImplemented();
-				// @todo: make entity animation instance? or is it already in the entity
-				// @todo: set entity animation state
-				// @todo: set entity direction to north if dynamic
 				// @todo: set entity position in chunk
 			}
 		}

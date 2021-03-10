@@ -2,6 +2,7 @@
 #define ENTITY_ANIMATION_DEFINITION_H
 
 #include <array>
+#include <optional>
 #include <vector>
 #include <string>
 
@@ -77,7 +78,7 @@ private:
 public:
 	int getStateCount() const;
 	const State &getState(int index) const;
-	bool tryGetStateIndex(const char *name, int *outIndex) const;
+	std::optional<int> tryGetStateIndex(const char *name) const;
 
 	void addState(State &&state);
 	void removeState(const char *name);

@@ -140,15 +140,16 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 		dynamicEntity->initCitizen(entityDefID, male ? maleAnimInst : femaleAnimInst, CardinalDirectionName::North);
 
 		// Idle animation by default.
-		int defaultStateIndex;
-		if (!entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &defaultStateIndex))
+		const std::optional<int> defaultStateIndex =
+			entityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		if (!defaultStateIndex.has_value())
 		{
 			DebugLogWarning("Couldn't get idle state index for citizen \"" + std::to_string(i) + "\".");
 			continue;
 		}
 
 		EntityAnimationInstance &animInst = dynamicEntity->getAnimInstance();
-		animInst.setStateIndex(defaultStateIndex);
+		animInst.setStateIndex(*defaultStateIndex);
 
 		auto citizenParams = std::make_unique<EntityAnimationInstance::CitizenParams>();
 		citizenParams->palette = generatedPalette;
