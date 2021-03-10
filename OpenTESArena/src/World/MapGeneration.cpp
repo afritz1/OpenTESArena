@@ -202,13 +202,11 @@ namespace MapGeneration
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
-		//auto &entityAnimData = newEntityDef.getAnimationData();
 		EntityAnimationDefinition entityAnimDef;
-		EntityAnimationInstance entityAnimInst;
 		if (entityType == EntityType::Static)
 		{
 			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType,
-				rulerIsMale, inf, textureManager, &entityAnimDef, &entityAnimInst))
+				rulerIsMale, inf, textureManager, &entityAnimDef))
 			{
 				DebugLogWarning("Couldn't make static entity anims for flat \"" +
 					std::to_string(flatIndex) + "\".");
@@ -230,7 +228,7 @@ namespace MapGeneration
 			const std::optional<bool> isMale = true;
 
 			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary,
-				binaryAssetLibrary, textureManager, &entityAnimDef, &entityAnimInst))
+				binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
 				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
 					std::to_string(flatIndex) + "\".");

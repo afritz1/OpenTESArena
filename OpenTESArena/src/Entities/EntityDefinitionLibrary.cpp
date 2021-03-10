@@ -145,9 +145,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		auto addCreatureDef = [this, &exeData, &textureManager](int creatureID, bool isFinalBoss)
 		{
 			EntityAnimationDefinition animDef;
-			EntityAnimationInstance animInst;
-			if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData,
-				textureManager, &animDef, &animInst))
+			if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, &animDef))
 			{
 				DebugLogWarning("Couldn't make creature anims for creature ID \"" +
 					std::to_string(creatureID) + "\".");
@@ -183,9 +181,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		auto addCitizenDef = [this, &exeData, &textureManager](ClimateType climateType, bool male)
 		{
 			EntityAnimationDefinition animDef;
-			EntityAnimationInstance animInst;
-			if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, exeData,
-				textureManager, &animDef, &animInst))
+			if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, exeData, textureManager, &animDef))
 			{
 				DebugLogWarning("Couldn't make citizen anims for citizen \"" +
 					std::to_string(static_cast<int>(climateType)) + "\".");

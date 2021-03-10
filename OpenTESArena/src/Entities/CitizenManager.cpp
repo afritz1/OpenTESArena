@@ -45,35 +45,6 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 		return cityDef.climateType;
 	}();
 
-	auto tryMakeEntityAnimInst = [&binaryAssetLibrary, &textureManager, climateType](
-		bool male, EntityAnimationInstance *outAnimInst)
-	{
-		EntityAnimationDefinition animDef;
-		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, binaryAssetLibrary.getExeData(),
-			textureManager, &animDef, outAnimInst))
-		{
-			DebugLogWarning(std::string("Couldn't make citizen anims (male: ") + (male ? "yes" : "no") +
-				", climate: " + std::to_string(static_cast<int>(climateType)) + ").");
-			return false;
-		}
-
-		return true;
-	};
-
-	// Only two citizen entity definitions for a given climate, based on the gender.
-	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	if (!tryMakeEntityAnimInst(true, &maleAnimInst))
-	{
-		DebugLogWarning("Couldn't make male citizen entity anim instance.");
-		return;
-	}
-
-	if (!tryMakeEntityAnimInst(false, &femaleAnimInst))
-	{
-		DebugLogWarning("Couldn't make female citizen entity anim instance.");
-		return;
-	}
-
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
 	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
@@ -87,6 +58,13 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 		DebugLogWarning("Couldn't get citizen entity def ID from library.");
 		return;
 	}
+	
+	// Only two citizen entity definitions for a given climate, based on the gender.
+	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
+	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
+	EntityAnimationInstance maleAnimInst, femaleAnimInst;
+	maleAnimInst.init(maleEntityDef.getAnimDef());
+	femaleAnimInst.init(femaleEntityDef.getAnimDef());
 
 	// Base palette for citizens to generate from.
 	const Palette &basePalette = [&textureManager]() -> const Palette&
@@ -150,7 +128,7 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 
 		const bool male = random.next(2) == 0;
 		const EntityDefID entityDefID = male ? maleEntityDefID : femaleEntityDefID;
-		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
+		const EntityDefinition &entityDef = male ? maleEntityDef : femaleEntityDef;
 		const EntityAnimationDefinition &entityAnimDef = entityDef.getAnimDef();
 
 		const uint16_t colorSeed = static_cast<uint16_t>(random.next());

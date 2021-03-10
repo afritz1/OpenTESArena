@@ -11,7 +11,6 @@
 #include "ArenaTypes.h"
 #include "INFFile.h"
 #include "../Entities/EntityAnimationDefinition.h"
-#include "../Entities/EntityAnimationInstance.h"
 #include "../Media/Palette.h"
 
 class ArenaRandom;
@@ -152,31 +151,28 @@ namespace ArenaAnimUtils
 	// Writes out static entity animation data to animation states.
 	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
-		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
-		EntityAnimationInstance *outAnimInst);
+		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out creature animation data to animation states.
 	bool tryMakeDynamicEntityCreatureAnims(int creatureID, const ExeData &exeData,
-		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
-		EntityAnimationInstance *outAnimInst);
+		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out human enemy animation data to animation states.
 	bool tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale,
 		const CharacterClassLibrary &charClassLibrary, const INFFile &inf,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+		EntityAnimationDefinition *outAnimDef);
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
 	// entity type (creature, human, etc.) is unknown.
 	bool tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, const std::optional<bool> &isMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		EntityAnimationDefinition *outAnimDef, EntityAnimationInstance *outAnimInst);
+		EntityAnimationDefinition *outAnimDef);
 
 	// Writes out citizen animation data to animation states.
 	bool tryMakeCitizenAnims(ClimateType climateType, bool isMale, const ExeData &exeData,
-		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef,
-		EntityAnimationInstance *outAnimInst);
+		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Transforms the palette used for a citizen's clothes and skin. The given seed value is
 	// "pure random" and can essentially be anything.
