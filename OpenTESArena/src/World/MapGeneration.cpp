@@ -528,11 +528,12 @@ namespace MapGeneration
 				// Transparent block with 2-sided texture on one side (i.e. fence). Note that in
 				// the center province's city, there is a temple voxel with zeroes for its texture
 				// index, and it appears solid gray in the original game (presumably a silent bug).
-				const int textureIndex = (map1Voxel & 0x003F) - 1;
+				int textureIndex = (map1Voxel & 0x003F) - 1;
 				if (textureIndex < 0)
 				{
 					DebugLogWarning("Invalid texture index \"" + std::to_string(textureIndex) +
-						"\" for type 0xA voxel.");
+						"\" for type 0xA voxel; defaulting to 0.");
+					textureIndex = 0;
 				}
 
 				const double yOffset = [mapType, map1Voxel]()
