@@ -50,6 +50,12 @@ namespace
 			levelPosition.y - static_cast<double>(chunkStartY),
 			levelPosition.z - static_cast<WEDouble>(chunkStartZ));
 	}
+
+	Chunk::VoxelID LevelVoxelDefIdToChunkVoxelID(LevelDefinition::VoxelDefID voxelDefID)
+	{
+		// Chunks have an air definition at ID 0.
+		return static_cast<Chunk::VoxelID>(voxelDefID + 1);
+	}
 }
 
 int ChunkManager::getChunkCount() const
@@ -222,7 +228,7 @@ void ChunkManager::populateChunkVoxels(Chunk &chunk, const LevelDefinition &leve
 				}
 
 				// Add one to account for the air voxel definition being ID 0.
-				const Chunk::VoxelID correctedVoxelID = voxelID + 1;
+				const Chunk::VoxelID correctedVoxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
 				chunk.setVoxel(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, correctedVoxelID);
 			}
 		}
@@ -480,13 +486,13 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 	}
 }
 
-void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
+void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition, const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
 {
 	Chunk &chunk = this->getChunk(index);
 	
 	// Notify the entity manager about the new chunk so entities can be spawned in it.
-	entityManager.addChunk(coord);
+	entityManager.addChunk(chunkCoord);
 
 	// Populate all or part of the chunk from a level definition depending on the world type.
 	const MapType mapType = mapDefinition.getMapType();
@@ -495,7 +501,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 		DebugAssert(activeLevelIndex.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
-		chunk.init(coord, levelDefinition.getHeight());
+		chunk.init(chunkCoord, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
@@ -509,13 +515,12 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 				const VoxelDefinition &voxelDef = levelInfoDefinition.getVoxelDef(i);
 				if (voxelDef.type == ArenaTypes::VoxelType::Ceiling)
 				{
-					// Add 1 to account for air voxel definition at ID 0.
-					return i + 1;
+					return LevelVoxelDefIdToChunkVoxelID(i);
 				}
 			}
 
 			// No ceiling found, use air instead.
-			return 0;
+			return Chunk::AIR_VOXEL_ID;
 		}();
 
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
@@ -531,10 +536,10 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 			}
 		}
 
-		if (ChunkUtils::touchesLevelDimensions(coord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+		if (ChunkUtils::touchesLevelDimensions(chunkCoord, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
+			const LevelInt2 levelOffset = chunkCoord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
@@ -547,17 +552,46 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 		DebugAssert(activeLevelIndex.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
-		chunk.init(coord, levelDefinition.getHeight());
+		chunk.init(chunkCoord, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
-		// @todo: chunks outside the level are wrapped but only have floor voxels.
-		// - just need to wrap based on level definitions, not chunk dimensions. So a 96x96 city
-		//   would start wrapping halfway through chunks (1, 0) and (0, 1).
+		// Chunks outside the level are wrapped but only have floor voxels.		
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				auto wrapLevelVoxel = [](int voxel, int levelDim)
+				{
+					if (voxel >= 0)
+					{
+						return voxel % levelDim;
+					}
+					else
+					{
+						return MathUtils::getWrappedIndex(levelDim, voxel);
+					}
+				};
 
-		if (ChunkUtils::touchesLevelDimensions(coord, levelDefinition.getWidth(), levelDefinition.getDepth()))
+				const SNInt levelWidth = levelDefinition.getWidth();
+				const WEInt levelDepth = levelDefinition.getDepth();
+
+				// Convert chunk voxel to level voxel, then wrap that between 0 and level width/depth.
+				const LevelInt2 levelVoxel = VoxelUtils::chunkVoxelToNewVoxel(chunkCoord, VoxelInt2(x, z));
+				const LevelInt2 wrappedLevelVoxel(
+					wrapLevelVoxel(levelVoxel.x, levelWidth),
+					wrapLevelVoxel(levelVoxel.y, levelDepth));
+				const LevelDefinition::VoxelDefID voxelDefID = levelDefinition.getVoxel(
+					wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+
+				const Chunk::VoxelID voxelID = LevelVoxelDefIdToChunkVoxelID(voxelDefID);
+				chunk.setVoxel(x, 0, z, voxelID);
+			}
+		}
+
+		if (ChunkUtils::touchesLevelDimensions(chunkCoord, levelDefinition.getWidth(), levelDefinition.getDepth()))
 		{
 			// Populate chunk from the part of the level it overlaps.
-			const LevelInt2 levelOffset = coord * ChunkUtils::CHUNK_DIM;
+			const LevelInt2 levelOffset = chunkCoord * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
@@ -569,10 +603,10 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &coord, const std::o
 	{
 		DebugAssert(!activeLevelIndex.has_value());
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
-		const int levelDefIndex = mapDefWild.getLevelDefIndex(coord);
+		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkCoord);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(levelDefIndex);
-		chunk.init(coord, levelDefinition.getHeight());
+		chunk.init(chunkCoord, levelDefinition.getHeight());
 		this->populateChunkVoxelDefs(chunk, levelInfoDefinition);
 
 		// Copy level definition directly into chunk.

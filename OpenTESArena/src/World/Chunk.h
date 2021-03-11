@@ -38,7 +38,6 @@ private:
 	static_assert((sizeof(VoxelID) * CHAR_BIT) >= BITS_PER_VOXEL);
 
 	static constexpr int MAX_VOXEL_DEFS = 1 << BITS_PER_VOXEL;
-	static constexpr VoxelID AIR_VOXEL_ID = 0;
 
 	// Indices into voxel definitions.
 	Buffer3D<VoxelID> voxels;
@@ -84,6 +83,7 @@ private:
 	// for which chasm faces they have.
 	void handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<int> &voxelInstIndicesToDestroy);
 public:
+	static constexpr VoxelID AIR_VOXEL_ID = 0;
 	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
 	static constexpr WEInt DEPTH = WIDTH;
 	static_assert(MathUtils::isPowerOf2(WIDTH));

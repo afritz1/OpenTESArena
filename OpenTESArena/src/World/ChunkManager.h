@@ -62,7 +62,7 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
-	void populateChunk(int index, const ChunkInt2 &coord, const std::optional<int> &activeLevelIndex,
+	void populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const EntityDefinitionLibrary &entityDefLibrary,
 		EntityManager &entityManager);
 
