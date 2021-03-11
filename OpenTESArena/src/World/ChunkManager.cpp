@@ -5,6 +5,7 @@
 #include "MapDefinition.h"
 #include "MapType.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/EntityType.h"
 #include "../Game/CardinalDirection.h"
@@ -405,82 +406,13 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 				}
 
 				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
-
-				// @todo: put most of this in EntityGeneration.
-
-				EntityRef entity = entityManager.makeEntity(entityType); // @todo: decide if chunk should be an argument too
-				Entity *entityPtr = entity.get();
-
-				EntityAnimationInstance animInst;
-				animInst.init(animDef);
-
-				const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(
-					EntityAnimationUtils::STATE_IDLE.c_str());
-				if (!defaultStateIndex.has_value())
-				{
-					DebugLogWarning("Couldn't get default state index for entity at \"" + position.toString() + "\".");
-					continue;
-				}
-
-				animInst.setStateIndex(*defaultStateIndex);
-				// @todo: set anim inst to the correct state for the entity
-				// @todo: let the entity acquire the anim inst instead of copying
-				// @todo: set streetlight anim state if night lights are active
-
-				if (entityType == EntityType::Static)
-				{
-					StaticEntity *staticEntity = dynamic_cast<StaticEntity*>(entityPtr);
-					if (entityDefType == EntityDefinition::Type::StaticNPC)
-					{
-						staticEntity->initNPC(*entityDefID, animInst);
-					}
-					else if (entityDefType == EntityDefinition::Type::Item)
-					{
-						// @todo: initialize as an item
-						staticEntity->initDoodad(*entityDefID, animInst);
-						DebugLogError("Item entity initialization not implemented.");
-					}
-					else if (entityDefType == EntityDefinition::Type::Container)
-					{
-						staticEntity->initContainer(*entityDefID, animInst);
-					}
-					else if (entityDefType == EntityDefinition::Type::Transition)
-					{
-						staticEntity->initTransition(*entityDefID, animInst);
-					}
-					else if (entityDefType == EntityDefinition::Type::Doodad)
-					{
-						staticEntity->initDoodad(*entityDefID, animInst);
-					}
-					else
-					{
-						DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
-					}
-				}
-				else if (entityType == EntityType::Dynamic)
-				{
-					DynamicEntity *dynamicEntity = dynamic_cast<DynamicEntity*>(entityPtr);
-					const VoxelDouble2 direction = CardinalDirection::North;
-					const CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(direction);
-
-					if (entityDefType == EntityDefinition::Type::Enemy)
-					{
-						dynamicEntity->initCreature(*entityDefID, animInst, direction, random);
-					}
-					else
-					{
-						DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
-					}
-				}
-				else
-				{
-					DebugNotImplementedMsg(std::to_string(static_cast<int>(entityType)));
-				}
+				Entity *entity = EntityGeneration::makeEntity(entityType, entityDefType, *entityDefID,
+					animDef, random, entityManager);
 
 				// Set entity position in chunk last. This has the potential to change the entity's chunk
 				// and invalidate the local entity pointer.
 				const CoordDouble2 coord(chunk.getCoord(), VoxelDouble2(point.x, point.z));
-				entityPtr->setPosition(coord, entityManager);
+				entity->setPosition(coord, entityManager);
 			}
 		}
 	}
