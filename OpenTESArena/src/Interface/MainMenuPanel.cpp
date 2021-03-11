@@ -674,8 +674,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const WeatherType filteredWeatherType =
 					WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
-				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs; // @todo: maybe get from an Arena utils function? MapGeneration?
-				DebugNotImplemented();
+				const auto &exeData = binaryAssetLibrary.getExeData();
+				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
+					ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 				MapGeneration::WildGenInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
