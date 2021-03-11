@@ -778,21 +778,21 @@ private:
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Helper functions for drawing the initial voxel column.
-	static void drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
+	static void drawInitialVoxelSameFloor(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawInitialVoxelAbove(int x, const CoordInt3 &coord,
+	static void drawInitialVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawInitialVoxelBelow(int x, const CoordInt3 &coord,
+	static void drawInitialVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
@@ -809,21 +809,21 @@ private:
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper functions for drawing a voxel column.
-	static void drawVoxelSameFloor(int x, const CoordInt3 &coord, const Camera &camera,
+	static void drawVoxelSameFloor(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawVoxelAbove(int x, const CoordInt3 &coord, const Camera &camera,
+	static void drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
 		const BufferView<const VisibleLight> &visLights,
 		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
-	static void drawVoxelBelow(int x, const CoordInt3 &coord, const Camera &camera,
+	static void drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,

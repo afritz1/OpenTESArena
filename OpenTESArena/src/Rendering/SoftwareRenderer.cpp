@@ -4373,7 +4373,7 @@ void SoftwareRenderer::drawStarPixels(int x, const DrawRange &drawRange, double 
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
+void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
@@ -4381,13 +4381,9 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
@@ -4421,7 +4417,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeThreePart(
 			nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
@@ -4463,7 +4459,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
@@ -4495,7 +4491,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -4513,7 +4509,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -4536,7 +4532,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
@@ -4580,7 +4576,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -4629,7 +4625,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 		const NewInt3 chasmVoxel(voxel.x, 0, voxel.z);
-		const VoxelInstance *chasmVoxelInst = chunk->tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
+		const VoxelInstance *chasmVoxelInst = chunk.tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
 
@@ -4707,12 +4703,11 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(
-			CoordInt2(coord.chunk, VoxelInt2(voxel.x, voxel.z)), doorData.type, percentOpen,
-			nearPoint, farPoint, camera, ray, chunkManager, hit);
+			coord2D, doorData.type, percentOpen, nearPoint, farPoint, camera, ray, chunkManager, hit);
 
 		if (success)
 		{
@@ -4808,7 +4803,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const CoordInt3 &coord,
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
+void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
@@ -4816,13 +4811,9 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
@@ -4847,7 +4838,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		// Floor.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -4875,7 +4866,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 			farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
@@ -4906,7 +4897,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -4924,7 +4915,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -4947,7 +4938,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
@@ -4991,7 +4982,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -5041,12 +5032,11 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(
-			CoordInt2(coord.chunk, VoxelInt2(voxel.x, voxel.z)), doorData.type, percentOpen,
-			nearPoint, farPoint, camera, ray, chunkManager, hit);
+			coord2D, doorData.type, percentOpen, nearPoint, farPoint, camera, ray, chunkManager, hit);
 
 		if (success)
 		{
@@ -5142,7 +5132,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const CoordInt3 &coord,
 	}
 }
 
-void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
+void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 	const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
@@ -5150,13 +5140,9 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
@@ -5181,7 +5167,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -5205,7 +5191,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -5241,7 +5227,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				farCeilingPoint, nearCeilingPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
@@ -5259,7 +5245,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Floor.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
@@ -5282,7 +5268,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 				nearCeilingPoint, farCeilingPoint, farFloorPoint, nearFloorPoint,
 				camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), nearPoint, farPoint,
@@ -5326,7 +5312,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -5375,7 +5361,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 		const VoxelInt3 chasmVoxel(voxel.x, 0, voxel.z);
-		const VoxelInstance *chasmVoxelInst = chunk->tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
+		const VoxelInstance *chasmVoxelInst = chunk.tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
 
@@ -5453,12 +5439,11 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const CoordInt3 &coord,
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findInitialDoorIntersection(
-			CoordInt2(coord.chunk, VoxelInt2(voxel.x, voxel.z)), doorData.type, percentOpen,
-			nearPoint, farPoint, camera, ray, chunkManager, hit);
+			coord2D, doorData.type, percentOpen, nearPoint, farPoint, camera, ray, chunkManager, hit);
 
 		if (success)
 		{
@@ -5569,6 +5554,9 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, const CoordInt2 &coord, con
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
 
+	const Chunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
+	DebugAssert(chunkPtr != nullptr);
+
 	const double wallU = [&farPoint, facing]()
 	{
 		const double uVal = [&farPoint, facing]()
@@ -5602,34 +5590,31 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, const CoordInt2 &coord, con
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
 	// Draw the player's current voxel first.
-	SoftwareRenderer::drawInitialVoxelSameFloor(x,
-		CoordInt3(coord.chunk, VoxelInt3(coord.voxel.x, adjustedVoxelY, coord.voxel.y)), camera, ray, facing,
-		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
-		chunkManager, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
+	SoftwareRenderer::drawInitialVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint,
+		farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+		visLightLists, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the player's voxel.
 	for (int voxelY = adjustedVoxelY - 1; voxelY >= 0; voxelY--)
 	{
-		CoordInt3 belowCoord(coord.chunk, VoxelInt3(coord.voxel.x, voxelY, coord.voxel.y));
-		SoftwareRenderer::drawInitialVoxelBelow(x, belowCoord, camera, ray, facing, nearPoint, farPoint,
-			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager,
+		const VoxelInt3 belowVoxel(coord.voxel.x, voxelY, coord.voxel.y);
+		SoftwareRenderer::drawInitialVoxelBelow(x, *chunkPtr, belowVoxel, camera, ray, facing, nearPoint,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager,
 			visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 
-	const Chunk *playerChunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(playerChunk != nullptr);
-
 	// Draw voxels above the player's voxel.
-	for (int voxelY = adjustedVoxelY + 1; voxelY < playerChunk->getHeight(); voxelY++)
+	for (int voxelY = adjustedVoxelY + 1; voxelY < chunkPtr->getHeight(); voxelY++)
 	{
-		CoordInt3 aboveCoord(coord.chunk, VoxelInt3(coord.voxel.x, voxelY, coord.voxel.y));
-		SoftwareRenderer::drawInitialVoxelAbove(x, aboveCoord, camera, ray, facing, nearPoint, farPoint,
-			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager,
+		const VoxelInt3 aboveVoxel(coord.voxel.x, voxelY, coord.voxel.y);
+		SoftwareRenderer::drawInitialVoxelAbove(x, *chunkPtr, aboveVoxel, camera, ray, facing, nearPoint,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager,
 			visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
-void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const Camera &camera,
+void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
@@ -5637,13 +5622,9 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 	
@@ -5669,7 +5650,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(nearPoint, visLights, visLightList);
 
@@ -5700,7 +5681,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 				farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
@@ -5732,7 +5713,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
@@ -5757,7 +5738,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
@@ -5808,7 +5789,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -5876,7 +5857,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 		const NewInt3 chasmVoxel(voxel.x, 0, voxel.z);
-		const VoxelInstance *chasmVoxelInst = chunk->tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
+		const VoxelInstance *chasmVoxelInst = chunk.tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
 
@@ -5974,7 +5955,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(coord2D, doorData.type, percentOpen,
@@ -6074,20 +6055,16 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const CoordInt3 &coord, const C
 	}
 }
 
-void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camera &camera,
+void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
@@ -6116,7 +6093,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 			nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(nearPoint, visLights, visLightList);
 
@@ -6151,7 +6128,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearFloorPoint, farFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, nearPoint, farPoint, nearZ,
 			farZ, -Double3::UnitY, textures.getTexture(ceilingData.textureAssetRef), fadePercent,
@@ -6182,7 +6159,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
@@ -6207,7 +6184,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
@@ -6258,7 +6235,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -6327,7 +6304,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(coord2D, doorData.type, percentOpen,
@@ -6427,20 +6404,16 @@ void SoftwareRenderer::drawVoxelAbove(int x, const CoordInt3 &coord, const Camer
 	}
 }
 
-void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camera &camera,
+void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
 	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
-	const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(chunk != nullptr);
-
-	const CoordInt2 coord2D(coord.chunk, VoxelInt2(coord.voxel.x, coord.voxel.z));
-	const VoxelInt3 &voxel = coord.voxel;
-	const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
-	const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
+	const Chunk::VoxelID voxelID = chunk.getVoxel(voxel.x, voxel.y, voxel.z);
+	const VoxelDefinition &voxelDef = chunk.getVoxelDef(voxelID);
 	const double voxelHeight = ceilingScale;
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
@@ -6469,7 +6442,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 		const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 			farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		// Ceiling.
 		SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint, farZ,
@@ -6500,7 +6473,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			farCeilingPoint, nearCeilingPoint, camera, frame);
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
-			voxel.x, voxel.y, voxel.z, *chunk);
+			voxel.x, voxel.y, voxel.z, chunk);
 
 		SoftwareRenderer::drawPerspectivePixels(x, drawRange, farPoint, nearPoint, farZ,
 			nearZ, Double3::UnitY, textures.getTexture(floorData.textureAssetRef), fadePercent,
@@ -6535,7 +6508,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				farCeilingPoint, nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Ceiling.
 			SoftwareRenderer::drawPerspectivePixels(x, drawRanges.at(0), farPoint, nearPoint,
@@ -6560,7 +6533,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 			const auto drawRanges = SoftwareRenderer::makeDrawRangeTwoPart(
 				nearCeilingPoint, nearFloorPoint, farFloorPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
@@ -6611,7 +6584,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				diagTopPoint, diagBottomPoint, camera, frame);
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
-				voxel.x, voxel.y, voxel.z, *chunk);
+				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
 				LightContributionCap>(hit.point, visLights, visLightList);
 
@@ -6679,7 +6652,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 		const VoxelDefinition::ChasmData &chasmData = voxelDef.chasm;
 
 		const NewInt3 chasmVoxel(voxel.x, 0, voxel.z);
-		const VoxelInstance *chasmVoxelInst = chunk->tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
+		const VoxelInstance *chasmVoxelInst = chunk.tryGetVoxelInst(chasmVoxel, VoxelInstance::Type::Chasm);
 		const VoxelInstance::ChasmState *chasmState = (chasmVoxelInst != nullptr) ?
 			&chasmVoxelInst->getChasmState() : nullptr;
 
@@ -6777,7 +6750,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const CoordInt3 &coord, const Camer
 	else if (voxelDef.type == ArenaTypes::VoxelType::Door)
 	{
 		const VoxelDefinition::DoorData &doorData = voxelDef.door;
-		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, *chunk);
+		const double percentOpen = RendererUtils::getDoorPercentOpen(voxel.x, voxel.z, chunk);
 
 		RayHit hit;
 		const bool success = SoftwareRenderer::findDoorIntersection(coord2D, doorData.type, percentOpen,
@@ -6897,6 +6870,9 @@ void SoftwareRenderer::drawVoxelColumn(int x, const CoordInt2 &coord, const Came
 	// either way, the drawing range should be contained within the projected range at the 
 	// sub-pixel level. This ensures that the vertical texture coordinate is always within 0->1.
 
+	const Chunk *chunkPtr = chunkManager.tryGetChunk(coord.chunk);
+	DebugAssert(chunkPtr != nullptr);
+
 	// Horizontal texture coordinate for the wall, potentially shared between multiple voxels
 	// in this voxel column.
 	const double wallU = [&nearPoint, facing]()
@@ -6932,30 +6908,27 @@ void SoftwareRenderer::drawVoxelColumn(int x, const CoordInt2 &coord, const Came
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
 	// Draw voxel straight ahead first.
-	SoftwareRenderer::drawVoxelSameFloor(x,
-		CoordInt3(coord.chunk, VoxelInt3(coord.voxel.x, adjustedVoxelY, coord.voxel.y)), camera, ray, facing,
-		nearPoint, farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
-		chunkManager, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
+	SoftwareRenderer::drawVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint, farPoint,
+		nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+		visLightLists, textures, chasmTextureGroups, occlusion, frame);
 
 	// Draw voxels below the voxel.
 	for (int voxelY = adjustedVoxelY - 1; voxelY >= 0; voxelY--)
 	{
-		const CoordInt3 belowCoord(coord.chunk, VoxelInt3(coord.voxel.x, voxelY, coord.voxel.y));
-		SoftwareRenderer::drawVoxelBelow(x, belowCoord, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
-			chunkManager, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+		const VoxelInt3 belowVoxel(coord.voxel.x, voxelY, coord.voxel.y);
+		SoftwareRenderer::drawVoxelBelow(x, *chunkPtr, belowVoxel, camera, ray, facing, nearPoint, farPoint,
+			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+			visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 
-	const Chunk *playerChunk = chunkManager.tryGetChunk(coord.chunk);
-	DebugAssert(playerChunk != nullptr);
-
 	// Draw voxels above the voxel.
-	for (int voxelY = adjustedVoxelY + 1; voxelY < playerChunk->getHeight(); voxelY++)
+	for (int voxelY = adjustedVoxelY + 1; voxelY < chunkPtr->getHeight(); voxelY++)
 	{
-		const CoordInt3 aboveCoord(coord.chunk, VoxelInt3(coord.voxel.x, voxelY, coord.voxel.y));
-		SoftwareRenderer::drawVoxelAbove(x, aboveCoord, camera, ray, facing, nearPoint,
-			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale,
-			chunkManager, visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
+		const VoxelInt3 aboveVoxel(coord.voxel.x, voxelY, coord.voxel.y);
+		SoftwareRenderer::drawVoxelAbove(x, *chunkPtr, aboveVoxel, camera, ray, facing, nearPoint, farPoint,
+			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+			visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 }
 
