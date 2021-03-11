@@ -5,7 +5,8 @@
 MusicDefinition::InteriorMusicDefinition::Type MusicUtils::getInteriorMusicType(ArenaTypes::InteriorType interiorType)
 {
 	if ((interiorType == ArenaTypes::InteriorType::Crypt) ||
-		(interiorType == ArenaTypes::InteriorType::Dungeon))
+		(interiorType == ArenaTypes::InteriorType::Dungeon) ||
+		(interiorType == ArenaTypes::InteriorType::Tower))
 	{
 		return MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
 	}
