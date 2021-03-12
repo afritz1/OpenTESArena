@@ -37,7 +37,7 @@ public:
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		TextureManager &textureManager, Renderer &renderer);
 
-	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	void update(double dt, Game *game, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
 		const EntityDefinitionLibrary &entityDefLibrary);
 };

@@ -218,10 +218,17 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	return true;
 }
 
-void LevelInstance::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
-	const EntityDefinitionLibrary &entityDefLibrary)
+void LevelInstance::update(double dt, Game *game, const ChunkInt2 &centerChunk,
+	const std::optional<int> &activeLevelIndex,	const MapDefinition &mapDefinition, int chunkDistance,
+	bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary)
 {
 	this->chunkManager.update(dt, centerChunk, activeLevelIndex, mapDefinition, chunkDistance,
 		updateChunkStates, entityDefLibrary, this->entityManager);
+
+	// The game parameter is not always available due to first-frame complications with level updating.
+	// It would pollute several callsites/functions with the Game parameter which is bad design.
+	if (game != nullptr)
+	{
+		this->entityManager.tick(*game, dt);
+	}
 }

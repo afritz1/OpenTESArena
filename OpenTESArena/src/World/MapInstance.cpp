@@ -170,12 +170,12 @@ void MapInstance::setActiveLevelIndex(int levelIndex, const MapDefinition &mapDe
 	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(levelIndex);
 }
 
-void MapInstance::update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
+void MapInstance::update(double dt, Game *game, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
 	double latitude, double daytimePercent, int chunkDistance, bool updateChunkStates,
 	const EntityDefinitionLibrary &entityDefLibrary)
 {
 	LevelInstance &levelInst = this->getActiveLevel();
-	levelInst.update(dt, centerChunk, this->activeLevelIndex, mapDefinition, chunkDistance,
+	levelInst.update(dt, game, centerChunk, this->activeLevelIndex, mapDefinition, chunkDistance,
 		updateChunkStates, entityDefLibrary);
 
 	SkyInstance &skyInst = this->getActiveSky();
