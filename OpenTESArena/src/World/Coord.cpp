@@ -13,12 +13,12 @@ bool CoordInt2::operator!=(const CoordInt2 &other) const
 
 CoordDouble2 CoordDouble2::operator+(const VoxelDouble2 &other) const
 {
-	return CoordDouble2(this->chunk, this->point + other);
+	return ChunkUtils::recalculateCoord(this->chunk, this->point + other);
 }
 
 CoordDouble2 CoordDouble2::operator-(const VoxelDouble2 &other) const
 {
-	return CoordDouble2(this->chunk, this->point - other);
+	return ChunkUtils::recalculateCoord(this->chunk, this->point - other);
 }
 
 VoxelDouble2 CoordDouble2::operator-(const CoordDouble2 &other) const
