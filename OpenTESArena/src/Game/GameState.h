@@ -11,7 +11,6 @@
 #include "Date.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Entities/CitizenManager.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
 #include "../Interface/TimedTextBox.h"
@@ -81,8 +80,6 @@ private:
 	// Stack of map definitions and instances. Multiple ones can exist at the same time when the player is
 	// inside an interior in a city or wilderness, but ultimately the size should never exceed 2.
 	std::stack<MapState> maps;
-
-	CitizenManager citizenManager; // Tracks active citizens and spawning.
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -174,7 +171,6 @@ public:
 	MapInstance &getActiveMapInst(); // @todo: this is bad practice since it becomes dangling when changing the active map.
 	const MapInstance &getActiveMapInst() const; // @todo: this is bad practice since it becomes dangling when changing the active map.
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
-	CitizenManager &getCitizenManager();
 	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;

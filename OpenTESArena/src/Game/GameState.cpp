@@ -591,11 +591,6 @@ bool GameState::isActiveMapNested() const
 	return this->maps.size() >= 2;
 }
 
-CitizenManager &GameState::getCitizenManager()
-{
-	return this->citizenManager;
-}
-
 WorldMapInstance &GameState::getWorldMapInstance()
 {
 	return this->worldMapInst;
@@ -998,7 +993,4 @@ void GameState::tick(double dt, Game &game)
 	tryTickTextBox(this->triggerText);
 	tryTickTextBox(this->actionText);
 	tryTickTextBox(this->effectText);
-
-	// Tick citizen manager state (check if new citizens should spawn, etc.).
-	this->citizenManager.tick(game);
 }
