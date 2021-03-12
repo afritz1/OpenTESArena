@@ -3,6 +3,7 @@
 #include "MapType.h"
 #include "WeatherUtils.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Entities/CitizenUtils.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
@@ -46,6 +47,7 @@ double LevelInstance::getCeilingScale() const
 
 bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Clear renderer textures, distant sky, and entities.
@@ -165,6 +167,14 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(mapType)));
 	}
 
+	// Load citizen textures if citizens can exist in the level.
+	if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
+	{
+		DebugAssert(citizenGenInfo.has_value());
+		CitizenUtils::writeCitizenTextures(*citizenGenInfo->maleEntityDef, *citizenGenInfo->femaleEntityDef,
+			textureManager, renderer);
+	}
+
 	// Load chasm textures (dry chasms are just a single color).
 	const uint8_t dryChasmColor = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
 	renderer.addChasmTexture(ArenaTypes::ChasmType::Dry, &dryChasmColor, 1, 1, palette);
@@ -219,11 +229,13 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 }
 
 void LevelInstance::update(double dt, Game *game, const ChunkInt2 &centerChunk,
-	const std::optional<int> &activeLevelIndex,	const MapDefinition &mapDefinition, int chunkDistance,
-	bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary)
+	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance, bool updateChunkStates,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager)
 {
-	this->chunkManager.update(dt, centerChunk, activeLevelIndex, mapDefinition, chunkDistance,
-		updateChunkStates, entityDefLibrary, this->entityManager);
+	this->chunkManager.update(dt, centerChunk, activeLevelIndex, mapDefinition, citizenGenInfo, chunkDistance,
+		updateChunkStates, entityDefLibrary, binaryAssetLibrary, textureManager, this->entityManager);
 
 	// The game parameter is not always available due to first-frame complications with level updating.
 	// It would pollute several callsites/functions with the Game parameter which is bad design.

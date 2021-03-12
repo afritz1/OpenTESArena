@@ -2024,7 +2024,8 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 		// Leave the interior and go to the saved exterior.
 		const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-		if (!gameState.tryPopMap(game.getEntityDefinitionLibrary(), textureManager, renderer))
+		if (!gameState.tryPopMap(game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			textureManager, renderer))
 		{
 			DebugCrash("Couldn't leave interior.");
 		}
@@ -2435,8 +2436,10 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				auto &newActiveLevel = interiorMapInst.getActiveLevel();
 
 				constexpr WeatherType weatherType = WeatherType::Clear;
+				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
+
 				if (!newActiveLevel.trySetActive(weatherType, gameState.nightLightsAreActive(), levelIndex,
-					interiorMapDef, game.getTextureManager(), game.getRenderer()))
+					interiorMapDef, citizenGenInfo, game.getTextureManager(), game.getRenderer()))
 				{
 					DebugCrash("Couldn't set new level active in renderer.");
 				}
@@ -2458,7 +2461,8 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 				constexpr bool updateChunkStates = false;
 				newActiveLevel.update(dummyDeltaTime, &game, player.getPosition().chunk, levelIndex, interiorMapDef,
-					chunkDistance, updateChunkStates, game.getEntityDefinitionLibrary());
+					citizenGenInfo, chunkDistance, updateChunkStates, game.getEntityDefinitionLibrary(),
+					game.getBinaryAssetLibrary(), game.getTextureManager());
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
@@ -2906,10 +2910,31 @@ void GameWorldPanel::tick(double dt)
 		return locationDef.getLatitude();
 	}();
 
+	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	TextureManager &textureManager = game.getTextureManager();
+
 	// Tick active map (entities, animated distant land, etc.).
 	constexpr bool updateChunkStates = true;
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
+		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
+	{
+		if ((mapType == MapType::City) || (mapType == MapType::Wilderness))
+		{
+			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+			const LocationDefinition &locationDef = gameState.getLocationDefinition();
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
+				entityDefLibrary, textureManager);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}();
+
 	mapInst.update(dt, &game, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), updateChunkStates, game.getEntityDefinitionLibrary());
+		game.getOptions().getMisc_ChunkDistance(), updateChunkStates, citizenGenInfo,
+		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager);
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.

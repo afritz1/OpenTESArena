@@ -233,10 +233,11 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	}
 
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
+	const int raceID = provinceDef.getRaceID();
 
 	MapState mapState;
-	if (!GameState::tryMakeMapFromLocation(locationDef, provinceDef.getRaceID(), weatherType, currentDay,
-		starCount, provinceDef.hasAnimatedDistantLand(), charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+	if (!GameState::tryMakeMapFromLocation(locationDef, raceID, weatherType, currentDay, starCount,
+		provinceDef.hasAnimatedDistantLand(), charClassLibrary, entityDefLibrary, binaryAssetLibrary,
 		textAssetLibrary, textureManager, &mapState))
 	{
 		DebugLogError("Couldn't make map from location \"" + locationDef.getName() + "\" in province \"" + provinceDef.getName() + "\".");
@@ -247,6 +248,7 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	this->maps.emplace(std::move(mapState));
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
@@ -283,9 +285,25 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&entityDefLibrary, &textureManager,
+		&locationDef, raceID, activeMapType]() -> std::optional<CitizenUtils::CitizenGenInfo>
+	{
+		if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+		{
+			DebugAssert(locationDef.getType() == LocationDefinition::Type::City);
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			const ClimateType climateType = cityDef.climateType;
+			return CitizenUtils::makeCitizenGenInfo(raceID, climateType, entityDefLibrary, textureManager);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}();
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
-		textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for location \"" + locationDef.getName() + "\".");
 		return false;
@@ -333,9 +351,11 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
-		textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated interior.");
 		return false;
@@ -388,6 +408,13 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	this->clearMaps();
 	this->maps.emplace(std::move(mapState));
 
+	if (newWorldMapLocationIDs.has_value())
+	{
+		// Update world map location.
+		this->provinceIndex = newWorldMapLocationIDs->provinceID;
+		this->locationIndex = newWorldMapLocationIDs->locationID;
+	}
+
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
@@ -410,19 +437,18 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
+		provinceDef.getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
-		textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated city.");
 		return false;
-	}
-
-	if (newWorldMapLocationIDs.has_value())
-	{
-		// Update world map location.
-		this->provinceIndex = newWorldMapLocationIDs->provinceID;
-		this->locationIndex = newWorldMapLocationIDs->locationID;
 	}
 
 	return true;
@@ -453,6 +479,13 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 
 	this->clearMaps();
 	this->maps.emplace(std::move(mapState));
+
+	if (newWorldMapLocationIDs.has_value())
+	{
+		// Update world map location.
+		this->provinceIndex = newWorldMapLocationIDs->provinceID;
+		this->locationIndex = newWorldMapLocationIDs->locationID;
+	}
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	MapInstance &activeMapInst = this->getActiveMapInst();
@@ -491,26 +524,25 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	// No active level index in the wilderness.
 	const std::optional<int> activeLevelIndex;
 
+	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
+		provinceDef.getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint, entityDefLibrary,
-		textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint, citizenGenInfo,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
 		return false;
 	}
 
-	if (newWorldMapLocationIDs.has_value())
-	{
-		// Update world map location.
-		this->provinceIndex = newWorldMapLocationIDs->provinceID;
-		this->locationIndex = newWorldMapLocationIDs->locationID;
-	}
-
 	return true;
 }
 
-bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager,
-	Renderer &renderer)
+bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	if (this->maps.size() == 0)
 	{
@@ -526,6 +558,7 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, Textu
 	}
 
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
 	MapInstance &activeMapInst = this->getActiveMapInst();
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
@@ -549,9 +582,26 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary, Textu
 		}
 	}();
 
+	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [this, &entityDefLibrary, &textureManager,
+		activeMapType]() -> std::optional<CitizenUtils::CitizenGenInfo>
+	{
+		if ((activeMapType == MapType::City) || (activeMapType == MapType::Wilderness))
+		{
+			const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
+			const LocationDefinition &locationDef = this->getLocationDefinition();
+			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+			return CitizenUtils::makeCitizenGenInfo(provinceDef.getRaceID(), cityDef.climateType,
+				entityDefLibrary, textureManager);
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}();
+
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, entityDefLibrary,
-		textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
+		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -867,7 +917,9 @@ void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
 }
 
 bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	WeatherType weatherType, const CoordInt2 &startCoord, const EntityDefinitionLibrary &entityDefLibrary,
+	WeatherType weatherType, const CoordInt2 &startCoord,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	const VoxelDouble2 startVoxelReal = VoxelUtils::getVoxelCenter(startCoord.voxel);
@@ -881,7 +933,7 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	const MapDefinition &mapDefinition = this->maps.top().definition;
 
 	if (!levelInst.trySetActive(weatherType, this->nightLightsAreActive(), activeLevelIndex,
-		mapDefinition, textureManager, renderer))
+		mapDefinition, citizenGenInfo, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer.");
 		return false;
@@ -893,8 +945,8 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	constexpr Game *game = nullptr; // Don't use here to avoid breaking the design.
 	constexpr int chunkDistance = ChunkUtils::MIN_CHUNK_DISTANCE; // @todo: get from options
 	constexpr bool updateChunkStates = false;
-	levelInst.update(0.0, game, startCoord.chunk, activeLevelIndex, mapDefinition, chunkDistance,
-		updateChunkStates, entityDefLibrary);
+	levelInst.update(0.0, game, startCoord.chunk, activeLevelIndex, mapDefinition, citizenGenInfo, chunkDistance,
+		updateChunkStates, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	return true;
 }

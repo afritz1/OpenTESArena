@@ -373,7 +373,9 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 
 void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
-	const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, EntityManager &entityManager)
 {
 	SNInt startX, endX;
 	int startY, endY;
@@ -416,10 +418,27 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 			}
 		}
 	}
+
+	if (citizenGenInfo.has_value())
+	{
+		// Spawn citizens.
+		// @todo: figure out how many to spawn based on existing count in the entity manager.
+		constexpr int spawnCount = 30;
+		for (int i = 0; i < spawnCount; i++)
+		{
+			if (!CitizenUtils::trySpawnCitizenInChunk(chunk, *citizenGenInfo, random, binaryAssetLibrary,
+				textureManager, entityManager))
+			{
+				DebugLogError("Couldn't spawn citizen in chunk \"" + chunk.getCoord().toString() + "\".");
+			}
+		}
+	}
 }
 
 void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
+	const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, EntityManager &entityManager)
 {
 	Chunk &chunk = this->getChunk(index);
 	
@@ -431,6 +450,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 	if (mapType == MapType::Interior)
 	{
 		DebugAssert(activeLevelIndex.has_value());
+		DebugAssert(!citizenGenInfo.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(*activeLevelIndex);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(*activeLevelIndex);
 		chunk.init(chunkCoord, levelDefinition.getHeight());
@@ -476,12 +496,13 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
 			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
-				entityDefLibrary, entityManager);
+				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 		}
 	}
 	else if (mapType == MapType::City)
 	{
 		DebugAssert(activeLevelIndex.has_value());
+		DebugAssert(citizenGenInfo.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
 		chunk.init(chunkCoord, levelDefinition.getHeight());
@@ -528,12 +549,13 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
 			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
-				entityDefLibrary, entityManager);
+				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
 	{
 		DebugAssert(!activeLevelIndex.has_value());
+		DebugAssert(citizenGenInfo.has_value());
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkCoord);
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(levelDefIndex);
@@ -549,7 +571,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 		this->populateChunkVoxelInsts(chunk);
 		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
-			entityDefLibrary, entityManager);
+			citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 	}
 	else
 	{
@@ -638,8 +660,10 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 }
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
-	const EntityDefinitionLibrary &entityDefLibrary, EntityManager &entityManager)
+	const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	int chunkDistance, bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -670,8 +694,8 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::op
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition,
-					entityDefLibrary, entityManager);
+				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, citizenGenInfo,
+					entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 			}
 		}
 	}

@@ -1,7 +1,10 @@
 #ifndef LEVEL_INSTANCE_H
 #define LEVEL_INSTANCE_H
 
+#include <optional>
+
 #include "ChunkManager.h"
+#include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityManager.h"
 
 // Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
@@ -35,11 +38,13 @@ public:
 
 	bool trySetActive(WeatherType weatherType, bool nightLightsAreActive,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, Game *game, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, int chunkDistance, bool updateChunkStates,
-		const EntityDefinitionLibrary &entityDefLibrary);
+		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		int chunkDistance, bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 };
 
 #endif
