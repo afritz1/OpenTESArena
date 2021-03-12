@@ -384,16 +384,16 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 			// Integrate by delta time.
 			this->position = this->position + (this->velocity * dt);
 
-			const NewDouble2 absolutePosition = VoxelUtils::coordToNewPoint(this->getPosition());
-			const NewDouble2 &direction = this->getDirection();
+			const CoordDouble2 newPosition = this->getPosition();
+			const VoxelDouble2 &direction = this->getDirection();
 
-			auto getVoxelAtDistance = [&absolutePosition](const NewDouble2 &checkDist) -> CoordInt2
+			auto getVoxelAtDistance = [&newPosition](const VoxelDouble2 &checkDist) -> CoordInt2
 			{
-				const NewDouble2 point = absolutePosition + checkDist;
-				return VoxelUtils::newVoxelToCoord(VoxelUtils::pointToVoxel(point));
+				const CoordDouble2 pos = newPosition + checkDist;
+				return CoordInt2(pos.chunk, VoxelUtils::pointToVoxel(pos.point));
 			};
 
-			const CoordInt2 curVoxel = VoxelUtils::newVoxelToCoord(VoxelUtils::pointToVoxel(absolutePosition));
+			const CoordInt2 curVoxel(newPosition.chunk, VoxelUtils::pointToVoxel(newPosition.point));
 			const CoordInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
 
 			if (nextVoxel != curVoxel)
