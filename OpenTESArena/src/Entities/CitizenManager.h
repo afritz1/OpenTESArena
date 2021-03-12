@@ -45,8 +45,7 @@ public:
 	void spawnCitizens(int raceID, const ChunkInt2 &playerChunk, const ChunkManager &chunkManager,
 		EntityManager &entityManager, const LocationDefinition &locationDef,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		Random &random, TextureManager &textureManager,
-		Renderer &renderer);
+		Random &random, TextureManager &textureManager, Renderer &renderer);
 	void clearCitizens(EntityManager &entityManager);
 	void tick(Game &game);
 };

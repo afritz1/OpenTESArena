@@ -170,6 +170,9 @@ public:
 	// Gets pointers to all entities. Returns number of entities written.
 	int getEntities(const Entity **outEntities, int outSize) const;
 
+	// Returns whether the entity manager is able to track entities in the given chunk.
+	bool hasChunk(const ChunkInt2 &chunk) const;
+
 	// Returns whether the given entity definition ID points to a valid definition.
 	bool hasEntityDef(EntityDefID defID) const;
 

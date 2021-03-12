@@ -693,6 +693,17 @@ int EntityManager::getEntities(const Entity **outEntities, int outSize) const
 	return writeIndex;
 }
 
+bool EntityManager::hasChunk(const ChunkInt2 &chunk) const
+{
+	const auto iter = std::find_if(this->entityChunks.begin(), this->entityChunks.end(),
+		[&chunk](const EntityChunk &entityChunk)
+	{
+		return entityChunk.chunk == chunk;
+	});
+
+	return iter != this->entityChunks.end();
+}
+
 bool EntityManager::hasEntityDef(EntityDefID defID) const
 {
 	return (defID >= 0) && (defID < static_cast<int>(this->entityDefs.size()));

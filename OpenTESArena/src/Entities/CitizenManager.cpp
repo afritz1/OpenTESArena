@@ -162,7 +162,7 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 	}
 
 	// Initializes base male and female textures in the renderer.
-	auto writeTextures = [&entityDefLibrary, &textureManager, &renderer, &maleEntityDef, &femaleEntityDef](bool male)
+	auto writeTextures = [&textureManager, &renderer, &maleEntityDef, &femaleEntityDef](bool male)
 	{
 		const EntityDefinition &entityDef = male ? maleEntityDef : femaleEntityDef;
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
