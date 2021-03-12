@@ -514,7 +514,7 @@ ConstEntityRef EntityManager::getEntityRef(EntityID id) const
 	return this->getEntityRef(id, entityType);
 }
 
-int EntityManager::getCount(EntityType entityType) const
+int EntityManager::getCountOfType(EntityType entityType) const
 {
 	int count = 0;
 	for (const EntityChunk &entityChunk : this->entityChunks)
@@ -536,7 +536,7 @@ int EntityManager::getCount(EntityType entityType) const
 	return count;
 }
 
-int EntityManager::getTotalCountInChunk(const ChunkInt2 &chunk) const
+int EntityManager::getCountInChunk(const ChunkInt2 &chunk) const
 {
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunk);
 	if (!chunkIndex.has_value())
@@ -549,12 +549,12 @@ int EntityManager::getTotalCountInChunk(const ChunkInt2 &chunk) const
 	return entityChunk.staticGroup.getCount() + entityChunk.dynamicGroup.getCount();
 }
 
-int EntityManager::getTotalCount() const
+int EntityManager::getCount() const
 {
-	return this->getCount(EntityType::Static) + this->getCount(EntityType::Dynamic);
+	return this->getCountOfType(EntityType::Static) + this->getCountOfType(EntityType::Dynamic);
 }
 
-int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int outSize)
+int EntityManager::getEntitiesOfType(EntityType entityType, Entity **outEntities, int outSize)
 {
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);
@@ -586,7 +586,7 @@ int EntityManager::getEntities(EntityType entityType, Entity **outEntities, int 
 	return writeIndex;
 }
 
-int EntityManager::getEntities(EntityType entityType, const Entity **outEntities, int outSize) const
+int EntityManager::getEntitiesOfType(EntityType entityType, const Entity **outEntities, int outSize) const
 {
 	DebugAssert(outEntities != nullptr);
 	DebugAssert(outSize >= 0);
@@ -618,7 +618,7 @@ int EntityManager::getEntities(EntityType entityType, const Entity **outEntities
 	return writeIndex;
 }
 
-int EntityManager::getTotalEntitiesInChunk(const ChunkInt2 &chunk, const Entity **outEntities, int outSize) const
+int EntityManager::getEntitiesInChunk(const ChunkInt2 &chunk, const Entity **outEntities, int outSize) const
 {
 	// Can't assume the given pointer is not null.
 	if ((outEntities == nullptr) || (outSize == 0))
@@ -669,7 +669,7 @@ int EntityManager::getTotalEntitiesInChunk(const ChunkInt2 &chunk, const Entity 
 	return writeIndex;
 }
 
-int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) const
+int EntityManager::getEntities(const Entity **outEntities, int outSize) const
 {
 	// Apparently std::vector::data() can be either null or non-null when the container is empty,
 	// so can't assume the given pointer is not null.
@@ -687,7 +687,7 @@ int EntityManager::getTotalEntities(const Entity **outEntities, int outSize) con
 			break;
 		}
 
-		writeIndex += this->getTotalEntitiesInChunk(entityChunk.chunk, outEntities + writeIndex, outSize - writeIndex);
+		writeIndex += this->getEntitiesInChunk(entityChunk.chunk, outEntities + writeIndex, outSize - writeIndex);
 	}
 
 	return writeIndex;

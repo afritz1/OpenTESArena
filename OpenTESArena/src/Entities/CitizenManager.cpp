@@ -195,8 +195,8 @@ void CitizenManager::spawnCitizens(int raceID, const ChunkInt2 &playerChunk, con
 
 void CitizenManager::clearCitizens(EntityManager &entityManager)
 {
-	Buffer<const Entity*> entities(entityManager.getCount(EntityType::Dynamic));
-	const int entityWriteCount = entityManager.getEntities(
+	Buffer<const Entity*> entities(entityManager.getCountOfType(EntityType::Dynamic));
+	const int entityWriteCount = entityManager.getEntitiesOfType(
 		EntityType::Dynamic, entities.get(), entities.getCount());
 
 	for (int i = 0; i < entityWriteCount; i++)

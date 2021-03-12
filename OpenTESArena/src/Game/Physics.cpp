@@ -112,7 +112,7 @@ namespace Physics
 			{
 				for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 				{
-					count += entityManager.getTotalCountInChunk(ChunkInt2(x, z));
+					count += entityManager.getCountInChunk(ChunkInt2(x, z));
 				}
 			}
 
@@ -127,8 +127,7 @@ namespace Physics
 		{
 			const Entity **entitiesPtr = entities.get() + entityInsertIndex;
 			const int size = entities.getCount() - entityInsertIndex;
-			const int writtenCount = entityManager.getTotalEntitiesInChunk(
-				ChunkInt2(chunkX, chunkZ), entitiesPtr, size);
+			const int writtenCount = entityManager.getEntitiesInChunk(ChunkInt2(chunkX, chunkZ), entitiesPtr, size);
 			DebugAssert(writtenCount <= size);
 			entityInsertIndex += writtenCount;
 		};

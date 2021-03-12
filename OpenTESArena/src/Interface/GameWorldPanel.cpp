@@ -1895,8 +1895,8 @@ void GameWorldPanel::handleNightLightChange(bool active)
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 
 	// Turn streetlights on or off.
-	Buffer<Entity*> entityBuffer(entityManager.getCount(EntityType::Static));
-	const int entityCount = entityManager.getEntities(
+	Buffer<Entity*> entityBuffer(entityManager.getCountOfType(EntityType::Static));
+	const int entityCount = entityManager.getEntitiesOfType(
 		EntityType::Static, entityBuffer.get(), entityBuffer.getCount());
 
 	for (int i = 0; i < entityCount; i++)

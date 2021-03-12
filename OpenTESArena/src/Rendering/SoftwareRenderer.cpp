@@ -1463,7 +1463,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera, int c
 
 	auto getChunkPotentiallyVisFlatCount = [&entityManager](SNInt chunkX, WEInt chunkZ)
 	{
-		return entityManager.getTotalCountInChunk(ChunkInt2(chunkX, chunkZ));
+		return entityManager.getCountInChunk(ChunkInt2(chunkX, chunkZ));
 	};
 
 	auto getTotalPotentiallyVisFlatCount = [](const BufferView2D<const int> &chunkPotentiallyVisFlatCounts)
@@ -1505,8 +1505,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera, int c
 		const SNInt visChunkX = chunkX - minChunk.x;
 		const WEInt visChunkZ = chunkZ - minChunk.y;
 		const int count = chunkPotentiallyVisFlatCounts.get(visChunkX, visChunkZ);
-		const int writtenCount = entityManager.getTotalEntitiesInChunk(
-			ChunkInt2(chunkX, chunkZ), entitiesPtr, count);
+		const int writtenCount = entityManager.getEntitiesInChunk(ChunkInt2(chunkX, chunkZ), entitiesPtr, count);
 		DebugAssert(writtenCount <= count);
 	};
 

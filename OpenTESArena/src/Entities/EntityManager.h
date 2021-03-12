@@ -152,23 +152,23 @@ public:
 	ConstEntityRef getEntityRef(EntityID id) const;
 
 	// Gets the number of entities of the given type in the manager.
-	int getCount(EntityType entityType) const;
+	int getCountOfType(EntityType entityType) const;
 
 	// Gets total number of entities in a chunk.
-	int getTotalCountInChunk(const ChunkInt2 &chunk) const;
+	int getCountInChunk(const ChunkInt2 &chunk) const;
 
 	// Gets total number of entities in the manager.
-	int getTotalCount() const;
+	int getCount() const;
 
 	// Gets pointers to entities of the given type. Returns number of entities written.
-	int getEntities(EntityType entityType, Entity **outEntities, int outSize);
-	int getEntities(EntityType entityType, const Entity **outEntities, int outSize) const;
+	int getEntitiesOfType(EntityType entityType, Entity **outEntities, int outSize);
+	int getEntitiesOfType(EntityType entityType, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities in a chunk. Returns number of entities written.
-	int getTotalEntitiesInChunk(const ChunkInt2 &chunk, const Entity **outEntities, int outSize) const;
+	int getEntitiesInChunk(const ChunkInt2 &chunk, const Entity **outEntities, int outSize) const;
 
 	// Gets pointers to all entities. Returns number of entities written.
-	int getTotalEntities(const Entity **outEntities, int outSize) const;
+	int getEntities(const Entity **outEntities, int outSize) const;
 
 	// Returns whether the given entity definition ID points to a valid definition.
 	bool hasEntityDef(EntityDefID defID) const;
