@@ -23,8 +23,6 @@ private:
 	ChunkManager chunkManager;
 	EntityManager entityManager;
 	double ceilingScale;
-
-	// @todo: probably store the table of TextureAssetReferences -> VoxelTextureID/EntityTextureID/etc. in this class.
 public:
 	LevelInstance();
 
