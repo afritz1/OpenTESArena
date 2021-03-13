@@ -1837,13 +1837,11 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 }
 
 void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
-	ArenaTypes::CityType cityType, uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon)
+	const LocationDefinition::CityDefinition &cityDef, uint32_t fallbackSeed)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
-	this->cityType = cityType;
+	this->cityDef = &cityDef;
 	this->fallbackSeed = fallbackSeed;
-	this->rulerSeed = rulerSeed;
-	this->palaceIsMainQuestDungeon = palaceIsMainQuestDungeon;
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::init(const ChunkInt2 &chunk)
@@ -2096,10 +2094,10 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 }
 
 void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-	const BufferView2D<const int> &levelDefIndices, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-	ArenaTypes::CityType cityType, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
+	const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
+	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos)
 {
 	DebugAssert(uniqueWildBlockIDs.getCount() == outLevelDefs.getCount());
@@ -2139,8 +2137,7 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 			}
 		}
 
-		const bool isCityBlockID = (wildBlockID >= 1) && (wildBlockID <= 4);
-		if (isCityBlockID)
+		if (ArenaWildUtils::isWildCityBlock(wildBlockID))
 		{
 			// Change the placeholder WILD00{1..4}.RMD block to the one for the given city.
 			BufferView2D<ArenaTypes::VoxelID> tempFlorView(
@@ -2150,11 +2147,8 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 			BufferView2D<ArenaTypes::VoxelID> tempMap2View(
 				tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
-			// @todo: change this to take wild block ID instead of assuming it's the whole wilderness
-			// and rename to reviseWildCityBlock() maybe.
-			/*WildLevelUtils::reviseWildernessCity(locationDef, tempFlorView, tempMap1View,
-				tempMap2View, binaryAssetLibrary);*/
-			DebugNotImplemented();
+			ArenaWildUtils::reviseWildCityBlock(wildBlockID, tempFlorView, tempMap1View, tempMap2View,
+				cityDef, binaryAssetLibrary);
 		}
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
@@ -2168,20 +2162,19 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 
 		constexpr MapType mapType = MapType::Wilderness;
 		constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Wilderness is not an interior.
-		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
 		
 		// Dungeon definition if this chunk has any dungeons.
-		constexpr uint32_t dungeonSeed = 0x1234; // @todo: arbitrary. Does it rely on the chunk XY? ArenaWildUtils::makeWildChunkSeed()?
+		const uint32_t dungeonSeed = cityDef.provinceSeed;
 		LocationDefinition::DungeonDefinition dungeonDef;
 		dungeonDef.init(dungeonSeed, ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS, ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS);
 
 		constexpr std::optional<bool> isArtifactDungeon = false; // No artifacts in wild dungeons.
 
-		MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, cityDef.rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
-		MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, &dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+		MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, cityDef.rulerSeed, cityDef.rulerIsMale,
+			cityDef.palaceIsMainQuestDungeon, cityDef.type, &dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
 			&entityMappings, &transitionMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);

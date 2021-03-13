@@ -297,11 +297,10 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
-	uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-	ArenaTypes::CityType cityType, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
@@ -357,9 +356,9 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
-	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView,
-		rulerSeed, palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef, &buildingNameInfos);
+	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,
+		&buildingNameInfos);
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
@@ -509,9 +508,9 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	
 	const BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
+	const LocationDefinition::CityDefinition &cityDef = *generationInfo.cityDef;
 
-	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, generationInfo.rulerSeed,
-		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityType, exteriorSkyGenInfo, inf,
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, exteriorSkyGenInfo, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	// No start level index and no start points in the wilderness due to the nature of chunks.

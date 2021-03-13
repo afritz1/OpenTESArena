@@ -679,8 +679,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 				MapGeneration::WildGenInfo wildGenInfo;
-				wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-					cityDef.palaceIsMainQuestDungeon);
+				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				const int currentDay = gameState->getDate().getDay();
 

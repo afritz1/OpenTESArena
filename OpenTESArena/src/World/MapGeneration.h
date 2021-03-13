@@ -118,13 +118,11 @@ namespace MapGeneration
 	struct WildGenInfo
 	{
 		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs;
-		ArenaTypes::CityType cityType;
+		const LocationDefinition::CityDefinition *cityDef;
 		uint32_t fallbackSeed;
-		uint32_t rulerSeed;
-		bool palaceIsMainQuestDungeon;
 
-		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs, ArenaTypes::CityType cityType,
-			uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon);
+		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
+			const LocationDefinition::CityDefinition &cityDef, uint32_t fallbackSeed);
 	};
 
 	// Building names in the wild are shared per-chunk.
@@ -189,8 +187,8 @@ namespace MapGeneration
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(const BufferView<const ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-		const BufferView2D<const int> &levelDefIndices, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-		ArenaTypes::CityType cityType, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef,

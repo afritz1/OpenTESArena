@@ -2202,8 +2202,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 				MapGeneration::WildGenInfo wildGenInfo;
-				wildGenInfo.init(std::move(wildBlockIDs), cityDef.type, cityDef.citySeed, cityDef.rulerSeed,
-					cityDef.palaceIsMainQuestDungeon);
+				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
