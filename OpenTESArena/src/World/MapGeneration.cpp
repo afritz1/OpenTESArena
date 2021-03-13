@@ -2169,16 +2169,21 @@ void MapGeneration::generateRmdWilderness(const BufferView<const ArenaWildUtils:
 		constexpr MapType mapType = MapType::Wilderness;
 		constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Wilderness is not an interior.
 		constexpr std::optional<bool> rulerIsMale; // Not necessary for wild.
-		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for wild.
-		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for wild.
+		
+		// Dungeon definition if this chunk has any dungeons.
+		constexpr uint32_t dungeonSeed = 0x1234; // @todo: arbitrary. Does it rely on the chunk XY? ArenaWildUtils::makeWildChunkSeed()?
+		LocationDefinition::DungeonDefinition dungeonDef;
+		dungeonDef.init(dungeonSeed, ArenaWildUtils::WILD_DUNGEON_WIDTH_CHUNKS, ArenaWildUtils::WILD_DUNGEON_HEIGHT_CHUNKS);
+
+		constexpr std::optional<bool> isArtifactDungeon = false; // No artifacts in wild dungeons.
 
 		MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
 		MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, rulerSeed, rulerIsMale,
-			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
-			entityDefLibrary, binaryAssetLibrary,
-			textureManager, &levelDef, outLevelInfoDef, &map1Mappings, &entityMappings, &transitionMappings);
+			palaceIsMainQuestDungeon, cityType, &dungeonDef, isArtifactDungeon, inf, charClassLibrary,
+			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
+			&entityMappings, &transitionMappings);
 		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
 	}
 
