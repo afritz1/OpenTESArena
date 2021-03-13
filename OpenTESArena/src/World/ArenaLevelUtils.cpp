@@ -14,6 +14,16 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
+uint8_t ArenaLevelUtils::getVoxelMostSigByte(ArenaTypes::VoxelID voxelID)
+{
+	return (voxelID & 0x7F00) >> 8;
+}
+
+uint8_t ArenaLevelUtils::getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID)
+{
+	return voxelID & 0x007F;
+}
+
 double ArenaLevelUtils::convertCeilingHeightToScale(int ceilingHeight)
 {
 	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;

@@ -42,18 +42,6 @@ namespace MapGeneration
 	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
 
-	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
-
-	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID)
-	{
-		return (voxelID & 0x7F00) >> 8;
-	}
-
-	uint8_t getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID)
-	{
-		return voxelID & 0x007F;
-	}
-
 	// Whether the Arena *MENU ID is for a city gate left/right voxel.
 	bool isCityGateMenuIndex(int menuIndex, MapType mapType)
 	{
@@ -383,8 +371,8 @@ namespace MapGeneration
 		if ((map1Voxel & 0x8000) == 0)
 		{
 			// A voxel of some kind.
-			const uint8_t mostSigByte = MapGeneration::getVoxelMostSigByte(map1Voxel);
-			const uint8_t leastSigByte = MapGeneration::getVoxelLeastSigByte(map1Voxel);
+			const uint8_t mostSigByte = ArenaLevelUtils::getVoxelMostSigByte(map1Voxel);
+			const uint8_t leastSigByte = ArenaLevelUtils::getVoxelLeastSigByte(map1Voxel);
 			const bool voxelIsSolid = mostSigByte == leastSigByte;
 
 			if (voxelIsSolid)
@@ -688,8 +676,8 @@ namespace MapGeneration
 		ArenaTypes::VoxelID map1Voxel, MapType mapType, const INFFile &inf)
 	{
 		// @todo: needs to handle palace voxel too here (type 0xA voxel, menuID 11?).
-		const uint8_t mostSigByte = MapGeneration::getVoxelMostSigByte(map1Voxel);
-		const uint8_t leastSigByte = MapGeneration::getVoxelLeastSigByte(map1Voxel);
+		const uint8_t mostSigByte = ArenaLevelUtils::getVoxelMostSigByte(map1Voxel);
+		const uint8_t leastSigByte = ArenaLevelUtils::getVoxelLeastSigByte(map1Voxel);
 		const bool isWall = mostSigByte == leastSigByte;
 		if (!isWall)
 		{
