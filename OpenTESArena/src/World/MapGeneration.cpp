@@ -44,9 +44,6 @@ namespace MapGeneration
 
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
 
-	// .INF flat index for determining if a flat is a transition to a wild dungeon.
-	constexpr ArenaTypes::FlatIndex WildDenFlatIndex = 37;
-
 	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID)
 	{
 		return (voxelID & 0x7F00) >> 8;
@@ -807,7 +804,7 @@ namespace MapGeneration
 			return std::nullopt;
 		}
 
-		const bool isWildDen = flatIndex == MapGeneration::WildDenFlatIndex;
+		const bool isWildDen = flatIndex == ArenaWildUtils::WILD_DEN_FLAT_INDEX;
 		if (!isWildDen)
 		{
 			return std::nullopt;

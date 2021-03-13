@@ -5,6 +5,7 @@
 
 #include "ArenaLevelUtils.h"
 #include "VoxelUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 
 #include "components/utilities/Buffer2D.h"
@@ -29,6 +30,9 @@ namespace ArenaWildUtils
 	// Number of dungeon chunks (32x32) wide and tall wild dungeons are.
 	constexpr int WILD_DUNGEON_WIDTH_CHUNKS = 2;
 	constexpr int WILD_DUNGEON_HEIGHT_CHUNKS = WILD_DUNGEON_WIDTH_CHUNKS;
+	
+	// .INF flat index for determining if a flat is a transition to a wild dungeon.
+	constexpr ArenaTypes::FlatIndex WILD_DEN_FLAT_INDEX = 37;
 
 	// Generates the .INF name for the wilderness given a climate and current weather.
 	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
