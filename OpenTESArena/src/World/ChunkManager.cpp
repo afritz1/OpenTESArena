@@ -503,7 +503,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 	}
 	else if (mapType == MapType::City)
 	{
-		DebugAssert(activeLevelIndex.has_value());
+		DebugAssert(activeLevelIndex.has_value() && (*activeLevelIndex == 0));
 		DebugAssert(citizenGenInfo.has_value());
 		const LevelDefinition &levelDefinition = mapDefinition.getLevel(0);
 		const LevelInfoDefinition &levelInfoDefinition = mapDefinition.getLevelInfoForLevel(0);
@@ -556,7 +556,9 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 	}
 	else if (mapType == MapType::Wilderness)
 	{
-		DebugAssert(!activeLevelIndex.has_value());
+		// The wilderness doesn't have an active level index since it's always just the one level.
+		DebugAssert(!activeLevelIndex.has_value() || (*activeLevelIndex == 0));
+
 		DebugAssert(citizenGenInfo.has_value());
 		const MapDefinition::Wild &mapDefWild = mapDefinition.getWild();
 		const int levelDefIndex = mapDefWild.getLevelDefIndex(chunkCoord);
