@@ -102,13 +102,15 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());
 	// @todo: renderer.setSky();
 
-	// Load textures known at level load time.
-	auto loadLevelDefTextures = [&mapDefinition, &textureManager, &renderer](int levelIndex)
-	{
-		// @todo: eventually don't preload all textures and let the chunk manager load them for new chunks.
-		RendererUtils::LoadedVoxelTextureCache loadedVoxelTextures;
-		RendererUtils::LoadedEntityTextureCache loadedEntityTextures;
+	// Loaded texture caches for tracking which textures have already been loaded in the renderer.
+	// @todo: eventually don't preload all textures and let the chunk manager load them for new chunks.
+	RendererUtils::LoadedVoxelTextureCache loadedVoxelTextures;
+	RendererUtils::LoadedEntityTextureCache loadedEntityTextures;
 
+	// Load textures known at level load time.
+	auto loadLevelDefTextures = [&mapDefinition, &textureManager, &renderer, &loadedVoxelTextures,
+		&loadedEntityTextures](int levelIndex)
+	{
 		const LevelInfoDefinition &levelInfoDef = mapDefinition.getLevelInfoForLevel(levelIndex);
 
 		for (int i = 0; i < levelInfoDef.getVoxelDefCount(); i++)
