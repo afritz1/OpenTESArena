@@ -17,6 +17,10 @@ enum class ClimateType;
 
 namespace CitizenUtils
 {
+	// Arbitrary values.
+	constexpr int CITIZENS_PER_CHUNK = 30;
+	constexpr int MAX_ACTIVE_CITIZENS = CITIZENS_PER_CHUNK * 9;
+
 	struct CitizenGenInfo
 	{
 		EntityDefID maleEntityDefID;

@@ -421,15 +421,17 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 	if (citizenGenInfo.has_value())
 	{
-		// Spawn citizens.
-		// @todo: figure out how many to spawn based on existing count in the entity manager.
-		constexpr int spawnCount = 30;
-		for (int i = 0; i < spawnCount; i++)
+		// Spawn citizens if the total active limit has not been reached.
+		const int currentCitizenCount = CitizenUtils::getCitizenCount(entityManager);
+		const int remainingCitizensToSpawn = std::min(
+			CitizenUtils::MAX_ACTIVE_CITIZENS - currentCitizenCount, CitizenUtils::CITIZENS_PER_CHUNK);
+
+		for (int i = 0; i < remainingCitizensToSpawn; i++)
 		{
 			if (!CitizenUtils::trySpawnCitizenInChunk(chunk, *citizenGenInfo, random, binaryAssetLibrary,
 				textureManager, entityManager))
 			{
-				DebugLogError("Couldn't spawn citizen in chunk \"" + chunk.getCoord().toString() + "\".");
+				DebugLogWarning("Couldn't spawn citizen in chunk \"" + chunk.getCoord().toString() + "\".");
 			}
 		}
 	}
