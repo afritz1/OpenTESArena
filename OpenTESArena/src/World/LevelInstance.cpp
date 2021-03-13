@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "LevelInstance.h"
 #include "MapDefinition.h"
 #include "MapType.h"
@@ -7,6 +9,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -100,9 +103,12 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	// @todo: renderer.setSky();
 
 	// Load textures known at level load time.
-	// @todo: this should definitely do duplicate texture checking since RAM would easily run out for the wilderness.
 	auto loadLevelDefTextures = [&mapDefinition, &textureManager, &renderer](int levelIndex)
 	{
+		// @todo: eventually don't preload all textures and let the chunk manager load them for new chunks.
+		RendererUtils::LoadedVoxelTextureCache loadedVoxelTextures;
+		RendererUtils::LoadedEntityTextureCache loadedEntityTextures;
+
 		const LevelInfoDefinition &levelInfoDef = mapDefinition.getLevelInfoForLevel(levelIndex);
 
 		for (int i = 0; i < levelInfoDef.getVoxelDefCount(); i++)
@@ -111,10 +117,14 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 			for (int j = 0; j < voxelDef.getTextureAssetReferenceCount(); j++)
 			{
 				const TextureAssetReference &textureAssetRef = voxelDef.getTextureAssetReference(j);
-				// @todo: duplicate texture check in some LevelInstance::rendererVoxelTextureCache
-				if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
+				const auto cacheIter = std::find(loadedVoxelTextures.begin(), loadedVoxelTextures.end(), textureAssetRef);
+				if (cacheIter == loadedVoxelTextures.end())
 				{
-					DebugLogError("Couldn't create renderer voxel texture for \"" + textureAssetRef.filename + "\".");
+					loadedVoxelTextures.push_back(textureAssetRef);
+					if (!renderer.tryCreateVoxelTexture(textureAssetRef, textureManager))
+					{
+						DebugLogError("Couldn't create renderer voxel texture for \"" + textureAssetRef.filename + "\".");
+					}
 				}
 			}
 		}
@@ -137,10 +147,23 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 					{
 						const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
 						const TextureAssetReference &textureAssetRef = keyframe.getTextureAssetRef();
-						// @todo: duplicate texture check in some LevelInstance::rendererEntityTextureCache
-						if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
+						const auto cacheIter = std::find_if(loadedEntityTextures.begin(), loadedEntityTextures.end(),
+							[&textureAssetRef, flipped, reflective](const RendererUtils::LoadedEntityTextureEntry &cacheEntry)
 						{
-							DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
+							return (cacheEntry.textureAssetRef == textureAssetRef) && (cacheEntry.flipped == flipped) &&
+								(cacheEntry.reflective == reflective);
+						});
+
+						if (cacheIter == loadedEntityTextures.end())
+						{
+							RendererUtils::LoadedEntityTextureEntry loadedEntityTextureEntry;
+							loadedEntityTextureEntry.init(TextureAssetReference(textureAssetRef), flipped, reflective);
+							loadedEntityTextures.emplace_back(std::move(loadedEntityTextureEntry));
+							
+							if (!renderer.tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager))
+							{
+								DebugLogError("Couldn't create renderer entity texture for \"" + textureAssetRef.filename + "\".");
+							}
 						}
 					}
 				}

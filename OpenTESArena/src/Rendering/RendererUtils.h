@@ -16,6 +16,21 @@ class Chunk;
 
 namespace RendererUtils
 {
+	struct LoadedEntityTextureEntry
+	{
+		TextureAssetReference textureAssetRef;
+		bool flipped;
+		bool reflective;
+
+		void init(TextureAssetReference &&textureAssetRef, bool flipped, bool reflective);
+	};
+
+	// Loaded texture asset caches so the rest of the engine can see what texture assets are already loaded
+	// in the renderer.
+	// @todo: this should eventually be a hash table of texture asset refs to texture handles
+	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
+	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
+
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
 
