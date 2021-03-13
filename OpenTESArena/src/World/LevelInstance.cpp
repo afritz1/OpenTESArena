@@ -53,10 +53,8 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	// Clear renderer textures, distant sky, and entities.
 	renderer.clearTextures();
-	renderer.clearSky();
-	this->entityManager.clear();
+	renderer.clearSky(); // @todo: not sure this needs to stay. The sky could be treated the same way as visible entities (updated every frame).
 
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
