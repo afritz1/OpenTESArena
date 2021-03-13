@@ -310,7 +310,8 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	{
 		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
 		{
-			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(x, y);
+			// Transpose the XY coordinate since the wild block IDs buffer is in original space.
+			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(y, x);
 			const auto iter = std::find(uniqueWildBlockIDs.begin(), uniqueWildBlockIDs.end(), blockID);
 
 			int levelDefIndex;
