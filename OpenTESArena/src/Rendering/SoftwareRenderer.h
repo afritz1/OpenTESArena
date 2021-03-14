@@ -585,8 +585,8 @@ private:
 	static const VisibleLight &getVisibleLightByID(const BufferView<const VisibleLight> &visLights,
 		VisibleLightList::LightID lightID);
 
-	// Gets the visible light list associated with some voxel column.
-	static const VisibleLightList &getVisibleLightList(
+	// Gets the visible light list associated with some voxel column if the given chunk is available.
+	static const VisibleLightList *getVisibleLightList(
 		const VisibleLightLists &visLightLists, const CoordInt2 &coord);
 
 	// Generates a vertical draw range on-screen from two vertices in world space.

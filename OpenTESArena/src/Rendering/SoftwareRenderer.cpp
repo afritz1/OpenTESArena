@@ -2100,18 +2100,20 @@ const SoftwareRenderer::VisibleLight &SoftwareRenderer::getVisibleLightByID(
 	return visLights.get(lightID);
 }
 
-const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
+const SoftwareRenderer::VisibleLightList *SoftwareRenderer::getVisibleLightList(
 	const VisibleLightLists &visLightLists, const CoordInt2 &coord)
 {
 	const auto iter = visLightLists.find(coord.chunk);
 	if (iter == visLightLists.end())
 	{
-		DebugCrash("Couldn't get visible light lists for chunk \"" + coord.chunk.toString() + "\".");
+		// Silently fail, this doesn't seem to affect visuals any (maybe it's just one row of voxels on a chunk edge?).
+		// @todo: track which chunks this fails for. It seems to be easier in the wilderness when spinning the camera around.
+		return nullptr;
 	}
 
 	const Buffer2D<VisibleLightList> &visLightListGroup = iter->second;
 	const VoxelInt2 &voxel = coord.voxel;
-	return visLightListGroup.get(voxel.x, voxel.y);
+	return &visLightListGroup.get(voxel.x, voxel.y);
 }
 
 SoftwareRenderer::DrawRange SoftwareRenderer::makeDrawRange(const Double3 &startPoint,
@@ -4391,7 +4393,14 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -4820,7 +4829,14 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -5148,7 +5164,14 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -5630,7 +5653,14 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -6069,7 +6099,14 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -6418,7 +6455,14 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
+	if (visLightListPtr == nullptr)
+	{
+		// Silently fail (doesn't seem to have a visual effect?).
+		return;
+	}
+
+	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -7018,7 +7062,14 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 		const CoordInt2 topVoxelCoordXZ(topCoordXZ.chunk, VoxelUtils::pointToVoxel(topCoordXZ.point));
 
 		// Light contribution per column.
-		const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, topVoxelCoordXZ);
+		const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, topVoxelCoordXZ);
+		if (visLightListPtr == nullptr)
+		{
+			// Silently fail (doesn't seem to have a visual effect?).
+			return;
+		}
+
+		const VisibleLightList &visLightList = *visLightListPtr;
 		const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(VoxelUtils::newPointToCoord(topPointXZ), visLights, visLightList);
 
