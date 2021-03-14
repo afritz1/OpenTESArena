@@ -751,16 +751,16 @@ void SoftwareRenderer::VisDistantObjects::clear()
 	this->starEnd = 0;
 }
 
-void SoftwareRenderer::VisibleLight::init(const Double3 &position, double radius)
+void SoftwareRenderer::VisibleLight::init(const CoordDouble3 &coord, double radius)
 {
-	this->position = position;
+	this->coord = coord;
 	this->radius = radius;
 }
 
-void SoftwareRenderer::LightVisibilityData::init(const Double3 &position, double radius,
+void SoftwareRenderer::LightVisibilityData::init(const CoordDouble3 &coord, double radius,
 	bool intersectsFrustum)
 {
-	this->position = position;
+	this->coord = coord;
 	this->radius = radius;
 	this->intersectsFrustum = intersectsFrustum;
 }
@@ -787,7 +787,7 @@ void SoftwareRenderer::VisibleLightList::clear()
 	this->count = 0;
 }
 
-void SoftwareRenderer::VisibleLightList::sortByNearest(const Double3 &point,
+void SoftwareRenderer::VisibleLightList::sortByNearest(const CoordDouble3 &coord,
 	const BufferView<const VisibleLight> &visLights)
 {
 	// @todo: can only do this if we know the lightID index when sorting.
@@ -799,12 +799,12 @@ void SoftwareRenderer::VisibleLightList::sortByNearest(const Double3 &point,
 	const auto startIter = this->lightIDs.begin();
 	const auto endIter = startIter + this->count;
 
-	std::sort(startIter, endIter, [&point, &visLights](LightID a, LightID b)
+	std::sort(startIter, endIter, [&coord, &visLights](LightID a, LightID b)
 	{
 		const VisibleLight &aLight = SoftwareRenderer::getVisibleLightByID(visLights, a);
 		const VisibleLight &bLight = SoftwareRenderer::getVisibleLightByID(visLights, b);
-		const double aDistSqr = (point - aLight.position).lengthSquared();
-		const double bDistSqr = (point - bLight.position).lengthSquared();
+		const double aDistSqr = (coord - aLight.coord).lengthSquared();
+		const double bDistSqr = (coord - bLight.coord).lengthSquared();
 		return aDistSqr < bDistSqr;
 	});
 }
@@ -830,7 +830,7 @@ void SoftwareRenderer::RenderThreadData::DistantSky::init(const VisDistantObject
 
 void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const std::vector<VisibleLight> &visLights,
-	const Buffer2D<VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &voxelTextures,
 	const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion)
 {
 	this->threadsDone = 0;
@@ -845,9 +845,9 @@ void SoftwareRenderer::RenderThreadData::Voxels::init(int chunkDistance, double 
 	this->doneLightVisTesting = false;
 }
 
-void SoftwareRenderer::RenderThreadData::Flats::init(const Double3 &flatNormal,
+void SoftwareRenderer::RenderThreadData::Flats::init(const VoxelDouble3 &flatNormal,
 	const std::vector<VisibleFlat> &visibleFlats, const std::vector<VisibleLight> &visLights,
-	const Buffer2D<VisibleLightList> &visLightLists, const EntityTextures &entityTextures)
+	const VisibleLightLists &visLightLists, const EntityTextures &entityTextures)
 {
 	this->threadsDone = 0;
 	this->flatNormal = &flatNormal;
@@ -1545,18 +1545,14 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	const Double3 flatUp = Double3::UnitY;
 	const Double3 flatRight = flatForward.cross(flatUp).normalized();
 
-	const CoordDouble2 eyeXZ(
-		camera.eye.chunk,
-		VoxelDouble2(camera.eye.point.x, camera.eye.point.z));
-	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewDouble2 absoluteEyeXZ(absoluteEye.x, absoluteEye.z);
+	const CoordDouble2 eyeXZ(camera.eye.chunk, VoxelDouble2(camera.eye.point.x, camera.eye.point.z));
 	const NewDouble2 cameraDir(camera.forwardX, camera.forwardZ);
 
 	if (shadingInfo.playerHasLight)
 	{
 		// Add player light.
 		VisibleLight playerVisLight;
-		playerVisLight.init(absoluteEye, 5.0);
+		playerVisLight.init(camera.eye, 5.0);
 		this->visibleLights.emplace_back(std::move(playerVisLight));
 	}
 
@@ -1601,28 +1597,28 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			lightIntensity = isActiveStreetLight ? streetLightIntensity : 0;
 		}
 
-		const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visData.flatPosition);
+		const CoordDouble3 &flatCoord = visData.flatPosition;
 		const bool isLight = lightIntensity > 0;
 		if (isLight)
 		{
 			// See if the light is visible.
 			SoftwareRenderer::LightVisibilityData lightVisData;
-			SoftwareRenderer::getLightVisibilityData(absoluteFlatPosition, flatHeight,
-				lightIntensity, absoluteEyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
+			SoftwareRenderer::getLightVisibilityData(flatCoord, flatHeight,
+				lightIntensity, eyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
 
 			if (lightVisData.intersectsFrustum)
 			{
 				// Add a new visible light.
 				VisibleLight visLight;
-				visLight.init(lightVisData.position, lightVisData.radius);
+				visLight.init(lightVisData.coord, lightVisData.radius);
 				this->visibleLights.push_back(std::move(visLight));
 			}
 		}
 
-		const NewDouble2 absoluteFlatPositionXZ(absoluteFlatPosition.x, absoluteFlatPosition.z);
+		const CoordDouble2 flatCoordXZ(flatCoord.chunk, VoxelDouble2(flatCoord.point.x, flatCoord.point.z));
 
 		// Check if the flat is somewhere in front of the camera.
-		const NewDouble2 flatEyeDiff = absoluteFlatPositionXZ - absoluteEyeXZ;
+		const NewDouble2 flatEyeDiff = flatCoordXZ - eyeXZ;
 		const double flatEyeDiffLen = flatEyeDiff.length();
 		const NewDouble2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
 		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
@@ -1644,6 +1640,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 			VisibleFlat visFlat;
 
 			// Calculate each corner of the flat in world space.
+			const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(flatCoord);
 			visFlat.bottomLeft = absoluteFlatPosition + flatRightScaled;
 			visFlat.bottomRight = absoluteFlatPosition - flatRightScaled;
 			visFlat.topLeft = visFlat.bottomLeft + flatUpScaled;
@@ -1702,79 +1699,97 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDistance,
 	double ceilingScale)
 {
-	// Visible light lists are relative to the potentially visible chunks.
 	const ChunkInt2 &cameraChunk = camera.eye.chunk;
 
+	// Visible light lists are dependent on the active chunks.
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(cameraChunk, chunkDistance, &minChunk, &maxChunk);
 
-	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
-	// relative chunk calculations.
-	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, VoxelInt2(0, 0));
-
-	SNInt potentiallyVisChunkCountX;
-	WEInt potentiallyVisChunkCountZ;
-	ChunkUtils::getPotentiallyVisibleChunkCounts(chunkDistance,
-		&potentiallyVisChunkCountX, &potentiallyVisChunkCountZ);
-
-	const SNInt visLightListVoxelCountX = potentiallyVisChunkCountX * ChunkUtils::CHUNK_DIM;
-	const WEInt visLightListVoxelCountZ = potentiallyVisChunkCountZ * ChunkUtils::CHUNK_DIM;
-
-	if (!this->visLightLists.isValid() ||
-		(this->visLightLists.getWidth() != visLightListVoxelCountX) ||
-		(this->visLightLists.getHeight() != visLightListVoxelCountZ))
+	// Clear out old chunks.
+	// @todo: this could probably just iterate over the chunk manager's chunks.
+	std::vector<ChunkInt2> chunksToRemove;
+	for (const auto &pair : this->visLightLists)
 	{
-		this->visLightLists.init(visLightListVoxelCountX, visLightListVoxelCountZ);
+		const ChunkInt2 &oldChunk = pair.first;
+		if (!ChunkUtils::isWithinActiveRange(cameraChunk, oldChunk, chunkDistance))
+		{
+			chunksToRemove.push_back(oldChunk);
+		}
 	}
 
-	// Clear all potentially visible light lists.
-	for (WEInt z = 0; z < this->visLightLists.getHeight(); z++)
+	for (const ChunkInt2 &chunkToRemove : chunksToRemove)
 	{
-		for (SNInt x = 0; x < this->visLightLists.getWidth(); x++)
+		this->visLightLists.erase(chunkToRemove);
+	}
+
+	// Add new chunks.
+	for (WEInt chunkZ = minChunk.y; chunkZ <= maxChunk.y; chunkZ++)
+	{
+		for (SNInt chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
 		{
-			VisibleLightList &visLightList = this->visLightLists.get(x, z);
-			visLightList.clear();
+			const ChunkInt2 chunk(chunkX, chunkZ);
+			const auto iter = this->visLightLists.find(chunk);
+			if (iter == this->visLightLists.end())
+			{
+				Buffer2D<VisibleLightList> visLightListGroup(ChunkUtils::CHUNK_DIM, ChunkUtils::CHUNK_DIM);
+				this->visLightLists.emplace(chunk, std::move(visLightListGroup));
+			}
+		}
+	}
+
+	// Clear all potentially visible light lists so they reference no lights.
+	for (auto &pair : this->visLightLists)
+	{
+		Buffer2D<VisibleLightList> &visLightListGroup = pair.second;
+		for (WEInt z = 0; z < visLightListGroup.getHeight(); z++)
+		{
+			for (SNInt x = 0; x < visLightListGroup.getWidth(); x++)
+			{
+				VisibleLightList &visLightList = visLightListGroup.get(x, z);
+				visLightList.clear();
+			}
 		}
 	}
 
 	// Populate potentially visible light lists based on visible lights.
 	for (size_t i = 0; i < this->visibleLights.size(); i++)
 	{
-		// Iterate over all voxels columns touched by the light.
 		const VisibleLight &visLight = this->visibleLights[i];
 		const VisibleLightList::LightID visLightID = static_cast<VisibleLightList::LightID>(i);
 
 		// Bounding box around the light's reach in the XZ plane.
-		const NewInt2 visLightMin(
-			static_cast<SNInt>(std::floor(visLight.position.x - visLight.radius)),
-			static_cast<WEInt>(std::floor(visLight.position.z - visLight.radius)));
-		const NewInt2 visLightMax(
-			static_cast<SNInt>(std::ceil(visLight.position.x + visLight.radius)),
-			static_cast<WEInt>(std::ceil(visLight.position.z + visLight.radius)));
+		const CoordDouble3 &visLightCoord = visLight.coord;
+		const double visLightRadius = visLight.radius;
+		const VoxelDouble2 visLightMinPointXZ(
+			visLightCoord.point.x - visLightRadius,
+			visLightCoord.point.z - visLightRadius);
+		const VoxelDouble2 visLightMaxPointXZ(
+			visLightCoord.point.x + visLightRadius,
+			visLightCoord.point.z + visLightRadius);
+		const CoordDouble2 visLightMinCoord = ChunkUtils::recalculateCoord(visLightCoord.chunk, visLightMinPointXZ);
+		const CoordDouble2 visLightMaxCoord = ChunkUtils::recalculateCoord(visLightCoord.chunk, visLightMaxPointXZ);
+		const CoordInt2 visLightMinVoxelCoord(
+			visLightMinCoord.chunk, VoxelUtils::pointToVoxel(visLightMinCoord.point));
+		const CoordInt2 visLightMaxVoxelCoord(
+			visLightMaxCoord.chunk, VoxelUtils::pointToVoxel(visLightMaxCoord.point));
 
-		// Since these are in a different coordinate system, can't rely on min < max.
-		const NewInt2 visLightAbsoluteChunkVoxelA = visLightMin;
-		const NewInt2 visLightAbsoluteChunkVoxelB = visLightMax;
+		// Iterate over all voxel columns touched by the light.
+		const NewInt2 absoluteVisLightMinVoxel = VoxelUtils::coordToNewVoxel(visLightMinVoxelCoord);
+		const NewInt2 absoluteVisLightMaxVoxel = VoxelUtils::coordToNewVoxel(visLightMaxVoxelCoord);
 
-		// Get chunk voxel coordinates relative to potentially visible chunks.
-		const NewInt2 relativeChunkVoxelA = visLightAbsoluteChunkVoxelA - minAbsoluteChunkVoxel;
-		const NewInt2 relativeChunkVoxelB = visLightAbsoluteChunkVoxelB - minAbsoluteChunkVoxel;
-
-		// Have to rely on delta between A and B instead of min/max due to coordinate system transform.
-		const Int2 relativeChunkVoxelDeltaStep(
-			((relativeChunkVoxelB.x - relativeChunkVoxelA.x) > 0) ? 1 : -1,
-			((relativeChunkVoxelB.y - relativeChunkVoxelA.y) > 0) ? 1 : -1);
-
-		for (WEInt z = relativeChunkVoxelA.y; z != relativeChunkVoxelB.y; z += relativeChunkVoxelDeltaStep.y)
+		for (WEInt z = absoluteVisLightMinVoxel.y; z <= absoluteVisLightMaxVoxel.y; z++)
 		{
-			for (SNInt x = relativeChunkVoxelA.x; x != relativeChunkVoxelB.x; x += relativeChunkVoxelDeltaStep.x)
+			for (SNInt x = absoluteVisLightMinVoxel.x; x <= absoluteVisLightMaxVoxel.x; x++)
 			{
-				const bool coordIsValid = (x >= 0) && (x < visLightListVoxelCountX) &&
-					(z >= 0) && (z < visLightListVoxelCountZ);
+				const CoordInt2 visLightListCoord = VoxelUtils::newVoxelToCoord(NewInt2(x, z));
 
-				if (coordIsValid)
+				// Check if the voxel lies in a loaded chunk, in case the light reaches past the world edge.
+				const auto iter = this->visLightLists.find(visLightListCoord.chunk);
+				if (iter != this->visLightLists.end())
 				{
-					VisibleLightList &visLightList = this->visLightLists.get(x, z);
+					Buffer2D<VisibleLightList> &visLightListGroup = iter->second;
+					VisibleLightList &visLightList = visLightListGroup.get(
+						visLightListCoord.voxel.x, visLightListCoord.voxel.y);
 					if (!visLightList.isFull())
 					{
 						visLightList.add(visLightID);
@@ -1785,25 +1800,28 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 	}
 
 	// Sort all of the touched voxel columns' light references by distance (shading optimization).
-	const BufferView<const VisibleLight> visLightsView(this->visibleLights.data(),
-		static_cast<int>(this->visibleLights.size()));
-
-	for (WEInt z = 0; z < this->visLightLists.getHeight(); z++)
+	const BufferView<const VisibleLight> visLightsView(
+		this->visibleLights.data(), static_cast<int>(this->visibleLights.size()));
+	for (auto &pair : this->visLightLists)
 	{
-		for (SNInt x = 0; x < this->visLightLists.getWidth(); x++)
+		Buffer2D<VisibleLightList> &visLightListGroup = pair.second;
+		for (WEInt z = 0; z < visLightListGroup.getHeight(); z++)
 		{
-			VisibleLightList &visLightList = this->visLightLists.get(x, z);
-			if (visLightList.count >= 2)
+			for (SNInt x = 0; x < visLightListGroup.getWidth(); x++)
 			{
-				const NewInt2 voxel(x + minAbsoluteChunkVoxel.x, z + minAbsoluteChunkVoxel.y);
+				VisibleLightList &visLightList = visLightListGroup.get(x, z);
+				const bool shouldSort = visLightList.count >= 2;
+				if (shouldSort)
+				{
+					const VoxelDouble2 voxelCenter = VoxelUtils::getVoxelCenter(VoxelInt2(x, z));
 
-				// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
-				const Double3 voxelColumnPoint(
-					static_cast<SNDouble>(voxel.x) + 0.50,
-					ceilingScale * 1.50,
-					static_cast<WEDouble>(voxel.y) + 0.50);
+					// Default to the middle of the main floor for now (voxel columns aren't really in 3D).
+					const CoordDouble3 voxelColumnPoint(
+						pair.first,
+						VoxelDouble3(voxelCenter.x, ceilingScale * 1.50, voxelCenter.y));
 
-				visLightList.sortByNearest(voxelColumnPoint, visLightsView);
+					visLightList.sortByNearest(voxelColumnPoint, visLightsView);
+				}
 			}
 		}
 	}
@@ -2083,42 +2101,17 @@ const SoftwareRenderer::VisibleLight &SoftwareRenderer::getVisibleLightByID(
 }
 
 const SoftwareRenderer::VisibleLightList &SoftwareRenderer::getVisibleLightList(
-	const BufferView2D<const VisibleLightList> &visLightLists, SNInt voxelX, WEInt voxelZ,
-	SNInt cameraVoxelX, WEInt cameraVoxelZ, int chunkDistance)
+	const VisibleLightLists &visLightLists, const CoordInt2 &coord)
 {
-	// Convert new voxel grid coordinates to potentially-visible light list space
-	// (chunk space but its origin depends on the camera).
-	const NewInt2 newVoxel(voxelX, voxelZ);
-
-	// Visible light lists are relative to the potentially visible chunks.
-	const CoordInt2 cameraChunkCoord = VoxelUtils::newVoxelToCoord(NewInt2(cameraVoxelX, cameraVoxelZ));
-
-	ChunkInt2 minChunk, maxChunk;
-	ChunkUtils::getSurroundingChunks(cameraChunkCoord.chunk, chunkDistance, &minChunk, &maxChunk);
-
-	// Get the closest-to-origin voxel in the potentially visible chunks so we can do some
-	// relative chunk calculations.
-	const NewInt2 minAbsoluteChunkVoxel = VoxelUtils::chunkVoxelToNewVoxel(minChunk, VoxelInt2(0, 0));
-
-	const int visLightListX = newVoxel.x - minAbsoluteChunkVoxel.x;
-	const int visLightListY = newVoxel.y - minAbsoluteChunkVoxel.y;
-
-	// @todo: temp hack to avoid crash from bad coordinate math. Not sure how to fix it
-	// because sometimes the XY is too low or too high, so it doesn't feel like a simple
-	// off-by- +/- one in some coordinate system transform :/ it'll hopefully get fixed
-	// when NewInt2 gets removed.
-	const bool coordIsValid =
-		(visLightListX >= 0) && (visLightListX < visLightLists.getWidth()) &&
-		(visLightListY >= 0) && (visLightListY < visLightLists.getHeight());
-
-	if (!coordIsValid)
+	const auto iter = visLightLists.find(coord.chunk);
+	if (iter == visLightLists.end())
 	{
-		return visLightLists.get(
-			std::clamp(visLightListX, 0, visLightLists.getWidth() - 1),
-			std::clamp(visLightListY, 0, visLightLists.getHeight() - 1));
+		DebugCrash("Couldn't get visible light lists for chunk \"" + coord.chunk.toString() + "\".");
 	}
 
-	return visLightLists.get(visLightListX, visLightListY);
+	const Buffer2D<VisibleLightList> &visLightListGroup = iter->second;
+	const VoxelInt2 &voxel = coord.voxel;
+	return visLightListGroup.get(voxel.x, voxel.y);
 }
 
 SoftwareRenderer::DrawRange SoftwareRenderer::makeDrawRange(const Double3 &startPoint,
@@ -3040,35 +3033,44 @@ bool SoftwareRenderer::findDoorIntersection(const CoordInt2 &coord, ArenaTypes::
 	}
 }
 
-void SoftwareRenderer::getLightVisibilityData(const NewDouble3 &flatPosition, double flatHeight,
-	int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
+void SoftwareRenderer::getLightVisibilityData(const CoordDouble3 &flatCoord, double flatHeight,
+	int lightIntensity, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
 	double viewDistance, LightVisibilityData *outVisData)
 {
 	// Put the light position at the center of the entity.
-	// @todo: maybe base it on the first frame so there's no jitter if the entity height is variable?
+	// @todo: maybe base it on the first anim frame so there's no jitter if the entity height is variable?
 	const double entityHalfHeight = flatHeight * 0.50;
-	const Double3 lightPosition = flatPosition + (Double3::UnitY * entityHalfHeight);
-	const NewDouble2 lightPosition2D(lightPosition.x, lightPosition.z);
+	const CoordDouble3 lightCoord(flatCoord.chunk, flatCoord.point + (VoxelDouble3::UnitY * entityHalfHeight));
+	const CoordDouble2 lightCoordXZ(lightCoord.chunk, VoxelDouble2(lightCoord.point.x, lightCoord.point.z));
 
-	// Point at max view distance away from current camera view.
-	const NewDouble2 cameraMaxPoint = eye2D + (cameraDir * viewDistance);
+	// Point at max view distance in front of the current camera view.
+	const CoordDouble2 cameraMaxCoord = ChunkUtils::recalculateCoord(
+		eyeCoord.chunk, eyeCoord.point + (cameraDir * viewDistance));
 
 	// Distance from max view point to left or right far frustum corner.
 	const double frustumHalfWidth = viewDistance * std::tan((fovX * 0.50) * Constants::DegToRad);
 
-	const NewDouble2 cameraFrustumP0 = eye2D;
-	const NewDouble2 cameraFrustumP1 = cameraMaxPoint + (cameraDir.rightPerp() * frustumHalfWidth);
-	const NewDouble2 cameraFrustumP2 = cameraMaxPoint + (cameraDir.leftPerp() * frustumHalfWidth);
+	// Points of the camera frustum triangle.
+	const CoordDouble2 cameraFrustumCoord0 = eyeCoord;
+	const CoordDouble2 cameraFrustumCoord1 = ChunkUtils::recalculateCoord(
+		cameraMaxCoord.chunk, cameraMaxCoord.point + (cameraDir.rightPerp() * frustumHalfWidth));
+	const CoordDouble2 cameraFrustumCoord2 = ChunkUtils::recalculateCoord(
+		cameraMaxCoord.chunk, cameraMaxCoord.point + (cameraDir.leftPerp() * frustumHalfWidth));
 
+	const NewDouble2 absoluteCameraFrustumPoint0 = VoxelUtils::coordToNewPoint(cameraFrustumCoord0);
+	const NewDouble2 absoluteCameraFrustumPoint1 = VoxelUtils::coordToNewPoint(cameraFrustumCoord1);
+	const NewDouble2 absoluteCameraFrustumPoint2 = VoxelUtils::coordToNewPoint(cameraFrustumCoord2);
+	const NewDouble2 absoluteLightPointXZ = VoxelUtils::coordToNewPoint(lightCoordXZ);
 	const double lightRadius = static_cast<double>(lightIntensity);
 	const bool intersectsFrustum = MathUtils::triangleCircleIntersection(
-		cameraFrustumP0, cameraFrustumP1, cameraFrustumP2, lightPosition2D, lightRadius);
+		absoluteCameraFrustumPoint0, absoluteCameraFrustumPoint1, absoluteCameraFrustumPoint2,
+		absoluteLightPointXZ, lightRadius);
 
-	outVisData->init(lightPosition, lightRadius, intersectsFrustum);
+	outVisData->init(lightCoord, lightRadius, intersectsFrustum);
 }
 
 template <bool CappedSum>
-double SoftwareRenderer::getLightContributionAtPoint(const NewDouble2 &point,
+double SoftwareRenderer::getLightContributionAtPoint(const CoordDouble2 &coord,
 	const BufferView<const VisibleLight> &visLights, const VisibleLightList &visLightList)
 {
 	double lightContributionPercent = 0.0;
@@ -3076,9 +3078,9 @@ double SoftwareRenderer::getLightContributionAtPoint(const NewDouble2 &point,
 	{
 		const VisibleLightList::LightID lightID = visLightList.lightIDs[i];
 		const VisibleLight &light = SoftwareRenderer::getVisibleLightByID(visLights, lightID);
-		const double lightDistSqr =
-			((light.position.x - point.x) * (light.position.x - point.x)) +
-			((light.position.z - point.y) * (light.position.z - point.y));
+		const CoordDouble2 lightCoordXZ(light.coord.chunk, VoxelDouble2(light.coord.point.x, light.coord.point.z));
+		const VoxelDouble2 coordDiff = lightCoordXZ - coord;
+		const double lightDistSqr = (coordDiff.x * coordDiff.x) + (coordDiff.y * coordDiff.y);
 		const double lightDist = std::sqrt(lightDistSqr);
 
 		const double val = (light.radius - lightDist) / light.radius;
@@ -3372,8 +3374,9 @@ void SoftwareRenderer::drawPerspectivePixelsShader(int x, const DrawRange &drawR
 
 			// Light contribution.
 			const NewDouble2 currentPoint(currentPointX, currentPointY);
+			const CoordDouble2 currentCoord = VoxelUtils::newPointToCoord(currentPoint); // @todo: do the shading in chunk space to begin with
 			const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(currentPoint, visLights, visLightList);
+				LightContributionCap>(currentCoord, visLights, visLightList);
 
 			// Shading from light.
 			constexpr double shadingMax = 1.0;
@@ -4377,7 +4380,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
@@ -4387,9 +4390,8 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -4425,7 +4427,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 
 		// Wall.
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(farPoint, visLights, visLightList);
+			LightContributionCap>(farCoord, visLights, visLightList);
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), farZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(wallData.sideTextureAssetRef),
 			fadePercent, wallLightPercent, shadingInfo, occlusion, frame);
@@ -4540,7 +4542,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal, textures.getTexture(raisedData.sideTextureAssetRef),
 				wallLightPercent, shadingInfo, occlusion, frame);
@@ -4577,7 +4579,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -4611,7 +4613,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -4691,7 +4693,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 			}();
 
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 
 			const Double3 farNormal = -VoxelUtils::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
@@ -4724,7 +4726,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -4744,7 +4746,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -4772,7 +4774,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
@@ -4792,7 +4794,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -4807,7 +4809,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
@@ -4817,9 +4819,8 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -4946,7 +4947,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -4983,7 +4984,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -5017,7 +5018,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -5053,7 +5054,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5073,7 +5074,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5101,7 +5102,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
@@ -5121,7 +5122,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5136,7 +5137,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 	const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
@@ -5146,9 +5147,8 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -5276,7 +5276,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), farZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -5313,7 +5313,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -5347,7 +5347,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -5427,7 +5427,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 			}();
 
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 
 			const Double3 farNormal = -VoxelUtils::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
@@ -5460,7 +5460,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5480,7 +5480,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5508,7 +5508,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, vStart, Constants::JustBelowOne, hit.normal,
@@ -5528,7 +5528,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5542,7 +5542,7 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, const CoordInt2 &coord, con
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	// This method handles some special cases such as drawing the back-faces of wall sides.
@@ -5617,7 +5617,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
 {
@@ -5628,9 +5628,9 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 	
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
+	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -5651,7 +5651,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxel.x, voxel.y, voxel.z, chunk);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 
 		SoftwareRenderer::drawPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(wallData.sideTextureAssetRef), fadePercent,
@@ -5721,7 +5721,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -5741,7 +5741,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -5757,7 +5757,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
@@ -5790,7 +5790,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -5814,7 +5814,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
@@ -5843,7 +5843,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -5898,7 +5898,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 
 			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
 				Constants::JustBelowOne, nearNormal, RendererUtils::isChasmEmissive(chasmData.type),
@@ -5943,7 +5943,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 			}();
 
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 
 			const Double3 farNormal = -VoxelUtils::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
@@ -5976,7 +5976,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -5996,7 +5996,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6024,7 +6024,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
@@ -6044,7 +6044,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6058,7 +6058,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
@@ -6068,9 +6068,8 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -6094,7 +6093,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 		const double fadePercent = RendererUtils::getFadingVoxelPercent(
 			voxel.x, voxel.y, voxel.z, chunk);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 
 		// Wall.
 		SoftwareRenderer::drawPixels(x, drawRanges.at(0), nearZ, wallU, 0.0,
@@ -6167,7 +6166,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -6187,7 +6186,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -6203,7 +6202,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
@@ -6236,7 +6235,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -6260,7 +6259,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
@@ -6289,7 +6288,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -6325,7 +6324,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6345,7 +6344,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6373,7 +6372,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
@@ -6393,7 +6392,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6407,7 +6406,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint, double nearZ,
 	double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo, int chunkDistance,
 	double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	const CoordInt2 coord2D(chunk.getCoord(), VoxelInt2(voxel.x, voxel.z));
@@ -6417,9 +6416,9 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 	const double voxelYReal = static_cast<double>(voxel.y) * voxelHeight;
 
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
-	const NewInt3 absoluteEyeVoxel = VoxelUtils::coordToNewVoxel(camera.eyeVoxel);
-	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-		visLightLists, voxel.x, voxel.z, absoluteEyeVoxel.x, absoluteEyeVoxel.z, chunkDistance);
+	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
+	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
+	const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 	{
@@ -6450,7 +6449,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 
 		// Wall.
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 		SoftwareRenderer::drawPixels(x, drawRanges.at(1), nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(wallData.sideTextureAssetRef), fadePercent,
 			wallLightPercent, shadingInfo, occlusion, frame);
@@ -6516,7 +6515,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(1), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -6536,7 +6535,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 
 			// Wall.
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 			SoftwareRenderer::drawTransparentPixels(x, drawRanges.at(0), nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
 				textures.getTexture(raisedData.sideTextureAssetRef), wallLightPercent, shadingInfo, occlusion, frame);
@@ -6552,7 +6551,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU,
 				raisedData.vTop, raisedData.vBottom, wallNormal,
@@ -6585,7 +6584,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 			const double fadePercent = RendererUtils::getFadingVoxelPercent(
 				voxel.x, voxel.y, voxel.z, chunk);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawPixels(x, drawRange, nearZ + hit.innerZ, hit.u, 0.0,
 				Constants::JustBelowOne, hit.normal, textures.getTexture(diagData.textureAssetRef), fadePercent,
@@ -6609,7 +6608,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 		const auto drawRange = SoftwareRenderer::makeDrawRange(
 			nearCeilingPoint, nearFloorPoint, camera, frame);
 		const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(nearPoint, visLights, visLightList);
+			LightContributionCap>(nearCoord, visLights, visLightList);
 
 		SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, wallU, 0.0,
 			Constants::JustBelowOne, wallNormal, textures.getTexture(transparentWallData.textureAssetRef),
@@ -6638,7 +6637,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				edgeTopPoint, edgeBottomPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(hit.point, visLights, visLightList);
+				LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 			SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ, hit.u,
 				0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(edgeData.textureAssetRef),
@@ -6693,7 +6692,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 			const auto drawRange = SoftwareRenderer::makeDrawRange(
 				nearCeilingPoint, nearFloorPoint, camera, frame);
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(nearPoint, visLights, visLightList);
+				LightContributionCap>(nearCoord, visLights, visLightList);
 
 			SoftwareRenderer::drawChasmPixels(x, drawRange, nearZ, nearU, 0.0,
 				Constants::JustBelowOne, nearNormal, RendererUtils::isChasmEmissive(chasmData.type),
@@ -6738,7 +6737,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 			}();
 
 			const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-				LightContributionCap>(farPoint, visLights, visLightList);
+				LightContributionCap>(farCoord, visLights, visLightList);
 
 			const Double3 farNormal = -VoxelUtils::getNormal(farFacing);
 			SoftwareRenderer::drawChasmPixels(x, drawRanges.at(0), farZ, farU, 0.0,
@@ -6771,7 +6770,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ + hit.innerZ,
 					hit.u, 0.0, Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6791,7 +6790,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6819,7 +6818,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 				const double vStart = raisedAmount / voxelHeight;
 
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, vStart,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef), wallLightPercent,
@@ -6839,7 +6838,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 				const auto drawRange = SoftwareRenderer::makeDrawRange(
 					doorTopPoint, doorBottomPoint, camera, frame);
 				const double wallLightPercent = SoftwareRenderer::getLightContributionAtPoint<
-					LightContributionCap>(hit.point, visLights, visLightList);
+					LightContributionCap>(VoxelUtils::newPointToCoord(hit.point), visLights, visLightList);
 
 				SoftwareRenderer::drawTransparentPixels(x, drawRange, nearZ, hit.u, 0.0,
 					Constants::JustBelowOne, hit.normal, textures.getTexture(doorData.textureAssetRef),
@@ -6853,7 +6852,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, const CoordInt2 &coord, const Came
 	const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 	double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 	const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 	const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame)
 {
 	// Much of the code here is duplicated from the initial voxel column drawing method, but
@@ -6934,7 +6933,7 @@ void SoftwareRenderer::drawVoxelColumn(int x, const CoordInt2 &coord, const Came
 void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
 	const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 	const Palette *overridePalette, int chunkDistance, const FlatTexture &texture,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 	const FrameView &frame)
 {
 	// X percents across the screen for the given start and end columns.
@@ -7015,14 +7014,13 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 
 		// XZ coordinates that this vertical slice of the flat occupies.
 		// @todo: should this be floor() + int() instead?
-		const SNInt voxelX = static_cast<int>(topPointXZ.x);
-		const WEInt voxelZ = static_cast<int>(topPointXZ.y);
+		const CoordDouble2 topCoordXZ = VoxelUtils::newPointToCoord(topPointXZ);
+		const CoordInt2 topVoxelCoordXZ(topCoordXZ.chunk, VoxelUtils::pointToVoxel(topCoordXZ.point));
 
 		// Light contribution per column.
-		const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(
-			visLightLists, voxelX, voxelZ, eyeVoxelXZ.x, eyeVoxelXZ.y, chunkDistance);
+		const VisibleLightList &visLightList = SoftwareRenderer::getVisibleLightList(visLightLists, topVoxelCoordXZ);
 		const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
-			LightContributionCap>(topPointXZ, visLights, visLightList);
+			LightContributionCap>(VoxelUtils::newPointToCoord(topPointXZ), visLights, visLightList);
 
 		// Linearly interpolated fog.
 		const Double3 &fogColor = shadingInfo.getFogColor();
@@ -7134,7 +7132,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 template <bool NonNegativeDirX, bool NonNegativeDirZ>
 void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 	const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
 {
@@ -7356,7 +7354,7 @@ void SoftwareRenderer::rayCast2DInternal(int x, const Camera &camera, const Ray 
 
 void SoftwareRenderer::rayCast2D(int x, const Camera &camera, const Ray &ray, const ShadingInfo &shadingInfo,
 	int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-	const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+	const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 	const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
 	const FrameView &frame)
 {
@@ -7528,7 +7526,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, const VisDistantObje
 
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
 	double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
+	const VisibleLightLists &visLightLists, const VoxelTextures &voxelTextures,
 	const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion,
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
@@ -7560,7 +7558,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
 	const EntityTextures &entityTextures, const ShadingInfo &shadingInfo, int chunkDistance,
 	const BufferView<const VisibleLight> &visLights,
-	const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame)
+	const VisibleLightLists &visLightLists, const FrameView &frame)
 {
 	// Iterate through all flats, rendering those visible within the given X range of 
 	// the screen.
@@ -7647,10 +7645,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of voxels.
 		const BufferView<const VisibleLight> voxelsVisLightsView(voxels.visLights->data(),
 			static_cast<int>(voxels.visLights->size()));
-		const BufferView2D<const VisibleLightList> voxelsVisLightListsView(voxels.visLightLists->get(),
-			voxels.visLightLists->getWidth(), voxels.visLightLists->getHeight());
 		SoftwareRenderer::drawVoxels(threadIndex, strideX, *threadData.camera, voxels.chunkDistance,
-			voxels.ceilingScale, *voxels.chunkManager, voxelsVisLightsView, voxelsVisLightListsView,
+			voxels.ceilingScale, *voxels.chunkManager, voxelsVisLightsView, *voxels.visLightLists,
 			*voxels.voxelTextures, *voxels.chasmTextureGroups, *voxels.occlusion, *threadData.shadingInfo,
 			*threadData.frame);
 
@@ -7666,11 +7662,9 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 		// Draw this thread's portion of flats.
 		const BufferView<const VisibleLight> flatsVisLightsView(flats.visLights->data(),
 			static_cast<int>(flats.visLights->size()));
-		const BufferView2D<const VisibleLightList> flatsVisLightListsView(flats.visLightLists->get(),
-			flats.visLightLists->getWidth(), flats.visLightLists->getHeight());
 		SoftwareRenderer::drawFlats(startX, endX, *threadData.camera, *flats.flatNormal, *flats.visibleFlats,
 			*flats.entityTextures, *threadData.shadingInfo, voxels.chunkDistance, flatsVisLightsView,
-			flatsVisLightListsView, *threadData.frame);
+			*flats.visLightLists, *threadData.frame);
 
 		// Wait for other threads to finish flats.
 		threadBarrier(flats);

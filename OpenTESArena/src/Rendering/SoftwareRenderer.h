@@ -258,7 +258,7 @@ private:
 	{
 		// Inner Z is the distance from the near point to the intersection point.
 		double innerZ, u;
-		NewDouble2 point;
+		NewDouble2 point; // @todo: change to CoordDouble2
 		Double3 normal;
 	};
 
@@ -398,23 +398,23 @@ private:
 		void clear();
 	};
 
-	// Instance of an entity light in the world.
+	// Instance of a light in the world visible to the camera.
 	struct VisibleLight
 	{
-		Double3 position;
+		CoordDouble3 coord; // @todo: this is probably overkill since the visible light list is tied to a chunk.
 		double radius;
 
-		void init(const Double3 &position, double radius);
+		void init(const CoordDouble3 &coord, double radius);
 	};
 
 	// Data about a light and whether it's visible. Used with visible light determination.
 	struct LightVisibilityData
 	{
-		Double3 position;
+		CoordDouble3 coord;
 		double radius;
 		bool intersectsFrustum;
 
-		void init(const Double3 &position, double radius, bool intersectsFrustum);
+		void init(const CoordDouble3 &coord, double radius, bool intersectsFrustum);
 	};
 
 	struct VisibleLightList
@@ -433,8 +433,11 @@ private:
 		void clear();
 
 		// Shading optimization, only useful when the light intensity cap is on for early-out.
-		void sortByNearest(const Double3 &point, const BufferView<const VisibleLight> &visLights);
+		void sortByNearest(const CoordDouble3 &coord, const BufferView<const VisibleLight> &visLights);
 	};
+
+	// Each chunk has a visible light list per voxel column.
+	using VisibleLightLists = std::unordered_map<ChunkInt2, Buffer2D<VisibleLightList>>;
 
 	// Data owned by the main thread that is referenced by render threads.
 	struct RenderThreadData
@@ -465,7 +468,7 @@ private:
 			int threadsDone;
 			const ChunkManager *chunkManager;
 			const std::vector<VisibleLight> *visLights;
-			const Buffer2D<VisibleLightList> *visLightLists;
+			const VisibleLightLists *visLightLists;
 			const VoxelTextures *voxelTextures;
 			const ChasmTextureGroups *chasmTextureGroups;
 			Buffer<OcclusionData> *occlusion;
@@ -474,7 +477,7 @@ private:
 			bool doneLightVisTesting; // True when render threads can start rendering voxels.
 
 			void init(int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-				const std::vector<VisibleLight> &visLights, const Buffer2D<VisibleLightList> &visLightLists,
+				const std::vector<VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 				const VoxelTextures &voxelTextures, const ChasmTextureGroups &chasmTextureGroups,
 				Buffer<OcclusionData> &occlusion);
 		};
@@ -485,13 +488,13 @@ private:
 			const Double3 *flatNormal;
 			const std::vector<VisibleFlat> *visibleFlats;
 			const std::vector<VisibleLight> *visLights;
-			const Buffer2D<VisibleLightList> *visLightLists;
+			const VisibleLightLists *visLightLists;
 			const EntityTextures *entityTextures;
 			bool doneSorting; // True when render threads can start rendering flats.
 
-			void init(const Double3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
-				const std::vector<VisibleLight> &visLights,
-				const Buffer2D<VisibleLightList> &visLightLists, const EntityTextures &entityTextures);
+			void init(const VoxelDouble3 &flatNormal, const std::vector<VisibleFlat> &visibleFlats,
+				const std::vector<VisibleLight> &visLights, const VisibleLightLists &visLightLists,
+				const EntityTextures &entityTextures);
 		};
 
 		SkyGradient skyGradient;
@@ -510,8 +513,7 @@ private:
 
 		RenderThreadData();
 
-		void init(int totalThreads, const Camera &camera, const ShadingInfo &shadingInfo,
-			const FrameView &frame);
+		void init(int totalThreads, const Camera &camera, const ShadingInfo &shadingInfo, const FrameView &frame);
 	};
 
 	// Clipping planes for Z coordinates.
@@ -530,7 +532,7 @@ private:
 	std::vector<VisibleFlat> visibleFlats; // Flats to be drawn.
 	DistantObjects distantObjects; // Distant sky objects (mountains, clouds, etc.).
 	VisDistantObjects visDistantObjs; // Visible distant sky objects.
-	Buffer2D<VisibleLightList> visLightLists; // Potentially-visible voxel column references to visible lights.
+	VisibleLightLists visLightLists; // Potentially-visible voxel column references to visible lights.
 	std::vector<VisibleLight> visibleLights; // Lights that contribute to the current frame.
 	VoxelTextures voxelTextures; // Voxel textures and their mappings.
 	EntityTextures entityTextures; // Entity textures and their mappings.
@@ -585,8 +587,7 @@ private:
 
 	// Gets the visible light list associated with some voxel column.
 	static const VisibleLightList &getVisibleLightList(
-		const BufferView2D<const VisibleLightList> &visLightLists, SNInt voxelX, WEInt voxelZ,
-		SNInt cameraVoxelX, WEInt cameraVoxelZ, int chunkDistance);
+		const VisibleLightLists &visLightLists, const CoordInt2 &coord);
 
 	// Generates a vertical draw range on-screen from two vertices in world space.
 	static DrawRange makeDrawRange(const Double3 &startPoint, const Double3 &endPoint,
@@ -666,8 +667,8 @@ private:
 		const NewDouble2 &farPoint, double nearU, RayHit &hit);
 
 	// Calculates light visibility data for a given entity.
-	static void getLightVisibilityData(const NewDouble3 &flatPosition, double flatHeight,
-		int lightIntensity, const NewDouble2 &eye2D, const NewDouble2 &cameraDir, Degrees fovX,
+	static void getLightVisibilityData(const CoordDouble3 &flatCoord, double flatHeight,
+		int lightIntensity, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
 		double viewDistance, LightVisibilityData *outVisData);
 
 	// Gets the amount of light at a point. Capped at 100% intensity if not unlimited.
@@ -675,7 +676,7 @@ private:
 	// completely inlined for each light count (permutation count depends on visible light
 	// list max lights).
 	template <bool CappedSum>
-	static double getLightContributionAtPoint(const NewDouble2 &point,
+	static double getLightContributionAtPoint(const CoordDouble2 &coord,
 		const BufferView<const VisibleLight> &visLights, const VisibleLightList &visLightList);
 
 	// Low-level texture sampling function.
@@ -783,21 +784,21 @@ private:
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 	static void drawInitialVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel,
 		const Camera &camera, const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint,
 		const NewDouble2 &farPoint, double nearZ, double farZ, double wallU, const Double3 &wallNormal,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Manages drawing voxels in the column that the player is in.
@@ -805,7 +806,7 @@ private:
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper functions for drawing a voxel column.
@@ -813,30 +814,30 @@ private:
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
-		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
+		const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
+		const FrameView &frame);
 	static void drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
-		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
+		const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
+		const FrameView &frame);
 	static void drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3 &voxel, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, double wallU, const Double3 &wallNormal, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
-		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
+		const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Manages drawing voxels in the column of the given XZ coordinate in the voxel grid.
 	static void drawVoxelColumn(int x, const CoordInt2 &coord, const Camera &camera,
 		const Ray &ray, VoxelFacing2D facing, const NewDouble2 &nearPoint, const NewDouble2 &farPoint,
 		double nearZ, double farZ, const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Draws the portion of a flat contained within the given X range of the screen. The end
@@ -844,7 +845,7 @@ private:
 	static void drawFlat(int startX, int endX, const VisibleFlat &flat, const Double3 &normal,
 		const NewDouble2 &eye, const NewInt2 &eyeVoxelXZ, double horizonProjY, const ShadingInfo &shadingInfo,
 		const Palette *overridePalette, int chunkDistance, const FlatTexture &texture,
-		const BufferView<const VisibleLight> &visLights, const BufferView2D<const VisibleLightList> &visLightLists,
+		const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
 		const FrameView &frame);
 
 	// Casts a 2D ray that steps through the current floor, rendering all voxels in the XZ column of each voxel.
@@ -852,16 +853,16 @@ private:
 	static void rayCast2DInternal(int x, const Camera &camera, const Ray &ray,
 		const ShadingInfo &shadingInfo, int chunkDistance, double ceilingScale,
 		const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &textures,
 		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
 
 	// Helper method for internal ray casting function that takes template parameters for better
 	// code generation.
 	static void rayCast2D(int x, const Camera &camera, const Ray &ray, const ShadingInfo &shadingInfo,
 		int chunkDistance, double ceilingScale, const ChunkManager &chunkManager,
-		const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &textures,
-		const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion, const FrameView &frame);
+		const BufferView<const VisibleLight> &visLights, const VisibleLightLists &visLightLists,
+		const VoxelTextures &textures, const ChasmTextureGroups &chasmTextureGroups, OcclusionData &occlusion,
+		const FrameView &frame);
 
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
@@ -878,7 +879,7 @@ private:
 	// Handles drawing all voxels for the current frame.
 	static void drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,
 		double ceilingScale, const ChunkManager &chunkManager, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const VoxelTextures &voxelTextures,
+		const VisibleLightLists &visLightLists, const VoxelTextures &voxelTextures,
 		const ChasmTextureGroups &chasmTextureGroups, Buffer<OcclusionData> &occlusion,
 		const ShadingInfo &shadingInfo, const FrameView &frame);
 
@@ -886,7 +887,7 @@ private:
 	static void drawFlats(int startX, int endX, const Camera &camera, const Double3 &flatNormal,
 		const std::vector<VisibleFlat> &visibleFlats, const EntityTextures &entityTextures,
 		const ShadingInfo &shadingInfo, int chunkDistance, const BufferView<const VisibleLight> &visLights,
-		const BufferView2D<const VisibleLightList> &visLightLists, const FrameView &frame);
+		const VisibleLightLists &visLightLists, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
