@@ -309,6 +309,10 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 		return false;
 	}
 
+	// Update world map location.
+	this->provinceIndex = provinceID;
+	this->locationIndex = locationID;
+
 	return true;
 }
 
