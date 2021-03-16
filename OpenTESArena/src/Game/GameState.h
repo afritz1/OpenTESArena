@@ -231,7 +231,7 @@ public:
 	void resetEffectText();
 
 	// Recalculates the weather for each global quarter (done hourly).
-	void updateWeather(const ExeData &exeData);
+	void updateWeatherList(const ExeData &exeData);
 
 	// Ticks the game clock (for the current time of day and date).
 	void tick(double dt, Game &game);

@@ -359,7 +359,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	this->tickTravelTime(game.getRandom());
 
 	// Update weathers.
-	gameState.updateWeather(exeData);
+	gameState.updateWeatherList(exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
 	gameState.resetTriggerText();

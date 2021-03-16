@@ -98,7 +98,7 @@ GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibra
 	}
 
 	// Do initial weather update (to set each value to a valid state).
-	this->updateWeather(binaryAssetLibrary.getExeData());
+	this->updateWeatherList(binaryAssetLibrary.getExeData());
 
 	this->provinceIndex = -1;
 	this->locationIndex = -1;
@@ -959,7 +959,7 @@ void GameState::clearMaps()
 	}
 }
 
-void GameState::updateWeather(const ExeData &exeData)
+void GameState::updateWeatherList(const ExeData &exeData)
 {
 	const int seasonIndex = this->date.getSeason();
 
@@ -1014,9 +1014,9 @@ void GameState::tick(double dt, Game &game)
 	// Check if the hour changed.
 	if (newHour != oldHour)
 	{
-		// Update the weather.
+		// Update the weather list that's used for selecting the current one.
 		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		this->updateWeather(exeData);
+		this->updateWeatherList(exeData);
 	}
 
 	// Check if the clock hour looped back around.
