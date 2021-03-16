@@ -2106,8 +2106,8 @@ const SoftwareRenderer::VisibleLightList *SoftwareRenderer::getVisibleLightList(
 	const auto iter = visLightLists.find(coord.chunk);
 	if (iter == visLightLists.end())
 	{
-		// Silently fail, this doesn't seem to affect visuals any (maybe it's just one row of voxels on a chunk edge?).
-		// @todo: track which chunks this fails for. It seems to be easier in the wilderness when spinning the camera around.
+		// Silently fail. This seems to only happen for entities that are hanging over a chunk edge into
+		// a non-loaded chunk.
 		return nullptr;
 	}
 
@@ -4394,12 +4394,7 @@ void SoftwareRenderer::drawInitialVoxelSameFloor(int x, const Chunk &chunk, cons
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -4830,12 +4825,7 @@ void SoftwareRenderer::drawInitialVoxelAbove(int x, const Chunk &chunk, const Vo
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -5165,12 +5155,7 @@ void SoftwareRenderer::drawInitialVoxelBelow(int x, const Chunk &chunk, const Vo
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -5654,12 +5639,7 @@ void SoftwareRenderer::drawVoxelSameFloor(int x, const Chunk &chunk, const Voxel
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -6100,12 +6080,7 @@ void SoftwareRenderer::drawVoxelAbove(int x, const Chunk &chunk, const VoxelInt3
 	const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -6456,12 +6431,7 @@ void SoftwareRenderer::drawVoxelBelow(int x, const Chunk &chunk, const VoxelInt3
 	const CoordDouble2 nearCoord = VoxelUtils::newPointToCoord(nearPoint);
 	const CoordDouble2 farCoord = VoxelUtils::newPointToCoord(farPoint);
 	const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, coord2D);
-	if (visLightListPtr == nullptr)
-	{
-		// Silently fail (doesn't seem to have a visual effect?).
-		return;
-	}
-
+	DebugAssert(visLightListPtr != nullptr);
 	const VisibleLightList &visLightList = *visLightListPtr;
 
 	if (voxelDef.type == ArenaTypes::VoxelType::Wall)
@@ -7062,14 +7032,11 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 		const CoordInt2 topVoxelCoordXZ(topCoordXZ.chunk, VoxelUtils::pointToVoxel(topCoordXZ.point));
 
 		// Light contribution per column.
+		// @temp fix: if an entity hangs over a chunk edge into a non-loaded chunk, the pointer is null.
+		// Using a dummy light list as a placeholder.
+		const VisibleLightList dummyVisLightList;
 		const VisibleLightList *visLightListPtr = SoftwareRenderer::getVisibleLightList(visLightLists, topVoxelCoordXZ);
-		if (visLightListPtr == nullptr)
-		{
-			// Silently fail (doesn't seem to have a visual effect?).
-			return;
-		}
-
-		const VisibleLightList &visLightList = *visLightListPtr;
+		const VisibleLightList &visLightList = (visLightListPtr != nullptr) ? *visLightListPtr : dummyVisLightList;
 		const double lightContributionPercent = SoftwareRenderer::getLightContributionAtPoint<
 			LightContributionCap>(VoxelUtils::newPointToCoord(topPointXZ), visLights, visLightList);
 
