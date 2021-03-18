@@ -39,9 +39,9 @@ public:
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		TextureManager &textureManager, Renderer &renderer);
 
-	void update(double dt, Game *game, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
+	void update(double dt, Game &game, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		int chunkDistance, bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary,
+		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 };
 

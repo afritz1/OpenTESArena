@@ -2437,6 +2437,8 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				constexpr WeatherType weatherType = WeatherType::Clear;
 				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
 
+				// @todo: should this be called differently so it doesn't badly influence data for the rest of
+				// this frame? Level changing should be done earlier I think.
 				if (!newActiveLevel.trySetActive(weatherType, gameState.nightLightsAreActive(), levelIndex,
 					interiorMapDef, citizenGenInfo, game.getTextureManager(), game.getRenderer()))
 				{
@@ -2454,14 +2456,12 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				player.setVelocityToZero();
 
 				// Tick the level's chunk manager once during initialization so the renderer is passed valid
-				// chunks this frame. This doesn't update chunk states since they would have animated one frame
-				// earlier than the player gets to.
+				// chunks this frame.
 				constexpr double dummyDeltaTime = 0.0;
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
-				constexpr bool updateChunkStates = false;
-				newActiveLevel.update(dummyDeltaTime, &game, player.getPosition().chunk, levelIndex, interiorMapDef,
-					citizenGenInfo, chunkDistance, updateChunkStates, game.getEntityDefinitionLibrary(),
-					game.getBinaryAssetLibrary(), game.getTextureManager());
+				newActiveLevel.update(dummyDeltaTime, game, player.getPosition().chunk, levelIndex, interiorMapDef,
+					citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+					game.getTextureManager());
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
@@ -2913,7 +2913,6 @@ void GameWorldPanel::tick(double dt)
 	TextureManager &textureManager = game.getTextureManager();
 
 	// Tick active map (entities, animated distant land, etc.).
-	constexpr bool updateChunkStates = true;
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
 		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
 	{
@@ -2931,9 +2930,9 @@ void GameWorldPanel::tick(double dt)
 		}
 	}();
 
-	mapInst.update(dt, &game, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), updateChunkStates, citizenGenInfo,
-		entityDefLibrary, game.getBinaryAssetLibrary(), textureManager);
+	mapInst.update(dt, game, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
+		game.getOptions().getMisc_ChunkDistance(), citizenGenInfo, entityDefLibrary,
+		game.getBinaryAssetLibrary(), textureManager);
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.

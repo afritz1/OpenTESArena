@@ -665,9 +665,8 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
 	const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	int chunkDistance, bool updateChunkStates, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-	EntityManager &entityManager)
+	int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -708,15 +707,12 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const std::op
 	// and is now small. This is significant even for chunk distance 2->1, or 25->9 chunks.
 	this->chunkPool.clear();
 
+	// Update each chunk so they can animate/destroy faded voxel instances, etc..
 	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
-	if (updateChunkStates)
+	for (int i = 0; i < activeChunkCount; i++)
 	{
-		// Update each chunk so they can animate/destroy faded voxel instances, etc..
-		for (int i = 0; i < activeChunkCount; i++)
-		{
-			ChunkPtr &chunkPtr = this->activeChunks[i];
-			chunkPtr->update(dt);
-		}
+		ChunkPtr &chunkPtr = this->activeChunks[i];
+		chunkPtr->update(dt);
 	}
 
 	// Update chunk perimeters in case voxels on the edge of one chunk affect context-sensitive
