@@ -97,7 +97,8 @@ private:
 	std::stack<MapState> maps;
 
 	// Storage for any in-progress map transition that will happen on the next frame, so that various systems are
-	// not passed bad data during the frame the map change is requested.
+	// not passed bad data during the frame the map change is requested. When this is non-null, as many things
+	// that depend on the current map should be handled via a special case by the game state that can be.
 	std::unique_ptr<MapTransitionState> nextMap;
 	
 	// Player's current world map location data.

@@ -636,23 +636,44 @@ Player &GameState::getPlayer()
 
 const MapDefinition &GameState::getActiveMapDef() const
 {
-	DebugAssert(!this->maps.empty());
-	const MapState &activeMapState = this->maps.top();
-	return activeMapState.definition;
+	if (this->nextMap != nullptr)
+	{
+		return this->nextMap->mapState.definition;
+	}
+	else
+	{
+		DebugAssert(!this->maps.empty());
+		const MapState &activeMapState = this->maps.top();
+		return activeMapState.definition;
+	}
 }
 
 MapInstance &GameState::getActiveMapInst()
 {
-	DebugAssert(!this->maps.empty());
-	MapState &activeMapState = this->maps.top();
-	return activeMapState.instance;
+	if (this->nextMap != nullptr)
+	{
+		return this->nextMap->mapState.instance;
+	}
+	else
+	{
+		DebugAssert(!this->maps.empty());
+		MapState &activeMapState = this->maps.top();
+		return activeMapState.instance;
+	}
 }
 
 const MapInstance &GameState::getActiveMapInst() const
 {
-	DebugAssert(!this->maps.empty());
-	const MapState &activeMapState = this->maps.top();
-	return activeMapState.instance;
+	if (this->nextMap != nullptr)
+	{
+		return this->nextMap->mapState.instance;
+	}
+	else
+	{
+		DebugAssert(!this->maps.empty());
+		const MapState &activeMapState = this->maps.top();
+		return activeMapState.instance;
+	}
 }
 
 bool GameState::isActiveMapNested() const
@@ -672,24 +693,32 @@ const WorldMapDefinition &GameState::getWorldMapDefinition() const
 
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
-	return this->worldMapDef.getProvinceDef(this->provinceIndex);
+	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
+		this->nextMap->worldMapLocationIDs->provinceID : this->provinceIndex;
+	return this->worldMapDef.getProvinceDef(index);
 }
 
 const LocationDefinition &GameState::getLocationDefinition() const
 {
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	return provinceDef.getLocationDef(this->locationIndex);
+	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
+		this->nextMap->worldMapLocationIDs->locationID : this->locationIndex;
+	return provinceDef.getLocationDef(index);
 }
 
 ProvinceInstance &GameState::getProvinceInstance()
 {
-	return this->worldMapInst.getProvinceInstance(this->provinceIndex);
+	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
+		this->nextMap->worldMapLocationIDs->provinceID : this->provinceIndex;
+	return this->worldMapInst.getProvinceInstance(index);
 }
 
 LocationInstance &GameState::getLocationInstance()
 {
 	ProvinceInstance &provinceInst = this->getProvinceInstance();
-	return provinceInst.getLocationInstance(this->locationIndex);
+	const int index = ((this->nextMap != nullptr) && this->nextMap->worldMapLocationIDs.has_value()) ?
+		this->nextMap->worldMapLocationIDs->locationID : this->locationIndex;
+	return provinceInst.getLocationInstance(index);
 }
 
 const GameState::WeatherList &GameState::getWeathersArray() const
@@ -975,15 +1004,15 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 		this->clearMaps();
 	}
 
+	this->maps.emplace(std::move(nextMapState));
+
 	if (transitionState.worldMapLocationIDs.has_value())
 	{
 		this->provinceIndex = transitionState.worldMapLocationIDs->provinceID;
 		this->locationIndex = transitionState.worldMapLocationIDs->locationID;
 	}
 
-	this->maps.emplace(std::move(nextMapState));
-
-	MapInstance &newMapInst = this->getActiveMapInst();
+	MapInstance &newMapInst = this->maps.top().instance;
 	const int newLevelInstIndex = newMapInst.getActiveLevelIndex();
 	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
 
