@@ -51,12 +51,25 @@ GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int location
 	this->locationID = locationID;
 }
 
-void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
+void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, WeatherType weatherType,
 	const std::optional<CoordInt3> &returnCoord)
 {
 	this->definition = std::move(mapDefinition);
 	this->instance = std::move(mapInstance);
+	this->weatherType = weatherType;
 	this->returnCoord = returnCoord;
+}
+
+void GameState::MapTransitionState::init(MapState &&mapState,
+	const std::optional<WorldMapLocationIDs> &worldMapLocationIDs,
+	std::optional<CitizenUtils::CitizenGenInfo> &&citizenGenInfo, const CoordInt2 &startCoord,
+	const std::optional<bool> &enteringInteriorFromExterior)
+{
+	this->mapState = std::move(mapState);
+	this->worldMapLocationIDs = worldMapLocationIDs;
+	this->citizenGenInfo = std::move(citizenGenInfo);
+	this->startCoord = startCoord;
+	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
 }
 
 GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
@@ -110,7 +123,7 @@ GameState::~GameState()
 	DebugLog("Closing.");
 }
 
-bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
+/*bool GameState::tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
 	int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState)
@@ -218,6 +231,8 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
+	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
+
 	// Get the province and location definitions.
 	if ((provinceID < 0) || (provinceID >= this->worldMapDef.getProvinceCount()))
 	{
@@ -314,13 +329,15 @@ bool GameState::trySetFromWorldMap(int provinceID, int locationID, const std::op
 	this->locationIndex = locationID;
 
 	return true;
-}
+}*/
 
 bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
 	const std::optional<CoordInt3> &returnCoord, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
+	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
+
 	MapDefinition mapDefinition;
 	if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textureManager))
@@ -332,9 +349,6 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	MapInstance mapInstance;
 	mapInstance.init(mapDefinition, textureManager);
 
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
-
 	// Save return voxel to the current exterior (if any).
 	if (this->maps.size() > 0)
 	{
@@ -342,28 +356,21 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 		activeMapState.returnCoord = returnCoord;
 	}
 
-	this->maps.emplace(std::move(mapState));
-
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	MapInstance &activeMapInst = this->getActiveMapInst();
-	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
-	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
-
-	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
-
-	DebugAssert(activeMapDef.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
+	DebugAssert(mapDefinition.getStartPointCount() > 0);
+	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
+	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
 
-	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
-		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
-	{
-		DebugLogError("Couldn't set level active in the renderer for generated interior.");
-		return false;
-	}
+	const std::optional<WorldMapLocationIDs> worldMapLocationIDs; // Doesn't change when pushing an interior.
+	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
+	constexpr bool enteringInteriorFromExterior = true;
+
+	this->nextMap = std::make_unique<MapTransitionState>();
+	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
+		startCoord, enteringInteriorFromExterior);
 
 	return true;
 }
@@ -373,19 +380,35 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	this->clearMaps();
+	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
 
-	const bool success = this->tryPushInterior(interiorGenInfo, std::nullopt, charClassLibrary,
-		entityDefLibrary, binaryAssetLibrary, textureManager, renderer);
-
-	if (success)
+	MapDefinition mapDefinition;
+	if (!mapDefinition.initInterior(interiorGenInfo, charClassLibrary, entityDefLibrary,
+		binaryAssetLibrary, textureManager))
 	{
-		// Update world map location.
-		this->provinceIndex = worldMapLocationIDs.provinceID;
-		this->locationIndex = worldMapLocationIDs.locationID;
+		DebugLogError("Couldn't init interior map from generation info.");
+		return false;
 	}
 
-	return success;
+	MapInstance mapInstance;
+	mapInstance.init(mapDefinition, textureManager);
+
+	DebugAssert(mapDefinition.getStartPointCount() > 0);
+	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
+	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
+
+	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
+
+	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
+	constexpr bool enteringInteriorFromExterior = false; // This method doesn't keep an exterior alive.
+
+	this->nextMap = std::make_unique<MapTransitionState>();
+	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
+		startCoord, enteringInteriorFromExterior);
+
+	return true;
 }
 
 bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
@@ -395,6 +418,8 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
 {
+	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
+
 	MapDefinition mapDefinition;
 	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, charClassLibrary, entityDefLibrary,
 		binaryAssetLibrary, textAssetLibrary, textureManager))
@@ -406,23 +431,9 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	MapInstance mapInstance;
 	mapInstance.init(mapDefinition, textureManager);
 
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
-
-	this->clearMaps();
-	this->maps.emplace(std::move(mapState));
-
-	if (newWorldMapLocationIDs.has_value())
-	{
-		// Update world map location.
-		this->provinceIndex = newWorldMapLocationIDs->provinceID;
-		this->locationIndex = newWorldMapLocationIDs->locationID;
-	}
-
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	MapInstance &activeMapInst = this->getActiveMapInst();
-	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
-	LevelInstance &activeLevelInst = activeMapInst.getLevel(activeLevelIndex);
+	DebugAssert(mapDefinition.getStartPointCount() > 0);
+	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
+	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
 	const WeatherType weatherType = [&overrideWeather]()
 	{
@@ -437,23 +448,32 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 		}
 	}();
 
-	DebugAssert(activeMapDef.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = activeMapDef.getStartPoint(0);
-	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
 
-	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDef.getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
-
-	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
-		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+	const ProvinceDefinition *provinceDefPtr = nullptr;
+	const LocationDefinition *locationDefPtr = nullptr;
+	if (newWorldMapLocationIDs.has_value())
 	{
-		DebugLogError("Couldn't set level active in the renderer for generated city.");
-		return false;
+		provinceDefPtr = &this->worldMapDef.getProvinceDef(newWorldMapLocationIDs->provinceID);
+		locationDefPtr = &provinceDefPtr->getLocationDef(newWorldMapLocationIDs->locationID);
 	}
+	else
+	{
+		// Use existing world map location (likely a wilderness->city transition).
+		provinceDefPtr = &this->getProvinceDefinition();
+		locationDefPtr = &this->getLocationDefinition();
+	}
+
+	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
+		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
+
+	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
+
+	this->nextMap = std::make_unique<MapTransitionState>();
+	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
+		startCoord, enteringInteriorFromExterior);
 
 	return true;
 }
@@ -464,6 +484,8 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
+	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
+
 	// @todo: try to get gate position if current active map is for city -- need to have saved it from when the
 	// gate was clicked in GameWorldPanel.
 	
@@ -478,39 +500,9 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	MapInstance mapInstance;
 	mapInstance.init(mapDefinition, textureManager);
 
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::nullopt);
-
-	this->clearMaps();
-	this->maps.emplace(std::move(mapState));
-
-	if (newWorldMapLocationIDs.has_value())
-	{
-		// Update world map location.
-		this->provinceIndex = newWorldMapLocationIDs->provinceID;
-		this->locationIndex = newWorldMapLocationIDs->locationID;
-	}
-
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	MapInstance &activeMapInst = this->getActiveMapInst();
-	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-
-	const WeatherType weatherType = [&overrideWeather]()
-	{
-		if (overrideWeather.has_value())
-		{
-			// Use this when we don't want to randomly generate the weather.
-			return *overrideWeather;
-		}
-		else
-		{
-			return WeatherType::Clear; // @todo: generate the weather for this location.
-		}
-	}();
-
 	// Wilderness start point depends on city gate the player is coming out of.
-	DebugAssert(activeMapDef.getStartPointCount() == 0);
-	const CoordInt2 startPoint = [&startCoord]()
+	DebugAssert(mapDefinition.getStartPointCount() == 0);
+	const CoordInt2 actualStartCoord = [&startCoord]()
 	{
 		if (startCoord.has_value())
 		{
@@ -525,22 +517,45 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		}
 	}();
 
-	// No active level index in the wilderness.
-	const std::optional<int> activeLevelIndex;
-
-	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
-	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
-		provinceDef.getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
-
-	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startPoint, citizenGenInfo,
-		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+	const WeatherType weatherType = [&overrideWeather]()
 	{
-		DebugLogError("Couldn't set level active in the renderer for generated wilderness.");
-		return false;
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return *overrideWeather;
+		}
+		else
+		{
+			return WeatherType::Clear; // @todo: generate the weather for this location.
+		}
+	}();
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
+
+	const ProvinceDefinition *provinceDefPtr = nullptr;
+	const LocationDefinition *locationDefPtr = nullptr;
+	if (newWorldMapLocationIDs.has_value())
+	{
+		provinceDefPtr = &this->worldMapDef.getProvinceDef(newWorldMapLocationIDs->provinceID);
+		locationDefPtr = &provinceDefPtr->getLocationDef(newWorldMapLocationIDs->locationID);
 	}
+	else
+	{
+		// Use existing world map location (likely a city->wilderness transition).
+		provinceDefPtr = &this->getProvinceDefinition();
+		locationDefPtr = &this->getLocationDefinition();
+	}
+
+	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
+		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
+
+	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
+
+	this->nextMap = std::make_unique<MapTransitionState>();
+	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
+		actualStartCoord, enteringInteriorFromExterior);
 
 	return true;
 }
@@ -955,6 +970,43 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	return true;
 }
 
+bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
+	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	MapState &nextMapState = transitionState.mapState;
+	const WeatherType nextWeatherType = nextMapState.weatherType;
+
+	// Clear map stack if it's not entering an interior from an exterior.
+	if (!transitionState.enteringInteriorFromExterior.has_value() ||
+		!(*transitionState.enteringInteriorFromExterior))
+	{
+		this->clearMaps();
+	}
+
+	if (transitionState.worldMapLocationIDs.has_value())
+	{
+		this->provinceIndex = transitionState.worldMapLocationIDs->provinceID;
+		this->locationIndex = transitionState.worldMapLocationIDs->locationID;
+	}
+
+	this->maps.emplace(std::move(nextMapState));
+
+	MapInstance &newMapInst = this->getActiveMapInst();
+	const int newLevelInstIndex = newMapInst.getActiveLevelIndex();
+	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
+
+	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, nextWeatherType,
+		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
+		textureManager, renderer))
+	{
+		DebugLogError("Couldn't set new level active.");
+		return false;
+	}
+
+	return true;
+}
+
 void GameState::clearMaps()
 {
 	while (!this->maps.empty())
@@ -1009,6 +1061,18 @@ void GameState::updateWeatherList(const ExeData &exeData)
 void GameState::tick(double dt, Game &game)
 {
 	DebugAssert(dt >= 0.0);
+
+	// See if there is a pending map transition.
+	if (this->nextMap != nullptr)
+	{
+		if (!this->tryApplyMapTransition(std::move(*this->nextMap), game.getEntityDefinitionLibrary(),
+			game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
+		{
+			DebugLogError("Couldn't apply map transition.");
+		}
+
+		this->nextMap = nullptr;
+	}
 
 	// Tick the game clock.
 	const int oldHour = this->clock.getHours24();

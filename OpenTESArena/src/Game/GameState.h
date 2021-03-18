@@ -66,9 +66,24 @@ private:
 	{
 		MapDefinition definition;
 		MapInstance instance;
+		WeatherType weatherType; // Only ignored if a significant amount of time has passed upon returning to an exterior.
 		std::optional<CoordInt3> returnCoord; // Available when returning from inside an interior.
 		
-		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, const std::optional<CoordInt3> &returnCoord);
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, WeatherType weatherType,
+			const std::optional<CoordInt3> &returnCoord);
+	};
+
+	struct MapTransitionState
+	{
+		MapState mapState;
+		std::optional<WorldMapLocationIDs> worldMapLocationIDs;
+		std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo;
+		CoordInt2 startCoord;
+		std::optional<bool> enteringInteriorFromExterior;
+
+		void init(MapState &&mapState, const std::optional<WorldMapLocationIDs> &worldMapLocationIDs,
+			std::optional<CitizenUtils::CitizenGenInfo> &&citizenGenInfo, const CoordInt2 &startCoord,
+			const std::optional<bool> &enteringInteriorFromExterior);
 	};
 
 	// Determines length of a real-time second in-game. For the original game, one real
@@ -80,6 +95,10 @@ private:
 	// Stack of map definitions and instances. Multiple ones can exist at the same time when the player is
 	// inside an interior in a city or wilderness, but ultimately the size should never exceed 2.
 	std::stack<MapState> maps;
+
+	// Storage for any in-progress map transition that will happen on the next frame, so that various systems are
+	// not passed bad data during the frame the map change is requested.
+	std::unique_ptr<MapTransitionState> nextMap;
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -107,10 +126,10 @@ private:
 	WeatherType weatherType;
 
 	// Helper function for generating a map definition and instance from the given world map location.
-	static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
+	/*static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
 		int currentDay, int starCount, bool provinceHasAnimatedLand, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, MapState *outMapState);*/
 
 	void setTransitionedPlayerPosition(const CoordDouble3 &position);
 
@@ -118,6 +137,11 @@ private:
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
 		WeatherType weatherType, const CoordInt2 &startCoord,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, Renderer &renderer);
+
+	// Attempts to apply the map transition state saved from the previous frame to the current game state.
+	bool tryApplyMapTransition(MapTransitionState &&transitionState,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
@@ -130,10 +154,10 @@ public:
 
 	// Clears all maps and attempts to generate one and set it active based on the given province + location pair.
 	// The map type can only be an interior (world map dungeon, etc.) or a city, as viewed from the world map.
-	bool trySetFromWorldMap(int provinceID, int locationID, const std::optional<WeatherType> &overrideWeather,
+	/*bool trySetFromWorldMap(int provinceID, int locationID, const std::optional<WeatherType> &overrideWeather,
 		int currentDay, int starCount, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer);
+		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager, Renderer &renderer);*/
 
 	// Attempts to generate an interior, add it to the map stack, and set it active based on the given generation
 	// info. This preserves existing maps for later when the interior is exited.
