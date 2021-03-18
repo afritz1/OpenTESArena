@@ -548,7 +548,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	}
 
 	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
-	const CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
+	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
 		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
 
 	constexpr std::optional<bool> enteringInteriorFromExterior; // Unused for exteriors.
