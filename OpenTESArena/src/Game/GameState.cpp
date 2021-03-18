@@ -576,16 +576,17 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 		return false;
 	}
 
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	MapState &activeMapState = this->maps.top();
+	const MapDefinition &activeMapDef = activeMapState.definition;
 	const MapType activeMapType = activeMapDef.getMapType();
-	MapInstance &activeMapInst = this->getActiveMapInst();
+	MapInstance &activeMapInst = activeMapState.instance;
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
-	const std::optional<CoordInt3> &returnCoord = this->maps.top().returnCoord;
+	const std::optional<CoordInt3> &returnCoord = activeMapState.returnCoord;
 
-	// @todo: should the map state save its weather beforehand so it can be restored here? What if the player sleeps in an interior?
-	// - probably need a condition to determine if we need to recalculate the weather.
-	const WeatherType weatherType = WeatherType::Clear;
+	// @todo: need a condition to determine if we need to recalculate the weather (i.e., if the player slept
+	// in an interior).
+	const WeatherType weatherType = activeMapState.weatherType;
 
 	const CoordInt2 startCoord = [&activeMapDef, &returnCoord]()
 	{
