@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <unordered_map>
 
 #include "ChunkManager.h"
 #include "ChunkUtils.h"
@@ -311,7 +312,8 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		}
 	}
 
-	// Add building names.
+	// Add building names (note that this doesn't apply to wilderness chunks because they can't rely on just the
+	// level definition; they also need the chunk coordinate).
 	for (int i = 0; i < levelDefinition.getBuildingNamePlacementDefCount(); i++)
 	{
 		const LevelDefinition::BuildingNamePlacementDef &placementDef = levelDefinition.getBuildingNamePlacementDef(i);
@@ -329,6 +331,51 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 
 				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
 				chunk.addBuildingNamePosition(*buildingNameID, voxel);
+			}
+		}
+	}
+}
+
+void ChunkManager::populateWildChunkBuildingNames(Chunk &chunk,
+	const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo, const LevelInfoDefinition &levelInfoDefinition)
+{
+	// Cache of level building names that have been added to the chunk.
+	std::unordered_map<LevelDefinition::BuildingNameID, Chunk::BuildingNameID> buildingNameIDs;
+
+	for (WEInt z = 0; z < Chunk::DEPTH; z++)
+	{
+		for (int y = 0; y < chunk.getHeight(); y++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				const VoxelInt3 voxel(x, y, z);
+				const TransitionDefinition *transitionDef = chunk.tryGetTransition(voxel);
+				if ((transitionDef != nullptr) && (transitionDef->getType() == TransitionType::EnterInterior))
+				{
+					const TransitionDefinition::InteriorEntranceDef &interiorEntranceDef = transitionDef->getInteriorEntrance();
+					const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+					const ArenaTypes::InteriorType interiorType = interiorGenInfo.getInteriorType();
+
+					LevelDefinition::BuildingNameID buildingNameID;
+					if (buildingNameInfo.tryGetBuildingNameID(interiorType, &buildingNameID))
+					{
+						const std::string &buildingName = levelInfoDefinition.getBuildingName(buildingNameID);
+
+						Chunk::BuildingNameID chunkBuildingNameID;
+						const auto nameIter = buildingNameIDs.find(buildingNameID);
+						if (nameIter != buildingNameIDs.end())
+						{
+							chunkBuildingNameID = nameIter->second;
+						}
+						else
+						{
+							chunkBuildingNameID = chunk.addBuildingName(std::string(buildingName));
+							buildingNameIDs.emplace(std::make_pair(buildingNameID, chunkBuildingNameID));
+						}
+
+						chunk.addBuildingNamePosition(chunkBuildingNameID, voxel);
+					}
+				}
 			}
 		}
 	}
@@ -573,6 +620,15 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 		const LevelInt2 levelOffset = LevelInt2::Zero;
 		this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 		this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
+
+		// Load building names for the given chunk. The wilderness might use the same level definition in
+		// multiple places, so the building names have to be generated separately.
+		const MapGeneration::WildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkCoord);
+		if (buildingNameInfo != nullptr)
+		{
+			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDefinition);
+		}
+
 		this->populateChunkVoxelInsts(chunk);
 		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
 			citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);

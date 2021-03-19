@@ -56,6 +56,10 @@ private:
 	void populateChunkDecorators(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset);
 
+	// Helper function for setting a wild chunk's building names.
+	void populateWildChunkBuildingNames(Chunk &chunk, const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo,
+		const LevelInfoDefinition &levelInfoDefinition);
+
 	// Adds any voxel instances to a chunk that should exist at level generation time. Mostly intended for chasms.
 	void populateChunkVoxelInsts(Chunk &chunk);
 
