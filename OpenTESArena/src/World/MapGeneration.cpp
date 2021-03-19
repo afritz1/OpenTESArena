@@ -1331,11 +1331,54 @@ namespace MapGeneration
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		const Int2 localCityPoint = LocationUtils::getLocalCityPoint(citySeed);
 
+		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z)
+			-> std::optional<ArenaTypes::InteriorType>
+		{
+			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z)
+				-> std::optional<LevelDefinition::TransitionDefID>
+			{
+				// Find the associated transition for this voxel (if any).
+				const LevelInt3 voxel(x, 1, z);
+				for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
+				{
+					const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
+					for (const LevelInt3 &position : placementDef.positions)
+					{
+						if (position == voxel)
+						{
+							return placementDef.id;
+						}
+					}
+				}
+
+				return std::nullopt;
+			};
+
+			const std::optional<LevelDefinition::TransitionDefID> transitionDefID = tryGetTransitionDefID(x, z);
+			if (!transitionDefID.has_value())
+			{
+				// No transition at this voxel.
+				return std::nullopt;
+			}
+
+			const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
+			const TransitionType transitionType = transitionDef.getType();
+			if (transitionType != TransitionType::EnterInterior)
+			{
+				// Not a transition to an interior.
+				return std::nullopt;
+			}
+
+			const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+			const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+			return interiorGenInfo.getInteriorType();
+		};
+
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 		// match the given menu type.
 		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
-			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData,
-			&localCityPoint](ArenaTypes::InteriorType interiorType)
+			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint,
+			&tryGetInteriorType](ArenaTypes::InteriorType interiorType)
 		{
 			if ((interiorType == ArenaTypes::InteriorType::Equipment) ||
 				(interiorType == ArenaTypes::InteriorType::Temple))
@@ -1442,49 +1485,15 @@ namespace MapGeneration
 			};
 
 			// The lambda called for each main-floor voxel in the area.
-			auto tryGenerateBlockName = [interiorType, &random, outLevelDef, outLevelInfoDef, &seen,
-				&hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
+			auto tryGenerateBlockName = [interiorType, &random, outLevelDef, outLevelInfoDef, &tryGetInteriorType,
+				&seen, &hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 			{
 				// See if the current voxel is a *MENU block and matches the target menu type.
-				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef]()
+				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef,
+					&tryGetInteriorType]()
 				{
-					// Find the associated transition for this voxel (if any).
-					const std::optional<LevelDefinition::TransitionDefID> transitionDefID =
-						[outLevelDef, x, z]() -> std::optional<LevelDefinition::TransitionDefID>
-					{
-						const LevelInt3 voxel(x, 1, z);
-						for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
-						{
-							const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
-							for (const LevelInt3 &position : placementDef.positions)
-							{
-								if (position == voxel)
-								{
-									return placementDef.id;
-								}
-							}
-						}
-
-						return std::nullopt;
-					}();
-
-					if (!transitionDefID.has_value())
-					{
-						// No transition at this voxel.
-						return false;
-					}
-
-					const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
-					const TransitionType transitionType = transitionDef.getType();
-					if (transitionType != TransitionType::EnterInterior)
-					{
-						// Not a transition to an interior.
-						return false;
-					}
-
-					const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
-					const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-					return interiorGenInfo.getInteriorType() == interiorType;
+					const std::optional<ArenaTypes::InteriorType> curInteriorType = tryGetInteriorType(x, z);
+					return curInteriorType.has_value() && (*curInteriorType == interiorType);
 				}();
 
 				if (matchesTargetType)
@@ -1570,6 +1579,27 @@ namespace MapGeneration
 		generateNames(ArenaTypes::InteriorType::Tavern);
 		generateNames(ArenaTypes::InteriorType::Equipment);
 		generateNames(ArenaTypes::InteriorType::Temple);
+
+		// Add names for any mage's guild entrances.
+		std::optional<LevelDefinition::BuildingNameID> magesGuildBuildingNameID;
+		for (WEInt z = 0; z < outLevelDef->getDepth(); z++)
+		{
+			for (SNInt x = 0; x < outLevelDef->getWidth(); x++)
+			{
+				const std::optional<ArenaTypes::InteriorType> interiorType = tryGetInteriorType(x, z);
+				if (interiorType.has_value() && (*interiorType == ArenaTypes::InteriorType::MagesGuild))
+				{
+					if (!magesGuildBuildingNameID.has_value())
+					{
+						const std::string &magesGuildBuildingName = exeData.cityGen.magesGuildMenuName;
+						magesGuildBuildingNameID = outLevelInfoDef->addBuildingName(std::string(magesGuildBuildingName));
+					}
+
+					const LevelInt3 position(x, 1, z);
+					outLevelDef->addBuildingName(*magesGuildBuildingNameID, position);
+				}
+			}
+		}
 	}
 
 	// Using a separate building name info struct because the same level definition might be
