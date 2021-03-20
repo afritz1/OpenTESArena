@@ -93,6 +93,7 @@ namespace MapGeneration
 		int raceID;
 		bool isPremade;
 		bool coastal;
+		bool rulerIsMale;
 		bool palaceIsMainQuestDungeon;
 
 		// Affects which types of city blocks are used at generation start.
@@ -107,8 +108,8 @@ namespace MapGeneration
 		int cityBlocksPerSide;
 
 		void init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType, uint32_t citySeed,
-			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon,
-			Buffer<uint8_t> &&reservedBlocks,
+			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
+			bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
 			const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
 			WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 	};
@@ -175,9 +176,9 @@ namespace MapGeneration
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-		bool isPremade, bool palaceIsMainQuestDungeon, const BufferView<const uint8_t> &reservedBlocks,
-		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal,
-		const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+		const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

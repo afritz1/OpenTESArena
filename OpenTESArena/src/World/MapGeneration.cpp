@@ -1848,8 +1848,8 @@ ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
 }
 
 void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,
-	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool palaceIsMainQuestDungeon,
-	Buffer<uint8_t> &&reservedBlocks,
+	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
+	bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
 	const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
@@ -1861,6 +1861,7 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 	this->raceID = raceID;
 	this->isPremade = isPremade;
 	this->coastal = coastal;
+	this->rulerIsMale = rulerIsMale;
 	this->palaceIsMainQuestDungeon = palaceIsMainQuestDungeon;
 	this->reservedBlocks = std::move(reservedBlocks);
 	this->mainQuestTempleOverride = mainQuestTempleOverride;
@@ -2060,9 +2061,9 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 }
 
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-	bool isPremade, bool palaceIsMainQuestDungeon, const BufferView<const uint8_t> &reservedBlocks,
-	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal,
-	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+	const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+	int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -2109,7 +2110,6 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 
 	constexpr MapType mapType = MapType::City;
 	constexpr std::optional<ArenaTypes::InteriorType> interiorType; // City is not an interior.
-	constexpr std::optional<bool> rulerIsMale; // Not necessary for city.
 	constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
 	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
 

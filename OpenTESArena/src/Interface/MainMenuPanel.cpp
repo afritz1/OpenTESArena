@@ -562,7 +562,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					MapGeneration::CityGenInfo cityGenInfo;
 					cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 						cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
-						cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 					const int currentDay = gameState->getDate().getDay();
@@ -640,7 +640,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					MapGeneration::CityGenInfo cityGenInfo;
 					cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 						cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
-						cityDef.coastal, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 					const int currentDay = gameState->getDate().getDay();

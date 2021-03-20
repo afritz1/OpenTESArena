@@ -248,7 +248,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
-	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool palaceIsMainQuestDungeon,
+	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
@@ -278,10 +278,10 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
-	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, palaceIsMainQuestDungeon,
-		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName,
-		cityType, mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-		textAssetLibrary, textureManager, &levelDef, &levelInfoDef);
+	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, rulerIsMale, palaceIsMainQuestDungeon,
+		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName, cityType,
+		mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
+		textureManager, &levelDef, &levelInfoDef);
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
@@ -483,9 +483,10 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	// Generate city level (optionally generating random city blocks if not premade).
 	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.rulerSeed, generationInfo.raceID,
 		generationInfo.isPremade, reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
-		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.palaceIsMainQuestDungeon,
-		generationInfo.cityTypeName, generationInfo.cityType, mainQuestTempleOverride, skyGenInfo, inf,
-		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary, textureManager);
+		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.rulerIsMale,
+		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityTypeName, generationInfo.cityType,
+		mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
 	return true;
