@@ -27,6 +27,10 @@ namespace ArenaWildUtils
 	// Max height of .RMD with highest MAP2 extension.
 	constexpr int LEVEL_HEIGHT = 6;
 
+	// Chunk offsets of the city from the wilderness origin.
+	constexpr int CITY_ORIGIN_CHUNK_X = 31;
+	constexpr int CITY_ORIGIN_CHUNK_Z = CITY_ORIGIN_CHUNK_X;
+
 	// Number of dungeon chunks (32x32) wide and tall wild dungeons are.
 	constexpr int WILD_DUNGEON_WIDTH_CHUNKS = 2;
 	constexpr int WILD_DUNGEON_HEIGHT_CHUNKS = WILD_DUNGEON_WIDTH_CHUNKS;

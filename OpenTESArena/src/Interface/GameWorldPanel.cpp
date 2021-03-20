@@ -2075,9 +2075,6 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 	{
 		// Either city or wilderness. If the transition is for an interior, enter it. If it's the city gates,
 		// toggle between city and wilderness.
-		const NewInt3 newHitVoxel = VoxelUtils::coordToNewVoxel(hitCoord);
-		const NewInt2 newHitVoxelXZ(newHitVoxel.x, newHitVoxel.z);
-
 		if (transitionType == TransitionType::EnterInterior)
 		{
 			const CoordInt3 returnCoord = [&voxelHit, &hitCoord]()
@@ -2156,10 +2153,10 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 			if (activeMapType == MapType::City)
 			{
-				// From city to wilderness. Use the gate position to determine where to put the
-				// player in the wilderness.
-				const NewInt2 gatePos = newHitVoxelXZ;
-				const NewInt2 transitionDir = [&voxelHit]()
+				// From city to wilderness. Use the gate position to determine where to put the player.
+
+				// The voxel face that was hit determines where to put the player relative to the gate.
+				const VoxelInt2 transitionDir = [&voxelHit]()
 				{
 					// Assuming this is a wall voxel.
 					DebugAssert(voxelHit.facing.has_value());
@@ -2183,7 +2180,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					}
 					else
 					{
-						DebugUnhandledReturnMsg(NewInt2, std::to_string(static_cast<int>(facing)));
+						DebugUnhandledReturnMsg(VoxelInt2, std::to_string(static_cast<int>(facing)));
 					}
 				}();
 
@@ -2199,10 +2196,19 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const std::optional<WeatherType> overrideWeather = weatherType;
+				const WeatherType overrideWeather = weatherType;
 
-				// @todo: calculate for wilderness based on the gate's voxel in the city.
-				const std::optional<CoordInt3> startCoord;
+				// Calculate wilderness position based on the gate's voxel in the city.
+				const CoordInt3 startCoord = [&hitCoord, &transitionDir]()
+				{
+					// Origin of the city in the wilderness.
+					const ChunkInt2 wildCityChunk(ArenaWildUtils::CITY_ORIGIN_CHUNK_X, ArenaWildUtils::CITY_ORIGIN_CHUNK_Z);
+
+					// Player position bias based on selected gate face.
+					const VoxelInt3 offset(transitionDir.x, 0, transitionDir.y);
+
+					return CoordInt3(wildCityChunk + hitCoord.chunk, hitCoord.voxel + offset);
+				}();
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
