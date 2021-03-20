@@ -15,6 +15,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
+#include "../Media/DoorSoundDefinition.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
@@ -151,6 +152,21 @@ namespace MapGeneration
 
 		void init(TransitionType transitionType, const std::optional<ArenaTypes::InteriorType> &interiorType,
 			const std::optional<int> &menuID, const std::optional<bool> &isLevelUp);
+	};
+
+	// Data that can be used when making an actual door definition.
+	struct DoorDefGenInfo
+	{
+		ArenaTypes::DoorType doorType;
+
+		// Indices into .INF sounds.
+		int openSoundIndex;
+		int closeSoundIndex;
+
+		DoorSoundDefinition::CloseType closeType;
+
+		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
+			DoorSoundDefinition::CloseType closeType);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.

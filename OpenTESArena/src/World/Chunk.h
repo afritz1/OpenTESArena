@@ -11,6 +11,7 @@
 
 #include "ChunkUtils.h"
 #include "Coord.h"
+#include "DoorDefinition.h"
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
@@ -18,7 +19,6 @@
 #include "VoxelInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
-#include "../Media/DoorSoundDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
@@ -34,6 +34,7 @@ public:
 	using TriggerID = int;
 	using LockID = int;
 	using BuildingNameID = int;
+	using DoorID = int;
 private:
 	// Determines the allowed number of voxel types per chunk.
 	static constexpr int BITS_PER_VOXEL = 8;
@@ -57,13 +58,14 @@ private:
 	std::vector<TriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<std::string> buildingNames;
-	std::vector<DoorSoundDefinition> doorSoundDefs;
+	std::vector<DoorDefinition> doorDefs;
 
 	// Indices into chunk decorators.
 	std::unordered_map<VoxelInt3, TransitionID> transitionDefIndices;
 	std::unordered_map<VoxelInt3, TriggerID> triggerDefIndices;
 	std::unordered_map<VoxelInt3, LockID> lockDefIndices;
 	std::unordered_map<VoxelInt3, BuildingNameID> buildingNameIndices;
+	std::unordered_map<VoxelInt3, DoorID> doorDefIndices;
 
 	// Chunk coordinates in the world.
 	ChunkInt2 coord;
@@ -123,10 +125,7 @@ public:
 	const TriggerDefinition *tryGetTrigger(const VoxelInt3 &voxel) const;
 	const LockDefinition *tryGetLock(const VoxelInt3 &voxel) const;
 	const std::string *tryGetBuildingName(const VoxelInt3 &voxel) const;
-
-	// @temp: change to a voxel hash look-up later.
-	int getDoorSoundDefCount() const;
-	const DoorSoundDefinition &getDoorSoundDef(int index) const;
+	const DoorDefinition *tryGetDoor(const VoxelInt3 &voxel) const;
 
 	// Sets the voxel at the given coordinate.
 	void setVoxel(SNInt x, int y, WEInt z, VoxelID id);
@@ -142,13 +141,14 @@ public:
 	TriggerID addTrigger(TriggerDefinition &&trigger);
 	LockID addLock(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
-	void addDoorSoundDef(DoorSoundDefinition &&doorSound);
+	DoorID addDoorDef(DoorDefinition &&door);
 
 	// Adds a mapping of the chunk decorator definition ID to the given voxel.
 	void addTransitionPosition(TransitionID id, const VoxelInt3 &voxel);
 	void addTriggerPosition(TriggerID id, const VoxelInt3 &voxel);
 	void addLockPosition(LockID id, const VoxelInt3 &voxel);
 	void addBuildingNamePosition(BuildingNameID id, const VoxelInt3 &voxel);
+	void addDoorPosition(DoorID id, const VoxelInt3 &voxel);
 
 	// Removes a voxel definition so its corresponding voxel ID can be reused.
 	void removeVoxelDef(VoxelID id);

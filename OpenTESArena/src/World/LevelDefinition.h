@@ -23,6 +23,7 @@ public:
 	using TriggerDefID = int;
 	using BuildingNameID = int;
 	using TransitionDefID = int;
+	using DoorDefID = int;
 
 	struct EntityPlacementDef
 	{
@@ -63,6 +64,14 @@ public:
 
 		BuildingNamePlacementDef(BuildingNameID id, std::vector<LevelInt3> &&positions);
 	};
+
+	struct DoorPlacementDef
+	{
+		DoorDefID id;
+		std::vector<LevelInt3> positions;
+
+		DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions);
+	};
 private:
 	Buffer3D<VoxelDefID> voxels;
 	std::vector<EntityPlacementDef> entityPlacementDefs;
@@ -70,6 +79,7 @@ private:
 	std::vector<TriggerPlacementDef> triggerPlacementDefs;
 	std::vector<TransitionPlacementDef> transitionPlacementDefs;
 	std::vector<BuildingNamePlacementDef> buildingNamePlacementDefs;
+	std::vector<DoorPlacementDef> doorPlacementDefs;
 public:
 	void init(SNInt width, int height, WEInt depth);
 
@@ -90,12 +100,15 @@ public:
 	const TransitionPlacementDef &getTransitionPlacementDef(int index) const;
 	int getBuildingNamePlacementDefCount() const;
 	const BuildingNamePlacementDef &getBuildingNamePlacementDef(int index) const;
+	int getDoorPlacementDefCount() const;
+	const DoorPlacementDef &getDoorPlacementDef(int index) const;
 
 	void addEntity(EntityDefID id, const LevelDouble3 &position);
 	void addLock(LockDefID id, const LevelInt3 &position);
 	void addTrigger(TriggerDefID id, const LevelInt3 &position);
 	void addTransition(TransitionDefID id, const LevelInt3 &position);
 	void addBuildingName(BuildingNameID id, const LevelInt3 &position);
+	void addDoor(DoorDefID id, const LevelInt3 &position);
 };
 
 #endif

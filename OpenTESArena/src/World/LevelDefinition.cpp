@@ -34,6 +34,12 @@ LevelDefinition::BuildingNamePlacementDef::BuildingNamePlacementDef(BuildingName
 	this->id = id;
 }
 
+LevelDefinition::DoorPlacementDef::DoorPlacementDef(DoorDefID id, std::vector<LevelInt3> &&positions)
+	: positions(std::move(positions))
+{
+	this->id = id;
+}
+
 void LevelDefinition::init(SNInt width, int height, WEInt depth)
 {
 	this->voxels.init(width, height, depth);
@@ -118,6 +124,17 @@ const LevelDefinition::BuildingNamePlacementDef &LevelDefinition::getBuildingNam
 {
 	DebugAssertIndex(this->buildingNamePlacementDefs, index);
 	return this->buildingNamePlacementDefs[index];
+}
+
+int LevelDefinition::getDoorPlacementDefCount() const
+{
+	return static_cast<int>(this->doorPlacementDefs.size());
+}
+
+const LevelDefinition::DoorPlacementDef &LevelDefinition::getDoorPlacementDef(int index) const
+{
+	DebugAssertIndex(this->doorPlacementDefs, index);
+	return this->doorPlacementDefs[index];
 }
 
 void LevelDefinition::addEntity(EntityDefID id, const LevelDouble3 &position)
@@ -212,5 +229,24 @@ void LevelDefinition::addBuildingName(BuildingNameID id, const LevelInt3 &positi
 	else
 	{
 		this->buildingNamePlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
+	}
+}
+
+void LevelDefinition::addDoor(DoorDefID id, const LevelInt3 &position)
+{
+	const auto iter = std::find_if(this->doorPlacementDefs.begin(),
+		this->doorPlacementDefs.end(), [id](const DoorPlacementDef &def)
+	{
+		return def.id == id;
+	});
+
+	if (iter != this->doorPlacementDefs.end())
+	{
+		std::vector<LevelInt3> &positions = iter->positions;
+		positions.push_back(position);
+	}
+	else
+	{
+		this->doorPlacementDefs.emplace_back(id, std::vector<LevelInt3> { position });
 	}
 }

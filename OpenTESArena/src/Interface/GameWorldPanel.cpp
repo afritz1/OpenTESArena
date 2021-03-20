@@ -1790,32 +1790,22 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
 							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
 
-							// Find this door's sound definition.
-							const DoorSoundDefinition *doorSoundDef = nullptr;
-							for (int i = 0; i < chunkPtr->getDoorSoundDefCount(); i++)
-							{
-								const DoorSoundDefinition &curDoorSoundDef = chunkPtr->getDoorSoundDef(i);
-								if (curDoorSoundDef.getDoorType() == doorData.type)
-								{
-									doorSoundDef = &curDoorSoundDef;
-									break;
-								}
-							}
+							// Get the door's definition.
+							const DoorDefinition *doorDefPtr = chunkPtr->tryGetDoor(voxel);
+							DebugAssert(doorDefPtr != nullptr);
+							
+							// Play the door's opening sound at the center of the voxel.
+							const DoorSoundDefinition &doorSoundDef = doorDefPtr->getDoorSoundDef();
+							const DoorSoundDefinition::OpenDef &openSoundDef = doorSoundDef.getOpen();
 
-							if (doorSoundDef != nullptr)
-							{
-								// Play the door's opening sound at the center of the voxel.
-								const DoorSoundDefinition::OpenDef &openSoundDef = doorSoundDef->getOpen();
+							auto &audioManager = game.getAudioManager();
+							const std::string &soundFilename = openSoundDef.soundFilename;
+							const Double3 soundPosition(
+								static_cast<SNDouble>(voxel.x) + 0.50,
+								(static_cast<double>(voxel.y) * ceilingScale) + (ceilingScale * 0.50),
+								static_cast<WEDouble>(voxel.z) + 0.50);
 
-								auto &audioManager = game.getAudioManager();
-								const std::string &soundFilename = openSoundDef.soundFilename;
-								const Double3 soundPosition(
-									static_cast<SNDouble>(voxel.x) + 0.50,
-									(static_cast<double>(voxel.y) * ceilingScale) + (ceilingScale * 0.50),
-									static_cast<WEDouble>(voxel.z) + 0.50);
-
-								audioManager.playSound(soundFilename, soundPosition);
-							}
+							audioManager.playSound(soundFilename, soundPosition);
 						}
 					}
 				}

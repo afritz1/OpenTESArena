@@ -45,9 +45,9 @@ int LevelInfoDefinition::getBuildingNameCount() const
 	return static_cast<int>(this->buildingNames.size());
 }
 
-int LevelInfoDefinition::getDoorSoundDefCount() const
+int LevelInfoDefinition::getDoorDefCount() const
 {
-	return static_cast<int>(this->doorSoundDefs.size());
+	return static_cast<int>(this->doorDefs.size());
 }
 
 const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDefID id) const
@@ -94,10 +94,10 @@ const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::Buildin
 	}
 }
 
-const DoorSoundDefinition &LevelInfoDefinition::getDoorSoundDef(int index) const
+const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID id) const
 {
-	DebugAssertIndex(this->doorSoundDefs, index);
-	return this->doorSoundDefs[index];
+	DebugAssertIndex(this->doorDefs, id);
+	return this->doorDefs[id];
 }
 
 double LevelInfoDefinition::getCeilingScale() const
@@ -141,10 +141,10 @@ LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string
 	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
 }
 
-int LevelInfoDefinition::addDoorSoundDef(DoorSoundDefinition &&def)
+LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(DoorDefinition &&def)
 {
-	this->doorSoundDefs.emplace_back(std::move(def));
-	return static_cast<int>(this->doorSoundDefs.size()) - 1;
+	this->doorDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size()) - 1;
 }
 
 void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)

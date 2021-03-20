@@ -152,15 +152,19 @@ const std::string *Chunk::tryGetBuildingName(const VoxelInt3 &voxel) const
 	}
 }
 
-int Chunk::getDoorSoundDefCount() const
+const DoorDefinition *Chunk::tryGetDoor(const VoxelInt3 &voxel) const
 {
-	return static_cast<int>(this->doorSoundDefs.size());
-}
-
-const DoorSoundDefinition &Chunk::getDoorSoundDef(int index) const
-{
-	DebugAssertIndex(this->doorSoundDefs, index);
-	return this->doorSoundDefs[index];
+	const auto iter = this->doorDefIndices.find(voxel);
+	if (iter != this->doorDefIndices.end())
+	{
+		const int index = iter->second;
+		DebugAssertIndex(this->doorDefs, index);
+		return &this->doorDefs[index];
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
@@ -254,9 +258,11 @@ Chunk::BuildingNameID Chunk::addBuildingName(std::string &&buildingName)
 	return id;
 }
 
-void Chunk::addDoorSoundDef(DoorSoundDefinition &&doorSound)
+Chunk::DoorID Chunk::addDoorDef(DoorDefinition &&door)
 {
-	this->doorSoundDefs.emplace_back(std::move(doorSound));
+	const DoorID id = static_cast<int>(this->doorDefs.size());
+	this->doorDefs.emplace_back(std::move(door));
+	return id;
 }
 
 void Chunk::addTransitionPosition(Chunk::TransitionID id, const VoxelInt3 &voxel)
@@ -281,6 +287,12 @@ void Chunk::addBuildingNamePosition(Chunk::BuildingNameID id, const VoxelInt3 &v
 {
 	DebugAssert(this->buildingNameIndices.find(voxel) == this->buildingNameIndices.end());
 	this->buildingNameIndices.emplace(voxel, id);
+}
+
+void Chunk::addDoorPosition(DoorID id, const VoxelInt3 &voxel)
+{
+	DebugAssert(this->doorDefIndices.find(voxel) == this->doorDefIndices.end());
+	this->doorDefIndices.emplace(voxel, id);
 }
 
 void Chunk::removeVoxelDef(VoxelID id)

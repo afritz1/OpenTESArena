@@ -3,9 +3,6 @@
 
 #include <string>
 
-#include "../Assets/ArenaTypes.h"
-#include "../World/VoxelDefinition.h"
-
 class DoorSoundDefinition
 {
 public:
@@ -31,16 +28,11 @@ public:
 		void init(CloseType closeType, std::string &&soundFilename);
 	};
 private:
-	ArenaTypes::DoorType doorType;
 	OpenDef open;
 	CloseDef close;
 public:
-	DoorSoundDefinition();
+	void init(std::string &&openSoundFilename, CloseType closeType, std::string &&closeSoundFilename);
 
-	void init(ArenaTypes::DoorType doorType, std::string &&openSoundFilename, CloseType closeType,
-		std::string &&closeSoundFilename);
-
-	ArenaTypes::DoorType getDoorType() const;
 	const OpenDef &getOpen() const;
 	const CloseDef &getClose() const;
 };

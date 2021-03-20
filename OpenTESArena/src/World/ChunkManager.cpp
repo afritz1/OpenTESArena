@@ -336,12 +336,26 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 		}
 	}
 
-	// Add door sound definitions.
-	// @todo: change this to voxel mappings instead of requiring users of the chunk to search for door sound defs.
-	for (int i = 0; i < levelInfoDefinition.getDoorSoundDefCount(); i++)
+	// Add door definitions.
+	for (int i = 0; i < levelInfoDefinition.getDoorDefCount(); i++)
 	{
-		const DoorSoundDefinition &doorSoundDef = levelInfoDefinition.getDoorSoundDef(i);
-		chunk.addDoorSoundDef(DoorSoundDefinition(doorSoundDef));
+		const LevelDefinition::DoorPlacementDef &placementDef = levelDefinition.getDoorPlacementDef(i);
+		const DoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
+
+		std::optional<Chunk::DoorID> doorID;
+		for (const LevelInt3 &position : placementDef.positions)
+		{
+			if (IsInChunkWritingRange(position, startX, endX, startY, endY, startZ, endZ))
+			{
+				if (!doorID.has_value())
+				{
+					doorID = chunk.addDoorDef(DoorDefinition(doorDef));
+				}
+
+				const VoxelInt3 voxel = MakeChunkVoxelFromLevel(position, startX, startY, startZ);
+				chunk.addDoorPosition(*doorID, voxel);
+			}
+		}
 	}
 }
 
