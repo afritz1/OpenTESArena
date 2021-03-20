@@ -339,28 +339,31 @@ void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &p
 {
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
-		// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
-		// the voxel if it is defined for the door.
-		const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-		const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-		const VoxelDouble3 diff = playerCoord - voxelCoord;
-
-		constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
-		const double distSqr = diff.lengthSquared();
-
-		if (distSqr >= closeDistSqr)
+		VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
+		if (doorState.getStateType() != VoxelInstance::DoorState::StateType::Closing)
 		{
-			VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
-			doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+			// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
+			// the voxel if it is defined for the door.
+			const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+			const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+			const VoxelDouble3 diff = playerCoord - voxelCoord;
 
-			// Play closing sound if it is defined for the door.
-			const DoorDefinition *doorDef = this->tryGetDoor(voxel);
-			DebugAssert(doorDef != nullptr);
-			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
-			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+			constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+			const double distSqr = diff.lengthSquared();
+
+			if (distSqr >= closeDistSqr)
 			{
-				const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
-				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+				doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+
+				// Play closing sound if it is defined for the door.
+				const DoorDefinition *doorDef = this->tryGetDoor(voxel);
+				DebugAssert(doorDef != nullptr);
+				const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
+				if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+				{
+					const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
+					audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+				}
 			}
 		}
 	}
