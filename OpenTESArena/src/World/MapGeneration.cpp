@@ -153,8 +153,12 @@ namespace MapGeneration
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
 
+		const ArenaTypes::InteriorType revisedInteriorType =
+			(palaceIsMainQuestDungeon && interiorType == ArenaTypes::InteriorType::Palace) ?
+			ArenaTypes::InteriorType::Dungeon : interiorType;
+
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::move(mifName), interiorType, rulerIsMale);
+		interiorGenInfo.initPrefab(std::move(mifName), revisedInteriorType, rulerIsMale);
 		return interiorGenInfo;
 	}
 
@@ -673,19 +677,18 @@ namespace MapGeneration
 	}
 
 	std::optional<MapGeneration::TransitionDefGenInfo> tryMakeVoxelTransitionDefGenInfo(
-		ArenaTypes::VoxelID map1Voxel, MapType mapType, const INFFile &inf)
+		ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf)
 	{
-		// @todo: needs to handle palace voxel too here (type 0xA voxel, menuID 11?).
 		const uint8_t mostSigByte = ArenaLevelUtils::getVoxelMostSigByte(map1Voxel);
 		const uint8_t leastSigByte = ArenaLevelUtils::getVoxelLeastSigByte(map1Voxel);
 		const bool isWall = mostSigByte == leastSigByte;
-		if (!isWall)
+		const bool isEdge = mostSigNibble == 0xA;
+		if (!isWall && !isEdge)
 		{
-			// Raised platforms cannot be transitions.
 			return std::nullopt;
 		}
 
-		const int textureIndex = mostSigByte - 1;
+		const int textureIndex = isEdge ? ((leastSigByte & 0x3F) - 1) : (mostSigByte - 1);
 		const std::optional<int> menuIndex = inf.getMenuIndex(textureIndex);
 
 		if (mapType == MapType::Interior)
@@ -990,7 +993,7 @@ namespace MapGeneration
 
 					// Try to make transition info if this MAP1 voxel is a transition.
 					const std::optional<MapGeneration::TransitionDefGenInfo> transitionDefGenInfo =
-						MapGeneration::tryMakeVoxelTransitionDefGenInfo(map1Voxel, mapType, inf);
+						MapGeneration::tryMakeVoxelTransitionDefGenInfo(map1Voxel, mostSigNibble, mapType, inf);
 
 					if (transitionDefGenInfo.has_value())
 					{
