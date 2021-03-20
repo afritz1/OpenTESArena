@@ -41,28 +41,7 @@ namespace MapGeneration
 	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
 	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
-
-	// Whether the Arena *MENU ID is for a city gate left/right voxel.
-	bool isCityGateMenuIndex(int menuIndex, MapType mapType)
-	{
-		if (mapType == MapType::Interior)
-		{
-			// No city gates in interiors.
-			return false;
-		}
-		else if (mapType == MapType::City)
-		{
-			return (menuIndex == 7) || (menuIndex == 8);
-		}
-		else if (mapType == MapType::Wilderness)
-		{
-			return (menuIndex == 6) || (menuIndex == 7);
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(mapType)));
-		}
-	}
+	using ArenaDoorSoundMappingCache = std::unordered_map<ArenaTypes::VoxelID, int>; // @todo: will probably eventually be DoorDefID.
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
 	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
@@ -575,6 +554,8 @@ namespace MapGeneration
 			{
 				// Door voxel.
 				const int textureIndex = (map1Voxel & 0x003F) - 1;
+
+				// @todo: move this to a tryMakeDoorDefFromMap1() function in the future.
 				const ArenaTypes::DoorType doorType = [map1Voxel]()
 				{
 					const int type = (map1Voxel & 0x00C0) >> 4;
@@ -735,7 +716,7 @@ namespace MapGeneration
 			if (isValid)
 			{
 				// Either city gates or an interior entrance.
-				const bool isCityGate = MapGeneration::isCityGateMenuIndex(*menuIndex, mapType);
+				const bool isCityGate = ArenaVoxelUtils::isCityGateMenuIndex(*menuIndex, mapType);
 
 				// Can't guarantee that an Arena *MENU block that isn't a city gate is a valid transition?
 				// I thought there were some wild dungeon voxels that resulted in bad values or something.
@@ -867,6 +848,86 @@ namespace MapGeneration
 		}
 
 		return transitionDef;
+	}
+
+	std::optional<DoorSoundDefinition> tryMakeDoorSoundDefFromMAP1(ArenaTypes::VoxelID map1Voxel,
+		uint8_t mostSigNibble, const INFFile &inf)
+	{
+		if (((map1Voxel & 0x8000) == 0) || (mostSigNibble != 0xB))
+		{
+			return std::nullopt;
+		}
+
+		const ArenaTypes::DoorType doorType = [map1Voxel]()
+		{
+			const int type = (map1Voxel & 0x00C0) >> 4;
+			if (type == 0x0)
+			{
+				return ArenaTypes::DoorType::Swinging;
+			}
+			else if (type == 0x4)
+			{
+				return ArenaTypes::DoorType::Sliding;
+			}
+			else if (type == 0x8)
+			{
+				return ArenaTypes::DoorType::Raising;
+			}
+			else
+			{
+				// Arena doesn't seem to have splitting doors, but they are supported.
+				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) +
+					"\", treating as splitting.");
+				return ArenaTypes::DoorType::Splitting;
+			}
+		}();
+
+		const std::optional<int> openSoundIndex = ArenaVoxelUtils::tryGetOpenSoundIndex(doorType);
+		if (!openSoundIndex.has_value())
+		{
+			DebugLogWarning("Couldn't get open sound index for door type \"" +
+				std::to_string(static_cast<int>(doorType)) + "\".");
+			return std::nullopt;
+		}
+
+		const std::optional<int> closeSoundIndex = ArenaVoxelUtils::tryGetCloseSoundIndex(doorType);
+		if (!closeSoundIndex.has_value())
+		{
+			DebugLogWarning("Couldn't get close sound index for door type \"" +
+				std::to_string(static_cast<int>(doorType)) + "\".");
+			return std::nullopt;
+		}
+
+		const std::optional<DoorSoundDefinition::CloseType> closeType = [doorType]()
+			-> std::optional<DoorSoundDefinition::CloseType>
+		{
+			if (ArenaVoxelUtils::doorHasSoundOnClosed(doorType))
+			{
+				return DoorSoundDefinition::CloseType::OnClosed;
+			}
+			else if (ArenaVoxelUtils::doorHasSoundOnClosing(doorType))
+			{
+				return DoorSoundDefinition::CloseType::OnClosing;
+			}
+			else
+			{
+				return std::nullopt;
+			}
+		}();
+
+		if (!closeType.has_value())
+		{
+			DebugLogWarning("Can't determine close sound type for door type \"" +
+				std::to_string(static_cast<int>(doorType)) + "\".");
+			return std::nullopt;
+		}
+
+		std::string openSoundFilename = inf.getSound(*openSoundIndex);
+		std::string closeSoundFilename = inf.getSound(*closeSoundIndex);
+
+		DoorSoundDefinition doorSoundDef;
+		doorSoundDef.init(doorType, std::move(openSoundFilename), *closeType, std::move(closeSoundFilename));
+		return doorSoundDef;
 	}
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.

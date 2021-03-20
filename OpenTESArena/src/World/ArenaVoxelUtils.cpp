@@ -116,6 +116,27 @@ bool ArenaVoxelUtils::menuLeadsToInterior(ArenaTypes::MenuType menuType)
 		(menuType == ArenaTypes::MenuType::Tower);
 }
 
+bool ArenaVoxelUtils::isCityGateMenuIndex(int menuIndex, MapType mapType)
+{
+	if (mapType == MapType::Interior)
+	{
+		// No city gates in interiors.
+		return false;
+	}
+	else if (mapType == MapType::City)
+	{
+		return (menuIndex == 7) || (menuIndex == 8);
+	}
+	else if (mapType == MapType::Wilderness)
+	{
+		return (menuIndex == 6) || (menuIndex == 7);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(mapType)));
+	}
+}
+
 bool ArenaVoxelUtils::menuHasDisplayName(ArenaTypes::MenuType menuType)
 {
 	return (menuType == ArenaTypes::MenuType::Equipment) ||
@@ -170,4 +191,55 @@ bool ArenaVoxelUtils::isFloorWildWallColored(int floorID, MapType mapType)
 	}
 
 	return (floorID != 0) && (floorID != 2) && (floorID != 3) && (floorID != 4);
+}
+
+std::optional<int> ArenaVoxelUtils::tryGetOpenSoundIndex(ArenaTypes::DoorType type)
+{
+	if (type == ArenaTypes::DoorType::Swinging)
+	{
+		return 6;
+	}
+	else if (type == ArenaTypes::DoorType::Sliding)
+	{
+		return 14;
+	}
+	else if (type == ArenaTypes::DoorType::Raising)
+	{
+		return 15;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+std::optional<int> ArenaVoxelUtils::tryGetCloseSoundIndex(ArenaTypes::DoorType type)
+{
+	if (type == ArenaTypes::DoorType::Swinging)
+	{
+		return 5;
+	}
+	else if (type == ArenaTypes::DoorType::Sliding)
+	{
+		return 14;
+	}
+	else if (type == ArenaTypes::DoorType::Raising)
+	{
+		return 15;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+bool ArenaVoxelUtils::doorHasSoundOnClosed(ArenaTypes::DoorType type)
+{
+	return type == ArenaTypes::DoorType::Swinging;
+}
+
+bool ArenaVoxelUtils::doorHasSoundOnClosing(ArenaTypes::DoorType type)
+{
+	return (type == ArenaTypes::DoorType::Sliding) || (type == ArenaTypes::DoorType::Raising) ||
+		(type == ArenaTypes::DoorType::Splitting);
 }

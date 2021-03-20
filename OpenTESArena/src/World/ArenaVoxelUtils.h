@@ -35,6 +35,9 @@ namespace ArenaVoxelUtils
 	// else (like city gates).
 	bool menuLeadsToInterior(ArenaTypes::MenuType menuType);
 
+	// Whether the Arena *MENU ID is for a city gate left/right voxel.
+	bool isCityGateMenuIndex(int menuIndex, MapType mapType);
+
 	// Returns whether the menu type displays text on-screen when the player right clicks it.
 	bool menuHasDisplayName(ArenaTypes::MenuType menuType);
 
@@ -51,6 +54,14 @@ namespace ArenaVoxelUtils
 	// Returns whether the floor would be colored like a wall on the wild automap, to make it easier
 	// to see roads, etc..
 	bool isFloorWildWallColored(int floorID, MapType mapType);
+
+	// Returns the door open/close .INF sound index (if any) for the given door type.
+	std::optional<int> tryGetOpenSoundIndex(ArenaTypes::DoorType type);
+	std::optional<int> tryGetCloseSoundIndex(ArenaTypes::DoorType type);
+
+	// Returns whether the door plays its close sound when the animation starts or finishes.
+	bool doorHasSoundOnClosed(ArenaTypes::DoorType type);
+	bool doorHasSoundOnClosing(ArenaTypes::DoorType type);
 }
 
 #endif

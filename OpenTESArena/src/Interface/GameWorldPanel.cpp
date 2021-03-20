@@ -1791,14 +1791,13 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
 
 							// Play the door's opening sound at the center of the voxel.
-							const auto &doorSoundLibrary = game.getDoorSoundLibrary();
-							const std::optional<int> doorSoundDefIndex =
-								doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Open);
+							DebugNotImplemented();
+							const std::optional<int> doorSoundDefIndex = std::nullopt; //doorSoundLibrary.tryGetDefIndex(doorData.type, DoorSoundDefinition::Type::Open);
 
 							if (doorSoundDefIndex.has_value())
 							{
-								const DoorSoundDefinition &doorSoundDef = doorSoundLibrary.getDef(*doorSoundDefIndex);
-								const DoorSoundDefinition::OpenDef &openDoorSoundDef = doorSoundDef.getOpen();
+								/*const DoorSoundDefinition &doorSoundDef = doorSoundLibrary.getDef(*doorSoundDefIndex);
+								const DoorSoundDefinition::OpenDef &openDoorSoundDef = doorSoundDef.getOpen();*/
 								
 								// @todo: get sound filename from chunkPtr probably?
 								DebugNotImplemented();

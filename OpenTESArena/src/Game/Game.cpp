@@ -132,7 +132,6 @@ Game::Game()
 	this->charClassLibrary.init(this->binaryAssetLibrary.getExeData());
 
 	this->cinematicLibrary.init();
-	this->doorSoundLibrary.init();
 
 	// Load entity definitions (dependent on original game's data).
 	this->entityDefLibrary.init(this->binaryAssetLibrary.getExeData(), this->textureManager);
@@ -233,11 +232,6 @@ const CinematicLibrary &Game::getCinematicLibrary() const
 const CharacterClassLibrary &Game::getCharacterClassLibrary() const
 {
 	return this->charClassLibrary;
-}
-
-const DoorSoundLibrary &Game::getDoorSoundLibrary() const
-{
-	return this->doorSoundLibrary;
 }
 
 const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const

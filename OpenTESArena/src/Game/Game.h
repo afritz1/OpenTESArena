@@ -18,7 +18,6 @@
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/CinematicLibrary.h"
-#include "../Media/DoorSoundLibrary.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
@@ -52,7 +51,6 @@ private:
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
-	DoorSoundLibrary doorSoundLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
 	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
@@ -118,9 +116,6 @@ public:
 	
 	// Gets the character class library for obtaining various class definitions.
 	const CharacterClassLibrary &getCharacterClassLibrary() const;
-
-	// Gets the door sound library for obtaining various sound mappings.
-	const DoorSoundLibrary &getDoorSoundLibrary() const;
 
 	// Gets the entity definition library for obtaining various entity definitions.
 	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;

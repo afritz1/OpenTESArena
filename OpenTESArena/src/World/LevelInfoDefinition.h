@@ -13,6 +13,7 @@
 #include "VoxelDefinition.h"
 #include "VoxelUtils.h"
 #include "../Entities/EntityDefinition.h"
+#include "../Media/DoorSoundDefinition.h"
 
 // Modern replacement for .INF files; defines the actual voxels, entities, etc. pointed to by a
 // level definition. This is intended to separate the level's IDs from what they're pointing to
@@ -32,6 +33,11 @@ private:
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<std::string> buildingNames;
 	std::unordered_map<LevelDefinition::BuildingNameID, std::string> buildingNameOverrides;
+
+	// @todo: once VoxelDefinition no longer stores the DoorType, this might change to a DoorDefinition and will
+	// have placement defs in LevelDefinition.
+	std::vector<DoorSoundDefinition> doorSoundDefs;
+
 	// @todo: interior gen info ID for when player creates a wall on water.
 
 	double ceilingScale; // Vertical size of walls; 1.0 by default.
@@ -46,6 +52,7 @@ public:
 	int getTriggerDefCount() const;
 	int getTransitionDefCount() const;
 	int getBuildingNameCount() const;
+	int getDoorSoundDefCount() const;
 
 	const VoxelDefinition &getVoxelDef(LevelDefinition::VoxelDefID id) const;
 	const EntityDefinition &getEntityDef(LevelDefinition::EntityDefID id) const;
@@ -53,6 +60,7 @@ public:
 	const TriggerDefinition &getTriggerDef(LevelDefinition::TriggerDefID id) const;
 	const TransitionDefinition &getTransitionDef(LevelDefinition::TransitionDefID id) const;
 	const std::string &getBuildingName(LevelDefinition::BuildingNameID id) const;
+	const DoorSoundDefinition &getDoorSoundDef(int index) const;
 	double getCeilingScale() const;
 
 	LevelDefinition::VoxelDefID addVoxelDef(VoxelDefinition &&def);
@@ -61,6 +69,7 @@ public:
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
 	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
+	void addDoorSoundDef(DoorSoundDefinition &&def);
 
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);

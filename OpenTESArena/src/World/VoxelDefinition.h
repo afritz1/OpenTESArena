@@ -108,6 +108,9 @@ public:
 	struct DoorData
 	{
 		TextureAssetReference textureAssetRef;
+		
+		// @todo: if VoxelDefinition eventually becomes just a geometry container, this will need to be in
+		// a DoorDefinition in LevelDefinition/LevelInfoDefinition/Chunk instead.
 		ArenaTypes::DoorType type;
 
 		void init(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type);
