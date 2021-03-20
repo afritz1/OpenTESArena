@@ -321,13 +321,12 @@ void Chunk::clear()
 	this->coord = ChunkInt2();
 }
 
-void Chunk::handleVoxelInstState(VoxelInstance &voxelInst)
+void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord)
 {
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
 		// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
 		// the voxel if it is defined for the door.
-		const CoordDouble3 playerCoord; // @todo
 		const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 		const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel)); // @todo: include ceiling scale
 		const VoxelDouble3 diff = playerCoord - voxelCoord;
@@ -518,7 +517,7 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 	}
 }
 
-void Chunk::update(double dt)
+void Chunk::update(double dt, const CoordDouble3 &playerCoord)
 {
 	// Need to track voxel instances that finished fading because certain ones are converted to
 	// context-sensitive voxels on completion.
@@ -534,7 +533,7 @@ void Chunk::update(double dt)
 		// removed because it no longer has interesting state.
 		if (voxelInst.hasRelevantState())
 		{
-			this->handleVoxelInstState(voxelInst);
+			this->handleVoxelInstState(voxelInst, playerCoord);
 		}
 		else
 		{

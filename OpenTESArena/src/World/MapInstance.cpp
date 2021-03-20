@@ -170,13 +170,13 @@ void MapInstance::setActiveLevelIndex(int levelIndex, const MapDefinition &mapDe
 	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(levelIndex);
 }
 
-void MapInstance::update(double dt, Game &game, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
+void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
 	double latitude, double daytimePercent, int chunkDistance, 
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	LevelInstance &levelInst = this->getActiveLevel();
-	levelInst.update(dt, game, centerChunk, this->activeLevelIndex, mapDefinition, citizenGenInfo, chunkDistance,
+	levelInst.update(dt, game, playerCoord, this->activeLevelIndex, mapDefinition, citizenGenInfo, chunkDistance,
 		entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	SkyInstance &skyInst = this->getActiveSky();

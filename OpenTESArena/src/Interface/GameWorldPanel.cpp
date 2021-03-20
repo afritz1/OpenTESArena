@@ -2462,7 +2462,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				// chunks this frame.
 				constexpr double dummyDeltaTime = 0.0;
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
-				newActiveLevel.update(dummyDeltaTime, game, player.getPosition().chunk, levelIndex, interiorMapDef,
+				newActiveLevel.update(dummyDeltaTime, game, player.getPosition(), levelIndex, interiorMapDef,
 					citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
 					game.getTextureManager());
 			};
@@ -2933,7 +2933,7 @@ void GameWorldPanel::tick(double dt)
 		}
 	}();
 
-	mapInst.update(dt, game, newPlayerCoord.chunk, mapDef, latitude, gameState.getDaytimePercent(),
+	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
 		game.getOptions().getMisc_ChunkDistance(), citizenGenInfo, entityDefLibrary,
 		game.getBinaryAssetLibrary(), textureManager);
 

@@ -43,7 +43,7 @@ public:
 
 	void setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition);
 
-	void update(double dt, Game &game, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
+	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
 		double latitude, double daytimePercent, int chunkDistance,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

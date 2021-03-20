@@ -97,11 +97,11 @@ public:
 	// whether to update the real-time state of chunks; this should be false during the frame of a level's
 	// initialization, and true for all other cases (otherwise the world would be one update step ahead of the
 	// player, which isn't a big deal but is poor design).
-	void update(double dt, const ChunkInt2 &centerChunk, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		EntityManager &entityManager);
+	void update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
+		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, EntityManager &entityManager);
 };
 
 #endif

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "ChunkUtils.h"
+#include "Coord.h"
 #include "LockDefinition.h"
 #include "TransitionDefinition.h"
 #include "TriggerDefinition.h"
@@ -75,7 +76,7 @@ private:
 
 	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
 	// instance itself.
-	void handleVoxelInstState(VoxelInstance &voxelInst);
+	void handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord);
 
 	// Runs any voxel instance shutdown behavior required by the given voxel instance type.
 	void handleVoxelInstFinished(VoxelInstance &voxelInst);
@@ -95,7 +96,7 @@ public:
 	int getHeight() const;
 
 	// Gets the chunk's XY coordinate in the world.
-	const ChunkInt2 &getCoord() const;
+	const ChunkInt2 &getCoord() const; // @todo: rename to position or something; Coord has different meaning now.
 
 	// Gets the voxel ID at the given coordinate.
 	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
@@ -162,7 +163,7 @@ public:
 	// Animates the chunk's voxels by delta time.
 	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity
 	// of chunk perimeters, etc. and the amount of almost-identical problem solving between the two classes.
-	void update(double dt);
+	void update(double dt, const CoordDouble3 &playerCoord);
 };
 
 #endif
