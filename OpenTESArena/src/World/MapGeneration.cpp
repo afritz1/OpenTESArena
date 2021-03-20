@@ -1011,7 +1011,7 @@ namespace MapGeneration
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
-		ArenaTransitionMappingCache *transitionCache)
+		ArenaTransitionMappingCache *transitionCache/*, ArenaDoorSoundMappingCache *doorSoundCache @todo: change to door, not door sound */)
 	{
 		for (SNInt map1Z = 0; map1Z < map1.getHeight(); map1Z++)
 		{
@@ -1026,7 +1026,7 @@ namespace MapGeneration
 				}
 
 				const SNInt levelX = map1Z;
-				const int levelY = 1;
+				constexpr int levelY = 1;
 				const WEInt levelZ = map1X;
 
 				// Determine if this MAP1 voxel is for a voxel or entity.
@@ -1078,6 +1078,30 @@ namespace MapGeneration
 						}
 
 						outLevelDef->addTransition(transitionDefID, transitionPos);
+					}
+
+					// Try to make a door definition if this MAP1 voxel is a door.
+					// @todo: probably change this to DoorSoundDefGenInfo
+					std::optional<DoorSoundDefinition> doorSoundDef =
+						MapGeneration::tryMakeDoorSoundDefFromMAP1(map1Voxel, mostSigNibble, inf);
+
+					if (doorSoundDef.has_value())
+					{
+						// @temp: don't worry about ID for now -- code that uses the door sound will search for it.
+						outLevelInfoDef->addDoorSoundDef(std::move(*doorSoundDef));
+
+						/*// Get door sound def ID from cache or create a new one.
+						int doorSoundDefID;
+						const auto iter = doorSoundCache->find(map1Voxel);
+						if (iter != doorSoundCache->end())
+						{
+							doorSoundDefID = iter->second;
+						}
+						else
+						{
+							outLevelInfoDef->addDoorSoundDef(std::move(*doorSoundDef));
+							doorSoundCache->insert(std::make_pair(map1Voxel, doorSoundDefID));
+						}*/
 					}
 				}
 				else

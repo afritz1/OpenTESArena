@@ -141,9 +141,10 @@ LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string
 	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
 }
 
-void LevelInfoDefinition::addDoorSoundDef(DoorSoundDefinition &&def)
+int LevelInfoDefinition::addDoorSoundDef(DoorSoundDefinition &&def)
 {
 	this->doorSoundDefs.emplace_back(std::move(def));
+	return static_cast<int>(this->doorSoundDefs.size()) - 1;
 }
 
 void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)

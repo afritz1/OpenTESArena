@@ -69,7 +69,7 @@ public:
 	LevelDefinition::TriggerDefID addTriggerDef(TriggerDefinition &&def);
 	LevelDefinition::TransitionDefID addTransitionDef(TransitionDefinition &&def);
 	LevelDefinition::BuildingNameID addBuildingName(std::string &&name);
-	void addDoorSoundDef(DoorSoundDefinition &&def);
+	int addDoorSoundDef(DoorSoundDefinition &&def);
 
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name);

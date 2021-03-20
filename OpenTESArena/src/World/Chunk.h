@@ -17,6 +17,7 @@
 #include "VoxelInstance.h"
 #include "VoxelUtils.h"
 #include "../Math/MathUtils.h"
+#include "../Media/DoorSoundDefinition.h"
 
 #include "components/utilities/Buffer3D.h"
 
@@ -55,6 +56,7 @@ private:
 	std::vector<TriggerDefinition> triggerDefs;
 	std::vector<LockDefinition> lockDefs;
 	std::vector<std::string> buildingNames;
+	std::vector<DoorSoundDefinition> doorSoundDefs;
 
 	// Indices into chunk decorators.
 	std::unordered_map<VoxelInt3, TransitionID> transitionDefIndices;
@@ -121,6 +123,10 @@ public:
 	const LockDefinition *tryGetLock(const VoxelInt3 &voxel) const;
 	const std::string *tryGetBuildingName(const VoxelInt3 &voxel) const;
 
+	// @temp: change to a voxel hash look-up later.
+	int getDoorSoundDefCount() const;
+	const DoorSoundDefinition &getDoorSoundDef(int index) const;
+
 	// Sets the voxel at the given coordinate.
 	void setVoxel(SNInt x, int y, WEInt z, VoxelID id);
 
@@ -135,6 +141,7 @@ public:
 	TriggerID addTrigger(TriggerDefinition &&trigger);
 	LockID addLock(LockDefinition &&lock);
 	BuildingNameID addBuildingName(std::string &&buildingName);
+	void addDoorSoundDef(DoorSoundDefinition &&doorSound);
 
 	// Adds a mapping of the chunk decorator definition ID to the given voxel.
 	void addTransitionPosition(TransitionID id, const VoxelInt3 &voxel);

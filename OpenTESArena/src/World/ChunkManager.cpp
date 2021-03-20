@@ -12,6 +12,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
+#include "../Media/DoorSoundDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -333,6 +334,14 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 				chunk.addBuildingNamePosition(*buildingNameID, voxel);
 			}
 		}
+	}
+
+	// Add door sound definitions.
+	// @todo: change this to voxel mappings instead of requiring users of the chunk to search for door sound defs.
+	for (int i = 0; i < levelInfoDefinition.getDoorSoundDefCount(); i++)
+	{
+		const DoorSoundDefinition &doorSoundDef = levelInfoDefinition.getDoorSoundDef(i);
+		chunk.addDoorSoundDef(DoorSoundDefinition(doorSoundDef));
 	}
 }
 

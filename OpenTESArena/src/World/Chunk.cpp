@@ -152,6 +152,17 @@ const std::string *Chunk::tryGetBuildingName(const VoxelInt3 &voxel) const
 	}
 }
 
+int Chunk::getDoorSoundDefCount() const
+{
+	return static_cast<int>(this->doorSoundDefs.size());
+}
+
+const DoorSoundDefinition &Chunk::getDoorSoundDef(int index) const
+{
+	DebugAssertIndex(this->doorSoundDefs, index);
+	return this->doorSoundDefs[index];
+}
+
 void Chunk::getAdjacentVoxelDefs(const VoxelInt3 &voxel, const VoxelDefinition **outNorth,
 	const VoxelDefinition **outEast, const VoxelDefinition **outSouth, const VoxelDefinition **outWest)
 {
@@ -243,6 +254,11 @@ Chunk::BuildingNameID Chunk::addBuildingName(std::string &&buildingName)
 	return id;
 }
 
+void Chunk::addDoorSoundDef(DoorSoundDefinition &&doorSound)
+{
+	this->doorSoundDefs.emplace_back(std::move(doorSound));
+}
+
 void Chunk::addTransitionPosition(Chunk::TransitionID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
@@ -309,10 +325,25 @@ void Chunk::handleVoxelInstState(VoxelInstance &voxelInst)
 {
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
-		// @todo: handle doors far enough from the player to close.
-		// - ArenaLevelUtils::DOOR_CLOSE_DISTANCE
-		// - if player is far enough, then set to closing and conditionally play onClosing sound at center of voxel.
-		DebugNotImplemented();
+		// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
+		// the voxel if it is defined for the door.
+		const CoordDouble3 playerCoord; // @todo
+		const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
+		const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel)); // @todo: include ceiling scale
+		const VoxelDouble3 diff = playerCoord - voxelCoord;
+
+		constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
+		const double distSqr = diff.lengthSquared();
+
+		if (distSqr >= closeDistSqr)
+		{
+			VoxelInstance::DoorState &doorState = voxelInst.getDoorState();
+			doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
+
+			// Play closing sound if it is defined for the door.
+			// @todo: need to do voxel look-up; can't do it with current iteration method.
+			DebugNotImplemented();
+		}
 	}
 }
 
