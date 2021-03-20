@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "ArenaWildUtils.h"
+#include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "LocationDefinition.h"
 #include "TransitionType.h"
@@ -15,7 +16,6 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"
-#include "../Media/DoorSoundDefinition.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
@@ -163,10 +163,10 @@ namespace MapGeneration
 		int openSoundIndex;
 		int closeSoundIndex;
 
-		DoorSoundDefinition::CloseType closeType;
+		DoorDefinition::CloseType closeType;
 
 		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-			DoorSoundDefinition::CloseType closeType);
+			DoorDefinition::CloseType closeType);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.

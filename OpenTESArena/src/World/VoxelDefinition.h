@@ -98,6 +98,9 @@ public:
 	struct ChasmData
 	{
 		TextureAssetReference textureAssetRef;
+
+		// @todo: should move this into LevelDefinition/LevelInfoDefinition/Chunk as a ChasmDefinition,
+		// the same as DoorDefinition.
 		ArenaTypes::ChasmType type;
 
 		void init(TextureAssetReference &&textureAssetRef, ArenaTypes::ChasmType type);
@@ -109,8 +112,8 @@ public:
 	{
 		TextureAssetReference textureAssetRef;
 		
-		// @todo: if VoxelDefinition eventually becomes just a geometry container, this will need to be in
-		// a DoorDefinition in LevelDefinition/LevelInfoDefinition/Chunk instead.
+		// @todo: DoorDefinition has effectively replaced this. Just need VoxelDefinition to become a geometry
+		// container and all of the VoxelGeometry and SoftwareRenderer dependencies on this removed too.
 		ArenaTypes::DoorType type;
 
 		void init(TextureAssetReference &&textureAssetRef, ArenaTypes::DoorType type);

@@ -7,7 +7,6 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ChunkUtils.h"
-#include "DoorDefinition.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
 #include "LocationUtils.h"
@@ -900,16 +899,16 @@ namespace MapGeneration
 			return std::nullopt;
 		}
 
-		const std::optional<DoorSoundDefinition::CloseType> closeType = [doorType]()
-			-> std::optional<DoorSoundDefinition::CloseType>
+		const std::optional<DoorDefinition::CloseType> closeType = [doorType]()
+			-> std::optional<DoorDefinition::CloseType>
 		{
 			if (ArenaVoxelUtils::doorHasSoundOnClosed(doorType))
 			{
-				return DoorSoundDefinition::CloseType::OnClosed;
+				return DoorDefinition::CloseType::OnClosed;
 			}
 			else if (ArenaVoxelUtils::doorHasSoundOnClosing(doorType))
 			{
-				return DoorSoundDefinition::CloseType::OnClosing;
+				return DoorDefinition::CloseType::OnClosing;
 			}
 			else
 			{
@@ -934,11 +933,9 @@ namespace MapGeneration
 		std::string openSoundFilename = inf.getSound(doorDefGenInfo.openSoundIndex);
 		std::string closeSoundFilename = inf.getSound(doorDefGenInfo.closeSoundIndex);
 
-		DoorSoundDefinition doorSoundDef;
-		doorSoundDef.init(std::move(openSoundFilename), doorDefGenInfo.closeType, std::move(closeSoundFilename));
-
 		DoorDefinition doorDef;
-		doorDef.init(doorDefGenInfo.doorType, std::move(doorSoundDef));
+		doorDef.init(doorDefGenInfo.doorType, std::move(openSoundFilename), doorDefGenInfo.closeType,
+			std::move(closeSoundFilename));
 		return doorDef;
 	}
 
@@ -2030,7 +2027,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 }
 
 void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-	DoorSoundDefinition::CloseType closeType)
+	DoorDefinition::CloseType closeType)
 {
 	this->doorType = doorType;
 	this->openSoundIndex = openSoundIndex;

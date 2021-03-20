@@ -1790,13 +1790,10 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 								voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
 							chunkPtr->addVoxelInst(std::move(newOpenDoorInst));
 
-							// Get the door's definition.
+							// Get the door's opening sound and play it at the center of the voxel.
 							const DoorDefinition *doorDefPtr = chunkPtr->tryGetDoor(voxel);
 							DebugAssert(doorDefPtr != nullptr);
-							
-							// Play the door's opening sound at the center of the voxel.
-							const DoorSoundDefinition &doorSoundDef = doorDefPtr->getDoorSoundDef();
-							const DoorSoundDefinition::OpenDef &openSoundDef = doorSoundDef.getOpen();
+							const DoorDefinition::OpenSoundDef &openSoundDef = doorDefPtr->getOpenSound();
 
 							auto &audioManager = game.getAudioManager();
 							const std::string &soundFilename = openSoundDef.soundFilename;

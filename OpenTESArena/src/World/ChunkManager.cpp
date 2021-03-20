@@ -12,7 +12,6 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
-#include "../Media/DoorSoundDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
