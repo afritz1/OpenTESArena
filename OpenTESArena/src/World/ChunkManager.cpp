@@ -743,9 +743,10 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, EntityManager &entityManager)
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
+	int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
+	EntityManager &entityManager)
 {
 	this->centerChunk = centerChunk;
 
@@ -791,7 +792,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDo
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		chunkPtr->update(dt, playerCoord);
+		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
 	}
 
 	// Update chunk perimeters in case voxels on the edge of one chunk affect context-sensitive

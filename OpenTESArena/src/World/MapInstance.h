@@ -9,6 +9,7 @@
 // Contains instance data for the associated map definition. This is the current state of voxels,
 // entities, and sky for every level instance in the map.
 
+class AudioManager;
 class MapDefinition;
 class TextureManager;
 
@@ -47,7 +48,7 @@ public:
 		double latitude, double daytimePercent, int chunkDistance,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager);
+		TextureManager &textureManager, AudioManager &audioManager);
 };
 
 #endif

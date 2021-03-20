@@ -14,6 +14,7 @@
 // the entity manager so the entities in it are handled correctly (marked for deletion one way or
 // another).
 
+class AudioManager;
 class BinaryAssetLibrary;
 class EntityDefinitionLibrary;
 class EntityManager;
@@ -99,9 +100,10 @@ public:
 	// player, which isn't a big deal but is poor design).
 	void update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, EntityManager &entityManager);
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
+		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
+		EntityManager &entityManager);
 };
 
 #endif

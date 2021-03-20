@@ -55,7 +55,7 @@ namespace VoxelUtils
 	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);
 
 	// Adds half of a voxel to the voxel coordinate to get its center point.
-	// @todo: be careful with Y values being influenced by ceilingScale. Consider a "VoxelDouble3 axisLengths" parameter.
+	Double3 getVoxelCenter(const Int3 &voxel, double ceilingScale);
 	Double3 getVoxelCenter(const Int3 &voxel);
 	Double2 getVoxelCenter(const Int2 &voxel);
 

@@ -2451,7 +2451,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 				newActiveLevel.update(dummyDeltaTime, game, player.getPosition(), levelIndex, interiorMapDef,
 					citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-					game.getTextureManager());
+					game.getTextureManager(), game.getAudioManager());
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
@@ -2922,7 +2922,7 @@ void GameWorldPanel::tick(double dt)
 
 	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
 		game.getOptions().getMisc_ChunkDistance(), citizenGenInfo, entityDefLibrary,
-		game.getBinaryAssetLibrary(), textureManager);
+		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,
 	// and handle any level transition.

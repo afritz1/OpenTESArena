@@ -24,6 +24,8 @@
 
 // A 3D set of voxels for a portion of the game world.
 
+class AudioManager;
+
 class Chunk
 {
 public:
@@ -78,10 +80,11 @@ private:
 
 	// Runs any voxel instance behavior based on its current state that cannot be done by the voxel
 	// instance itself.
-	void handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord);
+	void handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
+		double ceilingScale, AudioManager &audioManager);
 
 	// Runs any voxel instance shutdown behavior required by the given voxel instance type.
-	void handleVoxelInstFinished(VoxelInstance &voxelInst);
+	void handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScale, AudioManager &audioManager);
 
 	// Runs any context-sensitive voxel instance shutdown behavior based on its current state that cannot
 	// be done by the voxel instance itself. This is needed because of chasms that rely on adjacent voxels
@@ -163,7 +166,7 @@ public:
 	// Animates the chunk's voxels by delta time.
 	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity
 	// of chunk perimeters, etc. and the amount of almost-identical problem solving between the two classes.
-	void update(double dt, const CoordDouble3 &playerCoord);
+	void update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager);
 };
 
 #endif

@@ -10,6 +10,7 @@
 // Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
 // and depends on one or more level definitions for its population.
 
+class AudioManager;
 class EntityDefinitionLibrary;
 class MapDefinition;
 class Renderer;
@@ -42,7 +43,7 @@ public:
 	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
 		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager);
 };
 
 #endif

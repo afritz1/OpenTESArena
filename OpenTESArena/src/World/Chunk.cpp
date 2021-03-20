@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include "Chunk.h"
+#include "../Media/AudioManager.h"
 
 #include "components/debug/Debug.h"
 
@@ -333,14 +334,15 @@ void Chunk::clear()
 	this->coord = ChunkInt2();
 }
 
-void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord)
+void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &playerCoord,
+	double ceilingScale, AudioManager &audioManager)
 {
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
 		// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
 		// the voxel if it is defined for the door.
 		const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
-		const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel)); // @todo: include ceiling scale
+		const CoordDouble3 voxelCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 		const VoxelDouble3 diff = playerCoord - voxelCoord;
 
 		constexpr double closeDistSqr = ArenaLevelUtils::DOOR_CLOSE_DISTANCE * ArenaLevelUtils::DOOR_CLOSE_DISTANCE;
@@ -352,21 +354,34 @@ void Chunk::handleVoxelInstState(VoxelInstance &voxelInst, const CoordDouble3 &p
 			doorState.setStateType(VoxelInstance::DoorState::StateType::Closing);
 
 			// Play closing sound if it is defined for the door.
-			// @todo: need to do voxel look-up; can't do it with current iteration method.
-			DebugNotImplemented();
+			const DoorDefinition *doorDef = this->tryGetDoor(voxel);
+			DebugAssert(doorDef != nullptr);
+			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
+			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+			{
+				const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(voxelCoord);
+				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+			}
 		}
 	}
 }
 
-void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst)
+void Chunk::handleVoxelInstFinished(VoxelInstance &voxelInst, double ceilingScale, AudioManager &audioManager)
 {
 	const VoxelInt3 voxel(voxelInst.getX(), voxelInst.getY(), voxelInst.getZ());
 
 	if (voxelInst.getType() == VoxelInstance::Type::OpenDoor)
 	{
-		// @todo: handle door that just closed
-		// - delete voxel instance and conditionally play onClosed sound at center of voxel.
-		DebugNotImplemented();
+		// Play closed sound if it is defined for the door.
+		const DoorDefinition *doorDef = this->tryGetDoor(voxel);
+		DebugAssert(doorDef != nullptr);
+		const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef->getCloseSound();
+		if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
+		{
+			const CoordDouble3 soundCoord(this->coord, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+			const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
+			audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+		}
 	}
 	else if (voxelInst.getType() == VoxelInstance::Type::Fading)
 	{
@@ -529,7 +544,7 @@ void Chunk::handleVoxelInstPostFinished(VoxelInstance &voxelInst, std::vector<in
 	}
 }
 
-void Chunk::update(double dt, const CoordDouble3 &playerCoord)
+void Chunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
 	// Need to track voxel instances that finished fading because certain ones are converted to
 	// context-sensitive voxels on completion.
@@ -545,12 +560,12 @@ void Chunk::update(double dt, const CoordDouble3 &playerCoord)
 		// removed because it no longer has interesting state.
 		if (voxelInst.hasRelevantState())
 		{
-			this->handleVoxelInstState(voxelInst, playerCoord);
+			this->handleVoxelInstState(voxelInst, playerCoord, ceilingScale, audioManager);
 		}
 		else
 		{
 			// Do the voxel instance's "on destroy" action, if any.
-			this->handleVoxelInstFinished(voxelInst);
+			this->handleVoxelInstFinished(voxelInst, ceilingScale, audioManager);
 
 			// Certain voxel instances need another step of shutdown since they need to run after all
 			// other voxel instances have been updated this frame, due to being context-sensitive.
