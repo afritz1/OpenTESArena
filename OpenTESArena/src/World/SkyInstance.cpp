@@ -170,6 +170,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
 				addAnimInst(objectIndex, textureBuilderIDs, targetSeconds);
 			}
+
+			// Do position transform since it's only needed once at initialization for land objects.
+			ObjectInstance &objectInst = this->objectInsts.back();
+			objectInst.setTransformedDirection(objectInst.getBaseDirection());
 		}
 
 		landInstCount += static_cast<int>(placementDef.positions.size());
@@ -205,6 +209,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
 			addGeneralObjectInst(direction, width, height, *textureBuilderID);
+
+			// Do position transform since it's only needed once at initialization for air objects.
+			ObjectInstance &objectInst = this->objectInsts.back();
+			objectInst.setTransformedDirection(objectInst.getBaseDirection());
 		}
 
 		airInstCount += static_cast<int>(placementDef.positions.size());
