@@ -503,10 +503,14 @@ void FastTravelSubPanel::switchToNextPanel()
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
+		const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
+			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
+			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
+
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
-		if (!gameState.trySetInterior(interiorGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
-			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
-			game.getRenderer()))
+		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load named dungeon \"" + travelLocationDef.getName() + "\".");
 		}
@@ -543,10 +547,12 @@ void FastTravelSubPanel::switchToNextPanel()
 		interiorGenInfo.initPrefab(std::string(mainQuestDungeonDef.mapFilename),
 			ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
+		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.
+
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
-		if (!gameState.trySetInterior(interiorGenInfo, worldMapLocationIDs, game.getCharacterClassLibrary(),
-			game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(), game.getTextureManager(),
-			game.getRenderer()))
+		if (!gameState.trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
+			game.getTextureManager(), game.getRenderer()))
 		{
 			DebugCrash("Couldn't load main quest interior \"" + travelLocationDef.getName() + "\".");
 		}

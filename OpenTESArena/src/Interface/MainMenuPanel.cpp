@@ -422,10 +422,12 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					MapGeneration::InteriorGenInfo interiorGenInfo;
 					interiorGenInfo.initPrefab(std::string(mifName), interiorType, rulerIsMale);
 
+					const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest/interiors.
+
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-					if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
-						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-						game.getTextureManager(), renderer))
+					if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+						game.getBinaryAssetLibrary(), game.getTextureManager(), renderer))
 					{
 						DebugCrash("Couldn't load interior \"" + locationDef.getName() + "\".");
 					}
@@ -440,6 +442,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					constexpr bool isArtifactDungeon = false;
 
+					const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
+						ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,
+						ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_Z);
+
 					if (mifName == RandomNamedDungeon)
 					{
 						const std::optional<int> locationIndex = GetRandomDungeonLocationDefIndex(provinceDef);
@@ -452,9 +458,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
 						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
-							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-							game.getTextureManager(), game.getRenderer()))
+						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+							game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 						{
 							DebugCrash("Couldn't load named dungeon \"" + locationDef.getName() + "\".");
 						}
@@ -490,9 +496,9 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
 
 						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
-						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
-							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
-							game.getTextureManager(), renderer))
+						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+							binaryAssetLibrary, game.getTextureManager(), renderer))
 						{
 							DebugCrash("Couldn't load wilderness dungeon \"" + locationDef.getName() + "\".");
 						}

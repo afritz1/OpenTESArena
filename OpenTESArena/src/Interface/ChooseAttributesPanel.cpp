@@ -331,8 +331,10 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 						MapGeneration::InteriorGenInfo interiorGenInfo;
 						interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
+						const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
+
 						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
-						if (!gameState->trySetInterior(interiorGenInfo, worldMapLocationIDs,
+						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
 							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
 							game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 						{

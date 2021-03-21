@@ -376,9 +376,9 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 }
 
 bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-	const WorldMapLocationIDs &worldMapLocationIDs, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
+	const std::optional<VoxelInt2> &playerStartOffset, const WorldMapLocationIDs &worldMapLocationIDs,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
 {
 	DebugAssertMsg(this->nextMap == nullptr, "Already have a map to transition to.");
 
@@ -393,9 +393,15 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	MapInstance mapInstance;
 	mapInstance.init(mapDefinition, textureManager);
 
-	DebugAssert(mapDefinition.getStartPointCount() > 0);
-	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
-	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
+	const CoordInt2 startCoord = [&playerStartOffset, &mapDefinition]()
+	{
+		DebugAssert(mapDefinition.getStartPointCount() > 0);
+		const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
+		const LevelInt2 startVoxel = VoxelUtils::pointToVoxel(startPoint);
+		const CoordInt2 coord = VoxelUtils::levelVoxelToCoord(startVoxel);
+		const VoxelInt2 offset = playerStartOffset.has_value() ? *playerStartOffset : VoxelInt2::Zero;
+		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + offset);
+	}();
 
 	constexpr WeatherType weatherType = WeatherType::Clear; // Interiors are always clear.
 	MapState mapState;

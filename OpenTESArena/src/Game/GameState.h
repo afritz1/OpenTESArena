@@ -171,9 +171,9 @@ public:
 	// This is simpler than pushing an interior since there is no exterior to return to. Intended for world map
 	// dungeons.
 	bool trySetInterior(const MapGeneration::InteriorGenInfo &interiorGenInfo,
-		const WorldMapLocationIDs &worldMapLocationIDs, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
+		const std::optional<VoxelInt2> &playerStartOffset, const WorldMapLocationIDs &worldMapLocationIDs,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
