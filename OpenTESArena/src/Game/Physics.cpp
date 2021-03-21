@@ -604,7 +604,7 @@ namespace Physics
 	// Checks a voxel for ray hits and writes them into the output parameter. The near point and far point
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
-		VoxelFacing3D nearFacing, const VoxelDouble3 &nearPoint, const VoxelDouble3 &farPoint,
+		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
 		double ceilingScale, const LevelInstance &levelInst, Physics::Hit &hit)
 	{
 		const ChunkManager &chunkManager = levelInst.getChunkManager();
@@ -614,9 +614,6 @@ namespace Physics
 			// Nothing to intersect with.
 			return false;
 		}
-
-		const CoordDouble3 nearCoord(voxelCoord.chunk, nearPoint);
-		const CoordDouble3 farCoord(voxelCoord.chunk, farPoint);
 
 		const VoxelInt3 &voxel = voxelCoord.voxel;
 		const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
@@ -1298,12 +1295,14 @@ namespace Physics
 
 			// Near and far points in the voxel. The near point is where the voxel was hit before, and the far
 			// point is where the voxel was just hit on the far side.
-			const VoxelDouble3 nearPoint = rayCoord.point + (rayDirection * savedDistance);
-			const VoxelDouble3 farPoint = rayCoord.point + (rayDirection * rayDistance);
+			const CoordDouble3 nearCoord = ChunkUtils::recalculateCoord(
+				rayCoord.chunk, rayCoord.point + (rayDirection * savedDistance));
+			const CoordDouble3 farCoord = ChunkUtils::recalculateCoord(
+				rayCoord.chunk, rayCoord.point + (rayDirection * rayDistance));
 
 			// Test the current voxel's geometry for ray intersections.
 			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearPoint, farPoint, ceilingScale, levelInst, hit);
+				nearCoord, farCoord, ceilingScale, levelInst, hit);
 
 			if (includeEntities)
 			{
