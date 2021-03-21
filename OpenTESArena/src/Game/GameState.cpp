@@ -414,6 +414,9 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 	this->nextMap->init(std::move(mapState), worldMapLocationIDs, std::move(citizenGenInfo),
 		startCoord, enteringInteriorFromExterior);
 
+	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
+	renderer.clearSky();
+
 	return true;
 }
 
@@ -480,6 +483,9 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	this->nextMap = std::make_unique<MapTransitionState>();
 	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
 		startCoord, enteringInteriorFromExterior);
+
+	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
+	renderer.clearSky();
 
 	return true;
 }
@@ -562,6 +568,9 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	this->nextMap = std::make_unique<MapTransitionState>();
 	this->nextMap->init(std::move(mapState), newWorldMapLocationIDs, std::move(citizenGenInfo),
 		actualStartCoord, enteringInteriorFromExterior);
+
+	// @todo: hack to make fast travel not crash when iterating stale distant objects in renderer
+	renderer.clearSky();
 
 	return true;
 }
