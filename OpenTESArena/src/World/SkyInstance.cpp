@@ -166,8 +166,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 				const int objectIndex = static_cast<int>(this->objectInsts.size()) - 1;
 				// @todo: these texture builder IDs should come from iterating the SkyLandDefinition's texture asset refs.
 				const TextureBuilderIdGroup textureBuilderIDs(*textureBuilderID, skyLandDef.getTextureCount());
-				const double targetSeconds = static_cast<int>(static_cast<double>(textureBuilderIDs.getCount()) *
-					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME);
+				const double targetSeconds = static_cast<double>(textureBuilderIDs.getCount()) *
+					ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME;
 				addAnimInst(objectIndex, textureBuilderIDs, targetSeconds);
 			}
 
@@ -560,8 +560,9 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 		}
 
 		const int imageCount = animInst.textureBuilderIDs.getCount();
-		const double animPercent = std::clamp(animInst.currentSeconds / animInst.targetSeconds, 0.0, 1.0);
-		const int animIndex = static_cast<int>(static_cast<double>(imageCount) * animPercent);
+		const double animPercent = animInst.currentSeconds / animInst.targetSeconds;
+		const int animIndex = std::clamp(
+			static_cast<int>(static_cast<double>(imageCount) * animPercent), 0, imageCount - 1);
 		const TextureBuilderID newTextureBuilderID = animInst.textureBuilderIDs.getID(animIndex);
 		
 		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
