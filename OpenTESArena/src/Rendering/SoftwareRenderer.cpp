@@ -709,29 +709,28 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 	const int distantObjectCount = landCount + airCount + moonCount + sunCount + starCount;
 	this->objs.init(distantObjectCount);
 
-	// Reverse iterate through each sky object type, creating associations between it and its render texture.
-	// Order of insertion matters.
-	for (int i = skyInstance.getLandEndIndex() - 1; i >= skyInstance.getLandStartIndex(); i--)
+	// Iterate through each sky object type, creating associations between it and its render texture.
+	for (int i = skyInstance.getLandStartIndex(); i < skyInstance.getLandEndIndex(); i++)
 	{
 		addGeneralObject(i);
 	}
 
-	for (int i = skyInstance.getAirEndIndex() - 1; i >= skyInstance.getAirStartIndex(); i--)
+	for (int i = skyInstance.getAirStartIndex(); i < skyInstance.getAirEndIndex(); i++)
 	{
 		addGeneralObject(i);
 	}
 
-	for (int i = skyInstance.getMoonEndIndex() - 1; i >= skyInstance.getMoonStartIndex(); i--)
+	for (int i = skyInstance.getMoonStartIndex(); i < skyInstance.getMoonEndIndex(); i++)
 	{
 		addGeneralObject(i);
 	}
 
-	for (int i = skyInstance.getSunEndIndex() - 1; i >= skyInstance.getSunStartIndex(); i--)
+	for (int i = skyInstance.getSunStartIndex(); i < skyInstance.getSunEndIndex(); i++)
 	{
 		addGeneralObject(i);
 	}
 
-	for (int i = skyInstance.getStarEndIndex() - 1; i >= skyInstance.getStarStartIndex(); i--)
+	for (int i = skyInstance.getStarStartIndex(); i < skyInstance.getStarEndIndex(); i++)
 	{
 		if (skyInstance.isObjectSmallStar(i))
 		{
@@ -1434,7 +1433,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	// type to be used during rendering for different types of shading.
 	this->visDistantObjs.landStart = 0;
 
-	for (int i = this->distantObjects.landStart; i < this->distantObjects.landEnd; i++)
+	for (int i = this->distantObjects.landEnd - 1; i >= this->distantObjects.landStart; i--)
 	{
 		const DistantObject &land = this->distantObjects.objs.get(i);
 
@@ -1466,7 +1465,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	this->visDistantObjs.landEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.airStart = this->visDistantObjs.landEnd;
 
-	for (int i = this->distantObjects.airStart; i < this->distantObjects.airEnd; i++)
+	for (int i = this->distantObjects.airEnd - 1; i >= this->distantObjects.airStart; i--)
 	{
 		const DistantObject &air = this->distantObjects.objs.get(i);
 		DebugAssert(air.textureIndexCount == 1);
@@ -1492,7 +1491,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	this->visDistantObjs.airEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
-	for (int i = this->distantObjects.moonStart; i < this->distantObjects.moonEnd; i++)
+	for (int i = this->distantObjects.moonEnd - 1; i >= this->distantObjects.moonStart; i--)
 	{
 		const DistantObject &moon = this->distantObjects.objs.get(i);
 		DebugAssert(moon.textureIndexCount == 1);
@@ -1518,7 +1517,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	this->visDistantObjs.moonEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.sunStart = this->visDistantObjs.moonEnd;
 
-	for (int i = this->distantObjects.sunStart; i < this->distantObjects.sunEnd; i++)
+	for (int i = this->distantObjects.sunEnd - 1; i >= this->distantObjects.sunStart; i--)
 	{
 		const DistantObject &sun = this->distantObjects.objs.get(i);
 		DebugAssert(sun.textureIndexCount == 1);
@@ -1544,7 +1543,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	this->visDistantObjs.sunEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.starStart = this->visDistantObjs.sunEnd;
 
-	for (int i = this->distantObjects.starStart; i < this->distantObjects.starEnd; i++)
+	for (int i = this->distantObjects.starEnd - 1; i >= this->distantObjects.starStart; i--)
 	{
 		const DistantObject &star = this->distantObjects.objs.get(i);
 		DebugAssert(star.textureIndexCount == 1);
