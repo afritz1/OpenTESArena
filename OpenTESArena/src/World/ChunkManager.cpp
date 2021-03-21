@@ -335,7 +335,7 @@ void ChunkManager::populateChunkDecorators(Chunk &chunk, const LevelDefinition &
 	}
 
 	// Add door definitions.
-	for (int i = 0; i < levelInfoDefinition.getDoorDefCount(); i++)
+	for (int i = 0; i < levelDefinition.getDoorPlacementDefCount(); i++)
 	{
 		const LevelDefinition::DoorPlacementDef &placementDef = levelDefinition.getDoorPlacementDef(i);
 		const DoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
