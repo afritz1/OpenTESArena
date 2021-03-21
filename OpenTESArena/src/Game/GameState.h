@@ -141,6 +141,11 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
 
+	// Attempts to set the sky active in the systems (i.e. renderer) that need its data. This must
+	// be run after trySetLevelActive() (not sure that's a good idea though).
+	bool trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
+		TextureManager &textureManager, Renderer &renderer);
+
 	// Attempts to apply the map transition state saved from the previous frame to the current game state.
 	bool tryApplyMapTransition(MapTransitionState &&transitionState,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

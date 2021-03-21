@@ -54,51 +54,6 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	TextureManager &textureManager, Renderer &renderer)
 {
 	renderer.clearTextures();
-	renderer.clearSky(); // @todo: not sure this needs to stay. The sky could be treated the same way as visible entities (updated every frame).
-
-	const std::string &paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugLogError("Couldn't get palette \"" + paletteName + "\".");
-		return false;
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
-	// Set sky colors and objects.
-	const MapType mapType = mapDefinition.getMapType();
-	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
-	{
-		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()
-		{
-			if ((mapType == MapType::Interior) || (mapType == MapType::City))
-			{
-				DebugAssert(activeLevelIndex.has_value());
-				return mapDefinition.getSkyIndexForLevel(*activeLevelIndex);
-			}
-			else if (mapType == MapType::Wilderness)
-			{
-				return mapDefinition.getSkyIndexForLevel(0);
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
-			}
-		}();
-		
-		return mapDefinition.getSky(skyIndex);
-	}();
-
-	Buffer<uint32_t> skyColors(skyDefinition.getSkyColorCount());
-	for (int i = 0; i < skyColors.getCount(); i++)
-	{
-		const Color &color = skyDefinition.getSkyColor(i);
-		skyColors.set(i, color.toARGB());
-	}
-
-	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());
-	// @todo: renderer.setSky();
 
 	// Loaded texture caches for tracking which textures have already been loaded in the renderer.
 	// @todo: eventually don't preload all textures and let the chunk manager load them for new chunks.
@@ -171,6 +126,17 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 		}
 	};
 
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette \"" + paletteName + "\".");
+		return false;
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
+	const MapType mapType = mapDefinition.getMapType();
 	if ((mapType == MapType::Interior) || (mapType == MapType::City))
 	{
 		// Load textures for the active level.
@@ -199,7 +165,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	}
 
 	// Load chasm textures (dry chasms are just a single color).
-	const uint8_t dryChasmColor = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
+	constexpr uint8_t dryChasmColor = ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR;
 	renderer.addChasmTexture(ArenaTypes::ChasmType::Dry, &dryChasmColor, 1, 1, palette);
 
 	auto writeChasmTextures = [&textureManager, &renderer, &palette](ArenaTypes::ChasmType chasmType)

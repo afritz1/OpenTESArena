@@ -588,6 +588,7 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	MapInstance &activeMapInst = activeMapState.instance;
 	const int activeLevelIndex = activeMapInst.getActiveLevelIndex();
 	LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
 	const std::optional<CoordInt3> &returnCoord = activeMapState.returnCoord;
 
 	// @todo: need a condition to determine if we need to recalculate the weather (i.e., if the player slept
@@ -630,6 +631,12 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
+		return false;
+	}
+
+	if (!this->trySetSkyActive(activeSkyInst, activeLevelIndex, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set sky active in the renderer for previously active level.");
 		return false;
 	}
 
@@ -997,6 +1004,21 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	return true;
 }
 
+bool GameState::trySetSkyActive(SkyInstance &skyInst, const std::optional<int> &activeLevelIndex,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	DebugAssert(this->maps.size() > 0);
+	const MapDefinition &mapDefinition = this->maps.top().definition;
+
+	if (!skyInst.trySetActive(activeLevelIndex, mapDefinition, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set sky active in renderer.");
+		return false;
+	}
+
+	return true;
+}
+
 bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -1022,12 +1044,19 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	MapInstance &newMapInst = this->maps.top().instance;
 	const int newLevelInstIndex = newMapInst.getActiveLevelIndex();
 	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
+	SkyInstance &newSkyInst = newMapInst.getActiveSky();
 
 	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, nextWeatherType,
 		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
 		textureManager, renderer))
 	{
 		DebugLogError("Couldn't set new level active.");
+		return false;
+	}
+
+	if (!this->trySetSkyActive(newSkyInst, newLevelInstIndex, textureManager, renderer))
+	{
+		DebugLogError("Couldn't set new sky active.");
 		return false;
 	}
 

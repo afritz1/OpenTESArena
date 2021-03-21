@@ -2428,16 +2428,24 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 
 				// Set the new level active in the renderer.
 				auto &newActiveLevel = interiorMapInst.getActiveLevel();
+				auto &newActiveSky = interiorMapInst.getActiveSky();
 
 				constexpr WeatherType weatherType = WeatherType::Clear;
 				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
 
 				// @todo: should this be called differently so it doesn't badly influence data for the rest of
 				// this frame? Level changing should be done earlier I think.
+				auto &textureManager = game.getTextureManager();
+				auto &renderer = game.getRenderer();
 				if (!newActiveLevel.trySetActive(weatherType, gameState.nightLightsAreActive(), levelIndex,
-					interiorMapDef, citizenGenInfo, game.getTextureManager(), game.getRenderer()))
+					interiorMapDef, citizenGenInfo, textureManager, renderer))
 				{
 					DebugCrash("Couldn't set new level active in renderer.");
+				}
+
+				if (!newActiveSky.trySetActive(levelIndex, interiorMapDef, textureManager, renderer))
+				{
+					DebugCrash("Couldn't set new sky active in renderer.");
 				}
 
 				// Move the player to where they should be in the new level.

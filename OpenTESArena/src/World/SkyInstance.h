@@ -2,6 +2,7 @@
 #define SKY_INSTANCE_H
 
 #include <cstdint>
+#include <optional>
 #include <vector>
 
 #include "../Math/Vector3.h"
@@ -13,6 +14,8 @@
 // and 4) shading type. Maybe also rendering order. It has the option of doing visibility culling
 // as well.
 
+class MapDefinition;
+class Renderer;
 class SkyDefinition;
 class SkyInfoDefinition;
 class TextureManager;
@@ -111,6 +114,12 @@ public:
 	// resource IDs instead probably.
 	void getObjectSmallStar(int index, Double3 *outDirection, uint8_t *outPaletteIndex, double *outWidth,
 		double *outHeight) const;
+
+	// Attempts to set this sky active in the renderer.
+	// @todo: maybe this and LevelInstance::trySetActive() should be replaced by some MapInstance::trySetLevelActive(int)
+	// that does the work for both the level and the sky.
+	bool trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, double latitude, double daytimePercent);
 };

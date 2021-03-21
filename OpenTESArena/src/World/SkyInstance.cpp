@@ -1,6 +1,8 @@
 #include <cmath>
 
 #include "ArenaSkyUtils.h"
+#include "MapDefinition.h"
+#include "MapType.h"
 #include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
 #include "SkyInfoDefinition.h"
@@ -10,8 +12,10 @@
 #include "SkyStarDefinition.h"
 #include "SkySunDefinition.h"
 #include "SkyUtils.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
 
@@ -396,7 +400,8 @@ int SkyInstance::getMoonEndIndex() const
 bool SkyInstance::isObjectSmallStar(int objectIndex) const
 {
 	DebugAssertIndex(this->objectInsts, objectIndex);
-	return this->objectInsts[objectIndex].getType() != SkyInstance::ObjectInstance::Type::SmallStar;
+	const ObjectInstance &objectInst = this->objectInsts[objectIndex];
+	return objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar;
 }
 
 void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
@@ -425,6 +430,66 @@ void SkyInstance::getObjectSmallStar(int index, Double3 *outDirection, uint8_t *
 
 	*outWidth = objectInst.getWidth();
 	*outHeight = objectInst.getHeight();
+}
+
+bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	TextureManager &textureManager, Renderer &renderer)
+{
+	// Note: this method relies on LevelInstance::trySetActive() being called first (for texture clearing).
+	// @todo: do we want separation of "level" and "sky" in the renderer or no?
+	// - I.e. clearLevelTextures()/clearSkyTextures(). Might evolve into level/sky/UI.
+
+	// Although the sky could be treated the same way as visible entities (regenerated every frame), keep it this
+	// way because the sky is not added to and removed from like entities are. The sky is baked once per level
+	// and that's it.
+	renderer.clearSky();
+
+	const MapType mapType = mapDefinition.getMapType();
+	const SkyDefinition &skyDefinition = [&activeLevelIndex, &mapDefinition, mapType]() -> const SkyDefinition&
+	{
+		const int skyIndex = [&activeLevelIndex, &mapDefinition, mapType]()
+		{
+			if ((mapType == MapType::Interior) || (mapType == MapType::City))
+			{
+				DebugAssert(activeLevelIndex.has_value());
+				return mapDefinition.getSkyIndexForLevel(*activeLevelIndex);
+			}
+			else if (mapType == MapType::Wilderness)
+			{
+				return mapDefinition.getSkyIndexForLevel(0);
+			}
+			else
+			{
+				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
+			}
+		}();
+
+		return mapDefinition.getSky(skyIndex);
+	}();
+
+	// Set sky gradient colors.
+	Buffer<uint32_t> skyColors(skyDefinition.getSkyColorCount());
+	for (int i = 0; i < skyColors.getCount(); i++)
+	{
+		const Color &color = skyDefinition.getSkyColor(i);
+		skyColors.set(i, color.toARGB());
+	}
+
+	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());
+
+	// Set sky objects in the renderer.
+	const std::string &paletteName = ArenaPaletteName::Default;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugLogError("Couldn't get palette \"" + paletteName + "\".");
+		return false;
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	renderer.setSky(*this, palette, textureManager);
+
+	return true;
 }
 
 void SkyInstance::update(double dt, double latitude, double daytimePercent)
