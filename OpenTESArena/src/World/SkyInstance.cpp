@@ -432,6 +432,45 @@ void SkyInstance::getObjectSmallStar(int index, Double3 *outDirection, uint8_t *
 	*outHeight = objectInst.getHeight();
 }
 
+TextureBuilderIdGroup SkyInstance::getObjectTextureBuilderIDs(int index) const
+{
+	DebugAssert(!this->isObjectSmallStar(index));
+
+	// See if there's an animation with the texture builder IDs.
+	for (int i = 0; i < static_cast<int>(this->animInsts.size()); i++)
+	{
+		const SkyInstance::AnimInstance &animInst = this->animInsts[i];
+		if (animInst.objectIndex == index)
+		{
+			return animInst.textureBuilderIDs;
+		}
+	}
+
+	// Just get the object's texture builder ID directly.
+	DebugAssertIndex(this->objectInsts, index);
+	const SkyInstance::ObjectInstance &objectInst = this->objectInsts[index];
+	const SkyInstance::ObjectInstance::General &generalInst = objectInst.getGeneral();
+	return TextureBuilderIdGroup(generalInst.textureBuilderID, 1);
+}
+
+std::optional<double> SkyInstance::tryGetObjectAnimPercent(int index) const
+{
+	DebugAssert(!this->isObjectSmallStar(index));
+
+	// See if the object has an animation.
+	for (int i = 0; i < static_cast<int>(this->animInsts.size()); i++)
+	{
+		const SkyInstance::AnimInstance &animInst = this->animInsts[i];
+		if (animInst.objectIndex == index)
+		{
+			return animInst.currentSeconds / animInst.targetSeconds;
+		}
+	}
+
+	// No animation for the object.
+	return std::nullopt;
+}
+
 bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	TextureManager &textureManager, Renderer &renderer)
 {

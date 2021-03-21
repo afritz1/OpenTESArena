@@ -351,20 +351,22 @@ private:
 
 	struct DistantObject
 	{
-		// @todo: this doesn't work because the current design only inits DistantObjects once, not per frame.
-		// Need to change so animated lands get their new texture every frame and so the sun/moon/stars get
-		// their direction updated from SkyInstance::update().
+		// This distant object's index in the distant objects maps directly to the current sky instance for now.
+		// @todo: redesign this once public texture handles are being allocated (a visible distant object will be a
+		// direction and texture ID; just a piece of geometry like any other renderable thing).
+		int startTextureIndex; // Points into skyTextures list.
+		int textureIndexCount; // Greater than 1 for objects with animations.
 
-		Double3 direction; // Position in sky.
-		int textureIndex; // Points into skyTextures list.
-
-		DistantObject(const Double3 &direction, int textureIndex);
+		DistantObject(int startTextureIndex, int textureIndexCount);
+		DistantObject();
 	};
 
 	// Collection of all distant objects.
 	struct DistantObjects
 	{
-		std::vector<DistantObject> lands, airs, moons, suns, stars;
+		// These map 1-to-1 to the active sky instance for now.
+		Buffer<DistantObject> objs;
+		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
 
 		void init(const SkyInstance &skyInstance, std::vector<SkyTexture> &skyTextures,
 			const Palette &palette, TextureManager &textureManager);
@@ -555,8 +557,8 @@ private:
 	void resetRenderThreads();
 
 	// Refreshes the list of distant objects to be drawn.
-	void updateVisibleDistantObjects(const ShadingInfo &shadingInfo, const Camera &camera,
-		const FrameView &frame);
+	void updateVisibleDistantObjects(const SkyInstance &skyInstance, const ShadingInfo &shadingInfo,
+		const Camera &camera, const FrameView &frame);
 
 	// Refreshes the list of potentially visible flats (to be passed to actually-visible flat
 	// calculation).
@@ -958,10 +960,11 @@ public:
 
 	// Draws the scene to the output color buffer in ARGB8888 format.
 	// @todo: move everything to RenderCamera and RenderFrameSettings temporarily until design is finished.
-	void render(const CoordDouble3 &eye, const Double3 &direction, Degrees fovY, double ambient, double daytimePercent,
-		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
+	void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
+		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
+		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
+		const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette,
+		uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from
 	// at-init/occasional/every-frame to just at-init/every-frame. Things like the sky palette or render

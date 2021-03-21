@@ -565,11 +565,14 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->heightReal = static_cast<double>(height);
 }
 
-SoftwareRenderer::DistantObject::DistantObject(const Double3 &direction, int textureIndex)
-	: direction(direction)
+SoftwareRenderer::DistantObject::DistantObject(int startTextureIndex, int textureIndexCount)
 {
-	this->textureIndex = textureIndex;
+	this->startTextureIndex = startTextureIndex;
+	this->textureIndexCount = textureIndexCount;
 }
+
+SoftwareRenderer::DistantObject::DistantObject()
+	: DistantObject(-1, 0) { }
 
 void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std::vector<SkyTexture> &skyTextures,
 	const Palette &palette, TextureManager &textureManager)
@@ -641,73 +644,119 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 		}
 	};
 
-	auto addGeneralObject = [&skyInstance, &getOrAddSkyTextureIndex](int skyInstObjectIndex,
-		std::vector<DistantObject> &outObjects)
+	// Current write position in distant objects buffer.
+	int distantObjectWriteIndex = 0;
+
+	auto addGeneralObject = [this, &skyInstance, &getOrAddSkyTextureIndex, &distantObjectWriteIndex](int skyInstObjectIndex)
 	{
-		Double3 direction;
+		// @todo: this is commented out until public texture handles are being allocated.
+		/*Double3 direction;
 		TextureBuilderID textureBuilderID;
 		double width, height;
-		skyInstance.getObject(skyInstObjectIndex, &direction, &textureBuilderID, &width, &height);
+		skyInstance.getObject(skyInstObjectIndex, &direction, &textureBuilderID, &width, &height);*/
 
-		const int textureIndex = getOrAddSkyTextureIndex(textureBuilderID);
-		outObjects.emplace_back(DistantObject(direction, textureIndex));
+		const TextureBuilderIdGroup textureBuilderIdGroup = skyInstance.getObjectTextureBuilderIDs(skyInstObjectIndex);
+
+		DebugAssert(textureBuilderIdGroup.getCount() > 0);
+		const int startTextureIndex = getOrAddSkyTextureIndex(textureBuilderIdGroup.getID(0));
+
+		// Add the other textures.
+		for (int i = 1; i < textureBuilderIdGroup.getCount(); i++)
+		{
+			getOrAddSkyTextureIndex(textureBuilderIdGroup.getID(i));
+		}
+
+		this->objs.set(distantObjectWriteIndex, DistantObject(startTextureIndex, textureBuilderIdGroup.getCount()));
+		distantObjectWriteIndex++;
 	};
 
-	auto addSmallStarObject = [&skyInstance, &palette, &getOrAddSmallStarTextureIndex](int skyInstObjectIndex,
-		std::vector<DistantObject> &outObjects)
+	auto addSmallStarObject = [this, &skyInstance, &palette, &getOrAddSmallStarTextureIndex, &distantObjectWriteIndex](
+		int skyInstObjectIndex)
 	{
 		Double3 direction;
 		uint8_t paletteIndex;
 		double width, height;
 		skyInstance.getObjectSmallStar(skyInstObjectIndex, &direction, &paletteIndex, &width, &height);
 
+		// @temp
+		static_cast<void>(direction);
+		static_cast<void>(width);
+		static_cast<void>(height);
+
 		const Color &color = palette[paletteIndex];
 		const int textureIndex = getOrAddSmallStarTextureIndex(color.toARGB());
-		outObjects.emplace_back(DistantObject(direction, textureIndex));
+		this->objs.set(distantObjectWriteIndex, DistantObject(textureIndex, 1));
+		distantObjectWriteIndex++;
 	};
+
+	this->landStart = skyInstance.getLandStartIndex();
+	this->landEnd = skyInstance.getLandEndIndex();
+	this->airStart = skyInstance.getAirStartIndex();
+	this->airEnd = skyInstance.getAirEndIndex();
+	this->moonStart = skyInstance.getMoonStartIndex();
+	this->moonEnd = skyInstance.getMoonEndIndex();
+	this->sunStart = skyInstance.getSunStartIndex();
+	this->sunEnd = skyInstance.getSunEndIndex();
+	this->starStart = skyInstance.getStarStartIndex();
+	this->starEnd = skyInstance.getStarEndIndex();
+
+	// Allocate space for all distant objects.
+	const int landCount = this->landEnd - this->landStart;
+	const int airCount = this->airEnd - this->airStart;
+	const int moonCount = this->moonEnd - this->moonStart;
+	const int sunCount = this->sunEnd - this->sunStart;
+	const int starCount = this->starEnd - this->starStart;
+	const int distantObjectCount = landCount + airCount + moonCount + sunCount + starCount;
+	this->objs.init(distantObjectCount);
 
 	// Reverse iterate through each sky object type, creating associations between it and its render texture.
 	// Order of insertion matters.
 	for (int i = skyInstance.getLandEndIndex() - 1; i >= skyInstance.getLandStartIndex(); i--)
 	{
-		addGeneralObject(i, this->lands);
+		addGeneralObject(i);
 	}
 
 	for (int i = skyInstance.getAirEndIndex() - 1; i >= skyInstance.getAirStartIndex(); i--)
 	{
-		addGeneralObject(i, this->airs);
+		addGeneralObject(i);
 	}
 
 	for (int i = skyInstance.getMoonEndIndex() - 1; i >= skyInstance.getMoonStartIndex(); i--)
 	{
-		addGeneralObject(i, this->moons);
+		addGeneralObject(i);
 	}
 
 	for (int i = skyInstance.getSunEndIndex() - 1; i >= skyInstance.getSunStartIndex(); i--)
 	{
-		addGeneralObject(i, this->suns);
+		addGeneralObject(i);
 	}
 
 	for (int i = skyInstance.getStarEndIndex() - 1; i >= skyInstance.getStarStartIndex(); i--)
 	{
 		if (skyInstance.isObjectSmallStar(i))
 		{
-			addSmallStarObject(i, this->stars);
+			addSmallStarObject(i);
 		}
 		else
 		{
-			addGeneralObject(i, this->stars);
+			addGeneralObject(i);
 		}
 	}
 }
 
 void SoftwareRenderer::DistantObjects::clear()
 {
-	this->lands.clear();
-	this->airs.clear();
-	this->moons.clear();
-	this->suns.clear();
-	this->stars.clear();
+	this->objs.clear();
+	this->landStart = 0;
+	this->landEnd = 0;
+	this->airStart = 0;
+	this->airEnd = 0;
+	this->moonStart = 0;
+	this->moonEnd = 0;
+	this->sunStart = 0;
+	this->sunEnd = 0;
+	this->starStart = 0;
+	this->starEnd = 0;
 }
 
 SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange,
@@ -1289,7 +1338,7 @@ void SoftwareRenderer::resetRenderThreads()
 	this->threadData.isDestructing = false;
 }
 
-void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInfo,
+void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstance, const ShadingInfo &shadingInfo,
 	const Camera &camera, const FrameView &frame)
 {
 	this->visDistantObjs.clear();
@@ -1376,20 +1425,39 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 			const int xDrawStart = RendererUtils::getLowerBoundedPixel(xProjStart * frame.widthReal, frame.width);
 			const int xDrawEnd = RendererUtils::getUpperBoundedPixel(xProjEnd * frame.widthReal, frame.width);
 
-			this->visDistantObjs.objs.push_back(VisDistantObject(
+			this->visDistantObjs.objs.emplace_back(VisDistantObject(
 				texture, std::move(drawRange), xProjStart, xProjEnd, xDrawStart, xDrawEnd, emissive));
 		}
 	};
 
-	// Iterate all distant objects and gather up the visible ones. Set the start
-	// and end ranges for each object type to be used during rendering for
-	// different types of shading.
+	// Iterate all distant objects and gather up the visible ones. Set the start and end ranges for each object
+	// type to be used during rendering for different types of shading.
 	this->visDistantObjs.landStart = 0;
 
-	for (const DistantObject &land : this->distantObjects.lands)
+	for (int i = this->distantObjects.landStart; i < this->distantObjects.landEnd; i++)
 	{
-		const SkyTexture &texture = this->skyTextures.at(land.textureIndex);
-		const Double3 &direction = land.direction;
+		const DistantObject &land = this->distantObjects.objs.get(i);
+
+		// Only land objects can have animations right now.
+		// @todo: redesign this once public texture handles are being allocated.
+		const std::optional<double> animPercent = skyInstance.tryGetObjectAnimPercent(i);
+		const int animIndex = static_cast<int>(
+			static_cast<double>(land.textureIndexCount) * animPercent.value_or(0.0));
+		const int skyTexturesIndex = land.startTextureIndex + std::clamp(animIndex, 0, land.textureIndexCount - 1);
+
+		Double3 direction;
+		TextureBuilderID textureBuilderID;
+		double width, height;
+		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+
+		// @temp
+		static_cast<void>(textureBuilderID);
+		static_cast<void>(width);
+		static_cast<void>(height);
+
+		DebugAssertIndex(this->skyTextures, skyTexturesIndex);
+		const SkyTexture &texture = this->skyTextures[skyTexturesIndex];
+
 		constexpr bool emissive = false;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
@@ -1398,10 +1466,24 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	this->visDistantObjs.landEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.airStart = this->visDistantObjs.landEnd;
 
-	for (const DistantObject &air : this->distantObjects.airs)
+	for (int i = this->distantObjects.airStart; i < this->distantObjects.airEnd; i++)
 	{
-		const SkyTexture &texture = this->skyTextures.at(air.textureIndex);
-		const Double3 &direction = air.direction;
+		const DistantObject &air = this->distantObjects.objs.get(i);
+		DebugAssert(air.textureIndexCount == 1);
+
+		DebugAssertIndex(this->skyTextures, air.startTextureIndex);
+		const SkyTexture &texture = this->skyTextures[air.startTextureIndex];
+
+		Double3 direction;
+		TextureBuilderID textureBuilderID;
+		double width, height;
+		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+
+		// @temp
+		static_cast<void>(textureBuilderID);
+		static_cast<void>(width);
+		static_cast<void>(height);
+
 		constexpr bool emissive = false;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
@@ -1410,10 +1492,24 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	this->visDistantObjs.airEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.moonStart = this->visDistantObjs.airEnd;
 
-	for (const DistantObject &moon : this->distantObjects.moons)
+	for (int i = this->distantObjects.moonStart; i < this->distantObjects.moonEnd; i++)
 	{
-		const SkyTexture &texture = this->skyTextures.at(moon.textureIndex);
-		const Double3 &direction = moon.direction;
+		const DistantObject &moon = this->distantObjects.objs.get(i);
+		DebugAssert(moon.textureIndexCount == 1);
+
+		DebugAssertIndex(this->skyTextures, moon.startTextureIndex);
+		const SkyTexture &texture = this->skyTextures[moon.startTextureIndex];
+
+		Double3 direction;
+		TextureBuilderID textureBuilderID;
+		double width, height;
+		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+
+		// @temp
+		static_cast<void>(textureBuilderID);
+		static_cast<void>(width);
+		static_cast<void>(height);
+
 		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Top;
 		tryAddObject(texture, direction, emissive, orientation);
@@ -1422,10 +1518,24 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	this->visDistantObjs.moonEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.sunStart = this->visDistantObjs.moonEnd;
 
-	for (const DistantObject &sun : this->distantObjects.suns)
+	for (int i = this->distantObjects.sunStart; i < this->distantObjects.sunEnd; i++)
 	{
-		const SkyTexture &texture = this->skyTextures.at(sun.textureIndex);
-		const Double3 &direction = sun.direction;
+		const DistantObject &sun = this->distantObjects.objs.get(i);
+		DebugAssert(sun.textureIndexCount == 1);
+
+		DebugAssertIndex(this->skyTextures, sun.startTextureIndex);
+		const SkyTexture &texture = this->skyTextures[sun.startTextureIndex];
+
+		Double3 direction;
+		TextureBuilderID textureBuilderID;
+		double width, height;
+		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+
+		// @temp
+		static_cast<void>(textureBuilderID);
+		static_cast<void>(width);
+		static_cast<void>(height);
+
 		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Top;
 		tryAddObject(texture, direction, emissive, orientation);
@@ -1434,10 +1544,33 @@ void SoftwareRenderer::updateVisibleDistantObjects(const ShadingInfo &shadingInf
 	this->visDistantObjs.sunEnd = static_cast<int>(this->visDistantObjs.objs.size());
 	this->visDistantObjs.starStart = this->visDistantObjs.sunEnd;
 
-	for (const DistantObject &star : this->distantObjects.stars)
+	for (int i = this->distantObjects.starStart; i < this->distantObjects.starEnd; i++)
 	{
-		const SkyTexture &texture = skyTextures.at(star.textureIndex);
-		const Double3 &direction = star.direction;
+		const DistantObject &star = this->distantObjects.objs.get(i);
+		DebugAssert(star.textureIndexCount == 1);
+
+		DebugAssertIndex(this->skyTextures, star.startTextureIndex);
+		const SkyTexture &texture = this->skyTextures[star.startTextureIndex];
+
+		Double3 direction;
+		double width, height;
+		if (skyInstance.isObjectSmallStar(i))
+		{
+			uint8_t paletteIndex;
+			skyInstance.getObjectSmallStar(i, &direction, &paletteIndex, &width, &height);
+			static_cast<void>(paletteIndex);
+		}
+		else
+		{
+			TextureBuilderID textureBuilderID;
+			skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+			static_cast<void>(textureBuilderID);
+		}
+
+		// @temp
+		static_cast<void>(width);
+		static_cast<void>(height);
+
 		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
@@ -7690,9 +7823,10 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 }
 
 void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
-	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
-	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
+	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
+	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
+	const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette,
+	uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -7740,7 +7874,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	this->occlusion.fill(OcclusionData(0, this->height));
 
 	// Refresh the visible distant objects.
-	this->updateVisibleDistantObjects(shadingInfo, camera, frame);
+	this->updateVisibleDistantObjects(skyInst, shadingInfo, camera, frame);
 
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()

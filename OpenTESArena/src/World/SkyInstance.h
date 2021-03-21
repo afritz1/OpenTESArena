@@ -115,6 +115,12 @@ public:
 	void getObjectSmallStar(int index, Double3 *outDirection, uint8_t *outPaletteIndex, double *outWidth,
 		double *outHeight) const;
 
+	// @todo: this is public for the renderer for now. Remove this once public texture handles are being allocated.
+	// Gets the texture builder ID(s) for a non-small-star object. If it doesn't have an animation then there is only
+	// one ID.
+	TextureBuilderIdGroup getObjectTextureBuilderIDs(int index) const;
+	std::optional<double> tryGetObjectAnimPercent(int index) const;
+
 	// Attempts to set this sky active in the renderer.
 	// @todo: maybe this and LevelInstance::trySetActive() should be replaced by some MapInstance::trySetLevelActive(int)
 	// that does the work for both the level and the sky.
