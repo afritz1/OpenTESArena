@@ -1895,8 +1895,7 @@ void GameWorldPanel::handleNightLightChange(bool active)
 		const EntityDefID defID = entity->getDefinitionID();
 		const EntityDefinition &entityDef = entityManager.getEntityDef(defID, entityDefLibrary);
 
-		if ((entityDef.getType() == EntityDefinition::Type::Doodad) &&
-			(entityDef.getDoodad().streetlight))
+		if (EntityUtils::isStreetlight(entityDef))
 		{
 			const std::string &newStateName = active ?
 				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
@@ -2451,13 +2450,16 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				player.lookAt(player.getPosition() + dirToNewVoxel);
 				player.setVelocityToZero();
 
+				EntityGeneration::EntityGenInfo entityGenInfo;
+				entityGenInfo.init(gameState.nightLightsAreActive());
+
 				// Tick the level's chunk manager once during initialization so the renderer is passed valid
 				// chunks this frame.
 				constexpr double dummyDeltaTime = 0.0;
 				const int chunkDistance = game.getOptions().getMisc_ChunkDistance();
 				newActiveLevel.update(dummyDeltaTime, game, player.getPosition(), levelIndex, interiorMapDef,
-					citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
-					game.getTextureManager(), game.getAudioManager());
+					entityGenInfo, citizenGenInfo, chunkDistance, game.getEntityDefinitionLibrary(),
+					game.getBinaryAssetLibrary(), game.getTextureManager(), game.getAudioManager());
 			};
 
 			// Lambda for opening the world map when the player enters a transition voxel
@@ -2908,6 +2910,9 @@ void GameWorldPanel::tick(double dt)
 	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
 	TextureManager &textureManager = game.getTextureManager();
 
+	EntityGeneration::EntityGenInfo entityGenInfo;
+	entityGenInfo.init(gameState.nightLightsAreActive());
+
 	// Tick active map (entities, animated distant land, etc.).
 	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = [&game, &gameState, mapType,
 		&entityDefLibrary, &textureManager]() -> std::optional<CitizenUtils::CitizenGenInfo>
@@ -2927,7 +2932,7 @@ void GameWorldPanel::tick(double dt)
 	}();
 
 	mapInst.update(dt, game, newPlayerCoord, mapDef, latitude, gameState.getDaytimePercent(),
-		game.getOptions().getMisc_ChunkDistance(), citizenGenInfo, entityDefLibrary,
+		game.getOptions().getMisc_ChunkDistance(), entityGenInfo, citizenGenInfo, entityDefLibrary,
 		game.getBinaryAssetLibrary(), textureManager, game.getAudioManager());
 
 	// See if the player changed voxels in the XZ plane. If so, trigger text and sound events,

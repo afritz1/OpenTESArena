@@ -13,12 +13,20 @@ enum class EntityType;
 
 namespace EntityGeneration
 {
-	/*EntityGenerationInfo (might also affect EntityAnimationDef / Inst)
-	- optional rulerIsMale
-	- optional interiorType*/
+	struct EntityGenInfo
+	{
+		bool nightLightsAreActive;
+
+		// @todo? (might also affect EntityAnimationDef/Inst)
+		// - optional rulerIsMale
+		// - optional interiorType
+
+		void init(bool nightLightsAreActive);
+	};
 
 	Entity *makeEntity(EntityType entityType, EntityDefinition::Type entityDefType, EntityDefID entityDefID,
-		const EntityAnimationDefinition &animDef, Random &random, EntityManager &entityManager);
+		const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
+		const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager);
 }
 
 #endif

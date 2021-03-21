@@ -5,6 +5,7 @@
 
 #include "ChunkManager.h"
 #include "../Entities/CitizenUtils.h"
+#include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
 
 // Instance of a level with voxels and entities. Its data is in a baked, context-sensitive format
@@ -41,9 +42,10 @@ public:
 		TextureManager &textureManager, Renderer &renderer);
 
 	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager);
+		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, AudioManager &audioManager);
 };
 
 #endif

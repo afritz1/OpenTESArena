@@ -253,14 +253,15 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 
 void LevelInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
-	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance, 
+	const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, int chunkDistance,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, AudioManager &audioManager)
 {
 	const ChunkInt2 &centerChunk = playerCoord.chunk;
-	this->chunkManager.update(dt, centerChunk, playerCoord, activeLevelIndex, mapDefinition, citizenGenInfo,
-		this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager, audioManager,
-		this->entityManager);
+	this->chunkManager.update(dt, centerChunk, playerCoord, activeLevelIndex, mapDefinition, entityGenInfo,
+		citizenGenInfo, this->ceilingScale, chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager,
+		audioManager, this->entityManager);
 
 	this->entityManager.tick(game, dt);
 }

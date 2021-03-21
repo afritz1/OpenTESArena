@@ -3,6 +3,7 @@
 
 #include "LevelInstance.h"
 #include "SkyInstance.h"
+#include "../Entities/EntityGeneration.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -46,6 +47,7 @@ public:
 
 	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
 		double latitude, double daytimePercent, int chunkDistance,
+		const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, AudioManager &audioManager);

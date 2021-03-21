@@ -9,6 +9,7 @@
 #include "ChunkUtils.h"
 #include "VoxelUtils.h"
 #include "../Entities/CitizenUtils.h"
+#include "../Entities/EntityGeneration.h"
 
 // Handles lifetimes of chunks. Does not store any entities. When freeing a chunk, it needs to tell
 // the entity manager so the entities in it are handled correctly (marked for deletion one way or
@@ -67,13 +68,15 @@ private:
 	// Adds entities from the level to the chunk.
 	void populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+		const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityManager &entityManager);
 
 	// Fills the chunk with the data required based on its position and the world type.
 	void populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
-		const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityManager &entityManager);
 
@@ -100,6 +103,7 @@ public:
 	// player, which isn't a big deal but is poor design).
 	void update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+		const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 		int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,

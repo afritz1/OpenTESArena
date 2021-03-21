@@ -59,6 +59,11 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 	return (defID >= 0) && (defID < entityDefLibrary.getDefinitionCount());
 }
 
+bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
+{
+	return (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().streetlight;
+}
+
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
 	const EntityDefinition::Type type = entityDef.getType();

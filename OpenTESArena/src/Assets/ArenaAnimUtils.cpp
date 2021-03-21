@@ -690,7 +690,9 @@ ArenaTypes::FlatIndex ArenaAnimUtils::getStreetLightInactiveIndex()
 
 bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType)
 {
-	// Wilderness and interiors do not have streetlights.
+	// Wilderness and interiors do not manage streetlights. There are animating streetlights
+	// in the wilderness (sharing the exact same texture as city ones) but their activated state
+	// never changes in the original game.
 	if (mapType != MapType::City)
 	{
 		return false;

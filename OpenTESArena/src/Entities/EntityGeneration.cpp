@@ -3,8 +3,14 @@
 #include "EntityType.h"
 #include "../Game/CardinalDirection.h"
 
+void EntityGeneration::EntityGenInfo::init(bool nightLightsAreActive)
+{
+	this->nightLightsAreActive = nightLightsAreActive;
+}
+
 Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Type entityDefType,
-	EntityDefID entityDefID, const EntityAnimationDefinition &animDef, Random &random, EntityManager &entityManager)
+	EntityDefID entityDefID, const EntityDefinition &entityDef, const EntityAnimationDefinition &animDef,
+	const EntityGenInfo &entityGenInfo, Random &random, EntityManager &entityManager)
 {
 	EntityRef entity = entityManager.makeEntity(entityType); // @todo: decide if chunk should be an argument too
 	Entity *entityPtr = entity.get();
@@ -12,8 +18,20 @@ Entity *EntityGeneration::makeEntity(EntityType entityType, EntityDefinition::Ty
 	EntityAnimationInstance animInst;
 	animInst.init(animDef);
 
-	const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(
-		EntityAnimationUtils::STATE_IDLE.c_str());
+	const std::string &defaultStateName = [&entityDef, &entityGenInfo]() -> const std::string&
+	{
+		if (!EntityUtils::isStreetlight(entityDef))
+		{
+			return EntityAnimationUtils::STATE_IDLE;
+		}
+		else
+		{
+			return entityGenInfo.nightLightsAreActive ?
+				EntityAnimationUtils::STATE_ACTIVATED : EntityAnimationUtils::STATE_IDLE;
+		}
+	}();
+
+	const std::optional<int> defaultStateIndex = animDef.tryGetStateIndex(defaultStateName.c_str());
 	if (!defaultStateIndex.has_value())
 	{
 		DebugLogWarning("Couldn't get default state index for entity.");

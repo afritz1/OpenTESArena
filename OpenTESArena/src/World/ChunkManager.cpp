@@ -6,7 +6,6 @@
 #include "MapDefinition.h"
 #include "MapType.h"
 #include "../Assets/ArenaTypes.h"
-#include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/EntityType.h"
 #include "../Game/CardinalDirection.h"
@@ -442,6 +441,7 @@ void ChunkManager::populateChunkVoxelInsts(Chunk &chunk)
 
 void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &levelDefinition,
 	const LevelInfoDefinition &levelInfoDefinition, const LevelInt2 &levelOffset,
+	const EntityGeneration::EntityGenInfo &entityGenInfo,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, EntityManager &entityManager)
@@ -478,7 +478,7 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 
 				const VoxelDouble3 point = MakeChunkPointFromLevel(position, startX, startY, startZ);
 				Entity *entity = EntityGeneration::makeEntity(entityType, entityDefType, *entityDefID,
-					animDef, random, entityManager);
+					entityDef, animDef, entityGenInfo, random, entityManager);
 
 				// Set entity position in chunk last. This has the potential to change the entity's chunk
 				// and invalidate the local entity pointer.
@@ -507,7 +507,8 @@ void ChunkManager::populateChunkEntities(Chunk &chunk, const LevelDefinition &le
 }
 
 void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const std::optional<int> &activeLevelIndex,
-	const MapDefinition &mapDefinition, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+	const MapDefinition &mapDefinition, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, EntityManager &entityManager)
 {
@@ -566,7 +567,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 		}
 	}
@@ -619,7 +620,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 			this->populateChunkVoxels(chunk, levelDefinition, levelOffset);
 			this->populateChunkDecorators(chunk, levelDefinition, levelInfoDefinition, levelOffset);
 			this->populateChunkVoxelInsts(chunk);
-			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+			this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 				citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 		}
 	}
@@ -652,7 +653,7 @@ void ChunkManager::populateChunk(int index, const ChunkInt2 &chunkCoord, const s
 		}
 
 		this->populateChunkVoxelInsts(chunk);
-		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset,
+		this->populateChunkEntities(chunk, levelDefinition, levelInfoDefinition, levelOffset, entityGenInfo,
 			citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 	}
 	else
@@ -743,6 +744,7 @@ void ChunkManager::updateChunkPerimeter(Chunk &chunk)
 
 void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDouble3 &playerCoord,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
+	const EntityGeneration::EntityGenInfo &entityGenInfo,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
 	int chunkDistance, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager,
@@ -777,7 +779,7 @@ void ChunkManager::update(double dt, const ChunkInt2 &centerChunk, const CoordDo
 			if (!index.has_value())
 			{
 				const int spawnIndex = this->spawnChunk();
-				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, citizenGenInfo,
+				this->populateChunk(spawnIndex, coord, activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
 					entityDefLibrary, binaryAssetLibrary, textureManager, entityManager);
 			}
 		}

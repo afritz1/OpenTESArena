@@ -27,6 +27,10 @@ namespace EntityUtils
 	// entity definition library.
 	bool isLevelDependentDef(EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary);
 
+	// Returns whether the given entity definition is for a streetlight. Note that wilderness streetlights
+	// do not have their activation state updated in the original game like city streetlights do.
+	bool isStreetlight(const EntityDefinition &entityDef);
+
 	int getYOffset(const EntityDefinition &entityDef);
 
 	// Returns whether the entity definition has light intensity.
