@@ -35,10 +35,11 @@ void SkyInstance::ObjectInstance::init(Type type, const Double3 &baseDirection, 
 }
 
 void SkyInstance::ObjectInstance::initGeneral(const Double3 &baseDirection, double width, double height,
-	TextureBuilderID textureBuilderID)
+	TextureBuilderID textureBuilderID, bool emissive)
 {
 	this->init(ObjectInstance::Type::General, baseDirection, width, height);
 	this->general.textureBuilderID = textureBuilderID;
+	this->general.emissive = emissive;
 }
 
 void SkyInstance::ObjectInstance::initSmallStar(const Double3 &baseDirection, double width, double height,
@@ -109,10 +110,10 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	TextureManager &textureManager)
 {
 	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
-		TextureBuilderID textureBuilderID)
+		TextureBuilderID textureBuilderID, bool emissive)
 	{
 		ObjectInstance objectInst;
-		objectInst.initGeneral(baseDirection, width, height, textureBuilderID);
+		objectInst.initGeneral(baseDirection, width, height, textureBuilderID, emissive);
 		this->objectInsts.emplace_back(std::move(objectInst));
 	};
 
@@ -158,7 +159,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert radians to direction.
 			const Radians angleY = 0.0;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(position, angleY);
-			addGeneralObjectInst(direction, width, height, *textureBuilderID);
+			const bool emissive = skyLandDef.getShadingType() == SkyLandDefinition::ShadingType::Bright;
+			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
 
 			// Only land objects support animations (for now).
 			if (skyLandDef.hasAnimation())
@@ -208,7 +210,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleX = position.first;
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
-			addGeneralObjectInst(direction, width, height, *textureBuilderID);
+			constexpr bool emissive = false;
+			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
 
 			// Do position transform since it's only needed once at initialization for air objects.
 			ObjectInstance &objectInst = this->objectInsts.back();
@@ -269,7 +272,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
-				addGeneralObjectInst(position, width, height, *textureBuilderID);
+				constexpr bool emissive = false;
+				addGeneralObjectInst(position, width, height, *textureBuilderID, emissive);
 			}
 		}
 		else
@@ -308,7 +312,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert starting sun latitude to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID);
+			constexpr bool emissive = false;
+			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID, emissive);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -345,7 +350,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Convert moon position to direction.
 			// @todo: just use fixed direction for now, see RendererUtils later.
 			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
-			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID);
+			constexpr bool emissive = false;
+			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID, emissive);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -413,14 +419,16 @@ bool SkyInstance::isObjectSmallStar(int objectIndex) const
 }
 
 void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
-	double *outWidth, double *outHeight) const
+	bool *outEmissive, double *outWidth, double *outHeight) const
 {
 	DebugAssertIndex(this->objectInsts, index);
 	const ObjectInstance &objectInst = this->objectInsts[index];
 	*outDirection = objectInst.getTransformedDirection();
 
 	DebugAssert(objectInst.getType() == SkyInstance::ObjectInstance::Type::General);
-	*outTextureBuilderID = objectInst.getGeneral().textureBuilderID;
+	const SkyInstance::ObjectInstance::General &generalInst = objectInst.getGeneral();
+	*outTextureBuilderID = generalInst.textureBuilderID;
+	*outEmissive = generalInst.emissive;
 
 	*outWidth = objectInst.getWidth();
 	*outHeight = objectInst.getHeight();

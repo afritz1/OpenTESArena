@@ -38,6 +38,7 @@ private:
 		{
 			// Current texture of object (may change due to animation).
 			TextureBuilderID textureBuilderID;
+			bool emissive;
 		};
 
 		struct SmallStar
@@ -60,7 +61,8 @@ private:
 	public:
 		ObjectInstance();
 
-		void initGeneral(const Double3 &baseDirection, double width, double height, TextureBuilderID textureBuilderID);
+		void initGeneral(const Double3 &baseDirection, double width, double height, TextureBuilderID textureBuilderID,
+			bool emissive);
 		void initSmallStar(const Double3 &baseDirection, double width, double height, uint8_t paletteIndex);
 
 		Type getType() const;
@@ -107,8 +109,8 @@ public:
 	// @todo: this is bad design; there should not be a small star type.
 	bool isObjectSmallStar(int objectIndex) const;
 
-	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, double *outWidth,
-		double *outHeight) const;
+	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, bool *outEmissive,
+		double *outWidth, double *outHeight) const;
 
 	// @todo: this is bad design; there should not be a small star type. Eventually get renderer
 	// resource IDs instead probably.

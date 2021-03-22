@@ -1446,8 +1446,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 
 		Double3 direction;
 		TextureBuilderID textureBuilderID;
+		bool emissive;
 		double width, height;
-		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+		skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
 
 		// @temp
 		static_cast<void>(textureBuilderID);
@@ -1457,7 +1458,6 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 		DebugAssertIndex(this->skyTextures, skyTexturesIndex);
 		const SkyTexture &texture = this->skyTextures[skyTexturesIndex];
 
-		constexpr bool emissive = false;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
 	}
@@ -1475,15 +1475,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 
 		Double3 direction;
 		TextureBuilderID textureBuilderID;
+		bool emissive;
 		double width, height;
-		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+		skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
 
 		// @temp
 		static_cast<void>(textureBuilderID);
 		static_cast<void>(width);
 		static_cast<void>(height);
 
-		constexpr bool emissive = false;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
 	}
@@ -1501,15 +1501,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 
 		Double3 direction;
 		TextureBuilderID textureBuilderID;
+		bool emissive;
 		double width, height;
-		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+		skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
 
 		// @temp
 		static_cast<void>(textureBuilderID);
 		static_cast<void>(width);
 		static_cast<void>(height);
 
-		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Top;
 		tryAddObject(texture, direction, emissive, orientation);
 	}
@@ -1527,15 +1527,15 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 
 		Double3 direction;
 		TextureBuilderID textureBuilderID;
+		bool emissive;
 		double width, height;
-		skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+		skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
 
 		// @temp
 		static_cast<void>(textureBuilderID);
 		static_cast<void>(width);
 		static_cast<void>(height);
 
-		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Top;
 		tryAddObject(texture, direction, emissive, orientation);
 	}
@@ -1552,6 +1552,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 		const SkyTexture &texture = this->skyTextures[star.startTextureIndex];
 
 		Double3 direction;
+		bool emissive;
 		double width, height;
 		if (skyInstance.isObjectSmallStar(i))
 		{
@@ -1562,7 +1563,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 		else
 		{
 			TextureBuilderID textureBuilderID;
-			skyInstance.getObject(i, &direction, &textureBuilderID, &width, &height);
+			skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
 			static_cast<void>(textureBuilderID);
 		}
 
@@ -1570,7 +1571,6 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 		static_cast<void>(width);
 		static_cast<void>(height);
 
-		constexpr bool emissive = true;
 		constexpr Orientation orientation = Orientation::Bottom;
 		tryAddObject(texture, direction, emissive, orientation);
 	}
