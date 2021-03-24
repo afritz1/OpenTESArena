@@ -254,12 +254,16 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		this->getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
-	// Distance to player is used for switching animation states.
+	// Distance to player and player velocity are used for switching animation states.
 	const CoordDouble3 &playerPosition = player.getPosition();
 	const CoordDouble2 playerPositionXZ(
 		playerPosition.chunk, VoxelDouble2(playerPosition.point.x, playerPosition.point.z));
 	const VoxelDouble2 dirToPlayer = playerPositionXZ - this->position;
 	const double distToPlayerSqr = dirToPlayer.lengthSquared();
+
+	const VoxelDouble3 &playerVelocity = player.getVelocity();
+	const double playerSpeedSqr = playerVelocity.lengthSquared();
+	const bool isPlayerStopped = playerSpeedSqr < Constants::Epsilon;
 
 	// Get idle and walk state indices.
 	const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
@@ -284,7 +288,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	if (curAnimStateIndex == idleStateIndex)
 	{
 		const bool shouldChangeToWalking = !playerWeaponAnim.isSheathed() ||
-			(distToPlayerSqr > citizenIdleDistSqr);
+			(distToPlayerSqr > citizenIdleDistSqr) || !isPlayerStopped;
 
 		// @todo: need to preserve their previous direction so they stay aligned with
 		// the center of the voxel. Basically need to store cardinal direction as internal state.
@@ -305,7 +309,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	else if (curAnimStateIndex == walkStateIndex)
 	{
 		const bool shouldChangeToIdle = playerWeaponAnim.isSheathed() &&
-			(distToPlayerSqr <= citizenIdleDistSqr);
+			(distToPlayerSqr <= citizenIdleDistSqr) && isPlayerStopped;
 
 		if (shouldChangeToIdle)
 		{

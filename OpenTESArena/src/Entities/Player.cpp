@@ -108,6 +108,11 @@ Double2 Player::getGroundDirection() const
 	return Double2(direction.x, direction.z).normalized();
 }
 
+const VoxelDouble3 &Player::getVelocity() const
+{
+	return this->velocity;
+}
+
 double Player::getJumpMagnitude() const
 {
 	return Player::JUMP_VELOCITY;

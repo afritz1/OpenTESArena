@@ -4,6 +4,7 @@
 #include "Camera3D.h"
 #include "WeaponAnimation.h"
 #include "../Assets/MIFUtils.h"
+#include "../World/Coord.h"
 
 class CharacterClassLibrary;
 class ExeData;
@@ -31,7 +32,7 @@ private:
 	int charClassDefID;
 	int portraitID;
 	Camera3D camera;
-	Double3 velocity;
+	VoxelDouble3 velocity;
 	double maxWalkSpeed, maxRunSpeed; // Eventually a function of 'Speed'.
 	WeaponAnimation weaponAnimation;
 	// Other stats...
@@ -76,6 +77,9 @@ public:
 
 	// Gets the bird's eye view of the player's direction (in the XZ plane).
 	Double2 getGroundDirection() const;
+
+	// Gets the velocity vector of the player.
+	const VoxelDouble3 &getVelocity() const;
 
 	// Gets the strength of the player's jump (i.e., instantaneous change in Y velocity).
 	double getJumpMagnitude() const;
