@@ -16,6 +16,7 @@
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -107,7 +108,7 @@ SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdG
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-	TextureManager &textureManager)
+	int currentDay, TextureManager &textureManager)
 {
 	auto addGeneralObjectInst = [this](const Double3 &baseDirection, double width, double height,
 		TextureBuilderID textureBuilderID, bool emissive)
@@ -309,11 +310,14 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 		for (const double position : placementDef.positions)
 		{
-			// Convert starting sun latitude to direction.
-			// @todo: just use fixed direction for now, see RendererUtils later.
-			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
+			// Default to the direction at midnight here, biased by the sun's bonus latitude.
+			const Matrix4d sunLatitudeRotation = RendererUtils::getLatitudeRotation(position);
+			const Double3 sunDirection = -Double3::UnitY;
+			const Double4 direction4D = sunLatitudeRotation *
+				Double4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0);
 			constexpr bool emissive = false;
-			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
+				width, height, *textureBuilderID, emissive);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -329,9 +333,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::MoonDefID defID = placementDef.id;
 		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
 
-		// @todo: get the image from the current day, etc..
+		// Get the image from the current day.
 		DebugAssert(skyMoonDef.getTextureCount() > 0);
-		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(0);
+		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(currentDay);
 		const std::optional<TextureBuilderID> textureBuilderID =
 			textureManager.tryGetTextureBuilderID(textureAssetRef);
 		if (!textureBuilderID.has_value())
@@ -340,6 +344,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			continue;
 		}
 
+		// @todo: maybe move this into the per-moon-position loop below.
+		// @todo: use SkyDefinition::MoonPlacementDef::Position::imageIndex
 		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 
 		double width, height;
@@ -347,11 +353,11 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
-			// Convert moon position to direction.
-			// @todo: just use fixed direction for now, see RendererUtils later.
-			const Double3 tempDirection = Double3::UnitZ; // Temp: west. Ideally this would be -Y and rotated around +X (south).
+			// Default to the direction at midnight here -- it is updated each frame.
+			const Double3 direction = position.baseDir;
+			// @todo: take into consideration orbit percent, etc.
 			constexpr bool emissive = false;
-			addGeneralObjectInst(tempDirection, width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -581,31 +587,25 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 		objectInstGeneral.textureBuilderID = newTextureBuilderID;
 	}
 
+	const Matrix4d timeOfDayRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
+	const Matrix4d latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
+
+	auto transformObjectsInRange = [this, &timeOfDayRotation, &latitudeRotation](int start, int end)
+	{
+		for (int i = start; i < end; i++)
+		{
+			DebugAssertIndex(this->objectInsts, i);
+			ObjectInstance &objectInst = this->objectInsts[i];
+			const Double3 baseDirection = objectInst.getBaseDirection();
+			Double4 dir(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
+			dir = timeOfDayRotation * dir;
+			dir = latitudeRotation * dir;
+			objectInst.setTransformedDirection(Double3(dir.x, dir.y, dir.z));
+		}
+	};
+
 	// Update transformed sky position of stars, suns, and moons.
-	for (int i = this->starStart; i < this->starEnd; i++)
-	{
-		DebugAssertIndex(this->objectInsts, i);
-		ObjectInstance &objectInst = this->objectInsts[i];
-		// @todo: actually transform direction based on latitude and time of day.
-		const Double3 transformedDirection = objectInst.getBaseDirection();
-		objectInst.setTransformedDirection(transformedDirection);
-	}
-
-	for (int i = this->sunStart; i < this->sunEnd; i++)
-	{
-		DebugAssertIndex(this->objectInsts, i);
-		ObjectInstance &objectInst = this->objectInsts[i];
-		// @todo: actually transform direction based on latitude and time of day.
-		const Double3 transformedDirection = objectInst.getBaseDirection();
-		objectInst.setTransformedDirection(transformedDirection);
-	}
-
-	for (int i = this->moonStart; i < this->moonEnd; i++)
-	{
-		DebugAssertIndex(this->objectInsts, i);
-		ObjectInstance &objectInst = this->objectInsts[i];
-		// @todo: actually transform direction based on latitude and time of day.
-		const Double3 transformedDirection = objectInst.getBaseDirection();
-		objectInst.setTransformedDirection(transformedDirection);
-	}
+	transformObjectsInRange(this->starStart, this->starEnd);
+	transformObjectsInRange(this->sunStart, this->sunEnd);
+	transformObjectsInRange(this->moonStart, this->moonEnd);
 }

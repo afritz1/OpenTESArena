@@ -92,7 +92,7 @@ private:
 	int landStart, landEnd, airStart, airEnd, starStart, starEnd, sunStart, sunEnd, moonStart, moonEnd;
 public:
 	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
-		TextureManager &textureManager);
+		int currentDay, TextureManager &textureManager);
 
 	// Start (inclusive) and end (exclusive) indices of each sky object type.
 	int getLandStartIndex() const;

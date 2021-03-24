@@ -346,8 +346,10 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 		return false;
 	}
 
+	constexpr int currentDay = 0; // Doesn't matter for interiors.
+
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, textureManager);
+	mapInstance.init(mapDefinition, currentDay, textureManager);
 
 	// Save return voxel to the current exterior (if any).
 	if (this->maps.size() > 0)
@@ -390,8 +392,10 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 		return false;
 	}
 
+	constexpr int currentDay = 0; // Doesn't matter for interiors.
+
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, textureManager);
+	mapInstance.init(mapDefinition, currentDay, textureManager);
 
 	const CoordInt2 startCoord = [&playerStartOffset, &mapDefinition]()
 	{
@@ -438,7 +442,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	}
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, textureManager);
+	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager);
 
 	DebugAssert(mapDefinition.getStartPointCount() > 0);
 	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
@@ -510,7 +514,7 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	}
 
 	MapInstance mapInstance;
-	mapInstance.init(mapDefinition, textureManager);
+	mapInstance.init(mapDefinition, skyGenInfo.currentDay, textureManager);
 
 	// Wilderness start point depends on city gate the player is coming out of.
 	DebugAssert(mapDefinition.getStartPointCount() == 0);
