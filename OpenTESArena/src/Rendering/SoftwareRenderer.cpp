@@ -1,9 +1,6 @@
 #include <algorithm>
 #include <cmath>
-#include <emmintrin.h>
-#include <immintrin.h>
 #include <limits>
-#include <smmintrin.h>
 
 #include "ArenaRenderUtils.h"
 #include "RendererUtils.h"
