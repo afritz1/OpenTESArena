@@ -13,6 +13,7 @@ class EntityDefinitionLibrary;
 class EntityManager;
 class Random;
 
+enum class CardinalDirectionName;
 enum class ClimateType;
 
 namespace CitizenUtils
@@ -20,6 +21,12 @@ namespace CitizenUtils
 	// Arbitrary values.
 	constexpr int CITIZENS_PER_CHUNK = 30;
 	constexpr int MAX_ACTIVE_CITIZENS = CITIZENS_PER_CHUNK * 9;
+
+	// How far away a citizen will consider idling around the player.
+	constexpr double IDLE_DISTANCE = 1.25;
+
+	// Walking speed of citizens.
+	constexpr double SPEED = 2.25;
 
 	struct CitizenGenInfo
 	{
@@ -37,6 +44,13 @@ namespace CitizenUtils
 			EntityAnimationInstance &&femaleAnimInst, PaletteID paletteID, int raceID);
 	};
 
+	// Helper functions for determining a citizen's walking direction.
+	bool tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, NewDouble2 *outDirection);
+	CardinalDirectionName getCitizenDirectionNameByIndex(int index);
+	NewDouble2 getCitizenDirectionByIndex(int index);
+	int getRandomCitizenDirectionIndex(Random &random);
+
+	// Gets the number of citizens active in the world.
 	int getCitizenCount(const EntityManager &entityManager);
 	int getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager);
 

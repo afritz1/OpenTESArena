@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "CitizenUtils.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityManager.h"
@@ -5,6 +7,7 @@
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
@@ -12,6 +15,20 @@
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer.h"
+
+namespace
+{
+	// Allowed directions for citizens to walk.
+	const std::array<std::pair<CardinalDirectionName, NewDouble2>, 4> CitizenDirections =
+	{
+		{
+			{ CardinalDirectionName::North, CardinalDirection::North },
+			{ CardinalDirectionName::East, CardinalDirection::East },
+			{ CardinalDirectionName::South, CardinalDirection::South },
+			{ CardinalDirectionName::West, CardinalDirection::West }
+		}
+	};
+}
 
 void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
 	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef,
@@ -25,6 +42,42 @@ void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID
 	this->femaleAnimInst = std::move(femaleAnimInst);
 	this->paletteID = paletteID;
 	this->raceID = raceID;
+}
+
+bool CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName, NewDouble2 *outDirection)
+{
+	const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
+		[directionName](const auto &pair)
+	{
+		return pair.first == directionName;
+	});
+
+	if (iter != CitizenDirections.end())
+	{
+		*outDirection = iter->second;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+CardinalDirectionName CitizenUtils::getCitizenDirectionNameByIndex(int index)
+{
+	DebugAssertIndex(CitizenDirections, index);
+	return CitizenDirections[index].first;
+}
+
+NewDouble2 CitizenUtils::getCitizenDirectionByIndex(int index)
+{
+	DebugAssertIndex(CitizenDirections, index);
+	return CitizenDirections[index].second;
+}
+
+int CitizenUtils::getRandomCitizenDirectionIndex(Random &random)
+{
+	return random.next() % static_cast<int>(CitizenDirections.size());
 }
 
 int CitizenUtils::getCitizenCount(const EntityManager &entityManager)

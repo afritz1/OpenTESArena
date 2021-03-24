@@ -20,48 +20,6 @@ namespace
 	// Arbitrary value for how far away a creature can be heard from.
 	// @todo: make this be part of the player, not creatures.
 	constexpr double HearingDistance = 6.0;
-
-	// How far away a citizen will consider idling around the player.
-	constexpr double CitizenIdleDistance = 1.25;
-
-	// Walking speed of citizens.
-	constexpr double CitizenSpeed = 2.25;
-
-	// Allowed directions for citizens to walk.
-	const std::array<std::pair<CardinalDirectionName, NewDouble2>, 4> CitizenDirections =
-	{
-		{
-			{ CardinalDirectionName::North, CardinalDirection::North },
-			{ CardinalDirectionName::East, CardinalDirection::East },
-			{ CardinalDirectionName::South, CardinalDirection::South },
-			{ CardinalDirectionName::West, CardinalDirection::West }
-		}
-	};
-
-	bool TryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName,
-		NewDouble2 *outDirection)
-	{
-		const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
-			[directionName](const auto &pair)
-		{
-			return pair.first == directionName;
-		});
-
-		if (iter != CitizenDirections.end())
-		{
-			*outDirection = iter->second;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	int GetRandomCitizenDirectionIndex(Random &random)
-	{
-		return random.next() % static_cast<int>(CitizenDirections.size());
-	}
 }
 
 DynamicEntity::DynamicEntity()
@@ -77,10 +35,9 @@ void DynamicEntity::initCitizen(EntityDefID defID, const EntityAnimationInstance
 	this->init(defID, animInst);
 	this->derivedType = DynamicEntityType::Citizen;
 
-	if (!TryGetCitizenDirectionFromCardinalDirection(direction, &this->direction))
+	if (!CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(direction, &this->direction))
 	{
-		DebugCrash("Couldn't get citizen direction for \"" +
-			std::to_string(static_cast<int>(direction)) + "\".");
+		DebugCrash("Couldn't get citizen direction for \"" + std::to_string(static_cast<int>(direction)) + "\".");
 	}
 }
 
@@ -280,7 +237,7 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		return;
 	}
 
-	constexpr double citizenIdleDistSqr = CitizenIdleDistance * CitizenIdleDistance;
+	constexpr double citizenIdleDistSqr = CitizenUtils::IDLE_DISTANCE * CitizenUtils::IDLE_DISTANCE;
 	const auto &playerWeaponAnim = player.getWeaponAnimation();
 	EntityAnimationInstance &animInst = this->getAnimInstance();
 	const int curAnimStateIndex = animInst.getStateIndex();
@@ -295,10 +252,9 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 		if (shouldChangeToWalking)
 		{
 			animInst.setStateIndex(*walkStateIndex);
-			const int citizenDirectionIndex = GetRandomCitizenDirectionIndex(random);
-			const auto &citizenDirection = CitizenDirections[citizenDirectionIndex];
-			this->direction = citizenDirection.second;
-			this->velocity = this->direction * CitizenSpeed;
+			const int citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
+			this->direction = CitizenUtils::getCitizenDirectionByIndex(citizenDirectionIndex);
+			this->velocity = this->direction * CitizenUtils::SPEED;
 		}
 		else
 		{
@@ -447,11 +403,11 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
 					{
 						// See if this is a valid direction to go in.
-						const auto &directionPair = CitizenDirections[dirIndex];
-						const CardinalDirectionName cardinalDirectionName = directionPair.first;
+						const CardinalDirectionName cardinalDirectionName =
+							CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const NewDouble2 &direction = directionPair.second;
+							const NewDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
 							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
 							if (isSuitableVoxel(voxel))
 							{
@@ -464,10 +420,9 @@ void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 
 					if (iter != randomDirectionIndices.end())
 					{
-						const auto &directionPair = CitizenDirections[*iter];
-						const NewDouble2 &newDirection = directionPair.second;
+						const NewDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
 						this->setDirection(newDirection);
-						this->velocity = newDirection * CitizenSpeed;
+						this->velocity = newDirection * CitizenUtils::SPEED;
 					}
 					else
 					{
