@@ -665,7 +665,7 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	this->miscOptions.push_back(std::make_unique<IntOption>(
 		OptionsPanel::CHUNK_DISTANCE_NAME,
-		"Affects how many chunks away from the player chunks are\nsimulated and rendered.\n\nNot fully implemented yet.",
+		"Affects how many chunks away from the player chunks are\nsimulated and rendered.",
 		options.getMisc_ChunkDistance(),
 		1,
 		Options::MIN_CHUNK_DISTANCE,
