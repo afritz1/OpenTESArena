@@ -1,5 +1,6 @@
 #include <cmath>
 
+#include "ArenaSkyUtils.h"
 #include "SkyUtils.h"
 #include "../Math/Constants.h"
 
@@ -24,10 +25,8 @@ VoxelDouble3 SkyUtils::getSkyObjectDirection(Radians angleX, Radians angleY)
 
 void SkyUtils::getSkyObjectDimensions(int imageWidth, int imageHeight, double *outWidth, double *outHeight)
 {
-	DebugNotImplemented();
-	// @todo: use ArenaSkyUtils constexpr values?
-	*outWidth = 0;
-	*outHeight = 0;
+	*outWidth = static_cast<double>(imageWidth) / ArenaSkyUtils::IDENTITY_DIM;
+	*outHeight = static_cast<double>(imageHeight) / ArenaSkyUtils::IDENTITY_DIM;
 }
 
 int SkyUtils::getStarCountFromDensity(int starDensity)

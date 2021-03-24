@@ -22,12 +22,12 @@
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
 #include "../Utilities/Platform.h"
-#include "../World/ArenaSkyUtils.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
 #include "../World/SkyInstance.h"
+#include "../World/SkyUtils.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelUtils.h"
 
@@ -1364,8 +1364,9 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	{
 		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
 
-		const double objWidth = static_cast<double>(texture.width) / ArenaSkyUtils::IDENTITY_DIM;
-		const double objHeight = static_cast<double>(texture.height) / ArenaSkyUtils::IDENTITY_DIM;
+		double objWidth, objHeight;
+		SkyUtils::getSkyObjectDimensions(texture.width, texture.height, &objWidth, &objHeight);
+
 		const double objHalfWidth = objWidth * 0.50;
 
 		DrawRange drawRange = [direction, orientation, &camera, &frame, &absoluteEye, objHeight]()
