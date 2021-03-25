@@ -225,6 +225,84 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	this->airStart = this->landEnd;
 	this->airEnd = this->airStart + airInstCount;
 
+	int moonInstCount = 0;
+	for (int i = 0; i < skyDefinition.getMoonPlacementDefCount(); i++)
+	{
+		const SkyDefinition::MoonPlacementDef &placementDef = skyDefinition.getMoonPlacementDef(i);
+		const SkyDefinition::MoonDefID defID = placementDef.id;
+		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
+
+		// Get the image from the current day.
+		DebugAssert(skyMoonDef.getTextureCount() > 0);
+		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(currentDay);
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		// @todo: maybe move this into the per-moon-position loop below.
+		// @todo: use SkyDefinition::MoonPlacementDef::Position::imageIndex
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
+
+		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
+		{
+			// Default to the direction at midnight here -- it is updated each frame.
+			const Double3 direction = position.baseDir;
+			// @todo: take into consideration orbit percent, etc.
+			constexpr bool emissive = false;
+			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
+		}
+
+		moonInstCount += static_cast<int>(placementDef.positions.size());
+	}
+
+	this->moonStart = this->airEnd;
+	this->moonEnd = this->moonStart + moonInstCount;
+
+	int sunInstCount = 0;
+	for (int i = 0; i < skyDefinition.getSunPlacementDefCount(); i++)
+	{
+		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
+		const SkyDefinition::SunDefID defID = placementDef.id;
+		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
+		const TextureAssetReference &textureAssetRef = skySunDef.getTextureAssetRef();
+		const std::optional<TextureBuilderID> textureBuilderID =
+			textureManager.tryGetTextureBuilderID(textureAssetRef);
+		if (!textureBuilderID.has_value())
+		{
+			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
+			continue;
+		}
+
+		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+
+		double width, height;
+		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
+
+		for (const double position : placementDef.positions)
+		{
+			// Default to the direction at midnight here, biased by the sun's bonus latitude.
+			const Matrix4d sunLatitudeRotation = RendererUtils::getLatitudeRotation(position);
+			const Double3 sunDirection = -Double3::UnitY;
+			const Double4 direction4D = sunLatitudeRotation *
+				Double4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0);
+			constexpr bool emissive = false;
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
+				width, height, *textureBuilderID, emissive);
+		}
+
+		sunInstCount += static_cast<int>(placementDef.positions.size());
+	}
+
+	this->sunStart = this->moonEnd;
+	this->sunEnd = this->sunStart + sunInstCount;
+
 	int starInstCount = 0;
 	for (int i = 0; i < skyDefinition.getStarPlacementDefCount(); i++)
 	{
@@ -285,86 +363,8 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		starInstCount += static_cast<int>(placementDef.positions.size());
 	}
 
-	this->starStart = this->airEnd;
+	this->starStart = this->sunEnd;
 	this->starEnd = this->starStart + starInstCount;
-
-	int sunInstCount = 0;
-	for (int i = 0; i < skyDefinition.getSunPlacementDefCount(); i++)
-	{
-		const SkyDefinition::SunPlacementDef &placementDef = skyDefinition.getSunPlacementDef(i);
-		const SkyDefinition::SunDefID defID = placementDef.id;
-		const SkySunDefinition &skySunDef = skyInfoDefinition.getSun(defID);
-		const TextureAssetReference &textureAssetRef = skySunDef.getTextureAssetRef();
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
-
-		for (const double position : placementDef.positions)
-		{
-			// Default to the direction at midnight here, biased by the sun's bonus latitude.
-			const Matrix4d sunLatitudeRotation = RendererUtils::getLatitudeRotation(position);
-			const Double3 sunDirection = -Double3::UnitY;
-			const Double4 direction4D = sunLatitudeRotation *
-				Double4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0);
-			constexpr bool emissive = false;
-			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
-				width, height, *textureBuilderID, emissive);
-		}
-
-		sunInstCount += static_cast<int>(placementDef.positions.size());
-	}
-
-	this->sunStart = this->starEnd;
-	this->sunEnd = this->sunStart + sunInstCount;
-
-	int moonInstCount = 0;
-	for (int i = 0; i < skyDefinition.getMoonPlacementDefCount(); i++)
-	{
-		const SkyDefinition::MoonPlacementDef &placementDef = skyDefinition.getMoonPlacementDef(i);
-		const SkyDefinition::MoonDefID defID = placementDef.id;
-		const SkyMoonDefinition &skyMoonDef = skyInfoDefinition.getMoon(defID);
-
-		// Get the image from the current day.
-		DebugAssert(skyMoonDef.getTextureCount() > 0);
-		const TextureAssetReference &textureAssetRef = skyMoonDef.getTextureAssetRef(currentDay);
-		const std::optional<TextureBuilderID> textureBuilderID =
-			textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugLogError("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-			continue;
-		}
-
-		// @todo: maybe move this into the per-moon-position loop below.
-		// @todo: use SkyDefinition::MoonPlacementDef::Position::imageIndex
-		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-
-		double width, height;
-		SkyUtils::getSkyObjectDimensions(textureBuilder.getWidth(), textureBuilder.getHeight(), &width, &height);
-
-		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
-		{
-			// Default to the direction at midnight here -- it is updated each frame.
-			const Double3 direction = position.baseDir;
-			// @todo: take into consideration orbit percent, etc.
-			constexpr bool emissive = false;
-			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
-		}
-
-		moonInstCount += static_cast<int>(placementDef.positions.size());
-	}
-
-	this->moonStart = this->sunEnd;
-	this->moonEnd = this->moonStart + moonInstCount;
 }
 
 int SkyInstance::getLandStartIndex() const
