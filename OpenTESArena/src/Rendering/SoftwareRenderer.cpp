@@ -1913,13 +1913,17 @@ void SoftwareRenderer::updateVisibleLightLists(const Camera &camera, int chunkDi
 			{
 				const CoordInt2 visLightListCoord = VoxelUtils::newVoxelToCoord(NewInt2(x, z));
 
+				// @todo: remove this temp fix once newVoxelToCoord() doesn't return bad voxel values for negative chunks.
+				const CoordInt2 visLightListCoordRevised =
+					ChunkUtils::recalculateCoord(visLightListCoord.chunk, visLightListCoord.voxel);
+
 				// Check if the voxel lies in a loaded chunk, in case the light reaches past the world edge.
-				const auto iter = this->visLightLists.find(visLightListCoord.chunk);
+				const auto iter = this->visLightLists.find(visLightListCoordRevised.chunk);
 				if (iter != this->visLightLists.end())
 				{
 					Buffer2D<VisibleLightList> &visLightListGroup = iter->second;
 					VisibleLightList &visLightList = visLightListGroup.get(
-						visLightListCoord.voxel.x, visLightListCoord.voxel.y);
+						visLightListCoordRevised.voxel.x, visLightListCoordRevised.voxel.y);
 					if (!visLightList.isFull())
 					{
 						visLightList.add(visLightID);
