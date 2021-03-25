@@ -1550,7 +1550,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 		const SkyTexture &texture = this->skyTextures[star.startTextureIndex];
 
 		Double3 direction;
-		bool emissive;
+		bool emissive = true;
 		double width, height;
 		if (skyInstance.isObjectSmallStar(i))
 		{

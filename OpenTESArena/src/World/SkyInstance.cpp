@@ -255,7 +255,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			// Default to the direction at midnight here -- it is updated each frame.
 			const Double3 direction = position.baseDir;
 			// @todo: take into consideration orbit percent, etc.
-			constexpr bool emissive = false;
+			constexpr bool emissive = true;
 			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
 		}
 
@@ -292,7 +292,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Double3 sunDirection = -Double3::UnitY;
 			const Double4 direction4D = sunLatitudeRotation *
 				Double4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0);
-			constexpr bool emissive = false;
+			constexpr bool emissive = true;
 			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
 				width, height, *textureBuilderID, emissive);
 		}
@@ -351,7 +351,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			for (const Double3 &position : placementDef.positions)
 			{
 				// Use star direction directly.
-				constexpr bool emissive = false;
+				constexpr bool emissive = true;
 				addGeneralObjectInst(position, width, height, *textureBuilderID, emissive);
 			}
 		}
