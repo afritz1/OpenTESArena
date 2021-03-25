@@ -1038,6 +1038,29 @@ void EntityManager::removeChunk(const ChunkInt2 &chunk)
 		return;
 	}
 
+	// Reclaim all of the entity IDs owned by the chunk.
+	const EntityChunk &entityChunk = this->entityChunks[*chunkIndex];
+	const EntityGroup<StaticEntity> &staticEntities = entityChunk.staticGroup;
+	for (int i = 0; i < staticEntities.getCount(); i++)
+	{
+		const Entity *entity = staticEntities.getEntityAtIndex(i);
+		if (entity != nullptr)
+		{
+			this->freeIDs.push_back(entity->getID());
+		}
+	}
+
+	const EntityGroup<DynamicEntity> &dynamicEntities = entityChunk.dynamicGroup;
+	for (int i = 0; i < dynamicEntities.getCount(); i++)
+	{
+		const Entity *entity = dynamicEntities.getEntityAtIndex(i);
+		if (entity != nullptr)
+		{
+			this->freeIDs.push_back(entity->getID());
+		}
+	}
+
+	// Remove the chunk from the entity manager.
 	this->entityChunks.erase(this->entityChunks.begin() + *chunkIndex);
 }
 
