@@ -2642,7 +2642,7 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 
 		GameState &gameState = game.getGameState();
 		const auto &player = gameState.getPlayer();
-		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
+		const CoordDouble3 &playerPosition = player.getPosition();
 		const Double3 &direction = player.getDirection();
 
 		const std::string windowWidth = std::to_string(windowDims.x);
@@ -2653,9 +2653,10 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
 		const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 
-		const std::string posX = String::fixedPrecision(absolutePosition.x, 2);
-		const std::string posY = String::fixedPrecision(absolutePosition.y, 2);
-		const std::string posZ = String::fixedPrecision(absolutePosition.z, 2);
+		const std::string chunkStr = playerPosition.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
 		const std::string dirX = String::fixedPrecision(direction.x, 2);
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
@@ -2664,26 +2665,9 @@ void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
 			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
 			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 			renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-			"Pos: " + posX + ", " + posY + ", " + posZ + '\n' +
+			"Chunk: " + chunkStr + '\n' +
+			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
-
-		// Add any wilderness-specific info.
-		const MapDefinition &mapDef = gameState.getActiveMapDef();
-		const MapType mapType = mapDef.getMapType();
-		if (mapType == MapType::Wilderness)
-		{
-			const NewInt3 playerVoxel = VoxelUtils::pointToVoxel(absolutePosition);
-			const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(
-				NewInt2(playerVoxel.x, playerVoxel.z));
-			const Int2 chunkCoord(
-				originalVoxel.x / RMDFile::WIDTH,
-				originalVoxel.y / RMDFile::DEPTH);
-
-			const std::string chunkX = std::to_string(chunkCoord.x);
-			const std::string chunkY = std::to_string(chunkCoord.y);
-
-			text += "\nChunk: " + chunkX + ", " + chunkY;
-		}
 
 		auto &fontLibrary = game.getFontLibrary();
 		const FontName fontName = FontName::D;
