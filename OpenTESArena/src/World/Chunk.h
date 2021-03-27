@@ -103,6 +103,9 @@ public:
 	// Gets the chunk's XY coordinate in the world.
 	const ChunkInt2 &getCoord() const; // @todo: rename to position or something; Coord has different meaning now.
 
+	// Returns whether the given voxel coordinate is in the chunk.
+	bool isValidVoxel(SNInt x, int y, WEInt z) const;
+
 	// Gets the voxel ID at the given coordinate.
 	VoxelID getVoxel(SNInt x, int y, WEInt z) const;
 

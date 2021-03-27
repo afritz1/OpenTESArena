@@ -26,6 +26,11 @@ const ChunkInt2 &Chunk::getCoord() const
 	return this->coord;
 }
 
+bool Chunk::isValidVoxel(SNInt x, int y, WEInt z) const
+{
+	return (x >= 0) && (x < Chunk::WIDTH) && (y >= 0) && (y < this->getHeight()) && (z >= 0) && (z < Chunk::DEPTH);
+}
+
 int Chunk::getHeight() const
 {
 	return this->voxels.getHeight();
