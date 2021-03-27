@@ -600,7 +600,11 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 			Double4 dir(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
 			dir = timeOfDayRotation * dir;
 			dir = latitudeRotation * dir;
-			objectInst.setTransformedDirection(Double3(dir.x, dir.y, dir.z));
+
+			// @temp: flip X and Z.
+			// @todo: figure out why. Distant stars should rotate counter-clockwise when facing south,
+			// and the sun and moons should rise from the west.
+			objectInst.setTransformedDirection(Double3(-dir.x, dir.y, -dir.z));
 		}
 	};
 
