@@ -102,11 +102,13 @@ namespace SkyGeneration
 	}
 
 	// Used with mountains and clouds.
-	template <bool IsLandObject>
 	bool tryGenerateArenaStaticObject(const std::string &baseFilename, int position, int variation,
 		int maxDigits, ArenaRandom &random, TextureManager &textureManager, SkyDefinition *outSkyDef,
 		SkyInfoDefinition *outSkyInfoDef, ArenaLandMappingCache *landCache, ArenaAirMappingCache *airCache)
 	{
+		DebugAssert((landCache != nullptr) != (airCache != nullptr));
+		const bool isLandObject = landCache != nullptr;
+
 		// Digits for the filename variant. Allowed up to two digits.
 		const std::string digits = [&random, variation]()
 		{
@@ -140,7 +142,7 @@ namespace SkyGeneration
 
 		// The object is either a mountain or cloud.
 		TextureAssetReference textureAssetRef = TextureAssetReference(std::string(imageFilename)); // Most vexing parse.
-		if constexpr (IsLandObject)
+		if (isLandObject)
 		{
 			SkyDefinition::LandDefID landDefID;
 			const auto iter = landCache->find(imageFilename);
@@ -165,9 +167,7 @@ namespace SkyGeneration
 				constexpr int yPosLimit = 64;
 				const int yPos = random.next() % yPosLimit;
 				const double heightPercent = static_cast<double>(yPos) / static_cast<double>(yPosLimit);
-
-				// @todo: convert to Y angle properly.
-				const Radians angleLimit = 60.0 * Constants::DegToRad;
+				const Radians angleLimit = 45.0 * Constants::DegToRad;
 				return heightPercent * angleLimit;
 			}();
 
@@ -211,8 +211,8 @@ namespace SkyGeneration
 			const int position = landTraits.position;
 			const int variation = landTraits.variation;
 			const int maxDigits = landTraits.maxDigits;
-			if (!SkyGeneration::tryGenerateArenaStaticObject<true>(landFilename, position, variation,
-				maxDigits, random, textureManager, outSkyDef, outSkyInfoDef, &landCache, nullptr))
+			if (!SkyGeneration::tryGenerateArenaStaticObject(landFilename, position, variation, maxDigits,
+				random, textureManager, outSkyDef, outSkyInfoDef, &landCache, nullptr))
 			{
 				DebugLogWarning("Couldn't generate sky static land \"" + landFilename + "\" (position: " +
 					std::to_string(position) + ", variation: " + std::to_string(variation) + ", max digits: " +
@@ -236,9 +236,8 @@ namespace SkyGeneration
 				constexpr int cloudVariation = 17;
 				constexpr int cloudMaxDigits = 2;
 				constexpr bool randomHeight = true;
-				if (!SkyGeneration::tryGenerateArenaStaticObject<false>(cloudFilename, cloudPosition,
-					cloudVariation, cloudMaxDigits, random, textureManager, outSkyDef, outSkyInfoDef,
-					nullptr, &airCache))
+				if (!SkyGeneration::tryGenerateArenaStaticObject(cloudFilename, cloudPosition, cloudVariation,
+					cloudMaxDigits, random, textureManager, outSkyDef, outSkyInfoDef, nullptr, &airCache))
 				{
 					DebugLogWarning("Couldn't generate sky static air \"" + cloudFilename + "\" (position: " +
 						std::to_string(cloudPosition) + ", variation: " +
