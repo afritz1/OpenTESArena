@@ -274,15 +274,9 @@ private:
 		// The palette used for converting 8-bit texels to true color.
 		Palette palette;
 
-		// Rotation matrices for distant space objects.
-		Matrix4d timeRotation, latitudeRotation;
-
 		// Sky colors for the horizon and zenith to interpolate between. Index 0 is the
 		// horizon color. For interiors, every color in the array is the same.
 		std::array<Double3, SKY_COLOR_COUNT> skyColors;
-
-		// Direction towards the sun.
-		Double3 sunDirection;
 
 		// Global ambient light percent.
 		double ambient;

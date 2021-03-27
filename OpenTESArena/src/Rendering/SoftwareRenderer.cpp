@@ -529,14 +529,11 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::ve
 	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
 	this->palette = palette;
-	this->timeRotation = RendererUtils::getTimeOfDayRotation(daytimePercent);
-	this->latitudeRotation = RendererUtils::getLatitudeRotation(latitude);
 	this->nightLightsAreActive = nightLightsAreActive;
 
 	BufferView<Double3> skyColorsView(this->skyColors.data(), static_cast<int>(this->skyColors.size()));
 	RendererUtils::writeSkyColors(skyPalette, skyColorsView, daytimePercent);
 
-	this->sunDirection = RendererUtils::getSunDirection(this->timeRotation, latitude);
 	this->isExterior = isExterior;
 	this->ambient = ambient;
 	this->distantAmbient = RendererUtils::getDistantAmbientPercent(ambient);
