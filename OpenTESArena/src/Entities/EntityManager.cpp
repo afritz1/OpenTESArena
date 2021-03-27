@@ -950,7 +950,10 @@ void EntityManager::updateEntityChunk(Entity *entity)
 		const std::optional<int> newChunkIndex = this->tryGetChunkIndex(newChunk);
 		if (!newChunkIndex.has_value())
 		{
-			DebugLogWarning("Couldn't get new entity chunk \"" + newChunk.toString() + "\" that the entity should be in.");
+			// @todo: unsilence this warning once more engine order-of-operations work has been done, since this is
+			// likely an issue from deferring chunk destruction to the next frame. This particular one seemed to happen
+			// in the wilderness after a city->wilderness transition.
+			//DebugLogWarning("Couldn't get new entity chunk \"" + newChunk.toString() + "\" that the entity should be in.");
 			return;
 		}
 
