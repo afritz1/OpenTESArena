@@ -252,11 +252,19 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 		for (const SkyDefinition::MoonPlacementDef::Position &position : placementDef.positions)
 		{
-			// Default to the direction at midnight here -- it is updated each frame.
-			const Double3 direction = position.baseDir;
-			// @todo: take into consideration orbit percent, etc.
+			// Default to the direction at midnight here, biased by the moon's bonus latitude and
+			// orbit percent.
+			// @todo: not sure this matches the original game but it looks fine.
+			const Matrix4d moonLatitudeRotation = RendererUtils::getLatitudeRotation(position.bonusLatitude);
+			const Matrix4d moonOrbitPercentRotation = Matrix4d::xRotation(position.orbitPercent * Constants::TwoPi);
+			const Double3 baseDirection = -Double3::UnitY;
+			Double4 direction4D(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
+			direction4D = moonLatitudeRotation * direction4D;
+			direction4D = moonOrbitPercentRotation * direction4D;
+
 			constexpr bool emissive = true;
-			addGeneralObjectInst(direction, width, height, *textureBuilderID, emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), width, height,
+				*textureBuilderID, emissive);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -289,9 +297,9 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		{
 			// Default to the direction at midnight here, biased by the sun's bonus latitude.
 			const Matrix4d sunLatitudeRotation = RendererUtils::getLatitudeRotation(position);
-			const Double3 sunDirection = -Double3::UnitY;
+			const Double3 baseDirection = -Double3::UnitY;
 			const Double4 direction4D = sunLatitudeRotation *
-				Double4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0);
+				Double4(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
 			constexpr bool emissive = true;
 			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z),
 				width, height, *textureBuilderID, emissive);
