@@ -664,7 +664,7 @@ private:
 
 	// Calculates light visibility data for a given entity.
 	static void getLightVisibilityData(const CoordDouble3 &flatCoord, double flatHeight,
-		int lightIntensity, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
+		double lightRadius, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
 		double viewDistance, LightVisibilityData *outVisData);
 
 	// Gets the amount of light at a point. Capped at 100% intensity if not unlimited.

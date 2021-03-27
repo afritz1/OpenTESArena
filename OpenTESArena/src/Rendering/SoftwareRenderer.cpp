@@ -1729,16 +1729,17 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		if (isLight)
 		{
 			// See if the light is visible.
+			const double lightRadius = static_cast<double>(lightIntensity);
 			SoftwareRenderer::LightVisibilityData lightVisData;
 			SoftwareRenderer::getLightVisibilityData(flatCoord, flatHeight,
-				lightIntensity, eyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
+				lightRadius, eyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
 
 			if (lightVisData.intersectsFrustum)
 			{
 				// Add a new visible light.
 				VisibleLight visLight;
 				visLight.init(lightVisData.coord, lightVisData.radius);
-				this->visibleLights.push_back(std::move(visLight));
+				this->visibleLights.emplace_back(std::move(visLight));
 			}
 		}
 
@@ -3167,7 +3168,7 @@ bool SoftwareRenderer::findDoorIntersection(const CoordInt2 &coord, ArenaTypes::
 }
 
 void SoftwareRenderer::getLightVisibilityData(const CoordDouble3 &flatCoord, double flatHeight,
-	int lightIntensity, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
+	double lightRadius, const CoordDouble2 &eyeCoord, const VoxelDouble2 &cameraDir, Degrees fovX,
 	double viewDistance, LightVisibilityData *outVisData)
 {
 	// Put the light position at the center of the entity.
@@ -3194,7 +3195,6 @@ void SoftwareRenderer::getLightVisibilityData(const CoordDouble3 &flatCoord, dou
 	const NewDouble2 absoluteCameraFrustumPoint1 = VoxelUtils::coordToNewPoint(cameraFrustumCoord1);
 	const NewDouble2 absoluteCameraFrustumPoint2 = VoxelUtils::coordToNewPoint(cameraFrustumCoord2);
 	const NewDouble2 absoluteLightPointXZ = VoxelUtils::coordToNewPoint(lightCoordXZ);
-	const double lightRadius = static_cast<double>(lightIntensity);
 	const bool intersectsFrustum = MathUtils::triangleCircleIntersection(
 		absoluteCameraFrustumPoint0, absoluteCameraFrustumPoint1, absoluteCameraFrustumPoint2,
 		absoluteLightPointXZ, lightRadius);
