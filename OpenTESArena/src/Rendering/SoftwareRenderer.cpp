@@ -3181,6 +3181,10 @@ void SoftwareRenderer::getLightVisibilityData(const CoordDouble3 &flatCoord, dou
 	const CoordDouble2 cameraMaxCoord = ChunkUtils::recalculateCoord(
 		eyeCoord.chunk, eyeCoord.point + (cameraDir * viewDistance));
 
+	// @todo: not sure what causes some otherwise visible lights to fail the intersectsFrustum test below.
+	// Maybe the frustum points aren't being calculated right in all cases or something.
+	fovX = 179.0;
+
 	// Distance from max view point to left or right far frustum corner.
 	const double frustumHalfWidth = viewDistance * std::tan((fovX * 0.50) * Constants::DegToRad);
 
