@@ -1732,7 +1732,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
-				constexpr double maxSelectionDist = 1.50;
+				constexpr double maxSelectionDist = 1.75;
 
 				if (hit.getT() <= maxSelectionDist)
 				{
