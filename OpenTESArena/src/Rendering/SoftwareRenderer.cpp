@@ -5730,14 +5730,17 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, const CoordInt2 &coord, con
 	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
-	// Draw the player's current voxel first.
-	const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
-	SoftwareRenderer::drawInitialVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint,
-		farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
-		visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	// Try to draw the player's current voxel first.
+	if ((adjustedVoxelY >= 0) && (adjustedVoxelY < chunkPtr->getHeight()))
+	{
+		const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
+		SoftwareRenderer::drawInitialVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint,
+			farPoint, nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+			visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	}
 
-	// Draw voxels below the player's voxel.
-	for (int voxelY = adjustedVoxelY - 1; voxelY >= 0; voxelY--)
+	// Try to draw voxels below the player's voxel (clamping in case the player is above the chunk).
+	for (int voxelY = std::min(adjustedVoxelY - 1, chunkPtr->getHeight() - 1); voxelY >= 0; voxelY--)
 	{
 		const VoxelInt3 belowVoxel(coord.voxel.x, voxelY, coord.voxel.y);
 		SoftwareRenderer::drawInitialVoxelBelow(x, *chunkPtr, belowVoxel, camera, ray, facing, nearPoint,
@@ -5745,8 +5748,8 @@ void SoftwareRenderer::drawInitialVoxelColumn(int x, const CoordInt2 &coord, con
 			visLights, visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
 
-	// Draw voxels above the player's voxel.
-	for (int voxelY = adjustedVoxelY + 1; voxelY < chunkPtr->getHeight(); voxelY++)
+	// Try to draw voxels above the player's voxel (clamping in case the player is below the chunk).
+	for (int voxelY = std::max(adjustedVoxelY + 1, 0); voxelY < chunkPtr->getHeight(); voxelY++)
 	{
 		const VoxelInt3 aboveVoxel(coord.voxel.x, voxelY, coord.voxel.y);
 		SoftwareRenderer::drawInitialVoxelAbove(x, *chunkPtr, aboveVoxel, camera, ray, facing, nearPoint,
@@ -7053,23 +7056,26 @@ void SoftwareRenderer::drawVoxelColumn(int x, const CoordInt2 &coord, const Came
 	// Relative Y voxel coordinate of the camera, compensating for the ceiling height.
 	const int adjustedVoxelY = camera.getAdjustedEyeVoxelY(ceilingScale);
 
-	// Draw voxel straight ahead first.
-	const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
-	SoftwareRenderer::drawVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint, farPoint,
-		nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
-		visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	// Try to draw voxel straight ahead first.
+	if ((adjustedVoxelY >= 0) && (adjustedVoxelY < chunkPtr->getHeight()))
+	{
+		const VoxelInt3 sameFloorVoxel(coord.voxel.x, adjustedVoxelY, coord.voxel.y);
+		SoftwareRenderer::drawVoxelSameFloor(x, *chunkPtr, sameFloorVoxel, camera, ray, facing, nearPoint, farPoint,
+			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
+			visLightLists, textures, chasmTextureGroups, occlusion, frame);
+	}
 
-	// Draw voxels below the voxel.
-	for (int voxelY = adjustedVoxelY - 1; voxelY >= 0; voxelY--)
+	// Try to draw voxels below the player's voxel (clamping in case the player is above the chunk).
+	for (int voxelY = std::min(adjustedVoxelY - 1, chunkPtr->getHeight() - 1); voxelY >= 0; voxelY--)
 	{
 		const VoxelInt3 belowVoxel(coord.voxel.x, voxelY, coord.voxel.y);
 		SoftwareRenderer::drawVoxelBelow(x, *chunkPtr, belowVoxel, camera, ray, facing, nearPoint, farPoint,
 			nearZ, farZ, wallU, wallNormal, shadingInfo, chunkDistance, ceilingScale, chunkManager, visLights,
 			visLightLists, textures, chasmTextureGroups, occlusion, frame);
 	}
-
-	// Draw voxels above the voxel.
-	for (int voxelY = adjustedVoxelY + 1; voxelY < chunkPtr->getHeight(); voxelY++)
+	
+	// Try to draw voxels above the player's voxel (clamping in case the player is below the chunk).
+	for (int voxelY = std::max(adjustedVoxelY + 1, 0); voxelY < chunkPtr->getHeight(); voxelY++)
 	{
 		const VoxelInt3 aboveVoxel(coord.voxel.x, voxelY, coord.voxel.y);
 		SoftwareRenderer::drawVoxelAbove(x, *chunkPtr, aboveVoxel, camera, ray, facing, nearPoint, farPoint,

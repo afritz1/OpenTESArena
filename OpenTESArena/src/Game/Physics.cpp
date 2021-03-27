@@ -231,6 +231,12 @@ namespace Physics
 			return false;
 		}
 
+		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		{
+			// Not in the chunk.
+			return false;
+		}
+
 		const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
 
 		// Get the voxel definition associated with the voxel.
@@ -616,6 +622,12 @@ namespace Physics
 		}
 
 		const VoxelInt3 &voxel = voxelCoord.voxel;
+		if (!chunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		{
+			// Not in the chunk.
+			return false;
+		}
+
 		const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
 
 		// Get the voxel definition associated with the voxel.
@@ -1188,10 +1200,11 @@ namespace Physics
 		double deltaDistSumY = initialDeltaDistY;
 		WEDouble deltaDistSumZ = initialDeltaDistZ;
 
-		// We do need an exit condition if Y is outside the chunk since it doesn't follow the same wrapping
-		// rule as X and Z.
-		bool isVoxelYValid = (currentChunkPtr != nullptr) && (currentVoxel.y >= 0) &&
-			(currentVoxel.y < currentChunkPtr->getHeight());
+		// We do need an exit condition in case Y stepping would result in never being in the chunk, since it doesn't
+		// follow the same wrapping rule as X and Z. Doing this instead of "is voxel Y valid?" lets the player be
+		// above or below the chunk and still select things.
+		bool canDoYStep = (currentChunkPtr != nullptr) && 
+			(NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0));
 
 		// Helper values for ray distance calculation.
 		constexpr SNDouble halfOneMinusStepXReal = static_cast<SNDouble>((1 - stepX) / 2);
@@ -1201,7 +1214,7 @@ namespace Physics
 		// Lambda for stepping to the next voxel in the grid and updating various values.
 		auto doDDAStep = [&rayCoord, &rayDirection, &chunkManager, &deltaDist, stepX, stepY, stepZ, initialDeltaDistX,
 			initialDeltaDistY, initialDeltaDistZ, &visibleWallFacings, &rayDistance, &facing, &currentChunk,
-			&currentChunkPtr, &currentVoxel, &deltaDistSumX, &deltaDistSumY, &deltaDistSumZ, &isVoxelYValid,
+			&currentChunkPtr, &currentVoxel, &deltaDistSumX, &deltaDistSumY, &deltaDistSumZ, &canDoYStep,
 			halfOneMinusStepXReal, halfOneMinusStepYReal, halfOneMinusStepZReal]()
 		{
 			const ChunkInt2 oldChunk = currentChunk;
@@ -1238,7 +1251,7 @@ namespace Physics
 			{
 				deltaDistSumY += deltaDist.y;
 				currentVoxel.y += stepY;
-				isVoxelYValid = (currentVoxel.y >= 0) && (currentVoxel.y < currentChunkPtr->getHeight());
+				canDoYStep = NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0);
 				facing = visibleWallFacings[1];
 				rayDistance = ((static_cast<double>(currentVoxel.y) - rayCoord.point.y) + halfOneMinusStepYReal) / rayDirection.y;
 			}
@@ -1282,7 +1295,7 @@ namespace Physics
 
 		// Step through the grid while the current chunk is valid and the Y voxel is valid (this needs its own check
 		// since Y doesn't follow the same wrapping as X and Z). There doesn't need to be a max distance check.
-		while ((currentChunkPtr != nullptr) && isVoxelYValid)
+		while ((currentChunkPtr != nullptr) && canDoYStep)
 		{
 			// Store part of the current DDA state. The loop needs to do another DDA step to calculate
 			// the point on the far side of this voxel.

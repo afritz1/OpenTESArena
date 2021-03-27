@@ -2351,13 +2351,17 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 	const Chunk *chunkPtr = chunkManager.tryGetChunk(transitionCoord.chunk);
 	DebugAssert(chunkPtr != nullptr);
 
-	// Get the voxel definition associated with the voxel.
-	const VoxelDefinition &voxelDef = [&transitionCoord, chunkPtr]()
+	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
+	if (!chunkPtr->isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{
-		const Chunk::VoxelID voxelID = chunkPtr->getVoxel(
-			transitionCoord.voxel.x,
-			transitionCoord.voxel.y,
-			transitionCoord.voxel.z);
+		// Not in the chunk.
+		return;
+	}
+
+	// Get the voxel definition associated with the voxel.
+	const VoxelDefinition &voxelDef = [chunkPtr, &transitionVoxel]()
+	{
+		const Chunk::VoxelID voxelID = chunkPtr->getVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);
 		return chunkPtr->getVoxelDef(voxelID);
 	}();
 
