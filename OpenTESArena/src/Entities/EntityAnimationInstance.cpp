@@ -5,29 +5,6 @@
 
 #include "components/debug/Debug.h"
 
-const TextureBuilder &EntityAnimationInstance::Keyframe::getTextureBuilderHandle(
-	const EntityAnimationDefinition::Keyframe &defKeyframe, TextureManager &textureManager) const
-{
-	// @todo: this might all get cleaned up once entity texture handles are being used.
-	std::optional<TextureBuilderID> textureBuilderID;
-	if (false) /*this->overrideTextureBuilderID.has_value()*/
-	{
-		//textureBuilderID = *this->overrideTextureBuilderID;
-	}
-	else
-	{
-		const TextureAssetReference &textureAssetRef = defKeyframe.getTextureAssetRef();
-		textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
-		if (!textureBuilderID.has_value())
-		{
-			DebugCrash("Couldn't get texture builder ID for \"" + textureAssetRef.filename + "\".");
-		}
-	}
-
-	DebugAssert(textureBuilderID.has_value());
-	return textureManager.getTextureBuilderHandle(*textureBuilderID);
-}
-
 int EntityAnimationInstance::KeyframeList::getKeyframeCount() const
 {
 	return static_cast<int>(this->keyframes.size());
@@ -104,6 +81,33 @@ EntityAnimationInstance &EntityAnimationInstance::operator=(const EntityAnimatio
 	return *this;
 }
 
+void EntityAnimationInstance::init(const EntityAnimationDefinition &animDef)
+{
+	for (int i = 0; i < animDef.getStateCount(); i++)
+	{
+		const EntityAnimationDefinition::State &defState = animDef.getState(i);
+		EntityAnimationInstance::State instState;
+
+		for (int j = 0; j < defState.getKeyframeListCount(); j++)
+		{
+			const EntityAnimationDefinition::KeyframeList &defKeyframeList = defState.getKeyframeList(j);
+			EntityAnimationInstance::KeyframeList instKeyframeList;
+
+			for (int k = 0; k < defKeyframeList.getKeyframeCount(); k++)
+			{
+				EntityAnimationInstance::Keyframe instKeyframe;
+				// @todo: this will eventually get renderer entity texture handles, likely from looking up in a hash table
+				// of texture asset references (w/ other variables like flipped, reflective, etc.).
+				instKeyframeList.addKeyframe(std::move(instKeyframe));
+			}
+
+			instState.addKeyframeList(std::move(instKeyframeList));
+		}
+
+		this->states.emplace_back(std::move(instState));
+	}
+}
+
 int EntityAnimationInstance::getStateCount() const
 {
 	return static_cast<int>(this->states.size());
@@ -128,16 +132,6 @@ int EntityAnimationInstance::getStateIndex() const
 double EntityAnimationInstance::getCurrentSeconds() const
 {
 	return this->currentSeconds;
-}
-
-void EntityAnimationInstance::addState(State &&state)
-{
-	this->states.push_back(std::move(state));
-}
-
-void EntityAnimationInstance::clearStates()
-{
-	this->states.clear();
 }
 
 void EntityAnimationInstance::setCitizenParams(std::unique_ptr<CitizenParams> &&citizenParams)

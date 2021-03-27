@@ -18,6 +18,7 @@ double MathUtils::almostEqual(double a, double b)
 
 double MathUtils::getRealIndex(int bufferSize, double percent)
 {
+	DebugAssert(bufferSize > 0);
 	const double bufferSizeReal = static_cast<double>(bufferSize);
 
 	// Keep the real index in the same array bounds (i.e. if bufferSize is 5, the max is 4.999...).
@@ -27,6 +28,8 @@ double MathUtils::getRealIndex(int bufferSize, double percent)
 
 int MathUtils::getWrappedIndex(int bufferSize, int index)
 {
+	DebugAssert(bufferSize > 0);
+
 	while (index >= bufferSize)
 	{
 		index -= bufferSize;

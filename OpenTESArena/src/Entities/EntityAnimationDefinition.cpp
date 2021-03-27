@@ -128,11 +128,11 @@ const EntityAnimationDefinition::State &EntityAnimationDefinition::getState(int 
 	return this->states[index];
 }
 
-bool EntityAnimationDefinition::tryGetStateIndex(const char *name, int *outIndex) const
+std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name) const
 {
 	if (String::isNullOrEmpty(name))
 	{
-		return false;
+		return std::nullopt;
 	}
 
 	const int stateCount = static_cast<int>(this->states.size());
@@ -141,12 +141,11 @@ bool EntityAnimationDefinition::tryGetStateIndex(const char *name, int *outIndex
 		const State &state = this->states[i];
 		if (StringView::caseInsensitiveEquals(state.getName(), name))
 		{
-			*outIndex = i;
-			return true;
+			return i;
 		}
 	}
 
-	return false;
+	return std::nullopt;
 }
 
 void EntityAnimationDefinition::addState(State &&state)
@@ -156,10 +155,10 @@ void EntityAnimationDefinition::addState(State &&state)
 
 void EntityAnimationDefinition::removeState(const char *name)
 {
-	int stateIndex;
-	if (this->tryGetStateIndex(name, &stateIndex))
+	const std::optional<int> stateIndex = this->tryGetStateIndex(name);
+	if (stateIndex.has_value())
 	{
-		this->states.erase(this->states.begin() + stateIndex);
+		this->states.erase(this->states.begin() + *stateIndex);
 	}
 }
 

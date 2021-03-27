@@ -20,48 +20,6 @@ namespace
 	// Arbitrary value for how far away a creature can be heard from.
 	// @todo: make this be part of the player, not creatures.
 	constexpr double HearingDistance = 6.0;
-
-	// How far away a citizen will consider idling around the player.
-	constexpr double CitizenIdleDistance = 1.25;
-
-	// Walking speed of citizens.
-	constexpr double CitizenSpeed = 2.25;
-
-	// Allowed directions for citizens to walk.
-	const std::array<std::pair<CardinalDirectionName, NewDouble2>, 4> CitizenDirections =
-	{
-		{
-			{ CardinalDirectionName::North, CardinalDirection::North },
-			{ CardinalDirectionName::East, CardinalDirection::East },
-			{ CardinalDirectionName::South, CardinalDirection::South },
-			{ CardinalDirectionName::West, CardinalDirection::West }
-		}
-	};
-
-	bool TryGetCitizenDirectionFromCardinalDirection(CardinalDirectionName directionName,
-		NewDouble2 *outDirection)
-	{
-		const auto iter = std::find_if(CitizenDirections.begin(), CitizenDirections.end(),
-			[directionName](const auto &pair)
-		{
-			return pair.first == directionName;
-		});
-
-		if (iter != CitizenDirections.end())
-		{
-			*outDirection = iter->second;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	int GetRandomCitizenDirectionIndex(Random &random)
-	{
-		return random.next() % static_cast<int>(CitizenDirections.size());
-	}
 }
 
 DynamicEntity::DynamicEntity()
@@ -77,10 +35,9 @@ void DynamicEntity::initCitizen(EntityDefID defID, const EntityAnimationInstance
 	this->init(defID, animInst);
 	this->derivedType = DynamicEntityType::Citizen;
 
-	if (!TryGetCitizenDirectionFromCardinalDirection(direction, &this->direction))
+	if (!CitizenUtils::tryGetCitizenDirectionFromCardinalDirection(direction, &this->direction))
 	{
-		DebugCrash("Couldn't get citizen direction for \"" +
-			std::to_string(static_cast<int>(direction)) + "\".");
+		DebugCrash("Couldn't get citizen direction for \"" + std::to_string(static_cast<int>(direction)) + "\".");
 	}
 }
 
@@ -138,11 +95,11 @@ double DynamicEntity::nextCreatureSoundWaitTime(Random &random)
 	return 2.75 + (random.nextReal() * 4.50);
 }
 
-bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingHeight)
+bool DynamicEntity::withinHearingDistance(const CoordDouble3 &point, double ceilingScale)
 {
 	const CoordDouble3 position3D(
 		this->position.chunk,
-		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
 	const VoxelDouble3 diff = point - position3D;
 	constexpr double hearingDistanceSqr = HearingDistance * HearingDistance;
 	return diff.lengthSquared() < hearingDistanceSqr;
@@ -175,13 +132,13 @@ bool DynamicEntity::tryGetCreatureSoundFilename(const EntityManager &entityManag
 	return true;
 }
 
-void DynamicEntity::playCreatureSound(const std::string &soundFilename, double ceilingHeight,
+void DynamicEntity::playCreatureSound(const std::string &soundFilename, double ceilingScale,
 	AudioManager &audioManager)
 {
 	// Centered inside the creature.
 	const CoordDouble3 soundCoord(
 		this->position.chunk,
-		VoxelDouble3(this->position.point.x, ceilingHeight * 1.50, this->position.point.y));
+		VoxelDouble3(this->position.point.x, ceilingScale * 1.50, this->position.point.y));
 	const NewDouble3 absoluteSoundPosition = VoxelUtils::coordToNewPoint(soundCoord);
 	audioManager.playSound(soundFilename, absoluteSoundPosition);
 }
@@ -243,40 +200,44 @@ void DynamicEntity::setDestination(const NewDouble2 *point)
 
 void DynamicEntity::updateCitizenState(Game &game, double dt)
 {
-	auto &gameData = game.getGameData();
+	auto &gameState = game.getGameState();
 	auto &random = game.getRandom();
-	const auto &player = gameData.getPlayer();
-	const auto &worldData = gameData.getActiveWorld();
-	const auto &levelData = worldData.getActiveLevel();
-	const auto &voxelGrid = levelData.getVoxelGrid();
-	const auto &entityManager = levelData.getEntityManager();
+	const auto &player = gameState.getPlayer();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const auto &entityManager = activeLevelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
 	const EntityDefinition &entityDef = entityManager.getEntityDef(
 		this->getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
-	// Distance to player is used for switching animation states.
+	// Distance to player and player velocity are used for switching animation states.
 	const CoordDouble3 &playerPosition = player.getPosition();
 	const CoordDouble2 playerPositionXZ(
 		playerPosition.chunk, VoxelDouble2(playerPosition.point.x, playerPosition.point.z));
 	const VoxelDouble2 dirToPlayer = playerPositionXZ - this->position;
 	const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
+	const VoxelDouble3 &playerVelocity = player.getVelocity();
+	const double playerSpeedSqr = playerVelocity.lengthSquared();
+	const bool isPlayerStopped = playerSpeedSqr < Constants::Epsilon;
+
 	// Get idle and walk state indices.
-	int idleStateIndex, walkStateIndex;
-	if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str(), &idleStateIndex))
+	const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+	if (!idleStateIndex.has_value())
 	{
 		DebugLogWarning("Couldn't get citizen idle state index.");
 		return;
 	}
 
-	if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str(), &walkStateIndex))
+	const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+	if (!walkStateIndex.has_value())
 	{
 		DebugLogWarning("Couldn't get citizen walk state index.");
 		return;
 	}
 
-	constexpr double citizenIdleDistSqr = CitizenIdleDistance * CitizenIdleDistance;
+	constexpr double citizenIdleDistSqr = CitizenUtils::IDLE_DISTANCE * CitizenUtils::IDLE_DISTANCE;
 	const auto &playerWeaponAnim = player.getWeaponAnimation();
 	EntityAnimationInstance &animInst = this->getAnimInstance();
 	const int curAnimStateIndex = animInst.getStateIndex();
@@ -284,17 +245,16 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	if (curAnimStateIndex == idleStateIndex)
 	{
 		const bool shouldChangeToWalking = !playerWeaponAnim.isSheathed() ||
-			(distToPlayerSqr > citizenIdleDistSqr);
+			(distToPlayerSqr > citizenIdleDistSqr) || !isPlayerStopped;
 
 		// @todo: need to preserve their previous direction so they stay aligned with
 		// the center of the voxel. Basically need to store cardinal direction as internal state.
 		if (shouldChangeToWalking)
 		{
-			animInst.setStateIndex(walkStateIndex);
-			const int citizenDirectionIndex = GetRandomCitizenDirectionIndex(random);
-			const auto &citizenDirection = CitizenDirections[citizenDirectionIndex];
-			this->direction = citizenDirection.second;
-			this->velocity = this->direction * CitizenSpeed;
+			animInst.setStateIndex(*walkStateIndex);
+			const int citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
+			this->direction = CitizenUtils::getCitizenDirectionByIndex(citizenDirectionIndex);
+			this->velocity = this->direction * CitizenUtils::SPEED;
 		}
 		else
 		{
@@ -305,11 +265,11 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 	else if (curAnimStateIndex == walkStateIndex)
 	{
 		const bool shouldChangeToIdle = playerWeaponAnim.isSheathed() &&
-			(distToPlayerSqr <= citizenIdleDistSqr);
+			(distToPlayerSqr <= citizenIdleDistSqr) && isPlayerStopped;
 
 		if (shouldChangeToIdle)
 		{
-			animInst.setStateIndex(idleStateIndex);
+			animInst.setStateIndex(*idleStateIndex);
 			this->velocity = NewDouble2::Zero;
 		}
 	}
@@ -317,12 +277,12 @@ void DynamicEntity::updateCitizenState(Game &game, double dt)
 
 void DynamicEntity::updateCreatureState(Game &game, double dt)
 {
-	auto &gameData = game.getGameData();
-	const auto &worldData = gameData.getActiveWorld();
-	const auto &levelData = worldData.getActiveLevel();
-	const auto &entityManager = levelData.getEntityManager();
+	auto &gameState = game.getGameState();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const auto &entityManager = activeLevelInst.getEntityManager();
 	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
-	const double ceilingHeight = levelData.getCeilingHeight();
+	const double ceilingScale = activeLevelInst.getCeilingScale();
 
 	// @todo: creature AI
 
@@ -332,15 +292,15 @@ void DynamicEntity::updateCreatureState(Game &game, double dt)
 	if (this->secondsTillCreatureSound <= 0.0)
 	{
 		// See if the NPC is withing hearing distance of the player.
-		const CoordDouble3 &playerPosition = gameData.getPlayer().getPosition();
-		if (this->withinHearingDistance(playerPosition, ceilingHeight))
+		const CoordDouble3 &playerPosition = gameState.getPlayer().getPosition();
+		if (this->withinHearingDistance(playerPosition, ceilingScale))
 		{
 			// See if the NPC has a creature sound.
 			std::string creatureSoundFilename;
 			if (this->tryGetCreatureSoundFilename(entityManager, entityDefLibrary, &creatureSoundFilename))
 			{
 				auto &audioManager = game.getAudioManager();
-				this->playCreatureSound(creatureSoundFilename, ceilingHeight, audioManager);
+				this->playCreatureSound(creatureSoundFilename, ceilingScale, audioManager);
 
 				const double creatureSoundWaitTime =
 					DynamicEntity::nextCreatureSoundWaitTime(game.getRandom());
@@ -355,24 +315,23 @@ void DynamicEntity::updateProjectileState(Game &game, double dt)
 	// @todo: projectile motion + collision
 }
 
-void DynamicEntity::updatePhysics(const WorldData &worldData,
+void DynamicEntity::updatePhysics(const LevelInstance &activeLevel,
 	const EntityDefinitionLibrary &entityDefLibrary, Random &random, double dt)
 {
-	const auto &levelData = worldData.getActiveLevel();
+	const ChunkManager &chunkManager = activeLevel.getChunkManager();
+	const EntityManager &entityManager = activeLevel.getEntityManager();
 	const DynamicEntityType dynamicEntityType = this->getDerivedType();
 
 	if (dynamicEntityType == DynamicEntityType::Citizen)
 	{
 		// Update citizen position and change facing if about to hit something.
-		const auto &voxelGrid = levelData.getVoxelGrid();
-		const auto &entityManager = levelData.getEntityManager();
 		const EntityDefinition &entityDef = entityManager.getEntityDef(
 			this->getDefinitionID(), entityDefLibrary);
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
 		// If citizen and walking, continue walking until next block is not air.
-		int walkStateIndex;
-		if (!animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str(), &walkStateIndex))
+		const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		if (!walkStateIndex.has_value())
 		{
 			DebugLogWarning("Couldn't get citizen walk state index.");
 			return;
@@ -380,48 +339,51 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 
 		const EntityAnimationInstance &animInst = this->getAnimInstance();
 		const int curAnimStateIndex = animInst.getStateIndex();
-		if (curAnimStateIndex == walkStateIndex)
+		if (curAnimStateIndex == *walkStateIndex)
 		{
 			// Integrate by delta time.
 			this->position = this->position + (this->velocity * dt);
 
-			const NewDouble2 absolutePosition = VoxelUtils::coordToNewPoint(this->getPosition());
-			const NewDouble2 &direction = this->getDirection();
+			const CoordDouble2 newPosition = this->getPosition();
+			const VoxelDouble2 &direction = this->getDirection();
 
-			auto getVoxelAtDistance = [&absolutePosition](const NewDouble2 &checkDist)
+			auto getVoxelAtDistance = [&newPosition](const VoxelDouble2 &checkDist) -> CoordInt2
 			{
-				return NewInt2(
-					static_cast<SNInt>(std::floor(absolutePosition.x + checkDist.x)),
-					static_cast<WEInt>(std::floor(absolutePosition.y + checkDist.y)));
+				const CoordDouble2 pos = newPosition + checkDist;
+				return CoordInt2(pos.chunk, VoxelUtils::pointToVoxel(pos.point));
 			};
 
-			const NewInt2 curVoxel = VoxelUtils::pointToVoxel(absolutePosition);
-			const NewInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
+			const CoordInt2 curVoxel(newPosition.chunk, VoxelUtils::pointToVoxel(newPosition.point));
+			const CoordInt2 nextVoxel = getVoxelAtDistance(direction * 0.50);
 
 			if (nextVoxel != curVoxel)
 			{
-				auto isSuitableVoxel = [&voxelGrid](const NewInt2 &voxel)
+				auto isSuitableVoxel = [&chunkManager](const CoordInt2 &coord)
 				{
-					auto isValidVoxel = [&voxelGrid](const NewInt2 &voxel)
+					const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+
+					auto isValidVoxel = [chunk]()
 					{
-						return voxelGrid.coordIsValid(voxel.x, 1, voxel.y);
+						return chunk != nullptr;
 					};
 
-					auto isPassableVoxel = [&voxelGrid](const NewInt2 &voxel)
+					auto isPassableVoxel = [&coord, chunk]()
 					{
-						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 1, voxel.y);
-						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+						const VoxelInt3 voxel(coord.voxel.x, 1, coord.voxel.y);
+						const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 						return voxelDef.type == ArenaTypes::VoxelType::None;
 					};
 
-					auto isWalkableVoxel = [&voxelGrid](const NewInt2 &voxel)
+					auto isWalkableVoxel = [&coord, chunk]()
 					{
-						const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, 0, voxel.y);
-						const VoxelDefinition &voxelDef = voxelGrid.getVoxelDef(voxelID);
+						const VoxelInt3 voxel(coord.voxel.x, 0, coord.voxel.y);
+						const Chunk::VoxelID voxelID = chunk->getVoxel(voxel.x, voxel.y, voxel.z);
+						const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
 						return voxelDef.type == ArenaTypes::VoxelType::Floor;
 					};
 
-					return isValidVoxel(voxel) && isPassableVoxel(voxel) && isWalkableVoxel(voxel);
+					return isValidVoxel() && isPassableVoxel() && isWalkableVoxel();
 				};
 
 				if (!isSuitableVoxel(nextVoxel))
@@ -441,12 +403,12 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 						[&getVoxelAtDistance, &isSuitableVoxel, curDirectionName](int dirIndex)
 					{
 						// See if this is a valid direction to go in.
-						const auto &directionPair = CitizenDirections[dirIndex];
-						const CardinalDirectionName cardinalDirectionName = directionPair.first;
+						const CardinalDirectionName cardinalDirectionName =
+							CitizenUtils::getCitizenDirectionNameByIndex(dirIndex);
 						if (cardinalDirectionName != curDirectionName)
 						{
-							const NewDouble2 &direction = directionPair.second;
-							const NewInt2 voxel = getVoxelAtDistance(direction * 0.50);
+							const NewDouble2 &direction = CitizenUtils::getCitizenDirectionByIndex(dirIndex);
+							const CoordInt2 voxel = getVoxelAtDistance(direction * 0.50);
 							if (isSuitableVoxel(voxel))
 							{
 								return true;
@@ -458,10 +420,9 @@ void DynamicEntity::updatePhysics(const WorldData &worldData,
 
 					if (iter != randomDirectionIndices.end())
 					{
-						const auto &directionPair = CitizenDirections[*iter];
-						const NewDouble2 &newDirection = directionPair.second;
+						const NewDouble2 &newDirection = CitizenUtils::getCitizenDirectionByIndex(*iter);
 						this->setDirection(newDirection);
-						this->velocity = newDirection * CitizenSpeed;
+						this->velocity = newDirection * CitizenUtils::SPEED;
 					}
 					else
 					{
@@ -506,7 +467,9 @@ void DynamicEntity::tick(Game &game, double dt)
 
 	// Update physics/pathfinding/etc..
 	// @todo: add a check here if updating the entity state has put them in a non-physics state.
-	const auto &worldData = game.getGameData().getActiveWorld();
-	const auto &entityDefLibrary = game.getEntityDefinitionLibrary();
-	this->updatePhysics(worldData, entityDefLibrary, game.getRandom(), dt);
+	const GameState &gameState = game.getGameState();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
+	this->updatePhysics(activeLevelInst, entityDefLibrary, game.getRandom(), dt);
 }

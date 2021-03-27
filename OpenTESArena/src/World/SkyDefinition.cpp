@@ -55,7 +55,7 @@ int SkyDefinition::getSkyColorCount() const
 	return this->skyColors.getCount();
 }
 
-const Color &SkyDefinition::getSkyColor(int index)
+const Color &SkyDefinition::getSkyColor(int index) const
 {
 	return this->skyColors.get(index);
 }

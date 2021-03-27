@@ -1,3 +1,6 @@
+#include <cmath>
+
+#include "ArenaSkyUtils.h"
 #include "SkyUtils.h"
 #include "../Math/Constants.h"
 
@@ -12,19 +15,18 @@ int SkyUtils::getOctantIndex(bool posX, bool posY, bool posZ)
 	return xBit | yBit | zBit;
 }
 
-Double3 SkyUtils::getSkyObjectDirection(Radians angleX, Radians angleY)
+VoxelDouble3 SkyUtils::getSkyObjectDirection(Radians angleX, Radians angleY)
 {
-	// @todo: some sine and cosine functions
-	DebugNotImplemented();
-	return Double3();
+	return VoxelDouble3(
+		-std::sin(angleX),
+		std::sin(angleY),
+		-std::cos(angleX)).normalized();
 }
 
 void SkyUtils::getSkyObjectDimensions(int imageWidth, int imageHeight, double *outWidth, double *outHeight)
 {
-	DebugNotImplemented();
-	// @todo: use ArenaSkyUtils constexpr values?
-	*outWidth = 0;
-	*outHeight = 0;
+	*outWidth = static_cast<double>(imageWidth) / ArenaSkyUtils::IDENTITY_DIM;
+	*outHeight = static_cast<double>(imageHeight) / ArenaSkyUtils::IDENTITY_DIM;
 }
 
 int SkyUtils::getStarCountFromDensity(int starDensity)

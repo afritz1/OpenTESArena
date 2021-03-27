@@ -22,14 +22,24 @@ enum class MapType;
 
 namespace ArenaLevelUtils
 {
+	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
+
 	// The distance in voxels that doors will auto-close when the player is far enough away.
 	constexpr double DOOR_CLOSE_DISTANCE = 3.0; // @todo: probably make this a multiple/fraction of ARENA_UNITS
+
+	// Player position bias when entering a world map random dungeon or wild dungeon.
+	constexpr SNInt RANDOM_DUNGEON_PLAYER_START_OFFSET_X = 1;
+	constexpr WEInt RANDOM_DUNGEON_PLAYER_START_OFFSET_Z = 0;
 
 	// Display names for *MENU transition voxels in cities and the wilderness.
 	using MenuNamesList = std::vector<std::pair<NewInt2, std::string>>;
 
-	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 per voxel).
-	double convertArenaCeilingHeight(int ceilingHeight);
+	// Gets the most and least significant bytes from the voxel ID to determine the voxel type/texture/etc..
+	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID);
+	uint8_t getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID);
+
+	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 by default).
+	double convertCeilingHeightToScale(int ceilingHeight);
 
 	// Gets the number of voxels a MAP2 voxel occupies vertically (at least 1).
 	int getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel);

@@ -27,8 +27,9 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, TextureManage
 		const int skyIndex = mapDefinition.getSkyIndexForLevel(i);
 		const SkyDefinition &skyDefinition = mapDefinition.getSky(skyIndex);
 		const SkyInfoDefinition &skyInfoDefinition = mapDefinition.getSkyInfoForSky(skyIndex);
+		constexpr int currentDay = 0; // Doesn't matter for interiors.
 		SkyInstance &skyInst = this->skies.get(i);
-		skyInst.init(skyDefinition, skyInfoDefinition, textureManager);
+		skyInst.init(skyDefinition, skyInfoDefinition, currentDay, textureManager);
 	}
 
 	// Set active level/sky.
@@ -38,7 +39,7 @@ void MapInstance::initInterior(const MapDefinition &mapDefinition, TextureManage
 	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(this->activeLevelIndex);
 }
 
-void MapInstance::initCity(const MapDefinition &mapDefinition, TextureManager &textureManager)
+void MapInstance::initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager)
 {
 	DebugAssert(mapDefinition.getMapType() == MapType::City);
 	this->levels.init(1);
@@ -53,7 +54,7 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, TextureManager &t
 	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
 	const SkyInfoDefinition &skyInfoDefinition = mapDefinition.getSkyInfoForSky(0);
 	SkyInstance &skyInst = this->skies.get(0);
-	skyInst.init(skyDefinition, skyInfoDefinition, textureManager);
+	skyInst.init(skyDefinition, skyInfoDefinition, currentDay, textureManager);
 
 	// Set active level/sky.
 	const std::optional<int> &startLevelIndex = mapDefinition.getStartLevelIndex();
@@ -62,7 +63,7 @@ void MapInstance::initCity(const MapDefinition &mapDefinition, TextureManager &t
 	this->activeSkyIndex = 0;
 }
 
-void MapInstance::initWild(const MapDefinition &mapDefinition, TextureManager &textureManager)
+void MapInstance::initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager)
 {
 	DebugAssert(mapDefinition.getMapType() == MapType::Wilderness);
 	this->levels.init(1);
@@ -77,7 +78,7 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, TextureManager &t
 	const SkyDefinition &skyDefinition = mapDefinition.getSky(0);
 	const SkyInfoDefinition &skyInfoDefinition = mapDefinition.getSkyInfoForSky(0);
 	SkyInstance &skyInst = this->skies.get(0);
-	skyInst.init(skyDefinition, skyInfoDefinition, textureManager);
+	skyInst.init(skyDefinition, skyInfoDefinition, currentDay, textureManager);
 
 	// Set active level/sky.
 	const std::optional<int> &startLevelIndex = mapDefinition.getStartLevelIndex();
@@ -86,7 +87,7 @@ void MapInstance::initWild(const MapDefinition &mapDefinition, TextureManager &t
 	this->activeSkyIndex = 0;
 }
 
-void MapInstance::init(const MapDefinition &mapDefinition, TextureManager &textureManager)
+void MapInstance::init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager)
 {
 	const MapType mapType = mapDefinition.getMapType();
 	if (mapType == MapType::Interior)
@@ -95,11 +96,11 @@ void MapInstance::init(const MapDefinition &mapDefinition, TextureManager &textu
 	}
 	else if (mapType == MapType::City)
 	{
-		this->initCity(mapDefinition, textureManager);
+		this->initCity(mapDefinition, currentDay, textureManager);
 	}
 	else if (mapType == MapType::Wilderness)
 	{
-		this->initWild(mapDefinition, textureManager);
+		this->initWild(mapDefinition, currentDay, textureManager);
 	}
 	else
 	{
@@ -120,6 +121,11 @@ LevelInstance &MapInstance::getLevel(int index)
 const LevelInstance &MapInstance::getLevel(int index) const
 {
 	return this->levels.get(index);
+}
+
+int MapInstance::getActiveLevelIndex() const
+{
+	return this->activeLevelIndex;
 }
 
 LevelInstance &MapInstance::getActiveLevel()
@@ -157,21 +163,22 @@ const SkyInstance &MapInstance::getActiveSky() const
 	return this->skies.get(this->activeSkyIndex);
 }
 
-void MapInstance::setActiveLevelIndex(int levelIndex)
+void MapInstance::setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition)
 {
 	DebugAssert(levelIndex >= 0);
 	DebugAssert(levelIndex < this->levels.getCount());
-	this->activeLevelIndex = levelIndex;
-	
-	// @todo: update sky level index
-	DebugNotImplemented();
+	this->activeLevelIndex = levelIndex;	
+	this->activeSkyIndex = mapDefinition.getSkyIndexForLevel(levelIndex);
 }
 
-void MapInstance::update(double dt, const ChunkInt2 &centerChunk,
-	const MapDefinition &mapDefinition, double latitude, double daytimePercent, int chunkDistance)
+void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
+	double latitude, double daytimePercent, int chunkDistance, const EntityGeneration::EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, AudioManager &audioManager)
 {
 	LevelInstance &levelInst = this->getActiveLevel();
-	levelInst.update(dt, centerChunk, this->activeLevelIndex, mapDefinition, chunkDistance);
+	levelInst.update(dt, game, playerCoord, this->activeLevelIndex, mapDefinition, entityGenInfo, citizenGenInfo,
+		chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager, audioManager);
 
 	SkyInstance &skyInst = this->getActiveSky();
 	skyInst.update(dt, latitude, daytimePercent);

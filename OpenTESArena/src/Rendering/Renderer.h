@@ -10,16 +10,15 @@
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Entities/EntityManager.h"
 #include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Media/TextureUtils.h"
-#include "../World/LevelData.h"
 
 // Container for 2D and 3D rendering operations.
 
 class Color;
-class DistantSky;
 class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
@@ -27,7 +26,6 @@ class EntityManager;
 class Rect;
 class Surface;
 class TextureManager;
-class VoxelGrid;
 
 enum class CursorAlignment;
 
@@ -148,9 +146,9 @@ public:
 	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
 	// function because the exact method of testing may depend on the 3D representation of the entity.
 	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-		const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
-		double entityWidth, double entityHeight, const Double3 &rayPoint,
-		const Double3 &rayDirection, bool pixelPerfect, const Palette &palette, Double3 *outHitPoint) const;
+		const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
+		const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
+		const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;
 
 	// Converts a [0, 1] screen point to a ray through the world. The exact direction is
 	// dependent on renderer details.
@@ -212,30 +210,27 @@ public:
 	// Texture handle allocation functions.
 	// @todo: see RendererSystem3D -- these should take TextureBuilders instead and return optional handles.
 	bool tryCreateVoxelTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
-	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
+	bool tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective,
+		TextureManager &textureManager);
 	bool tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 	bool tryCreateUiTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager);
 
 	// Texture handle freeing functions.
 	// @todo: see RendererSystem3D -- these should take texture IDs instead.
 	void freeVoxelTexture(const TextureAssetReference &textureAssetRef);
-	void freeEntityTexture(const TextureAssetReference &textureAssetRef);
+	void freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective);
 	void freeSkyTexture(const TextureAssetReference &textureAssetRef);
 	void freeUiTexture(const TextureAssetReference &textureAssetRef);
 
 	// Helper methods for changing data in the 3D renderer.
 	void setFogDistance(double fogDistance);
-	EntityRenderID makeEntityRenderID();
-	void setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-		const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager);
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
-	void setDistantSky(const DistantSky &distantSky, const Palette &palette,
-		TextureManager &textureManager);
+	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
 	void setSkyPalette(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active, const Palette &palette);
-	void clearTexturesAndEntityRenderIDs();
-	void clearDistantSky();
+	void clearTextures();
+	void clearSky();
 
 	// Fills the native frame buffer with the draw color, or default black/transparent.
 	void clear(const Color &color);
@@ -254,9 +249,9 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	// If the renderer is uninitialized, this causes a crash.
-	void renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient, double daytimePercent,
+	void renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
-		int chunkDistance, double ceilingHeight, const LevelData &levelData,
+		int chunkDistance, double ceilingScale, const LevelInstance &levelInst, const SkyInstance &skyInst,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 

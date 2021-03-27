@@ -169,9 +169,9 @@ std::optional<Panel::CursorData> ProvinceSearchSubPanel::getCurrentCursor() cons
 std::vector<int> ProvinceSearchSubPanel::getMatchingLocations(Game &game,
 	const std::string &locationName, int provinceIndex, const int **exactLocationIndex)
 {
-	auto &gameData = game.getGameData();
-	const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
-	const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+	auto &gameState = game.getGameState();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
@@ -279,9 +279,9 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 		const int x = 85;
 		const int y = 34;
 
-		auto &gameData = game.getGameData();
-		const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
-		const WorldMapInstance &worldMapInst = gameData.getWorldMapInstance();
+		auto &gameState = game.getGameState();
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+		const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
 		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);

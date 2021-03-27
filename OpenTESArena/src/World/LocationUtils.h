@@ -88,8 +88,8 @@ namespace LocationUtils
 	// require actual location data -- it can just be a place on the map.
 	uint32_t getRulerSeed(const Int2 &localPoint, const Rect &provinceRect);
 
-	// Gets the 32-bit seed for a city's distant sky in the given province.
-	uint32_t getDistantSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect);
+	// Gets the 32-bit seed for a city's sky in the given province.
+	uint32_t getSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect);
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID.
 	uint32_t getDungeonSeed(int localDungeonID, int provinceID,

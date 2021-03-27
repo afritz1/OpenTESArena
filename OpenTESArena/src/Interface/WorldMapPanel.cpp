@@ -10,7 +10,7 @@
 #include "../Assets/CIFFile.h"
 #include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
@@ -119,7 +119,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 
 void WorldMapPanel::render(Renderer &renderer)
 {
-	DebugAssert(this->getGame().gameDataIsActive());
+	DebugAssert(this->getGame().gameStateIsActive());
 
 	// Clear full screen.
 	renderer.clear();
@@ -155,8 +155,8 @@ void WorldMapPanel::render(Renderer &renderer)
 		return;
 	}
 
-	const auto &gameData = this->getGame().getGameData();
-	const int provinceID = gameData.getProvinceDefinition().getRaceID();
+	const auto &gameState = this->getGame().getGameState();
+	const int provinceID = gameState.getProvinceDefinition().getRaceID();
 	const TextureBuilderID provinceTextTextureBuilderID = provinceTextTextureBuilderIDs->getID(provinceID);
 	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
 	renderer.drawOriginal(provinceTextTextureBuilderID, *paletteID, nameOffset.x, nameOffset.y, textureManager);

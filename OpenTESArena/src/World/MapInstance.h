@@ -3,12 +3,14 @@
 
 #include "LevelInstance.h"
 #include "SkyInstance.h"
+#include "../Entities/EntityGeneration.h"
 
 #include "components/utilities/Buffer.h"
 
 // Contains instance data for the associated map definition. This is the current state of voxels,
 // entities, and sky for every level instance in the map.
 
+class AudioManager;
 class MapDefinition;
 class TextureManager;
 
@@ -21,16 +23,17 @@ private:
 	int activeSkyIndex;
 
 	void initInterior(const MapDefinition &mapDefinition, TextureManager &textureManager);
-	void initCity(const MapDefinition &mapDefinition, TextureManager &textureManager);
-	void initWild(const MapDefinition &mapDefinition, TextureManager &textureManager);
+	void initCity(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
+	void initWild(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
 public:
 	MapInstance();
 
-	void init(const MapDefinition &mapDefinition, TextureManager &textureManager);
+	void init(const MapDefinition &mapDefinition, int currentDay, TextureManager &textureManager);
 
 	int getLevelCount() const;
 	LevelInstance &getLevel(int index);
 	const LevelInstance &getLevel(int index) const;
+	int getActiveLevelIndex() const; // For indexing into map definition.
 	LevelInstance &getActiveLevel();
 	const LevelInstance &getActiveLevel() const;
 	
@@ -40,10 +43,14 @@ public:
 	SkyInstance &getActiveSky();
 	const SkyInstance &getActiveSky() const;
 
-	void setActiveLevelIndex(int levelIndex);
+	void setActiveLevelIndex(int levelIndex, const MapDefinition &mapDefinition);
 
-	void update(double dt, const ChunkInt2 &centerChunk, const MapDefinition &mapDefinition,
-		double latitude, double daytimePercent, int chunkDistance);
+	void update(double dt, Game &game, const CoordDouble3 &playerCoord, const MapDefinition &mapDefinition,
+		double latitude, double daytimePercent, int chunkDistance,
+		const EntityGeneration::EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+		TextureManager &textureManager, AudioManager &audioManager);
 };
 
 #endif

@@ -30,13 +30,13 @@ namespace
 	}
 
 	// Voxel geometry generation functions. Generally low X face first, then high X, etc..
-	void GenerateWall(const VoxelDefinition::WallData &wall, const Double3 &origin, double ceilingHeight,
+	void GenerateWall(const VoxelDefinition::WallData &wall, const Double3 &origin, double ceilingScale,
 		BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 6);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Near X
@@ -84,12 +84,12 @@ namespace
 	}
 
 	void GenerateFloor(const VoxelDefinition::FloorData &floor, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Far Y
@@ -102,12 +102,12 @@ namespace
 	}
 
 	void GenerateCeiling(const VoxelDefinition::CeilingData &ceiling, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Near Y
@@ -120,14 +120,14 @@ namespace
 	}
 
 	void GenerateRaised(const VoxelDefinition::RaisedData &raised, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 6);
 
-		const Double3 raisedOrigin = origin + Double3(0.0, raised.yOffset * ceilingHeight, 0.0);
+		const Double3 raisedOrigin = origin + Double3(0.0, raised.yOffset * ceilingScale, 0.0);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(raised.ySize * ceilingHeight);
+		const Double3 yVec = GetYVec(raised.ySize * ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Near X
@@ -175,16 +175,16 @@ namespace
 	}
 
 	void GenerateDiagonal(const VoxelDefinition::DiagonalData &diagonal, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Diagonal orientation depends on type.
-		const Quad face = [&diagonal, &origin, ceilingHeight, &xVec, &yVec, &zVec]()
+		const Quad face = [&diagonal, &origin, ceilingScale, &xVec, &yVec, &zVec]()
 		{
 			if (diagonal.type1)
 			{
@@ -208,12 +208,12 @@ namespace
 	}
 
 	void GenerateTransparentWall(const VoxelDefinition::TransparentWallData &transparent,
-		const Double3 &origin, double ceilingHeight, BufferView<Quad> &outView)
+		const Double3 &origin, double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 4);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Near X
@@ -247,14 +247,14 @@ namespace
 	}
 
 	void GenerateEdge(const VoxelDefinition::EdgeData &edge, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 1);
 
-		const Double3 edgeOrigin = origin + Double3(0.0, edge.yOffset * ceilingHeight, 0.0);
+		const Double3 edgeOrigin = origin + Double3(0.0, edge.yOffset * ceilingScale, 0.0);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		const Quad face = [&edge, &edgeOrigin, &xVec, &yVec, &zVec]()
@@ -295,15 +295,15 @@ namespace
 	}
 
 	void GenerateChasm(const VoxelDefinition::ChasmData &chasm, const Double3 &origin,
-		double ceilingHeight, const VoxelInstance::ChasmState *chasmState, BufferView<Quad> &outView)
+		double ceilingScale, const VoxelInstance::ChasmState *chasmState, BufferView<Quad> &outView)
 	{
 		// Depends on number of faces and chasm type.
 		const int faceCount = outView.getCount();
 		DebugAssert(faceCount > 0);
 
 		const double chasmDepth = (chasm.type == ArenaTypes::ChasmType::Dry) ?
-			ceilingHeight : ArenaVoxelUtils::WET_CHASM_DEPTH;
-		const Double3 chasmOrigin = origin + Double3(0.0, ceilingHeight - chasmDepth, 0.0);
+			ceilingScale : ArenaVoxelUtils::WET_CHASM_DEPTH;
+		const Double3 chasmOrigin = origin + Double3(0.0, ceilingScale - chasmDepth, 0.0);
 
 		const bool hasNorthFace = (chasmState != nullptr) && chasmState->getNorth();
 		const bool hasEastFace = (chasmState != nullptr) && chasmState->getEast();
@@ -375,12 +375,12 @@ namespace
 	}
 
 	void GenerateDoor(const VoxelDefinition::DoorData &door, const Double3 &origin,
-		double ceilingHeight, BufferView<Quad> &outView)
+		double ceilingScale, BufferView<Quad> &outView)
 	{
 		DebugAssert(outView.getCount() == 4);
 
 		const Double3 xVec = GetXVec();
-		const Double3 yVec = GetYVec(ceilingHeight);
+		const Double3 yVec = GetYVec(ceilingScale);
 		const Double3 zVec = GetZVec();
 
 		// Near X
@@ -481,7 +481,7 @@ void VoxelGeometry::getInfo(const VoxelDefinition &voxelDef, const VoxelInstance
 	}
 }
 
-int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxel, double ceilingHeight,
+int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxel, double ceilingScale,
 	const VoxelInstance *voxelInst, Quad *outQuads, int bufferSize)
 {
 	if ((outQuads == nullptr) || (bufferSize <= 0))
@@ -503,7 +503,7 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxe
 	BufferView<Quad> quadView(outQuads, quadCount);
 	const Double3 origin(
 		static_cast<double>(voxel.x),
-		static_cast<double>(voxel.y) * ceilingHeight,
+		static_cast<double>(voxel.y) * ceilingScale,
 		static_cast<double>(voxel.z));
 
 	switch (voxelDef.type)
@@ -511,25 +511,25 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxe
 	case ArenaTypes::VoxelType::None:
 		break;
 	case ArenaTypes::VoxelType::Wall:
-		GenerateWall(voxelDef.wall, origin, ceilingHeight, quadView);
+		GenerateWall(voxelDef.wall, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Floor:
-		GenerateFloor(voxelDef.floor, origin, ceilingHeight, quadView);
+		GenerateFloor(voxelDef.floor, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Ceiling:
-		GenerateCeiling(voxelDef.ceiling, origin, ceilingHeight, quadView);
+		GenerateCeiling(voxelDef.ceiling, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Raised:
-		GenerateRaised(voxelDef.raised, origin, ceilingHeight, quadView);
+		GenerateRaised(voxelDef.raised, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Diagonal:
-		GenerateDiagonal(voxelDef.diagonal, origin, ceilingHeight, quadView);
+		GenerateDiagonal(voxelDef.diagonal, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::TransparentWall:
-		GenerateTransparentWall(voxelDef.transparentWall, origin, ceilingHeight, quadView);
+		GenerateTransparentWall(voxelDef.transparentWall, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Edge:
-		GenerateEdge(voxelDef.edge, origin, ceilingHeight, quadView);
+		GenerateEdge(voxelDef.edge, origin, ceilingScale, quadView);
 		break;
 	case ArenaTypes::VoxelType::Chasm:
 	{
@@ -543,11 +543,11 @@ int VoxelGeometry::getQuads(const VoxelDefinition &voxelDef, const NewInt3 &voxe
 			return nullptr;
 		}();
 
-		GenerateChasm(voxelDef.chasm, origin, ceilingHeight, chasmState, quadView);
+		GenerateChasm(voxelDef.chasm, origin, ceilingScale, chasmState, quadView);
 		break;
 	}
 	case ArenaTypes::VoxelType::Door:
-		GenerateDoor(voxelDef.door, origin, ceilingHeight, quadView);
+		GenerateDoor(voxelDef.door, origin, ceilingScale, quadView);
 		break;
 	default:
 		break;

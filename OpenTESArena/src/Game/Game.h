@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "CharacterCreationState.h"
-#include "GameData.h"
+#include "GameState.h"
 #include "Options.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -18,7 +18,6 @@
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/CinematicLibrary.h"
-#include "../Media/DoorSoundLibrary.h"
 #include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
@@ -27,10 +26,10 @@
 #include "components/utilities/Allocator.h"
 #include "components/utilities/Profiler.h"
 
-// This class holds the current game data, manages the primary game loop, and 
+// This class holds the current game state, manages the primary game loop, and 
 // updates the game state each frame.
 
-// The game data holds all the active player and world data. It is null if a 
+// The game state holds all the active player and world data. It is null if a 
 // game session is not currently running (in the main menu, character creation), 
 // and is not null while a game session is running (in the game world, pause menu, 
 // cinematic, journal, etc.).
@@ -52,9 +51,8 @@ private:
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
-	DoorSoundLibrary doorSoundLibrary;
 	EntityDefinitionLibrary entityDefLibrary;
-	std::unique_ptr<GameData> gameData;
+	std::unique_ptr<GameState> gameState;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
 	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
@@ -119,19 +117,15 @@ public:
 	// Gets the character class library for obtaining various class definitions.
 	const CharacterClassLibrary &getCharacterClassLibrary() const;
 
-	// Gets the door sound library for obtaining various sound mappings.
-	const DoorSoundLibrary &getDoorSoundLibrary() const;
-
 	// Gets the entity definition library for obtaining various entity definitions.
 	const EntityDefinitionLibrary &getEntityDefinitionLibrary() const;
 
-	// Determines if a game session is currently running. This is true when a player
-	// is loaded into memory.
-	bool gameDataIsActive() const;
+	// Determines if a game session is currently running. This is true when a player is loaded into memory.
+	bool gameStateIsActive() const;
 
-	// The game data holds the "session" data for the game. If no session is active, 
-	// do not call this method. Verify beforehand by calling Game::gameDataIsActive().
-	GameData &getGameData() const;
+	// The game state holds the "session" for the game. If no session is active, do not call this method.
+	// Verify beforehand by calling Game::gameStateIsActive().
+	GameState &getGameState() const;
 
 	// Returns whether a new character is currently being created.
 	bool characterCreationIsActive() const;
@@ -199,9 +193,8 @@ public:
 	// never call this, because if they are active, then there are no sub-panels to pop.
 	void popSubPanel();
 
-	// Sets the current game data object. A game session is active if the game data
-	// is not null.
-	void setGameData(std::unique_ptr<GameData> gameData);
+	// Sets the current game state. A game session is active if the game state is not null.
+	void setGameState(std::unique_ptr<GameState> gameState);
 
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.

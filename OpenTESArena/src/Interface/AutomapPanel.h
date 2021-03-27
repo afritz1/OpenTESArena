@@ -8,29 +8,24 @@
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureUtils.h"
-#include "../World/LevelData.h"
 #include "../World/VoxelUtils.h"
 
 // @todo: be able to click somewhere inside the drawable area of the automap and get a 2D voxel
-// coordinate in world space for attaching a note to. Store the note in GameData or something.
+// coordinate in world space for attaching a note to. Store the note in GameState or something.
 
-// @todo: will need to redesign the map rendering code once the voxel grid is gone since it does an
-// offset from the wilderness origin if in the wilderness.
-
-// @todo: maybe split the automap into one texture per chunk. This would make it easier to add
-// new functionality like zooming out, since it would only add/remove textures to the display
-// list instead of resizing one and having to change its coordinates.
+// @todo: maybe split the automap into one texture per chunk
 // - the only worry with this is SDL rendering imprecision, resulting in 1 pixel gaps between chunks.
 // - Texture makeChunkTexture(??Int chunkX, ??Int chunkY);
 // - Int2 getChunkPixelPosition(??Int chunkX, ??Int chunkY); // position on-screen in original render coords
 // - just get the surrounding 3x3 chunks. Does it really matter that it's 2x2 like the original game?
 
+class Chunk;
+class ChunkManager;
 class Color;
 class Renderer;
-class Surface;
 class TextBox;
+class TransitionDefinition;
 class VoxelDefinition;
-class VoxelGrid;
 
 enum class CardinalDirectionName;
 
@@ -51,17 +46,16 @@ private:
 	// a wall, door, water, etc., and some context-sensitive cases like whether a dry chasm
 	// has a wall over it.
 	static const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const NewInt2 &voxel, const LevelData::Transitions &transitions);
+		const TransitionDefinition *transitionDef);
 	static const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const NewInt2 &voxel, const LevelData::Transitions &transitions);
+		const TransitionDefinition *transitionDef);
 
-	// Generates a surface of the automap to be converted to a texture for rendering.
-	static Surface makeAutomap(const NewInt2 &playerVoxel, CardinalDirectionName playerDir,
-		bool isWild, const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions);
+	// Generates a texture of the automap.
+	static Texture makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
+		bool isWild, const ChunkManager &chunkManager, Renderer &renderer);
 
-	// Calculates screen offset of automap for rendering.
-	static Double2 makeAutomapOffset(const NewInt2 &playerVoxel, bool isWild,
-		SNInt gridWidth, WEInt gridDepth);
+	// Calculates automap screen offset in pixels for rendering.
+	static Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
 
 	// Helper function for obtaining relative wild origin in new coordinate system.
 	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
@@ -71,8 +65,8 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game &game, const CoordDouble3 &playerPosition, const NewDouble2 &playerDirection,
-		const VoxelGrid &voxelGrid, const LevelData::Transitions &transitions, const std::string &locationName);
+	AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
+		const ChunkManager &chunkManager, const std::string &locationName);
 	virtual ~AutomapPanel() = default;
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;

@@ -5,9 +5,17 @@
 #include "../Game/CardinalDirection.h"
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
-#include "../World/LevelData.h"
+#include "../World/Chunk.h"
 
 #include "components/debug/Debug.h"
+
+void RendererUtils::LoadedEntityTextureEntry::init(TextureAssetReference &&textureAssetRef, bool flipped,
+	bool reflective)
+{
+	this->textureAssetRef = std::move(textureAssetRef);
+	this->flipped = flipped;
+	this->reflective = reflective;
+}
 
 int RendererUtils::getRenderThreadsFromMode(int mode)
 {
@@ -108,10 +116,10 @@ void RendererUtils::getDiag2Points2D(SNInt voxelX, WEInt voxelZ, NewDouble2 *out
 	*outEnd = *outStart + (diff * Constants::JustBelowOne);
 }
 
-double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const LevelData &levelData)
+double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk)
 {
-	const NewInt3 voxel(voxelX, 1, voxelZ);
-	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
+	const VoxelInt3 voxel(voxelX, 1, voxelZ);
+	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::OpenDoor);
 	if (voxelInst != nullptr)
 	{
 		const VoxelInstance::DoorState &doorState = voxelInst->getDoorState();
@@ -123,10 +131,10 @@ double RendererUtils::getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Level
 	}
 }
 
-double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const LevelData &levelData)
+double RendererUtils::getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk)
 {
-	const NewInt3 voxel(voxelX, voxelY, voxelZ);
-	const VoxelInstance *voxelInst = levelData.tryGetVoxelInstance(voxel, VoxelInstance::Type::Fading);
+	const VoxelInt3 voxel(voxelX, voxelY, voxelZ);
+	const VoxelInstance *voxelInst = chunk.tryGetVoxelInst(voxel, VoxelInstance::Type::Fading);
 	if (voxelInst != nullptr)
 	{
 		const VoxelInstance::FadeState &fadeState = voxelInst->getFadeState();
@@ -176,16 +184,6 @@ Matrix4d RendererUtils::getLatitudeRotation(double latitude)
 Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
 {
 	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
-}
-
-Double3 RendererUtils::getSunDirection(const Matrix4d &timeRotation, double latitude)
-{
-	// The sun gets a bonus to latitude. Arena angle units are 0->100.
-	const double sunLatitude = latitude + (13.0 / 100.0);
-	const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
-	const Double3 baseDir = -Double3::UnitY;
-	const Double4 dir = sunRotation * (timeRotation * Double4(baseDir, 0.0));
-	return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negated for +X south/+Z west.
 }
 
 Double3 RendererUtils::getSunColor(const Double3 &sunDirection, bool isExterior)

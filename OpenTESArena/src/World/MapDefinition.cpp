@@ -102,7 +102,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		// Transpose .MIF dimensions to new dimensions.
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 
-		const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 		levelInfoDef.init(ceilingScale);
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
@@ -205,7 +205,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	BufferView<LevelDefinition> levelDefView(this->levels.get(), this->levels.getCount());
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
@@ -248,7 +248,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
-	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool palaceIsMainQuestDungeon,
+	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
@@ -274,14 +274,14 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	levelDef.init(levelDepth, levelHeight, levelWidth);
 
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	levelInfoDef.init(ceilingScale);
 
-	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, palaceIsMainQuestDungeon,
-		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName,
-		cityType, mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
-		textAssetLibrary, textureManager, &levelDef, &levelInfoDef);
+	MapGeneration::generateMifCity(mif, citySeed, rulerSeed, raceID, isPremade, rulerIsMale, palaceIsMainQuestDungeon,
+		reservedBlocks, blockStartPosX, blockStartPosY, cityBlocksPerSide, coastal, cityTypeName, cityType,
+		mainQuestTempleOverride, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary,
+		textureManager, &levelDef, &levelInfoDef);
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
@@ -297,11 +297,10 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 }
 
 bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
-	uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-	ArenaTypes::CityType cityType, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-	const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager)
+	uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
@@ -311,7 +310,8 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	{
 		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
 		{
-			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(x, y);
+			// Transpose the XY coordinate since the wild block IDs buffer is in original space.
+			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(y, x);
 			const auto iter = std::find(uniqueWildBlockIDs.begin(), uniqueWildBlockIDs.end(), blockID);
 
 			int levelDefIndex;
@@ -348,7 +348,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 	const INFFile::CeilingData &ceiling = inf.getCeiling();
-	const double ceilingScale = ArenaLevelUtils::convertArenaCeilingHeight(ceiling.height);
+	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
 	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
@@ -357,9 +357,9 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
-	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView,
-		rulerSeed, palaceIsMainQuestDungeon, cityType, inf, charClassLibrary, entityDefLibrary,
-		binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef, &buildingNameInfos);
+	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
+		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,
+		&buildingNameInfos);
 
 	SkyDefinition &skyDef = this->skies.get(0);
 	SkyInfoDefinition &skyInfoDef = this->skyInfos.get(0);
@@ -431,12 +431,12 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 			return false;
 		}
 
-		ArenaRandom random(dungeonGenInfo.dungeonDef->dungeonSeed);
+		ArenaRandom random(dungeonGenInfo.dungeonDef.dungeonSeed);
 
 		// Generate dungeon levels and get the player start point.
 		LevelInt2 startPoint;
-		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef->widthChunkCount,
-			dungeonGenInfo.dungeonDef->heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
+		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef.widthChunkCount,
+			dungeonGenInfo.dungeonDef.heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &startPoint);
 
 		const LevelDouble2 startPointReal = VoxelUtils::getVoxelCenter(startPoint);
@@ -446,8 +446,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	}
 	else
 	{
-		DebugCrash("Unrecognized interior generation type \"" +
-			std::to_string(static_cast<int>(interiorType)) + "\".");
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(interiorType)));
 	}
 	
 	return true;
@@ -484,9 +483,10 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	// Generate city level (optionally generating random city blocks if not premade).
 	this->initCityLevel(mif, generationInfo.citySeed, generationInfo.rulerSeed, generationInfo.raceID,
 		generationInfo.isPremade, reservedBlocks, generationInfo.blockStartPosX, generationInfo.blockStartPosY,
-		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.palaceIsMainQuestDungeon,
-		generationInfo.cityTypeName, generationInfo.cityType, mainQuestTempleOverride, skyGenInfo, inf,
-		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textAssetLibrary, textureManager);
+		generationInfo.cityBlocksPerSide, generationInfo.coastal, generationInfo.rulerIsMale,
+		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityTypeName, generationInfo.cityType,
+		mainQuestTempleOverride, skyGenInfo, inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary,
+		textAssetLibrary, textureManager);
 	this->initStartPoints(mif);
 	this->startLevelIndex = 0;
 	return true;
@@ -510,9 +510,9 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 	
 	const BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs.get(),
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
+	const LocationDefinition::CityDefinition &cityDef = *generationInfo.cityDef;
 
-	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, generationInfo.rulerSeed,
-		generationInfo.palaceIsMainQuestDungeon, generationInfo.cityType, exteriorSkyGenInfo, inf,
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, exteriorSkyGenInfo, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	// No start level index and no start points in the wilderness due to the nature of chunks.

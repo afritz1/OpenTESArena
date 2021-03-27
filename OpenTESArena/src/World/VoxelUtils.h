@@ -12,10 +12,10 @@ enum class VoxelFacing3D;
 
 namespace VoxelUtils
 {
-	const NewInt2 North(-1, 0);
-	const NewInt2 South(1, 0);
-	const NewInt2 East(0, -1);
-	const NewInt2 West(0, 1);
+	const VoxelInt2 North(-1, 0);
+	const VoxelInt2 South(1, 0);
+	const VoxelInt2 East(0, -1);
+	const VoxelInt2 West(0, 1);
 
 	// Transformation methods for converting voxel coordinates between the original game's format
 	// (+X west, +Z south) and the new format (+X south, +Z west). This is a bi-directional
@@ -25,6 +25,7 @@ namespace VoxelUtils
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Gets the voxel a point is in.
+	VoxelInt3 pointToVoxel(const VoxelDouble3 &point, double ceilingScale);
 	VoxelInt3 pointToVoxel(const VoxelDouble3 &point);
 	VoxelInt2 pointToVoxel(const VoxelDouble2 &point);
 
@@ -35,6 +36,7 @@ namespace VoxelUtils
 	NewDouble3 coordToNewPoint(const CoordDouble3 &coord);
 	NewDouble2 coordToNewPoint(const CoordDouble2 &coord);
 	NewInt3 coordToNewVoxel(const CoordInt3 &coord);
+	NewInt2 coordToNewVoxel(const CoordInt2 &coord);
 	NewInt2 chunkVoxelToNewVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
 	// Converts a voxel from new voxel grid space to chunk voxel space.
@@ -53,6 +55,8 @@ namespace VoxelUtils
 	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);
 
 	// Adds half of a voxel to the voxel coordinate to get its center point.
+	Double3 getVoxelCenter(const Int3 &voxel, double ceilingScale);
+	Double3 getVoxelCenter(const Int3 &voxel);
 	Double2 getVoxelCenter(const Int2 &voxel);
 
 	// Gets the normal associated with a voxel facing.

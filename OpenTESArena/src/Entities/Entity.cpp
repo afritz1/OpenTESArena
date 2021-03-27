@@ -8,7 +8,6 @@ Entity::Entity()
 {
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
-	this->renderID = EntityManager::NO_RENDER_ID;
 	this->animInst.reset();
 }
 
@@ -27,11 +26,6 @@ EntityID Entity::getID() const
 EntityDefID Entity::getDefinitionID() const
 {
 	return this->defID;
-}
-
-EntityRenderID Entity::getRenderID() const
-{
-	return this->renderID;
 }
 
 const CoordDouble2 &Entity::getPosition() const
@@ -54,16 +48,10 @@ void Entity::setID(EntityID id)
 	this->id = id;
 }
 
-void Entity::setRenderID(EntityRenderID id)
-{
-	this->renderID = id;
-}
-
-void Entity::setPosition(const CoordDouble2 &position, EntityManager &entityManager,
-	const VoxelGrid &voxelGrid)
+void Entity::setPosition(const CoordDouble2 &position, EntityManager &entityManager)
 {
 	this->position = position;
-	entityManager.updateEntityChunk(this, voxelGrid);
+	entityManager.updateEntityChunk(this);
 }
 
 void Entity::reset()
@@ -72,7 +60,6 @@ void Entity::reset()
 	// group between lifetimes.
 	this->id = EntityManager::NO_ID;
 	this->defID = EntityManager::NO_DEF_ID;
-	this->renderID = EntityManager::NO_RENDER_ID;
 	this->position = CoordDouble2(ChunkInt2::Zero, VoxelDouble2::Zero);
 	this->animInst.reset();
 }
@@ -81,9 +68,10 @@ void Entity::tick(Game &game, double dt)
 {
 	const EntityAnimationDefinition &animDef = [this, &game]() -> const EntityAnimationDefinition&
 	{
-		const WorldData &worldData = game.getGameData().getActiveWorld();
-		const LevelData &levelData = worldData.getActiveLevel();
-		const EntityManager &entityManager = levelData.getEntityManager();
+		const GameState &gameState = game.getGameState();
+		const MapInstance &mapInst = gameState.getActiveMapInst();
+		const LevelInstance &levelInst = mapInst.getActiveLevel();
+		const EntityManager &entityManager = levelInst.getEntityManager();
 		const EntityDefinitionLibrary &entityDefLibrary = game.getEntityDefinitionLibrary();
 		const EntityDefinition &entityDef = entityManager.getEntityDef(
 			this->getDefinitionID(), entityDefLibrary);

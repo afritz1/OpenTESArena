@@ -11,7 +11,7 @@ enum class VoxelFacing3D;
 class VoxelInstance
 {
 public:
-	enum class Type { Chasm, OpenDoor, Fading };
+	enum class Type { Chasm, OpenDoor, Fading, Trigger };
 
 	// @todo: maybe a BashState?
 
@@ -65,6 +65,16 @@ public:
 
 		void update(double dt);
 	};
+
+	class TriggerState
+	{
+	private:
+		bool triggered;
+	public:
+		void init(bool triggered);
+
+		bool isTriggered() const;
+	};
 private:
 	SNInt x;
 	int y;
@@ -76,6 +86,7 @@ private:
 		ChasmState chasm;
 		DoorState door;
 		FadeState fade;
+		TriggerState trigger;
 	};
 
 	void init(SNInt x, int y, WEInt z, Type type);
@@ -96,6 +107,8 @@ public:
 	// Default to beginning fade.
 	static VoxelInstance makeFading(SNInt x, int y, WEInt z, double speed);
 
+	static VoxelInstance makeTrigger(SNInt x, int y, WEInt z, bool triggered);
+
 	SNInt getX() const;
 	int getY() const;
 	WEInt getZ() const;
@@ -106,6 +119,8 @@ public:
 	const DoorState &getDoorState() const;
 	FadeState &getFadeState();
 	const FadeState &getFadeState() const;
+	TriggerState &getTriggerState();
+	const TriggerState &getTriggerState() const;
 
 	// Returns whether the voxel instance is worth keeping alive because it has unique data active.
 	bool hasRelevantState() const;

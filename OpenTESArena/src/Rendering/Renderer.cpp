@@ -19,7 +19,6 @@
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Utilities/Platform.h"
-#include "../World/VoxelGrid.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -392,32 +391,42 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 }
 
 bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
-	const Double3 &entityForward, const Double3 &entityRight, const Double3 &entityUp,
-	double entityWidth, double entityHeight, const Double3 &rayPoint, const Double3 &rayDirection,
-	bool pixelPerfect, const Palette &palette, Double3 *outHitPoint) const
+	const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
+	const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
+	const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const
 {
 	DebugAssert(this->renderer3D->isInited());
 	const Entity &entity = *visData.entity;
 
 	// Do a ray test to see if the ray intersects.
+	const NewDouble3 absoluteRayPoint = VoxelUtils::coordToNewPoint(rayPoint);
 	const NewDouble3 absoluteFlatPosition = VoxelUtils::coordToNewPoint(visData.flatPosition);
-	if (MathUtils::rayPlaneIntersection(rayPoint, rayDirection, absoluteFlatPosition,
-		entityForward, outHitPoint))
+	NewDouble3 absoluteHitPoint;
+	if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
+		entityForward, &absoluteHitPoint))
 	{
-		const Double3 diff = (*outHitPoint) - absoluteFlatPosition;
+		const NewDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
 
 		// Get the texture coordinates. It's okay if they are outside the entity.
 		const Double2 uv(
 			0.5 - (diff.dot(entityRight) / entityWidth),
 			1.0 - (diff.dot(entityUp) / entityHeight));
 
+		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+		const EntityAnimationDefinition::State &animState = animDef.getState(visData.stateIndex);
+		const EntityAnimationDefinition::KeyframeList &animKeyframeList = animState.getKeyframeList(visData.angleIndex);
+		const EntityAnimationDefinition::Keyframe &animKeyframe = animKeyframeList.getKeyframe(visData.keyframeIndex);
+		const TextureAssetReference &textureAssetRef = animKeyframe.getTextureAssetRef();
+		const bool flipped = animKeyframeList.isFlipped();
+		const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
+
 		// See if the ray successfully hit a point on the entity, and that point is considered
 		// selectable (i.e. it's not transparent).
 		bool isSelected;
-		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv,
-			entity.getRenderID(), visData.stateIndex, visData.angleIndex, visData.keyframeIndex,
-			pixelPerfect, palette, &isSelected);
+		const bool withinEntity = this->renderer3D->tryGetEntitySelectionData(uv, textureAssetRef, flipped,
+			reflective, pixelPerfect, palette, &isSelected);
 
+		*outHitPoint = VoxelUtils::newPointToCoord(absoluteHitPoint);
 		return withinEntity && isSelected;
 	}
 	else
@@ -786,9 +795,10 @@ bool Renderer::tryCreateVoxelTexture(const TextureAssetReference &textureAssetRe
 	return this->renderer3D->tryCreateVoxelTexture(textureAssetRef, textureManager);
 }
 
-bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
+bool Renderer::tryCreateEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped,
+	bool reflective, TextureManager &textureManager)
 {
-	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, textureManager);
+	return this->renderer3D->tryCreateEntityTexture(textureAssetRef, flipped, reflective, textureManager);
 }
 
 bool Renderer::tryCreateSkyTexture(const TextureAssetReference &textureAssetRef, TextureManager &textureManager)
@@ -806,9 +816,9 @@ void Renderer::freeVoxelTexture(const TextureAssetReference &textureAssetRef)
 	this->renderer3D->freeVoxelTexture(textureAssetRef);
 }
 
-void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef)
+void Renderer::freeEntityTexture(const TextureAssetReference &textureAssetRef, bool flipped, bool reflective)
 {
-	this->renderer3D->freeEntityTexture(textureAssetRef);
+	this->renderer3D->freeEntityTexture(textureAssetRef, flipped, reflective);
 }
 
 void Renderer::freeSkyTexture(const TextureAssetReference &textureAssetRef)
@@ -826,19 +836,6 @@ void Renderer::setFogDistance(double fogDistance)
 	this->renderer3D->setFogDistance(fogDistance);
 }
 
-EntityRenderID Renderer::makeEntityRenderID()
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->makeEntityRenderID();
-}
-
-void Renderer::setFlatTextures(EntityRenderID entityRenderID, const EntityAnimationDefinition &animDef,
-	const EntityAnimationInstance &animInst, bool isPuddle, TextureManager &textureManager)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setFlatTextures(entityRenderID, animDef, animInst, isPuddle, textureManager);
-}
-
 void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 	int width, int height, const Palette &palette)
 {
@@ -846,11 +843,10 @@ void Renderer::addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *c
 	this->renderer3D->addChasmTexture(chasmType, colors, width, height, palette);
 }
 
-void Renderer::setDistantSky(const DistantSky &distantSky, const Palette &palette,
-	TextureManager &textureManager)
+void Renderer::setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setDistantSky(distantSky, palette, textureManager);
+	this->renderer3D->setSky(skyInstance, palette, textureManager);
 }
 
 void Renderer::setSkyPalette(const uint32_t *colors, int count)
@@ -865,16 +861,16 @@ void Renderer::setNightLightsActive(bool active, const Palette &palette)
 	this->renderer3D->setNightLightsActive(active, palette);
 }
 
-void Renderer::clearTexturesAndEntityRenderIDs()
+void Renderer::clearTextures()
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearTexturesAndEntityRenderIDs();
+	this->renderer3D->clearTextures();
 }
 
-void Renderer::clearDistantSky()
+void Renderer::clearSky()
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->clearDistantSky();
+	this->renderer3D->clearSky();
 }
 
 void Renderer::clear(const Color &color)
@@ -954,10 +950,10 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 	SDL_RenderFillRect(this->renderer, &rect.getRect());
 }
 
-void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, double fovY, double ambient,
+void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
-	bool playerHasLight, int chunkDistance, double ceilingHeight, const LevelData &levelData,
-	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
+	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
+	const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->renderer3D->isInited());
@@ -973,9 +969,9 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &forward, doub
 
 	// Render the game world to the game world frame buffer.
 	const auto startTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->render(eye, forward, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
-		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingHeight, levelData,
-		entityDefLibrary, palette, gameWorldPixels);
+	this->renderer3D->render(eye, direction, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
+		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingScale, levelInst,
+		skyInst, entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

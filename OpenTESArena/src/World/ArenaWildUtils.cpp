@@ -4,10 +4,8 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWildUtils.h"
 #include "ClimateType.h"
-#include "LocationDefinition.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
-#include "VoxelGrid.h"
 #include "WeatherUtils.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
@@ -148,44 +146,19 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 	return indices;
 }
 
-void ArenaWildUtils::reviseWildernessCity(const LocationDefinition &locationDef,
-	Buffer2D<uint16_t> &flor, Buffer2D<uint16_t> &map1, Buffer2D<uint16_t> &map2,
+bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
+{
+	return (wildBlockID >= 1) && (wildBlockID <= 4);
+}
+
+void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
+	BufferView2D<ArenaTypes::VoxelID> &flor, BufferView2D<ArenaTypes::VoxelID> &map1,
+	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationDefinition::CityDefinition &cityDef,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
-	// For now, assume the given buffers are for the entire 4096x4096 wilderness.
-	// @todo: change to only care about 128x128 layers.
-	DebugAssert(flor.getWidth() == (ArenaWildUtils::WILD_WIDTH * RMDFile::WIDTH));
-	DebugAssert(flor.getWidth() == flor.getHeight());
-	DebugAssert(flor.getWidth() == map1.getWidth());
-	DebugAssert(flor.getWidth() == map2.getWidth());
-
-	// Clear all placeholder city blocks.
-	constexpr int placeholderWidth = RMDFile::WIDTH * 2;
-	constexpr int placeholderDepth = RMDFile::DEPTH * 2;
-
-	// @todo: change to only care about 128x128 floors -- these should both be removed.
-	constexpr WEInt xOffset = RMDFile::WIDTH * 31;
-	constexpr SNInt zOffset = RMDFile::DEPTH * 31;
-
-	for (WEInt x = 0; x < placeholderWidth; x++)
-	{
-		const int startIndex = zOffset + ((x + xOffset) * flor.getHeight());
-
-		auto clearRow = [placeholderDepth, startIndex](Buffer2D<uint16_t> &dst)
-		{
-			const auto dstBegin = dst.get() + startIndex;
-			const auto dstEnd = dstBegin + placeholderDepth;
-			DebugAssert(dstEnd <= dst.end());
-			std::fill(dstBegin, dstEnd, 0);
-		};
-
-		clearRow(flor);
-		clearRow(map1);
-		clearRow(map2);
-	}
+	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));
 
 	// Get city generation info -- the .MIF filename to load for the city skeleton.
-	const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 	const std::string mifName = cityDef.mapFilename;
 	MIFFile mif;
 	if (!mif.init(mifName.c_str()))
@@ -197,12 +170,12 @@ void ArenaWildUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 	const MIFFile::Level &level = mif.getLevel(0);
 
 	// Buffers for the city data. Copy the .MIF data into them.
-	Buffer2D<uint16_t> cityFlor(mif.getWidth(), mif.getDepth());
-	Buffer2D<uint16_t> cityMap1(mif.getWidth(), mif.getDepth());
-	Buffer2D<uint16_t> cityMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<uint16_t> cityFlorView(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight());
-	BufferView2D<uint16_t> cityMap1View(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight());
-	BufferView2D<uint16_t> cityMap2View(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight());
+	Buffer2D<ArenaTypes::VoxelID> cityFlor(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaTypes::VoxelID> cityMap1(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaTypes::VoxelID> cityMap2(mif.getWidth(), mif.getDepth());
+	BufferView2D<ArenaTypes::VoxelID> cityFlorView(cityFlor.get(), cityFlor.getWidth(), cityFlor.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> cityMap1View(cityMap1.get(), cityMap1.getWidth(), cityMap1.getHeight());
+	BufferView2D<ArenaTypes::VoxelID> cityMap2View(cityMap2.get(), cityMap2.getWidth(), cityMap2.getHeight());
 	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have
@@ -265,20 +238,37 @@ void ArenaWildUtils::reviseWildernessCity(const LocationDefinition &locationDef,
 			}
 		}
 	}
+	
+	DebugAssert(flor.getWidth() == RMDFile::WIDTH);
+	DebugAssert(flor.getWidth() == flor.getHeight());
+	DebugAssert(flor.getWidth() == map1.getWidth());
+	DebugAssert(flor.getWidth() == map2.getWidth());
 
-	// Write city buffers into the wilderness.
-	for (SNInt z = 0; z < mif.getDepth(); z++)
+	// Clear all voxels in the wild chunk.
+	flor.fill(0);
+	map1.fill(0);
+	map2.fill(0);
+
+	// Write city buffers into the wilderness. The city is most likely bigger than the wild chunk so this will
+	// only write part of the city. Wild blocks are ordered like this from a top down view:
+	// 2 1
+	// 4 3
+	const WEInt cityStartX = ((wildBlockID == 1) || (wildBlockID == 3)) ? 0 : RMDFile::WIDTH;
+	const WEInt cityEndX = cityStartX + std::min(RMDFile::WIDTH, mif.getWidth() - cityStartX);
+	const SNInt cityStartZ = ((wildBlockID == 1) || (wildBlockID == 2)) ? 0 : RMDFile::DEPTH;
+	const SNInt cityEndZ = cityStartZ + std::min(RMDFile::DEPTH, mif.getDepth() - cityStartZ);
+	for (SNInt cityZ = cityStartZ; cityZ < cityEndZ; cityZ++)
 	{
-		for (WEInt x = 0; x < mif.getWidth(); x++)
+		for (WEInt cityX = cityStartX; cityX < cityEndX; cityX++)
 		{
-			const uint16_t srcFlorVoxel = cityFlor.get(x, z);
-			const uint16_t srcMap1Voxel = cityMap1.get(x, z);
-			const uint16_t srcMap2Voxel = cityMap2.get(x, z);
-			const WEInt dstX = xOffset + x;
-			const SNInt dstZ = zOffset + z;
-			flor.set(dstX, dstZ, srcFlorVoxel);
-			map1.set(dstX, dstZ, srcMap1Voxel);
-			map2.set(dstX, dstZ, srcMap2Voxel);
+			const WEInt chunkVoxelX = cityX - cityStartX;
+			const SNInt chunkVoxelZ = cityZ - cityStartZ;
+			const ArenaTypes::VoxelID cityFlorVoxel = cityFlor.get(cityX, cityZ);
+			const ArenaTypes::VoxelID cityMap1Voxel = cityMap1.get(cityX, cityZ);
+			const ArenaTypes::VoxelID cityMap2Voxel = cityMap2.get(cityX, cityZ);
+			flor.set(chunkVoxelX, chunkVoxelZ, cityFlorVoxel);
+			map1.set(chunkVoxelX, chunkVoxelZ, cityMap1Voxel);
+			map2.set(chunkVoxelX, chunkVoxelZ, cityMap2Voxel);
 		}
 	}
 }

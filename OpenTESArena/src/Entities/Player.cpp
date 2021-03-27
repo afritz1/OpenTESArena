@@ -8,14 +8,12 @@
 #include "Player.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
-#include "../World/LevelData.h"
+#include "../World/LevelUtils.h"
 #include "../World/VoxelDefinition.h"
-#include "../World/VoxelGrid.h"
-#include "../World/WorldData.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -110,6 +108,11 @@ Double2 Player::getGroundDirection() const
 	return Double2(direction.x, direction.z).normalized();
 }
 
+const VoxelDouble3 &Player::getVelocity() const
+{
+	return this->velocity;
+}
+
 double Player::getJumpMagnitude() const
 {
 	return Player::JUMP_VELOCITY;
@@ -131,7 +134,7 @@ double Player::getFeetY() const
 	return cameraY - Player::HEIGHT;
 }
 
-bool Player::onGround(const WorldData &worldData) const
+bool Player::onGround(const LevelInstance &activeLevel) const
 {
 	// @todo: find a non-hack way to do this.
 
@@ -189,59 +192,62 @@ void Player::lookAt(const CoordDouble3 &point)
 	this->camera.lookAt(point);
 }
 
-void Player::handleCollision(const WorldData &worldData, double dt)
+void Player::handleCollision(const LevelInstance &activeLevel, double dt)
 {
-	const LevelData &activeLevel = worldData.getActiveLevel();
+	const ChunkManager &chunkManager = activeLevel.getChunkManager();
 
-	auto getVoxelDef = [&activeLevel](const NewInt3 &voxel) -> VoxelDefinition
+	auto tryGetVoxelDef = [&activeLevel, &chunkManager](const CoordInt3 &coord) -> const VoxelDefinition*
 	{
-		const VoxelGrid &voxelGrid = activeLevel.getVoxelGrid();
-
-		// Voxels outside the world are air.
-		if ((voxel.x < 0) || (voxel.x >= voxelGrid.getWidth()) ||
-			(voxel.y < 0) || (voxel.y >= voxelGrid.getHeight()) ||
-			(voxel.z < 0) || (voxel.z >= voxelGrid.getDepth()))
+		const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+		if (chunk != nullptr)
 		{
-			return VoxelDefinition();
+			const Chunk::VoxelID voxelID = chunk->getVoxel(coord.voxel.x, coord.voxel.y, coord.voxel.z);
+			const VoxelDefinition &voxelDef = chunk->getVoxelDef(voxelID);
+			return &voxelDef;
 		}
 		else
 		{
-			const uint16_t voxelID = voxelGrid.getVoxel(voxel.x, voxel.y, voxel.z);
-			return voxelGrid.getVoxelDef(voxelID);
+			// Chunks not in the chunk manager are air.
+			return nullptr;
 		}
 	};
 
 	// Coordinates of the base of the voxel the feet are in.
 	// - @todo: add delta velocity Y?
 	const int feetVoxelY = static_cast<int>(std::floor(
-		this->getFeetY() / activeLevel.getCeilingHeight()));
+		this->getFeetY() / activeLevel.getCeilingScale()));
 
-	// Get the voxel data for each voxel the player would touch on each axis.
-	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
-	const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPoint);
-	const NewInt3 xVoxel(
-		static_cast<SNInt>(std::floor(absolutePlayerPoint.x + (this->velocity.x * dt))),
-		feetVoxelY,
-		absolutePlayerVoxel.z);
-	const NewInt3 yVoxel(
-		absolutePlayerVoxel.x,
-		feetVoxelY,
-		absolutePlayerVoxel.z);
-	const NewInt3 zVoxel(
-		absolutePlayerVoxel.x,
-		feetVoxelY,
-		static_cast<WEInt>(std::floor(absolutePlayerPoint.z + (this->velocity.z * dt))));
+	// Regular old Euler integration in XZ plane.
+	const CoordDouble3 curPlayerCoord = this->getPosition();
+	const VoxelDouble3 deltaPosition(this->velocity.x * dt, 0.0, this->velocity.z * dt);
 
-	const VoxelDefinition &xVoxelDef = getVoxelDef(xVoxel);
-	const VoxelDefinition &yVoxelDef = getVoxelDef(yVoxel);
-	const VoxelDefinition &zVoxelDef = getVoxelDef(zVoxel);
+	// The next voxels in X/Y/Z directions based on player movement.
+	const VoxelInt3 nextXVoxel(
+		static_cast<SNInt>(std::floor(curPlayerCoord.point.x + deltaPosition.x)),
+		feetVoxelY,
+		static_cast<WEInt>(std::floor(curPlayerCoord.point.z)));
+	const VoxelInt3 nextYVoxel(
+		static_cast<SNInt>(std::floor(curPlayerCoord.point.x)),
+		nextXVoxel.y,
+		nextXVoxel.z);
+	const VoxelInt3 nextZVoxel(
+		nextYVoxel.x,
+		nextYVoxel.y,
+		static_cast<WEInt>(std::floor(curPlayerCoord.point.z + deltaPosition.z)));
+
+	const CoordInt3 nextXCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextXVoxel);
+	const CoordInt3 nextYCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextYVoxel);
+	const CoordInt3 nextZCoord = ChunkUtils::recalculateCoord(curPlayerCoord.chunk, nextZVoxel);
+	const VoxelDefinition *xVoxelDef = tryGetVoxelDef(nextXCoord);
+	const VoxelDefinition *yVoxelDef = tryGetVoxelDef(nextYCoord);
+	const VoxelDefinition *zVoxelDef = tryGetVoxelDef(nextZCoord);
 
 	// Check horizontal collisions.
 
 	// -- Temp hack until Y collision detection is implemented --
 	// - @todo: formalize the collision calculation and get rid of this hack.
 	//   We should be able to cover all collision cases in Arena now.
-	auto wouldCollideWithVoxel = [&activeLevel](const NewInt3 &voxel, const VoxelDefinition &voxelDef)
+	auto wouldCollideWithVoxel = [&chunkManager](const CoordInt3 &coord, const VoxelDefinition &voxelDef)
 	{
 		if (voxelDef.type == ArenaTypes::VoxelType::TransparentWall)
 		{
@@ -258,13 +264,16 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 		else
 		{
+			const Chunk *chunk = chunkManager.tryGetChunk(coord.chunk);
+			DebugAssert(chunk != nullptr);
+
 			// General voxel collision.
 			const bool isEmpty = voxelDef.type == ArenaTypes::VoxelType::None;
-			const bool isOpenDoor = [&activeLevel, &voxel, &voxelDef]()
+			const bool isOpenDoor = [&coord, &voxelDef, chunk]()
 			{
 				if (voxelDef.type == ArenaTypes::VoxelType::Door)
 				{
-					const VoxelInstance *doorInst = activeLevel.tryGetVoxelInstance(voxel, VoxelInstance::Type::OpenDoor);
+					const VoxelInstance *doorInst = chunk->tryGetVoxelInst(coord.voxel, VoxelInstance::Type::OpenDoor);
 					const bool isClosed = doorInst == nullptr;
 					return !isClosed;
 				}
@@ -276,18 +285,13 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 
 			// -- Temporary hack for "on voxel enter" transitions --
 			// - @todo: replace with "on would enter voxel" event and near facing check.
-			const bool isLevelTransition = [&activeLevel, &voxel, &voxelDef]()
+			const bool isLevelTransition = [&coord, &voxelDef, chunk]()
 			{
 				if (voxelDef.type == ArenaTypes::VoxelType::Wall)
 				{
-					const LevelData::Transitions &transitions = activeLevel.getTransitions();
-					const auto transitionIter = transitions.find(NewInt2(voxel.x, voxel.z));
-					if (transitionIter == transitions.end())
-					{
-						return false;
-					}
-
-					return transitionIter->second.getType() != LevelData::Transition::Type::Menu;
+					// Check if there is a level change transition definition for this voxel.
+					const TransitionDefinition *transitionDef = chunk->tryGetTransition(coord.voxel);
+					return (transitionDef != nullptr) && (transitionDef->getType() == TransitionType::LevelChange);
 				}
 				else
 				{
@@ -299,12 +303,12 @@ void Player::handleCollision(const WorldData &worldData, double dt)
 		}
 	};
 
-	if (wouldCollideWithVoxel(xVoxel, xVoxelDef))
+	if ((xVoxelDef != nullptr) && wouldCollideWithVoxel(nextXCoord, *xVoxelDef))
 	{
 		this->velocity.x = 0.0;
 	}
 
-	if (wouldCollideWithVoxel(zVoxel, zVoxelDef))
+	if ((zVoxelDef != nullptr) && wouldCollideWithVoxel(nextZCoord, *zVoxelDef))
 	{
 		this->velocity.z = 0.0;
 	}
@@ -374,22 +378,18 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	}
 }
 
-void Player::updatePhysics(const WorldData &worldData, bool collision, double dt)
+void Player::updatePhysics(const LevelInstance &activeLevel, bool collision, double dt)
 {
 	// Acceleration from gravity (always).
 	this->accelerate(-Double3::UnitY, Player::GRAVITY, false, dt);
 
 	// Temp: get floor Y until Y collision is implemented.
-	const double floorY = [&worldData]()
-	{
-		const LevelData &activeLevel = worldData.getActiveLevel();
-		return activeLevel.getCeilingHeight();
-	}();
+	const double floorY = activeLevel.getCeilingScale();
 
 	// Change the player's velocity based on collision.
 	if (collision)
 	{
-		this->handleCollision(worldData, dt);
+		this->handleCollision(activeLevel, dt);
 
 		// Temp: keep camera Y fixed until Y collision is implemented.
 		this->camera.position.point.y = floorY + Player::HEIGHT;
@@ -402,16 +402,15 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 	}
 
 	// Simple Euler integration for updating the player's position.
-	const NewDouble3 absolutePlayerPoint = VoxelUtils::coordToNewPoint(this->getPosition());
-	const Double3 newPosition = absolutePlayerPoint + (this->velocity * dt);
+	const VoxelDouble3 newPoint = this->camera.position.point + (this->velocity * dt);
 
 	// Update the position if valid.
-	if (std::isfinite(newPosition.length()))
+	if (std::isfinite(newPoint.length()))
 	{
-		this->camera.position = VoxelUtils::newPointToCoord(newPosition);
+		this->camera.position = ChunkUtils::recalculateCoord(this->camera.position.chunk, newPoint);
 	}
 
-	if (this->onGround(worldData))
+	if (this->onGround(activeLevel))
 	{
 		// Slow down the player's horizontal velocity with some friction.
 		Double2 velocityXZ(this->velocity.x, this->velocity.z);
@@ -429,8 +428,11 @@ void Player::updatePhysics(const WorldData &worldData, bool collision, double dt
 void Player::tick(Game &game, double dt)
 {
 	// Update player position and velocity due to collisions.
-	const WorldData &worldData = game.getGameData().getActiveWorld();
-	this->updatePhysics(worldData, game.getOptions().getMisc_Collision(), dt);
+	const GameState &gameState = game.getGameState();
+	const MapInstance &activeMapInst = gameState.getActiveMapInst();
+	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
+	const bool collisionEnabled = game.getOptions().getMisc_Collision();
+	this->updatePhysics(activeLevelInst, collisionEnabled, dt);
 
 	// Tick weapon animation.
 	this->weaponAnimation.tick(dt);

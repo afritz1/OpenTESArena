@@ -45,6 +45,8 @@ public:
 	SNInt getX() const;
 	int getY() const;
 	WEInt getZ() const;
+	bool hasSoundDef() const;
+	bool hasTextDef() const;
 	const SoundDef &getSoundDef() const;
 	const TextDef &getTextDef() const;
 

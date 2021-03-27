@@ -59,6 +59,16 @@ WEInt TriggerDefinition::getZ() const
 	return this->z;
 }
 
+bool TriggerDefinition::hasSoundDef() const
+{
+	return this->sound.getFilename().size() > 0;
+}
+
+bool TriggerDefinition::hasTextDef() const
+{
+	return this->text.getText().size() > 0;
+}
+
 const TriggerDefinition::SoundDef &TriggerDefinition::getSoundDef() const
 {
 	return this->sound;

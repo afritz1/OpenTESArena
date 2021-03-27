@@ -45,6 +45,11 @@ int LevelInfoDefinition::getBuildingNameCount() const
 	return static_cast<int>(this->buildingNames.size());
 }
 
+int LevelInfoDefinition::getDoorDefCount() const
+{
+	return static_cast<int>(this->doorDefs.size());
+}
+
 const VoxelDefinition &LevelInfoDefinition::getVoxelDef(LevelDefinition::VoxelDefID id) const
 {
 	DebugAssertIndex(this->voxelDefs, id);
@@ -89,6 +94,12 @@ const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::Buildin
 	}
 }
 
+const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID id) const
+{
+	DebugAssertIndex(this->doorDefs, id);
+	return this->doorDefs[id];
+}
+
 double LevelInfoDefinition::getCeilingScale() const
 {
 	return this->ceilingScale;
@@ -128,6 +139,12 @@ LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string
 {
 	this->buildingNames.emplace_back(std::move(name));
 	return static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size()) - 1;
+}
+
+LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(DoorDefinition &&def)
+{
+	this->doorDefs.emplace_back(std::move(def));
+	return static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size()) - 1;
 }
 
 void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)

@@ -67,7 +67,7 @@ public:
 			double orbitPercent;
 
 			// Added to location latitude to get 'moon latitude'.
-			double bonusLatitude;
+			double bonusLatitude; // @todo: might only need either baseDir or this, not both. See sun position.
 
 			// Index in moon definition phase images (full/half/new/etc.).
 			int imageIndex;
@@ -91,7 +91,7 @@ public:
 	void init(Buffer<Color> &&skyColors);
 
 	int getSkyColorCount() const;
-	const Color &getSkyColor(int index);
+	const Color &getSkyColor(int index) const;
 
 	int getLandPlacementDefCount() const;
 	const LandPlacementDef &getLandPlacementDef(int index) const;

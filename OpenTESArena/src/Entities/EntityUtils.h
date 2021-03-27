@@ -3,27 +3,33 @@
 
 #include <string>
 
+#include "EntityDefinition.h"
+
 // Entity instance handle.
 using EntityID = int;
 
 // Entity definition handle.
 using EntityDefID = int;
 
-// Renderer handle. Can be shared between entity instances that look the same.
-using EntityRenderID = int;
-
 class CharacterClassLibrary;
-class EntityDefinition;
 class EntityDefinitionLibrary;
+
+enum class EntityType;
 
 namespace EntityUtils
 {
+	EntityType getEntityTypeFromDefType(EntityDefinition::Type defType);
+
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
 
 	// Returns whether the given entity definition ID is from a level, or if it is in the
 	// entity definition library.
 	bool isLevelDependentDef(EntityDefID defID, const EntityDefinitionLibrary &entityDefLibrary);
+
+	// Returns whether the given entity definition is for a streetlight. Note that wilderness streetlights
+	// do not have their activation state updated in the original game like city streetlights do.
+	bool isStreetlight(const EntityDefinition &entityDef);
 
 	int getYOffset(const EntityDefinition &entityDef);
 

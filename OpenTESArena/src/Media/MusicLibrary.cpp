@@ -23,7 +23,6 @@ namespace
 		{
 			MAKE_MUSIC_DEFINITION_PAIR(CharacterCreation),
 			MAKE_MUSIC_DEFINITION_PAIR(Cinematic),
-			MAKE_MUSIC_DEFINITION_PAIR(Dungeon),
 			MAKE_MUSIC_DEFINITION_PAIR(Interior),
 			MAKE_MUSIC_DEFINITION_PAIR(Jingle),
 			MAKE_MUSIC_DEFINITION_PAIR(MainMenu),
@@ -87,7 +86,11 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	auto tryParseInteriorType = [](const std::string_view &str,
 		MusicDefinition::InteriorMusicDefinition::Type *outInteriorType)
 	{
-		if (str == "Equipment")
+		if (str == "Dungeon")
+		{
+			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+		}
+		else if (str == "Equipment")
 		{
 			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Equipment;
 		}
@@ -236,11 +239,6 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		}
 
 		outDefinition->initCinematic(std::move(musicFilename), cinematicType);
-	}
-	else if (type == MusicDefinition::Type::Dungeon)
-	{
-		DebugAssert(strs.size() == 1);
-		outDefinition->initDungeon(std::move(musicFilename));
 	}
 	else if (type == MusicDefinition::Type::Interior)
 	{

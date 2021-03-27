@@ -92,19 +92,18 @@ private:
 		TextureManager &textureManager, LevelInt2 *outStartPoint);
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
-		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool palaceIsMainQuestDungeon,
-		const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
+		bool palaceIsMainQuestDungeon, const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 		const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
 	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
-		uint32_t fallbackSeed, uint32_t rulerSeed, bool palaceIsMainQuestDungeon,
-		ArenaTypes::CityType cityType, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager);
+		uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const MapGeneration::InteriorGenInfo &generationInfo,

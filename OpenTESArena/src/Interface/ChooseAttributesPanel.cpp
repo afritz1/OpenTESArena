@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 
 #include "SDL.h"
@@ -22,7 +23,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Entities/Player.h"
 #include "../Game/CardinalDirection.h"
-#include "../Game/GameData.h"
+#include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
@@ -255,7 +256,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							fullGameWindow,
 							options.getGraphics_RenderThreadsMode());
 
-						std::unique_ptr<GameData> gameData = [this, &game, &binaryAssetLibrary]()
+						std::unique_ptr<GameState> gameState = [this, &game, &binaryAssetLibrary]()
 						{
 							const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -290,54 +291,58 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									exeData);
 							}();
 
-							return std::make_unique<GameData>(std::move(player), binaryAssetLibrary);
+							return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
 						}();
 
 						// Find starting dungeon location definition.
 						const int provinceIndex = LocationUtils::CENTER_PROVINCE_ID;
-						const WorldMapDefinition &worldMapDef = gameData->getWorldMapDefinition();
+						const WorldMapDefinition &worldMapDef = gameState->getWorldMapDefinition();
 						const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
-
-						const LocationDefinition *locationDefPtr = nullptr;
-						for (int i = 0; i < provinceDef.getLocationCount(); i++)
+						const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
 						{
-							const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
-							if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
+							for (int i = 0; i < provinceDef.getLocationCount(); i++)
 							{
-								const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-									locationDef.getMainQuestDungeonDefinition();
-
-								if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+								const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
+								if (locationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
 								{
-									locationDefPtr = &locationDef;
-									break;
+									const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
+										locationDef.getMainQuestDungeonDefinition();
+
+									if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Start)
+									{
+										return i;
+									}
 								}
 							}
-						}
 
-						DebugAssertMsg(locationDefPtr != nullptr, "Couldn't find start dungeon location definition.");
+							return std::nullopt;
+						}();
+
+						DebugAssertMsg(locationIndex.has_value(), "Couldn't find start dungeon location definition.");
 
 						// Load starting dungeon.
+						const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 						const LocationDefinition::MainQuestDungeonDefinition &mainQuestDungeonDef =
-							locationDefPtr->getMainQuestDungeonDefinition();
+							locationDef.getMainQuestDungeonDefinition();
 						const std::string mifName = mainQuestDungeonDef.mapFilename;
 
-						MIFFile mif;
-						if (!mif.init(mifName.c_str()))
+						constexpr std::optional<bool> rulerIsMale; // Not needed.
+
+						MapGeneration::InteriorGenInfo interiorGenInfo;
+						interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+
+						const std::optional<VoxelInt2> playerStartOffset; // Unused for start dungeon.
+
+						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
+							game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+							game.getBinaryAssetLibrary(), game.getTextureManager(), game.getRenderer()))
 						{
-							DebugCrash("Could not init .MIF file \"" + mifName + "\".");
+							DebugCrash("Couldn't load start dungeon \"" + mifName + "\".");
 						}
 
-						if (!gameData->loadInterior(*locationDefPtr, provinceDef, ArenaTypes::InteriorType::Dungeon,
-							mif, game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-							game.getBinaryAssetLibrary(), game.getRandom(), game.getTextureManager(),
-							renderer))
-						{
-							DebugCrash("Couldn't load interior \"" + locationDefPtr->getName() + "\".");
-						}
-
-						// Set the game data before constructing the game world panel.
-						game.setGameData(std::move(gameData));
+						// Set the game state before constructing the game world panel.
+						game.setGameState(std::move(gameState));
 					};
 
 					auto cinematicFunction = [gameDataFunction](Game &game)
@@ -346,25 +351,24 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 						auto gameFunction = [](Game &game)
 						{
-							// Create the function that will be called when the player leaves
-							// the starting dungeon.
+							// Create the function that will be called when the player leaves the starting dungeon.
 							auto onLevelUpVoxelEnter = [](Game &game)
 							{
 								// Teleport the player to a random location based on their race.
-								auto &gameData = game.getGameData();
-								auto &player = gameData.getPlayer();
+								auto &gameState = game.getGameState();
+								auto &player = gameState.getPlayer();
 								player.setVelocityToZero();
 
-								const int localCityID = game.getRandom().next(32);
-								const int provinceID = gameData.getPlayer().getRaceID();
+								const int provinceID = gameState.getPlayer().getRaceID();
+								const int locationID = game.getRandom().next(32);
 
-								const WorldMapDefinition &worldMapDef = gameData.getWorldMapDefinition();
+								const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 								const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-								const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
+								const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
 								// Random weather for now.
-								// - @todo: make it depend on the location (no need to prevent
-								//   deserts from having snow since the climates are still hardcoded).
+								// - @todo: make it depend on the location (no need to prevent deserts from having snow
+								//   since the climates are still hardcoded).
 								const WeatherType weatherType = [&game]()
 								{
 									constexpr std::array<WeatherType, 8> Weathers =
@@ -384,23 +388,59 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 									return Weathers[index];
 								}();
 
-								const int starCount = SkyUtils::getStarCountFromDensity(
-									game.getOptions().getMisc_StarDensity());
-
+								const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 								auto &renderer = game.getRenderer();
-								if (!gameData.loadCity(locationDef, provinceDef, weatherType, starCount,
-									game.getEntityDefinitionLibrary(), game.getCharacterClassLibrary(),
-									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getRandom(),
-									game.getTextureManager(), renderer))
+
+								const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
+								Buffer<uint8_t> reservedBlocks = [&cityDef]()
+								{
+									const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+									DebugAssert(cityReservedBlocks != nullptr);
+									Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+									std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.get());
+									return buffer;
+								}();
+
+								const std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+									[&cityDef]() ->std::optional<LocationDefinition::CityDefinition::MainQuestTempleOverride>
+								{
+									if (cityDef.hasMainQuestTempleOverride)
+									{
+										return cityDef.mainQuestTempleOverride;
+									}
+									else
+									{
+										return std::nullopt;
+									}
+								}();
+
+								MapGeneration::CityGenInfo cityGenInfo;
+								cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+									cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+									cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+									mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+
+								const int currentDay = gameState.getDate().getDay();
+
+								SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+								skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
+									cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+								
+								const std::optional<WeatherType> overrideWeather = weatherType;
+								const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
+								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
+									game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
+									game.getBinaryAssetLibrary(), game.getTextAssetLibrary(), game.getTextureManager(),
+									renderer))
 								{
 									DebugCrash("Couldn't load city \"" + locationDef.getName() + "\".");
 								}
 
 								// Set music based on weather and time.
-								const MusicDefinition *musicDef = [&game, &gameData, weatherType]()
+								const MusicDefinition *musicDef = [&game, &gameState, weatherType]()
 								{
 									const MusicLibrary &musicLibrary = game.getMusicLibrary();
-									if (!gameData.nightMusicIsActive())
+									if (!gameState.nightMusicIsActive())
 									{
 										return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
 											game.getRandom(), [weatherType](const MusicDefinition &def)
@@ -427,8 +467,8 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 							};
 
 							// Set the *LEVELUP voxel enter event.
-							auto &gameData = game.getGameData();
-							gameData.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
+							auto &gameState = game.getGameState();
+							gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
 
 							// Initialize the game world panel.
 							auto gameWorldPanel = std::make_unique<GameWorldPanel>(game);
@@ -436,8 +476,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 
 							// Choose random dungeon music.
 							const MusicLibrary &musicLibrary = game.getMusicLibrary();
-							const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-								MusicDefinition::Type::Dungeon, game.getRandom());
+							const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+								MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
+							{
+								DebugAssert(def.getType() == MusicDefinition::Type::Interior);
+								const auto &interiorMusicDef = def.getInteriorMusicDefinition();
+								return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+							});
 
 							if (musicDef == nullptr)
 							{

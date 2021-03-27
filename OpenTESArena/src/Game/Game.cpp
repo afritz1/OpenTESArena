@@ -132,7 +132,6 @@ Game::Game()
 	this->charClassLibrary.init(this->binaryAssetLibrary.getExeData());
 
 	this->cinematicLibrary.init();
-	this->doorSoundLibrary.init();
 
 	// Load entity definitions (dependent on original game's data).
 	this->entityDefLibrary.init(this->binaryAssetLibrary.getExeData(), this->textureManager);
@@ -186,10 +185,10 @@ Game::Game()
 	// Use a texture as the cursor instead.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// Leave some members null for now. The game data is initialized when the player 
+	// Leave some members null for now. The game state is initialized when the player 
 	// enters the game world, and the "next panel" is a temporary used by the game
 	// to avoid corruption between panel events which change the panel.
-	this->gameData = nullptr;
+	this->gameState = nullptr;
 	this->charCreationState = nullptr;
 	this->nextPanel = nullptr;
 	this->nextSubPanel = nullptr;
@@ -235,25 +234,20 @@ const CharacterClassLibrary &Game::getCharacterClassLibrary() const
 	return this->charClassLibrary;
 }
 
-const DoorSoundLibrary &Game::getDoorSoundLibrary() const
-{
-	return this->doorSoundLibrary;
-}
-
 const EntityDefinitionLibrary &Game::getEntityDefinitionLibrary() const
 {
 	return this->entityDefLibrary;
 }
 
-bool Game::gameDataIsActive() const
+bool Game::gameStateIsActive() const
 {
-	return this->gameData.get() != nullptr;
+	return this->gameState.get() != nullptr;
 }
 
-GameData &Game::getGameData() const
+GameState &Game::getGameState() const
 {
-	DebugAssert(this->gameDataIsActive());
-	return *this->gameData.get();
+	DebugAssert(this->gameStateIsActive());
+	return *this->gameState.get();
 }
 
 bool Game::characterCreationIsActive() const
@@ -335,9 +329,9 @@ void Game::popSubPanel()
 	this->requestedSubPanelPop = true;
 }
 
-void Game::setGameData(std::unique_ptr<GameData> gameData)
+void Game::setGameState(std::unique_ptr<GameState> gameState)
 {
-	this->gameData = std::move(gameData);
+	this->gameState = std::move(gameState);
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
@@ -599,11 +593,11 @@ void Game::loop()
 		this->inputManager.update();
 
 		// Update the audio manager listener (if any) and check for finished sounds.
-		if (this->gameDataIsActive())
+		if (this->gameStateIsActive())
 		{
 			const AudioManager::ListenerData listenerData = [this]()
 			{
-				const Player &player = this->getGameData().getPlayer();
+				const Player &player = this->getGameState().getPlayer();
 				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
 				const NewDouble3 &direction = player.getDirection();
 				return AudioManager::ListenerData(absolutePosition, direction);

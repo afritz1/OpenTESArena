@@ -279,8 +279,7 @@ uint32_t LocationUtils::getRulerSeed(const Int2 &localPoint, const Rect &provinc
 	return Bytes::rol(seed, 16);
 }
 
-uint32_t LocationUtils::getDistantSkySeed(const Int2 &localPoint, int provinceID,
-	const Rect &provinceRect)
+uint32_t LocationUtils::getSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect)
 {
 	const Int2 globalPoint = LocationUtils::getGlobalPoint(localPoint, provinceRect);
 	const uint32_t seed = static_cast<uint32_t>((globalPoint.x << 16) + globalPoint.y);

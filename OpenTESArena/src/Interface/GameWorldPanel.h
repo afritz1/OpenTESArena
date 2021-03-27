@@ -22,6 +22,7 @@
 class Player;
 class Renderer;
 class TextureManager;
+class TransitionDefinition;
 
 class GameWorldPanel : public Panel
 {
@@ -71,18 +72,16 @@ private:
 
 	// Sends an "on voxel enter" message for the given voxel and triggers any text or
 	// sound events.
-	void handleTriggers(const NewInt2 &voxel);
+	void handleTriggers(const CoordInt3 &coord);
 
-	// Handles updating of doors that are not closed.
-	void handleDoors(double dt, const Double2 &playerPos);
+	// Handles the behavior for when the player activates a map transition block and transitions
+	// from one map to another (i.e., from an interior to an exterior). This does not handle
+	// level transitions.
+	void handleMapTransition(const Physics::Hit &hit, const TransitionDefinition &transitionDef);
 
-	// Handles the behavior for when the player activates a *MENU block and transitions
-	// from one world to another (i.e., from an interior to an exterior).
-	void handleWorldTransition(const Physics::Hit &hit, int menuID);
-
-	// Checks the given voxel to see if it's a transition voxel (i.e., level up/down),
+	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down),
 	// and changes the current level if it is.
-	void handleLevelTransition(const NewInt2 &playerVoxel, const NewInt2 &transitionVoxel);
+	void handleLevelTransition(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
 
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
@@ -94,7 +93,7 @@ private:
 	// Draws some debug profiler text.
 	void drawProfiler(int profilerLevel, Renderer &renderer);
 public:
-	// Constructs the game world panel. The GameData object in Game must be initialized.
+	// Constructs the game world panel. The GameState object in Game must be initialized.
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
 

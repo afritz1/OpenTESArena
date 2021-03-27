@@ -12,10 +12,25 @@
 
 #include "components/utilities/BufferView.h"
 
-class LevelData;
+class Chunk;
 
 namespace RendererUtils
 {
+	struct LoadedEntityTextureEntry
+	{
+		TextureAssetReference textureAssetRef;
+		bool flipped;
+		bool reflective;
+
+		void init(TextureAssetReference &&textureAssetRef, bool flipped, bool reflective);
+	};
+
+	// Loaded texture asset caches so the rest of the engine can see what texture assets are already loaded
+	// in the renderer.
+	// @todo: this should eventually be a hash table of texture asset refs to texture handles
+	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
+	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
+
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
 
@@ -38,10 +53,10 @@ namespace RendererUtils
 		NewDouble2 *outMiddle, NewDouble2 *outEnd);
 
 	// Gets the percent open of a door, or zero if there's no open door at the given voxel.
-	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const LevelData &levelData);
+	double getDoorPercentOpen(SNInt voxelX, WEInt voxelZ, const Chunk &chunk);
 
 	// Gets the percent fade of a voxel, or 1 if the given voxel is not fading.
-	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const LevelData &levelData);
+	double getFadingVoxelPercent(SNInt voxelX, int voxelY, WEInt voxelZ, const Chunk &chunk);
 
 	// Gets the y-shear value of the camera based on the Y angle relative to the horizon
 	// and the zoom of the camera (dependent on vertical field of view).
@@ -61,9 +76,6 @@ namespace RendererUtils
 
 	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
 	Matrix4d getTimeOfDayRotation(double daytimePercent);
-
-	// Gets the direction towards the sun. The sun rises in the west and sets in the east.
-	Double3 getSunDirection(const Matrix4d &timeRotation, double latitude);
 
 	// Gets the color of the sun for shading with.
 	Double3 getSunColor(const Double3 &sunDirection, bool isExterior);

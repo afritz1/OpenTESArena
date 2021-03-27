@@ -104,8 +104,8 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	{
 		auto function = [](Game &game)
 		{
-			// Back button behavior depends on whether game data is active.
-			if (game.gameDataIsActive())
+			// Back button behavior depends on whether game state is active.
+			if (game.gameStateIsActive())
 			{
 				game.setPanel<PauseMenuPanel>(game);
 			}

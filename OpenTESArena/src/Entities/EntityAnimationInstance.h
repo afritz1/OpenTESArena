@@ -32,12 +32,9 @@ public:
 		// could be sharing of that combination (i.e. medium armor male enemy with sword) done beforehand and
 		// the keyframe would still get that texture handle.
 	public:
-		// Gets the raw texture builder handle for this keyframe (does not protect from dangling pointers).
 		// @todo: eventually return renderer texture handle instead and maybe don't pass anim def keyframe. The
 		// entity animation definition needs its own entity texture handles allocated as "the go-to ones" if there
 		// is nothing interesting to set as the override handle in this instance keyframe.
-		const TextureBuilder &getTextureBuilderHandle(const EntityAnimationDefinition::Keyframe &defKeyframe,
-			TextureManager &textureManager) const;
 	};
 
 	class KeyframeList
@@ -82,14 +79,13 @@ public:
 
 	EntityAnimationInstance &operator=(const EntityAnimationInstance &other);
 
+	void init(const EntityAnimationDefinition &animDef);
+
 	int getStateCount() const;
 	const State &getState(int index) const;
 	const CitizenParams *getCitizenParams() const;
 	double getCurrentSeconds() const;
 	int getStateIndex() const;
-
-	void addState(State &&state);
-	void clearStates();
 
 	void setCitizenParams(std::unique_ptr<CitizenParams> &&citizenParams);
 

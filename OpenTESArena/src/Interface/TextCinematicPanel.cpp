@@ -96,7 +96,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 		// Replace substitution tokens. The original game wraps text onto the next screen if the
 		// player's name is too long, which may push the text for every subsequent screen forward
 		// by a little bit.
-		const std::string playerFirstName = game.getGameData().getPlayer().getFirstName();
+		const std::string playerFirstName = game.getGameState().getPlayer().getFirstName();
 		cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
 
 		// Re-distribute newlines.

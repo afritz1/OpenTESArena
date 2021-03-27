@@ -18,7 +18,7 @@ void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int model
 
 void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
-	uint32_t rulerSeed, uint32_t distantSkySeed, ClimateType climateType,
+	uint32_t rulerSeed, uint32_t skySeed, ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
 	bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
@@ -31,7 +31,7 @@ void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const c
 	this->wildSeed = wildSeed;
 	this->provinceSeed = provinceSeed;
 	this->rulerSeed = rulerSeed;
-	this->distantSkySeed = distantSkySeed;
+	this->skySeed = skySeed;
 	this->climateType = climateType;
 	this->reservedBlocks = reservedBlocks;
 	this->blockStartPosX = blockStartPosX;
@@ -173,7 +173,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t wildSeed = LocationUtils::getWildernessSeed(localCityID, provinceData);
 	const uint32_t provinceSeed = LocationUtils::getProvinceSeed(provinceID, provinceData);
 	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
-	const uint32_t distantSkySeed = LocationUtils::getDistantSkySeed(
+	const uint32_t skySeed = LocationUtils::getSkySeed(
 		localPoint, provinceID, provinceRect);
 	const ClimateType climateType = LocationUtils::getCityClimateType(
 		localCityID, provinceID, binaryAssetLibrary);
@@ -229,7 +229,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		(provinceID == LocationUtils::CENTER_PROVINCE_ID) && (localCityID == 0);
 
 	this->city.init(type, typeDisplayName.c_str(), mapFilename.c_str(), citySeed, wildSeed,
-		provinceSeed, rulerSeed, distantSkySeed, climateType, reservedBlocks, blockStartPosition.x,
+		provinceSeed, rulerSeed, skySeed, climateType, reservedBlocks, blockStartPosition.x,
 		blockStartPosition.y, mainQuestTempleOverridePtr, cityBlocksPerSide, coastal, premade,
 		rulerIsMale, palaceIsMainQuestDungeon);
 }
