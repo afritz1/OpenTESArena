@@ -145,7 +145,7 @@ namespace MapGeneration
 		const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon)
 	{
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 		return interiorGenInfo;
 	}
 
@@ -1877,7 +1877,7 @@ void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, ArenaTy
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDefinition::DungeonDefinition *dungeonDef,
+void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDefinition::DungeonDefinition &dungeonDef,
 	bool isArtifactDungeon)
 {
 	this->dungeonDef = dungeonDef;
@@ -1901,7 +1901,7 @@ void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, ArenaType
 	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
 }
 
-void MapGeneration::InteriorGenInfo::initDungeon(const LocationDefinition::DungeonDefinition *dungeonDef,
+void MapGeneration::InteriorGenInfo::initDungeon(const LocationDefinition::DungeonDefinition &dungeonDef,
 	bool isArtifactDungeon)
 {
 	this->init(InteriorGenInfo::Type::Dungeon);
@@ -2092,6 +2092,11 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 
 	// Store the seed for later, to be used with block selection.
 	const uint32_t seed2 = random.getSeed();
+
+	if (widthChunks == 0 || depthChunks == 0)
+	{
+		printf("oh no");
+	}
 
 	// Determine transition blocks (*LEVELUP/*LEVELDOWN) that will appear in the dungeon.
 	auto getNextTransBlock = [widthChunks, depthChunks, &random]()

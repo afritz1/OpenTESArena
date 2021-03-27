@@ -58,10 +58,10 @@ namespace MapGeneration
 		// Output: N LevelDefinitions + 1 LevelInfoDefinition
 		struct Dungeon
 		{
-			const LocationDefinition::DungeonDefinition *dungeonDef;
+			LocationDefinition::DungeonDefinition dungeonDef;
 			bool isArtifactDungeon;
 
-			void init(const LocationDefinition::DungeonDefinition *dungeonDef, bool isArtifactDungeon);
+			void init(const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon);
 		};
 	private:
 		Type type;
@@ -74,7 +74,7 @@ namespace MapGeneration
 
 		void initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
 			const std::optional<bool> &rulerIsMale);
-		void initDungeon(const LocationDefinition::DungeonDefinition *dungeonDef, bool isArtifactDungeon);
+		void initDungeon(const LocationDefinition::DungeonDefinition &dungeonDef, bool isArtifactDungeon);
 
 		Type getType() const;
 		const Prefab &getPrefab() const;

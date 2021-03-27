@@ -501,7 +501,7 @@ void FastTravelSubPanel::switchToNextPanel()
 		const LocationDefinition::DungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 		const std::optional<VoxelInt2> playerStartOffset = VoxelInt2(
 			ArenaLevelUtils::RANDOM_DUNGEON_PLAYER_START_OFFSET_X,

@@ -431,12 +431,12 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 			return false;
 		}
 
-		ArenaRandom random(dungeonGenInfo.dungeonDef->dungeonSeed);
+		ArenaRandom random(dungeonGenInfo.dungeonDef.dungeonSeed);
 
 		// Generate dungeon levels and get the player start point.
 		LevelInt2 startPoint;
-		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef->widthChunkCount,
-			dungeonGenInfo.dungeonDef->heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
+		this->initDungeonLevels(mif, dungeonGenInfo.dungeonDef.widthChunkCount,
+			dungeonGenInfo.dungeonDef.heightChunkCount, dungeonGenInfo.isArtifactDungeon, random,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &startPoint);
 
 		const LevelDouble2 startPointReal = VoxelUtils::getVoxelCenter(startPoint);

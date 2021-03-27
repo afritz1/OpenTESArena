@@ -455,7 +455,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						const LocationDefinition::DungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
 						MapGeneration::InteriorGenInfo interiorGenInfo;
-						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+						interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
@@ -493,7 +493,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						dungeonDef.init(dungeonSeed, widthChunkCount, heightChunkCount);
 
 						MapGeneration::InteriorGenInfo interiorGenInfo;
-						interiorGenInfo.initDungeon(&dungeonDef, isArtifactDungeon);
+						interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 						const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
 						if (!gameState->trySetInterior(interiorGenInfo, playerStartOffset, worldMapLocationIDs,
