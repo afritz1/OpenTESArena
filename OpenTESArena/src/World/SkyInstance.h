@@ -89,7 +89,7 @@ private:
 
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
 	std::vector<AnimInstance> animInsts; // Data for each sky object with an animation.
-	int landStart, landEnd, airStart, airEnd, starStart, starEnd, sunStart, sunEnd, moonStart, moonEnd;
+	int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
 public:
 	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
 		int currentDay, TextureManager &textureManager);

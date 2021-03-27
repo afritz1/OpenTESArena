@@ -608,8 +608,8 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 		}
 	};
 
-	// Update transformed sky position of stars, suns, and moons.
-	transformObjectsInRange(this->starStart, this->starEnd);
-	transformObjectsInRange(this->sunStart, this->sunEnd);
+	// Update transformed sky positions of moons, suns, and stars.
 	transformObjectsInRange(this->moonStart, this->moonEnd);
+	transformObjectsInRange(this->sunStart, this->sunEnd);
+	transformObjectsInRange(this->starStart, this->starEnd);
 }
