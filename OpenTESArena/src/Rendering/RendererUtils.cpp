@@ -186,16 +186,6 @@ Matrix4d RendererUtils::getTimeOfDayRotation(double daytimePercent)
 	return Matrix4d::xRotation(daytimePercent * Constants::TwoPi);
 }
 
-Double3 RendererUtils::getSunDirection(const Matrix4d &timeRotation, double latitude)
-{
-	// The sun gets a bonus to latitude. Arena angle units are 0->100.
-	const double sunLatitude = latitude + (13.0 / 100.0);
-	const Matrix4d sunRotation = RendererUtils::getLatitudeRotation(sunLatitude);
-	const Double3 baseDir = -Double3::UnitY;
-	const Double4 dir = sunRotation * (timeRotation * Double4(baseDir, 0.0));
-	return Double3(-dir.x, dir.y, -dir.z).normalized(); // Negated for +X south/+Z west.
-}
-
 Double3 RendererUtils::getSunColor(const Double3 &sunDirection, bool isExterior)
 {
 	if (isExterior)

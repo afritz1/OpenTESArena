@@ -77,9 +77,6 @@ namespace RendererUtils
 	// Creates a rotation matrix for drawing distant space objects relative to the time of day.
 	Matrix4d getTimeOfDayRotation(double daytimePercent);
 
-	// Gets the direction towards the sun. The sun rises in the west and sets in the east.
-	Double3 getSunDirection(const Matrix4d &timeRotation, double latitude);
-
 	// Gets the color of the sun for shading with.
 	Double3 getSunColor(const Double3 &sunDirection, bool isExterior);
 
