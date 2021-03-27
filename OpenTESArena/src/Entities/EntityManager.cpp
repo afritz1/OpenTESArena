@@ -541,7 +541,9 @@ int EntityManager::getCountInChunk(const ChunkInt2 &chunk) const
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunk);
 	if (!chunkIndex.has_value())
 	{
-		DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" not in entity manager.");
+		// @todo: unsilence this warning once more engine order-of-operations work has been done, since this is
+		// likely an issue from deferring chunk destruction to the next frame.
+		//DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" not in entity manager.");
 		return 0;
 	}
 
@@ -629,7 +631,9 @@ int EntityManager::getEntitiesInChunk(const ChunkInt2 &chunk, const Entity **out
 	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunk);
 	if (!chunkIndex.has_value())
 	{
-		DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" not in entity manager.");
+		// @todo: unsilence this warning once more engine order-of-operations work has been done, since this is
+		// likely an issue from deferring chunk destruction to the next frame.
+		//DebugLogWarning("Entity chunk \"" + chunk.toString() + "\" not in entity manager.");
 		return 0;
 	}
 
