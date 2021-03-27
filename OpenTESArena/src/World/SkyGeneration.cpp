@@ -485,7 +485,7 @@ namespace SkyGeneration
 		SkySunDefinition skySunDef;
 		skySunDef.init(std::move(textureAssetRef));
 		const SkyDefinition::SunDefID sunDefID = outSkyInfoDef->addSun(std::move(skySunDef));
-		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE);
+		outSkyDef->addSun(sunDefID, ArenaSkyUtils::SUN_BONUS_LATITUDE / 100.0);
 	}
 
 	void generateArenaMoons(int currentDay, const ExeData &exeData, TextureManager &textureManager,
