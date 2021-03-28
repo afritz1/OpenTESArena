@@ -787,10 +787,21 @@ WeatherType GameState::getWeatherType() const
 
 double GameState::getAmbientPercent() const
 {
-	DebugAssert(!this->maps.empty());
-	const MapDefinition &activeMapDef = this->maps.top().definition;
+	const MapDefinition *activeMapDef = nullptr;
+	if (this->nextMap != nullptr)
+	{
+		activeMapDef = &this->nextMap->mapState.definition;
+	}
+	else
+	{
+		DebugAssert(!this->maps.empty());
+		activeMapDef = &this->maps.top().definition;
+	}
 
-	if (activeMapDef.getMapType() == MapType::Interior)
+	DebugAssert(activeMapDef != nullptr);
+	const MapType activeMapType = activeMapDef->getMapType();
+
+	if (activeMapType == MapType::Interior)
 	{
 		// Completely dark indoors (some places might be an exception to this, and those
 		// would be handled eventually).
