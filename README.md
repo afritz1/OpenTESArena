@@ -2,7 +2,7 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" from 1994 by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
 
-- Version: 0.12.0
+- Version: 0.13.0
 - License: MIT
 - Discord: https://discord.gg/DgHe2jG
 
