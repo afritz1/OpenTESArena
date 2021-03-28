@@ -78,14 +78,14 @@ Texture Panel::createTooltip(const std::string &text,
 
 	// Offset the text from the top left corner by a bit so it isn't against the side 
 	// of the tooltip (for aesthetic purposes).
-	SDL_Rect rect;
-	rect.x = padding / 2;
-	rect.y = padding / 2;
-	rect.w = textSurface.getWidth();
-	rect.h = textSurface.getHeight();
+	const Rect dstRect(
+		padding / 2,
+		padding / 2,
+		textSurface.getWidth(),
+		textSurface.getHeight());
 
 	// Draw the text onto the background.
-	SDL_BlitSurface(textSurface.get(), nullptr, background.get(), &rect);
+	textSurface.blit(background, dstRect);
 
 	// Create a hardware texture for the tooltip.
 	Texture tooltip = renderer.createTextureFromSurface(background);
