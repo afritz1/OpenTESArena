@@ -170,7 +170,35 @@ void Surface::fillRect(const Rect &rect, uint8_t r, uint8_t g, uint8_t b)
 
 void Surface::blit(Surface &dst, const Rect &dstRect) const
 {
+#if SDL_COMPILEDVERSION == SDL_VERSIONNUM(2, 0, 9)
+	// Workaround for an issue found with text and parchment rendering on Raspberry Pi 4. I doubt it's an actual
+	// SDL bug but this workaround fixes it for some reason (may be ARM64-related?).
+	const SDL_Surface *src = this->surface;
+	const uint32_t srcTransparent = SDL_MapRGBA(src->format, 0, 0, 0, 0);
+	const uint32_t *srcPixels = static_cast<const uint32_t*>(src->pixels);
+	uint32_t *dstPixels = static_cast<uint32_t*>(dst.getPixels());
+	const int dstX = dstRect.getLeft();
+	const int dstY = dstRect.getTop();
+
+	DebugAssert((dstX + src->w) <= dst.getWidth());
+	DebugAssert((dstY + src->h) <= dst.getHeight());
+
+	for (int y = 0; y < src->h; y++)
+	{
+		for (int x = 0; x < src->w; x++)
+		{
+			const int srcIndex = x + (y * src->w);
+			const uint32_t srcPixel = srcPixels[srcIndex];
+			if (srcPixel != srcTransparent)
+			{
+				const int dstIndex = (dstX + x) + ((dstY + y) * dst.getWidth());
+				dstPixels[dstIndex] = srcPixel;
+			}
+		}
+	}
+#else
 	SDL_BlitSurface(this->surface, nullptr, dst.surface, const_cast<SDL_Rect*>(&dstRect.getRect()));
+#endif
 }
 
 void Surface::blit(Surface &dst, int dstX, int dstY) const
