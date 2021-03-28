@@ -1,5 +1,3 @@
-#include "SDL.h"
-
 #include "TextureUtils.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Interface/Surface.h"
@@ -148,13 +146,8 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		{
 			for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += body.getWidth())
 			{
-				SDL_Rect rect;
-				rect.x = x;
-				rect.y = y;
-				rect.w = body.getWidth();
-				rect.h = body.getHeight();
-
-				SDL_BlitSurface(body.get(), nullptr, surface.get(), &rect);
+				const Rect rect(x, y, body.getWidth(), body.getHeight());
+				body.blit(surface, rect);
 			}
 		}
 
@@ -168,8 +161,8 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 			surface.fillRect(leftRect, clearColor);
 			surface.fillRect(rightRect, clearColor);
 
-			SDL_BlitSurface(left.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&leftRect.getRect()));
-			SDL_BlitSurface(right.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&rightRect.getRect()));
+			left.blit(surface, leftRect);
+			right.blit(surface, rightRect);
 		}
 
 		for (int x = topLeft.getWidth(); x < (surface.getWidth() - topRight.getWidth()); x += top.getWidth())
@@ -181,8 +174,8 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 			surface.fillRect(topRect, clearColor);
 			surface.fillRect(bottomRect, clearColor);
 
-			SDL_BlitSurface(top.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topRect.getRect()));
-			SDL_BlitSurface(bottom.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRect.getRect()));
+			top.blit(surface, topRect);
+			bottom.blit(surface, bottomRect);
 		}
 
 		// Draw corner tiles.
@@ -200,10 +193,10 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		surface.fillRect(bottomLeftRect, clearColor);
 		surface.fillRect(bottomRightRect, clearColor);
 
-		SDL_BlitSurface(topLeft.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topLeftRect.getRect()));
-		SDL_BlitSurface(topRight.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&topRightRect.getRect()));
-		SDL_BlitSurface(bottomLeft.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomLeftRect.getRect()));
-		SDL_BlitSurface(bottomRight.get(), nullptr, surface.get(), const_cast<SDL_Rect*>(&bottomRightRect.getRect()));
+		topLeft.blit(surface, topLeftRect);
+		topRight.blit(surface, topRightRect);
+		bottomLeft.blit(surface, bottomLeftRect);
+		bottomRight.blit(surface, bottomRightRect);
 	}
 	else if (type == TextureUtils::PatternType::Dark)
 	{

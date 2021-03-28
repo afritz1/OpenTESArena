@@ -1,7 +1,5 @@
 #include <algorithm>
 
-#include "SDL.h"
-
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Rect.h"
@@ -72,15 +70,10 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 		}
 	};
 
-	auto blitSurfaceToSurface = [](const SDL_Surface *src, int dstX, int dstY, Surface &dst)
+	auto blitSurfaceToSurface = [](const Surface &src, int dstX, int dstY, Surface &dst)
 	{
-		SDL_Rect rect;
-		rect.x = dstX;
-		rect.y = dstY;
-		rect.w = src->w;
-		rect.h = src->h;
-
-		SDL_BlitSurface(const_cast<SDL_Surface*>(src), nullptr, dst.get(), &rect);
+		const Rect dstRect(dstX, dstY, src.getWidth(), src.getHeight());
+		src.blit(dst, dstRect);
 	};
 
 	// Lambda for setting all non-transparent pixels in the temp surface to some color.
@@ -179,22 +172,20 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	if (hasShadow)
 	{
 		drawTempText(shadowColor);
-		blitSurfaceToSurface(tempSurface.get(), std::max(shadowOffset.x, 0),
-			std::max(shadowOffset.y, 0), this->surface);
+		blitSurfaceToSurface(tempSurface, std::max(shadowOffset.x, 0), std::max(shadowOffset.y, 0), this->surface);
 
 		// Set all shadow pixels in the temp surface to the main color.
 		setNonTransparentPixels(richText.getColor());
 
-		blitSurfaceToSurface(tempSurface.get(), std::max(-shadowOffset.x, 0),
-			std::max(-shadowOffset.y, 0), this->surface);
+		blitSurfaceToSurface(tempSurface, std::max(-shadowOffset.x, 0), std::max(-shadowOffset.y, 0), this->surface);
 	}
 	else
 	{
 		drawTempText(richText.getColor());
-		blitSurfaceToSurface(tempSurface.get(), 0, 0, this->surface);
+		blitSurfaceToSurface(tempSurface, 0, 0, this->surface);
 	}
 
-	// Create the destination SDL textures (keeping the surfaces' color keys).
+	// Create the destination textures (keeping the surfaces' color keys).
 	this->texture = renderer.createTextureFromSurface(this->surface);
 }
 
