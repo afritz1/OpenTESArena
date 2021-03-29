@@ -133,12 +133,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 
 	auto changeToScrolling = [changeToIntroStory](Game &game)
 	{
-		game.setPanel<CinematicPanel>(
-			game,
-			ArenaPaletteName::Default,
-			ArenaTextureSequenceName::OpeningScroll,
-			0.042,
-			changeToIntroStory);
+		const std::string &sequenceName = ArenaTextureSequenceName::OpeningScroll;
+		const std::string &paletteName = sequenceName;
+		game.setPanel<CinematicPanel>(game, paletteName, sequenceName,
+			0.042, changeToIntroStory);
 	};
 
 	auto changeToQuote = [changeToScrolling](Game &game)
@@ -172,12 +170,10 @@ std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 
 		auto makeIntroBookPanel = [changeToTitle, &game]()
 		{
-			return std::make_unique<CinematicPanel>(
-				game,
-				ArenaPaletteName::Default,
-				ArenaTextureSequenceName::IntroBook,
-				1.0 / 7.0,
-				changeToTitle);
+			const std::string &sequenceName = ArenaTextureSequenceName::IntroBook;
+			const std::string &paletteName = sequenceName;
+			return std::make_unique<CinematicPanel>(game, paletteName, sequenceName,
+				1.0 / 7.0, changeToTitle);
 		};
 
 		return makeIntroBookPanel();
