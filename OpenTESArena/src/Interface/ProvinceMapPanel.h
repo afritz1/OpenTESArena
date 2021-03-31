@@ -15,8 +15,6 @@ class Renderer;
 class Texture;
 class TextureManager;
 
-enum class ProvinceButtonName;
-
 class ProvinceMapPanel : public Panel
 {
 public:
@@ -29,6 +27,9 @@ public:
 
 		TravelData(int locationID, int provinceID, int travelDays);
 	};
+
+	// Each button in the province panel.
+	enum class ButtonName { Search, Travel, BackToWorldMap };
 private:
 	// Current is where the player is. Selected is which location (if any) has been selected.
 	enum class LocationHighlightType { Current, Selected };
@@ -85,7 +86,7 @@ private:
 	void drawLocationName(int locationID, Renderer &renderer);
 
 	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
-	void drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer);
+	void drawButtonTooltip(ProvinceMapPanel::ButtonName buttonName, Renderer &renderer);
 public:
 	ProvinceMapPanel(Game &game, int provinceID,
 		std::unique_ptr<ProvinceMapPanel::TravelData> travelData);

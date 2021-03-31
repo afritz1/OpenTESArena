@@ -7,7 +7,6 @@
 
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
-#include "ProvinceButtonName.h"
 #include "ProvinceMapPanel.h"
 #include "ProvinceSearchSubPanel.h"
 #include "TextSubPanel.h"
@@ -49,18 +48,18 @@ namespace
 	constexpr uint8_t YellowPaletteIndex = 194;
 	constexpr uint8_t RedPaletteIndex = 223;
 
-	const std::unordered_map<ProvinceButtonName, std::string> ProvinceButtonTooltips =
+	const std::unordered_map<ProvinceMapPanel::ButtonName, std::string> ProvinceButtonTooltips =
 	{
-		{ ProvinceButtonName::Search, "Search" },
-		{ ProvinceButtonName::Travel, "Travel" },
-		{ ProvinceButtonName::BackToWorldMap, "Back to World Map" }
+		{ ProvinceMapPanel::ButtonName::Search, "Search" },
+		{ ProvinceMapPanel::ButtonName::Travel, "Travel" },
+		{ ProvinceMapPanel::ButtonName::BackToWorldMap, "Back to World Map" }
 	};
 
-	const std::unordered_map<ProvinceButtonName, Rect> ProvinceButtonClickAreas =
+	const std::unordered_map<ProvinceMapPanel::ButtonName, Rect> ProvinceButtonClickAreas =
 	{
-		{ ProvinceButtonName::Search, Rect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::Travel, Rect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
-		{ ProvinceButtonName::BackToWorldMap, Rect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) }
+		{ ProvinceMapPanel::ButtonName::Search, Rect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
+		{ ProvinceMapPanel::ButtonName::Travel, Rect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) },
+		{ ProvinceMapPanel::ButtonName::BackToWorldMap, Rect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27) }
 	};
 }
 
@@ -77,7 +76,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 {
 	this->searchButton = []()
 	{
-		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Search);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceMapPanel::ButtonName::Search);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -92,7 +91,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 
 	this->travelButton = []()
 	{
-		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::Travel);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceMapPanel::ButtonName::Travel);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -130,7 +129,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID,
 
 	this->backToWorldMapButton = []()
 	{
-		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceButtonName::BackToWorldMap);
+		const Rect &clickArea = ProvinceButtonClickAreas.at(ProvinceMapPanel::ButtonName::BackToWorldMap);
 		int x = clickArea.getLeft();
 		int y = clickArea.getTop();
 		int width = clickArea.getWidth();
@@ -940,7 +939,7 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 	renderer.drawOriginal(textBox.getTexture(), x, y);
 }
 
-void ProvinceMapPanel::drawButtonTooltip(ProvinceButtonName buttonName, Renderer &renderer)
+void ProvinceMapPanel::drawButtonTooltip(ProvinceMapPanel::ButtonName buttonName, Renderer &renderer)
 {
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
 
@@ -1039,7 +1038,7 @@ void ProvinceMapPanel::renderSecondary(Renderer &renderer)
 	// Draw a tooltip if the mouse is over a button.
 	const auto tooltipIter = std::find_if(
 		ProvinceButtonTooltips.begin(), ProvinceButtonTooltips.end(),
-		[&originalPosition](const std::pair<ProvinceButtonName, std::string> &pair)
+		[&originalPosition](const std::pair<ProvinceMapPanel::ButtonName, std::string> &pair)
 	{
 		const Rect &clickArea = ProvinceButtonClickAreas.at(pair.first);
 		return clickArea.contains(originalPosition);
