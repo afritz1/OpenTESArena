@@ -1,8 +1,5 @@
 #include "SDL.h"
 
-#include "CursorAlignment.h"
-#include "RichTextString.h"
-#include "TextBox.h"
 #include "TextSubPanel.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
@@ -11,6 +8,9 @@
 #include "../Media/FontLibrary.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextBox.h"
 
 TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
 	const RichTextString &richText, const std::function<void(Game&)> &endingAction,

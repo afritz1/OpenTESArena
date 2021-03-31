@@ -5,11 +5,6 @@
 #include "ChooseClassCreationPanel.h"
 #include "ChooseClassPanel.h"
 #include "ChooseNamePanel.h"
-#include "CursorAlignment.h"
-#include "RichTextString.h"
-#include "Surface.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Entities/CharacterClassLibrary.h"
@@ -26,6 +21,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/Surface.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 #include "components/debug/Debug.h"
 

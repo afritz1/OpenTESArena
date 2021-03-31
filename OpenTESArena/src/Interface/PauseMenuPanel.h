@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
+#include "../UI/Button.h"
 
 class AudioManager;
 class Options;

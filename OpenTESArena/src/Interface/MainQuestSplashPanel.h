@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "Button.h"
-#include "TextBox.h"
 #include "Panel.h"
+#include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class MainQuestSplashPanel : public Panel
 {

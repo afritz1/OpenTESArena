@@ -1,10 +1,7 @@
 #include <array>
 
-#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
-#include "TextAlignment.h"
-#include "Texture.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -14,6 +11,9 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/Texture.h"
 
 #include "components/utilities/String.h"
 

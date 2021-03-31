@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "Button.h"
 #include "Panel.h"
+#include "../UI/Button.h"
 
 // Halfway between a CinematicPanel and an ImagePanel, this panel displays still 
 // images one at a time and allows only the escape button to fully skip until the

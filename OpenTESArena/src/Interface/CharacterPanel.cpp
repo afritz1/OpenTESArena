@@ -2,12 +2,7 @@
 
 #include "CharacterEquipmentPanel.h"
 #include "CharacterPanel.h"
-#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
-#include "Texture.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -26,6 +21,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 

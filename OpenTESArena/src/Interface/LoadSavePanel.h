@@ -3,9 +3,9 @@
 
 #include <array>
 
-#include "Button.h"
 #include "Panel.h"
-#include "TextBox.h"
+#include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class Renderer;
 class Surface;

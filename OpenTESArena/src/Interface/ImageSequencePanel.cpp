@@ -3,9 +3,9 @@
 #include "SDL.h"
 
 #include "ImageSequencePanel.h"
-#include "Texture.h"
 #include "../Game/Game.h"
 #include "../Media/TextureManager.h"
+#include "../UI/Texture.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"

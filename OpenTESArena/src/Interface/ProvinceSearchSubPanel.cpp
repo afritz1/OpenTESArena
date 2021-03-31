@@ -2,12 +2,8 @@
 
 #include "SDL.h"
 
-#include "CursorAlignment.h"
 #include "ProvinceMapPanel.h"
 #include "ProvinceSearchSubPanel.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextEntry.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
@@ -16,6 +12,10 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextEntry.h"
 
 #include "components/utilities/String.h"
 

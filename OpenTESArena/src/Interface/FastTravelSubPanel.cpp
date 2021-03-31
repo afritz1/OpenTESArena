@@ -1,11 +1,9 @@
 #include <algorithm>
 #include <sstream>
 
-#include "CursorAlignment.h"
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
-#include "TextAlignment.h"
 #include "TextSubPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
@@ -18,6 +16,8 @@
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/TextAlignment.h"
 #include "../World/LocationDefinition.h"
 #include "../World/LocationType.h"
 #include "../World/LocationUtils.h"

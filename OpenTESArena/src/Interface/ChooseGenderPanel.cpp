@@ -3,11 +3,6 @@
 #include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
-#include "CursorAlignment.h"
-#include "RichTextString.h"
-#include "Surface.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
@@ -19,6 +14,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/Surface.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game)

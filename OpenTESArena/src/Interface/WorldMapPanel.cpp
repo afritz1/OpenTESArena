@@ -1,10 +1,7 @@
 #include "SDL.h"
 
-#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
-#include "TextBox.h"
-#include "Texture.h"
 #include "WorldMapPanel.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/CIFFile.h"
@@ -16,6 +13,9 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 

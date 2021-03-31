@@ -7,9 +7,9 @@
 #include <string>
 #include <vector>
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Media/TextureManager.h"
+#include "../UI/Button.h"
 
 // Very similar to a cinematic panel, only now it's designed for cinematics with
 // subtitles at the bottom (a.k.a., "text").

@@ -3,10 +3,10 @@
 
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
-#include "Texture.h"
 #include "../Math/Vector2.h"
+#include "../UI/Button.h"
+#include "../UI/Texture.h"
 
 class Renderer;
 

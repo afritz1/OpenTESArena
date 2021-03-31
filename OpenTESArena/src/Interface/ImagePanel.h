@@ -4,8 +4,8 @@
 #include <functional>
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
+#include "../UI/Button.h"
 
 // For rendering still images in a similar fashion to a cinematic, only now
 // it's one image.

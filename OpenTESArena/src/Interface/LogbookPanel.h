@@ -1,9 +1,9 @@
 #ifndef LOGBOOK_PANEL_H
 #define LOGBOOK_PANEL_H
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Media/TextureUtils.h"
+#include "../UI/Button.h"
 
 class Renderer;
 class TextBox;

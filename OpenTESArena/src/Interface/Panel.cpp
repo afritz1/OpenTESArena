@@ -3,15 +3,10 @@
 #include "SDL.h"
 
 #include "CinematicPanel.h"
-#include "CursorAlignment.h"
 #include "ImageSequencePanel.h"
 #include "ImagePanel.h"
 #include "MainMenuPanel.h"
 #include "Panel.h"
-#include "RichTextString.h"
-#include "Surface.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
@@ -21,6 +16,11 @@
 #include "../Media/Color.h"
 #include "../Media/FontLibrary.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/Surface.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 #include "components/vfs/manager.hpp"
 

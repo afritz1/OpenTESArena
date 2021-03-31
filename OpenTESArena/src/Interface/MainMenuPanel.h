@@ -4,9 +4,9 @@
 #include <optional>
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Assets/ArenaTypes.h"
+#include "../UI/Button.h"
 #include "../World/VoxelDefinition.h"
 
 class Renderer;

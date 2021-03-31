@@ -3,11 +3,11 @@
 
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Assets/CIFFile.h"
 #include "../Math/Vector2.h"
 #include "../Media/Palette.h"
+#include "../UI/Button.h"
 
 class LocationDefinition;
 class ProvinceDefinition;

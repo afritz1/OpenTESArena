@@ -3,16 +3,11 @@
 
 #include "SDL.h"
 
-#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "LoadSavePanel.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
-#include "Texture.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Entities/CharacterClassDefinition.h"
@@ -31,6 +26,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
 	: Panel(game)

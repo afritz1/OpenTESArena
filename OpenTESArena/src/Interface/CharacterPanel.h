@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
+#include "../UI/Button.h"
 
 // Maybe rename this to "CharacterStatsPanel"?
 

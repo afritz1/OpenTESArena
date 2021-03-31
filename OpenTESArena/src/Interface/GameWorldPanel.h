@@ -4,12 +4,12 @@
 #include <array>
 #include <vector>
 
-#include "Button.h"
 #include "Panel.h"
-#include "TextBox.h"
 #include "../Game/Physics.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureUtils.h"
+#include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelUtils.h"
 

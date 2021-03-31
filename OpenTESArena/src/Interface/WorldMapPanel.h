@@ -3,10 +3,10 @@
 
 #include <array>
 
-#include "Button.h"
 #include "Panel.h"
 #include "ProvinceMapPanel.h"
 #include "../Math/Vector2.h"
+#include "../UI/Button.h"
 
 class Renderer;
 

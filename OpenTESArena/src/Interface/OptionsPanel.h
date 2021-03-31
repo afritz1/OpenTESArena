@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
-#include "Button.h"
 #include "Panel.h"
 #include "../Math/Vector2.h"
+#include "../UI/Button.h"
 
 class AudioManager;
 class Options;

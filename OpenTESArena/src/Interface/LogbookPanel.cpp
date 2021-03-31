@@ -1,12 +1,7 @@
 #include "SDL.h"
 
-#include "CursorAlignment.h"
 #include "GameWorldPanel.h"
 #include "LogbookPanel.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
-#include "Texture.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
@@ -18,6 +13,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 LogbookPanel::LogbookPanel(Game &game)
 	: Panel(game)

@@ -54,6 +54,10 @@ FILE(GLOB_RECURSE TES_RENDERING
     ${SRC_ROOT}/src/Rendering/*.h* 
     ${SRC_ROOT}/src/Rendering/*.c*)
 
+FILE(GLOB_RECURSE TES_UI
+    ${SRC_ROOT}/src/UI/*.h* 
+    ${SRC_ROOT}/src/UI/*.c*)
+
 FILE(GLOB_RECURSE TES_UTILITIES
     ${SRC_ROOT}/src/Utilities/*.h* 
     ${SRC_ROOT}/src/Utilities/*.c*)
@@ -76,6 +80,7 @@ SET(TES_SOURCES
     ${TES_MATH}
     ${TES_MEDIA}
     ${TES_RENDERING}
+    ${TES_UI}
     ${TES_UTILITIES}
     ${TES_WORLD}
     ${TES_MAIN})
@@ -131,6 +136,7 @@ SOURCE_GROUP("Items" FILES ${TES_ITEMS})
 SOURCE_GROUP("Math" FILES ${TES_MATH})
 SOURCE_GROUP("Media" FILES ${TES_MEDIA})
 SOURCE_GROUP("Rendering" FILES ${TES_RENDERING})
+SOURCE_GROUP("UI" FILES ${TES_UI})
 SOURCE_GROUP("Utilities" FILES ${TES_UTILITIES})
 SOURCE_GROUP("World" FILES ${TES_WORLD})
 SOURCE_GROUP("Main" FILES ${TES_MAIN})

@@ -4,11 +4,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Button.h"
-#include "ListBox.h"
 #include "Panel.h"
-#include "Texture.h"
 #include "../Entities/CharacterClassDefinition.h"
+#include "../UI/Button.h"
+#include "../UI/ListBox.h"
+#include "../UI/Texture.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
 // list that says nothing about the classes (thus requiring the manual for 

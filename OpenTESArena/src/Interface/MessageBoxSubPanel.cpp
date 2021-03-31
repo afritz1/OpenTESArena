@@ -1,12 +1,12 @@
-#include "CursorAlignment.h"
 #include "MessageBoxSubPanel.h"
-#include "TextBox.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/TextBox.h"
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
 	std::vector<MessageBoxSubPanel::Element> &&elements,

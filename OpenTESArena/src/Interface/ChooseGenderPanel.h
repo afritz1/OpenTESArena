@@ -3,9 +3,9 @@
 
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
-#include "Texture.h"
+#include "../UI/Button.h"
+#include "../UI/Texture.h"
 
 class Renderer;
 class TextBox;

@@ -4,13 +4,8 @@
 
 #include "SDL.h"
 
-#include "CursorAlignment.h"
 #include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
-#include "Texture.h"
 #include "../Entities/Player.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
@@ -23,6 +18,11 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorAlignment.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

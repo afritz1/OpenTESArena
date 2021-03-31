@@ -5,11 +5,7 @@
 
 #include "SDL.h"
 
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
 #include "TextCinematicPanel.h"
-#include "Texture.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
 #include "../Media/AudioManager.h"
@@ -19,6 +15,10 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/RichTextString.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"

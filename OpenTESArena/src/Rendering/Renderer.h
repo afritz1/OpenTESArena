@@ -11,10 +11,10 @@
 #include "RendererSystemType.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Entities/EntityManager.h"
-#include "../Interface/Texture.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Media/TextureUtils.h"
+#include "../UI/Texture.h"
 
 // Container for 2D and 3D rendering operations.
 

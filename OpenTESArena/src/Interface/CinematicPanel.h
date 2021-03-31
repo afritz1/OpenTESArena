@@ -4,8 +4,8 @@
 #include <functional>
 #include <string>
 
-#include "Button.h"
 #include "Panel.h"
+#include "../UI/Button.h"
 
 // Designed for sets of images (i.e., videos) that play one after another and
 // eventually lead to another panel. Skipping is available, too.
