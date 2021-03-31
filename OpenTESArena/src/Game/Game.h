@@ -18,10 +18,10 @@
 #include "../Interface/Panel.h"
 #include "../Media/AudioManager.h"
 #include "../Media/CinematicLibrary.h"
-#include "../Media/FontLibrary.h"
 #include "../Media/MusicLibrary.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/FontLibrary.h"
 
 #include "components/utilities/Allocator.h"
 #include "components/utilities/Profiler.h"

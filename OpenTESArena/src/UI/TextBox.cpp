@@ -1,11 +1,11 @@
 #include <algorithm>
 
+#include "FontDefinition.h"
+#include "FontLibrary.h"
+#include "FontUtils.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Math/Rect.h"
-#include "../Media/FontDefinition.h"
-#include "../Media/FontLibrary.h"
-#include "../Media/FontUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"

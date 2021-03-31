@@ -5,10 +5,10 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
-#include "../Media/FontLibrary.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/RichTextString.h"
 #include "../UI/TextBox.h"
 

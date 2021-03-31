@@ -1,8 +1,8 @@
 #include "SDL.h"
 
+#include "FontLibrary.h"
+#include "FontUtils.h"
 #include "RichTextString.h"
-#include "../Media/FontLibrary.h"
-#include "../Media/FontUtils.h"
 
 #include "components/utilities/String.h"
 

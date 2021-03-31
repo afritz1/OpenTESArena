@@ -6,12 +6,12 @@
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Math/Random.h"
-#include "../Media/FontName.h"
 #include "../Media/MusicUtils.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/Texture.h"
 

@@ -2,6 +2,9 @@
 
 #include "SDL.h"
 
+#include "FontDefinition.h"
+#include "FontLibrary.h"
+#include "FontUtils.h"
 #include "ListBox.h"
 #include "RichTextString.h"
 #include "TextAlignment.h"
@@ -9,9 +12,6 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontDefinition.h"
-#include "../Media/FontLibrary.h"
-#include "../Media/FontUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"

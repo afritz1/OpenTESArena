@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "FontDefinition.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
-#include "../Media/FontDefinition.h"
 
 // A formatted string for use with Arena's text boxes.
 
