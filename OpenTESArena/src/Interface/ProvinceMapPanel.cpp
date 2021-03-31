@@ -33,10 +33,10 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
-#include "../World/LocationDefinition.h"
-#include "../World/LocationInstance.h"
-#include "../World/LocationUtils.h"
 #include "../World/WeatherType.h"
+#include "../WorldMap/LocationDefinition.h"
+#include "../WorldMap/LocationInstance.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

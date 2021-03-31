@@ -4,9 +4,7 @@
 #include "ArenaCityUtils.h"
 #include "ArenaVoxelUtils.h"
 #include "ClimateType.h"
-#include "LocationUtils.h"
 #include "MapType.h"
-#include "ProvinceDefinition.h"
 #include "VoxelDefinition.h"
 #include "WeatherType.h"
 #include "WeatherUtils.h"
@@ -14,6 +12,8 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Math/Random.h"
+#include "../WorldMap/LocationUtils.h"
+#include "../WorldMap/ProvinceDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

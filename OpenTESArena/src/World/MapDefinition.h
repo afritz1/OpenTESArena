@@ -8,13 +8,13 @@
 
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
-#include "LocationDefinition.h"
 #include "MapGeneration.h"
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
 #include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
+#include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView2D.h"

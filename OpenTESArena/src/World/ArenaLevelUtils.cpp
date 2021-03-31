@@ -2,13 +2,13 @@
 
 #include "ArenaLevelUtils.h"
 #include "ArenaVoxelUtils.h"
-#include "LocationType.h"
-#include "LocationUtils.h"
 #include "VoxelDefinition.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
+#include "../WorldMap/LocationType.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

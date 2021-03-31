@@ -18,7 +18,7 @@
 #include "../UI/TimedTextBox.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapInstance.h"
-#include "../World/WorldMapInstance.h"
+#include "../WorldMap/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 
 // while a player is loaded (i.e., not in the main menu).

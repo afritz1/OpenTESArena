@@ -37,10 +37,10 @@
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 #include "../World/ClimateType.h"
-#include "../World/LocationType.h"
-#include "../World/LocationUtils.h"
 #include "../World/SkyUtils.h"
 #include "../World/WeatherType.h"
+#include "../WorldMap/LocationType.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"

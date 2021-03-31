@@ -4,9 +4,9 @@
 #include <optional>
 #include <string>
 
-#include "VoxelUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
+#include "../World/VoxelUtils.h"
 
 class BinaryAssetLibrary;
 class ExeData;

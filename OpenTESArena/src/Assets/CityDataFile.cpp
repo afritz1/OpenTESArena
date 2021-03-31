@@ -4,9 +4,9 @@
 #include "CityDataFile.h"
 #include "ExeData.h"
 #include "../Math/Random.h"
-#include "../World/LocationType.h"
-#include "../World/LocationUtils.h"
 #include "../World/VoxelDefinition.h"
+#include "../WorldMap/LocationType.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"

@@ -6,8 +6,8 @@
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
 #include "../World/ClimateType.h"
-#include "../World/LocationDefinition.h"
 #include "../World/WeatherType.h"
+#include "../WorldMap/LocationDefinition.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/File.h"

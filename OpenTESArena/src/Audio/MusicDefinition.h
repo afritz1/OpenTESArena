@@ -4,7 +4,7 @@
 #include <string>
 
 #include "../Assets/ArenaTypes.h"
-#include "../World/LocationDefinition.h"
+#include "../WorldMap/LocationDefinition.h"
 
 enum class ClimateType;
 enum class WeatherType;

@@ -9,7 +9,6 @@
 #include "ChunkUtils.h"
 #include "LevelDefinition.h"
 #include "LevelInfoDefinition.h"
-#include "LocationUtils.h"
 #include "LockDefinition.h"
 #include "MapDefinition.h"
 #include "MapGeneration.h"
@@ -27,6 +26,7 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityType.h"
 #include "../Math/Random.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView2D.h"

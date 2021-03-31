@@ -4,8 +4,8 @@
 #include "MIFUtils.h"
 #include "../Math/Random.h"
 #include "../World/ClimateType.h"
-#include "../World/LocationType.h"
-#include "../World/LocationUtils.h"
+#include "../WorldMap/LocationType.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/dos/DOSUtils.h"

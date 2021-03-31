@@ -22,7 +22,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
-#include "../World/LocationUtils.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/utilities/String.h"
 
