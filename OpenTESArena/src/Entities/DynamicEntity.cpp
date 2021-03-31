@@ -4,6 +4,7 @@
 #include "DynamicEntity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
+#include "../Audio/AudioManager.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
@@ -11,7 +12,6 @@
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
-#include "../Media/AudioManager.h"
 
 #include "components/utilities/String.h"
 

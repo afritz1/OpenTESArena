@@ -22,6 +22,10 @@ FILE(GLOB_RECURSE TES_ASSETS
     ${SRC_ROOT}/src/Assets/*.h* 
     ${SRC_ROOT}/src/Assets/*.c*)
 
+FILE(GLOB_RECURSE TES_AUDIO
+    ${SRC_ROOT}/src/Audio/*.h* 
+    ${SRC_ROOT}/src/Audio/*.c*)
+
 FILE(GLOB_RECURSE TES_ENTITIES
     ${SRC_ROOT}/src/Entities/*.h* 
     ${SRC_ROOT}/src/Entities/*.c*)
@@ -72,6 +76,7 @@ SET(TES_RESOURCES ${CMAKE_SOURCE_DIR}/windows/opentesarena.rc)
 
 SET(TES_SOURCES 
     ${TES_ASSETS}
+    ${TES_AUDIO}
     ${TES_ENTITIES}
     ${TES_GAME}
     ${TES_INPUT}
@@ -128,6 +133,7 @@ SET_TARGET_PROPERTIES(TESArena PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESAren
 
 # Visual Studio filters.
 SOURCE_GROUP("Assets" FILES ${TES_ASSETS})
+SOURCE_GROUP("Audio" FILES ${TES_AUDIO})
 SOURCE_GROUP("Entities" FILES ${TES_ENTITIES})
 SOURCE_GROUP("Game" FILES ${TES_GAME})
 SOURCE_GROUP("Input" FILES ${TES_INPUT})

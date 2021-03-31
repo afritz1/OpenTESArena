@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "Chunk.h"
-#include "../Media/AudioManager.h"
+#include "../Audio/AudioManager.h"
 
 #include "components/debug/Debug.h"
 

@@ -6,12 +6,12 @@
 
 #include "OptionsPanel.h"
 #include "PauseMenuPanel.h"
+#include "../Audio/AudioManager.h"
 #include "../Entities/Player.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Game/PlayerInterface.h"
-#include "../Media/AudioManager.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"

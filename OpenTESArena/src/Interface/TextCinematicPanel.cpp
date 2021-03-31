@@ -6,9 +6,9 @@
 #include "SDL.h"
 
 #include "TextCinematicPanel.h"
+#include "../Audio/AudioManager.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
-#include "../Media/AudioManager.h"
 #include "../Media/TextCinematicDefinition.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
