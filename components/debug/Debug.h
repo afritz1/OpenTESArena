@@ -40,7 +40,7 @@ public:
 	static void logError(const char *__file__, int lineNumber, const std::string &message);
 
 	// Use DebugCrash() instead. Helper method for crashing the program with a reason.
-	static void crash(const char *__file__, int lineNumber, const std::string &message);
+	[[noreturn]] static void crash(const char *__file__, int lineNumber, const std::string &message);
 
 	// General logging defines.
 #define DebugLog(message) Debug::log(__FILE__, __LINE__, message)
