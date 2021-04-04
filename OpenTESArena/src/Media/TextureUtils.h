@@ -12,12 +12,6 @@
 using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 
-// Texture instance handles, same as texture manager but for generated textures not loaded
-// from a file.
-using ImageInstanceID = int; // 8-bit software surface
-using SurfaceInstanceID = int; // 32-bit software surface
-using TextureInstanceID = int; // 32-bit hardware surface
-
 class Renderer;
 class Surface;
 class Texture;
