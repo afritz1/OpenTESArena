@@ -1,7 +1,10 @@
+#include <algorithm>
+
 #include "Entity.h"
 #include "EntityManager.h"
 #include "EntityType.h"
 #include "../Game/Game.h"
+#include "../World/ChunkUtils.h"
 
 Entity::Entity()
 	: position(ChunkInt2::Zero, VoxelDouble2::Zero)
@@ -41,6 +44,51 @@ EntityAnimationInstance &Entity::getAnimInstance()
 const EntityAnimationInstance &Entity::getAnimInstance() const
 {
 	return this->animInst;
+}
+
+void Entity::getViewDependentBBox2D(const CoordDouble2 &cameraCoord, CoordDouble2 *outMin, CoordDouble2 *outMax) const
+{
+	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
+
+	// @todo: get the animation frame that would be shown to the camera.
+	// - get from EntityAnimationInstance
+	DebugNotImplemented();
+}
+
+void Entity::getViewIndependentBBox2D(const EntityManager &entityManager,
+	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble2 *outMin, CoordDouble2 *outMax) const
+{
+	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
+
+	const EntityDefinition &entityDef = entityManager.getEntityDef(this->defID, entityDefLibrary);
+	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
+
+	// Get the largest width from the animation frames.
+	double maxAnimWidth = 0.0;
+	for (int i = 0; i < animDef.getStateCount(); i++)
+	{
+		const EntityAnimationDefinition::State &state = animDef.getState(i);
+		for (int j = 0; j < state.getKeyframeListCount(); j++)
+		{
+			const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
+			for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+			{
+				const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
+				maxAnimWidth = std::max(maxAnimWidth, keyframe.getWidth());
+			}
+		}
+	}
+
+	const double halfMaxWidth = maxAnimWidth * 0.50;
+
+	// Orient the bounding box so it is largest with respect to the grid. Recalculate the coordinates in case
+	// the min and max are in different chunks.
+	*outMin = ChunkUtils::recalculateCoord(
+		this->position.chunk,
+		VoxelDouble2(this->position.point.x - halfMaxWidth, this->position.point.y - halfMaxWidth));
+	*outMax = ChunkUtils::recalculateCoord(
+		this->position.chunk,
+		VoxelDouble2(this->position.point.x + halfMaxWidth, this->position.point.y + halfMaxWidth));
 }
 
 void Entity::setID(EntityID id)
