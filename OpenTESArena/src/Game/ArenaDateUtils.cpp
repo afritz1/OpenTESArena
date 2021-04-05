@@ -1,10 +1,10 @@
+#include "ArenaDateUtils.h"
 #include "Date.h"
-#include "DateUtils.h"
 #include "../Assets/ExeData.h"
 
 #include "components/debug/Debug.h"
 
-std::string DateUtils::getDateString(const Date &date, const ExeData &exeData)
+std::string ArenaDateUtils::makeDateString(const Date &date, const ExeData &exeData)
 {
 	std::string text = exeData.status.date;
 

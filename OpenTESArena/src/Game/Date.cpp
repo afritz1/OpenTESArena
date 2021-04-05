@@ -1,3 +1,4 @@
+#include "ArenaDateUtils.h"
 #include "Date.h"
 
 #include "components/debug/Debug.h"
@@ -7,9 +8,9 @@ Date::Date(int year, int month, int day)
 	// Make sure each value is in a valid range.
 	DebugAssert(year >= 1);
 	DebugAssert(month >= 0);
-	DebugAssert(month < Date::MONTHS_PER_YEAR);
+	DebugAssert(month < ArenaDateUtils::MONTHS_PER_YEAR);
 	DebugAssert(day >= 0);
-	DebugAssert(day < Date::DAYS_PER_MONTH);
+	DebugAssert(day < ArenaDateUtils::DAYS_PER_MONTH);
 
 	this->year = year;
 	this->month = month;
@@ -17,10 +18,10 @@ Date::Date(int year, int month, int day)
 }
 
 Date::Date(int month, int day)
-	: Date(Date::INITIAL_YEAR, month, day) { }
+	: Date(ArenaDateUtils::INITIAL_YEAR, month, day) { }
 
 Date::Date()
-	: Date(Date::INITIAL_YEAR, 0, 0) { }
+	: Date(ArenaDateUtils::INITIAL_YEAR, 0, 0) { }
 
 int Date::getYear() const
 {
@@ -35,7 +36,7 @@ int Date::getMonth() const
 int Date::getWeekday() const
 {
 	// For now, all months start on the same weekday (Monday).
-	return this->day % Date::DAYS_PER_WEEK;
+	return this->day % ArenaDateUtils::DAYS_PER_WEEK;
 }
 
 int Date::getDay() const
@@ -73,7 +74,7 @@ std::string Date::getOrdinalDay() const
 
 int Date::getSeason() const
 {
-	return ((this->month + 10) % Date::MONTHS_PER_YEAR) / 3;
+	return ((this->month + 10) % ArenaDateUtils::MONTHS_PER_YEAR) / 3;
 }
 
 void Date::incrementYear()
@@ -85,7 +86,7 @@ void Date::incrementMonth()
 {
 	this->month++;
 
-	if (this->month == Date::MONTHS_PER_YEAR)
+	if (this->month == ArenaDateUtils::MONTHS_PER_YEAR)
 	{
 		this->incrementYear();
 		this->month = 0;
@@ -96,7 +97,7 @@ void Date::incrementDay()
 {
 	this->day++;
 
-	if (this->day == Date::DAYS_PER_MONTH)
+	if (this->day == ArenaDateUtils::DAYS_PER_MONTH)
 	{
 		this->incrementMonth();
 		this->day = 0;

@@ -10,7 +10,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Assets/MIFFile.h"
 #include "../Audio/MusicUtils.h"
-#include "../Game/DateUtils.h"
+#include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Game/GameState.h"
 #include "../Media/TextureManager.h"
@@ -135,8 +135,7 @@ std::unique_ptr<Panel> FastTravelSubPanel::makeCityArrivalPopUp() const
 
 		const std::string dateString = [&gameState, &exeData]()
 		{
-			return exeData.travel.arrivalPopUpDate +
-				DateUtils::getDateString(gameState.getDate(), exeData);
+			return exeData.travel.arrivalPopUpDate + ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
 		}();
 
 		const std::string daysString = [this, &exeData]()

@@ -27,9 +27,9 @@
 #include "../Entities/EntityType.h"
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"
+#include "../Game/ArenaDateUtils.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/CardinalDirectionName.h"
-#include "../Game/DateUtils.h"
 #include "../Game/GameState.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -455,7 +455,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 				baseText.replace(index, 2, timeString);
 
 				// Replace third %s with date string, filled in with each value.
-				std::string dateString = DateUtils::getDateString(gameState.getDate(), exeData);
+				std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
 				dateString.back() = '\n'; // Replace \r with \n.
 
 				index = baseText.find("%s", index);
