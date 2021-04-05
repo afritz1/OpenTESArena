@@ -1742,14 +1742,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const NewDouble2 flatEyeDir = flatEyeDiff / flatEyeDiffLen;
 		const bool inFrontOfCamera = cameraDir.dot(flatEyeDir) > 0.0;
 
-		// Check if the flat is within the fog distance. Treat the flat as a cylinder and
-		// see if it's inside the fog distance circle centered on the player. Can't use
-		// distance squared here because a^2 - b^2 does not equal (a - b)^2.
-		const double flatRadius = flatHalfWidth;
-		const double flatEyeCylinderDist = flatEyeDiffLen - flatRadius;
-		const bool inFogDistance = flatEyeCylinderDist < fogDistance;
-
-		if (inFrontOfCamera && inFogDistance)
+		if (inFrontOfCamera)
 		{
 			// Scaled axes based on flat dimensions.
 			const Double3 flatRightScaled = flatRight * flatHalfWidth;
