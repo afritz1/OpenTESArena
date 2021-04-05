@@ -759,23 +759,14 @@ void EntityManager::getEntityVisibilityState2D(const Entity &entity, const Coord
 	const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
 	EntityVisibilityState2D &outVisState) const
 {
-	DebugNotImplemented();
-}
-
-void EntityManager::getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
-	double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-	EntityVisibilityState3D &outVisState) const
-{
-	outVisState.entity = &entity;
 	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 	const EntityAnimationInstance &animInst = entity.getAnimInstance();
 
 	// Get active animation state.
-	const int animStateIndex = animInst.getStateIndex();
-	const EntityAnimationDefinition::State &animDefState = animDef.getState(animStateIndex);
-	const EntityAnimationInstance::State &animInstState = animInst.getState(animStateIndex);
-	outVisState.stateIndex = animStateIndex;
+	const int stateIndex = animInst.getStateIndex();
+	const EntityAnimationDefinition::State &animDefState = animDef.getState(stateIndex);
+	const EntityAnimationInstance::State &animInstState = animInst.getState(stateIndex);
 
 	// Get animation angle based on entity direction relative to some camera/eye.
 	const int angleCount = animInstState.getKeyframeListCount();
@@ -806,13 +797,13 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(double,
+			DebugUnhandledReturnMsg(Radians,
 				std::to_string(static_cast<int>(entity.getEntityType())));
 		}
 	}();
 
 	// Index into animation keyframe lists for the state.
-	outVisState.angleIndex = [angleCount, animAngle]()
+	const int angleIndex = [angleCount, animAngle]()
 	{
 		const double angleCountReal = static_cast<double>(angleCount);
 		const double anglePercent = animAngle / Constants::TwoPi;
@@ -821,11 +812,10 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 	}();
 
 	// Keyframe list for the current state and angle.
-	const EntityAnimationDefinition::KeyframeList &animDefKeyframeList =
-		animDefState.getKeyframeList(outVisState.angleIndex);
+	const EntityAnimationDefinition::KeyframeList &animDefKeyframeList = animDefState.getKeyframeList(angleIndex);
 
 	// Progress through current animation.
-	outVisState.keyframeIndex = [&animInst, &animDefState, &animDefKeyframeList]()
+	const int keyframeIndex = [&animInst, &animDefState, &animDefKeyframeList]()
 	{
 		const int keyframeCount = animDefKeyframeList.getKeyframeCount();
 		const double keyframeCountReal = static_cast<double>(keyframeCount);
@@ -836,22 +826,32 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 		return std::clamp(keyframeIndex, 0, keyframeCount - 1);
 	}();
 
-	// Current animation frame based on everything above.
-	const EntityAnimationDefinition::Keyframe &animDefKeyframe =
-		animDefKeyframeList.getKeyframe(outVisState.keyframeIndex);
+	const CoordDouble2 &entityCoord = entity.getPosition();
+	const CoordDouble2 flatPosition(
+		entityCoord.chunk,
+		VoxelDouble2(entityCoord.point.x, entityCoord.point.y));
 
-	const double flatWidth = animDefKeyframe.getWidth();
-	const double flatHeight = animDefKeyframe.getHeight();
-	const double flatHalfWidth = flatWidth * 0.50;
+	outVisState.init(&entity, flatPosition, stateIndex, angleIndex, keyframeIndex);
+}
 
+void EntityManager::getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
+	double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+	EntityVisibilityState3D &outVisState) const
+{
+	// Use the results from the 2D calculation.
+	EntityVisibilityState2D visState2D;
+	this->getEntityVisibilityState2D(entity, eye2D, chunkManager, entityDefLibrary, visState2D);
+
+	const EntityDefinition &entityDef = this->getEntityDef(entity.getDefinitionID(), entityDefLibrary);
 	const int baseYOffset = EntityUtils::getYOffset(entityDef);
 	const double flatYOffset = static_cast<double>(-baseYOffset) / MIFUtils::ARENA_UNITS;
 
 	// If the entity is in a raised platform voxel, they are set on top of it.
-	const CoordDouble2 &entityCoord = entity.getPosition();
-	const double raisedPlatformYOffset = [ceilingScale, &chunkManager, &entityCoord]()
+	const double raisedPlatformYOffset = [ceilingScale, &chunkManager, &visState2D]()
 	{
-		const CoordInt2 entityVoxelCoord(entityCoord.chunk, VoxelUtils::pointToVoxel(entityCoord.point));
+		const CoordInt2 entityVoxelCoord(
+			visState2D.flatPosition.chunk,
+			VoxelUtils::pointToVoxel(visState2D.flatPosition.point));
 		const Chunk *chunk = chunkManager.tryGetChunk(entityVoxelCoord.chunk);
 		if (chunk == nullptr)
 		{
@@ -875,11 +875,13 @@ void EntityManager::getEntityVisibilityState3D(const Entity &entity, const Coord
 	}();
 
 	// Bottom center of flat.
-	const VoxelDouble3 newCoordPoint(
-		entityCoord.point.x,
+	const VoxelDouble3 flatPoint(
+		visState2D.flatPosition.point.x,
 		ceilingScale + flatYOffset + raisedPlatformYOffset,
-		entityCoord.point.y);
-	outVisState.flatPosition = CoordDouble3(entityCoord.chunk, newCoordPoint);
+		visState2D.flatPosition.point.y);
+	const CoordDouble3 flatPosition(visState2D.flatPosition.chunk, flatPoint);
+
+	outVisState.init(&entity, flatPosition, visState2D.stateIndex, visState2D.angleIndex, visState2D.keyframeIndex);
 }
 
 const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(const Entity &entity,
