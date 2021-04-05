@@ -1679,7 +1679,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 	{
 		// Add player light.
 		VisibleLight playerVisLight;
-		playerVisLight.init(camera.eye, 5.0);
+		playerVisLight.init(camera.eye, ArenaRenderUtils::PLAYER_LIGHT_RADIUS);
 		this->visibleLights.emplace_back(std::move(playerVisLight));
 	}
 
@@ -1714,25 +1714,16 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const double flatHeight = animDefKeyframe.getHeight();
 		const double flatHalfWidth = flatWidth * 0.50;
 
-		// See if the entity is a light.
-		int lightIntensity;
-		if (!EntityUtils::tryGetLightIntensity(entityDef, &lightIntensity))
-		{
-			constexpr int streetLightIntensity = 4;
-			const bool isActiveStreetLight = ((entityDef.getType() == EntityDefinition::Type::Doodad) &&
-				entityDef.getDoodad().streetlight) && shadingInfo.nightLightsAreActive;
-			lightIntensity = isActiveStreetLight ? streetLightIntensity : 0;
-		}
-
+		// See if the entity has an active light.
+		const std::optional<double> lightRadius = EntityUtils::tryGetLightRadius(
+			entityDef, shadingInfo.nightLightsAreActive);
 		const CoordDouble3 &flatCoord = visData.flatPosition;
-		const bool isLight = lightIntensity > 0;
-		if (isLight)
+		if (lightRadius.has_value())
 		{
 			// See if the light is visible.
-			const double lightRadius = static_cast<double>(lightIntensity);
 			SoftwareRenderer::LightVisibilityData lightVisData;
 			SoftwareRenderer::getLightVisibilityData(flatCoord, flatHeight,
-				lightRadius, eyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
+				*lightRadius, eyeXZ, cameraDir, camera.fovX, fogDistance, &lightVisData);
 
 			if (lightVisData.intersectsFrustum)
 			{

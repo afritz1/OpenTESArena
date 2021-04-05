@@ -1,6 +1,7 @@
 #ifndef ENTITY_UTILS_H
 #define ENTITY_UTILS_H
 
+#include <optional>
 #include <string>
 
 #include "EntityDefinition.h"
@@ -33,8 +34,8 @@ namespace EntityUtils
 
 	int getYOffset(const EntityDefinition &entityDef);
 
-	// Returns whether the entity definition has light intensity.
-	bool tryGetLightIntensity(const EntityDefinition &entityDef, int *outIntensity);
+	// Returns the entity definition's light radius, if any.
+	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef, bool nightLightsAreActive);
 
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef,

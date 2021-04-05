@@ -4,6 +4,7 @@
 #include "EntityDefinitionLibrary.h"
 #include "EntityType.h"
 #include "EntityUtils.h"
+#include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -92,21 +93,26 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 	}
 }
 
-bool EntityUtils::tryGetLightIntensity(const EntityDefinition &entityDef, int *outIntensity)
+std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef, bool nightLightsAreActive)
 {
 	if (entityDef.getType() != EntityDefinition::Type::Doodad)
 	{
-		return false;
+		return std::nullopt;
 	}
 
-	const auto &doodadDef = entityDef.getDoodad();
-	if (doodadDef.lightIntensity <= 0)
+	const EntityDefinition::DoodadDefinition &doodadDef = entityDef.getDoodad();
+	if (doodadDef.streetlight && nightLightsAreActive)
 	{
-		return false;
+		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
 	}
-
-	*outIntensity = doodadDef.lightIntensity;
-	return true;
+	else if (doodadDef.lightIntensity > 0)
+	{
+		return static_cast<double>(doodadDef.lightIntensity);
+	}
+	else
+	{
+		return std::nullopt;
+	}
 }
 
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
