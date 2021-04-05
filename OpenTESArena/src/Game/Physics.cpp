@@ -28,23 +28,23 @@ namespace Physics
 	struct ChunkEntityMap
 	{
 		ChunkInt2 chunk;
-		std::unordered_map<VoxelInt3, std::vector<EntityManager::EntityVisibilityData>> mappings;
+		std::unordered_map<VoxelInt3, std::vector<EntityManager::EntityVisibilityState3D>> mappings;
 
 		void init(const ChunkInt2 &chunk)
 		{
 			this->chunk = chunk;
 		}
 
-		void add(const VoxelInt3 &voxel, const EntityManager::EntityVisibilityData &visData)
+		void add(const VoxelInt3 &voxel, const EntityManager::EntityVisibilityState3D &visState)
 		{
 			auto iter = this->mappings.find(voxel);
 			if (iter == this->mappings.end())
 			{
-				iter = this->mappings.emplace(voxel, std::vector<EntityManager::EntityVisibilityData>()).first;
+				iter = this->mappings.emplace(voxel, std::vector<EntityManager::EntityVisibilityState3D>()).first;
 			}
 
-			std::vector<EntityManager::EntityVisibilityData> &visDataList = iter->second;
-			visDataList.emplace_back(visData);
+			std::vector<EntityManager::EntityVisibilityState3D> &visStateList = iter->second;
+			visStateList.emplace_back(visState);
 		}
 	};
 
@@ -154,14 +154,14 @@ namespace Physics
 
 			const Entity &entity = *entityPtr;
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
-			EntityManager::EntityVisibilityData visData;
-			entityManager.getEntityVisibilityData(entity, viewCoordXZ, ceilingScale, chunkManager,
-				entityDefLibrary, visData);
+			EntityManager::EntityVisibilityState3D visState;
+			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, chunkManager,
+				entityDefLibrary, visState);
 
 			// Get the entity's view-dependent bounding box to help determine which voxels they are in.
 			// @todo: the view-independent bounding box would be better and would keep this function from needing a view coord.
 			CoordDouble3 minCoord, maxCoord;
-			entityManager.getEntityBoundingBox(entity, visData, entityDefLibrary, &minCoord, &maxCoord);
+			entityManager.getEntityBoundingBox(entity, visState, entityDefLibrary, &minCoord, &maxCoord);
 
 			// Normalize Y values.
 			const VoxelDouble3 minPoint(minCoord.point.x, minCoord.point.y / ceilingScale, minCoord.point.z);
@@ -188,7 +188,7 @@ namespace Physics
 						// If it's in the center chunk, add a mapping.
 						if (curCoord.chunk == chunk)
 						{
-							chunkEntityMap.add(curCoord.voxel, visData);
+							chunkEntityMap.add(curCoord.voxel, visState);
 						}
 					}
 				}
@@ -1019,20 +1019,20 @@ namespace Physics
 		if (iter != entityMappings.end())
 		{
 			// Iterate over all the entities that cross this voxel and ray test them.
-			const std::vector<EntityManager::EntityVisibilityData> &entityVisDataList = iter->second;
-			for (const EntityManager::EntityVisibilityData &visData : entityVisDataList)
+			const std::vector<EntityManager::EntityVisibilityState3D> &entityVisStateList = iter->second;
+			for (const EntityManager::EntityVisibilityState3D &visState : entityVisStateList)
 			{
-				const Entity &entity = *visData.entity;
+				const Entity &entity = *visState.entity;
 				const EntityDefinition &entityDef = entityManager.getEntityDef(
 					entity.getDefinitionID(), entityDefLibrary);
 				const EntityAnimationDefinition::Keyframe &animKeyframe =
-					entityManager.getEntityAnimKeyframe(entity, visData, entityDefLibrary);
+					entityManager.getEntityAnimKeyframe(entity, visState, entityDefLibrary);
 
 				const double flatWidth = animKeyframe.getWidth();
 				const double flatHeight = animKeyframe.getHeight();
 
 				CoordDouble3 hitCoord;
-				if (renderer.getEntityRayIntersection(visData, entityDef, flatForward, flatRight, flatUp,
+				if (renderer.getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
 					flatWidth, flatHeight, rayCoord, rayDirection, pixelPerfect, palette, &hitCoord))
 				{
 					const double distance = (hitCoord - rayCoord).length();

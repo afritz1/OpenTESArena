@@ -26,7 +26,21 @@ enum class EntityType;
 class EntityManager
 {
 public:
-	struct EntityVisibilityData
+	struct EntityVisibilityState2D
+	{
+		const Entity *entity;
+		CoordDouble2 flatPosition;
+		int stateIndex;
+		int angleIndex;
+		int keyframeIndex;
+
+		EntityVisibilityState2D();
+
+		void init(const Entity *entity, const CoordDouble2 &flatPosition, int stateIndex,
+			int angleIndex, int keyframeIndex);
+	};
+
+	struct EntityVisibilityState3D
 	{
 		const Entity *entity;
 		CoordDouble3 flatPosition;
@@ -34,7 +48,7 @@ public:
 		int angleIndex;
 		int keyframeIndex;
 
-		EntityVisibilityData();
+		EntityVisibilityState3D();
 
 		void init(const Entity *entity, const CoordDouble3 &flatPosition, int stateIndex,
 			int angleIndex, int keyframeIndex);
@@ -184,18 +198,21 @@ public:
 	// Adds an entity definition and returns its ID.
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &entityDefLibrary);
 
-	// Gets the data necessary for rendering and ray cast selection.
-	void getEntityVisibilityData(const Entity &entity, const CoordDouble2 &eye2D,
+	// Gets the entity visibility data necessary for rendering and ray cast selection.
+	void getEntityVisibilityState2D(const Entity &entity, const CoordDouble2 &eye2D,
+		const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
+		EntityVisibilityState2D &outVisState) const;
+	void getEntityVisibilityState3D(const Entity &entity, const CoordDouble2 &eye2D,
 		double ceilingScale, const ChunkManager &chunkManager, const EntityDefinitionLibrary &entityDefLibrary,
-		EntityVisibilityData &outVisData) const;
+		EntityVisibilityState3D &outVisState) const;
 
 	// Convenience function for getting the active keyframe from an entity, given some
 	// visibility data.
 	const EntityAnimationDefinition::Keyframe &getEntityAnimKeyframe(const Entity &entity,
-		const EntityVisibilityData &visData, const EntityDefinitionLibrary &entityDefLibrary) const;
+		const EntityVisibilityState3D &visState, const EntityDefinitionLibrary &entityDefLibrary) const;
 
 	// Gets the entity's 3D bounding box. This is view-dependent!
-	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityData &visData,
+	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityState3D &visState,
 		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
 
 	// Puts the entity into the chunk representative of their 3D position.

@@ -145,7 +145,7 @@ public:
 	// 'pixelPerfect' determines whether the entity's texture is involved in the calculation.
 	// Returns whether the entity was able to be tested and was hit by the ray. This is a renderer
 	// function because the exact method of testing may depend on the 3D representation of the entity.
-	bool getEntityRayIntersection(const EntityManager::EntityVisibilityData &visData,
+	bool getEntityRayIntersection(const EntityManager::EntityVisibilityState3D &visState,
 		const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
 		const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
 		const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const;

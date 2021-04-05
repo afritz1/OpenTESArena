@@ -1698,17 +1698,17 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const EntityDefinition &entityDef = entityManager.getEntityDef(
 			entity->getDefinitionID(), entityDefLibrary);
 
-		EntityManager::EntityVisibilityData visData;
-		entityManager.getEntityVisibilityData(*entity, eyeXZ, ceilingScale, chunkManager,
-			entityDefLibrary, visData);
+		EntityManager::EntityVisibilityState3D visState;
+		entityManager.getEntityVisibilityState3D(*entity, eyeXZ, ceilingScale, chunkManager,
+			entityDefLibrary, visState);
 
 		// Get entity animation state to determine render properties.
 		const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-		const EntityAnimationDefinition::State &animDefState = animDef.getState(visData.stateIndex);
+		const EntityAnimationDefinition::State &animDefState = animDef.getState(visState.stateIndex);
 		const EntityAnimationDefinition::KeyframeList &animDefKeyframeList =
-			animDefState.getKeyframeList(visData.angleIndex);
+			animDefState.getKeyframeList(visState.angleIndex);
 		const EntityAnimationDefinition::Keyframe &animDefKeyframe =
-			animDefKeyframeList.getKeyframe(visData.keyframeIndex);
+			animDefKeyframeList.getKeyframe(visState.keyframeIndex);
 
 		const double flatWidth = animDefKeyframe.getWidth();
 		const double flatHeight = animDefKeyframe.getHeight();
@@ -1717,7 +1717,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		// See if the entity has an active light.
 		const std::optional<double> lightRadius = EntityUtils::tryGetLightRadius(
 			entityDef, shadingInfo.nightLightsAreActive);
-		const CoordDouble3 &flatCoord = visData.flatPosition;
+		const CoordDouble3 &flatCoord = visState.flatPosition;
 		if (lightRadius.has_value())
 		{
 			// See if the light is visible.
