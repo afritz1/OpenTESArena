@@ -85,9 +85,6 @@ void Entity::getViewIndependentBBox3D(double flatPosY, const EntityManager &enti
 {
 	DebugAssert(this->defID != EntityManager::NO_DEF_ID);
 
-	CoordDouble2 min2D, max2D;
-	this->getViewIndependentBBox2D(entityManager, entityDefLibrary, &min2D, &max2D);
-
 	const EntityDefinition &entityDef = entityManager.getEntityDef(this->defID, entityDefLibrary);
 	const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
 
