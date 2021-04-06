@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "CharacterClassDefinition.h"
 #include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
@@ -113,6 +115,30 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 	{
 		return std::nullopt;
 	}
+}
+
+void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth,
+	double *outMaxHeight)
+{
+	double maxAnimWidth = 0.0;
+	double maxAnimHeight = 0.0;
+	for (int i = 0; i < animDef.getStateCount(); i++)
+	{
+		const EntityAnimationDefinition::State &state = animDef.getState(i);
+		for (int j = 0; j < state.getKeyframeListCount(); j++)
+		{
+			const EntityAnimationDefinition::KeyframeList &keyframeList = state.getKeyframeList(j);
+			for (int k = 0; k < keyframeList.getKeyframeCount(); k++)
+			{
+				const EntityAnimationDefinition::Keyframe &keyframe = keyframeList.getKeyframe(k);
+				maxAnimWidth = std::max(maxAnimWidth, keyframe.getWidth());
+				maxAnimHeight = std::max(maxAnimHeight, keyframe.getHeight());
+			}
+		}
+	}
+
+	*outMaxWidth = maxAnimWidth;
+	*outMaxHeight = maxAnimHeight;
 }
 
 bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,

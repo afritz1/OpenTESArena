@@ -211,10 +211,6 @@ public:
 	const EntityAnimationDefinition::Keyframe &getEntityAnimKeyframe(const Entity &entity,
 		const EntityVisibilityState3D &visState, const EntityDefinitionLibrary &entityDefLibrary) const;
 
-	// Gets the entity's 3D bounding box. This is view-dependent!
-	void getEntityBoundingBox(const Entity &entity, const EntityVisibilityState3D &visState,
-		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
-
 	// Puts the entity into the chunk representative of their 3D position.
 	void updateEntityChunk(Entity *entity);
 

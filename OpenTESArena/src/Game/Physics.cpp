@@ -91,9 +91,6 @@ namespace Physics
 
 	// Builds a set of voxels for a chunk that are at least partially touched by entities. A point of reference
 	// is needed for evaluating entity animations. Ignores entities behind the camera.
-	// @todo: the view coord might eventually be obsolete if we use the view-independent bounding boxes of
-	// entities instead. It would require a preprocessing step on the entity animation def, and would require
-	// iterating all states and frames.
 	Physics::ChunkEntityMap makeChunkEntityMap(const ChunkInt2 &chunk, const CoordDouble3 &viewCoord,
 		double ceilingScale, const ChunkManager &chunkManager, const EntityManager &entityManager,
 		const EntityDefinitionLibrary &entityDefLibrary)
@@ -153,15 +150,16 @@ namespace Physics
 			}
 
 			const Entity &entity = *entityPtr;
+
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
 			EntityManager::EntityVisibilityState3D visState;
 			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, chunkManager,
 				entityDefLibrary, visState);
 
-			// Get the entity's view-dependent bounding box to help determine which voxels they are in.
-			// @todo: the view-independent bounding box would be better and would keep this function from needing a view coord.
+			// Get the entity's view-independent bounding box to help determine which voxels they are in.
 			CoordDouble3 minCoord, maxCoord;
-			entityManager.getEntityBoundingBox(entity, visState, entityDefLibrary, &minCoord, &maxCoord);
+			entity.getViewIndependentBBox3D(visState.flatPosition.point.y, entityManager, entityDefLibrary,
+				&minCoord, &maxCoord);
 
 			// Normalize Y values.
 			const VoxelDouble3 minPoint(minCoord.point.x, minCoord.point.y / ceilingScale, minCoord.point.z);

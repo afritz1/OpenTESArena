@@ -48,6 +48,8 @@ public:
 	void getViewDependentBBox2D(const CoordDouble2 &cameraCoord, CoordDouble2 *outMin, CoordDouble2 *outMax) const;
 	void getViewIndependentBBox2D(const EntityManager &entityManager, const EntityDefinitionLibrary &entityDefLibrary,
 		CoordDouble2 *outMin, CoordDouble2 *outMax) const;
+	void getViewIndependentBBox3D(double flatPosY, const EntityManager &entityManager,
+		const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const;
 
 	// Gets the entity's derived type (NPC, doodad, etc.).
 	virtual EntityType getEntityType() const = 0;

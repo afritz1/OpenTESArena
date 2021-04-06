@@ -895,26 +895,6 @@ const EntityAnimationDefinition::Keyframe &EntityManager::getEntityAnimKeyframe(
 	return animKeyframe;
 }
 
-void EntityManager::getEntityBoundingBox(const Entity &entity, const EntityVisibilityState3D &visState,
-	const EntityDefinitionLibrary &entityDefLibrary, CoordDouble3 *outMin, CoordDouble3 *outMax) const
-{
-	// Get animation frame from visibility data.
-	const EntityAnimationDefinition::Keyframe &keyframe =
-		this->getEntityAnimKeyframe(entity, visState, entityDefLibrary);
-
-	// Start with bounding cylinder.
-	const double radius = keyframe.getWidth() * 0.50;
-	const double height = keyframe.getHeight();
-
-	// Convert bounding cylinder to axis-aligned bounding box. Need to calculate the resulting chunk coordinates
-	// since the bounding box might cross chunk boundaries.
-	const CoordDouble3 &flatPos = visState.flatPosition;
-	const VoxelDouble3 minPoint(flatPos.point.x - radius, flatPos.point.y, flatPos.point.z - radius);
-	const VoxelDouble3 maxPoint(flatPos.point.x + radius, flatPos.point.y + height, flatPos.point.z + radius);
-	*outMin = ChunkUtils::recalculateCoord(flatPos.chunk, minPoint);
-	*outMax = ChunkUtils::recalculateCoord(flatPos.chunk, maxPoint);
-}
-
 void EntityManager::updateEntityChunk(Entity *entity)
 {
 	if (entity == nullptr)
