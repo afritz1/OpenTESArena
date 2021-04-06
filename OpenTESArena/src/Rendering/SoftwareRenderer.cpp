@@ -9,6 +9,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Entities/EntityAnimationInstance.h"
 #include "../Entities/EntityType.h"
+#include "../Entities/EntityVisibilityState.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
@@ -1698,7 +1699,7 @@ void SoftwareRenderer::updateVisibleFlats(const Camera &camera, const ShadingInf
 		const EntityDefinition &entityDef = entityManager.getEntityDef(
 			entity->getDefinitionID(), entityDefLibrary);
 
-		EntityManager::EntityVisibilityState3D visState;
+		EntityVisibilityState3D visState;
 		entityManager.getEntityVisibilityState3D(*entity, eyeXZ, ceilingScale, chunkManager,
 			entityDefLibrary, visState);
 

@@ -5,6 +5,7 @@
 #include "EntityDefinitionLibrary.h"
 #include "EntityManager.h"
 #include "EntityType.h"
+#include "EntityVisibilityState.h"
 #include "../Assets/MIFUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
@@ -13,44 +14,6 @@
 #include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
-
-EntityManager::EntityVisibilityState2D::EntityVisibilityState2D()
-	: flatPosition(ChunkInt2::Zero, VoxelDouble2::Zero)
-{
-	this->entity = nullptr;
-	this->stateIndex = -1;
-	this->angleIndex = -1;
-	this->keyframeIndex = -1;
-}
-
-void EntityManager::EntityVisibilityState2D::init(const Entity *entity, const CoordDouble2 &flatPosition,
-	int stateIndex, int angleIndex, int keyframeIndex)
-{
-	this->entity = entity;
-	this->flatPosition = flatPosition;
-	this->stateIndex = stateIndex;
-	this->angleIndex = angleIndex;
-	this->keyframeIndex = keyframeIndex;
-}
-
-EntityManager::EntityVisibilityState3D::EntityVisibilityState3D()
-	: flatPosition(ChunkInt2::Zero, VoxelDouble3::Zero)
-{
-	this->entity = nullptr;
-	this->stateIndex = -1;
-	this->angleIndex = -1;
-	this->keyframeIndex = -1;
-}
-
-void EntityManager::EntityVisibilityState3D::init(const Entity *entity, const CoordDouble3 &flatPosition,
-	int stateIndex, int angleIndex, int keyframeIndex)
-{
-	this->entity = entity;
-	this->flatPosition = flatPosition;
-	this->stateIndex = stateIndex;
-	this->angleIndex = angleIndex;
-	this->keyframeIndex = keyframeIndex;
-}
 
 template <typename T>
 int EntityManager::EntityGroup<T>::getCount() const

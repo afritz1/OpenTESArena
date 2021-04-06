@@ -11,6 +11,7 @@
 #include "SdlUiRenderer.h"
 #include "SoftwareRenderer.h"
 #include "../Entities/EntityAnimationInstance.h"
+#include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
@@ -390,7 +391,7 @@ const Renderer::ProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-bool Renderer::getEntityRayIntersection(const EntityManager::EntityVisibilityState3D &visState,
+bool Renderer::getEntityRayIntersection(const EntityVisibilityState3D &visState,
 	const EntityDefinition &entityDef, const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight,
 	const VoxelDouble3 &entityUp, double entityWidth, double entityHeight, const CoordDouble3 &rayPoint,
 	const VoxelDouble3 &rayDirection, bool pixelPerfect, const Palette &palette, CoordDouble3 *outHitPoint) const

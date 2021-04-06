@@ -6,6 +6,7 @@
 #include "../Assets/MIFFile.h"
 #include "../Entities/Entity.h"
 #include "../Entities/EntityType.h"
+#include "../Entities/EntityVisibilityState.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -28,22 +29,22 @@ namespace Physics
 	struct ChunkEntityMap
 	{
 		ChunkInt2 chunk;
-		std::unordered_map<VoxelInt3, std::vector<EntityManager::EntityVisibilityState3D>> mappings;
+		std::unordered_map<VoxelInt3, std::vector<EntityVisibilityState3D>> mappings;
 
 		void init(const ChunkInt2 &chunk)
 		{
 			this->chunk = chunk;
 		}
 
-		void add(const VoxelInt3 &voxel, const EntityManager::EntityVisibilityState3D &visState)
+		void add(const VoxelInt3 &voxel, const EntityVisibilityState3D &visState)
 		{
 			auto iter = this->mappings.find(voxel);
 			if (iter == this->mappings.end())
 			{
-				iter = this->mappings.emplace(voxel, std::vector<EntityManager::EntityVisibilityState3D>()).first;
+				iter = this->mappings.emplace(voxel, std::vector<EntityVisibilityState3D>()).first;
 			}
 
-			std::vector<EntityManager::EntityVisibilityState3D> &visStateList = iter->second;
+			std::vector<EntityVisibilityState3D> &visStateList = iter->second;
 			visStateList.emplace_back(visState);
 		}
 	};
@@ -152,7 +153,7 @@ namespace Physics
 			const Entity &entity = *entityPtr;
 
 			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
-			EntityManager::EntityVisibilityState3D visState;
+			EntityVisibilityState3D visState;
 			entityManager.getEntityVisibilityState3D(entity, viewCoordXZ, ceilingScale, chunkManager,
 				entityDefLibrary, visState);
 
@@ -1017,8 +1018,8 @@ namespace Physics
 		if (iter != entityMappings.end())
 		{
 			// Iterate over all the entities that cross this voxel and ray test them.
-			const std::vector<EntityManager::EntityVisibilityState3D> &entityVisStateList = iter->second;
-			for (const EntityManager::EntityVisibilityState3D &visState : entityVisStateList)
+			const std::vector<EntityVisibilityState3D> &entityVisStateList = iter->second;
+			for (const EntityVisibilityState3D &visState : entityVisStateList)
 			{
 				const Entity &entity = *visState.entity;
 				const EntityDefinition &entityDef = entityManager.getEntityDef(

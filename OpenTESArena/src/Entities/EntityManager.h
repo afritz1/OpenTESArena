@@ -21,38 +21,13 @@ class ChunkManager;
 class EntityDefinitionLibrary;
 class Game;
 
+struct EntityVisibilityState2D;
+struct EntityVisibilityState3D;
+
 enum class EntityType;
 
 class EntityManager
 {
-public:
-	struct EntityVisibilityState2D
-	{
-		const Entity *entity;
-		CoordDouble2 flatPosition;
-		int stateIndex;
-		int angleIndex;
-		int keyframeIndex;
-
-		EntityVisibilityState2D();
-
-		void init(const Entity *entity, const CoordDouble2 &flatPosition, int stateIndex,
-			int angleIndex, int keyframeIndex);
-	};
-
-	struct EntityVisibilityState3D
-	{
-		const Entity *entity;
-		CoordDouble3 flatPosition;
-		int stateIndex;
-		int angleIndex;
-		int keyframeIndex;
-
-		EntityVisibilityState3D();
-
-		void init(const Entity *entity, const CoordDouble3 &flatPosition, int stateIndex,
-			int angleIndex, int keyframeIndex);
-	};
 private:
 	template <typename T>
 	class EntityGroup
