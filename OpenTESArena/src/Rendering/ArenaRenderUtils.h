@@ -8,6 +8,7 @@ namespace ArenaRenderUtils
 {
 	constexpr int SCREEN_WIDTH = 320;
 	constexpr int SCREEN_HEIGHT = 200;
+	constexpr double ASPECT_RATIO = static_cast<double>(SCREEN_WIDTH) / static_cast<double>(SCREEN_HEIGHT);
 	constexpr int BITS_PER_PIXEL = 8;
 
 	// Texture limits.

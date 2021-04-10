@@ -17,6 +17,15 @@ enum class ClimateType;
 
 namespace ArenaWeatherUtils
 {
+	static constexpr int RAINDROP_COUNT = 64;
+
+	// Raindrop velocities in pixels per second.
+	static constexpr int RAINDROP_VELOCITY_X = -200;
+	static constexpr int RAINDROP_VELOCITY_Y = -450;
+
+	static constexpr double THUNDERSTORM_FLASH_SECONDS = 0.35; // Duration of sky flash.
+	static constexpr double THUNDERSTORM_BOLT_SECONDS = 0.10; // Duration of lightning bolt.
+
 	// Helper functions for determining what category a weather type falls into.
 	bool isClear(ArenaTypes::WeatherType weatherType);
 	bool isOvercast(ArenaTypes::WeatherType weatherType);
