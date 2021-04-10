@@ -185,7 +185,7 @@ int LocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &globalDst)
 }
 
 int LocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-	int month, const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
+	int month, const std::array<ArenaTypes::WeatherType, 36> &weathers, ArenaRandom &random,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();

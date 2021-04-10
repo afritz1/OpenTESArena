@@ -37,10 +37,9 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
+#include "../World/ArenaWeatherUtils.h"
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
-#include "../World/WeatherType.h"
-#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -199,28 +198,28 @@ namespace
 	};
 
 	// Values for testing.
-	const std::vector<WeatherType> Weathers =
+	const std::vector<ArenaTypes::WeatherType> Weathers =
 	{
-		WeatherType::Clear,
-		WeatherType::Overcast,
-		WeatherType::Rain,
-		WeatherType::Snow,
-		WeatherType::SnowOvercast,
-		WeatherType::Rain2,
-		WeatherType::Overcast2,
-		WeatherType::SnowOvercast2
+		ArenaTypes::WeatherType::Clear,
+		ArenaTypes::WeatherType::Overcast,
+		ArenaTypes::WeatherType::Rain,
+		ArenaTypes::WeatherType::Snow,
+		ArenaTypes::WeatherType::SnowOvercast,
+		ArenaTypes::WeatherType::Rain2,
+		ArenaTypes::WeatherType::Overcast2,
+		ArenaTypes::WeatherType::SnowOvercast2
 	};
 
-	const std::unordered_map<WeatherType, std::string> WeatherTypeNames =
+	const std::unordered_map<ArenaTypes::WeatherType, std::string> WeatherTypeNames =
 	{
-		{ WeatherType::Clear, "Clear" },
-		{ WeatherType::Overcast, "Overcast" },
-		{ WeatherType::Rain, "Rain" },
-		{ WeatherType::Snow, "Snow" },
-		{ WeatherType::SnowOvercast, "Snow Overcast" },
-		{ WeatherType::Rain2, "Rain 2" },
-		{ WeatherType::Overcast2, "Overcast 2" },
-		{ WeatherType::SnowOvercast2, "Snow Overcast 2" }
+		{ ArenaTypes::WeatherType::Clear, "Clear" },
+		{ ArenaTypes::WeatherType::Overcast, "Overcast" },
+		{ ArenaTypes::WeatherType::Rain, "Rain" },
+		{ ArenaTypes::WeatherType::Snow, "Snow" },
+		{ ArenaTypes::WeatherType::SnowOvercast, "Snow Overcast" },
+		{ ArenaTypes::WeatherType::Rain2, "Rain 2" },
+		{ ArenaTypes::WeatherType::Overcast2, "Overcast 2" },
+		{ ArenaTypes::WeatherType::SnowOvercast2, "Snow Overcast 2" }
 	};
 }
 
@@ -325,7 +324,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->quickStartButton = [&game]()
 	{
 		auto function = [](Game &game, int testType, int testIndex, const std::string &mifName,
-			const std::optional<ArenaTypes::InteriorType> &optInteriorType, WeatherType weatherType, MapType mapType)
+			const std::optional<ArenaTypes::InteriorType> &optInteriorType, ArenaTypes::WeatherType weatherType,
+			MapType mapType)
 		{
 			// Initialize 3D renderer.
 			auto &renderer = game.getRenderer();
@@ -577,7 +577,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
-					const std::optional<WeatherType> overrideWeather = weatherType;
+					const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
@@ -618,8 +618,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-					const WeatherType filteredWeatherType =
-						WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+					const ArenaTypes::WeatherType filteredWeatherType =
+						ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 					Buffer<uint8_t> reservedBlocks = [&cityDef]()
 					{
@@ -656,7 +656,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					// Load city into game state.
-					const std::optional<WeatherType> overrideWeather = filteredWeatherType;
+					const std::optional<ArenaTypes::WeatherType> overrideWeather = filteredWeatherType;
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
@@ -677,8 +677,8 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-				const WeatherType filteredWeatherType =
-					WeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+				const ArenaTypes::WeatherType filteredWeatherType =
+					ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				const auto &exeData = binaryAssetLibrary.getExeData();
 				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
@@ -694,7 +694,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const std::optional<WeatherType> overrideWeather = filteredWeatherType;
+				const std::optional<ArenaTypes::WeatherType> overrideWeather = filteredWeatherType;
 
 				// No previous start coordinate available. Let the loader decide.
 				const std::optional<CoordInt3> startCoord;
@@ -731,7 +731,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				{
 					// Make sure to get updated weather type from game state and not local variable
 					// so it gets the filtered weather type.
-					const WeatherType weatherType = gameState->getWeatherType();
+					const ArenaTypes::WeatherType weatherType = gameState->getWeatherType();
 					if (!gameState->nightMusicIsActive())
 					{
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
@@ -805,7 +805,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 		};
 
 		return Button<Game&, int, int, const std::string&,
-			const std::optional<ArenaTypes::InteriorType>&, WeatherType, MapType>(function);
+			const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType>(function);
 	}();
 
 	this->exitButton = []()
@@ -1120,7 +1120,7 @@ std::optional<ArenaTypes::InteriorType> MainMenuPanel::getSelectedTestInteriorTy
 	}
 }
 
-WeatherType MainMenuPanel::getSelectedTestWeatherType() const
+ArenaTypes::WeatherType MainMenuPanel::getSelectedTestWeatherType() const
 {
 	return Weathers.at(this->testWeather);
 }
@@ -1386,7 +1386,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	// Draw weather text if applicable.
 	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
 	{
-		const WeatherType weatherType = this->getSelectedTestWeatherType();
+		const ArenaTypes::WeatherType weatherType = this->getSelectedTestWeatherType();
 		const std::string &weatherName = WeatherTypeNames.at(weatherType);
 
 		const RichTextString testWeatherText(

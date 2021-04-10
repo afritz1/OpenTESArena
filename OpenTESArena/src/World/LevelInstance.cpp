@@ -1,9 +1,9 @@
 #include <algorithm>
 
+#include "ArenaWeatherUtils.h"
 #include "LevelInstance.h"
 #include "MapDefinition.h"
 #include "MapType.h"
-#include "WeatherUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Media/TextureManager.h"
@@ -48,7 +48,7 @@ double LevelInstance::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreActive,
+bool LevelInstance::trySetActive(ArenaTypes::WeatherType weatherType, bool nightLightsAreActive,
 	const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	TextureManager &textureManager, Renderer &renderer)
@@ -210,7 +210,7 @@ bool LevelInstance::trySetActive(WeatherType weatherType, bool nightLightsAreAct
 	writeChasmTextures(ArenaTypes::ChasmType::Lava);
 
 	// Set renderer fog distance and night lights.
-	const double fogDistance = WeatherUtils::getFogDistanceFromWeather(weatherType);
+	const double fogDistance = ArenaWeatherUtils::getFogDistanceFromWeather(weatherType);
 	renderer.setFogDistance(fogDistance);
 	renderer.setNightLightsActive(nightLightsAreActive, palette);
 

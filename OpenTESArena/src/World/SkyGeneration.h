@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "../Assets/ArenaTypes.h"
+
 #include "components/utilities/Buffer.h"
 
 class BinaryAssetLibrary;
@@ -11,7 +13,6 @@ class SkyInfoDefinition;
 class TextureManager;
 
 enum class ClimateType;
-enum class WeatherType;
 
 namespace SkyGeneration
 {
@@ -25,14 +26,14 @@ namespace SkyGeneration
 	struct ExteriorSkyGenInfo
 	{
 		ClimateType climateType; // Only cities have climate.
-		WeatherType weatherType;
+		ArenaTypes::WeatherType weatherType;
 		int currentDay;
 		int starCount;
 		uint32_t citySeed;
 		uint32_t skySeed;
 		bool provinceHasAnimatedLand;
 
-		void init(ClimateType climateType, WeatherType weatherType, int currentDay, int starCount,
+		void init(ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay, int starCount,
 			uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
 	};
 

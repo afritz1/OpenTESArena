@@ -32,7 +32,6 @@ class TextureManager;
 
 enum class ClimateType;
 enum class MapType;
-enum class WeatherType;
 
 class MapDefinition
 {

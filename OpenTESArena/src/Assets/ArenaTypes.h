@@ -99,6 +99,20 @@ namespace ArenaTypes
 		Splitting
 	};
 
+	// A unique identifier for each kind of weather. These can have an effect on the sky colors,
+	// fog distance, music, etc.. If in a desert, snow is replaced by rain.
+	enum class WeatherType
+	{
+		Clear,
+		Overcast, // Always with fog.
+		Rain, // If rnd() < 24000 then thunderstorm.
+		Snow,
+		SnowOvercast, // Always with fog.
+		Rain2, // If rnd() < 24000 then thunderstorm.
+		Overcast2, // Always with fog?
+		SnowOvercast2 // If rnd() < 16000 then with fog.
+	};
+
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

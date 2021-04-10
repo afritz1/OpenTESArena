@@ -2,18 +2,18 @@
 
 #include "ArenaCityUtils.h"
 #include "ArenaVoxelUtils.h"
+#include "ArenaWeatherUtils.h"
 #include "ArenaWildUtils.h"
 #include "ClimateType.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
-#include "WeatherUtils.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ClimateType climateType, WeatherType weatherType)
+std::string ArenaWildUtils::generateInfName(ClimateType climateType, ArenaTypes::WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -40,15 +40,15 @@ std::string ArenaWildUtils::generateInfName(ClimateType climateType, WeatherType
 
 	const char weatherLetter = [climateType, weatherType]()
 	{
-		if (WeatherUtils::isClear(weatherType) || WeatherUtils::isOvercast(weatherType))
+		if (ArenaWeatherUtils::isClear(weatherType) || ArenaWeatherUtils::isOvercast(weatherType))
 		{
 			return 'N';
 		}
-		else if (WeatherUtils::isRain(weatherType))
+		else if (ArenaWeatherUtils::isRain(weatherType))
 		{
 			return 'R';
 		}
-		else if (WeatherUtils::isSnow(weatherType))
+		else if (ArenaWeatherUtils::isSnow(weatherType))
 		{
 			// Deserts can't have snow.
 			if (climateType != ClimateType::Desert)

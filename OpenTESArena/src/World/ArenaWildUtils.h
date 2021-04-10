@@ -14,7 +14,6 @@
 class BinaryAssetLibrary;
 
 enum class ClimateType;
-enum class WeatherType;
 
 namespace ArenaWildUtils
 {
@@ -39,7 +38,7 @@ namespace ArenaWildUtils
 	constexpr ArenaTypes::FlatIndex WILD_DEN_FLAT_INDEX = 37;
 
 	// Generates the .INF name for the wilderness given a climate and current weather.
-	std::string generateInfName(ClimateType climateType, WeatherType weatherType);
+	std::string generateInfName(ClimateType climateType, ArenaTypes::WeatherType weatherType);
 
 	// Makes a 32-bit seed for a wilderness chunk. Intended for building names.
 	uint32_t makeWildChunkSeed(int wildX, int wildY);

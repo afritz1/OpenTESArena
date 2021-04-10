@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "ChunkManager.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Entities/CitizenUtils.h"
 #include "../Entities/EntityGeneration.h"
 #include "../Entities/EntityManager.h"
@@ -17,7 +18,6 @@ class MapDefinition;
 class Renderer;
 
 enum class MapType;
-enum class WeatherType;
 
 class LevelInstance
 {
@@ -36,7 +36,7 @@ public:
 	const EntityManager &getEntityManager() const;
 	double getCeilingScale() const;
 
-	bool trySetActive(WeatherType weatherType, bool nightLightsAreActive,
+	bool trySetActive(ArenaTypes::WeatherType weatherType, bool nightLightsAreActive,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		TextureManager &textureManager, Renderer &renderer);

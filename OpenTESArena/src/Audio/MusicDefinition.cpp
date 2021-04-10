@@ -18,7 +18,7 @@ void MusicDefinition::JingleMusicDefinition::init(ArenaTypes::CityType cityType,
 	this->climateType = climateType;
 }
 
-void MusicDefinition::WeatherMusicDefinition::init(WeatherType type)
+void MusicDefinition::WeatherMusicDefinition::init(ArenaTypes::WeatherType type)
 {
 	this->type = type;
 }
@@ -68,7 +68,7 @@ void MusicDefinition::initSwimming(std::string &&filename)
 	this->init(std::move(filename), Type::Swimming);
 }
 
-void MusicDefinition::initWeather(std::string &&filename, WeatherType type)
+void MusicDefinition::initWeather(std::string &&filename, ArenaTypes::WeatherType type)
 {
 	this->init(std::move(filename), Type::Weather);
 	this->weather.init(type);

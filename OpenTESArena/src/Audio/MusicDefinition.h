@@ -7,7 +7,6 @@
 #include "../WorldMap/LocationDefinition.h"
 
 enum class ClimateType;
-enum class WeatherType;
 
 class MusicDefinition
 {
@@ -67,9 +66,9 @@ public:
 
 	struct WeatherMusicDefinition
 	{
-		WeatherType type;
+		ArenaTypes::WeatherType type;
 
-		void init(WeatherType type);
+		void init(ArenaTypes::WeatherType type);
 	};
 private:
 	std::string filename;
@@ -92,7 +91,7 @@ public:
 	void initMainMenu(std::string &&filename);
 	void initNight(std::string &&filename);
 	void initSwimming(std::string &&filename);
-	void initWeather(std::string &&filename, WeatherType type);
+	void initWeather(std::string &&filename, ArenaTypes::WeatherType type);
 
 	const std::string &getFilename() const;
 	Type getType() const;

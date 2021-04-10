@@ -54,13 +54,12 @@
 #include "../World/ArenaInteriorUtils.h"
 #include "../World/ArenaLevelUtils.h"
 #include "../World/ArenaVoxelUtils.h"
+#include "../World/ArenaWeatherUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
-#include "../World/WeatherType.h"
-#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -2021,7 +2020,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 		// Change to exterior music.
 		const auto &clock = gameState.getClock();
-		const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
+		const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
 			gameState.getWeatherType(), cityDef.climateType);
 
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -2146,7 +2145,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const WeatherType weatherType = gameState.getWeatherType();
+			const ArenaTypes::WeatherType weatherType = gameState.getWeatherType();
 			const int currentDay = gameState.getDate().getDay();
 			const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 
@@ -2195,7 +2194,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const WeatherType overrideWeather = weatherType;
+				const ArenaTypes::WeatherType overrideWeather = weatherType;
 
 				// Calculate wilderness position based on the gate's voxel in the city.
 				const CoordInt3 startCoord = [&hitCoord, &transitionDir]()
@@ -2256,7 +2255,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const std::optional<WeatherType> overrideWeather = weatherType;
+				const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
@@ -2282,7 +2281,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 			{
 				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
 				const ClimateType climateType = cityDef.climateType;
-				const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
+				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
 					gameState.getWeatherType(), climateType);
 
 				if (!gameState.nightMusicIsActive())
@@ -2434,7 +2433,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				auto &newActiveLevel = interiorMapInst.getActiveLevel();
 				auto &newActiveSky = interiorMapInst.getActiveSky();
 
-				constexpr WeatherType weatherType = WeatherType::Clear;
+				constexpr ArenaTypes::WeatherType weatherType = ArenaTypes::WeatherType::Clear;
 				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
 
 				// @todo: should this be called differently so it doesn't badly influence data for the rest of
@@ -2854,7 +2853,7 @@ void GameWorldPanel::tick(double dt)
 		{
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
 			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			const WeatherType filteredWeatherType = WeatherUtils::getFilteredWeatherType(
+			const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
 				gameState.getWeatherType(), cityDef.climateType);
 
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(

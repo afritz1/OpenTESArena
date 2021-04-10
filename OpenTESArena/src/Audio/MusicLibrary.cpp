@@ -3,10 +3,10 @@
 #include <sstream>
 
 #include "MusicLibrary.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
 #include "../World/ClimateType.h"
-#include "../World/WeatherType.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -169,39 +169,39 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseWeatherType = [](const std::string_view &str, WeatherType *outWeatherType)
+	auto tryParseWeatherType = [](const std::string_view &str, ArenaTypes::WeatherType *outWeatherType)
 	{
 		if (str == "Clear")
 		{
-			*outWeatherType = WeatherType::Clear;
+			*outWeatherType = ArenaTypes::WeatherType::Clear;
 		}
 		else if (str == "Overcast")
 		{
-			*outWeatherType = WeatherType::Overcast;
+			*outWeatherType = ArenaTypes::WeatherType::Overcast;
 		}
 		else if (str == "Rain")
 		{
-			*outWeatherType = WeatherType::Rain;
+			*outWeatherType = ArenaTypes::WeatherType::Rain;
 		}
 		else if (str == "Snow")
 		{
-			*outWeatherType = WeatherType::Snow;
+			*outWeatherType = ArenaTypes::WeatherType::Snow;
 		}
 		else if (str == "SnowOvercast")
 		{
-			*outWeatherType = WeatherType::SnowOvercast;
+			*outWeatherType = ArenaTypes::WeatherType::SnowOvercast;
 		}
 		else if (str == "Overcast2")
 		{
-			*outWeatherType = WeatherType::Overcast2;
+			*outWeatherType = ArenaTypes::WeatherType::Overcast2;
 		}
 		else if (str == "Rain2")
 		{
-			*outWeatherType = WeatherType::Rain2;
+			*outWeatherType = ArenaTypes::WeatherType::Rain2;
 		}
 		else if (str == "SnowOvercast2")
 		{
-			*outWeatherType = WeatherType::SnowOvercast2;
+			*outWeatherType = ArenaTypes::WeatherType::SnowOvercast2;
 		}
 		else
 		{
@@ -292,7 +292,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	{
 		DebugAssert(strs.size() == 2);
 
-		WeatherType weatherType;
+		ArenaTypes::WeatherType weatherType;
 		if (!tryParseWeatherType(strs[1], &weatherType))
 		{
 			DebugLogWarning("Couldn't parse weather type in weather music definition \"" + std::string(valueStr) + "\".");

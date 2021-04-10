@@ -38,7 +38,6 @@
 #include "../UI/Texture.h"
 #include "../World/ClimateType.h"
 #include "../World/SkyUtils.h"
-#include "../World/WeatherType.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -369,18 +368,18 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								// Random weather for now.
 								// - @todo: make it depend on the location (no need to prevent deserts from having snow
 								//   since the climates are still hardcoded).
-								const WeatherType weatherType = [&game]()
+								const ArenaTypes::WeatherType weatherType = [&game]()
 								{
-									constexpr std::array<WeatherType, 8> Weathers =
+									constexpr std::array<ArenaTypes::WeatherType, 8> Weathers =
 									{
-										WeatherType::Clear,
-										WeatherType::Overcast,
-										WeatherType::Rain,
-										WeatherType::Snow,
-										WeatherType::SnowOvercast,
-										WeatherType::Rain2,
-										WeatherType::Overcast2,
-										WeatherType::SnowOvercast2
+										ArenaTypes::WeatherType::Clear,
+										ArenaTypes::WeatherType::Overcast,
+										ArenaTypes::WeatherType::Rain,
+										ArenaTypes::WeatherType::Snow,
+										ArenaTypes::WeatherType::SnowOvercast,
+										ArenaTypes::WeatherType::Rain2,
+										ArenaTypes::WeatherType::Overcast2,
+										ArenaTypes::WeatherType::SnowOvercast2
 									};
 
 									const int index = game.getRandom().next(static_cast<int>(Weathers.size()));
@@ -426,7 +425,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 									cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 								
-								const std::optional<WeatherType> overrideWeather = weatherType;
+								const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
 								const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 									game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),

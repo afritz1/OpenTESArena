@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/CityDataFile.h"
 #include "../Math/Vector2.h"
 
@@ -14,7 +15,6 @@ class Rect;
 
 enum class ClimateType;
 enum class LocationType;
-enum class WeatherType;
 
 // Various functions for working with original game values like location IDs.
 
@@ -75,7 +75,7 @@ namespace LocationUtils
 
 	// Gets the number of days required to travel from one province's local point to another.
 	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-		int month, const std::array<WeatherType, 36> &weathers, ArenaRandom &random,
+		int month, const std::array<ArenaTypes::WeatherType, 36> &weathers, ArenaRandom &random,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.

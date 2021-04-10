@@ -5,12 +5,11 @@
 #include <type_traits>
 
 #include "ArenaSkyUtils.h"
+#include "ArenaWeatherUtils.h"
 #include "ClimateType.h"
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
-#include "WeatherType.h"
-#include "WeatherUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
@@ -73,10 +72,10 @@ namespace SkyGeneration
 		return skyColors;
 	}
 
-	Buffer<Color> makeExteriorSkyColors(WeatherType weatherType, TextureManager &textureManager)
+	Buffer<Color> makeExteriorSkyColors(ArenaTypes::WeatherType weatherType, TextureManager &textureManager)
 	{
 		// Get the palette name for the given weather.
-		const std::string &paletteName = (weatherType == WeatherType::Clear) ?
+		const std::string &paletteName = (weatherType == ArenaTypes::WeatherType::Clear) ?
 			ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 		// The palettes in the data files only cover half of the day, so some added darkness is
@@ -192,7 +191,7 @@ namespace SkyGeneration
 	}
 
 	// Includes distant mountains and clouds.
-	void generateArenaStatics(ClimateType climateType, WeatherType weatherType, int currentDay,
+	void generateArenaStatics(ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
 		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager,
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
@@ -221,7 +220,7 @@ namespace SkyGeneration
 		}
 
 		// Cloud generation, only if the sky is clear.
-		if (WeatherUtils::isClear(weatherType))
+		if (ArenaWeatherUtils::isClear(weatherType))
 		{
 			const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
 			random.srand(cloudSeed);
@@ -528,7 +527,7 @@ void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, WeatherType weatherType,
+void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, ArenaTypes::WeatherType weatherType,
 	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->weatherType = weatherType;
@@ -570,7 +569,7 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 	}
 
 	// Add space objects if the weather permits it.
-	if (WeatherUtils::isClear(skyGenInfo.weatherType))
+	if (ArenaWeatherUtils::isClear(skyGenInfo.weatherType))
 	{
 		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
 			outSkyDef, outSkyInfoDef);

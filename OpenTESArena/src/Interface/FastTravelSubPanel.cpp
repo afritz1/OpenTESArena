@@ -18,8 +18,8 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../World/ArenaWeatherUtils.h"
 #include "../World/SkyUtils.h"
-#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
@@ -380,7 +380,7 @@ void FastTravelSubPanel::switchToNextPanel()
 	{
 		// Get weather type from game state.
 		const LocationDefinition::CityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const WeatherType weatherType = [this, &game, &gameState, &binaryAssetLibrary,
+		const ArenaTypes::WeatherType weatherType = [this, &game, &gameState, &binaryAssetLibrary,
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
@@ -392,7 +392,7 @@ void FastTravelSubPanel::switchToNextPanel()
 
 			const auto &weathersArray = gameState.getWeathersArray();
 			DebugAssertIndex(weathersArray, globalQuarter);
-			return WeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
+			return ArenaWeatherUtils::getFilteredWeatherType(weathersArray[globalQuarter], cityDef.climateType);
 		}();
 
 		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
@@ -433,7 +433,7 @@ void FastTravelSubPanel::switchToNextPanel()
 			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
 		// Load the destination city.
-		const std::optional<WeatherType> overrideWeather = weatherType;
+		const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
