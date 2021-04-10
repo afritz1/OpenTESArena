@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "al.h"
+
 #include "Midi.h"
 
 #include "../Math/Vector3.h"
@@ -84,7 +85,7 @@ private:
 	void playMusic(const std::string &filename, bool loop);
 public:
 	AudioManager();
-	~AudioManager(); // Required for pImpl to stay in .cpp file.
+	~AudioManager();
 
     void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
 		bool is3D, const std::string &midiConfig);
