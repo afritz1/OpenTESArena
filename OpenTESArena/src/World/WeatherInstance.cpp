@@ -134,7 +134,7 @@ WeatherInstance::WeatherInstance()
 	this->type = static_cast<WeatherInstance::Type>(-1);
 }
 
-void WeatherInstance::init(const WeatherDefinition &weatherDef)
+void WeatherInstance::init(const WeatherDefinition &weatherDef, Random &random)
 {
 	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
 
@@ -146,6 +146,9 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef)
 	else if (weatherDefType == WeatherDefinition::Type::Rain)
 	{
 		this->type = WeatherInstance::Type::Rain;
+
+		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
+		this->rain.init(rainDef.thunderstorm, random);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Snow)
 	{

@@ -63,7 +63,7 @@ private:
 public:
 	WeatherInstance();
 
-	void init(const WeatherDefinition &weatherDef);
+	void init(const WeatherDefinition &weatherDef, Random &random);
 
 	Type getType() const;
 	const RainInstance &getRain() const;
