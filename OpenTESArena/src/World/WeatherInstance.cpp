@@ -17,7 +17,7 @@ namespace
 		return ArenaWeatherUtils::THUNDERSTORM_FLASH_SECONDS + (random.nextReal() * 5.0);
 	}
 
-	double MakeLightningBoltAngle(Random &random)
+	Radians MakeLightningBoltAngle(Random &random)
 	{
 		return random.nextReal() * Constants::TwoPi;
 	}
