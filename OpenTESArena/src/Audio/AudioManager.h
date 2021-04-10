@@ -1,16 +1,22 @@
 #ifndef AUDIO_MANAGER_H
 #define AUDIO_MANAGER_H
 
+#include <deque>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "al.h"
+#include "Midi.h"
 
 #include "../Math/Vector3.h"
 
 // This class manages what sounds and music are played by OpenAL Soft.
 
-class AudioManagerImpl;
 class MusicDefinition;
+class OpenALStream;
 class Options;
 
 class AudioManager
@@ -29,7 +35,53 @@ public:
 		const Double3 &getDirection() const;
 	};
 private:
-	std::unique_ptr<AudioManagerImpl> pImpl;
+	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
+
+	float mMusicVolume;
+	float mSfxVolume;
+	bool mHasResamplerExtension; // Whether AL_SOFT_source_resampler is supported.
+
+	ALint mResampler;
+	bool mIs3D;
+	std::string mNextSong;
+
+	// Sounds which are allowed only one active instance at a time, otherwise they would
+	// sound a bit obnoxious. This functionality is added here because the original game
+	// can only play one sound at a time, so it doesn't have this problem.
+	std::vector<std::string> mSingleInstanceSounds;
+
+	// Currently active song and playback stream.
+	MidiSongPtr mCurrentSong;
+	std::unique_ptr<OpenALStream> mSongStream;
+
+	// Loaded sound buffers from .VOC files.
+	std::unordered_map<std::string, ALuint> mSoundBuffers;
+
+	// A deque of available sources to play sounds and streams with.
+	std::deque<ALuint> mFreeSources;
+
+	// A deque of currently used sources for sounds (the music source is owned
+	// by OpenALStream). The string is the filename and the integer is the ID.
+	// The filename is required for some sounds that can only have one instance
+	// active at a time.
+	std::deque<std::pair<std::string, ALuint>> mUsedSources;
+
+	// Use this when resetting sound sources back to their default resampling. This uses
+	// whatever setting is the default within OpenAL.
+	static ALint getDefaultResampler();
+
+	// Gets the resampling index to use, given some resampling option. The two values are not
+	// necessarily identical (depending on the resampling implementation). Causes an error
+	// if the resampling extension is unsupported.
+	static ALint getResamplingIndex(int value);
+
+	// Whether there is a music queued after the current one.
+	bool hasNextMusic() const;
+
+	void setListenerPosition(const Double3 &position);
+	void setListenerOrientation(const Double3 &direction);
+
+	void playMusic(const std::string &filename, bool loop);
 public:
 	AudioManager();
 	~AudioManager(); // Required for pImpl to stay in .cpp file.

@@ -2,12 +2,9 @@
 #include <array>
 #include <atomic>
 #include <cstdint>
-#include <deque>
 #include <functional>
 #include <optional>
 #include <thread>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "al.h"
@@ -29,100 +26,10 @@
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
-class OpenALStream;
-
-class AudioManagerImpl
-{
-private:
-	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
-
-	ALint mResampler;
-	bool mIs3D;	
-	std::string mNextSong;
-
-	// Sounds which are allowed only one active instance at a time, otherwise they would
-	// sound a bit obnoxious. This functionality is added here because the original game
-	// can only play one sound at a time, so it doesn't have this problem.
-	std::vector<std::string> mSingleInstanceSounds;
-
-	// Use this when resetting sound sources back to their default resampling. This uses
-	// whatever setting is the default within OpenAL.
-	static ALint getDefaultResampler();
-
-	// Gets the resampling index to use, given some resampling option. The two values are not
-	// necessarily identical (depending on the resampling implementation). Causes an error
-	// if the resampling extension is unsupported.
-	static ALint getResamplingIndex(int value);
-public:
-	float mMusicVolume;
-	float mSfxVolume;
-	bool mHasResamplerExtension; // Whether AL_SOFT_source_resampler is supported.
-
-	// Currently active song and playback stream.
-	MidiSongPtr mCurrentSong;
-	std::unique_ptr<OpenALStream> mSongStream;
-
-	// Loaded sound buffers from .VOC files.
-	std::unordered_map<std::string, ALuint> mSoundBuffers;
-
-	// A deque of available sources to play sounds and streams with.
-	std::deque<ALuint> mFreeSources;
-
-	// A deque of currently used sources for sounds (the music source is owned
-	// by OpenALStream). The string is the filename and the integer is the ID.
-	// The filename is required for some sounds that can only have one instance
-	// active at a time.
-	std::deque<std::pair<std::string, ALuint>> mUsedSources;
-
-	AudioManagerImpl();
-	~AudioManagerImpl();
-
-	void init(double musicVolume, double soundVolume, int maxChannels, int resamplingOption,
-		bool is3D, const std::string &midiConfig);
-
-	bool hasNextMusic() const;
-
-	// Returns whether the given sound is currently playing.
-	bool soundIsPlaying(const std::string &filename) const;
-
-	bool soundExists(const std::string &filename) const;
-
-	void playMusic(const std::string &filename, bool loop);
-	void playSound(const std::string &filename, const std::optional<Double3> &position);
-
-	void stopMusic();
-	void stopSound();
-
-	void setMusicVolume(double percent);
-	void setSoundVolume(double percent);
-	void setResamplingOption(int value);
-	void set3D(bool is3D);
-	void addSingleInstanceSound(std::string &&filename);
-	void clearSingleInstanceSounds();
-	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &direction);
-	void setNextMusic(std::string &&filename);
-
-	void update(double dt, const AudioManager::ListenerData *listenerData);
-};
-
-AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
-	: position(position), direction(direction) { }
-
-const Double3 &AudioManager::ListenerData::getPosition() const
-{
-	return this->position;
-}
-
-const Double3 &AudioManager::ListenerData::getDirection() const
-{
-	return this->direction;
-}
-
 class OpenALStream
 {
 private:
-	AudioManagerImpl *mManager;
+	std::deque<ALuint> *mFreeSourcesPtr; // Free sources owned by audio manager.
 	MidiSong *mSong;
 	bool mLoop;
 
@@ -283,12 +190,13 @@ private:
 	}
 
 public:
-	OpenALStream(AudioManagerImpl *manager, MidiSong *song)
-		: mBuffers{ 0 }, mQuit(false)
+	OpenALStream(std::deque<ALuint> *freeSources, MidiSong *song)
+		: mQuit(false)
 	{
-		mManager = manager;
+		mFreeSourcesPtr = freeSources;
 		mSong = song;
 		mSource = 0;
+		mBuffers.fill(0);
 		mBufferIdx = 0;
 		mSampleRate = 0;
 		mLoop = false;
@@ -309,7 +217,7 @@ public:
 			 */
 			alSourceRewind(mSource);
 			alSourcei(mSource, AL_BUFFER, 0);
-			mManager->mFreeSources.push_front(mSource);
+			mFreeSourcesPtr->push_front(mSource);
 		}
 		/* Delete the buffers used for the queue. */
 		alDeleteBuffers(static_cast<ALsizei>(mBuffers.size()), mBuffers.data());
@@ -403,16 +311,29 @@ public:
 	}
 };
 
-// Audio Manager Impl
+AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
+	: position(position), direction(direction) { }
 
-AudioManagerImpl::AudioManagerImpl()
+const Double3 &AudioManager::ListenerData::getPosition() const
 {
-	mMusicVolume = 1.0f;
-	mSfxVolume = 1.0f;
-	mHasResamplerExtension = false;
+	return this->position;
 }
 
-AudioManagerImpl::~AudioManagerImpl()
+const Double3 &AudioManager::ListenerData::getDirection() const
+{
+	return this->direction;
+}
+
+AudioManager::AudioManager()
+{
+	mMusicVolume = 0.0f;
+	mSfxVolume = 0.0f;
+	mHasResamplerExtension = false;
+	mResampler = -1;
+	mIs3D = false;
+}
+
+AudioManager::~AudioManager()
 {
 	this->stopMusic();
 	this->stopSound();
@@ -446,44 +367,7 @@ AudioManagerImpl::~AudioManagerImpl()
 	alcCloseDevice(device);
 }
 
-ALint AudioManagerImpl::getDefaultResampler()
-{
-	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
-	return defaultResampler;
-}
-
-ALint AudioManagerImpl::getResamplingIndex(int resamplingOption)
-{
-	const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
-	const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
-
-	if (resamplingOption == 0)
-	{
-		// Default.
-		return defaultResampler;
-	}
-	else if (resamplingOption == 1)
-	{
-		// Fastest.
-		return 0;
-	}
-	else if (resamplingOption == 2)
-	{
-		// Medium.
-		return std::min(defaultResampler + 1, resamplerCount - 1);
-	}
-	else if (resamplingOption == 3)
-	{
-		// Best.
-		return resamplerCount - 1;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(ALint, std::to_string(resamplingOption));
-	}
-}
-
-void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChannels,
+void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	int resamplingOption, bool is3D, const std::string &midiConfig)
 {
 	DebugLog("Initializing.");
@@ -513,9 +397,8 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 
 	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
-	mResampler = mHasResamplerExtension ?
-		AudioManagerImpl::getResamplingIndex(resamplingOption) :
-		AudioManagerImpl::UNSUPPORTED_EXTENSION;
+	mResampler = mHasResamplerExtension ? AudioManager::getResamplingIndex(resamplingOption) :
+		AudioManager::UNSUPPORTED_EXTENSION;
 
 	// Set whether the audio manager should play in 2D or 3D mode.
 	mIs3D = is3D;
@@ -555,12 +438,22 @@ void AudioManagerImpl::init(double musicVolume, double soundVolume, int maxChann
 	this->setListenerOrientation(Double3::UnitX);
 }
 
-bool AudioManagerImpl::hasNextMusic() const
+double AudioManager::getMusicVolume() const
 {
-	return !this->mNextSong.empty();
+	return static_cast<double>(mMusicVolume);
 }
 
-bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
+double AudioManager::getSoundVolume() const
+{
+	return static_cast<double>(mSfxVolume);
+}
+
+bool AudioManager::hasResamplerExtension() const
+{
+	return mHasResamplerExtension;
+}
+
+bool AudioManager::isPlayingSound(const std::string &filename) const
 {
 	// Check through used sources' filenames.
 	const auto iter = std::find_if(mUsedSources.begin(), mUsedSources.end(),
@@ -572,41 +465,82 @@ bool AudioManagerImpl::soundIsPlaying(const std::string &filename) const
 	return iter != mUsedSources.end();
 }
 
-bool AudioManagerImpl::soundExists(const std::string &filename) const
+bool AudioManager::soundExists(const std::string &filename) const
 {
 	return VFS::Manager::get().open(filename.c_str()) != nullptr;
 }
 
-void AudioManagerImpl::playMusic(const std::string &filename, bool loop)
+ALint AudioManager::getDefaultResampler()
 {
-	stopMusic();
+	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+	return defaultResampler;
+}
 
-	if (!mFreeSources.empty())
+ALint AudioManager::getResamplingIndex(int resamplingOption)
+{
+	const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
+	const ALint defaultResampler = AudioManager::getDefaultResampler();
+
+	if (resamplingOption == 0)
 	{
-		if (MidiDevice::isInited())
-			mCurrentSong = MidiDevice::get().open(filename);
-		if (!mCurrentSong)
-		{
-			DebugLogWarning("Failed to play " + filename + ".");
-			return;
-		}
-
-		mSongStream = std::make_unique<OpenALStream>(this, mCurrentSong.get());
-		if (mSongStream->init(mFreeSources.front(), mMusicVolume, loop))
-		{
-			mFreeSources.pop_front();
-			mSongStream->play();
-			DebugLog("Playing music " + filename + ".");
-		}
-		else
-		{
-			DebugLogWarning("Failed to init " + filename + " stream.");
-		}
+		// Default.
+		return defaultResampler;
+	}
+	else if (resamplingOption == 1)
+	{
+		// Fastest.
+		return 0;
+	}
+	else if (resamplingOption == 2)
+	{
+		// Medium.
+		return std::min(defaultResampler + 1, resamplerCount - 1);
+	}
+	else if (resamplingOption == 3)
+	{
+		// Best.
+		return resamplerCount - 1;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(ALint, std::to_string(resamplingOption));
 	}
 }
 
-void AudioManagerImpl::playSound(const std::string &filename,
-	const std::optional<Double3> &position)
+bool AudioManager::hasNextMusic() const
+{
+	return !this->mNextSong.empty();
+}
+
+void AudioManager::setListenerPosition(const Double3 &position)
+{
+	const ALfloat posX = static_cast<ALfloat>(position.x);
+	const ALfloat posY = static_cast<ALfloat>(position.y);
+	const ALfloat posZ = static_cast<ALfloat>(position.z);
+	alListener3f(AL_POSITION, posX, posY, posZ);
+}
+
+void AudioManager::setListenerOrientation(const Double3 &direction)
+{
+	DebugAssert(direction.isNormalized());
+	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
+		Double4(direction.x, direction.y, direction.z, 1.0);
+	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
+
+	const std::array<ALfloat, 6> orientation =
+	{
+		static_cast<ALfloat>(direction.x),
+		static_cast<ALfloat>(direction.y),
+		static_cast<ALfloat>(direction.z),
+		static_cast<ALfloat>(up.x),
+		static_cast<ALfloat>(up.y),
+		static_cast<ALfloat>(up.z)
+	};
+
+	alListenerfv(AL_ORIENTATION, orientation.data());
+}
+
+void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
 {
 	// Certain sounds should only have one live instance at a time. This is purely an arbitrary
 	// rule to avoid having long sounds overlap each other which would be very annoying and/or
@@ -614,7 +548,7 @@ void AudioManagerImpl::playSound(const std::string &filename,
 	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(),
 		mSingleInstanceSounds.end(), filename) != mSingleInstanceSounds.end();
 	const bool allowedToPlay = !isSingleInstance ||
-		(isSingleInstance && !this->soundIsPlaying(filename));
+		(isSingleInstance && !this->isPlayingSound(filename));
 
 	if (!mFreeSources.empty() && allowedToPlay)
 	{
@@ -686,7 +620,61 @@ void AudioManagerImpl::playSound(const std::string &filename,
 	}
 }
 
-void AudioManagerImpl::stopMusic()
+void AudioManager::playMusic(const std::string &filename, bool loop)
+{
+	stopMusic();
+
+	if (!mFreeSources.empty())
+	{
+		if (MidiDevice::isInited())
+			mCurrentSong = MidiDevice::get().open(filename);
+		if (!mCurrentSong)
+		{
+			DebugLogWarning("Failed to play " + filename + ".");
+			return;
+		}
+
+		mSongStream = std::make_unique<OpenALStream>(&mFreeSources, mCurrentSong.get());
+		if (mSongStream->init(mFreeSources.front(), mMusicVolume, loop))
+		{
+			mFreeSources.pop_front();
+			mSongStream->play();
+			DebugLog("Playing music " + filename + ".");
+		}
+		else
+		{
+			DebugLogWarning("Failed to init " + filename + " stream.");
+		}
+	}
+}
+
+void AudioManager::setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef)
+{
+	if (optMusicDef != nullptr)
+	{
+		// Play optional music first and set the main music as the next music.
+		const std::string &optFilename = optMusicDef->getFilename();
+		const bool loop = false;
+		this->playMusic(optFilename, loop);
+
+		DebugAssert(musicDef != nullptr);
+		mNextSong = musicDef->getFilename();
+	}
+	else if (musicDef != nullptr)
+	{
+		// Play main music immediately.
+		const std::string &filename = musicDef->getFilename();
+		const bool loop = true;
+		this->playMusic(filename, loop);
+	}
+	else
+	{
+		// No music to play.
+		this->stopMusic();
+	}
+}
+
+void AudioManager::stopMusic()
 {
 	if (mSongStream != nullptr)
 	{
@@ -697,7 +685,7 @@ void AudioManagerImpl::stopMusic()
 	mCurrentSong = nullptr;
 }
 
-void AudioManagerImpl::stopSound()
+void AudioManager::stopSound()
 {
 	// Reset all used sources and return them to the free sources.
 	for (const auto &pair : mUsedSources)
@@ -709,7 +697,7 @@ void AudioManagerImpl::stopSound()
 
 		if (mHasResamplerExtension)
 		{
-			const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
+			const ALint defaultResampler = AudioManager::getDefaultResampler();
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
 		}
 
@@ -719,7 +707,7 @@ void AudioManagerImpl::stopSound()
 	mUsedSources.clear();
 }
 
-void AudioManagerImpl::setMusicVolume(double percent)
+void AudioManager::setMusicVolume(double percent)
 {
 	mMusicVolume = static_cast<float>(percent);
 
@@ -729,7 +717,7 @@ void AudioManagerImpl::setMusicVolume(double percent)
 	}
 }
 
-void AudioManagerImpl::setSoundVolume(double percent)
+void AudioManager::setSoundVolume(double percent)
 {
 	mSfxVolume = static_cast<float>(percent);
 
@@ -746,13 +734,13 @@ void AudioManagerImpl::setSoundVolume(double percent)
 	}
 }
 
-void AudioManagerImpl::setResamplingOption(int resamplingOption)
+void AudioManager::setResamplingOption(int resamplingOption)
 {
 	// Do not call if AL_SOFT_source_resampler is unsupported.
 	DebugAssert(mHasResamplerExtension);
 
 	// Determine which resampling index to use.
-	mResampler = AudioManagerImpl::getResamplingIndex(resamplingOption);
+	mResampler = AudioManager::getResamplingIndex(resamplingOption);
 
 	// Set resampling options for free and used sources.
 	for (const ALuint source : mFreeSources)
@@ -767,56 +755,23 @@ void AudioManagerImpl::setResamplingOption(int resamplingOption)
 	}
 }
 
-void AudioManagerImpl::set3D(bool is3D)
+void AudioManager::set3D(bool is3D)
 {
 	// Any future game world sounds will base their playback on this value.
 	mIs3D = is3D;
 }
 
-void AudioManagerImpl::addSingleInstanceSound(std::string &&filename)
+void AudioManager::addSingleInstanceSound(std::string &&filename)
 {
 	mSingleInstanceSounds.emplace_back(std::move(filename));
 }
 
-void AudioManagerImpl::clearSingleInstanceSounds()
+void AudioManager::clearSingleInstanceSounds()
 {
 	mSingleInstanceSounds.clear();
 }
 
-void AudioManagerImpl::setListenerPosition(const Double3 &position)
-{
-	const ALfloat posX = static_cast<ALfloat>(position.x);
-	const ALfloat posY = static_cast<ALfloat>(position.y);
-	const ALfloat posZ = static_cast<ALfloat>(position.z);
-	alListener3f(AL_POSITION, posX, posY, posZ);
-}
-
-void AudioManagerImpl::setListenerOrientation(const Double3 &direction)
-{
-	DebugAssert(direction.isNormalized());
-	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
-		Double4(direction.x, direction.y, direction.z, 1.0);
-	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
-
-	const std::array<ALfloat, 6> orientation =
-	{
-		static_cast<ALfloat>(direction.x),
-		static_cast<ALfloat>(direction.y),
-		static_cast<ALfloat>(direction.z),
-		static_cast<ALfloat>(up.x),
-		static_cast<ALfloat>(up.y),
-		static_cast<ALfloat>(up.z)
-	};
-
-	alListenerfv(AL_ORIENTATION, orientation.data());
-}
-
-void AudioManagerImpl::setNextMusic(std::string &&filename)
-{
-	mNextSong = std::move(filename);
-}
-
-void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *listenerData)
+void AudioManager::update(double dt, const ListenerData *listenerData)
 {
 	// Update listener values if there is a listener currently active.
 	if (listenerData != nullptr)
@@ -840,7 +795,7 @@ void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *liste
 
 			if (mHasResamplerExtension)
 			{
-				const ALint defaultResampler = AudioManagerImpl::getDefaultResampler();
+				const ALint defaultResampler = AudioManager::getDefaultResampler();
 				alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
 			}
 
@@ -861,122 +816,4 @@ void AudioManagerImpl::update(double dt, const AudioManager::ListenerData *liste
 			mNextSong.clear();
 		}
 	}
-}
-
-// Audio Manager
-
-AudioManager::AudioManager()
-	: pImpl(std::make_unique<AudioManagerImpl>()) { }
-
-AudioManager::~AudioManager()
-{
-
-}
-
-void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
-	int resamplingOption, bool is3D, const std::string &midiConfig)
-{
-	pImpl->init(musicVolume, soundVolume, maxChannels, resamplingOption, is3D, midiConfig);
-}
-
-double AudioManager::getMusicVolume() const
-{
-	return static_cast<double>(pImpl->mMusicVolume);
-}
-
-double AudioManager::getSoundVolume() const
-{
-	return static_cast<double>(pImpl->mSfxVolume);
-}
-
-bool AudioManager::hasResamplerExtension() const
-{
-	return pImpl->mHasResamplerExtension;
-}
-
-bool AudioManager::isPlayingSound(const std::string &filename) const
-{
-	return pImpl->soundIsPlaying(filename);
-}
-
-bool AudioManager::soundExists(const std::string &filename) const
-{
-	return pImpl->soundExists(filename);
-}
-
-void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
-{
-	pImpl->playSound(filename, position);
-}
-
-void AudioManager::setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef)
-{
-	if (optMusicDef != nullptr)
-	{
-		// Play optional music first and set the main music as the next music.
-		const std::string &optFilename = optMusicDef->getFilename();
-		const bool loop = false;
-		pImpl->playMusic(optFilename, loop);
-
-		DebugAssert(musicDef != nullptr);
-		const std::string &nextFilename = musicDef->getFilename();
-		pImpl->setNextMusic(std::string(nextFilename));
-	}
-	else if (musicDef != nullptr)
-	{
-		// Play main music immediately.
-		const std::string &filename = musicDef->getFilename();
-		const bool loop = true;
-		pImpl->playMusic(filename, loop);
-	}
-	else
-	{
-		// No music to play.
-		this->stopMusic();
-	}
-}
-
-void AudioManager::stopMusic()
-{
-	pImpl->stopMusic();
-}
-
-void AudioManager::stopSound()
-{
-	pImpl->stopSound();
-}
-
-void AudioManager::setMusicVolume(double percent)
-{
-	pImpl->setMusicVolume(percent);
-}
-
-void AudioManager::setSoundVolume(double percent)
-{
-	pImpl->setSoundVolume(percent);
-}
-
-void AudioManager::setResamplingOption(int resamplingOption)
-{
-	pImpl->setResamplingOption(resamplingOption);
-}
-
-void AudioManager::set3D(bool is3D)
-{
-	pImpl->set3D(is3D);
-}
-
-void AudioManager::addSingleInstanceSound(std::string &&filename)
-{
-	pImpl->addSingleInstanceSound(std::move(filename));
-}
-
-void AudioManager::clearSingleInstanceSounds()
-{
-	pImpl->clearSingleInstanceSounds();
-}
-
-void AudioManager::update(double dt, const ListenerData *listenerData)
-{
-	pImpl->update(dt, listenerData);
 }
