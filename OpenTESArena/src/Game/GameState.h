@@ -18,6 +18,8 @@
 #include "../UI/TimedTextBox.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapInstance.h"
+#include "../World/WeatherDefinition.h"
+#include "../World/WeatherInstance.h"
 #include "../WorldMap/WorldMapInstance.h"
 
 // Intended to be a container for the player and world data that is currently active 
@@ -65,10 +67,10 @@ private:
 	{
 		MapDefinition definition;
 		MapInstance instance;
-		ArenaTypes::WeatherType weatherType; // Only ignored if a significant amount of time has passed upon returning to an exterior.
+		WeatherDefinition weatherDef; // Only ignored if a significant amount of time has passed upon returning to an exterior.
 		std::optional<CoordInt3> returnCoord; // Available when returning from inside an interior.
 		
-		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, ArenaTypes::WeatherType weatherType,
+		void init(MapDefinition &&mapDefinition, MapInstance &&mapInstance, WeatherDefinition &&weatherDef,
 			const std::optional<CoordInt3> &returnCoord);
 	};
 
@@ -123,7 +125,9 @@ private:
 	Clock clock;
 	ArenaRandom arenaRandom;
 	double chasmAnimSeconds;
-	ArenaTypes::WeatherType weatherType;
+
+	WeatherDefinition weatherDef;
+	WeatherInstance weatherInst;
 
 	// Helper function for generating a map definition and instance from the given world map location.
 	/*static bool tryMakeMapFromLocation(const LocationDefinition &locationDef, int raceID, WeatherType weatherType,
@@ -135,7 +139,7 @@ private:
 
 	// Attempts to set the level active in the systems (i.e. renderer) that need its data.
 	bool trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-		ArenaTypes::WeatherType weatherType, const CoordInt2 &startCoord,
+		WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Renderer &renderer);
@@ -181,7 +185,7 @@ public:
 
 	// Clears all maps and attempts to generate a city and set it active based on the given generation info.
 	bool trySetCity(const MapGeneration::CityGenInfo &cityGenInfo, const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo,
-		const std::optional<ArenaTypes::WeatherType> &overrideWeather,
+		const std::optional<WeatherDefinition> &overrideWeather,
 		const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
@@ -189,7 +193,7 @@ public:
 
 	// Clears all maps and attempts to generate a wilderness and set it active based on the given generation info.
 	bool trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<ArenaTypes::WeatherType> &overrideWeather,
+		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
 		const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer);
@@ -221,7 +225,9 @@ public:
 	// Gets a percentage representing the current progress through the looping chasm animation.
 	double getChasmAnimPercent() const;
 
-	ArenaTypes::WeatherType getWeatherType() const;
+	// Gets the currently selected weather and associated state.
+	const WeatherDefinition &getWeatherDefinition() const;
+	const WeatherInstance &getWeatherInstance() const;
 
 	// Gets the current ambient light percent, based on the current clock time and 
 	// the player's location (interior/exterior). This function is intended to match

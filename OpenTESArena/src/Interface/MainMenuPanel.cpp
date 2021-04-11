@@ -342,6 +342,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				binaryAssetLibrary);
 
 			const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
+			const int currentDay = gameState->getDate().getDay();
 
 			// Load the selected level based on world type (writing into active game state).
 			if (mapType == MapType::Interior)
@@ -571,13 +572,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-					const int currentDay = gameState->getDate().getDay();
-
 					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
 					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
-					const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
+					const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+					{
+						WeatherDefinition weatherDef;
+						weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+						return weatherDef;
+					}();
+
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
@@ -618,8 +623,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 					const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 					const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-					const ArenaTypes::WeatherType filteredWeatherType =
-						ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 					Buffer<uint8_t> reservedBlocks = [&cityDef]()
 					{
@@ -649,15 +652,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-					const int currentDay = gameState->getDate().getDay();
-
 					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-					skyGenInfo.init(cityDef.climateType, filteredWeatherType, currentDay, starCount, cityDef.citySeed,
+					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
-					// Load city into game state.
-					const std::optional<ArenaTypes::WeatherType> overrideWeather = filteredWeatherType;
+					const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+					{
+						WeatherDefinition weatherDef;
+						weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+						return weatherDef;
+					}();
+
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+
+					// Load city into game state.
 					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 						game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), binaryAssetLibrary,
 						game.getTextAssetLibrary(), game.getTextureManager(), renderer))
@@ -675,10 +683,7 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 				const int locationIndex = GetRandomCityLocationIndex(provinceDef);
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
-
 				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-				const ArenaTypes::WeatherType filteredWeatherType =
-					ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				const auto &exeData = binaryAssetLibrary.getExeData();
 				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
@@ -687,14 +692,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				MapGeneration::WildGenInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-				const int currentDay = gameState->getDate().getDay();
-
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, filteredWeatherType, currentDay, starCount, cityDef.citySeed,
+				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const std::optional<ArenaTypes::WeatherType> overrideWeather = filteredWeatherType;
+				const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+				{
+					WeatherDefinition weatherDef;
+					weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+					return weatherDef;
+				}();
 
 				// No previous start coordinate available. Let the loader decide.
 				const std::optional<CoordInt3> startCoord;
@@ -722,24 +730,21 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
 			const MusicDefinition *musicDef = [&game, &mifName, &optInteriorType, mapType, &gameState, &musicLibrary]()
 			{
-				const bool isExterior = (mapType == MapType::City) ||
-					(mapType == MapType::Wilderness);
+				const bool isExterior = (mapType == MapType::City) || (mapType == MapType::Wilderness);
 
 				// Exteriors depend on the time of day for which music to use. Interiors depend
 				// on the current location's .MIF name (if any).
 				if (isExterior)
 				{
-					// Make sure to get updated weather type from game state and not local variable
-					// so it gets the filtered weather type.
-					const ArenaTypes::WeatherType weatherType = gameState->getWeatherType();
 					if (!gameState->nightMusicIsActive())
 					{
+						const WeatherDefinition &weatherDef = gameState->getWeatherDefinition();
 						return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-							game.getRandom(), [weatherType](const MusicDefinition &def)
+							game.getRandom(), [weatherDef](const MusicDefinition &def)
 						{
 							DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 							const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-							return weatherMusicDef.type == weatherType;
+							return weatherMusicDef.weatherDef == weatherDef;
 						});
 					}
 					else

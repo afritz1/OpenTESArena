@@ -4,6 +4,7 @@
 #include <string>
 
 #include "../Assets/ArenaTypes.h"
+#include "../World/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
 enum class ClimateType;
@@ -66,21 +67,19 @@ public:
 
 	struct WeatherMusicDefinition
 	{
-		ArenaTypes::WeatherType type;
+		WeatherDefinition weatherDef;
 
-		void init(ArenaTypes::WeatherType type);
+		void init(WeatherDefinition &&weatherDef);
 	};
 private:
 	std::string filename;
 	Type type;
 
-	union
-	{
-		CinematicMusicDefinition cinematic;
-		InteriorMusicDefinition interior;
-		JingleMusicDefinition jingle;
-		WeatherMusicDefinition weather;
-	};
+	// Only one is active at a time, given by 'type' (no union because of WeatherMusicDefinition).
+	CinematicMusicDefinition cinematic;
+	InteriorMusicDefinition interior;
+	JingleMusicDefinition jingle;
+	WeatherMusicDefinition weather;
 
 	void init(std::string &&filename, Type type);
 public:
@@ -91,7 +90,7 @@ public:
 	void initMainMenu(std::string &&filename);
 	void initNight(std::string &&filename);
 	void initSwimming(std::string &&filename);
-	void initWeather(std::string &&filename, ArenaTypes::WeatherType type);
+	void initWeather(std::string &&filename, WeatherDefinition &&weatherDef);
 
 	const std::string &getFilename() const;
 	Type getType() const;

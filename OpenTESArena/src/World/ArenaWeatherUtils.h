@@ -7,7 +7,7 @@
 
 #include "components/utilities/Buffer.h"
 
-class ArenaRandom;
+class Random;
 class Color;
 class TextureManager;
 
@@ -36,7 +36,7 @@ namespace ArenaWeatherUtils
 	bool fogIsHeavy(int currentDay);
 
 	// Returns whether rainy weather is also a thunderstorm.
-	bool rainIsThunderstorm(ArenaRandom &random);
+	bool rainIsThunderstorm(Random &random);
 
 	// Returns a filtered version of the given weather so that, i.e., deserts can't have snow.
 	ArenaTypes::WeatherType getFilteredWeatherType(ArenaTypes::WeatherType weatherType, ClimateType climateType);

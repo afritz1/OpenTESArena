@@ -5,8 +5,8 @@
 
 #include "components/utilities/Buffer.h"
 
-class ArenaRandom;
 class Color;
+class Random;
 
 class WeatherDefinition
 {
@@ -52,11 +52,13 @@ private:
 public:
 	WeatherDefinition();
 
+	bool operator==(const WeatherDefinition &other) const;
+
 	void initClear();
 	void initOvercast(bool heavyFog);
 	void initRain(bool thunderstorm);
 	void initSnow(bool overcast, bool heavyFog);
-	void initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, ArenaRandom &random);
+	void initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, Random &random);
 
 	Type getType() const;
 	double getFogDistance() const;

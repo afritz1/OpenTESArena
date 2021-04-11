@@ -25,6 +25,7 @@
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWeatherUtils.h"
 #include "../World/MapType.h"
+#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
 #include "../WorldMap/LocationType.h"
@@ -51,11 +52,11 @@ GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int location
 }
 
 void GameState::MapState::init(MapDefinition &&mapDefinition, MapInstance &&mapInstance,
-	ArenaTypes::WeatherType weatherType, const std::optional<CoordInt3> &returnCoord)
+	WeatherDefinition &&weatherDef, const std::optional<CoordInt3> &returnCoord)
 {
 	this->definition = std::move(mapDefinition);
 	this->instance = std::move(mapInstance);
-	this->weatherType = weatherType;
+	this->weatherDef = std::move(weatherDef);
 	this->returnCoord = returnCoord;
 }
 
@@ -361,9 +362,13 @@ bool GameState::tryPushInterior(const MapGeneration::InteriorGenInfo &interiorGe
 	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
-	constexpr ArenaTypes::WeatherType weatherType = ArenaTypes::WeatherType::Clear; // Interiors are always clear.
+	// Interiors are always clear weather.
+	Random weatherRandom(this->arenaRandom.getSeed()); // Cosmetic random.
+	WeatherDefinition weatherDef;
+	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
+
 	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
 
 	const std::optional<WorldMapLocationIDs> worldMapLocationIDs; // Doesn't change when pushing an interior.
 	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
@@ -406,9 +411,13 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 		return ChunkUtils::recalculateCoord(coord.chunk, coord.voxel + offset);
 	}();
 
-	constexpr ArenaTypes::WeatherType weatherType = ArenaTypes::WeatherType::Clear; // Interiors are always clear.
+	// Interiors are always clear weather.
+	Random weatherRandom(this->arenaRandom.getSeed()); // Cosmetic random.
+	WeatherDefinition weatherDef;
+	weatherDef.initFromClassic(ArenaTypes::WeatherType::Clear, currentDay, weatherRandom);
+
 	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
 
 	std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // No citizens in interiors.
 	constexpr bool enteringInteriorFromExterior = false; // This method doesn't keep an exterior alive.
@@ -424,7 +433,7 @@ bool GameState::trySetInterior(const MapGeneration::InteriorGenInfo &interiorGen
 }
 
 bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<ArenaTypes::WeatherType> &overrideWeather,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
 	const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
@@ -447,22 +456,6 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	const LevelDouble2 &startPoint = mapDefinition.getStartPoint(0);
 	const CoordInt2 startCoord = VoxelUtils::levelVoxelToCoord(VoxelUtils::pointToVoxel(startPoint));
 
-	const ArenaTypes::WeatherType weatherType = [&overrideWeather]()
-	{
-		if (overrideWeather.has_value())
-		{
-			// Use this when we don't want to randomly generate the weather.
-			return *overrideWeather;
-		}
-		else
-		{
-			return ArenaTypes::WeatherType::Clear; // @todo: generate the weather for this location.
-		}
-	}();
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
-
 	const ProvinceDefinition *provinceDefPtr = nullptr;
 	const LocationDefinition *locationDefPtr = nullptr;
 	if (newWorldMapLocationIDs.has_value())
@@ -478,6 +471,24 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 	}
 
 	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
+	{
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return WeatherUtils::getFilteredWeather(*overrideWeather, cityDef.climateType);
+		}
+		else
+		{
+			WeatherDefinition def;
+			def.initClear(); // @todo: generate the weather for this location.
+			return def; 
+		}
+	}();
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
+	
 	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
 		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
 
@@ -494,7 +505,7 @@ bool GameState::trySetCity(const MapGeneration::CityGenInfo &cityGenInfo,
 }
 
 bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<ArenaTypes::WeatherType> &overrideWeather,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const std::optional<WeatherDefinition> &overrideWeather,
 	const std::optional<CoordInt3> &startCoord, const std::optional<WorldMapLocationIDs> &newWorldMapLocationIDs,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, Renderer &renderer)
@@ -532,22 +543,6 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 		}
 	}();
 
-	const ArenaTypes::WeatherType weatherType = [&overrideWeather]()
-	{
-		if (overrideWeather.has_value())
-		{
-			// Use this when we don't want to randomly generate the weather.
-			return *overrideWeather;
-		}
-		else
-		{
-			return ArenaTypes::WeatherType::Clear; // @todo: generate the weather for this location.
-		}
-	}();
-
-	MapState mapState;
-	mapState.init(std::move(mapDefinition), std::move(mapInstance), weatherType, std::nullopt);
-
 	const ProvinceDefinition *provinceDefPtr = nullptr;
 	const LocationDefinition *locationDefPtr = nullptr;
 	if (newWorldMapLocationIDs.has_value())
@@ -563,6 +558,24 @@ bool GameState::trySetWilderness(const MapGeneration::WildGenInfo &wildGenInfo,
 	}
 
 	const LocationDefinition::CityDefinition &cityDef = locationDefPtr->getCityDefinition();
+	WeatherDefinition weatherDef = [&overrideWeather, &cityDef]()
+	{
+		if (overrideWeather.has_value())
+		{
+			// Use this when we don't want to randomly generate the weather.
+			return WeatherUtils::getFilteredWeather(*overrideWeather, cityDef.climateType);
+		}
+		else
+		{
+			WeatherDefinition def;
+			def.initClear(); // @todo: generate the weather for this location.
+			return def;
+		}
+	}();
+
+	MapState mapState;
+	mapState.init(std::move(mapDefinition), std::move(mapInstance), std::move(weatherDef), std::nullopt);
+
 	CitizenUtils::CitizenGenInfo citizenGenInfo = CitizenUtils::makeCitizenGenInfo(
 		provinceDefPtr->getRaceID(), cityDef.climateType, entityDefLibrary, textureManager);
 
@@ -605,7 +618,7 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 
 	// @todo: need a condition to determine if we need to recalculate the weather (i.e., if the player slept
 	// in an interior).
-	const ArenaTypes::WeatherType weatherType = activeMapState.weatherType;
+	WeatherDefinition activeWeatherDef = activeMapState.weatherDef;
 
 	const CoordInt2 startCoord = [&activeMapDef, &returnCoord]()
 	{
@@ -639,8 +652,8 @@ bool GameState::tryPopMap(const EntityDefinitionLibrary &entityDefLibrary,
 	}();
 
 	// Set level active in the renderer.
-	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, weatherType, startCoord, citizenGenInfo,
-		entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
+	if (!this->trySetLevelActive(activeLevelInst, activeLevelIndex, std::move(activeWeatherDef), startCoord,
+		citizenGenInfo, entityDefLibrary, binaryAssetLibrary, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer for previously active level.");
 		return false;
@@ -779,9 +792,14 @@ double GameState::getChasmAnimPercent() const
 	return std::clamp(percent, 0.0, Constants::JustBelowOne);
 }
 
-ArenaTypes::WeatherType GameState::getWeatherType() const
+const WeatherDefinition &GameState::getWeatherDefinition() const
 {
-	return this->weatherType;
+	return this->weatherDef;
+}
+
+const WeatherInstance &GameState::getWeatherInstance() const
+{
+	return this->weatherInst;
 }
 
 double GameState::getAmbientPercent() const
@@ -1002,7 +1020,7 @@ void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
 }
 
 bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<int> &activeLevelIndex,
-	ArenaTypes::WeatherType weatherType, const CoordInt2 &startCoord,
+	WeatherDefinition &&weatherDef, const CoordInt2 &startCoord,
 	const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, Renderer &renderer)
@@ -1012,12 +1030,15 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 		startCoord.chunk,
 		VoxelDouble3(startVoxelReal.x, levelInst.getCeilingScale() + Player::HEIGHT, startVoxelReal.y));
 	this->setTransitionedPlayerPosition(playerPos);
-	this->weatherType = weatherType;
+	this->weatherDef = std::move(weatherDef);
+
+	Random weatherRandom; // Cosmetic random.
+	this->weatherInst.init(this->weatherDef, weatherRandom);
 
 	DebugAssert(this->maps.size() > 0);
 	const MapDefinition &mapDefinition = this->maps.top().definition;
 
-	if (!levelInst.trySetActive(weatherType, this->nightLightsAreActive(), activeLevelIndex,
+	if (!levelInst.trySetActive(this->weatherDef, this->nightLightsAreActive(), activeLevelIndex,
 		mapDefinition, citizenGenInfo, textureManager, renderer))
 	{
 		DebugLogError("Couldn't set level active in the renderer.");
@@ -1047,7 +1068,7 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	MapState &nextMapState = transitionState.mapState;
-	const ArenaTypes::WeatherType nextWeatherType = nextMapState.weatherType;
+	WeatherDefinition nextWeatherDef = nextMapState.weatherDef;
 
 	// Clear map stack if it's not entering an interior from an exterior.
 	if (!transitionState.enteringInteriorFromExterior.has_value() ||
@@ -1069,7 +1090,7 @@ bool GameState::tryApplyMapTransition(MapTransitionState &&transitionState,
 	LevelInstance &newLevelInst = newMapInst.getActiveLevel();
 	SkyInstance &newSkyInst = newMapInst.getActiveSky();
 
-	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, nextWeatherType,
+	if (!this->trySetLevelActive(newLevelInst, newLevelInstIndex, std::move(nextWeatherDef),
 		transitionState.startCoord, transitionState.citizenGenInfo, entityDefLibrary, binaryAssetLibrary,
 		textureManager, renderer))
 	{

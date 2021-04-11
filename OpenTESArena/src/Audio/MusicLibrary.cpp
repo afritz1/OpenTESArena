@@ -7,6 +7,7 @@
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
 #include "../World/ClimateType.h"
+#include "../World/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/debug/Debug.h"
@@ -169,43 +170,47 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseWeatherType = [](const std::string_view &str, ArenaTypes::WeatherType *outWeatherType)
+	auto tryParseWeatherType = [](const std::string_view &str, WeatherDefinition::Type *outWeatherType)
 	{
 		if (str == "Clear")
 		{
-			*outWeatherType = ArenaTypes::WeatherType::Clear;
+			*outWeatherType = WeatherDefinition::Type::Clear;
 		}
 		else if (str == "Overcast")
 		{
-			*outWeatherType = ArenaTypes::WeatherType::Overcast;
+			*outWeatherType = WeatherDefinition::Type::Overcast;
 		}
 		else if (str == "Rain")
 		{
-			*outWeatherType = ArenaTypes::WeatherType::Rain;
+			*outWeatherType = WeatherDefinition::Type::Rain;
 		}
 		else if (str == "Snow")
 		{
-			*outWeatherType = ArenaTypes::WeatherType::Snow;
-		}
-		else if (str == "SnowOvercast")
-		{
-			*outWeatherType = ArenaTypes::WeatherType::SnowOvercast;
-		}
-		else if (str == "Overcast2")
-		{
-			*outWeatherType = ArenaTypes::WeatherType::Overcast2;
-		}
-		else if (str == "Rain2")
-		{
-			*outWeatherType = ArenaTypes::WeatherType::Rain2;
-		}
-		else if (str == "SnowOvercast2")
-		{
-			*outWeatherType = ArenaTypes::WeatherType::SnowOvercast2;
+			*outWeatherType = WeatherDefinition::Type::Snow;
 		}
 		else
 		{
 			DebugLogWarning("Unrecognized weather type \"" + std::string(str) + "\".");
+			return false;
+		}
+
+		return true;
+	};
+
+	// All weather arguments (heavy fog, etc.) are bools.
+	auto tryParseWeatherBoolArg = [](const std::string_view &str, bool *outValue)
+	{
+		if (StringView::caseInsensitiveEquals(str, "True"))
+		{
+			*outValue = true;
+		}
+		else if (StringView::caseInsensitiveEquals(str, "False"))
+		{
+			*outValue = false;
+		}
+		else
+		{
+			DebugLogWarning("Unrecognized weather argument \"" + std::string(str) + "\".");
 			return false;
 		}
 
@@ -290,16 +295,91 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	}
 	else if (type == MusicDefinition::Type::Weather)
 	{
-		DebugAssert(strs.size() == 2);
+		// Variable arguments depending on the weather type.
+		DebugAssert(strs.size() >= 2);
 
-		ArenaTypes::WeatherType weatherType;
+		WeatherDefinition::Type weatherType;
 		if (!tryParseWeatherType(strs[1], &weatherType))
 		{
 			DebugLogWarning("Couldn't parse weather type in weather music definition \"" + std::string(valueStr) + "\".");
 			return false;
 		}
 
-		outDefinition->initWeather(std::move(musicFilename), weatherType);
+		WeatherDefinition weatherDef;
+		if (weatherType == WeatherDefinition::Type::Clear)
+		{
+			if (strs.size() != 2)
+			{
+				DebugLogWarning("Incorrect argument count for clear weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			weatherDef.initClear();
+		}
+		else if (weatherType == WeatherDefinition::Type::Overcast)
+		{
+			if (strs.size() != 3)
+			{
+				DebugLogWarning("Incorrect argument count for overcast weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			bool heavyFog;
+			if (!tryParseWeatherBoolArg(strs[2], &heavyFog))
+			{
+				DebugLogWarning("Couldn't parse argument in overcast weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			weatherDef.initOvercast(heavyFog);
+		}
+		else if (weatherType == WeatherDefinition::Type::Rain)
+		{
+			if (strs.size() != 3)
+			{
+				DebugLogWarning("Incorrect argument count for rain weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			bool thunderstorm;
+			if (!tryParseWeatherBoolArg(strs[2], &thunderstorm))
+			{
+				DebugLogWarning("Couldn't parse argument in rain weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			weatherDef.initRain(thunderstorm);
+		}
+		else if (weatherType == WeatherDefinition::Type::Snow)
+		{
+			if (strs.size() != 4)
+			{
+				DebugLogWarning("Incorrect argument count for snow weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			bool overcast;
+			if (!tryParseWeatherBoolArg(strs[2], &overcast))
+			{
+				DebugLogWarning("Couldn't parse first argument in snow weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			bool heavyFog;
+			if (!tryParseWeatherBoolArg(strs[3], &heavyFog))
+			{
+				DebugLogWarning("Couldn't parse second argument in snow weather music definition \"" + std::string(valueStr) + "\".");
+				return false;
+			}
+
+			weatherDef.initSnow(overcast, heavyFog);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
+		}
+
+		outDefinition->initWeather(std::move(musicFilename), std::move(weatherDef));
 	}
 	else
 	{

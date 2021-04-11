@@ -425,7 +425,13 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 									cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 								
-								const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
+								const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+								{
+									WeatherDefinition weatherDef;
+									weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+									return weatherDef;
+								}();
+
 								const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
 								if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 									game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(),
@@ -436,17 +442,18 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 								}
 
 								// Set music based on weather and time.
-								const MusicDefinition *musicDef = [&game, &gameState, weatherType]()
+								const MusicDefinition *musicDef = [&game, &gameState]()
 								{
 									const MusicLibrary &musicLibrary = game.getMusicLibrary();
 									if (!gameState.nightMusicIsActive())
 									{
+										const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 										return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-											game.getRandom(), [weatherType](const MusicDefinition &def)
+											game.getRandom(), [&weatherDef](const MusicDefinition &def)
 										{
 											DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 											const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-											return weatherMusicDef.type == weatherType;
+											return weatherMusicDef.weatherDef == weatherDef;
 										});
 									}
 									else

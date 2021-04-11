@@ -432,8 +432,14 @@ void FastTravelSubPanel::switchToNextPanel()
 		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
+		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+		{
+			WeatherDefinition weatherDef;
+			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
+			return weatherDef;
+		}();
+
 		// Load the destination city.
-		const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);
 		if (!gameState.trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
 			game.getCharacterClassLibrary(), game.getEntityDefinitionLibrary(), game.getBinaryAssetLibrary(),
@@ -444,16 +450,16 @@ void FastTravelSubPanel::switchToNextPanel()
 
 		// Choose time-based music and enter the game world.
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-		const MusicDefinition *musicDef = [&game, &gameState, weatherType, &musicLibrary]()
+		const MusicDefinition *musicDef = [&game, &gameState, &overrideWeather, &musicLibrary]()
 		{
 			if (!gameState.nightMusicIsActive())
 			{
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [weatherType](const MusicDefinition &def)
+					game.getRandom(), [&overrideWeather](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-					return weatherMusicDef.type == weatherType;
+					return weatherMusicDef.weatherDef == overrideWeather;
 				});
 			}
 			else

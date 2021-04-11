@@ -16,6 +16,7 @@ class AudioManager;
 class EntityDefinitionLibrary;
 class MapDefinition;
 class Renderer;
+class WeatherDefinition;
 
 enum class MapType;
 
@@ -36,7 +37,7 @@ public:
 	const EntityManager &getEntityManager() const;
 	double getCeilingScale() const;
 
-	bool trySetActive(ArenaTypes::WeatherType weatherType, bool nightLightsAreActive,
+	bool trySetActive(const WeatherDefinition &weatherDef, bool nightLightsAreActive,
 		const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
 		TextureManager &textureManager, Renderer &renderer);

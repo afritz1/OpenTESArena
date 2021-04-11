@@ -60,6 +60,7 @@
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
+#include "../World/WeatherUtils.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -2020,20 +2021,18 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 		// Change to exterior music.
 		const auto &clock = gameState.getClock();
-		const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
-			gameState.getWeatherType(), cityDef.climateType);
-
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
-		const MusicDefinition *musicDef = [&game, &gameState, filteredWeatherType, &musicLibrary]()
+		const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 		{
 			if (!gameState.nightMusicIsActive())
 			{
+				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 				return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
+					game.getRandom(), [&weatherDef](const MusicDefinition &def)
 				{
 					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-					return weatherMusicDef.type == filteredWeatherType;
+					return weatherMusicDef.weatherDef == weatherDef;
 				});
 			}
 			else
@@ -2145,7 +2144,7 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 			const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const ArenaTypes::WeatherType weatherType = gameState.getWeatherType();
+			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 			const int currentDay = gameState.getDate().getDay();
 			const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
 
@@ -2190,11 +2189,11 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, WeatherUtils::getLegacyWeather(weatherDef), currentDay, starCount,
+					cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const ArenaTypes::WeatherType overrideWeather = weatherType;
+				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// Calculate wilderness position based on the gate's voxel in the city.
 				const CoordInt3 startCoord = [&hitCoord, &transitionDir]()
@@ -2251,11 +2250,11 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					cityDef.cityBlocksPerSide);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, WeatherUtils::getLegacyWeather(weatherDef), currentDay, starCount,
+					cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
-				const std::optional<ArenaTypes::WeatherType> overrideWeather = weatherType;
+				const WeatherDefinition &overrideWeather = weatherDef;
 
 				// No need to change world map location here.
 				const std::optional<GameState::WorldMapLocationIDs> worldMapLocationIDs;
@@ -2277,21 +2276,17 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 
 			// Reset the current music (even if it's the same one).
 			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = [&game, &gameState, &locationDef, &musicLibrary]()
+			const MusicDefinition *musicDef = [&game, &gameState, &musicLibrary]()
 			{
-				const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-				const ClimateType climateType = cityDef.climateType;
-				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
-					gameState.getWeatherType(), climateType);
-
 				if (!gameState.nightMusicIsActive())
 				{
+					const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 					return musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-						game.getRandom(), [filteredWeatherType](const MusicDefinition &def)
+						game.getRandom(), [&weatherDef](const MusicDefinition &def)
 					{
 						DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 						const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-						return weatherMusicDef.type == filteredWeatherType;
+						return weatherMusicDef.weatherDef == weatherDef;
 					});
 				}
 				else
@@ -2433,14 +2428,16 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				auto &newActiveLevel = interiorMapInst.getActiveLevel();
 				auto &newActiveSky = interiorMapInst.getActiveSky();
 
-				constexpr ArenaTypes::WeatherType weatherType = ArenaTypes::WeatherType::Clear;
+				WeatherDefinition weatherDef;
+				weatherDef.initClear();
+
 				const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo; // Not used with interiors.
 
 				// @todo: should this be called differently so it doesn't badly influence data for the rest of
 				// this frame? Level changing should be done earlier I think.
 				auto &textureManager = game.getTextureManager();
 				auto &renderer = game.getRenderer();
-				if (!newActiveLevel.trySetActive(weatherType, gameState.nightLightsAreActive(), levelIndex,
+				if (!newActiveLevel.trySetActive(weatherDef, gameState.nightLightsAreActive(), levelIndex,
 					interiorMapDef, citizenGenInfo, textureManager, renderer))
 				{
 					DebugCrash("Couldn't set new level active in renderer.");
@@ -2851,18 +2848,13 @@ void GameWorldPanel::tick(double dt)
 
 		if (changeToDayMusic)
 		{
-			const LocationDefinition &locationDef = gameState.getLocationDefinition();
-			const LocationDefinition::CityDefinition &cityDef = locationDef.getCityDefinition();
-			const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(
-				gameState.getWeatherType(), cityDef.climateType);
-
+			const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
 			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicDefinition::Type::Weather, game.getRandom(),
-				[filteredWeatherType](const MusicDefinition &def)
+				MusicDefinition::Type::Weather, game.getRandom(), [&weatherDef](const MusicDefinition &def)
 			{
 				DebugAssert(def.getType() == MusicDefinition::Type::Weather);
 				const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-				return weatherMusicDef.type == filteredWeatherType;
+				return weatherMusicDef.weatherDef == weatherDef;
 			});
 
 			if (musicDef == nullptr)

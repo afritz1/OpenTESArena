@@ -49,9 +49,9 @@ bool ArenaWeatherUtils::fogIsHeavy(int currentDay)
 	return (currentDay & 8) != 0;
 }
 
-bool ArenaWeatherUtils::rainIsThunderstorm(ArenaRandom &random)
+bool ArenaWeatherUtils::rainIsThunderstorm(Random &random)
 {
-	return random.next() < 24000;
+	return random.next(0x10000) < 24000;
 }
 
 ArenaTypes::WeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaTypes::WeatherType weatherType,

@@ -53,14 +53,17 @@
 1=SWIMMING.XMI
 
 # Weather musics
-# - Weather type: Clear, Overcast, Rain, Snow, SnowOvercast, Rain2, Overcast2,
-#   SnowOvercast2
+# - Weather type: Clear, Overcast, Rain, Snow
+# - If Overcast: heavy fog (true/false)
+# - If Rain: thunderstorm (true/false)
+# - If Snow: overcast (true/false), heavy fog (true/false)
 [Weather]
 1=SUNNYDAY.XFM,Clear
-2=OVERCAST.XMI,Overcast
-3=OVERCAST.XMI,Overcast2
-4=RAINING.XMI,Rain
-5=RAINING.XMI,Rain2
-6=SNOWING.XMI,Snow
-7=OVERSNOW.XFM,SnowOvercast
-8=OVERSNOW.XFM,SnowOvercast2
+2=OVERCAST.XMI,Overcast,true
+3=OVERCAST.XMI,Overcast,false
+4=RAINING.XMI,Rain,true
+5=RAINING.XMI,Rain,false
+6=SNOWING.XMI,Snow,false,false
+7=SNOWING.XMI,Snow,false,true
+8=OVERSNOW.XFM,Snow,true,false
+9=OVERSNOW.XFM,Snow,true,true
