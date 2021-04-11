@@ -30,7 +30,6 @@ class EntityDefinitionLibrary;
 class TextAssetLibrary;
 class TextureManager;
 
-enum class ClimateType;
 enum class MapType;
 
 class MapDefinition

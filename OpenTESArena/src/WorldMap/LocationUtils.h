@@ -13,7 +13,6 @@ class ArenaRandom;
 class BinaryAssetLibrary;
 class Rect;
 
-enum class ClimateType;
 enum class LocationType;
 
 // Various functions for working with original game values like location IDs.
@@ -44,9 +43,9 @@ namespace LocationUtils
 	LocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
-	ClimateType getCityClimateType(int localCityID, int provinceID,
+	ArenaTypes::ClimateType getCityClimateType(int localCityID, int provinceID,
 		const BinaryAssetLibrary &binaryAssetLibrary);
-	ClimateType getDungeonClimateType(int localDungeonID, int provinceID,
+	ArenaTypes::ClimateType getDungeonClimateType(int localDungeonID, int provinceID,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().

@@ -7,8 +7,6 @@
 #include "../World/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
-enum class ClimateType;
-
 class MusicDefinition
 {
 public:
@@ -60,9 +58,9 @@ public:
 	struct JingleMusicDefinition
 	{
 		ArenaTypes::CityType cityType;
-		ClimateType climateType;
+		ArenaTypes::ClimateType climateType;
 
-		void init(ArenaTypes::CityType cityType, ClimateType climateType);
+		void init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
 	};
 
 	struct WeatherMusicDefinition
@@ -86,7 +84,7 @@ public:
 	void initCharacterCreation(std::string &&filename);
 	void initCinematic(std::string &&filename, CinematicMusicDefinition::Type type);
 	void initInterior(std::string &&filename, InteriorMusicDefinition::Type type);
-	void initJingle(std::string &&filename, ArenaTypes::CityType cityType, ClimateType climateType);
+	void initJingle(std::string &&filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
 	void initMainMenu(std::string &&filename);
 	void initNight(std::string &&filename);
 	void initSwimming(std::string &&filename);

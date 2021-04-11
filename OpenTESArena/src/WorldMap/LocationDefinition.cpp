@@ -18,7 +18,7 @@ void LocationDefinition::CityDefinition::MainQuestTempleOverride::init(int model
 
 void LocationDefinition::CityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
-	uint32_t rulerSeed, uint32_t skySeed, ClimateType climateType,
+	uint32_t rulerSeed, uint32_t skySeed, ArenaTypes::ClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
 	bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
@@ -175,7 +175,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t rulerSeed = LocationUtils::getRulerSeed(localPoint, provinceRect);
 	const uint32_t skySeed = LocationUtils::getSkySeed(
 		localPoint, provinceID, provinceRect);
-	const ClimateType climateType = LocationUtils::getCityClimateType(
+	const ArenaTypes::ClimateType climateType = LocationUtils::getCityClimateType(
 		localCityID, provinceID, binaryAssetLibrary);
 
 	const auto &cityGen = exeData.cityGen;

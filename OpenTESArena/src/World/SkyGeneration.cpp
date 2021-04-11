@@ -6,7 +6,6 @@
 
 #include "ArenaSkyUtils.h"
 #include "ArenaWeatherUtils.h"
-#include "ClimateType.h"
 #include "SkyDefinition.h"
 #include "SkyGeneration.h"
 #include "SkyInfoDefinition.h"
@@ -191,7 +190,7 @@ namespace SkyGeneration
 	}
 
 	// Includes distant mountains and clouds.
-	void generateArenaStatics(ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
+	void generateArenaStatics(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
 		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager,
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
@@ -527,7 +526,7 @@ void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ClimateType climateType, ArenaTypes::WeatherType weatherType,
+void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType,
 	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->weatherType = weatherType;

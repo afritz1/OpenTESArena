@@ -1,7 +1,6 @@
 #include <unordered_map>
 
 #include "ArenaWeatherUtils.h"
-#include "ClimateType.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Math/Random.h"
 #include "../Media/TextureManager.h"
@@ -55,11 +54,11 @@ bool ArenaWeatherUtils::rainIsThunderstorm(Random &random)
 }
 
 ArenaTypes::WeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
-	ClimateType climateType)
+	ArenaTypes::ClimateType climateType)
 {
 	// Snow in deserts is replaced by rain.
 	const bool isSnow = ArenaWeatherUtils::isSnow(weatherType);
-	return ((climateType == ClimateType::Desert) && isSnow) ? ArenaTypes::WeatherType::Rain : weatherType;
+	return ((climateType == ArenaTypes::ClimateType::Desert) && isSnow) ? ArenaTypes::WeatherType::Rain : weatherType;
 }
 
 double ArenaWeatherUtils::getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType)

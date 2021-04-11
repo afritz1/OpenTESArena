@@ -13,7 +13,6 @@
 #include "../Entities/EntityType.h"
 #include "../Items/ArmorMaterialType.h"
 #include "../Media/TextureManager.h"
-#include "../World/ClimateType.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -1153,7 +1152,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex,
 	}
 }
 
-bool ArenaAnimUtils::tryMakeCitizenAnims(ClimateType climateType, bool isMale, const ExeData &exeData,
+bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	// Index into citizen animation filenames, depends on the climate and gender.
@@ -1163,11 +1162,11 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ClimateType climateType, bool isMale, c
 		{
 			switch (climateType)
 			{
-			case ClimateType::Temperate:
+			case ArenaTypes::ClimateType::Temperate:
 				return 2;
-			case ClimateType::Desert:
+			case ArenaTypes::ClimateType::Desert:
 				return 1;
-			case ClimateType::Mountain:
+			case ArenaTypes::ClimateType::Mountain:
 				return 0;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
@@ -1177,11 +1176,11 @@ bool ArenaAnimUtils::tryMakeCitizenAnims(ClimateType climateType, bool isMale, c
 		{
 			switch (climateType)
 			{
-			case ClimateType::Temperate:
+			case ArenaTypes::ClimateType::Temperate:
 				return 0;
-			case ClimateType::Desert:
+			case ArenaTypes::ClimateType::Desert:
 				return 1;
-			case ClimateType::Mountain:
+			case ArenaTypes::ClimateType::Mountain:
 				return 2;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));

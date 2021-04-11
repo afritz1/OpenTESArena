@@ -3,7 +3,6 @@
 #include "BinaryAssetLibrary.h"
 #include "MIFUtils.h"
 #include "../Math/Random.h"
-#include "../World/ClimateType.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -12,26 +11,26 @@
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
-ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8_t index)
+ArenaTypes::ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8_t index)
 {
 	if ((index == WorldMapTerrain::TEMPERATE1) ||
 		(index == WorldMapTerrain::TEMPERATE2))
 	{
-		return ClimateType::Temperate;
+		return ArenaTypes::ClimateType::Temperate;
 	}
 	else if ((index == WorldMapTerrain::MOUNTAIN1) ||
 		(index == WorldMapTerrain::MOUNTAIN2))
 	{
-		return ClimateType::Mountain;
+		return ArenaTypes::ClimateType::Mountain;
 	}
 	else if ((index == WorldMapTerrain::DESERT1) ||
 		(index == WorldMapTerrain::DESERT2))
 	{
-		return ClimateType::Desert;
+		return ArenaTypes::ClimateType::Desert;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(ClimateType, std::to_string(static_cast<int>(index)));
+		DebugUnhandledReturnMsg(ArenaTypes::ClimateType, std::to_string(static_cast<int>(index)));
 	}
 }
 

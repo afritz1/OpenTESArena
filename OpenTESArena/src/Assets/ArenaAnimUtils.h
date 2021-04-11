@@ -20,7 +20,6 @@ class CharacterClassLibrary;
 class ExeData;
 class TextureManager;
 
-enum class ClimateType;
 enum class EntityType;
 enum class MapType;
 
@@ -171,7 +170,7 @@ namespace ArenaAnimUtils
 		EntityAnimationDefinition *outAnimDef);
 
 	// Writes out citizen animation data to animation states.
-	bool tryMakeCitizenAnims(ClimateType climateType, bool isMale, const ExeData &exeData,
+	bool tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Transforms the palette used for a citizen's clothes and skin. The given seed value is

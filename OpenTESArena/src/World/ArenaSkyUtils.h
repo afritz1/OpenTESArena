@@ -1,10 +1,9 @@
 #ifndef ARENA_SKY_UTILS_H
 #define ARENA_SKY_UTILS_H
 
+#include "../Assets/ArenaTypes.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
-
-enum class ClimateType;
 
 namespace ArenaSkyUtils
 {
@@ -31,7 +30,7 @@ namespace ArenaSkyUtils
 	};
 
 	// Gets distant land traits for a sky by climate.
-	const LandTraits &getLandTraits(ClimateType climateType);
+	const LandTraits &getLandTraits(ArenaTypes::ClimateType climateType);
 
 	// Converts an Arena angle to an actual angle in radians.
 	Radians arenaAngleToRadians(int arenaAngle);

@@ -123,7 +123,7 @@ int CitizenUtils::getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityMan
 	return count;
 }
 
-CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ClimateType climateType,
+CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
 	const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.

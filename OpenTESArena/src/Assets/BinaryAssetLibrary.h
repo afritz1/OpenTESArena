@@ -18,7 +18,6 @@
 
 class ArenaRandom;
 
-enum class ClimateType;
 enum class LocationType;
 
 class BinaryAssetLibrary
@@ -42,7 +41,7 @@ public:
 		std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
 	public:
 		// Converts a terrain index to a climate type. The given index must be for a land pixel.
-		static ClimateType toClimateType(uint8_t index);
+		static ArenaTypes::ClimateType toClimateType(uint8_t index);
 
 		// Converts a terrain index to a normalized index (such that sea = 0).
 		static uint8_t getNormalizedIndex(uint8_t index);

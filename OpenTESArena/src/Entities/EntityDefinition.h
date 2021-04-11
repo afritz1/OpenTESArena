@@ -6,10 +6,9 @@
 
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../World/LevelDefinition.h"
-
-enum class ClimateType;
 
 class EntityDefinition
 {
@@ -88,11 +87,11 @@ public:
 	struct CitizenDefinition
 	{
 		bool male;
-		ClimateType climateType;
+		ArenaTypes::ClimateType climateType;
 
 		CitizenDefinition();
 
-		void init(bool male, ClimateType climateType);
+		void init(bool male, ArenaTypes::ClimateType climateType);
 	};
 
 	class StaticNpcDefinition
@@ -298,7 +297,7 @@ public:
 	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
 
 	// Citizen.
-	void initCitizen(bool male, ClimateType climateType, EntityAnimationDefinition &&animDef);
+	void initCitizen(bool male, ArenaTypes::ClimateType climateType, EntityAnimationDefinition &&animDef);
 
 	// Static NPC.
 	void initStaticNpcShopkeeper(StaticNpcDefinition::ShopkeeperDefinition::Type type,

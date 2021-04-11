@@ -5,6 +5,7 @@
 
 #include "EntityDefinition.h"
 #include "EntityUtils.h"
+#include "../Assets/ArenaTypes.h"
 
 // Collection of various entity definitions. Not all definition types are supported
 // due to insufficient information for look-up/comparison and therefore the definitions
@@ -12,8 +13,6 @@
 
 class ExeData;
 class TextureManager;
-
-enum class ClimateType;
 
 class EntityDefinitionLibrary
 {
@@ -51,11 +50,11 @@ public:
 		struct CitizenKey
 		{
 			bool male;
-			ClimateType climateType;
+			ArenaTypes::ClimateType climateType;
 			
 			bool operator==(const CitizenKey &other) const;
 
-			void init(bool male, ClimateType climateType);
+			void init(bool male, ArenaTypes::ClimateType climateType);
 		};
 	private:
 		Type type;
@@ -80,7 +79,7 @@ public:
 
 		void initCreature(int creatureIndex, bool isFinalBoss);
 		//void initHumanEnemy(bool male, int charClassID);
-		void initCitizen(bool male, ClimateType climateType);
+		void initCitizen(bool male, ArenaTypes::ClimateType climateType);
 	};
 private:
 	static constexpr int NO_INDEX = -1;

@@ -6,7 +6,6 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Math/Random.h"
 #include "../Math/RandomUtils.h"
-#include "../World/ClimateType.h"
 #include "../World/WeatherDefinition.h"
 #include "../WorldMap/LocationDefinition.h"
 
@@ -147,19 +146,19 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseJingleClimateType = [](const std::string_view &str, ClimateType *outClimateType)
+	auto tryParseJingleClimateType = [](const std::string_view &str, ArenaTypes::ClimateType *outClimateType)
 	{
 		if (str == "Temperate")
 		{
-			*outClimateType = ClimateType::Temperate;
+			*outClimateType = ArenaTypes::ClimateType::Temperate;
 		}
 		else if (str == "Desert")
 		{
-			*outClimateType = ClimateType::Desert;
+			*outClimateType = ArenaTypes::ClimateType::Desert;
 		}
 		else if (str == "Mountain")
 		{
-			*outClimateType = ClimateType::Mountain;
+			*outClimateType = ArenaTypes::ClimateType::Mountain;
 		}
 		else
 		{
@@ -269,7 +268,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 			return false;
 		}
 
-		ClimateType climateType;
+		ArenaTypes::ClimateType climateType;
 		if (!tryParseJingleClimateType(strs[2], &climateType))
 		{
 			DebugLogWarning("Couldn't parse climate type in jingle music definition \"" + std::string(valueStr) + "\".");

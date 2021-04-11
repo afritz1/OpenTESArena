@@ -2,7 +2,6 @@
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
-#include "../World/ClimateType.h"
 #include "../World/ClimateUtils.h"
 
 #include "components/debug/Debug.h"
@@ -35,7 +34,7 @@ bool EntityDefinitionLibrary::Key::CitizenKey::operator==(const CitizenKey &othe
 	return (this->male == other.male) && (this->climateType == other.climateType);
 }
 
-void EntityDefinitionLibrary::Key::CitizenKey::init(bool male, ClimateType climateType)
+void EntityDefinitionLibrary::Key::CitizenKey::init(bool male, ArenaTypes::ClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
@@ -111,7 +110,7 @@ void EntityDefinitionLibrary::Key::initCreature(int creatureIndex, bool isFinalB
 	this->humanEnemy.init(male, charClassID);
 }*/
 
-void EntityDefinitionLibrary::Key::initCitizen(bool male, ClimateType climateType)
+void EntityDefinitionLibrary::Key::initCitizen(bool male, ArenaTypes::ClimateType climateType)
 {
 	this->init(Key::Type::Citizen);
 	this->citizen.init(male, climateType);
@@ -178,7 +177,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 
 	auto addCitizenDefs = [this, &exeData, &textureManager]()
 	{
-		auto addCitizenDef = [this, &exeData, &textureManager](ClimateType climateType, bool male)
+		auto addCitizenDef = [this, &exeData, &textureManager](ArenaTypes::ClimateType climateType, bool male)
 		{
 			EntityAnimationDefinition animDef;
 			if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, exeData, textureManager, &animDef))
@@ -200,7 +199,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		// Iterate all climate type + gender combinations.
 		for (int i = 0; i < ClimateUtils::getClimateTypeCount(); i++)
 		{
-			const ClimateType climateType = ClimateUtils::getClimateType(i);
+			const ArenaTypes::ClimateType climateType = ClimateUtils::getClimateType(i);
 			addCitizenDef(climateType, true);
 			addCitizenDef(climateType, false);
 		}

@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "EntityDefinition.h"
-#include "../World/ClimateType.h"
 
 void EntityDefinition::EnemyDefinition::CreatureDefinition::init(int creatureIndex,
 	bool isFinalBoss, const ExeData &exeData)
@@ -81,10 +80,10 @@ void EntityDefinition::EnemyDefinition::initHuman(bool male, int charClassID)
 EntityDefinition::CitizenDefinition::CitizenDefinition()
 {
 	this->male = false;
-	this->climateType = static_cast<ClimateType>(-1);
+	this->climateType = static_cast<ArenaTypes::ClimateType>(-1);
 }
 
-void EntityDefinition::CitizenDefinition::init(bool male, ClimateType climateType)
+void EntityDefinition::CitizenDefinition::init(bool male, ArenaTypes::ClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
@@ -330,7 +329,7 @@ void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimatio
 	this->enemy.initHuman(male, charClassID);
 }
 
-void EntityDefinition::initCitizen(bool male, ClimateType climateType,
+void EntityDefinition::initCitizen(bool male, ArenaTypes::ClimateType climateType,
 	EntityAnimationDefinition &&animDef)
 {
 	this->init(Type::Citizen, std::move(animDef));

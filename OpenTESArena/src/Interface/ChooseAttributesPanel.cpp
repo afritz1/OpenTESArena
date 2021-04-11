@@ -36,7 +36,6 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
-#include "../World/ClimateType.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"

@@ -14,7 +14,7 @@
 namespace LocationUtils
 {
 	// Parent function for getting the climate type of a location.
-	ClimateType getClimateType(int locationID, int provinceID,
+	ArenaTypes::ClimateType getClimateType(int locationID, int provinceID,
 		const BinaryAssetLibrary &binaryAssetLibrary)
 	{
 		const auto &cityData = binaryAssetLibrary.getCityDataFile();
@@ -84,14 +84,14 @@ LocationType LocationUtils::getDungeonType(int localDungeonID)
 	}
 }
 
-ClimateType LocationUtils::getCityClimateType(int localCityID, int provinceID,
+ArenaTypes::ClimateType LocationUtils::getCityClimateType(int localCityID, int provinceID,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = LocationUtils::cityToLocationID(localCityID);
 	return LocationUtils::getClimateType(locationID, provinceID, binaryAssetLibrary);
 }
 
-ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinceID,
+ArenaTypes::ClimateType LocationUtils::getDungeonClimateType(int localDungeonID, int provinceID,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = LocationUtils::dungeonToLocationID(localDungeonID);

@@ -99,6 +99,14 @@ namespace ArenaTypes
 		Splitting
 	};
 
+	// Climate determines the textures and allowed weathers at an exterior world map location.
+	enum class ClimateType
+	{
+		Temperate,
+		Desert,
+		Mountain
+	};
+
 	// A unique identifier for each kind of weather. These can have an effect on the sky colors,
 	// fog distance, music, etc.. If in a desert, snow is replaced by rain.
 	enum class WeatherType

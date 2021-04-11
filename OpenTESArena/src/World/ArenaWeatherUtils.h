@@ -11,8 +11,6 @@ class Random;
 class Color;
 class TextureManager;
 
-enum class ClimateType;
-
 // Various functions for working with the original game's weather.
 
 namespace ArenaWeatherUtils
@@ -39,7 +37,8 @@ namespace ArenaWeatherUtils
 	bool rainIsThunderstorm(Random &random);
 
 	// Returns a filtered version of the given weather so that, i.e., deserts can't have snow.
-	ArenaTypes::WeatherType getFilteredWeatherType(ArenaTypes::WeatherType weatherType, ClimateType climateType);
+	ArenaTypes::WeatherType getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
+		ArenaTypes::ClimateType climateType);
 
 	// Gets the fog distance associated with the given weather type.
 	double getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType);

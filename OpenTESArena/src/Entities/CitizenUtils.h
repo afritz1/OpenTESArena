@@ -3,6 +3,7 @@
 
 #include "EntityAnimationInstance.h"
 #include "EntityUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Media/TextureUtils.h"
 #include "../World/Coord.h"
 
@@ -14,7 +15,6 @@ class EntityManager;
 class Random;
 
 enum class CardinalDirectionName;
-enum class ClimateType;
 
 namespace CitizenUtils
 {
@@ -54,7 +54,7 @@ namespace CitizenUtils
 	int getCitizenCount(const EntityManager &entityManager);
 	int getCitizenCountInChunk(const ChunkInt2 &chunk, const EntityManager &entityManager);
 
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ClimateType climateType,
+	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType,
 		const EntityDefinitionLibrary &entityDefLibrary, TextureManager &textureManager);
 
 	bool trySpawnCitizenInChunk(const Chunk &chunk, const CitizenGenInfo &citizenGenInfo, Random &random,

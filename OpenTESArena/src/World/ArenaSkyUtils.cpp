@@ -2,18 +2,17 @@
 #include <array>
 
 #include "ArenaSkyUtils.h"
-#include "ClimateType.h"
 
 #include "components/debug/Debug.h"
 
 namespace ArenaSkyUtils
 {
-	const std::array<std::pair<ClimateType, LandTraits>, 3> LandTraitsMappings =
+	const std::array<std::pair<ArenaTypes::ClimateType, LandTraits>, 3> LandTraitsMappings =
 	{
 		{
-			{ ClimateType::Temperate, ArenaSkyUtils::LandTraits(2, 4, 10, 2) },
-			{ ClimateType::Desert, ArenaSkyUtils::LandTraits(1, 6, 4, 1) },
-			{ ClimateType::Mountain, ArenaSkyUtils::LandTraits(0, 6, 11, 2) }
+			{ ArenaTypes::ClimateType::Temperate, ArenaSkyUtils::LandTraits(2, 4, 10, 2) },
+			{ ArenaTypes::ClimateType::Desert, ArenaSkyUtils::LandTraits(1, 6, 4, 1) },
+			{ ArenaTypes::ClimateType::Mountain, ArenaSkyUtils::LandTraits(0, 6, 11, 2) }
 		}
 	};
 }
@@ -26,7 +25,7 @@ ArenaSkyUtils::LandTraits::LandTraits(int filenameIndex, int position, int varia
 	this->maxDigits = maxDigits;
 }
 
-const ArenaSkyUtils::LandTraits &ArenaSkyUtils::getLandTraits(ClimateType climateType)
+const ArenaSkyUtils::LandTraits &ArenaSkyUtils::getLandTraits(ArenaTypes::ClimateType climateType)
 {
 	const auto iter = std::find_if(ArenaSkyUtils::LandTraitsMappings.begin(),
 		ArenaSkyUtils::LandTraitsMappings.end(), [climateType](const auto &pair)

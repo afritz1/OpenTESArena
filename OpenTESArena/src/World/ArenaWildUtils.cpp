@@ -4,7 +4,6 @@
 #include "ArenaVoxelUtils.h"
 #include "ArenaWeatherUtils.h"
 #include "ArenaWildUtils.h"
-#include "ClimateType.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
 #include "../Assets/MIFFile.h"
@@ -13,19 +12,19 @@
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ClimateType climateType, ArenaTypes::WeatherType weatherType)
+std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
-		if (climateType == ClimateType::Temperate)
+		if (climateType == ArenaTypes::ClimateType::Temperate)
 		{
 			return 'T';
 		}
-		else if (climateType == ClimateType::Desert)
+		else if (climateType == ArenaTypes::ClimateType::Desert)
 		{
 			return 'D';
 		}
-		else if (climateType == ClimateType::Mountain)
+		else if (climateType == ArenaTypes::ClimateType::Mountain)
 		{
 			return 'M';
 		}
@@ -51,7 +50,7 @@ std::string ArenaWildUtils::generateInfName(ClimateType climateType, ArenaTypes:
 		else if (ArenaWeatherUtils::isSnow(weatherType))
 		{
 			// Deserts can't have snow.
-			if (climateType != ClimateType::Desert)
+			if (climateType != ArenaTypes::ClimateType::Desert)
 			{
 				return 'S';
 			}

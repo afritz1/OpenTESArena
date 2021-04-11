@@ -12,8 +12,6 @@ class SkyDefinition;
 class SkyInfoDefinition;
 class TextureManager;
 
-enum class ClimateType;
-
 namespace SkyGeneration
 {
 	struct InteriorSkyGenInfo
@@ -25,7 +23,7 @@ namespace SkyGeneration
 
 	struct ExteriorSkyGenInfo
 	{
-		ClimateType climateType; // Only cities have climate.
+		ArenaTypes::ClimateType climateType; // Only cities have climate.
 		ArenaTypes::WeatherType weatherType;
 		int currentDay;
 		int starCount;
@@ -33,8 +31,8 @@ namespace SkyGeneration
 		uint32_t skySeed;
 		bool provinceHasAnimatedLand;
 
-		void init(ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay, int starCount,
-			uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
+		void init(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
+			int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
 	};
 
 	void generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,

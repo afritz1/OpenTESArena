@@ -1,12 +1,12 @@
 #ifndef CLIMATE_UTILS_H
 #define CLIMATE_UTILS_H
 
-enum class ClimateType;
+#include "../Assets/ArenaTypes.h"
 
 namespace ClimateUtils
 {
 	int getClimateTypeCount();
-	ClimateType getClimateType(int index);
+	ArenaTypes::ClimateType getClimateType(int index);
 }
 
 #endif
