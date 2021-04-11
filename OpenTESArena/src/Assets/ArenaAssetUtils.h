@@ -15,6 +15,7 @@ namespace ArenaAssetUtils
 	constexpr const char *EXTENSION_MNU = "MNU";
 	constexpr const char *EXTENSION_RCI = "RCI";
 	constexpr const char *EXTENSION_SET = "SET";
+	constexpr const char *EXTENSION_TXT = "TXT";
 }
 
 #endif

@@ -12,6 +12,7 @@
 #include "../Assets/LGTFile.h"
 #include "../Assets/RCIFile.h"
 #include "../Assets/SETFile.h"
+#include "../Assets/TXTFile.h"
 #include "../Assets/TextureAssetReference.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
@@ -250,6 +251,34 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			TextureBuilder textureBuilder = makePaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
 			outTextures->set(i, std::move(textureBuilder));
 		}
+	}
+	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_TXT))
+	{
+		TXTFile txt;
+		if (!txt.init(filename))
+		{
+			DebugLogWarning("Couldn't init .TXT file \"" + std::string(filename) + "\".");
+			return false;
+		}
+
+		const uint16_t *srcPixels = txt.getPixels();
+		constexpr int srcPixelCount = TXTFile::WIDTH * TXTFile::HEIGHT;
+
+		// Convert 16-bit image to 32-bit for now. Not sure if this will be final (doubtful that 16-bit TextureBuilders
+		// will be a thing).
+		Buffer<uint32_t> trueColorBuffer(srcPixelCount);
+		std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.get(),
+			[](const uint16_t srcPixel)
+		{
+			const double srcPercent = std::clamp(static_cast<double>(srcPixel) / TXTFile::PIXEL_DIVISOR, 0.0, 1.0);
+			const uint8_t srcByte = static_cast<uint8_t>(srcPercent * 255.0);
+			const Color dstColor = Color(srcByte, srcByte, srcByte, srcByte);
+			return dstColor.toARGB();
+		});
+
+		TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.get());
+		outTextures->init(1);
+		outTextures->set(0, std::move(textureBuilder));
 	}
 	else
 	{
