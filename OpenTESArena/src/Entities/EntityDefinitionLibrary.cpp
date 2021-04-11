@@ -2,7 +2,7 @@
 #include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
-#include "../World/ClimateUtils.h"
+#include "../World/ArenaClimateUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -197,9 +197,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textu
 		};
 
 		// Iterate all climate type + gender combinations.
-		for (int i = 0; i < ClimateUtils::getClimateTypeCount(); i++)
+		for (int i = 0; i < ArenaClimateUtils::getClimateTypeCount(); i++)
 		{
-			const ArenaTypes::ClimateType climateType = ClimateUtils::getClimateType(i);
+			const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
 			addCitizenDef(climateType, true);
 			addCitizenDef(climateType, false);
 		}
