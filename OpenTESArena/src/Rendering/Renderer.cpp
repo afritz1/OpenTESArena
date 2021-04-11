@@ -850,10 +850,10 @@ void Renderer::setSky(const SkyInstance &skyInstance, const Palette &palette, Te
 	this->renderer3D->setSky(skyInstance, palette, textureManager);
 }
 
-void Renderer::setSkyPalette(const uint32_t *colors, int count)
+void Renderer::setSkyColors(const uint32_t *colors, int count)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setSkyPalette(colors, count);
+	this->renderer3D->setSkyColors(colors, count);
 }
 
 void Renderer::setNightLightsActive(bool active, const Palette &palette)

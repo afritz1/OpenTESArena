@@ -82,8 +82,8 @@ namespace RendererUtils
 
 	// Generates the sky colors from the horizon to the top of the sky. The number of colors to
 	// make is variable but five seems enough for clean gradient generation across the screen.
-	void writeSkyColors(const std::vector<Double3> &skyPalette,
-		BufferView<Double3> &skyColors, double daytimePercent);
+	void writeSkyColors(const std::vector<Double3> &skyColors,
+		BufferView<Double3> &outSkyColorsView, double daytimePercent);
 
 	// Gets the ambient percent applied to distant sky as a function of global ambient.
 	double getDistantAmbientPercent(double ambientPercent);

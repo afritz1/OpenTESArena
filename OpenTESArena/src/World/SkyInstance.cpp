@@ -544,7 +544,7 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 		skyColors.set(i, color.toARGB());
 	}
 
-	renderer.setSkyPalette(skyColors.get(), skyColors.getCount());
+	renderer.setSkyColors(skyColors.get(), skyColors.getCount());
 
 	// Set sky objects in the renderer.
 	const std::string &paletteName = ArenaPaletteName::Default;

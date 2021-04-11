@@ -89,7 +89,7 @@ public:
 	virtual void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette) = 0;
 	virtual void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager) = 0;
-	virtual void setSkyPalette(const uint32_t *colors, int count) = 0;
+	virtual void setSkyColors(const uint32_t *colors, int count) = 0;
 	virtual void setNightLightsActive(bool active, const Palette &palette) = 0;
 	virtual void clearTextures() = 0;
 	virtual void clearSky() = 0;

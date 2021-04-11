@@ -299,7 +299,7 @@ private:
 		// Whether the player has a light attached like the original game.
 		bool playerHasLight;
 
-		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyPalette, double daytimePercent,
+		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors, double daytimePercent,
 			double latitude, double ambient, double fogDistance, double chasmAnimPercent,
 			bool nightLightsAreActive, bool isExterior, bool playerHasLight);
 
@@ -534,7 +534,7 @@ private:
 	EntityTextures entityTextures; // Entity textures and their mappings.
 	ChasmTextureGroups chasmTextureGroups; // Mappings from chasm ID to textures.
 	std::vector<SkyTexture> skyTextures; // Distant object textures. Size is managed internally.
-	std::vector<Double3> skyPalette; // Colors for each time of day.
+	std::vector<Double3> skyColors; // Colors for each time of day.
 	Buffer<Double3> skyGradientRowCache; // Contains row colors of most recent sky gradient.
 	Buffer<std::thread> renderThreads; // Threads used for rendering the world.
 	RenderThreadData threadData; // Managed by main thread, used by render threads.
@@ -920,7 +920,7 @@ public:
 
 	// Sets the sky palette to use with sky colors based on the time of day.
 	// For dungeons, this would probably just be one black pixel.
-	void setSkyPalette(const uint32_t *colors, int count) override;
+	void setSkyColors(const uint32_t *colors, int count) override;
 
 	// Adds a screen-space chasm texture to the given chasm type's texture list.
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,

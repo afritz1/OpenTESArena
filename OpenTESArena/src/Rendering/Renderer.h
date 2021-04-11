@@ -227,7 +227,7 @@ public:
 	void addChasmTexture(ArenaTypes::ChasmType chasmType, const uint8_t *colors,
 		int width, int height, const Palette &palette);
 	void setSky(const SkyInstance &skyInstance, const Palette &palette, TextureManager &textureManager);
-	void setSkyPalette(const uint32_t *colors, int count);
+	void setSkyColors(const uint32_t *colors, int count);
 	void setNightLightsActive(bool active, const Palette &palette);
 	void clearTextures();
 	void clearSky();
