@@ -706,6 +706,15 @@ void ExeData::WallHeightTables::init(const char *data, const KeyValueFile &keyVa
 	initInt16Array(this->box4, data + box4Offset);
 }
 
+#include <functional>
+void ExeData::Weather::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const KeyValueFile::Section &section = *keyValueFile.getSectionByName("Weather");
+	const int thunderstormFlashColorsOffset = ExeData::get(section, "ThunderstormFlashColors");
+	
+	initInt8Array(this->thunderstormFlashColors, data + thunderstormFlashColorsOffset);
+}
+
 void ExeData::Wilderness::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const KeyValueFile::Section &section = *keyValueFile.getSectionByName("Wilderness");
@@ -863,6 +872,7 @@ bool ExeData::init(bool floppyVersion)
 	this->travel.init(dataPtr, keyValueFile);
 	this->ui.init(dataPtr, keyValueFile);
 	this->wallHeightTables.init(dataPtr, keyValueFile);
+	this->weather.init(dataPtr, keyValueFile);
 	this->wild.init(dataPtr, keyValueFile);
 
 	this->floppyVersion = floppyVersion;

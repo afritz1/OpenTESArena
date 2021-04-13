@@ -325,5 +325,11 @@ const KeyValueFile::Section *KeyValueFile::getSectionByName(const std::string &n
 		return section.getName() < str;
 	});
 
-	return (iter != this->sections.end()) ? &(*iter) : nullptr;
+	if ((iter == this->sections.end()) || (iter->getName() != name))
+	{
+		DebugLogWarning("Couldn't find section \"" + name + "\".");
+		return nullptr;
+	}
+
+	return &(*iter);
 }

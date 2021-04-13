@@ -511,6 +511,13 @@ public:
 		void init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
+	struct Weather
+	{
+		std::array<uint8_t, 3> thunderstormFlashColors;
+
+		void init(const char *data, const KeyValueFile &keyValueFile);
+	};
+
 	struct Wilderness
 	{
 		// .RMD index lists for each type of block (normal, village, dungeon, tavern, and temple).
@@ -561,6 +568,7 @@ public:
 	Travel travel;
 	UI ui;
 	WallHeightTables wallHeightTables;
+	Weather weather;
 	Wilderness wild;
 
 	bool isFloppyVersion() const;

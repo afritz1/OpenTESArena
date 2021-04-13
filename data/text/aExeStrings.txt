@@ -244,6 +244,9 @@ Box3A=0x482E6
 Box3B=0x482F6
 Box4=0x48306
 
+[Weather]
+ThunderstormFlashColors=0x3F8D2
+
 [Wilderness]
 NormalBlocks=0x3F02C
 VillageBlocks=0x3F045
