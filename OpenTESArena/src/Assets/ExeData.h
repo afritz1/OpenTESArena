@@ -29,7 +29,7 @@ public:
 		std::array<std::string, 15> holidayNames;
 		std::array<uint16_t, 15> holidayDates;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CharacterClasses
@@ -60,7 +60,7 @@ public:
 		std::array<uint8_t, 18> lockpickingDivisors;
 		std::array<std::string, 18> preferredAttributes;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CharacterCreation
@@ -88,7 +88,7 @@ public:
 		std::string chooseAttributesReroll;
 		std::string chooseAppearance;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct CityGeneration
@@ -119,7 +119,7 @@ public:
 		// The displayed name when a mage's guild *MENU voxel is right-clicked.
 		std::string magesGuildMenuName;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Entities
@@ -195,7 +195,7 @@ public:
 		std::array<uint8_t, 16> citizenColorBase;
 		std::array<uint8_t, 10> citizenSkinColors;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	// See Items wiki page for more information.
@@ -280,7 +280,7 @@ public:
 		std::array<std::string, 11> bodyPartNames; // Chest, ..., general.
 		std::array<std::string, 11> weaponAnimationFilenames; // staff.cif, ..., spell.img.
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Locations
@@ -347,14 +347,14 @@ public:
 		// Base filename for distant stars.
 		std::string starFilename;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Logbook
 	{
 		std::string isEmpty;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Meta
@@ -363,7 +363,7 @@ public:
 		// weapons lists (not necessary for this class, though).
 		uint32_t dataSegmentOffset;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Quests
@@ -377,7 +377,7 @@ public:
 		std::string keyPickedUp;
 		std::string doorUnlockedWithKey;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Races
@@ -386,7 +386,7 @@ public:
 		std::array<std::string, 8> singularNames;
 		std::array<std::string, 8> pluralNames;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Status
@@ -402,7 +402,7 @@ public:
 		std::string effect; // With %s token.
 		std::array<std::string, 23> effectsList; // Healthy, diseased, etc..
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Travel
@@ -445,7 +445,7 @@ public:
 		// Province indices into the staff dungeon splash filenames.
 		std::array<uint8_t, 8> staffDungeonSplashIndices;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct UI
@@ -482,7 +482,7 @@ public:
 		// Displayed when clicking an entity.
 		std::string inspectedEntityName;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct WallHeightTables
@@ -508,14 +508,14 @@ public:
 		std::array<uint16_t, 8> box3a, box3b;
 		std::array<uint16_t, 16> box4;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Weather
 	{
 		std::array<uint8_t, 3> thunderstormFlashColors;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
 	struct Wilderness
@@ -525,7 +525,7 @@ public:
 		std::vector<uint8_t> normalBlocks, villageBlocks, dungeonBlocks,
 			tavernBlocks, templeBlocks;
 
-		void init(const char *data, const KeyValueFile &keyValueFile);
+		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 private:
 	static const std::string CD_VERSION_MAP_FILENAME;
