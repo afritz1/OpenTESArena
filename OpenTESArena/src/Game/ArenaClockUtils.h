@@ -30,6 +30,10 @@ namespace ArenaClockUtils
 	// Change in music times.
 	const Clock MusicSwitchToDay(6, 19, 0);
 	const Clock MusicSwitchToNight(17, 45, 0);
+
+	// Thunderstorm times.
+	const Clock ThunderstormStart(18, 1, 0);
+	const Clock ThunderstormEnd(6, 0, 0);
 }
 
 #endif
