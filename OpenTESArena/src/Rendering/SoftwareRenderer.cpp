@@ -28,6 +28,7 @@
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing2D.h"
 #include "../World/VoxelUtils.h"
+#include "../World/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
 
@@ -7814,8 +7815,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette,
-	uint32_t *colorBuffer)
+	const SkyInstance &skyInst, const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary,
+	const Palette &palette, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);

@@ -26,6 +26,7 @@ class EntityManager;
 class Rect;
 class Surface;
 class TextureManager;
+class WeatherInstance;
 
 enum class CursorAlignment;
 
@@ -119,6 +120,9 @@ public:
 
 	// Gets the width and height of the active window.
 	Int2 getWindowDimensions() const;
+
+	// Gets the aspect ratio of the active window.
+	double getWindowAspect() const;
 
 	// Gets a list of supported fullscreen display modes.
 	const std::vector<DisplayMode> &getDisplayModes() const;
@@ -252,7 +256,7 @@ public:
 	void renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingScale, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
+		const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

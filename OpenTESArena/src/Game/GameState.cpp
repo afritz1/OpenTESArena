@@ -1201,6 +1201,10 @@ void GameState::tick(double dt, Game &game)
 		this->chasmAnimSeconds = std::fmod(this->chasmAnimSeconds, ArenaVoxelUtils::CHASM_ANIM_SECONDS);
 	}
 
+	// Tick weather.
+	const Renderer &renderer = game.getRenderer();
+	this->weatherInst.update(dt, renderer.getWindowAspect(), game.getRandom());
+
 	// Tick on-screen text messages.
 	auto tryTickTextBox = [dt](TimedTextBox &textBox)
 	{

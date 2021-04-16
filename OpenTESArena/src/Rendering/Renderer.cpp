@@ -288,6 +288,12 @@ Int2 Renderer::getWindowDimensions() const
 	return Int2(nativeSurface->w, nativeSurface->h);
 }
 
+double Renderer::getWindowAspect() const
+{
+	const Int2 dims = this->getWindowDimensions();
+	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
+}
+
 const std::vector<Renderer::DisplayMode> &Renderer::getDisplayModes() const
 {
 	return this->displayModes;
@@ -954,7 +960,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
 	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
+	const SkyInstance &skyInst, const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary,
+	const Palette &palette)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->renderer3D->isInited());
@@ -972,7 +979,7 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, do
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->renderer3D->render(eye, direction, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
 		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingScale, levelInst,
-		skyInst, entityDefLibrary, palette, gameWorldPixels);
+		skyInst, weatherInst, entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

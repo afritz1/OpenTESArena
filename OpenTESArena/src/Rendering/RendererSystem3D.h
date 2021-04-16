@@ -28,6 +28,7 @@ class RenderInstanceGroup;
 class SkyInstance;
 class TextureBuilder;
 class TextureManager;
+class WeatherInstance;
 
 struct TextureAssetReference;
 
@@ -96,8 +97,8 @@ public:
 	virtual void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette,
-		uint32_t *colorBuffer) = 0;
+		const SkyInstance &skyInst, const WeatherInstance &weatherInst,
+		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.

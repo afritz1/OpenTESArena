@@ -2958,6 +2958,7 @@ void GameWorldPanel::render(Renderer &renderer)
 	const MapInstance &activeMapInst = gameState.getActiveMapInst();
 	const LevelInstance &activeLevelInst = activeMapInst.getActiveLevel();
 	const SkyInstance &activeSkyInst = activeMapInst.getActiveSky();
+	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 	const auto &options = game.getOptions();
 	const double ambientPercent = gameState.getAmbientPercent();
 
@@ -2984,7 +2985,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
 		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
-		game.getEntityDefinitionLibrary(), defaultPalette);
+		activeWeatherInst, game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
