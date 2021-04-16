@@ -559,6 +559,7 @@ SoftwareRenderer::FrameView::FrameView(uint32_t *colorBuffer, double *depthBuffe
 	this->height = height;
 	this->widthReal = static_cast<double>(width);
 	this->heightReal = static_cast<double>(height);
+	this->aspectRatio = this->widthReal / this->heightReal;
 }
 
 SoftwareRenderer::DistantObject::DistantObject(int startTextureIndex, int textureIndexCount)
@@ -7716,6 +7717,87 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	}
 }
 
+void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
+	const FrameView &frame)
+{
+	const WeatherInstance::Type weatherInstType = weatherInst.getType();
+	if (weatherInstType == WeatherInstance::Type::None)
+	{
+		// No weather to render.
+		return;
+	}
+
+	if (weatherInstType == WeatherInstance::Type::Rain)
+	{
+		constexpr int raindropTextureWidth = 3;
+		constexpr int raindropTextureHeight = 8;
+		constexpr double raindropBaseWidthPercent = static_cast<double>(raindropTextureWidth) /
+			static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+		constexpr double raindropBaseHeightPercent = static_cast<double>(raindropTextureHeight) /
+			static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+
+		// Make sure raindrops are scaled correctly for the current aspect ratio.
+		const double raindropScaledWidthPercent = raindropBaseWidthPercent / frame.aspectRatio;
+		const double raindropScaledHeightPercent = raindropBaseHeightPercent / frame.aspectRatio;
+
+		const uint32_t raindropColor = shadingInfo.palette[ArenaRenderUtils::PALETTE_INDEX_RAINDROP].toARGB();
+		const std::array<uint32_t, raindropTextureWidth * raindropTextureHeight> raindropTexture =
+		{
+			0, 0, raindropColor,
+			0, 0, raindropColor,
+			0, raindropColor, 0,
+			0, raindropColor, 0,
+			0, raindropColor, 0,
+			raindropColor, 0, 0,
+			raindropColor, 0, 0,
+			raindropColor, 0, 0
+		};
+
+		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
+		const Buffer<WeatherInstance::RainInstance::Raindrop> &raindrops = rainInst.raindrops;
+		for (int i = 0; i < raindrops.getCount(); i++)
+		{
+			const WeatherInstance::RainInstance::Raindrop &raindrop = raindrops.get(i);
+			const double raindropLeft = raindrop.xPercent;
+			const double raindropRight = raindropLeft + raindropScaledWidthPercent;
+			const double raindropTop = raindrop.yPercent;
+			const double raindropBottom = raindropTop + raindropScaledHeightPercent;
+
+			const int startX = RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width);
+			const int endX = RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width);
+			const int startY = RendererUtils::getLowerBoundedPixel(raindropTop * frame.heightReal, frame.height);
+			const int endY = RendererUtils::getUpperBoundedPixel(raindropBottom * frame.heightReal, frame.height);
+
+			const double startXReal = static_cast<double>(startX);
+			const double endXReal = static_cast<double>(endX);
+			const double startYReal = static_cast<double>(startY);
+			const double endYReal = static_cast<double>(endY);
+
+			for (int y = startY; y < endY; y++)
+			{
+				const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+				for (int x = startX; x < endX; x++)
+				{
+					const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
+
+					const int textureX = std::clamp(
+						static_cast<int>(xPercent * raindropTextureWidth), 0, raindropTextureWidth - 1);
+					const int textureY = std::clamp(
+						static_cast<int>(yPercent * raindropTextureHeight), 0, raindropTextureHeight - 1);
+					const int textureIndex = textureX + (textureY * raindropTextureWidth);
+					const uint32_t texel = raindropTexture[textureIndex];
+
+					if (texel != 0)
+					{
+						const int index = x + (y * frame.width);
+						frame.colorBuffer[index] = texel;
+					}
+				}
+			}
+		}
+	}
+}
+
 void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int threadIndex, int startX,
 	int endX, int startY, int endY)
 {
@@ -7919,6 +8001,9 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	{
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
+
+	// Draw weather (if any) on the main thread.
+	this->drawWeather(weatherInst, shadingInfo, frame);
 }
 
 void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,

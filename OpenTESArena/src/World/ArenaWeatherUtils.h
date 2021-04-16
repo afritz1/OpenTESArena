@@ -19,7 +19,7 @@ namespace ArenaWeatherUtils
 
 	// Raindrop velocities in pixels per second.
 	static constexpr int RAINDROP_VELOCITY_X = -200;
-	static constexpr int RAINDROP_VELOCITY_Y = -450;
+	static constexpr int RAINDROP_VELOCITY_Y = 500;
 
 	static constexpr double THUNDERSTORM_FLASH_SECONDS = 0.35; // Duration of sky flash.
 	static constexpr double THUNDERSTORM_BOLT_SECONDS = 0.10; // Duration of lightning bolt.
