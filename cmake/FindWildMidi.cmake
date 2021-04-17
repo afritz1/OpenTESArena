@@ -52,7 +52,7 @@ find_library(WILDMIDI_LIBRARY NAMES WildMidi wildmidi_dynamic
 # handle the QUIETLY and REQUIRED arguments and set WILDMIDI_FOUND to TRUE if
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(WILDMIDI REQUIRED_VARS WILDMIDI_LIBRARY WILDMIDI_INCLUDE_DIR)
+find_package_handle_standard_args(WildMidi REQUIRED_VARS WILDMIDI_LIBRARY WILDMIDI_INCLUDE_DIR)
 
 if(WILDMIDI_FOUND)
     set(WILDMIDI_LIBRARIES ${WILDMIDI_LIBRARY})
