@@ -38,7 +38,7 @@ namespace ArenaRenderUtils
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
 	constexpr uint8_t PALETTE_INDEX_PUDDLE_ODD_ROW = 103;
 	constexpr uint8_t PALETTE_INDEX_DRY_CHASM_COLOR = 112; // @todo: might not be correct, need to check with light tables
-	constexpr uint8_t PALETTE_INDEX_RAINDROP = 47; // @todo: doesn't seem to be correct, need to check.
+	constexpr uint8_t PALETTE_INDEX_RAINDROP = 103;
 
 	constexpr double PLAYER_LIGHT_RADIUS = 5.0; // @todo: this might be a little too high.
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 4.0; // @todo: this might be a little too high.
