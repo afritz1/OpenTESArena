@@ -15,7 +15,7 @@ class TextureManager;
 
 namespace ArenaWeatherUtils
 {
-	static constexpr int RAINDROP_COUNT = 64;
+	static constexpr int RAINDROP_COUNT = 60;
 
 	// Raindrop velocities in pixels per second.
 	static constexpr int RAINDROP_VELOCITY_X = -200;
