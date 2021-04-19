@@ -7731,14 +7731,15 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 	{
 		constexpr int raindropTextureWidth = 3;
 		constexpr int raindropTextureHeight = 8;
-		constexpr double raindropBaseWidthPercent = static_cast<double>(raindropTextureWidth) /
-			static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
-		constexpr double raindropBaseHeightPercent = static_cast<double>(raindropTextureHeight) /
-			static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+		constexpr double raindropTextureWidthReal = static_cast<double>(raindropTextureWidth);
+		constexpr double raindropTextureHeightReal = static_cast<double>(raindropTextureHeight);
+		constexpr double raindropBaseWidthPercent =
+			raindropTextureWidthReal / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+		constexpr double raindropBaseHeightPercent =
+			raindropTextureHeightReal / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 		// Make sure raindrops are scaled correctly for the current aspect ratio.
 		const double raindropScaledWidthPercent = raindropBaseWidthPercent / frame.aspectRatio;
-		const double raindropScaledHeightPercent = raindropBaseHeightPercent / frame.aspectRatio;
 
 		const uint32_t raindropColor = shadingInfo.palette[ArenaRenderUtils::PALETTE_INDEX_RAINDROP].toARGB();
 		const std::array<uint32_t, raindropTextureWidth * raindropTextureHeight> raindropTexture =
@@ -7761,7 +7762,7 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 			const double raindropLeft = raindrop.xPercent;
 			const double raindropRight = raindropLeft + raindropScaledWidthPercent;
 			const double raindropTop = raindrop.yPercent;
-			const double raindropBottom = raindropTop + raindropScaledHeightPercent;
+			const double raindropBottom = raindropTop + raindropBaseHeightPercent;
 
 			const int startX = RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width);
 			const int endX = RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width);
@@ -7781,9 +7782,9 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 					const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
 
 					const int textureX = std::clamp(
-						static_cast<int>(xPercent * raindropTextureWidth), 0, raindropTextureWidth - 1);
+						static_cast<int>(xPercent * raindropTextureWidthReal), 0, raindropTextureWidth - 1);
 					const int textureY = std::clamp(
-						static_cast<int>(yPercent * raindropTextureHeight), 0, raindropTextureHeight - 1);
+						static_cast<int>(yPercent * raindropTextureHeightReal), 0, raindropTextureHeight - 1);
 					const int textureIndex = textureX + (textureY * raindropTextureWidth);
 					const uint32_t texel = raindropTexture[textureIndex];
 
