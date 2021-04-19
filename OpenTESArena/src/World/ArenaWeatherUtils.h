@@ -36,6 +36,10 @@ namespace ArenaWeatherUtils
 	// Returns whether rainy weather is also a thunderstorm.
 	bool rainIsThunderstorm(Random &random);
 
+	// Whether an individual snowflake should randomly switch between left/right at this point in time
+	// (not sure how frequently this is checked).
+	bool shouldSnowflakeChangeDirection(Random &random);
+
 	// Returns a filtered version of the given weather so that, i.e., deserts can't have snow.
 	ArenaTypes::WeatherType getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
 		ArenaTypes::ClimateType climateType);

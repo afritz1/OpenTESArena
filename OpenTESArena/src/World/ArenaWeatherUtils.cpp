@@ -53,6 +53,11 @@ bool ArenaWeatherUtils::rainIsThunderstorm(Random &random)
 	return random.next(0x10000) < 24000;
 }
 
+bool ArenaWeatherUtils::shouldSnowflakeChangeDirection(Random &random)
+{
+	return random.next(0x10000) < 15000;
+}
+
 ArenaTypes::WeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
 	ArenaTypes::ClimateType climateType)
 {
