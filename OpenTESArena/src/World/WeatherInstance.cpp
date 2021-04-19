@@ -91,11 +91,11 @@ void WeatherInstance::RainInstance::update(double dt, double aspectRatio, Random
 		const bool canBeRestarted = (raindrop.xPercent < 0.0) || (raindrop.yPercent >= 1.0);
 		if (canBeRestarted)
 		{
-			// Pick a screen edge to spawn at.
-			// @todo: this distribution could be improved by involving the aspect ratio. If the screen is super wide, there
-			// should be more drops on the top edge than the right edge (otherwise the right edge drops get bunched up).
-			// Maybe it should be some ratio of the sum of the side lengths.
-			if ((random.next() % 2) == 0)
+			// Pick a screen edge to spawn at. This involves the aspect ratio so that drops are properly distributed.
+			const double topEdgeLength = aspectRatio;
+			constexpr double rightEdgeLength = 1.0;
+			const double topEdgePercent = topEdgeLength / (topEdgeLength + rightEdgeLength);
+			if (random.nextReal() <= topEdgePercent)
 			{
 				// Top edge.
 				raindrop.xPercent = random.nextReal();
