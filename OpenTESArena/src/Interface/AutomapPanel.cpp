@@ -26,7 +26,6 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../World/ArenaWildUtils.h"
-#include "../World/LevelUtils.h"
 #include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
 #include "../World/VoxelFacing2D.h"
