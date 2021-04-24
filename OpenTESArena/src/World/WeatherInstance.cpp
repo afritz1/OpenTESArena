@@ -174,6 +174,9 @@ void WeatherInstance::SnowInstance::init(Random &random)
 	{
 		this->directions.set(i, MakeSnowflakeDirection(random));
 	}
+
+	this->lastDirectionChangeSeconds.init(this->particles.getCount());
+	this->lastDirectionChangeSeconds.fill(0.0);
 }
 
 void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random &random)
@@ -195,8 +198,23 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 			}
 			else
 			{
-				const bool flippedX = this->directions.get(i);
-				const double directionX = flippedX ? -1.0 : 1.0;
+				double &secondsSinceDirectionChange = this->lastDirectionChangeSeconds.get(i);
+				secondsSinceDirectionChange += dt;
+
+				// The snowflake gets a chance to change direction a few times a second.
+				if (secondsSinceDirectionChange >= ArenaWeatherUtils::SNOWFLAKE_MIN_SECONDS_BEFORE_DIRECTION_CHANGE)
+				{
+					secondsSinceDirectionChange = std::fmod(
+						secondsSinceDirectionChange, ArenaWeatherUtils::SNOWFLAKE_MIN_SECONDS_BEFORE_DIRECTION_CHANGE);
+
+					const bool shouldFlip = (random.next() % 2) != 0;
+					if (shouldFlip)
+					{
+						this->directions.set(i, !this->directions.get(i));
+					}
+				}
+
+				const double directionX = this->directions.get(i) ? 1.0 : -1.0;
 
 				// The particle's horizontal movement is aspect-ratio-dependent.
 				const double aspectRatioMultiplierX = ArenaRenderUtils::ASPECT_RATIO / aspectRatio;

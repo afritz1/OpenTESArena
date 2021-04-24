@@ -51,6 +51,8 @@ namespace ArenaWeatherUtils
 	constexpr int SNOWFLAKE_MEDIUM_SIZE = 2;
 	constexpr int SNOWFLAKE_SLOW_SIZE = 1;
 
+	constexpr double SNOWFLAKE_MIN_SECONDS_BEFORE_DIRECTION_CHANGE = 0.25; // Arbitrary.
+
 	// Helper functions for determining what category a weather type falls into.
 	bool isClear(ArenaTypes::WeatherType weatherType);
 	bool isOvercast(ArenaTypes::WeatherType weatherType);

@@ -63,6 +63,7 @@ public:
 	{
 		Buffer<Particle> particles;
 		Buffer<bool> directions;
+		Buffer<double> lastDirectionChangeSeconds;
 
 		void init(Random &random);
 
