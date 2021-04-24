@@ -207,8 +207,7 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 					secondsSinceDirectionChange = std::fmod(
 						secondsSinceDirectionChange, ArenaWeatherUtils::SNOWFLAKE_MIN_SECONDS_BEFORE_DIRECTION_CHANGE);
 
-					const bool shouldFlip = (random.next() % 2) != 0;
-					if (shouldFlip)
+					if (ArenaWeatherUtils::shouldSnowflakeChangeDirection(random))
 					{
 						this->directions.set(i, !this->directions.get(i));
 					}
