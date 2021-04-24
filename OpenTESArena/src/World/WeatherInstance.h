@@ -6,6 +6,7 @@
 #include "../Math/MathUtils.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/BufferView.h"
 
 class Random;
 class WeatherDefinition;
@@ -21,17 +22,17 @@ public:
 		Snow
 	};
 
+	struct Particle
+	{
+		// Percent positions on the screen, where (0, 0) is the top left. This should work for any
+		// resolution/aspect ratio. The particle's anchor is also at the top left.
+		double xPercent, yPercent;
+
+		void init(double xPercent, double yPercent);
+	};
+
 	struct RainInstance
 	{
-		struct Raindrop
-		{
-			// Percent positions on the screen, where (0, 0) is the top left. This should work for any
-			// resolution/aspect ratio. The raindrop's anchor is also at the top left.
-			double xPercent, yPercent;
-
-			void init(double xPercent, double yPercent);
-		};
-
 		struct Thunderstorm
 		{
 			double secondsSincePrevLightning;
@@ -50,16 +51,29 @@ public:
 			void update(double dt, Random &random);
 		};
 
-		Buffer<Raindrop> raindrops;
+		Buffer<Particle> particles;
 		std::optional<Thunderstorm> thunderstorm;
 
 		void init(bool isThunderstorm, Random &random);
 
 		void update(double dt, double aspectRatio, Random &random);
 	};
+
+	struct SnowInstance
+	{
+		Buffer<Particle> particles;
+
+		// @todo: times since each snowflake was tested for changing direction?
+		// @todo: need to know for each animation step which way they're going
+
+		void init(Random &random);
+
+		void update(double dt, double aspectRatio, Random &random);
+	};
 private:
 	Type type;
 	RainInstance rain;
+	SnowInstance snow;
 public:
 	WeatherInstance();
 
@@ -67,6 +81,7 @@ public:
 
 	Type getType() const;
 	const RainInstance &getRain() const;
+	const SnowInstance &getSnow() const;
 
 	void update(double dt, double aspectRatio, Random &random);
 };

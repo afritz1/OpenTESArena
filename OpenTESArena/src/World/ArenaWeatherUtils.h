@@ -1,28 +1,55 @@
 #ifndef ARENA_WEATHER_UTILS_H
 #define ARENA_WEATHER_UTILS_H
 
-#include <cstdint>
-
 #include "../Assets/ArenaTypes.h"
+#include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/utilities/Buffer.h"
 
-class Random;
 class Color;
+class Random;
 class TextureManager;
 
 // Various functions for working with the original game's weather.
 
 namespace ArenaWeatherUtils
 {
-	static constexpr int RAINDROP_COUNT = 60;
+	constexpr int RAINDROP_FAST_COUNT = 20;
+	constexpr int RAINDROP_MEDIUM_COUNT = 20;
+	constexpr int RAINDROP_SLOW_COUNT = 20;
+	constexpr int RAINDROP_TOTAL_COUNT = RAINDROP_FAST_COUNT + RAINDROP_MEDIUM_COUNT + RAINDROP_SLOW_COUNT;
 
-	// Raindrop velocities in pixels per second.
-	static constexpr int RAINDROP_VELOCITY_X = -200;
-	static constexpr int RAINDROP_VELOCITY_Y = 500;
+	constexpr int RAINDROP_FAST_PIXELS_PER_FRAME_Y =
+		static_cast<int>((3.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+	constexpr int RAINDROP_MEDIUM_PIXELS_PER_FRAME_Y =
+		static_cast<int>((1.0 / 10.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+	constexpr int RAINDROP_SLOW_PIXELS_PER_FRAME_Y =
+		static_cast<int>((2.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
 
-	static constexpr double THUNDERSTORM_FLASH_SECONDS = 0.35; // Duration of sky flash.
-	static constexpr double THUNDERSTORM_BOLT_SECONDS = 0.10; // Duration of lightning bolt.
+	constexpr int RAINDROP_FAST_PIXELS_PER_FRAME_X = -RAINDROP_FAST_PIXELS_PER_FRAME_Y / 2;
+	constexpr int RAINDROP_MEDIUM_PIXELS_PER_FRAME_X = -RAINDROP_MEDIUM_PIXELS_PER_FRAME_Y / 2;
+	constexpr int RAINDROP_SLOW_PIXELS_PER_FRAME_X = -RAINDROP_SLOW_PIXELS_PER_FRAME_Y / 2;
+
+	constexpr double THUNDERSTORM_SKY_FLASH_SECONDS = 0.35;
+	constexpr double THUNDERSTORM_BOLT_SECONDS = 0.10;
+
+	constexpr int SNOWFLAKE_FAST_COUNT = 20;
+	constexpr int SNOWFLAKE_MEDIUM_COUNT = 30;
+	constexpr int SNOWFLAKE_SLOW_COUNT = 50;
+	constexpr int SNOWFLAKE_TOTAL_COUNT = SNOWFLAKE_FAST_COUNT + SNOWFLAKE_MEDIUM_COUNT + SNOWFLAKE_SLOW_COUNT;
+
+	constexpr int SNOWFLAKE_FAST_PIXELS_PER_FRAME_Y =
+		static_cast<int>((1.0 / 25.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+	constexpr int SNOWFLAKE_MEDIUM_PIXELS_PER_FRAME_Y =
+		static_cast<int>((3.0 / 100.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+	constexpr int SNOWFLAKE_SLOW_PIXELS_PER_FRAME_Y =
+		static_cast<int>((1.0 / 50.0) * static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT));
+
+	constexpr int SNOWFLAKE_PIXELS_PER_FRAME_X = 2; // Either left or right.
+
+	constexpr int SNOWFLAKE_FAST_SIZE = 2;
+	constexpr int SNOWFLAKE_MEDIUM_SIZE = 2;
+	constexpr int SNOWFLAKE_SLOW_SIZE = 1;
 
 	// Helper functions for determining what category a weather type falls into.
 	bool isClear(ArenaTypes::WeatherType weatherType);

@@ -7755,13 +7755,13 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 		};
 
 		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
-		const Buffer<WeatherInstance::RainInstance::Raindrop> &raindrops = rainInst.raindrops;
-		for (int i = 0; i < raindrops.getCount(); i++)
+		const Buffer<WeatherInstance::Particle> &particles = rainInst.particles;
+		for (int i = 0; i < particles.getCount(); i++)
 		{
-			const WeatherInstance::RainInstance::Raindrop &raindrop = raindrops.get(i);
-			const double raindropLeft = raindrop.xPercent;
+			const WeatherInstance::Particle &particle = particles.get(i);
+			const double raindropLeft = particle.xPercent;
 			const double raindropRight = raindropLeft + raindropScaledWidthPercent;
-			const double raindropTop = raindrop.yPercent;
+			const double raindropTop = particle.yPercent;
 			const double raindropBottom = raindropTop + raindropBaseHeightPercent;
 
 			const int startX = RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width);

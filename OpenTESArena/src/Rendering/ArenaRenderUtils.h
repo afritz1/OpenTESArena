@@ -11,6 +11,8 @@ namespace ArenaRenderUtils
 	constexpr double ASPECT_RATIO = static_cast<double>(SCREEN_WIDTH) / static_cast<double>(SCREEN_HEIGHT);
 	constexpr int BITS_PER_PIXEL = 8;
 
+	constexpr int FRAMES_PER_SECOND = 25;
+
 	// Texture limits.
 	constexpr int DEFAULT_VOXEL_TEXTURE_COUNT = 64;
 	constexpr int DEFAULT_FLAT_TEXTURE_COUNT = 256;
