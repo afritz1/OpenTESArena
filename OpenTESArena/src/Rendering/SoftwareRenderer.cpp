@@ -21,6 +21,7 @@
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 #include "../World/ArenaVoxelUtils.h"
+#include "../World/ArenaWeatherUtils.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/LevelInstance.h"
@@ -7796,6 +7797,129 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 				}
 			}
 		}
+	}
+	else if (weatherInstType == WeatherInstance::Type::Snow)
+	{
+		constexpr int fastSnowflakeType = 0;
+		constexpr int mediumSnowflakeType = fastSnowflakeType + 1;
+		constexpr int slowSnowflakeType = mediumSnowflakeType + 1;
+
+		constexpr std::array<int, 3> snowflakeDims =
+		{
+			ArenaWeatherUtils::SNOWFLAKE_FAST_SIZE,
+			ArenaWeatherUtils::SNOWFLAKE_MEDIUM_SIZE,
+			ArenaWeatherUtils::SNOWFLAKE_SLOW_SIZE
+		};
+
+		constexpr std::array<double, 3> snowflakeRealDims =
+		{
+			static_cast<double>(ArenaWeatherUtils::SNOWFLAKE_FAST_SIZE),
+			static_cast<double>(ArenaWeatherUtils::SNOWFLAKE_MEDIUM_SIZE),
+			static_cast<double>(ArenaWeatherUtils::SNOWFLAKE_SLOW_SIZE)
+		};
+
+		constexpr std::array<double, 3> snowflakeBaseWidthPercents =
+		{
+			snowflakeRealDims[0] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+			snowflakeRealDims[1] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH),
+			snowflakeRealDims[2] / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH)
+		};
+
+		constexpr std::array<double, 3> snowflakeBaseHeightPercents =
+		{
+			snowflakeRealDims[0] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT),
+			snowflakeRealDims[1] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT),
+			snowflakeRealDims[2] / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT)
+		};
+
+		// Make sure snowflakes are scaled correctly for the current aspect ratio.
+		const std::array<double, 3> snowflakeScaledWidthPercents =
+		{
+			snowflakeBaseWidthPercents[0] / frame.aspectRatio,
+			snowflakeBaseWidthPercents[1] / frame.aspectRatio,
+			snowflakeBaseWidthPercents[2] / frame.aspectRatio
+		};
+
+		const uint32_t snowflakeColor = shadingInfo.palette[ArenaRenderUtils::PALETTE_INDEX_SNOWFLAKE].toARGB();
+
+		std::array<uint32_t, snowflakeDims[0] * snowflakeDims[0]> fastSnowflakeTexture;
+		std::array<uint32_t, snowflakeDims[1] * snowflakeDims[1]> mediumSnowflakeTexture;
+		std::array<uint32_t, snowflakeDims[2] * snowflakeDims[2]> slowSnowflakeTexture;
+		fastSnowflakeTexture.fill(snowflakeColor);
+		mediumSnowflakeTexture.fill(snowflakeColor);
+		slowSnowflakeTexture.fill(snowflakeColor);
+
+		const std::array<const uint32_t*, 3> snowflakeTextures =
+		{
+			fastSnowflakeTexture.data(),
+			mediumSnowflakeTexture.data(),
+			slowSnowflakeTexture.data(),
+		};
+
+		const WeatherInstance::SnowInstance &snowInst = weatherInst.getSnow();
+		const Buffer<WeatherInstance::Particle> &particles = snowInst.particles;
+
+		auto drawSnowflakeRange = [&frame, &snowflakeDims, &snowflakeRealDims, &snowflakeBaseHeightPercents,
+			&snowflakeScaledWidthPercents, &snowflakeTextures, &particles](int startIndex, int endIndex, int snowflakeType)
+		{
+			const double scaledWidthPercent = snowflakeScaledWidthPercents[snowflakeType];
+			const double baseHeightPercent = snowflakeBaseHeightPercents[snowflakeType];
+
+			const int textureWidth = snowflakeDims[snowflakeType];
+			const int textureHeight = textureWidth;
+			const double textureWidthReal = snowflakeRealDims[snowflakeType];
+			const double textureHeightReal = textureWidthReal;
+
+			const uint32_t *texture = snowflakeTextures[snowflakeType];
+
+			for (int i = startIndex; i < endIndex; i++)
+			{
+				const WeatherInstance::Particle &particle = particles.get(i);
+				const double snowflakeLeft = particle.xPercent;
+				const double snowflakeRight = snowflakeLeft + scaledWidthPercent;
+				const double snowflakeTop = particle.yPercent;
+				const double snowflakeBottom = snowflakeTop + baseHeightPercent;
+
+				const int startX = RendererUtils::getLowerBoundedPixel(snowflakeLeft * frame.widthReal, frame.width);
+				const int endX = RendererUtils::getUpperBoundedPixel(snowflakeRight * frame.widthReal, frame.width);
+				const int startY = RendererUtils::getLowerBoundedPixel(snowflakeTop * frame.heightReal, frame.height);
+				const int endY = RendererUtils::getUpperBoundedPixel(snowflakeBottom * frame.heightReal, frame.height);
+
+				const double startXReal = static_cast<double>(startX);
+				const double endXReal = static_cast<double>(endX);
+				const double startYReal = static_cast<double>(startY);
+				const double endYReal = static_cast<double>(endY);
+
+				for (int y = startY; y < endY; y++)
+				{
+					const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+					for (int x = startX; x < endX; x++)
+					{
+						const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
+
+						const int textureX = std::clamp(
+							static_cast<int>(xPercent * textureWidthReal), 0, textureWidth - 1);
+						const int textureY = std::clamp(
+							static_cast<int>(yPercent * textureHeightReal), 0, textureHeight - 1);
+						const int textureIndex = textureX + (textureY * textureWidth);
+						const uint32_t texel = texture[textureIndex];
+						const int index = x + (y * frame.width);
+						frame.colorBuffer[index] = texel;
+					}
+				}
+			}
+		};
+
+		constexpr int fastStartIndex = 0;
+		constexpr int fastEndIndex = ArenaWeatherUtils::SNOWFLAKE_FAST_COUNT;
+		constexpr int mediumStartIndex = fastEndIndex;
+		constexpr int mediumEndIndex = mediumStartIndex + ArenaWeatherUtils::SNOWFLAKE_MEDIUM_COUNT;
+		constexpr int slowStartIndex = mediumEndIndex;
+		constexpr int slowEndIndex = slowStartIndex + ArenaWeatherUtils::SNOWFLAKE_SLOW_COUNT;
+
+		drawSnowflakeRange(fastStartIndex, fastEndIndex, fastSnowflakeType);
+		drawSnowflakeRange(mediumStartIndex, mediumEndIndex, mediumSnowflakeType);
+		drawSnowflakeRange(slowStartIndex, slowEndIndex, slowSnowflakeType);
 	}
 }
 

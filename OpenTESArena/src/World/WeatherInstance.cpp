@@ -21,6 +21,11 @@ namespace
 	{
 		return random.nextReal() * Constants::TwoPi;
 	}
+
+	bool MakeSnowflakeDirection(Random &random)
+	{
+		return (random.next() % 2) != 0;
+	}
 }
 
 void WeatherInstance::Particle::init(double xPercent, double yPercent)
@@ -157,12 +162,79 @@ void WeatherInstance::RainInstance::update(double dt, double aspectRatio, Random
 
 void WeatherInstance::SnowInstance::init(Random &random)
 {
-	DebugNotImplemented();
+	this->particles.init(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
+	for (int i = 0; i < this->particles.getCount(); i++)
+	{
+		Particle &particle = this->particles.get(i);
+		particle.init(random.nextReal(), random.nextReal());
+	}
+
+	this->directions.init(this->particles.getCount());
+	for (int i = 0; i < this->directions.getCount(); i++)
+	{
+		this->directions.set(i, MakeSnowflakeDirection(random));
+	}
 }
 
 void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random &random)
 {
-	DebugNotImplemented();
+	auto animateSnowflakeRange = [this, dt, aspectRatio, &random](int startIndex, int endIndex,
+		double velocityPercentX, double velocityPercentY)
+	{
+		for (int i = startIndex; i < endIndex; i++)
+		{
+			Particle &particle = this->particles.get(i);
+			const bool canBeRestarted = particle.yPercent >= 1.0;
+			if (canBeRestarted)
+			{
+				// Pick somewhere on the top edge to spawn.
+				particle.xPercent = random.nextReal();
+				particle.yPercent = 0.0;
+
+				this->directions.set(i, MakeSnowflakeDirection(random));
+			}
+			else
+			{
+				const bool flippedX = this->directions.get(i);
+				const double directionX = flippedX ? -1.0 : 1.0;
+
+				// The particle's horizontal movement is aspect-ratio-dependent.
+				const double aspectRatioMultiplierX = ArenaRenderUtils::ASPECT_RATIO / aspectRatio;
+				const double deltaPercentX = (velocityPercentX * directionX * aspectRatioMultiplierX) * dt;
+				const double deltaPercentY = velocityPercentY * dt;
+				particle.xPercent += deltaPercentX;
+				particle.yPercent += deltaPercentY;
+			}
+		}
+	};
+
+	constexpr int fastStartIndex = 0;
+	constexpr int fastEndIndex = ArenaWeatherUtils::SNOWFLAKE_FAST_COUNT;
+	constexpr int mediumStartIndex = fastEndIndex;
+	constexpr int mediumEndIndex = mediumStartIndex + ArenaWeatherUtils::SNOWFLAKE_MEDIUM_COUNT;
+	constexpr int slowStartIndex = mediumEndIndex;
+	constexpr int slowEndIndex = slowStartIndex + ArenaWeatherUtils::SNOWFLAKE_SLOW_COUNT;
+
+	constexpr double arenaScreenWidthReal = static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+	constexpr double arenaScreenHeightReal = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+	constexpr int arenaFramesPerSecond = ArenaRenderUtils::FRAMES_PER_SECOND;
+
+	constexpr double fastVelocityPercentX = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_PIXELS_PER_FRAME_X * arenaFramesPerSecond) / arenaScreenWidthReal;
+	constexpr double fastVelocityPercentY = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_FAST_PIXELS_PER_FRAME_Y * arenaFramesPerSecond) / arenaScreenHeightReal;
+	constexpr double mediumVelocityPercentX = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_PIXELS_PER_FRAME_X * arenaFramesPerSecond) / arenaScreenWidthReal;
+	constexpr double mediumVelocityPercentY = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_MEDIUM_PIXELS_PER_FRAME_Y * arenaFramesPerSecond) / arenaScreenHeightReal;
+	constexpr double slowVelocityPercentX = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_PIXELS_PER_FRAME_X * arenaFramesPerSecond) / arenaScreenWidthReal;
+	constexpr double slowVelocityPercentY = static_cast<double>(
+		ArenaWeatherUtils::SNOWFLAKE_SLOW_PIXELS_PER_FRAME_Y * arenaFramesPerSecond) / arenaScreenHeightReal;
+
+	animateSnowflakeRange(fastStartIndex, fastEndIndex, fastVelocityPercentX, fastVelocityPercentY);
+	animateSnowflakeRange(mediumStartIndex, mediumEndIndex, mediumVelocityPercentX, mediumVelocityPercentY);
+	animateSnowflakeRange(slowStartIndex, slowEndIndex, slowVelocityPercentX, slowVelocityPercentY);
 }
 
 WeatherInstance::WeatherInstance()

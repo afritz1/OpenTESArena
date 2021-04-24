@@ -62,9 +62,7 @@ public:
 	struct SnowInstance
 	{
 		Buffer<Particle> particles;
-
-		// @todo: times since each snowflake was tested for changing direction?
-		// @todo: need to know for each animation step which way they're going
+		Buffer<bool> directions;
 
 		void init(Random &random);
 
