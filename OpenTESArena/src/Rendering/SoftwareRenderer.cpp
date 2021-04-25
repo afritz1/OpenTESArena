@@ -7728,6 +7728,7 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 		return;
 	}
 
+	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 	if (weatherInstType == WeatherInstance::Type::Rain)
 	{
 		constexpr int raindropTextureWidth = 3;
@@ -7740,7 +7741,7 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 			raindropTextureHeightReal / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
 		// Make sure raindrops are scaled correctly for the current aspect ratio.
-		const double raindropScaledWidthPercent = raindropBaseWidthPercent / frame.aspectRatio;
+		const double raindropScaledWidthPercent = raindropBaseWidthPercent * correctedAspectRatio;
 
 		const uint32_t raindropColor = shadingInfo.palette[ArenaRenderUtils::PALETTE_INDEX_RAINDROP].toARGB();
 		const std::array<uint32_t, raindropTextureWidth * raindropTextureHeight> raindropTexture =
@@ -7833,7 +7834,6 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 		};
 
 		// Make sure snowflakes are scaled correctly for the current aspect ratio.
-		const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 		const std::array<double, 3> snowflakeScaledWidthPercents =
 		{
 			snowflakeBaseWidthPercents[0] * correctedAspectRatio,
