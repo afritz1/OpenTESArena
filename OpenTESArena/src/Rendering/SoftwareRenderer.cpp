@@ -7833,11 +7833,12 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 		};
 
 		// Make sure snowflakes are scaled correctly for the current aspect ratio.
+		const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 		const std::array<double, 3> snowflakeScaledWidthPercents =
 		{
-			snowflakeBaseWidthPercents[0] / frame.aspectRatio,
-			snowflakeBaseWidthPercents[1] / frame.aspectRatio,
-			snowflakeBaseWidthPercents[2] / frame.aspectRatio
+			snowflakeBaseWidthPercents[0] * correctedAspectRatio,
+			snowflakeBaseWidthPercents[1] * correctedAspectRatio,
+			snowflakeBaseWidthPercents[2] * correctedAspectRatio
 		};
 
 		const uint32_t snowflakeColor = shadingInfo.palette[ArenaRenderUtils::PALETTE_INDEX_SNOWFLAKE].toARGB();
