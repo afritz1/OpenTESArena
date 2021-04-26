@@ -217,7 +217,11 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 
 				// The particle's horizontal movement is aspect-ratio-dependent.
 				const double aspectRatioMultiplierX = ArenaRenderUtils::ASPECT_RATIO / aspectRatio;
-				const double deltaPercentX = (velocityPercentX * directionX * aspectRatioMultiplierX) * dt;
+
+				// This seems to make snowflakes move at a closer speed to the original game.
+				constexpr double velocityCorrectionX = 0.50;
+
+				const double deltaPercentX = (velocityPercentX * directionX * aspectRatioMultiplierX * velocityCorrectionX) * dt;
 				const double deltaPercentY = velocityPercentY * dt;
 				particle.xPercent += deltaPercentX;
 				particle.yPercent += deltaPercentY;
