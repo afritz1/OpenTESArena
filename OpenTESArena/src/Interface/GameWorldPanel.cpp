@@ -3152,7 +3152,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		{
 			const int interfaceOffset = modernInterface ? (gameWorldInterfaceTextureBuilderRef.getHeight() / 2) :
 				gameWorldInterfaceTextureBuilderRef.getHeight();
-			return ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 2;
+			return ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 3;
 		}();
 
 		renderer.drawOriginal(*triggerTextTexture, centerX, centerY);
