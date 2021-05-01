@@ -4,6 +4,8 @@
 #include "../Assets/TextureAssetReference.h"
 #include "../Media/TextureUtils.h"
 
+#include "components/utilities/Buffer.h"
+
 class SkyLandDefinition
 {
 public:
@@ -13,12 +15,12 @@ public:
 		Bright // Max brightness.
 	};
 private:
-	std::vector<TextureAssetReference> textureAssetRefs;
+	Buffer<TextureAssetReference> textureAssetRefs;
 	double animSeconds;
 	ShadingType shadingType;
 public:
 	// Initializer for an animated land.
-	void init(std::vector<TextureAssetReference> &&textureAssetRefs, double animSeconds, ShadingType shadingType);
+	void init(Buffer<TextureAssetReference> &&textureAssetRefs, double animSeconds, ShadingType shadingType);
 
 	// Initializer for a non-animated land.
 	void init(TextureAssetReference &&textureAssetRef, ShadingType shadingType);

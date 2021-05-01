@@ -3,9 +3,9 @@
 
 #include <optional>
 
+#include "../Assets/TextureAssetReference.h"
 #include "../Math/MathUtils.h"
 #include "../Media/TextureBuilder.h"
-#include "../Media/TextureUtils.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
@@ -38,17 +38,18 @@ public:
 
 	struct RainInstance
 	{
+		// @todo: see if this should be refactored so part of it is in SkyDefinition/SkyInstance instead.
 		struct Thunderstorm
 		{
 			Buffer<uint8_t> flashColors; // In here and not WeatherDefinition due to design complications.
-			Buffer<TextureBuilderIdGroup> lightningBoltTextureBuilderIDs;
+			Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs;
 			double secondsSincePrevLightning;
 			double secondsUntilNextLightning;
 			Radians lightningBoltAngle;
 			int lightningBoltGroupIndex;
 			bool active; // Whether the thunderstorm can flash/have lightning bolts.
 
-			void init(Buffer<uint8_t> &&flashColors, Buffer<TextureBuilderIdGroup> &&lightningBoltTextureBuilderIDs,
+			void init(Buffer<uint8_t> &&flashColors, Buffer<Buffer<TextureAssetReference>> &&lightningBoltTextureAssetRefs,
 				bool active, Random &random);
 
 			// If a lightning bolt recently flashed, returns how bright the sky is because of the flash.

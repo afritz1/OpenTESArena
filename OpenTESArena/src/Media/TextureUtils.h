@@ -7,6 +7,7 @@
 #include "Palette.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
 
 // Various texture handles for use with texture manager.
 using PaletteID = int; // 32-bit software surface (generally 256 texels)
@@ -72,8 +73,7 @@ namespace TextureUtils
 
 	// Generates individual texture asset references from the given filename. This should be used for filenames
 	// that point to a set of textures.
-	std::vector<TextureAssetReference> makeTextureAssetRefs(const std::string &filename,
-		TextureManager &textureManager);
+	Buffer<TextureAssetReference> makeTextureAssetRefs(const std::string &filename, TextureManager &textureManager);
 }
 
 using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;

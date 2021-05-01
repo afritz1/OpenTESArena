@@ -281,7 +281,7 @@ namespace SkyGeneration
 
 		// Determine which frames the animation will have. DFAs have multiple frames while
 		// IMGs do not, although we can use the same texture manager function for both.
-		std::vector<TextureAssetReference> textureAssetRefs =
+		Buffer<TextureAssetReference> textureAssetRefs =
 			TextureUtils::makeTextureAssetRefs(animFilename, textureManager);
 
 		// Position on the horizon.
@@ -290,7 +290,7 @@ namespace SkyGeneration
 			static_cast<double>(animLandGlobalPos.x - locationGlobalPos.x));
 
 		const double animSeconds = ArenaSkyUtils::ANIMATED_LAND_SECONDS_PER_FRAME *
-			static_cast<double>(textureAssetRefs.size());
+			static_cast<double>(textureAssetRefs.getCount());
 
 		SkyLandDefinition skyLandDef;
 		skyLandDef.init(std::move(textureAssetRefs), animSeconds, SkyLandDefinition::ShadingType::Bright);
@@ -498,7 +498,7 @@ namespace SkyGeneration
 			const auto &moonFilenames = exeData.locations.moonFilenames;
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
 			std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
-			std::vector<TextureAssetReference> textureAssetRefs =
+			Buffer<TextureAssetReference> textureAssetRefs =
 				TextureUtils::makeTextureAssetRefs(moonFilename, textureManager);
 
 			// Base direction from original game values.

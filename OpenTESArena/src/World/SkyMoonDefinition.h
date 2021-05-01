@@ -4,13 +4,15 @@
 #include "../Assets/TextureAssetReference.h"
 #include "../Media/TextureUtils.h"
 
+#include "components/utilities/Buffer.h"
+
 class SkyMoonDefinition
 {
 private:
 	// One texture per phase.
-	std::vector<TextureAssetReference> textureAssetRefs;
+	Buffer<TextureAssetReference> textureAssetRefs;
 public:
-	void init(std::vector<TextureAssetReference> &&textureAssetRefs);
+	void init(Buffer<TextureAssetReference> &&textureAssetRefs);
 
 	int getTextureCount() const;
 	const TextureAssetReference &getTextureAssetRef(int index) const;

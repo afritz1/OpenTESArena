@@ -48,10 +48,10 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 }
 
 void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors,
-	Buffer<TextureBuilderIdGroup> &&lightningBoltTextureBuilderIDs, bool active, Random &random)
+	Buffer<Buffer<TextureAssetReference>> &&lightningBoltTextureAssetRefs, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
-	this->lightningBoltTextureBuilderIDs = std::move(lightningBoltTextureBuilderIDs);
+	this->lightningBoltTextureAssetRefs = std::move(lightningBoltTextureAssetRefs);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
@@ -99,7 +99,7 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock 
 			this->secondsSincePrevLightning = 0.0;
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
-			this->lightningBoltGroupIndex = random.next(this->lightningBoltTextureBuilderIDs.getCount());
+			this->lightningBoltGroupIndex = random.next(this->lightningBoltTextureAssetRefs.getCount());
 
 			const std::string &soundFilename = ArenaSoundName::Thunder;
 			audioManager.playSound(soundFilename);
@@ -121,9 +121,9 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	{
 		this->thunderstorm = std::make_optional<Thunderstorm>();
 
-		Buffer<TextureBuilderIdGroup> lightningBoltTextureBuilderIDs =
-			ArenaWeatherUtils::makeLightningBoltTextureBuilderIDs(textureManager);
-		this->thunderstorm->init(std::move(flashColors), std::move(lightningBoltTextureBuilderIDs),
+		Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs =
+			ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(textureManager);
+		this->thunderstorm->init(std::move(flashColors), std::move(lightningBoltTextureAssetRefs),
 			IsDuringThunderstorm(clock), random);
 	}
 	else

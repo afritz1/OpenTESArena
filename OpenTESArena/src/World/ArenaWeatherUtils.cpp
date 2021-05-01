@@ -4,7 +4,9 @@
 #include "ArenaWeatherUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ExeData.h"
+#include "../Assets/TextureAssetReference.h"
 #include "../Math/Random.h"
+#include "../Media/TextureFileMetadata.h"
 #include "../Media/TextureManager.h"
 
 #include "components/dos/DOSUtils.h"
@@ -109,25 +111,20 @@ Buffer<uint8_t> ArenaWeatherUtils::makeThunderstormColors(const ExeData &exeData
 	return colors;
 }
 
-Buffer<TextureBuilderIdGroup> ArenaWeatherUtils::makeLightningBoltTextureBuilderIDs(TextureManager &textureManager)
+Buffer<Buffer<TextureAssetReference>> ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(TextureManager &textureManager)
 {
 	constexpr int fileCount = 6;
-	Buffer<TextureBuilderIdGroup> buffer(fileCount);
+	Buffer<Buffer<TextureAssetReference>> textureAssetRefBuffers(fileCount);
 
 	for (int i = 0; i < fileCount; i++)
 	{
 		DOSUtils::FilenameBuffer filename;
 		std::snprintf(filename.data(), filename.size(), "LGLIT0%d.CFA", i + 1);
 
-		std::optional<TextureBuilderIdGroup> idGroup = textureManager.tryGetTextureBuilderIDs(filename.data());
-		if (!idGroup.has_value())
-		{
-			DebugLogError("Couldn't load lightning bolt texture group \"" + std::string(filename.data()) + "\".");
-			continue;
-		}
-
-		buffer.set(i, std::move(*idGroup));
+		Buffer<TextureAssetReference> textureAssetRefs = TextureUtils::makeTextureAssetRefs(
+			std::string(filename.data()), textureManager);
+		textureAssetRefBuffers.set(i, std::move(textureAssetRefs));
 	}
 
-	return buffer;
+	return textureAssetRefBuffers;
 }
