@@ -7,6 +7,7 @@
 #include "components/utilities/Buffer.h"
 
 class Color;
+class ExeData;
 class Random;
 class TextureManager;
 
@@ -77,8 +78,11 @@ namespace ArenaWeatherUtils
 	// Gets the fog distance associated with the given weather type.
 	double getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType);
 
-	// Creates a sky palette from the given weather. This palette covers the entire day (including night colors).
+	// Creates a sky color buffer from the given weather. This covers the entire day and night.
 	Buffer<Color> makeSkyColors(ArenaTypes::WeatherType weatherType, TextureManager &textureManager);
+
+	// Creates a color buffer for thunderstorm flashes in the sky.
+	Buffer<uint8_t> makeThunderstormColors(const ExeData &exeData);
 }
 
 #endif
