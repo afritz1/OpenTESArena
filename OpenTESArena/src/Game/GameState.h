@@ -227,6 +227,7 @@ public:
 
 	// Gets the currently selected weather and associated state.
 	const WeatherDefinition &getWeatherDefinition() const;
+	WeatherInstance &getWeatherInstance();
 	const WeatherInstance &getWeatherInstance() const;
 
 	// Gets the current ambient light percent, based on the current clock time and 

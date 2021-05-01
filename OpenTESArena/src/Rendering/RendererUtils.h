@@ -1,6 +1,7 @@
 #ifndef RENDERER_UTILS_H
 #define RENDERER_UTILS_H
 
+#include <optional>
 #include <vector>
 
 #include "../Assets/ArenaTypes.h"
@@ -13,6 +14,7 @@
 #include "components/utilities/BufferView.h"
 
 class Chunk;
+class WeatherInstance;
 
 namespace RendererUtils
 {
@@ -91,6 +93,9 @@ namespace RendererUtils
 	// Returns whether the given percent through the day is before noon. This affects
 	// the sliding window direction of the sky palette.
 	bool isBeforeNoon(double daytimePercent);
+
+	// Gets the thunderstorm flash percent if it's raining and a thunderstorm is present.
+	std::optional<double> getThunderstormFlashPercent(const WeatherInstance &weatherInst);
 }
 
 #endif

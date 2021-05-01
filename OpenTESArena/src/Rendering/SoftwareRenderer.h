@@ -281,6 +281,7 @@ private:
 
 		// Thunderstorm flash colors for the sky. Index 0 is the start of the flash.
 		std::array<Double3, THUNDERSTORM_COLOR_COUNT> thunderstormColors;
+		std::optional<double> thunderstormFlashPercent;
 
 		// Global ambient light percent.
 		double ambient;
@@ -303,9 +304,8 @@ private:
 		// Whether the player has a light attached like the original game.
 		bool playerHasLight;
 
-		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors,
-			const WeatherInstance &weatherInstance, double daytimePercent,
-			double latitude, double ambient, double fogDistance, double chasmAnimPercent,
+		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors, const WeatherInstance &weatherInst,
+			double daytimePercent, double latitude, double ambient, double fogDistance, double chasmAnimPercent,
 			bool nightLightsAreActive, bool isExterior, bool playerHasLight);
 
 		const Double3 &getFogColor() const;
@@ -869,8 +869,8 @@ private:
 	// Draws a portion of the sky gradient. The start and end Y are determined from current
 	// threading settings.
 	static void drawSkyGradient(int startY, int endY, double gradientProjYTop, double gradientProjYBottom,
-		Buffer<Double3> &skyGradientRowCache, std::atomic<bool> &shouldDrawStars, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+		Buffer<Double3> &skyGradientRowCache, std::atomic<bool> &shouldDrawStars,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Draws some columns of distant sky objects (mountains, clouds, etc.). The start and end X
 	// are determined from current threading settings.

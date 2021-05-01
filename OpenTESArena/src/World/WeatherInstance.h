@@ -40,6 +40,7 @@ public:
 			double secondsSincePrevLightning;
 			double secondsUntilNextLightning;
 			Radians lightningBoltAngle;
+			bool active; // Whether the thunderstorm can flash/have lightning bolts.
 			// @todo: generated lightning bolt paletted texture
 
 			void init(Buffer<uint8_t> &&flashColors, Random &random);
@@ -84,6 +85,7 @@ public:
 	void init(const WeatherDefinition &weatherDef, const ExeData &exeData, Random &random);
 
 	Type getType() const;
+	RainInstance &getRain();
 	const RainInstance &getRain() const;
 	const SnowInstance &getSnow() const;
 

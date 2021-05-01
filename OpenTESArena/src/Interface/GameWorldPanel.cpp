@@ -2832,6 +2832,34 @@ void GameWorldPanel::tick(double dt)
 		this->handleNightLightChange(false);
 	}
 
+	// See if the active thunderstorm (if any) should start flashing/having lightning bolts.
+	WeatherInstance &weatherInst = gameState.getWeatherInstance();
+	if (weatherInst.getType() == WeatherInstance::Type::Rain)
+	{
+		WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
+		std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+		if (thunderstorm.has_value())
+		{
+			// Start is in the evening and end is in the morning.
+			const double thunderstormStartTime = ArenaClockUtils::ThunderstormStart.getPreciseTotalSeconds();
+			const double thunderstormEndTime = ArenaClockUtils::ThunderstormEnd.getPreciseTotalSeconds();
+
+			const bool shouldStartThunderstorm = (oldClockTime < thunderstormStartTime) &&
+				(newClockTime >= thunderstormStartTime);
+			const bool shouldEndThunderstorm = (oldClockTime < thunderstormEndTime) &&
+				(newClockTime >= thunderstormEndTime);
+
+			if (shouldStartThunderstorm)
+			{
+				thunderstorm->active = true;
+			}
+			else if (shouldEndThunderstorm)
+			{
+				thunderstorm->active = false;
+			}
+		}
+	}
+
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
 

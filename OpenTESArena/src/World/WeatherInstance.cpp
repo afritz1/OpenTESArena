@@ -40,6 +40,7 @@ void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashCo
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
+	this->active = false;
 }
 
 int WeatherInstance::RainInstance::Thunderstorm::getFlashColorCount() const
@@ -65,15 +66,18 @@ bool WeatherInstance::RainInstance::Thunderstorm::isLightningBoltVisible() const
 
 void WeatherInstance::RainInstance::Thunderstorm::update(double dt, Random &random)
 {
-	this->secondsSincePrevLightning += dt;
-	this->secondsUntilNextLightning -= dt;
-	if (this->secondsUntilNextLightning <= 0.0)
+	if (this->active)
 	{
-		this->secondsSincePrevLightning = 0.0;
-		this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
-		this->lightningBoltAngle = MakeLightningBoltAngle(random);
+		this->secondsSincePrevLightning += dt;
+		this->secondsUntilNextLightning -= dt;
+		if (this->secondsUntilNextLightning <= 0.0)
+		{
+			this->secondsSincePrevLightning = 0.0;
+			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
+			this->lightningBoltAngle = MakeLightningBoltAngle(random);
 
-		// @todo: signal lightning bolt to generate + appear, and audio to play.
+			// @todo: signal lightning bolt to generate + appear, and audio to play.
+		}
 	}
 }
 
@@ -305,6 +309,12 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const ExeData &e
 WeatherInstance::Type WeatherInstance::getType() const
 {
 	return this->type;
+}
+
+WeatherInstance::RainInstance& WeatherInstance::getRain()
+{
+	DebugAssert(this->type == WeatherInstance::Type::Rain);
+	return this->rain;
 }
 
 const WeatherInstance::RainInstance &WeatherInstance::getRain() const

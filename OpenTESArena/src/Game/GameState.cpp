@@ -797,6 +797,11 @@ const WeatherDefinition &GameState::getWeatherDefinition() const
 	return this->weatherDef;
 }
 
+WeatherInstance &GameState::getWeatherInstance()
+{
+	return this->weatherInst;
+}
+
 const WeatherInstance &GameState::getWeatherInstance() const
 {
 	return this->weatherInst;

@@ -528,7 +528,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors,
-	const WeatherInstance &weatherInstance, double daytimePercent, double latitude, double ambient, double fogDistance,
+	const WeatherInstance &weatherInst, double daytimePercent, double latitude, double ambient, double fogDistance,
 	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
 	this->palette = palette;
@@ -537,10 +537,10 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::ve
 	BufferView<Double3> skyColorsView(this->skyColors.data(), static_cast<int>(this->skyColors.size()));
 	RendererUtils::writeSkyColors(skyColors, skyColorsView, daytimePercent);
 
-	this->thunderstormColors.fill(Double3::Zero);
-	if (weatherInstance.getType() == WeatherInstance::Type::Rain)
+	this->thunderstormColors.fill(Double3::Zero); // Default if unused.
+	if (weatherInst.getType() == WeatherInstance::Type::Rain)
 	{
-		const WeatherInstance::RainInstance &rainInst = weatherInstance.getRain();
+		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
 		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
 		if (thunderstorm.has_value())
 		{
@@ -555,6 +555,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::ve
 		}
 	}
 
+	this->thunderstormFlashPercent = RendererUtils::getThunderstormFlashPercent(weatherInst);
 	this->isExterior = isExterior;
 	this->ambient = ambient;
 	this->distantAmbient = RendererUtils::getDistantAmbientPercent(ambient);
@@ -873,8 +874,8 @@ void SoftwareRenderer::VisibleLightList::sortByNearest(const CoordDouble3 &coord
 	});
 }
 
-void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop,
-	double projectedYBottom, Buffer<Double3> &rowCache)
+void SoftwareRenderer::RenderThreadData::SkyGradient::init(double projectedYTop, double projectedYBottom,
+	Buffer<Double3> &rowCache)
 {
 	this->threadsDone = 0;
 	this->rowCache = &rowCache;
@@ -7587,8 +7588,7 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 			yPercent, gradientProjYTop, gradientProjYBottom);
 
 		// Color of the sky gradient at the given percentage.
-		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(
-			gradientPercent, shadingInfo);
+		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(gradientPercent, shadingInfo);
 
 		// Cache row color for star rendering.
 		skyGradientRowCache.set(y, color);

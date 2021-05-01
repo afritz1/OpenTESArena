@@ -6,6 +6,7 @@
 #include "../Math/Constants.h"
 #include "../Utilities/Platform.h"
 #include "../World/Chunk.h"
+#include "../World/WeatherInstance.h"
 
 #include "components/debug/Debug.h"
 
@@ -242,4 +243,26 @@ double RendererUtils::getDistantAmbientPercent(double ambientPercent)
 bool RendererUtils::isBeforeNoon(double daytimePercent)
 {
 	return daytimePercent < 0.50;
+}
+
+std::optional<double> RendererUtils::getThunderstormFlashPercent(const WeatherInstance &weatherInst)
+{
+	if (weatherInst.getType() != WeatherInstance::Type::Rain)
+	{
+		return std::nullopt;
+	}
+
+	const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
+	const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+	if (!thunderstorm.has_value())
+	{
+		return std::nullopt;
+	}
+
+	if (!thunderstorm->active)
+	{
+		return std::nullopt;
+	}
+
+	return thunderstorm->getFlashPercent();
 }
