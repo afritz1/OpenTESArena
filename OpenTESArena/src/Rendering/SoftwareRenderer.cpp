@@ -2383,6 +2383,20 @@ Double3 SoftwareRenderer::getSkyGradientRowColor(double gradientPercent, const S
 	return color.lerp(nextColor, percent);
 }
 
+Double3 SoftwareRenderer::getThunderstormFlashColor(double flashPercent, const Double3 *colors, int colorCount)
+{
+	DebugAssert(colors != nullptr);
+	DebugAssert(colorCount > 0);
+
+	const double realIndex = MathUtils::getRealIndex(colorCount, flashPercent);
+	const double percent = realIndex - std::floor(realIndex);
+	const int index = static_cast<int>(realIndex);
+	const int nextIndex = std::clamp(index + 1, 0, colorCount - 1);
+	const Double3 &color = colors[index];
+	const Double3 &nextColor = colors[nextIndex];
+	return color.lerp(nextColor, percent);
+}
+
 bool SoftwareRenderer::findDiag1Intersection(const CoordInt2 &coord, const NewDouble2 &nearPoint,
 	const NewDouble2 &farPoint, RayHit &hit)
 {
@@ -7580,15 +7594,30 @@ void SoftwareRenderer::drawSkyGradient(int startY, int endY, double gradientProj
 
 	for (int y = startY; y < endY; y++)
 	{
-		// Y percent across the screen.
-		const double yPercent = (static_cast<double>(y) + 0.50) / frame.heightReal;
+		// The color depends on whether there is a thunderstorm.
+		const std::optional<double> thunderstormFlashPercent = shadingInfo.thunderstormFlashPercent;
+		const bool isThunderstormFlashActive = thunderstormFlashPercent.has_value();
 
-		// Y percent within the sky gradient.
-		const double gradientPercent = SoftwareRenderer::getSkyGradientPercent(
-			yPercent, gradientProjYTop, gradientProjYBottom);
+		Double3 color;
+		if (!isThunderstormFlashActive)
+		{
+			// Y percent across the screen.
+			const double yPercent = (static_cast<double>(y) + 0.50) / frame.heightReal;
 
-		// Color of the sky gradient at the given percentage.
-		const Double3 color = SoftwareRenderer::getSkyGradientRowColor(gradientPercent, shadingInfo);
+			// Y percent within the sky gradient.
+			const double gradientPercent = SoftwareRenderer::getSkyGradientPercent(
+				yPercent, gradientProjYTop, gradientProjYBottom);
+
+			// Color of the sky gradient at the given percentage.
+			color = SoftwareRenderer::getSkyGradientRowColor(gradientPercent, shadingInfo);
+		}
+		else
+		{
+			const auto &thunderstormColors = shadingInfo.thunderstormColors;
+			const int thunderstormColorCount = static_cast<int>(thunderstormColors.size());
+			color = SoftwareRenderer::getThunderstormFlashColor(
+				*thunderstormFlashPercent, thunderstormColors.data(), thunderstormColorCount);
+		}
 
 		// Cache row color for star rendering.
 		skyGradientRowCache.set(y, color);

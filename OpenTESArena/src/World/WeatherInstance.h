@@ -50,8 +50,7 @@ public:
 			uint8_t getFlashColor(int index) const;
 
 			// If a lightning bolt recently flashed, returns how bright the sky is because of the flash.
-			// Otherwise returns 0.
-			double getFlashPercent() const;
+			std::optional<double> getFlashPercent() const;
 
 			bool isLightningBoltVisible() const;
 

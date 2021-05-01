@@ -620,6 +620,9 @@ private:
 	// Gets the color of a row in the sky gradient at some percent between the top and bottom.
 	static Double3 getSkyGradientRowColor(double gradientPercent, const ShadingInfo &shadingInfo);
 
+	// Gets the blended thunderstorm flash color for a percentage through the flash animation.
+	static Double3 getThunderstormFlashColor(double flashPercent, const Double3 *colors, int colorCount);
+
 	// Gathers potential intersection data from a voxel containing a "diagonal 1" ID; the 
 	// diagonal starting at (nearX, nearZ) and ending at (farX, farZ). Returns whether an 
 	// intersection occurred within the voxel.

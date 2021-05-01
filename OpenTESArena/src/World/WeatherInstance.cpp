@@ -64,10 +64,17 @@ uint8_t WeatherInstance::RainInstance::Thunderstorm::getFlashColor(int index) co
 	return this->flashColors.get(index);
 }
 
-double WeatherInstance::RainInstance::Thunderstorm::getFlashPercent() const
+std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getFlashPercent() const
 {
 	const double percent = this->secondsSincePrevLightning / ArenaWeatherUtils::THUNDERSTORM_SKY_FLASH_SECONDS;
-	return std::clamp(1.0 - percent, 0.0, 1.0);
+	if ((percent >= 0.0) && (percent < 1.0))
+	{
+		return percent;
+	}
+	else
+	{
+		return std::nullopt;
+	}
 }
 
 bool WeatherInstance::RainInstance::Thunderstorm::isLightningBoltVisible() const
