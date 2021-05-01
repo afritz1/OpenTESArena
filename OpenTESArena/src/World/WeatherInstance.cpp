@@ -47,23 +47,16 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors,
+	Buffer<TextureBuilderIdGroup> &&lightningBoltTextureBuilderIDs, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
+	this->lightningBoltTextureBuilderIDs = std::move(lightningBoltTextureBuilderIDs);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
+	this->lightningBoltGroupIndex = -1;
 	this->active = active;
-}
-
-int WeatherInstance::RainInstance::Thunderstorm::getFlashColorCount() const
-{
-	return this->flashColors.getCount();
-}
-
-uint8_t WeatherInstance::RainInstance::Thunderstorm::getFlashColor(int index) const
-{
-	return this->flashColors.get(index);
 }
 
 std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getFlashPercent() const
@@ -79,9 +72,17 @@ std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getFlashPerce
 	}
 }
 
-bool WeatherInstance::RainInstance::Thunderstorm::isLightningBoltVisible() const
+std::optional<double> WeatherInstance::RainInstance::Thunderstorm::getLightningBoltPercent() const
 {
-	return this->secondsSincePrevLightning <= ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS;
+	const double percent = this->secondsSincePrevLightning / ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS;
+	if ((percent >= 0.0) && (percent < 1.0))
+	{
+		return percent;
+	}
+	else
+	{
+		return std::nullopt;
+	}
 }
 
 void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock &clock,
@@ -98,17 +99,16 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock 
 			this->secondsSincePrevLightning = 0.0;
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
+			this->lightningBoltGroupIndex = random.next(this->lightningBoltTextureBuilderIDs.getCount());
 
 			const std::string &soundFilename = ArenaSoundName::Thunder;
 			audioManager.playSound(soundFilename);
-
-			// @todo: signal lightning bolt to generate + appear
 		}
 	}
 }
 
 void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock,
-	Buffer<uint8_t> &&flashColors, Random &random)
+	Buffer<uint8_t> &&flashColors, Random &random, TextureManager &textureManager)
 {
 	this->particles.init(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 	for (int i = 0; i < this->particles.getCount(); i++)
@@ -120,7 +120,11 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	if (isThunderstorm)
 	{
 		this->thunderstorm = std::make_optional<Thunderstorm>();
-		this->thunderstorm->init(std::move(flashColors), IsDuringThunderstorm(clock), random);
+
+		Buffer<TextureBuilderIdGroup> lightningBoltTextureBuilderIDs =
+			ArenaWeatherUtils::makeLightningBoltTextureBuilderIDs(textureManager);
+		this->thunderstorm->init(std::move(flashColors), std::move(lightningBoltTextureBuilderIDs),
+			IsDuringThunderstorm(clock), random);
 	}
 	else
 	{
@@ -307,7 +311,7 @@ WeatherInstance::WeatherInstance()
 }
 
 void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clock,
-	const ExeData &exeData, Random &random)
+	const ExeData &exeData, Random &random, TextureManager &textureManager)
 {
 	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
 
@@ -322,7 +326,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 
 		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
-		this->rain.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random);
+		this->rain.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random, textureManager);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Snow)
 	{

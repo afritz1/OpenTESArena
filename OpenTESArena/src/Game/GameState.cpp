@@ -1033,7 +1033,8 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	this->weatherDef = std::move(weatherDef);
 
 	Random weatherRandom; // Cosmetic random.
-	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), weatherRandom);
+	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(),
+		weatherRandom, textureManager);
 
 	DebugAssert(this->maps.size() > 0);
 	const MapDefinition &mapDefinition = this->maps.top().definition;

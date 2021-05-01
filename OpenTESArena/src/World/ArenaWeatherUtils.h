@@ -2,6 +2,7 @@
 #define ARENA_WEATHER_UTILS_H
 
 #include "../Assets/ArenaTypes.h"
+#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/utilities/Buffer.h"
@@ -83,6 +84,9 @@ namespace ArenaWeatherUtils
 
 	// Creates a color buffer for thunderstorm flashes in the sky.
 	Buffer<uint8_t> makeThunderstormColors(const ExeData &exeData);
+
+	// Creates a buffer of texture builder IDs for lightning bolts.
+	Buffer<TextureBuilderIdGroup> makeLightningBoltTextureBuilderIDs(TextureManager &textureManager);
 }
 
 #endif
