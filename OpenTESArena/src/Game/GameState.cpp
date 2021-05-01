@@ -1203,7 +1203,7 @@ void GameState::tick(double dt, Game &game)
 
 	// Tick weather.
 	const Renderer &renderer = game.getRenderer();
-	this->weatherInst.update(dt, this->clock, renderer.getWindowAspect(), game.getRandom());
+	this->weatherInst.update(dt, this->clock, renderer.getWindowAspect(), game.getRandom(), game.getAudioManager());
 
 	// Tick on-screen text messages.
 	auto tryTickTextBox = [dt](TimedTextBox &textBox)

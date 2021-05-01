@@ -4,6 +4,8 @@
 #include "ArenaWeatherUtils.h"
 #include "WeatherDefinition.h"
 #include "WeatherInstance.h"
+#include "../Assets/ArenaSoundName.h"
+#include "../Audio/AudioManager.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/Clock.h"
 #include "../Math/Constants.h"
@@ -82,7 +84,8 @@ bool WeatherInstance::RainInstance::Thunderstorm::isLightningBoltVisible() const
 	return this->secondsSincePrevLightning <= ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock &clock, Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock &clock,
+	Random &random, AudioManager &audioManager)
 {
 	this->active = IsDuringThunderstorm(clock);
 
@@ -96,7 +99,10 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock 
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
 
-			// @todo: signal lightning bolt to generate + appear, and audio to play.
+			const std::string &soundFilename = ArenaSoundName::Thunder;
+			audioManager.playSound(soundFilename);
+
+			// @todo: signal lightning bolt to generate + appear
 		}
 	}
 }
@@ -122,7 +128,8 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	}
 }
 
-void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double aspectRatio, Random &random)
+void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double aspectRatio,
+	Random &random, AudioManager &audioManager)
 {
 	auto animateRaindropRange = [this, dt, aspectRatio, &random](int startIndex, int endIndex,
 		double velocityPercentX, double velocityPercentY)
@@ -192,7 +199,7 @@ void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double
 
 	if (this->thunderstorm.has_value())
 	{
-		this->thunderstorm->update(dt, clock, random);
+		this->thunderstorm->update(dt, clock, random, audioManager);
 	}
 }
 
@@ -345,7 +352,8 @@ const WeatherInstance::SnowInstance &WeatherInstance::getSnow() const
 	return this->snow;
 }
 
-void WeatherInstance::update(double dt, const Clock &clock, double aspectRatio, Random &random)
+void WeatherInstance::update(double dt, const Clock &clock, double aspectRatio,
+	Random &random, AudioManager &audioManager)
 {
 	if (this->type == WeatherInstance::Type::None)
 	{
@@ -353,7 +361,7 @@ void WeatherInstance::update(double dt, const Clock &clock, double aspectRatio, 
 	}
 	else if (this->type == WeatherInstance::Type::Rain)
 	{
-		this->rain.update(dt, clock, aspectRatio, random);
+		this->rain.update(dt, clock, aspectRatio, random, audioManager);
 	}
 	else if (this->type == WeatherInstance::Type::Snow)
 	{

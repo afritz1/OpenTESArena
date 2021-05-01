@@ -42,6 +42,9 @@ namespace ArenaSoundName
 	const std::string Burst = "BURST5.VOC";
 	const std::string Explode = "EXPLODE.VOC";
 	const std::string SlowBall = "SLOWBALL.VOC";
+
+	// Weather.
+	const std::string Thunder = "THUNDER.VOC";
 }
 
 #endif

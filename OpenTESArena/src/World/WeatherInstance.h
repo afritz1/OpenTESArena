@@ -8,6 +8,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 
+class AudioManager;
 class Clock;
 class ExeData;
 class Random;
@@ -54,7 +55,7 @@ public:
 
 			bool isLightningBoltVisible() const;
 
-			void update(double dt, const Clock &clock, Random &random);
+			void update(double dt, const Clock &clock, Random &random, AudioManager &audioManager);
 		};
 
 		Buffer<Particle> particles;
@@ -62,7 +63,7 @@ public:
 
 		void init(bool isThunderstorm, const Clock &clock, Buffer<uint8_t> &&flashColors, Random &random);
 
-		void update(double dt, const Clock &clock, double aspectRatio, Random &random);
+		void update(double dt, const Clock &clock, double aspectRatio, Random &random, AudioManager &audioManager);
 	};
 
 	struct SnowInstance
@@ -88,7 +89,7 @@ public:
 	const RainInstance &getRain() const;
 	const SnowInstance &getSnow() const;
 
-	void update(double dt, const Clock &clock, double aspectRatio, Random &random);
+	void update(double dt, const Clock &clock, double aspectRatio, Random &random, AudioManager &audioManager);
 };
 
 #endif
