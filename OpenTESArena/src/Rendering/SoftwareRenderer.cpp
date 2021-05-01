@@ -528,7 +528,7 @@ void SoftwareRenderer::OcclusionData::update(int yStart, int yEnd)
 }
 
 SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors,
-	double daytimePercent, double latitude, double ambient, double fogDistance,
+	const WeatherInstance &weatherInstance, double daytimePercent, double latitude, double ambient, double fogDistance,
 	double chasmAnimPercent, bool nightLightsAreActive, bool isExterior, bool playerHasLight)
 {
 	this->palette = palette;
@@ -536,6 +536,24 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::ve
 
 	BufferView<Double3> skyColorsView(this->skyColors.data(), static_cast<int>(this->skyColors.size()));
 	RendererUtils::writeSkyColors(skyColors, skyColorsView, daytimePercent);
+
+	this->thunderstormColors.fill(Double3::Zero);
+	if (weatherInstance.getType() == WeatherInstance::Type::Rain)
+	{
+		const WeatherInstance::RainInstance &rainInst = weatherInstance.getRain();
+		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+		if (thunderstorm.has_value())
+		{
+			const Buffer<uint8_t> &thunderstormColors = thunderstorm->flashColors;
+			DebugAssert(thunderstormColors.getCount() == this->thunderstormColors.size());
+			std::transform(thunderstormColors.get(), thunderstormColors.end(), this->thunderstormColors.begin(),
+				[&palette](const uint8_t color)
+			{
+				const Color &paletteColor = palette[color];
+				return Double3::fromRGB(paletteColor.toARGB());
+			});
+		}
+	}
 
 	this->isExterior = isExterior;
 	this->ambient = ambient;
@@ -8042,7 +8060,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 
 	// Calculate shading information for this frame. Create some helper structs to keep similar
 	// values together.
-	const ShadingInfo shadingInfo(palette, this->skyColors, daytimePercent, latitude, ambient,
+	const ShadingInfo shadingInfo(palette, this->skyColors, weatherInst, daytimePercent, latitude, ambient,
 		this->fogDistance, chasmAnimPercent, nightLightsAreActive, isExterior, playerHasLight);
 	const FrameView frame(colorBuffer, this->depthBuffer.get(), this->width, this->height);
 

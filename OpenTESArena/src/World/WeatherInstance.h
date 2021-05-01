@@ -8,6 +8,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 
+class ExeData;
 class Random;
 class WeatherDefinition;
 
@@ -35,12 +36,16 @@ public:
 	{
 		struct Thunderstorm
 		{
+			Buffer<uint8_t> flashColors; // In here and not WeatherDefinition due to design complications.
 			double secondsSincePrevLightning;
 			double secondsUntilNextLightning;
 			Radians lightningBoltAngle;
 			// @todo: generated lightning bolt paletted texture
 
-			void init(Random &random);
+			void init(Buffer<uint8_t> &&flashColors, Random &random);
+
+			int getFlashColorCount() const;
+			uint8_t getFlashColor(int index) const;
 
 			// If a lightning bolt recently flashed, returns how bright the sky is because of the flash.
 			// Otherwise returns 0.
@@ -54,7 +59,7 @@ public:
 		Buffer<Particle> particles;
 		std::optional<Thunderstorm> thunderstorm;
 
-		void init(bool isThunderstorm, Random &random);
+		void init(bool isThunderstorm, Buffer<uint8_t> &&flashColors, Random &random);
 
 		void update(double dt, double aspectRatio, Random &random);
 	};
@@ -76,7 +81,7 @@ private:
 public:
 	WeatherInstance();
 
-	void init(const WeatherDefinition &weatherDef, Random &random);
+	void init(const WeatherDefinition &weatherDef, const ExeData &exeData, Random &random);
 
 	Type getType() const;
 	const RainInstance &getRain() const;

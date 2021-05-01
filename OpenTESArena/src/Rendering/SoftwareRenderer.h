@@ -267,6 +267,7 @@ private:
 	struct ShadingInfo
 	{
 		static constexpr int SKY_COLOR_COUNT = 5;
+		static constexpr int THUNDERSTORM_COLOR_COUNT = 3;
 
 		// Sky gradient brightness when stars become visible.
 		static constexpr double STAR_VIS_THRESHOLD = 64.0 / 255.0;
@@ -277,6 +278,9 @@ private:
 		// Sky colors for the horizon and zenith to interpolate between. Index 0 is the
 		// horizon color. For interiors, every color in the array is the same.
 		std::array<Double3, SKY_COLOR_COUNT> skyColors;
+
+		// Thunderstorm flash colors for the sky. Index 0 is the start of the flash.
+		std::array<Double3, THUNDERSTORM_COLOR_COUNT> thunderstormColors;
 
 		// Global ambient light percent.
 		double ambient;
@@ -299,7 +303,8 @@ private:
 		// Whether the player has a light attached like the original game.
 		bool playerHasLight;
 
-		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors, double daytimePercent,
+		ShadingInfo(const Palette &palette, const std::vector<Double3> &skyColors,
+			const WeatherInstance &weatherInstance, double daytimePercent,
 			double latitude, double ambient, double fogDistance, double chasmAnimPercent,
 			bool nightLightsAreActive, bool isExterior, bool playerHasLight);
 

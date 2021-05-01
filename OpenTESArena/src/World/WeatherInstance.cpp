@@ -34,11 +34,22 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::init(Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, Random &random)
 {
+	this->flashColors = std::move(flashColors);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
+}
+
+int WeatherInstance::RainInstance::Thunderstorm::getFlashColorCount() const
+{
+	return this->flashColors.getCount();
+}
+
+uint8_t WeatherInstance::RainInstance::Thunderstorm::getFlashColor(int index) const
+{
+	return this->flashColors.get(index);
 }
 
 double WeatherInstance::RainInstance::Thunderstorm::getFlashPercent() const
@@ -66,7 +77,7 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, Random &rand
 	}
 }
 
-void WeatherInstance::RainInstance::init(bool isThunderstorm, Random &random)
+void WeatherInstance::RainInstance::init(bool isThunderstorm, Buffer<uint8_t> &&flashColors, Random &random)
 {
 	this->particles.init(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 	for (int i = 0; i < this->particles.getCount(); i++)
@@ -78,7 +89,7 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, Random &random)
 	if (isThunderstorm)
 	{
 		this->thunderstorm = std::make_optional<Thunderstorm>();
-		this->thunderstorm->init(random);
+		this->thunderstorm->init(std::move(flashColors), random);
 	}
 	else
 	{
@@ -263,7 +274,7 @@ WeatherInstance::WeatherInstance()
 	this->type = static_cast<WeatherInstance::Type>(-1);
 }
 
-void WeatherInstance::init(const WeatherDefinition &weatherDef, Random &random)
+void WeatherInstance::init(const WeatherDefinition &weatherDef, const ExeData &exeData, Random &random)
 {
 	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
 
@@ -277,7 +288,8 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, Random &random)
 		this->type = WeatherInstance::Type::Rain;
 
 		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
-		this->rain.init(rainDef.thunderstorm, random);
+		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
+		this->rain.init(rainDef.thunderstorm, std::move(thunderstormColors), random);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Snow)
 	{
