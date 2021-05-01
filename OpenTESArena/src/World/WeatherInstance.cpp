@@ -4,6 +4,8 @@
 #include "ArenaWeatherUtils.h"
 #include "WeatherDefinition.h"
 #include "WeatherInstance.h"
+#include "../Game/ArenaClockUtils.h"
+#include "../Game/Clock.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -12,6 +14,15 @@
 
 namespace
 {
+	bool IsDuringThunderstorm(const Clock &clock)
+	{
+		// Starts in the evening, ends in the morning.
+		const double seconds = clock.getPreciseTotalSeconds();
+		const double startSeconds = ArenaClockUtils::ThunderstormStart.getPreciseTotalSeconds();
+		const double endSeconds = ArenaClockUtils::ThunderstormEnd.getPreciseTotalSeconds();
+		return (seconds >= startSeconds) || (seconds < endSeconds);
+	}
+
 	double MakeSecondsUntilNextLightning(Random &random)
 	{
 		return ArenaWeatherUtils::THUNDERSTORM_SKY_FLASH_SECONDS + (random.nextReal() * 5.0);
@@ -34,13 +45,13 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
-	this->active = false;
+	this->active = active;
 }
 
 int WeatherInstance::RainInstance::Thunderstorm::getFlashColorCount() const
@@ -64,8 +75,10 @@ bool WeatherInstance::RainInstance::Thunderstorm::isLightningBoltVisible() const
 	return this->secondsSincePrevLightning <= ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::update(double dt, Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock &clock, Random &random)
 {
+	this->active = IsDuringThunderstorm(clock);
+
 	if (this->active)
 	{
 		this->secondsSincePrevLightning += dt;
@@ -81,7 +94,8 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, Random &rand
 	}
 }
 
-void WeatherInstance::RainInstance::init(bool isThunderstorm, Buffer<uint8_t> &&flashColors, Random &random)
+void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock,
+	Buffer<uint8_t> &&flashColors, Random &random)
 {
 	this->particles.init(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 	for (int i = 0; i < this->particles.getCount(); i++)
@@ -93,7 +107,7 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, Buffer<uint8_t> &&
 	if (isThunderstorm)
 	{
 		this->thunderstorm = std::make_optional<Thunderstorm>();
-		this->thunderstorm->init(std::move(flashColors), random);
+		this->thunderstorm->init(std::move(flashColors), IsDuringThunderstorm(clock), random);
 	}
 	else
 	{
@@ -101,7 +115,7 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, Buffer<uint8_t> &&
 	}
 }
 
-void WeatherInstance::RainInstance::update(double dt, double aspectRatio, Random &random)
+void WeatherInstance::RainInstance::update(double dt, const Clock &clock, double aspectRatio, Random &random)
 {
 	auto animateRaindropRange = [this, dt, aspectRatio, &random](int startIndex, int endIndex,
 		double velocityPercentX, double velocityPercentY)
@@ -171,7 +185,7 @@ void WeatherInstance::RainInstance::update(double dt, double aspectRatio, Random
 
 	if (this->thunderstorm.has_value())
 	{
-		this->thunderstorm->update(dt, random);
+		this->thunderstorm->update(dt, clock, random);
 	}
 }
 
@@ -278,7 +292,8 @@ WeatherInstance::WeatherInstance()
 	this->type = static_cast<WeatherInstance::Type>(-1);
 }
 
-void WeatherInstance::init(const WeatherDefinition &weatherDef, const ExeData &exeData, Random &random)
+void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clock,
+	const ExeData &exeData, Random &random)
 {
 	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
 
@@ -293,7 +308,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const ExeData &e
 
 		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
-		this->rain.init(rainDef.thunderstorm, std::move(thunderstormColors), random);
+		this->rain.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Snow)
 	{
@@ -311,12 +326,6 @@ WeatherInstance::Type WeatherInstance::getType() const
 	return this->type;
 }
 
-WeatherInstance::RainInstance& WeatherInstance::getRain()
-{
-	DebugAssert(this->type == WeatherInstance::Type::Rain);
-	return this->rain;
-}
-
 const WeatherInstance::RainInstance &WeatherInstance::getRain() const
 {
 	DebugAssert(this->type == WeatherInstance::Type::Rain);
@@ -329,7 +338,7 @@ const WeatherInstance::SnowInstance &WeatherInstance::getSnow() const
 	return this->snow;
 }
 
-void WeatherInstance::update(double dt, double aspectRatio, Random &random)
+void WeatherInstance::update(double dt, const Clock &clock, double aspectRatio, Random &random)
 {
 	if (this->type == WeatherInstance::Type::None)
 	{
@@ -337,7 +346,7 @@ void WeatherInstance::update(double dt, double aspectRatio, Random &random)
 	}
 	else if (this->type == WeatherInstance::Type::Rain)
 	{
-		this->rain.update(dt, aspectRatio, random);
+		this->rain.update(dt, clock, aspectRatio, random);
 	}
 	else if (this->type == WeatherInstance::Type::Snow)
 	{

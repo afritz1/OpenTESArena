@@ -797,11 +797,6 @@ const WeatherDefinition &GameState::getWeatherDefinition() const
 	return this->weatherDef;
 }
 
-WeatherInstance &GameState::getWeatherInstance()
-{
-	return this->weatherInst;
-}
-
 const WeatherInstance &GameState::getWeatherInstance() const
 {
 	return this->weatherInst;
@@ -1038,7 +1033,7 @@ bool GameState::trySetLevelActive(LevelInstance &levelInst, const std::optional<
 	this->weatherDef = std::move(weatherDef);
 
 	Random weatherRandom; // Cosmetic random.
-	this->weatherInst.init(this->weatherDef, binaryAssetLibrary.getExeData(), weatherRandom);
+	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), weatherRandom);
 
 	DebugAssert(this->maps.size() > 0);
 	const MapDefinition &mapDefinition = this->maps.top().definition;
@@ -1208,7 +1203,7 @@ void GameState::tick(double dt, Game &game)
 
 	// Tick weather.
 	const Renderer &renderer = game.getRenderer();
-	this->weatherInst.update(dt, renderer.getWindowAspect(), game.getRandom());
+	this->weatherInst.update(dt, this->clock, renderer.getWindowAspect(), game.getRandom());
 
 	// Tick on-screen text messages.
 	auto tryTickTextBox = [dt](TimedTextBox &textBox)

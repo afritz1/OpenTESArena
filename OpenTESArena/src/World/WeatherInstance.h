@@ -8,6 +8,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 
+class Clock;
 class ExeData;
 class Random;
 class WeatherDefinition;
@@ -43,7 +44,7 @@ public:
 			bool active; // Whether the thunderstorm can flash/have lightning bolts.
 			// @todo: generated lightning bolt paletted texture
 
-			void init(Buffer<uint8_t> &&flashColors, Random &random);
+			void init(Buffer<uint8_t> &&flashColors, bool active, Random &random);
 
 			int getFlashColorCount() const;
 			uint8_t getFlashColor(int index) const;
@@ -54,15 +55,15 @@ public:
 
 			bool isLightningBoltVisible() const;
 
-			void update(double dt, Random &random);
+			void update(double dt, const Clock &clock, Random &random);
 		};
 
 		Buffer<Particle> particles;
 		std::optional<Thunderstorm> thunderstorm;
 
-		void init(bool isThunderstorm, Buffer<uint8_t> &&flashColors, Random &random);
+		void init(bool isThunderstorm, const Clock &clock, Buffer<uint8_t> &&flashColors, Random &random);
 
-		void update(double dt, double aspectRatio, Random &random);
+		void update(double dt, const Clock &clock, double aspectRatio, Random &random);
 	};
 
 	struct SnowInstance
@@ -82,14 +83,13 @@ private:
 public:
 	WeatherInstance();
 
-	void init(const WeatherDefinition &weatherDef, const ExeData &exeData, Random &random);
+	void init(const WeatherDefinition &weatherDef, const Clock &clock, const ExeData &exeData, Random &random);
 
 	Type getType() const;
-	RainInstance &getRain();
 	const RainInstance &getRain() const;
 	const SnowInstance &getSnow() const;
 
-	void update(double dt, double aspectRatio, Random &random);
+	void update(double dt, const Clock &clock, double aspectRatio, Random &random);
 };
 
 #endif
