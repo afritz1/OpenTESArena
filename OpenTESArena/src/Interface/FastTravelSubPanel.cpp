@@ -427,17 +427,16 @@ void FastTravelSubPanel::switchToNextPanel()
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
-
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
-
 		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
 		{
 			WeatherDefinition weatherDef;
 			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
 			return weatherDef;
 		}();
+
+		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
 		// Load the destination city.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(this->travelData.provinceID, this->travelData.locationID);

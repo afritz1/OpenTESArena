@@ -572,16 +572,16 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
 					const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
 					{
 						WeatherDefinition weatherDef;
 						weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
 						return weatherDef;
 					}();
+
+					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+					skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 					if (!gameState->trySetCity(cityGenInfo, skyGenInfo, overrideWeather, worldMapLocationIDs,
@@ -652,16 +652,16 @@ MainMenuPanel::MainMenuPanel(Game &game)
 						cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 						mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
-					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-					skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
 					const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
 					{
 						WeatherDefinition weatherDef;
 						weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
 						return weatherDef;
 					}();
+
+					SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+					skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+						cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 					const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
@@ -692,10 +692,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				MapGeneration::WildGenInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, weatherType, currentDay, starCount, cityDef.citySeed,
-					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
 				// Use current weather.
 				const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
 				{
@@ -703,6 +699,10 @@ MainMenuPanel::MainMenuPanel(Game &game)
 					weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
 					return weatherDef;
 				}();
+
+				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// No previous start coordinate available. Let the loader decide.
 				const std::optional<CoordInt3> startCoord;

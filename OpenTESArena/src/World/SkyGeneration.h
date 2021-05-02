@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+#include "WeatherDefinition.h"
 #include "../Assets/ArenaTypes.h"
 
 #include "components/utilities/Buffer.h"
@@ -24,14 +25,14 @@ namespace SkyGeneration
 	struct ExteriorSkyGenInfo
 	{
 		ArenaTypes::ClimateType climateType; // Only cities have climate.
-		ArenaTypes::WeatherType weatherType;
+		WeatherDefinition weatherDef;
 		int currentDay;
 		int starCount;
 		uint32_t citySeed;
 		uint32_t skySeed;
 		bool provinceHasAnimatedLand;
 
-		void init(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
+		void init(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
 			int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
 	};
 

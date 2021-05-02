@@ -6,13 +6,14 @@
 #include "ArenaWildUtils.h"
 #include "MapType.h"
 #include "VoxelDefinition.h"
+#include "WeatherDefinition.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/RMDFile.h"
 #include "../Math/Random.h"
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType)
+std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef)
 {
 	const char climateLetter = [climateType]()
 	{
@@ -35,19 +36,20 @@ std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType,
 	}();
 
 	// Wilderness is "W".
-	const char locationLetter = 'W';
+	constexpr char locationLetter = 'W';
 
-	const char weatherLetter = [climateType, weatherType]()
+	const char weatherLetter = [climateType, &weatherDef]()
 	{
-		if (ArenaWeatherUtils::isClear(weatherType) || ArenaWeatherUtils::isOvercast(weatherType))
+		const WeatherDefinition::Type weatherDefType = weatherDef.getType();
+		if ((weatherDefType == WeatherDefinition::Type::Clear) || (weatherDefType == WeatherDefinition::Type::Overcast))
 		{
 			return 'N';
 		}
-		else if (ArenaWeatherUtils::isRain(weatherType))
+		else if (weatherDefType == WeatherDefinition::Type::Rain)
 		{
 			return 'R';
 		}
-		else if (ArenaWeatherUtils::isSnow(weatherType))
+		else if (weatherDefType == WeatherDefinition::Type::Snow)
 		{
 			// Deserts can't have snow.
 			if (climateType != ArenaTypes::ClimateType::Desert)

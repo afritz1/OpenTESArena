@@ -2189,8 +2189,8 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, WeatherUtils::getLegacyWeather(weatherDef), currentDay, starCount,
-					cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
 				const WeatherDefinition &overrideWeather = weatherDef;
@@ -2250,8 +2250,8 @@ void GameWorldPanel::handleMapTransition(const Physics::Hit &hit, const Transiti
 					cityDef.cityBlocksPerSide);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-				skyGenInfo.init(cityDef.climateType, WeatherUtils::getLegacyWeather(weatherDef), currentDay, starCount,
-					cityDef.citySeed, cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
+					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Use current weather.
 				const WeatherDefinition &overrideWeather = weatherDef;

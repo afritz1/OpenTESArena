@@ -71,10 +71,10 @@ namespace SkyGeneration
 		return skyColors;
 	}
 
-	Buffer<Color> makeExteriorSkyColors(ArenaTypes::WeatherType weatherType, TextureManager &textureManager)
+	Buffer<Color> makeExteriorSkyColors(const WeatherDefinition &weatherDef, TextureManager &textureManager)
 	{
 		// Get the palette name for the given weather.
-		const std::string &paletteName = (weatherType == ArenaTypes::WeatherType::Clear) ?
+		const std::string &paletteName = (weatherDef.getType() == WeatherDefinition::Type::Clear) ?
 			ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 		// The palettes in the data files only cover half of the day, so some added darkness is
@@ -190,9 +190,9 @@ namespace SkyGeneration
 	}
 
 	// Includes distant mountains and clouds.
-	void generateArenaStatics(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType, int currentDay,
-		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager,
-		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
+	void generateArenaStatics(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
+		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager, SkyDefinition *outSkyDef,
+		SkyInfoDefinition *outSkyInfoDef)
 	{
 		ArenaRandom random(skySeed);
 
@@ -219,7 +219,7 @@ namespace SkyGeneration
 		}
 
 		// Cloud generation, only if the sky is clear.
-		if (ArenaWeatherUtils::isClear(weatherType))
+		if (weatherDef.getType() == WeatherDefinition::Type::Clear)
 		{
 			const uint32_t cloudSeed = random.getSeed() + (currentDay % 32);
 			random.srand(cloudSeed);
@@ -526,11 +526,11 @@ void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, ArenaTypes::WeatherType weatherType,
+void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef,
 	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
-	this->weatherType = weatherType;
 	this->climateType = climateType;
+	this->weatherDef = weatherDef;
 	this->currentDay = currentDay;
 	this->starCount = starCount;
 	this->citySeed = citySeed;
@@ -553,11 +553,11 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
 	// Generate sky colors.
-	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherType, textureManager);
+	Buffer<Color> skyColors = SkyGeneration::makeExteriorSkyColors(skyGenInfo.weatherDef, textureManager);
 	outSkyDef->init(std::move(skyColors));
 
 	// Generate static land and air objects.
-	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherType,
+	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef,
 		skyGenInfo.currentDay, skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
 
 	// Generate animated land if the province has it.
@@ -568,7 +568,8 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 	}
 
 	// Add space objects if the weather permits it.
-	if (ArenaWeatherUtils::isClear(skyGenInfo.weatherType))
+	const WeatherDefinition::Type weatherDefType = skyGenInfo.weatherDef.getType();
+	if (weatherDefType == WeatherDefinition::Type::Clear)
 	{
 		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
 			outSkyDef, outSkyInfoDef);
@@ -576,4 +577,12 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			outSkyDef, outSkyInfoDef);
 		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
 	}
+
+	// @todo: pass const WeatherDefinition& instead of Arena weather type in ExteriorSkyGenInfo?
+
+	// @todo: generateArenaWeatherParticles() -- rain/snow textures
+
+	// @todo: generateArenaWeatherObjects() -- lightning bolt as SkyLandDefinition
+	// - do all the TextureUtils::makeTextureAssetRefs() there
+	// - may need to add a conditional value to SkyLandDefinition so it can be treated differently by SkyInstance
 }

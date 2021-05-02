@@ -10,6 +10,7 @@
 #include "MapGeneration.h"
 #include "MapType.h"
 #include "SkyGeneration.h"
+#include "WeatherUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFFile.h"
 #include "../Assets/MIFUtils.h"
@@ -467,7 +468,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherType);
+	const std::string infName = ArenaCityUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
@@ -493,14 +494,13 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 }
 
 bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const CharacterClassLibrary &charClassLibrary,
+	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager)
 {
 	this->init(MapType::Wilderness);
 
-	const std::string infName = ArenaWildUtils::generateInfName(
-		exteriorSkyGenInfo.climateType, exteriorSkyGenInfo.weatherType);
+	const std::string infName = ArenaWildUtils::generateInfName(skyGenInfo.climateType, skyGenInfo.weatherDef);
 	INFFile inf;
 	if (!inf.init(infName.c_str()))
 	{
@@ -512,7 +512,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 		generationInfo.wildBlockIDs.getWidth(), generationInfo.wildBlockIDs.getHeight());
 	const LocationDefinition::CityDefinition &cityDef = *generationInfo.cityDef;
 
-	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, exteriorSkyGenInfo, inf,
+	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, skyGenInfo, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 
 	// No start level index and no start points in the wilderness due to the nature of chunks.
