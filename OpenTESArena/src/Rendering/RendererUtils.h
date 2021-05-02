@@ -96,6 +96,9 @@ namespace RendererUtils
 
 	// Gets the thunderstorm flash percent if it's raining and a thunderstorm is present.
 	std::optional<double> getThunderstormFlashPercent(const WeatherInstance &weatherInst);
+
+	// Gets the lightning bolt percent if it's a thunderstorm and a lightning bolt is present.
+	std::optional<double> getLightningBoltPercent(const WeatherInstance &weatherInst);
 }
 
 #endif

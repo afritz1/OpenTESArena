@@ -266,3 +266,25 @@ std::optional<double> RendererUtils::getThunderstormFlashPercent(const WeatherIn
 
 	return thunderstorm->getFlashPercent();
 }
+
+std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstance &weatherInst)
+{
+	if (weatherInst.getType() != WeatherInstance::Type::Rain)
+	{
+		return std::nullopt;
+	}
+
+	const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
+	const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+	if (!thunderstorm.has_value())
+	{
+		return std::nullopt;
+	}
+
+	if (!thunderstorm->active)
+	{
+		return std::nullopt;
+	}
+
+	return thunderstorm->getLightningBoltPercent();
+}
