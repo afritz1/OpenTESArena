@@ -15,10 +15,12 @@
 // as well.
 
 class MapDefinition;
+class Random;
 class Renderer;
 class SkyDefinition;
 class SkyInfoDefinition;
 class TextureManager;
+class WeatherInstance;
 
 class SkyInstance
 {
@@ -75,6 +77,9 @@ private:
 		const SmallStar &getSmallStar() const;
 
 		void setTransformedDirection(const Double3 &direction);
+
+		// Intended for lightning bolt updating.
+		void setDimensions(double width, double height);
 	};
 
 	// Animation data for each sky object with an animation.
@@ -87,10 +92,23 @@ private:
 		AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs, double targetSeconds);
 	};
 
+	struct LightningState
+	{
+		int objectIndex;
+		int animIndex; // So the texture IDs can be set to another group.
+
+		LightningState(int objectIndex, int animIndex);
+	};
+
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
 	std::vector<AnimInstance> animInsts; // Data for each sky object with an animation.
+	Buffer<Buffer<TextureBuilderID>> lightningTextureBuilderIdGroups; // Textures for each lightning bolt.
 	int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
+	std::optional<LightningState> lightningState;
+	bool lightningBoltIsVisible; // Updated by WeatherInstance.
 public:
+	SkyInstance();
+
 	void init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
 		int currentDay, TextureManager &textureManager);
 
@@ -105,9 +123,13 @@ public:
 	int getSunEndIndex() const;
 	int getMoonStartIndex() const;
 	int getMoonEndIndex() const;
+	std::optional<int> getLightningIndex() const;
 
 	// @todo: this is bad design; there should not be a small star type.
 	bool isObjectSmallStar(int objectIndex) const;
+
+	// Whether the lightning bolt is currently visible due to thunderstorm state.
+	bool isLightningVisible() const;
 
 	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, bool *outEmissive,
 		double *outWidth, double *outHeight) const;
@@ -129,7 +151,8 @@ public:
 	bool trySetActive(const std::optional<int> &activeLevelIndex, const MapDefinition &mapDefinition,
 		TextureManager &textureManager, Renderer &renderer);
 
-	void update(double dt, double latitude, double daytimePercent);
+	void update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst,
+		Random &random, const TextureManager &textureManager);
 };
 
 #endif

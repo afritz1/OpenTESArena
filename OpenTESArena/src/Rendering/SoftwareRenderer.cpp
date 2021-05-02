@@ -717,13 +717,27 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 	this->starStart = skyInstance.getStarStartIndex();
 	this->starEnd = skyInstance.getStarEndIndex();
 
+	// Only one lightning bolt is supported by SkyInstance.
+	const std::optional<int> lightningIndex = skyInstance.getLightningIndex();
+	if (lightningIndex.has_value())
+	{
+		this->lightningStart = *lightningIndex;
+		this->lightningEnd = this->lightningStart + 1;
+	}
+	else
+	{
+		this->lightningStart = -1;
+		this->lightningEnd = -1;
+	}
+
 	// Allocate space for all distant objects.
 	const int landCount = this->landEnd - this->landStart;
 	const int airCount = this->airEnd - this->airStart;
 	const int moonCount = this->moonEnd - this->moonStart;
 	const int sunCount = this->sunEnd - this->sunStart;
 	const int starCount = this->starEnd - this->starStart;
-	const int distantObjectCount = landCount + airCount + moonCount + sunCount + starCount;
+	const int lightningCount = this->lightningEnd - this->lightningStart;
+	const int distantObjectCount = landCount + airCount + moonCount + sunCount + starCount + lightningCount;
 	this->objs.init(distantObjectCount);
 
 	// Iterate through each sky object type, creating associations between it and its render texture.
@@ -758,6 +772,11 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 			addGeneralObject(i);
 		}
 	}
+
+	if (lightningIndex.has_value())
+	{
+		addGeneralObject(*lightningIndex);
+	}
 }
 
 void SoftwareRenderer::DistantObjects::clear()
@@ -773,6 +792,8 @@ void SoftwareRenderer::DistantObjects::clear()
 	this->sunEnd = 0;
 	this->starStart = 0;
 	this->starEnd = 0;
+	this->lightningStart = 0;
+	this->lightningEnd = 0;
 }
 
 SoftwareRenderer::VisDistantObject::VisDistantObject(const SkyTexture &texture, DrawRange &&drawRange,
@@ -799,6 +820,8 @@ SoftwareRenderer::VisDistantObjects::VisDistantObjects()
 	this->sunEnd = 0;
 	this->starStart = 0;
 	this->starEnd = 0;
+	this->lightningStart = 0;
+	this->lightningEnd = 0;
 }
 
 void SoftwareRenderer::VisDistantObjects::clear()
@@ -814,6 +837,8 @@ void SoftwareRenderer::VisDistantObjects::clear()
 	this->sunEnd = 0;
 	this->starStart = 0;
 	this->starEnd = 0;
+	this->lightningStart = 0;
+	this->lightningEnd = 0;
 }
 
 void SoftwareRenderer::VisibleLight::init(const CoordDouble3 &coord, double radius)
@@ -1455,7 +1480,6 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	{
 		const DistantObject &land = this->distantObjects.objs.get(i);
 
-		// Only land objects can have animations right now.
 		// @todo: redesign this once public texture handles are being allocated.
 		const std::optional<double> animPercent = skyInstance.tryGetObjectAnimPercent(i);
 		const int animIndex = static_cast<int>(
@@ -1594,6 +1618,40 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 	}
 
 	this->visDistantObjs.starEnd = static_cast<int>(this->visDistantObjs.objs.size());
+	this->visDistantObjs.lightningStart = this->visDistantObjs.starEnd;
+
+	for (int i = this->distantObjects.lightningEnd - 1; i >= this->distantObjects.lightningStart; i--)
+	{
+		if (skyInstance.isLightningVisible()) // @hack: this doesn't take an index parameter because SkyInstance only supports one bolt.
+		{
+			const DistantObject &lightning = this->distantObjects.objs.get(i);
+
+			// @todo: redesign this once public texture handles are being allocated.
+			const std::optional<double> animPercent = skyInstance.tryGetObjectAnimPercent(i);
+			const int animIndex = static_cast<int>(static_cast<double>(lightning.textureIndexCount) * (*animPercent));
+			const int skyTexturesIndex = lightning.startTextureIndex +
+				std::clamp(animIndex, 0, lightning.textureIndexCount - 1);
+
+			Double3 direction;
+			TextureBuilderID textureBuilderID;
+			bool emissive;
+			double width, height;
+			skyInstance.getObject(i, &direction, &textureBuilderID, &emissive, &width, &height);
+
+			// @temp
+			static_cast<void>(textureBuilderID);
+			static_cast<void>(width);
+			static_cast<void>(height);
+
+			DebugAssertIndex(this->skyTextures, skyTexturesIndex);
+			const SkyTexture &texture = this->skyTextures[skyTexturesIndex];
+
+			constexpr Orientation orientation = Orientation::Bottom;
+			tryAddObject(texture, direction, emissive, orientation);
+		}
+	}
+
+	this->visDistantObjs.lightningEnd = static_cast<int>(this->visDistantObjs.objs.size());
 }
 
 void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera, int chunkDistance,
@@ -7712,6 +7770,7 @@ void SoftwareRenderer::drawDistantSky(int startX, int endX, const VisDistantObje
 	drawDistantObjRange(visDistantObjs.moonStart, visDistantObjs.moonEnd, DistantRenderType::Moon);
 	drawDistantObjRange(visDistantObjs.airStart, visDistantObjs.airEnd, DistantRenderType::General);
 	drawDistantObjRange(visDistantObjs.landStart, visDistantObjs.landEnd, DistantRenderType::General);
+	drawDistantObjRange(visDistantObjs.lightningStart, visDistantObjs.lightningEnd, DistantRenderType::General);
 }
 
 void SoftwareRenderer::drawVoxels(int startX, int stride, const Camera &camera, int chunkDistance,

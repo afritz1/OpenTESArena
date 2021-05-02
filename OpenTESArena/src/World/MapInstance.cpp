@@ -1,6 +1,7 @@
 #include "MapDefinition.h"
 #include "MapInstance.h"
 #include "MapType.h"
+#include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
 
@@ -181,5 +182,6 @@ void MapInstance::update(double dt, Game &game, const CoordDouble3 &playerCoord,
 		chunkDistance, entityDefLibrary, binaryAssetLibrary, textureManager, audioManager);
 
 	SkyInstance &skyInst = this->getActiveSky();
-	skyInst.update(dt, latitude, daytimePercent);
+	const WeatherInstance &weatherInst = game.getGameState().getWeatherInstance();
+	skyInst.update(dt, latitude, daytimePercent, weatherInst, game.getRandom(), textureManager);
 }

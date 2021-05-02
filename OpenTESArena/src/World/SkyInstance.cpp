@@ -12,7 +12,9 @@
 #include "SkyStarDefinition.h"
 #include "SkySunDefinition.h"
 #include "SkyUtils.h"
+#include "WeatherInstance.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Math/Random.h"
 #include "../Media/TextureBuilder.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -98,6 +100,12 @@ void SkyInstance::ObjectInstance::setTransformedDirection(const Double3 &directi
 	this->transformedDirection = direction;
 }
 
+void SkyInstance::ObjectInstance::setDimensions(double width, double height)
+{
+	this->width = width;
+	this->height = height;
+}
+
 SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs,
 	double targetSeconds)
 {
@@ -105,6 +113,27 @@ SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdG
 	this->textureBuilderIDs = textureBuilderIDs;
 	this->targetSeconds = targetSeconds;
 	this->currentSeconds = 0.0;
+}
+
+SkyInstance::LightningState::LightningState(int objectIndex, int animIndex)
+{
+	this->objectIndex = objectIndex;
+	this->animIndex = animIndex;
+}
+
+SkyInstance::SkyInstance()
+{
+	this->landStart = -1;
+	this->landEnd = -1;
+	this->airStart = -1;
+	this->airEnd = -1;
+	this->moonStart = -1;
+	this->moonEnd = -1;
+	this->sunStart = -1;
+	this->sunEnd = -1;
+	this->starStart = -1;
+	this->starEnd = -1;
+	this->lightningBoltIsVisible = false;
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
@@ -373,6 +402,43 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 
 	this->starStart = this->sunEnd;
 	this->starEnd = this->starStart + starInstCount;
+
+	// Populate lightning bolt assets for random selection.
+	const int lightningBoltDefCount = skyInfoDefinition.getLightningCount();
+	if (lightningBoltDefCount > 0)
+	{
+		this->lightningTextureBuilderIdGroups.init(lightningBoltDefCount);
+		for (int i = 0; i < lightningBoltDefCount; i++)
+		{
+			const SkyLightningDefinition &skyLightningDef = skyInfoDefinition.getLightning(i);
+			Buffer<TextureBuilderID> textureBuilderIDs(skyLightningDef.getTextureCount());
+			for (int j = 0; j < skyLightningDef.getTextureCount(); j++)
+			{
+				const TextureAssetReference &textureAssetRef = skyLightningDef.getTextureAssetRef(j);
+				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+				if (!textureBuilderID.has_value())
+				{
+					DebugLogError("Couldn't get texture builder ID " + std::to_string(j) +
+						" for \"" + textureAssetRef.filename + "\".");
+					continue;
+				}
+
+				textureBuilderIDs.set(j, *textureBuilderID);
+			}
+
+			this->lightningTextureBuilderIdGroups.set(i, std::move(textureBuilderIDs));
+		}
+
+		// Make one lightning bolt, to have updated values set later.
+		const TextureBuilderID tempTextureBuilderID = this->lightningTextureBuilderIdGroups.get(0).get(0);
+		addGeneralObjectInst(Double3::Zero, 0.0, 0.0, tempTextureBuilderID, true);
+
+		const int lightningObjectIndex = static_cast<int>(this->objectInsts.size()) - 1;
+		const double lightningAnimSeconds = skyInfoDefinition.getLightning(0).getAnimationSeconds();
+		addAnimInst(lightningObjectIndex, TextureBuilderIdGroup(tempTextureBuilderID, 1), lightningAnimSeconds);
+
+		this->lightningState = LightningState(lightningObjectIndex, static_cast<int>(this->animInsts.size()) - 1);
+	}
 }
 
 int SkyInstance::getLandStartIndex() const
@@ -425,11 +491,28 @@ int SkyInstance::getMoonEndIndex() const
 	return this->moonEnd;
 }
 
+std::optional<int> SkyInstance::getLightningIndex() const
+{
+	if (this->lightningState.has_value())
+	{
+		return this->lightningState->objectIndex;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
 bool SkyInstance::isObjectSmallStar(int objectIndex) const
 {
 	DebugAssertIndex(this->objectInsts, objectIndex);
 	const ObjectInstance &objectInst = this->objectInsts[objectIndex];
 	return objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar;
+}
+
+bool SkyInstance::isLightningVisible() const
+{
+	return this->lightningBoltIsVisible;
 }
 
 void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
@@ -561,8 +644,53 @@ bool SkyInstance::trySetActive(const std::optional<int> &activeLevelIndex, const
 	return true;
 }
 
-void SkyInstance::update(double dt, double latitude, double daytimePercent)
+void SkyInstance::update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst,
+	Random &random, const TextureManager &textureManager)
 {
+	// Update lightning (if any).
+	if (weatherInst.getType() == WeatherInstance::Type::Rain)
+	{
+		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
+		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
+		if (thunderstorm.has_value() && thunderstorm->active)
+		{
+			DebugAssert(this->lightningState.has_value());
+
+			const std::optional<double> lightningBoltPercent = thunderstorm->getLightningBoltPercent();
+			const bool visibilityChanged = this->lightningBoltIsVisible != lightningBoltPercent.has_value();
+			this->lightningBoltIsVisible = lightningBoltPercent.has_value();
+
+			if (visibilityChanged && this->lightningBoltIsVisible)
+			{
+				// Pick a new spot and texture group for the lightning bolt.
+				const Radians lightningAngleX = thunderstorm->lightningBoltAngle;
+				const Double3 lightningDirection = SkyUtils::getSkyObjectDirection(lightningAngleX, 0.0);
+
+				ObjectInstance &lightningObjInst = this->objectInsts[this->lightningState->objectIndex];
+				lightningObjInst.setTransformedDirection(lightningDirection);
+
+				const int newLightningTextureGroupIndex = random.next(this->lightningTextureBuilderIdGroups.getCount());
+				const Buffer<TextureBuilderID> &newLightningTextureBuilderIDs =
+					this->lightningTextureBuilderIdGroups.get(newLightningTextureGroupIndex);
+
+				const TextureBuilderID firstTextureBuilderID = newLightningTextureBuilderIDs.get(0);
+				const TextureBuilder &firstTextureBuilder = textureManager.getTextureBuilderHandle(firstTextureBuilderID);
+				double width, height;
+				SkyUtils::getSkyObjectDimensions(firstTextureBuilder.getWidth(), firstTextureBuilder.getHeight(), &width, &height);
+				lightningObjInst.setDimensions(width, height);
+
+				AnimInstance &lightningAnimInst = this->animInsts[this->lightningState->animIndex];
+				lightningAnimInst.currentSeconds = *lightningBoltPercent * lightningAnimInst.targetSeconds;
+				lightningAnimInst.textureBuilderIDs = TextureBuilderIdGroup(
+					firstTextureBuilderID, newLightningTextureBuilderIDs.getCount());
+			}
+		}
+		else
+		{
+			this->lightningBoltIsVisible = false;
+		}
+	}
+
 	// Update animations.
 	const int animInstCount = static_cast<int>(this->animInsts.size());
 	for (int i = 0; i < animInstCount; i++)
@@ -571,6 +699,12 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 
 		// Small stars don't have animations.
 		if (this->isObjectSmallStar(animInst.objectIndex))
+		{
+			continue;
+		}
+
+		// Don't update if it's an inactive lightning bolt.
+		if (this->lightningState.has_value() && (i == this->lightningState->animIndex) && !this->isLightningVisible())
 		{
 			continue;
 		}
@@ -586,7 +720,7 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent)
 		const int animIndex = std::clamp(
 			static_cast<int>(static_cast<double>(imageCount) * animPercent), 0, imageCount - 1);
 		const TextureBuilderID newTextureBuilderID = animInst.textureBuilderIDs.getID(animIndex);
-		
+
 		DebugAssertIndex(this->objectInsts, animInst.objectIndex);
 		ObjectInstance &objectInst = this->objectInsts[animInst.objectIndex];
 

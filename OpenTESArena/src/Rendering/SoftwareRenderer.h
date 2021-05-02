@@ -366,7 +366,8 @@ private:
 	{
 		// These map 1-to-1 to the active sky instance for now.
 		Buffer<DistantObject> objs;
-		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
+		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd,
+			lightningStart, lightningEnd;
 
 		void init(const SkyInstance &skyInstance, std::vector<SkyTexture> &skyTextures,
 			const Palette &palette, TextureManager &textureManager);
@@ -393,7 +394,8 @@ private:
 
 		// Need to store start and end indices for each range so we can call different 
 		// shading methods on some of them. End indices are exclusive.
-		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
+		int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd,
+			lightningStart, lightningEnd;
 
 		VisDistantObjects();
 
