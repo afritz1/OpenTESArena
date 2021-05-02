@@ -6,6 +6,7 @@
 #include "SkyAirDefinition.h"
 #include "SkyDefinition.h"
 #include "SkyLandDefinition.h"
+#include "SkyLightningDefinition.h"
 #include "SkyMoonDefinition.h"
 #include "SkyStarDefinition.h"
 #include "SkySunDefinition.h"
@@ -20,6 +21,9 @@ private:
 	std::vector<SkyStarDefinition> stars;
 	std::vector<SkySunDefinition> suns;
 	std::vector<SkyMoonDefinition> moons;
+
+	// Not referenced by SkyDefinition since lightning bolts are generated at random placements.
+	std::vector<SkyLightningDefinition> lightnings;
 public:
 	const SkyLandDefinition &getLand(SkyDefinition::LandDefID id) const;
 	const SkyAirDefinition &getAir(SkyDefinition::AirDefID id) const;
@@ -27,11 +31,15 @@ public:
 	const SkySunDefinition &getSun(SkyDefinition::SunDefID id) const;
 	const SkyMoonDefinition &getMoon(SkyDefinition::MoonDefID id) const;
 
+	int getLightningCount() const;
+	const SkyLightningDefinition &getLightning(int index) const;
+
 	SkyDefinition::LandDefID addLand(SkyLandDefinition &&def);
 	SkyDefinition::AirDefID addAir(SkyAirDefinition &&def);
 	SkyDefinition::StarDefID addStar(SkyStarDefinition &&def);
 	SkyDefinition::SunDefID addSun(SkySunDefinition &&def);
 	SkyDefinition::MoonDefID addMoon(SkyMoonDefinition &&def);
+	void addLightning(SkyLightningDefinition &&def);
 };
 
 #endif

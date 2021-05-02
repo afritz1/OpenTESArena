@@ -32,6 +32,17 @@ const SkyMoonDefinition &SkyInfoDefinition::getMoon(SkyDefinition::MoonDefID id)
 	return this->moons[id];
 }
 
+int SkyInfoDefinition::getLightningCount() const
+{
+	return static_cast<int>(this->lightnings.size());
+}
+
+const SkyLightningDefinition &SkyInfoDefinition::getLightning(int index) const
+{
+	DebugAssertIndex(this->lightnings, index);
+	return this->lightnings[index];
+}
+
 SkyDefinition::LandDefID SkyInfoDefinition::addLand(SkyLandDefinition &&def)
 {
 	this->lands.emplace_back(std::move(def));
@@ -60,4 +71,9 @@ SkyDefinition::MoonDefID SkyInfoDefinition::addMoon(SkyMoonDefinition &&def)
 {
 	this->moons.emplace_back(std::move(def));
 	return static_cast<SkyDefinition::MoonDefID>(this->moons.size()) - 1;
+}
+
+void SkyInfoDefinition::addLightning(SkyLightningDefinition &&def)
+{
+	this->lightnings.emplace_back(std::move(def));
 }

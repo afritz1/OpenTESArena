@@ -519,6 +519,22 @@ namespace SkyGeneration
 		generateMoon(true);
 		generateMoon(false);
 	}
+
+	void generateArenaLightning(TextureManager &textureManager, SkyInfoDefinition *outSkyInfoDef)
+	{
+		Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs =
+			ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(textureManager);
+
+		for (int i = 0; i < lightningBoltTextureAssetRefs.getCount(); i++)
+		{
+			SkyLightningDefinition skyLightningDef;
+			skyLightningDef.init(std::move(lightningBoltTextureAssetRefs.get(i)),
+				ArenaWeatherUtils::THUNDERSTORM_BOLT_SECONDS);
+
+			// Don't need to store any ID -- lightning bolts are placed randomly.
+			outSkyInfoDef->addLightning(std::move(skyLightningDef));
+		}
+	}
 }
 
 void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
@@ -567,22 +583,23 @@ void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo,
 			outSkyDef, outSkyInfoDef);
 	}
 
-	// Add space objects if the weather permits it.
 	const WeatherDefinition::Type weatherDefType = skyGenInfo.weatherDef.getType();
 	if (weatherDefType == WeatherDefinition::Type::Clear)
 	{
+		// Add space objects.
 		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
 			outSkyDef, outSkyInfoDef);
 		SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager,
 			outSkyDef, outSkyInfoDef);
 		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
 	}
-
-	// @todo: pass const WeatherDefinition& instead of Arena weather type in ExteriorSkyGenInfo?
-
-	// @todo: generateArenaWeatherParticles() -- rain/snow textures
-
-	// @todo: generateArenaWeatherObjects() -- lightning bolt as SkyLandDefinition
-	// - do all the TextureUtils::makeTextureAssetRefs() there
-	// - may need to add a conditional value to SkyLandDefinition so it can be treated differently by SkyInstance
+	else if (weatherDefType == WeatherDefinition::Type::Rain)
+	{
+		const WeatherDefinition::RainDefinition &rainDef = skyGenInfo.weatherDef.getRain();
+		if (rainDef.thunderstorm)
+		{
+			// Add lightning bolt assets, to be spawned randomly during a thunderstorm.
+			SkyGeneration::generateArenaLightning(textureManager, outSkyInfoDef);
+		}
+	}
 }
