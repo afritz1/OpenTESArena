@@ -3,12 +3,9 @@
 
 #include <optional>
 
-#include "../Assets/TextureAssetReference.h"
 #include "../Math/MathUtils.h"
-#include "../Media/TextureBuilder.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
 
 class AudioManager;
 class Clock;
@@ -42,15 +39,12 @@ public:
 		struct Thunderstorm
 		{
 			Buffer<uint8_t> flashColors; // In here and not WeatherDefinition due to design complications.
-			Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs;
 			double secondsSincePrevLightning;
 			double secondsUntilNextLightning;
 			Radians lightningBoltAngle;
-			int lightningBoltGroupIndex;
 			bool active; // Whether the thunderstorm can flash/have lightning bolts.
 
-			void init(Buffer<uint8_t> &&flashColors, Buffer<Buffer<TextureAssetReference>> &&lightningBoltTextureAssetRefs,
-				bool active, Random &random);
+			void init(Buffer<uint8_t> &&flashColors, bool active, Random &random);
 
 			// If a lightning bolt recently flashed, returns how bright the sky is because of the flash.
 			std::optional<double> getFlashPercent() const;

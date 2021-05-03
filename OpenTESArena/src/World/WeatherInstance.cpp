@@ -47,15 +47,12 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors,
-	Buffer<Buffer<TextureAssetReference>> &&lightningBoltTextureAssetRefs, bool active, Random &random)
+void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
-	this->lightningBoltTextureAssetRefs = std::move(lightningBoltTextureAssetRefs);
 	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
-	this->lightningBoltGroupIndex = -1;
 	this->active = active;
 }
 
@@ -99,7 +96,6 @@ void WeatherInstance::RainInstance::Thunderstorm::update(double dt, const Clock 
 			this->secondsSincePrevLightning = 0.0;
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
-			this->lightningBoltGroupIndex = random.next(this->lightningBoltTextureAssetRefs.getCount());
 
 			const std::string &soundFilename = ArenaSoundName::Thunder;
 			audioManager.playSound(soundFilename);
@@ -120,11 +116,7 @@ void WeatherInstance::RainInstance::init(bool isThunderstorm, const Clock &clock
 	if (isThunderstorm)
 	{
 		this->thunderstorm = std::make_optional<Thunderstorm>();
-
-		Buffer<Buffer<TextureAssetReference>> lightningBoltTextureAssetRefs =
-			ArenaWeatherUtils::makeLightningBoltTextureAssetRefs(textureManager);
-		this->thunderstorm->init(std::move(flashColors), std::move(lightningBoltTextureAssetRefs),
-			IsDuringThunderstorm(clock), random);
+		this->thunderstorm->init(std::move(flashColors), IsDuringThunderstorm(clock), random);
 	}
 	else
 	{
