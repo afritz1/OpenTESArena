@@ -716,19 +716,8 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 	this->sunEnd = skyInstance.getSunEndIndex();
 	this->starStart = skyInstance.getStarStartIndex();
 	this->starEnd = skyInstance.getStarEndIndex();
-
-	// Only one lightning bolt is supported by SkyInstance.
-	const std::optional<int> lightningIndex = skyInstance.getLightningIndex();
-	if (lightningIndex.has_value())
-	{
-		this->lightningStart = *lightningIndex;
-		this->lightningEnd = this->lightningStart + 1;
-	}
-	else
-	{
-		this->lightningStart = -1;
-		this->lightningEnd = -1;
-	}
+	this->lightningStart = skyInstance.getLightningStartIndex();
+	this->lightningEnd = skyInstance.getLightningEndIndex();
 
 	// Allocate space for all distant objects.
 	const int landCount = this->landEnd - this->landStart;
@@ -773,9 +762,9 @@ void SoftwareRenderer::DistantObjects::init(const SkyInstance &skyInstance, std:
 		}
 	}
 
-	if (lightningIndex.has_value())
+	for (int i = skyInstance.getLightningStartIndex(); i < skyInstance.getLightningEndIndex(); i++)
 	{
-		addGeneralObject(*lightningIndex);
+		addGeneralObject(i);
 	}
 }
 
@@ -1622,7 +1611,7 @@ void SoftwareRenderer::updateVisibleDistantObjects(const SkyInstance &skyInstanc
 
 	for (int i = this->distantObjects.lightningEnd - 1; i >= this->distantObjects.lightningStart; i--)
 	{
-		if (skyInstance.isLightningVisible()) // @hack: this doesn't take an index parameter because SkyInstance only supports one bolt.
+		if (skyInstance.isLightningVisible(i))
 		{
 			const DistantObject &lightning = this->distantObjects.objs.get(i);
 

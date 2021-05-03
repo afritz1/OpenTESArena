@@ -115,12 +115,6 @@ SkyInstance::AnimInstance::AnimInstance(int objectIndex, const TextureBuilderIdG
 	this->currentSeconds = 0.0;
 }
 
-SkyInstance::LightningState::LightningState(int objectIndex, int animIndex)
-{
-	this->objectIndex = objectIndex;
-	this->animIndex = animIndex;
-}
-
 SkyInstance::SkyInstance()
 {
 	this->landStart = -1;
@@ -133,7 +127,8 @@ SkyInstance::SkyInstance()
 	this->sunEnd = -1;
 	this->starStart = -1;
 	this->starEnd = -1;
-	this->lightningBoltIsVisible = false;
+	this->lightningStart = -1;
+	this->lightningEnd = -1;
 }
 
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition,
@@ -407,37 +402,43 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 	const int lightningBoltDefCount = skyInfoDefinition.getLightningCount();
 	if (lightningBoltDefCount > 0)
 	{
-		this->lightningTextureBuilderIdGroups.init(lightningBoltDefCount);
+		this->lightningAnimIndices.init(lightningBoltDefCount);
+
 		for (int i = 0; i < lightningBoltDefCount; i++)
 		{
 			const SkyLightningDefinition &skyLightningDef = skyInfoDefinition.getLightning(i);
-			Buffer<TextureBuilderID> textureBuilderIDs(skyLightningDef.getTextureCount());
-			for (int j = 0; j < skyLightningDef.getTextureCount(); j++)
+			const TextureBuilderIdGroup idGroup = [&textureManager, &skyLightningDef]()
 			{
-				const TextureAssetReference &textureAssetRef = skyLightningDef.getTextureAssetRef(j);
-				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAssetRef);
+				DebugAssert(skyLightningDef.getTextureCount() > 0);
+				const TextureAssetReference &firstTextureAssetRef = skyLightningDef.getTextureAssetRef(0);
+				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(firstTextureAssetRef);
 				if (!textureBuilderID.has_value())
 				{
-					DebugLogError("Couldn't get texture builder ID " + std::to_string(j) +
-						" for \"" + textureAssetRef.filename + "\".");
-					continue;
+					DebugLogError("Couldn't get texture builder ID for \"" + firstTextureAssetRef.filename + "\".");
+					return TextureBuilderIdGroup();
 				}
 
-				textureBuilderIDs.set(j, *textureBuilderID);
-			}
+				// Load the remaining frames so they are all sequential in the texture manager.
+				for (int frameIndex = 1; frameIndex < skyLightningDef.getTextureCount(); frameIndex++)
+				{
+					textureManager.tryGetTextureBuilderID(skyLightningDef.getTextureAssetRef(frameIndex));
+				}
 
-			this->lightningTextureBuilderIdGroups.set(i, std::move(textureBuilderIDs));
+				return TextureBuilderIdGroup(*textureBuilderID, skyLightningDef.getTextureCount());
+			}();
+
+			const TextureBuilder &firstTextureBuilder = textureManager.getTextureBuilderHandle(idGroup.getID(0));
+			double width, height;
+			SkyUtils::getSkyObjectDimensions(firstTextureBuilder.getWidth(), firstTextureBuilder.getHeight(), &width, &height);
+
+			addGeneralObjectInst(Double3::Zero, width, height, idGroup.getID(0), true);
+			addAnimInst(static_cast<int>(this->objectInsts.size()) - 1, idGroup, skyLightningDef.getAnimationSeconds());
+
+			this->lightningAnimIndices.set(i, static_cast<int>(this->animInsts.size()) - 1);
 		}
 
-		// Make one lightning bolt, to have updated values set later.
-		const TextureBuilderID tempTextureBuilderID = this->lightningTextureBuilderIdGroups.get(0).get(0);
-		addGeneralObjectInst(Double3::Zero, 0.0, 0.0, tempTextureBuilderID, true);
-
-		const int lightningObjectIndex = static_cast<int>(this->objectInsts.size()) - 1;
-		const double lightningAnimSeconds = skyInfoDefinition.getLightning(0).getAnimationSeconds();
-		addAnimInst(lightningObjectIndex, TextureBuilderIdGroup(tempTextureBuilderID, 1), lightningAnimSeconds);
-
-		this->lightningState = LightningState(lightningObjectIndex, static_cast<int>(this->animInsts.size()) - 1);
+		this->lightningStart = this->starEnd;
+		this->lightningEnd = this->lightningStart + lightningBoltDefCount;
 	}
 }
 
@@ -491,16 +492,14 @@ int SkyInstance::getMoonEndIndex() const
 	return this->moonEnd;
 }
 
-std::optional<int> SkyInstance::getLightningIndex() const
+int SkyInstance::getLightningStartIndex() const
 {
-	if (this->lightningState.has_value())
-	{
-		return this->lightningState->objectIndex;
-	}
-	else
-	{
-		return std::nullopt;
-	}
+	return this->lightningStart;
+}
+
+int SkyInstance::getLightningEndIndex() const
+{
+	return this->lightningEnd;
 }
 
 bool SkyInstance::isObjectSmallStar(int objectIndex) const
@@ -510,9 +509,9 @@ bool SkyInstance::isObjectSmallStar(int objectIndex) const
 	return objectInst.getType() == SkyInstance::ObjectInstance::Type::SmallStar;
 }
 
-bool SkyInstance::isLightningVisible() const
+bool SkyInstance::isLightningVisible(int objectIndex) const
 {
-	return this->lightningBoltIsVisible;
+	return this->currentLightningBoltObjectIndex == objectIndex;
 }
 
 void SkyInstance::getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID,
@@ -654,40 +653,37 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
 		if (thunderstorm.has_value() && thunderstorm->active)
 		{
-			DebugAssert(this->lightningState.has_value());
+			DebugAssert(this->lightningAnimIndices.getCount() > 0);
 
 			const std::optional<double> lightningBoltPercent = thunderstorm->getLightningBoltPercent();
-			const bool visibilityChanged = this->lightningBoltIsVisible != lightningBoltPercent.has_value();
-			this->lightningBoltIsVisible = lightningBoltPercent.has_value();
-
-			if (visibilityChanged && this->lightningBoltIsVisible)
+			const bool visibilityChanged = this->currentLightningBoltObjectIndex.has_value() != lightningBoltPercent.has_value();
+			if (visibilityChanged && lightningBoltPercent.has_value())
 			{
-				// Pick a new spot and texture group for the lightning bolt.
+				const int lightningGroupCount = this->lightningEnd - this->lightningStart;
+				this->currentLightningBoltObjectIndex = this->lightningStart + random.next(lightningGroupCount);
+
+				// Pick a new spot for the chosen lightning bolt.
 				const Radians lightningAngleX = thunderstorm->lightningBoltAngle;
 				const Double3 lightningDirection = SkyUtils::getSkyObjectDirection(lightningAngleX, 0.0);
 
-				ObjectInstance &lightningObjInst = this->objectInsts[this->lightningState->objectIndex];
+				ObjectInstance &lightningObjInst = this->objectInsts[*this->currentLightningBoltObjectIndex];
 				lightningObjInst.setTransformedDirection(lightningDirection);
+			}
 
-				const int newLightningTextureGroupIndex = random.next(this->lightningTextureBuilderIdGroups.getCount());
-				const Buffer<TextureBuilderID> &newLightningTextureBuilderIDs =
-					this->lightningTextureBuilderIdGroups.get(newLightningTextureGroupIndex);
-
-				const TextureBuilderID firstTextureBuilderID = newLightningTextureBuilderIDs.get(0);
-				const TextureBuilder &firstTextureBuilder = textureManager.getTextureBuilderHandle(firstTextureBuilderID);
-				double width, height;
-				SkyUtils::getSkyObjectDimensions(firstTextureBuilder.getWidth(), firstTextureBuilder.getHeight(), &width, &height);
-				lightningObjInst.setDimensions(width, height);
-
-				AnimInstance &lightningAnimInst = this->animInsts[this->lightningState->animIndex];
+			if (lightningBoltPercent.has_value())
+			{
+				const int animInstIndex = this->lightningAnimIndices.get(*this->currentLightningBoltObjectIndex - this->lightningStart);
+				AnimInstance &lightningAnimInst = this->animInsts[animInstIndex];
 				lightningAnimInst.currentSeconds = *lightningBoltPercent * lightningAnimInst.targetSeconds;
-				lightningAnimInst.textureBuilderIDs = TextureBuilderIdGroup(
-					firstTextureBuilderID, newLightningTextureBuilderIDs.getCount());
+			}
+			else
+			{
+				this->currentLightningBoltObjectIndex = std::nullopt;
 			}
 		}
 		else
 		{
-			this->lightningBoltIsVisible = false;
+			this->currentLightningBoltObjectIndex = std::nullopt;
 		}
 	}
 
@@ -704,7 +700,18 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 		}
 
 		// Don't update if it's an inactive lightning bolt.
-		if (this->lightningState.has_value() && (i == this->lightningState->animIndex) && !this->isLightningVisible())
+		const bool isLightningAnim = [this, i]()
+		{
+			if (this->lightningAnimIndices.getCount() == 0)
+			{
+				return false;
+			}
+
+			const auto iter = std::find(this->lightningAnimIndices.get(), this->lightningAnimIndices.end(), i);
+			return iter != this->lightningAnimIndices.end();
+		}();
+
+		if (isLightningAnim && !this->isLightningVisible(animInst.objectIndex))
 		{
 			continue;
 		}

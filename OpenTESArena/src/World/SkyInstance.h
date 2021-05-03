@@ -92,20 +92,12 @@ private:
 		AnimInstance(int objectIndex, const TextureBuilderIdGroup &textureBuilderIDs, double targetSeconds);
 	};
 
-	struct LightningState
-	{
-		int objectIndex;
-		int animIndex; // So the texture IDs can be set to another group.
-
-		LightningState(int objectIndex, int animIndex);
-	};
-
 	std::vector<ObjectInstance> objectInsts; // Each sky object instance.
 	std::vector<AnimInstance> animInsts; // Data for each sky object with an animation.
-	Buffer<Buffer<TextureBuilderID>> lightningTextureBuilderIdGroups; // Textures for each lightning bolt.
-	int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd;
-	std::optional<LightningState> lightningState;
-	bool lightningBoltIsVisible; // Updated by WeatherInstance.
+	int landStart, landEnd, airStart, airEnd, moonStart, moonEnd, sunStart, sunEnd, starStart, starEnd,
+		lightningStart, lightningEnd;
+	Buffer<int> lightningAnimIndices; // Non-empty during thunderstorm so animations can be updated.
+	std::optional<int> currentLightningBoltObjectIndex; // Updated by WeatherInstance.
 public:
 	SkyInstance();
 
@@ -123,13 +115,14 @@ public:
 	int getSunEndIndex() const;
 	int getMoonStartIndex() const;
 	int getMoonEndIndex() const;
-	std::optional<int> getLightningIndex() const;
+	int getLightningStartIndex() const;
+	int getLightningEndIndex() const;
 
 	// @todo: this is bad design; there should not be a small star type.
 	bool isObjectSmallStar(int objectIndex) const;
 
 	// Whether the lightning bolt is currently visible due to thunderstorm state.
-	bool isLightningVisible() const;
+	bool isLightningVisible(int objectIndex) const;
 
 	void getObject(int index, Double3 *outDirection, TextureBuilderID *outTextureBuilderID, bool *outEmissive,
 		double *outWidth, double *outHeight) const;

@@ -34,7 +34,7 @@ namespace ArenaWeatherUtils
 	constexpr int RAINDROP_SLOW_PIXELS_PER_FRAME_X = -RAINDROP_SLOW_PIXELS_PER_FRAME_Y / 2;
 
 	constexpr double THUNDERSTORM_SKY_FLASH_SECONDS = 0.35;
-	constexpr double THUNDERSTORM_BOLT_SECONDS = 0.10;
+	constexpr double THUNDERSTORM_BOLT_SECONDS = 0.15;
 
 	constexpr int SNOWFLAKE_FAST_COUNT = 20;
 	constexpr int SNOWFLAKE_MEDIUM_COUNT = 30;
