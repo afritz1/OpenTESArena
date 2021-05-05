@@ -1,8 +1,12 @@
 #ifndef ARENA_RENDER_UTILS_H
 #define ARENA_RENDER_UTILS_H
 
+#include <array>
 #include <cstdint>
 #include <string>
+
+class Random;
+class TextureManager;
 
 namespace ArenaRenderUtils
 {
@@ -53,6 +57,16 @@ namespace ArenaRenderUtils
 	bool isGhostTexel(uint8_t texel);
 	bool isPuddleTexel(uint8_t texel);
 	bool isCloudTexel(uint8_t texel);
+
+	// Values for screen-space fog.
+	constexpr int FOG_MATRIX_WIDTH = 40;
+	constexpr int FOG_MATRIX_HEIGHT = 25;
+	constexpr int FOG_MATRIX_ZEROED_ROW = 8; // 9th row is zeroed out.
+	constexpr int FOG_MATRIX_SQUARE_DIM = 8; // 8x8 pixel squares.
+	using FogMatrix = std::array<uint8_t, FOG_MATRIX_WIDTH * FOG_MATRIX_HEIGHT>;
+
+	// Fog matrix for fog light levels.
+	bool tryMakeFogMatrix(Random &random, TextureManager &textureManager, FogMatrix *outMatrix);
 }
 
 #endif
