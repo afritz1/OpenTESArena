@@ -205,7 +205,7 @@ void SoftwareRenderer::SkyTexture::init(int width, int height, const uint8_t *sr
 			SkyTexel &dstTexel = this->texels[index];
 
 			// Same as flat texels but for sky objects and without some hardcoded indices.
-			if (ArenaRenderUtils::IsCloudTexel(srcTexel))
+			if (ArenaRenderUtils::isCloudTexel(srcTexel))
 			{
 				// Transparency for clouds.
 				constexpr double r = 0.0;
@@ -7274,7 +7274,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 				if (!isTransparentTexel)
 				{
 					double colorR, colorG, colorB;
-					if (ArenaRenderUtils::IsGhostTexel(texel.value))
+					if (ArenaRenderUtils::isGhostTexel(texel.value))
 					{
 						// Ghost shader. The previously rendered pixel is diminished by some amount.
 						const double alpha = static_cast<double>(texel.value) /
@@ -7286,7 +7286,7 @@ void SoftwareRenderer::drawFlat(int startX, int endX, const VisibleFlat &flat, c
 						colorG = prevColor.y * visPercent;
 						colorB = prevColor.z * visPercent;
 					}
-					else if (texture.reflective && ArenaRenderUtils::IsPuddleTexel(texel.value))
+					else if (texture.reflective && ArenaRenderUtils::isPuddleTexel(texel.value))
 					{
 						// Reflective texel (i.e. puddle).
 						// Copy-paste the previously-drawn pixel from the Y pixel coordinate mirrored
