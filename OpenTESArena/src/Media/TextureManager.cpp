@@ -264,16 +264,12 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 		const uint16_t *srcPixels = txt.getPixels();
 		constexpr int srcPixelCount = TXTFile::WIDTH * TXTFile::HEIGHT;
 
-		// Convert 16-bit image to 32-bit for now. Not sure if this will be final (doubtful that 16-bit TextureBuilders
-		// will be a thing).
+		// Expand 16-bit to 32-bit for now since I don't want to add another texture builder format.
 		Buffer<uint32_t> trueColorBuffer(srcPixelCount);
 		std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.get(),
 			[](const uint16_t srcPixel)
 		{
-			const double srcPercent = std::clamp(static_cast<double>(srcPixel) / TXTFile::PIXEL_DIVISOR, 0.0, 1.0);
-			const uint8_t srcByte = static_cast<uint8_t>(srcPercent * 255.0);
-			const Color dstColor = Color(srcByte, srcByte, srcByte, srcByte);
-			return dstColor.toARGB();
+			return static_cast<uint32_t>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(&srcPixel)));
 		});
 
 		TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.get());
