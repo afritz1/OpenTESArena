@@ -62,7 +62,7 @@ namespace ArenaRenderUtils
 	constexpr int FOG_MATRIX_WIDTH = 40;
 	constexpr int FOG_MATRIX_HEIGHT = 25;
 	constexpr int FOG_MATRIX_ZEROED_ROW = 8; // 9th row is zeroed out.
-	constexpr int FOG_MATRIX_SQUARE_DIM = 8; // 8x8 pixel squares.
+	constexpr int FOG_MATRIX_SCALE = 8; // Each pixel expands to 8x8 with linear gradient.
 	using FogMatrix = std::array<uint8_t, FOG_MATRIX_WIDTH * FOG_MATRIX_HEIGHT>;
 
 	// Fog matrix for fog light levels.
