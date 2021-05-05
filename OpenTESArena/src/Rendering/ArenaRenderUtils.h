@@ -50,9 +50,9 @@ namespace ArenaRenderUtils
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";
 
 	// Various functions for determining the type of palette index.
-	bool IsGhostTexel(uint8_t texel);
-	bool IsPuddleTexel(uint8_t texel);
-	bool IsCloudTexel(uint8_t texel);
+	bool isGhostTexel(uint8_t texel);
+	bool isPuddleTexel(uint8_t texel);
+	bool isCloudTexel(uint8_t texel);
 }
 
 #endif
