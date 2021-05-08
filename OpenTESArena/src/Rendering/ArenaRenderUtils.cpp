@@ -87,18 +87,8 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 	constexpr double textureWidthReal = static_cast<double>(textureWidth);
 	constexpr double textureHeightReal = static_cast<double>(textureHeight);
 
-	auto sampleMatrixPoint = [&fogMatrix, &matrixSampleToDouble4, textureWidth, textureHeight,
-		textureWidthReal, textureHeightReal](double u, double v)
-	{
-		const int textureX = static_cast<int>(u * textureWidthReal);
-		const int textureY = static_cast<int>(v * textureHeightReal);
-		const int textureIndex = textureX + (textureY * textureWidth);
-
-		const uint8_t texel = fogMatrix[textureIndex];
-		return matrixSampleToDouble4(texel);
-	};
-
-	auto sampleMatrixLinear = [&fogMatrix, &matrixSampleToDouble4, textureWidth, textureHeight,
+	// Linear texture-filtered sample in fog matrix.
+	auto sampleMatrixTexture = [&fogMatrix, &matrixSampleToDouble4, textureWidth, textureHeight,
 		textureWidthReal, textureHeightReal](double u, double v)
 	{
 		const double texelWidth = 1.0 / textureWidthReal;
@@ -135,13 +125,18 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 		const uint8_t texelTR = fogMatrix[textureIndexTR];
 		const uint8_t texelBL = fogMatrix[textureIndexBL];
 		const uint8_t texelBR = fogMatrix[textureIndexBR];
+		const uint8_t tlPercentInteger = static_cast<uint8_t>(tlPercent * 100.0);
+		const uint8_t trPercentInteger = static_cast<uint8_t>(trPercent * 100.0);
+		const uint8_t blPercentInteger = static_cast<uint8_t>(blPercent * 100.0);
+		const uint8_t brPercentInteger = static_cast<uint8_t>(brPercent * 100.0);
 
-		const Double4 colorTL = matrixSampleToDouble4(texelTL) * tlPercent;
-		const Double4 colorTR = matrixSampleToDouble4(texelTR) * trPercent;
-		const Double4 colorBL = matrixSampleToDouble4(texelBL) * blPercent;
-		const Double4 colorBR = matrixSampleToDouble4(texelBR) * brPercent;
+		const uint16_t texelTLScaled = texelTL * tlPercentInteger;
+		const uint16_t texelTRScaled = texelTR * trPercentInteger;
+		const uint16_t texelBLScaled = texelBL * blPercentInteger;
+		const uint16_t texelBRScaled = texelBR * brPercentInteger;
 
-		return colorTL + colorTR + colorBL + colorBR;
+		const uint16_t texelSumScaled = texelTLScaled + texelTRScaled + texelBLScaled + texelBRScaled;
+		return static_cast<uint8_t>(texelSumScaled / 100);
 	};
 
 	for (int y = 0; y < textureHeight; y++)
@@ -179,8 +174,8 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 					const double u = std::clamp(uTexture / textureWidthReal, 0.0, Constants::JustBelowOne);
 					const double v = std::clamp(vTexture / textureHeightReal, 0.0, Constants::JustBelowOne);
 
-					const Double4 sample = sampleMatrixLinear(u, v);
-					outPixels[dstIndex] = sample.toARGB();
+					const uint8_t paletteIndex = sampleMatrixTexture(u, v);
+					outPixels[dstIndex] = matrixSampleToDouble4(paletteIndex).toARGB();
 				}
 			}
 		}
