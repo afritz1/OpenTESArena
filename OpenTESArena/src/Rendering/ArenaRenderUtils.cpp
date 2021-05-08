@@ -125,10 +125,13 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 		const uint8_t texelTR = fogMatrix[textureIndexTR];
 		const uint8_t texelBL = fogMatrix[textureIndexBL];
 		const uint8_t texelBR = fogMatrix[textureIndexBR];
-		const uint8_t tlPercentInteger = static_cast<uint8_t>(tlPercent * 100.0);
-		const uint8_t trPercentInteger = static_cast<uint8_t>(trPercent * 100.0);
-		const uint8_t blPercentInteger = static_cast<uint8_t>(blPercent * 100.0);
-		const uint8_t brPercentInteger = static_cast<uint8_t>(brPercent * 100.0);
+
+		constexpr int percentMultiplier = 100;
+		constexpr double percentMultiplierReal = static_cast<double>(percentMultiplier);
+		const uint16_t tlPercentInteger = static_cast<uint16_t>(tlPercent * percentMultiplierReal);
+		const uint16_t trPercentInteger = static_cast<uint16_t>(trPercent * percentMultiplierReal);
+		const uint16_t blPercentInteger = static_cast<uint16_t>(blPercent * percentMultiplierReal);
+		const uint16_t brPercentInteger = static_cast<uint16_t>(brPercent * percentMultiplierReal);
 
 		const uint16_t texelTLScaled = texelTL * tlPercentInteger;
 		const uint16_t texelTRScaled = texelTR * trPercentInteger;
@@ -136,16 +139,13 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 		const uint16_t texelBRScaled = texelBR * brPercentInteger;
 
 		const uint16_t texelSumScaled = texelTLScaled + texelTRScaled + texelBLScaled + texelBRScaled;
-		return static_cast<uint8_t>(texelSumScaled / 100);
+		return static_cast<uint8_t>(texelSumScaled / percentMultiplier);
 	};
 
 	for (int y = 0; y < textureHeight; y++)
 	{
 		for (int x = 0; x < textureWidth; x++)
 		{
-			const int srcIndex = x + (y * textureWidth);
-			const uint8_t srcPixel = fogMatrix[srcIndex];
-
 			for (int i = 0; i < ArenaRenderUtils::FOG_MATRIX_SCALE; i++)
 			{
 				for (int j = 0; j < ArenaRenderUtils::FOG_MATRIX_SCALE; j++)
