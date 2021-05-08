@@ -137,16 +137,16 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint8
 
 	for (int y = 0; y < textureHeight; y++)
 	{
+		const int yOffset = y * ArenaRenderUtils::FOG_MATRIX_SCALE;
+
 		for (int x = 0; x < textureWidth; x++)
 		{
+			const int xOffset = x * ArenaRenderUtils::FOG_MATRIX_SCALE;
+
 			for (int i = 0; i < ArenaRenderUtils::FOG_MATRIX_SCALE; i++)
 			{
 				for (int j = 0; j < ArenaRenderUtils::FOG_MATRIX_SCALE; j++)
 				{
-					const int xOffset = x * ArenaRenderUtils::FOG_MATRIX_SCALE;
-					const int yOffset = y * ArenaRenderUtils::FOG_MATRIX_SCALE;
-					const int dstIndex = (xOffset + i) + ((yOffset + j) * matrixSurfaceWidth);
-
 					int textureX, textureY;
 					if (((i + j) & 1) != 0)
 					{
@@ -166,8 +166,9 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint8
 
 					const double u = std::clamp(uTexture / textureWidthReal, 0.0, Constants::JustBelowOne);
 					const double v = std::clamp(vTexture / textureHeightReal, 0.0, Constants::JustBelowOne);
-
 					const uint8_t paletteIndex = sampleFogMatrixTexture(u, v);
+
+					const int dstIndex = (xOffset + i) + ((yOffset + j) * matrixSurfaceWidth);
 					outPixels[dstIndex] = paletteIndex;
 				}
 			}
