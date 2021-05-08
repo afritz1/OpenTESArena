@@ -69,10 +69,8 @@ namespace ArenaRenderUtils
 	// @todo: maybe pass zeroed row as a parameter to support modern interface mode.
 	bool tryMakeFogMatrix(Random &random, TextureManager &textureManager, FogMatrix *outMatrix);
 
-	// Draws to a 320x200 true color buffer.
-	// @todo: the output should be 8-bit eventually.
-	// @todo: pass Int2 offset value that is moved 1 pixel left+down every 16.0/25.0 seconds?
-	void drawFog(const FogMatrix &fogMatrix, Random &random, uint32_t *outPixels);
+	// Draws to an 8-bit 320x200 color buffer.
+	void drawFog(const FogMatrix &fogMatrix, Random &random, uint8_t *outPixels);
 }
 
 #endif

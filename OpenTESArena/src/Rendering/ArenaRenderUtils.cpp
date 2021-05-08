@@ -71,25 +71,18 @@ bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureM
 	return true;
 }
 
-void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint32_t *outPixels)
+void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint8_t *outPixels)
 {
 	constexpr int matrixSurfaceWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_SCALE;
 	constexpr int matrixSurfaceHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT * ArenaRenderUtils::FOG_MATRIX_SCALE;
-
-	auto matrixSampleToDouble4 = [](uint8_t texel)
-	{
-		const double percent = static_cast<double>(texel) / static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
-		return Double4(1.0, 1.0, 1.0, percent);
-	};
-
 	constexpr int textureWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
 	constexpr int textureHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT;
 	constexpr double textureWidthReal = static_cast<double>(textureWidth);
 	constexpr double textureHeightReal = static_cast<double>(textureHeight);
 
 	// Linear texture-filtered sample in fog matrix.
-	auto sampleMatrixTexture = [&fogMatrix, &matrixSampleToDouble4, textureWidth, textureHeight,
-		textureWidthReal, textureHeightReal](double u, double v)
+	auto sampleFogMatrixTexture = [&fogMatrix, textureWidth, textureHeight, textureWidthReal,
+		textureHeightReal](double u, double v)
 	{
 		const double texelWidth = 1.0 / textureWidthReal;
 		const double texelHeight = 1.0 / textureHeightReal;
@@ -174,8 +167,8 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint3
 					const double u = std::clamp(uTexture / textureWidthReal, 0.0, Constants::JustBelowOne);
 					const double v = std::clamp(vTexture / textureHeightReal, 0.0, Constants::JustBelowOne);
 
-					const uint8_t paletteIndex = sampleMatrixTexture(u, v);
-					outPixels[dstIndex] = matrixSampleToDouble4(paletteIndex).toARGB();
+					const uint8_t paletteIndex = sampleFogMatrixTexture(u, v);
+					outPixels[dstIndex] = paletteIndex;
 				}
 			}
 		}
