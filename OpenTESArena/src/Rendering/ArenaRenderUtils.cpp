@@ -9,6 +9,7 @@
 #include "../Media/TextureManager.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 
 bool ArenaRenderUtils::isGhostTexel(uint8_t texel)
 {
@@ -38,7 +39,8 @@ bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureM
 		return false;
 	}
 
-	// It's been converted from 16-bit to 32-bit. Find the max then convert to 8-bit because of the right shift.
+	// The fog texture is 16 bits per pixel but it's expanded to 32-bit so the engine doesn't have to support
+	// another texture builder format only used here.
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const TextureBuilder::TrueColorTexture &texture = textureBuilder.getTrueColor();
 	const Buffer2D<uint32_t> &texels = texture.texels;
@@ -46,11 +48,16 @@ bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureM
 	const uint8_t pixelMax = static_cast<uint8_t>((*pixelMaxPtr) >> 8);
 
 	// Generate random pixel values based on the max.
-	std::generate(outMatrix->begin(), outMatrix->end(),
-		[&random, pixelMax]()
+	const int pixelCount = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_HEIGHT;
+	for (int i = 0; i < pixelCount; i++)
 	{
-		return random.next(pixelMax);
-	});
+		const uint16_t texel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(texels.get() + i));
+		const uint8_t highByte = (texel >> 8) & 0xFF;
+		const uint8_t lowByte = texel & 0xFF;
+
+		const uint8_t paletteIndex = static_cast<uint8_t>(random.next(pixelMax)); // Not using FOG.TXT yet.
+		(*outMatrix)[i] = paletteIndex;
+	}
 
 	// Zero out one of the rows.
 	constexpr int matrixWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
@@ -64,7 +71,7 @@ bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureM
 	return true;
 }
 
-void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, uint32_t *outPixels)
+void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint32_t *outPixels)
 {
 	constexpr int matrixSurfaceWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_SCALE;
 	constexpr int matrixSurfaceHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT * ArenaRenderUtils::FOG_MATRIX_SCALE;
@@ -152,9 +159,21 @@ void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, uint32_t *outPixels)
 					const int yOffset = y * ArenaRenderUtils::FOG_MATRIX_SCALE;
 					const int dstIndex = (xOffset + i) + ((yOffset + j) * matrixSurfaceWidth);
 
-					const double uTexture = static_cast<double>(x) +
+					int textureX, textureY;
+					if (((i + j) & 1) != 0)
+					{
+						textureX = x;
+						textureY = y;
+					}
+					else
+					{
+						textureX = random.next(textureWidth);
+						textureY = random.next(textureHeight);
+					}
+
+					const double uTexture = static_cast<double>(textureX) +
 						((static_cast<double>(i) + 0.50) / static_cast<double>(ArenaRenderUtils::FOG_MATRIX_SCALE));
-					const double vTexture = static_cast<double>(y) +
+					const double vTexture = static_cast<double>(textureY) +
 						((static_cast<double>(j) + 0.50) / static_cast<double>(ArenaRenderUtils::FOG_MATRIX_SCALE));
 
 					const double u = std::clamp(uTexture / textureWidthReal, 0.0, Constants::JustBelowOne);
