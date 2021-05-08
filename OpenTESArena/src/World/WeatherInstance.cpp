@@ -47,6 +47,16 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
+void WeatherInstance::FogInstance::init()
+{
+	DebugNotImplemented();
+}
+
+void WeatherInstance::FogInstance::update(double dt)
+{
+	DebugNotImplemented();
+}
+
 void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
@@ -299,7 +309,9 @@ void WeatherInstance::SnowInstance::update(double dt, double aspectRatio, Random
 
 WeatherInstance::WeatherInstance()
 {
-	this->type = static_cast<WeatherInstance::Type>(-1);
+	this->fog = false;
+	this->rain = false;
+	this->snow = false;
 }
 
 void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clock,
@@ -307,23 +319,29 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 {
 	const WeatherDefinition::Type weatherDefType = weatherDef.getType();
 
-	if ((weatherDefType == WeatherDefinition::Type::Clear) ||
-		(weatherDefType == WeatherDefinition::Type::Overcast))
+	if (weatherDefType == WeatherDefinition::Type::Clear)
 	{
-		this->type = WeatherInstance::Type::None;
+		// Do nothing.
+	}
+	else if (weatherDefType == WeatherDefinition::Type::Overcast)
+	{
+		const WeatherDefinition::OvercastDefinition &overcastDef = weatherDef.getOvercast();
+		this->fog = overcastDef.heavyFog;
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Rain)
 	{
-		this->type = WeatherInstance::Type::Rain;
+		this->rain = true;
 
 		const WeatherDefinition::RainDefinition &rainDef = weatherDef.getRain();
 		Buffer<uint8_t> thunderstormColors = ArenaWeatherUtils::makeThunderstormColors(exeData);
-		this->rain.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random, textureManager);
+		this->rainInst.init(rainDef.thunderstorm, clock, std::move(thunderstormColors), random, textureManager);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Snow)
 	{
-		this->type = WeatherInstance::Type::Snow;
-		this->snow.init(random);
+		const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
+		this->fog = snowDef.heavyFog;
+		this->snow = true;
+		this->snowInst.init(random);
 	}
 	else
 	{
@@ -331,40 +349,54 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 	}
 }
 
-WeatherInstance::Type WeatherInstance::getType() const
+bool WeatherInstance::hasFog() const
 {
-	return this->type;
+	return this->fog;
+}
+
+bool WeatherInstance::hasRain() const
+{
+	return this->rain;
+}
+
+bool WeatherInstance::hasSnow() const
+{
+	return this->snow;
+}
+
+const WeatherInstance::FogInstance &WeatherInstance::getFog() const
+{
+	DebugAssert(this->hasFog());
+	return this->fogInst;
 }
 
 const WeatherInstance::RainInstance &WeatherInstance::getRain() const
 {
-	DebugAssert(this->type == WeatherInstance::Type::Rain);
-	return this->rain;
+	DebugAssert(this->hasRain());
+	return this->rainInst;
 }
 
 const WeatherInstance::SnowInstance &WeatherInstance::getSnow() const
 {
-	DebugAssert(this->type == WeatherInstance::Type::Snow);
-	return this->snow;
+	DebugAssert(this->hasSnow());
+	return this->snowInst;
 }
 
 void WeatherInstance::update(double dt, const Clock &clock, double aspectRatio,
 	Random &random, AudioManager &audioManager)
 {
-	if (this->type == WeatherInstance::Type::None)
+	if (this->hasFog())
 	{
-		// Do nothing.
+		this->fogInst.update(dt);
 	}
-	else if (this->type == WeatherInstance::Type::Rain)
+
+	if (this->hasRain())
 	{
-		this->rain.update(dt, clock, aspectRatio, random, audioManager);
+		this->rainInst.update(dt, clock, aspectRatio, random, audioManager);
 	}
-	else if (this->type == WeatherInstance::Type::Snow)
+	
+	if (this->hasSnow())
 	{
-		this->snow.update(dt, aspectRatio, random);
-	}
-	else
-	{
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->type)));
+		this->snowInst.update(dt, aspectRatio, random);
 	}
 }

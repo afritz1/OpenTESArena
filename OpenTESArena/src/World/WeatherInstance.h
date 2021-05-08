@@ -16,14 +16,6 @@ class WeatherDefinition;
 class WeatherInstance
 {
 public:
-	enum class Type
-	{
-		// @todo: may eventually add the fog mask here since it animates in the original game.
-		None, // No extra data/simulation needed for the weather type.
-		Rain,
-		Snow
-	};
-
 	struct Particle
 	{
 		// Percent positions on the screen, where (0, 0) is the top left. This should work for any
@@ -31,6 +23,13 @@ public:
 		double xPercent, yPercent;
 
 		void init(double xPercent, double yPercent);
+	};
+
+	struct FogInstance
+	{
+		void init();
+
+		void update(double dt);
 	};
 
 	struct RainInstance
@@ -75,16 +74,20 @@ public:
 		void update(double dt, double aspectRatio, Random &random);
 	};
 private:
-	Type type;
-	RainInstance rain;
-	SnowInstance snow;
+	bool fog, rain, snow;
+	FogInstance fogInst;
+	RainInstance rainInst;
+	SnowInstance snowInst;
 public:
 	WeatherInstance();
 
 	void init(const WeatherDefinition &weatherDef, const Clock &clock, const ExeData &exeData, Random &random,
 		TextureManager &textureManager);
 
-	Type getType() const;
+	bool hasFog() const;
+	bool hasRain() const;
+	bool hasSnow() const;
+	const FogInstance &getFog() const;
 	const RainInstance &getRain() const;
 	const SnowInstance &getSnow() const;
 

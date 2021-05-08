@@ -647,7 +647,7 @@ void SkyInstance::update(double dt, double latitude, double daytimePercent, cons
 	Random &random, const TextureManager &textureManager)
 {
 	// Update lightning (if any).
-	if (weatherInst.getType() == WeatherInstance::Type::Rain)
+	if (weatherInst.hasRain())
 	{
 		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
 		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;

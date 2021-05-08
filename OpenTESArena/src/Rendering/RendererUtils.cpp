@@ -247,7 +247,7 @@ bool RendererUtils::isBeforeNoon(double daytimePercent)
 
 std::optional<double> RendererUtils::getThunderstormFlashPercent(const WeatherInstance &weatherInst)
 {
-	if (weatherInst.getType() != WeatherInstance::Type::Rain)
+	if (!weatherInst.hasRain())
 	{
 		return std::nullopt;
 	}
@@ -269,7 +269,7 @@ std::optional<double> RendererUtils::getThunderstormFlashPercent(const WeatherIn
 
 std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstance &weatherInst)
 {
-	if (weatherInst.getType() != WeatherInstance::Type::Rain)
+	if (!weatherInst.hasRain())
 	{
 		return std::nullopt;
 	}

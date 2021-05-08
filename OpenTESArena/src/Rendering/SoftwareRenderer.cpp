@@ -538,7 +538,7 @@ SoftwareRenderer::ShadingInfo::ShadingInfo(const Palette &palette, const std::ve
 	RendererUtils::writeSkyColors(skyColors, skyColorsView, daytimePercent);
 
 	this->thunderstormColors.fill(Double3::Zero); // Default if unused.
-	if (weatherInst.getType() == WeatherInstance::Type::Rain)
+	if (weatherInst.hasRain())
 	{
 		const WeatherInstance::RainInstance &rainInst = weatherInst.getRain();
 		const std::optional<WeatherInstance::RainInstance::Thunderstorm> &thunderstorm = rainInst.thunderstorm;
@@ -7816,15 +7816,14 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
 	const FrameView &frame)
 {
-	const WeatherInstance::Type weatherInstType = weatherInst.getType();
-	if (weatherInstType == WeatherInstance::Type::None)
+	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
+
+	if (weatherInst.hasFog())
 	{
-		// No weather to render.
-		return;
+		DebugLogWarning("Fog rendering not implemented.");
 	}
 
-	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
-	if (weatherInstType == WeatherInstance::Type::Rain)
+	if (weatherInst.hasRain())
 	{
 		constexpr int raindropTextureWidth = 3;
 		constexpr int raindropTextureHeight = 8;
@@ -7894,7 +7893,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 			}
 		}
 	}
-	else if (weatherInstType == WeatherInstance::Type::Snow)
+	
+	if (weatherInst.hasSnow())
 	{
 		constexpr int fastSnowflakeType = 0;
 		constexpr int mediumSnowflakeType = fastSnowflakeType + 1;
