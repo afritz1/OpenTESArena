@@ -7867,14 +7867,6 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const Double2 projP3Scaled = projP3 * frameMults;
 			const Double2 projP4Scaled = projP4 * frameMults;
 
-			// Get the pixel coordinate ranges with valid center-of-pixel sample points.
-			const Int2 screenP1(
-				RendererUtils::getLowerBoundedPixel(projP1Scaled.x, frame.width),
-				RendererUtils::getUpperBoundedPixel(projP1Scaled.y, frame.height));
-			const Int2 screenP2(
-				RendererUtils::getUpperBoundedPixel(projP2Scaled.x, frame.width),
-				RendererUtils::getUpperBoundedPixel(projP2Scaled.y, frame.height));
-
 			const double projectedXStart = projP1Scaled.x;
 			const double projectedXEnd = projP2Scaled.x;
 
@@ -7883,8 +7875,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const double projectedY2Start = projP2Scaled.y;
 			const double projectedY2End = projP4Scaled.y;
 
-			const int startX = screenP1.x;
-			const int endX = screenP2.x;
+			const int startX = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
+			const int endX = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);
 
 			// Draw the fog by column left to right.
 			for (int x = startX; x < endX; x++)
