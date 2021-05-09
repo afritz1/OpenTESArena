@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 #include "RendererUtils.h"
 #include "../Game/CardinalDirection.h"
@@ -305,4 +306,44 @@ std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstan
 	}
 
 	return thunderstorm->getLightningBoltPercent();
+}
+
+void RendererUtils::getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices)
+{
+	// Working with a cube with 4 faces (no top/bottom).
+	static_assert(std::tuple_size_v<FogVertexArray> == 8);
+	static_assert(std::tuple_size_v<FogIndexArray> == 16);
+
+	(*outVertices)[0] = Double3(0.50, 0.50, 0.50);
+	(*outVertices)[1] = Double3(-0.50, 0.50, 0.50);
+	(*outVertices)[2] = Double3(0.50, -0.50, 0.50);
+	(*outVertices)[3] = Double3(-0.50, -0.50, 0.50);
+	(*outVertices)[4] = Double3(0.50, 0.50, -0.50);
+	(*outVertices)[5] = Double3(-0.50, 0.50, -0.50);
+	(*outVertices)[6] = Double3(0.50, -0.50, -0.50);
+	(*outVertices)[7] = Double3(-0.50, -0.50, -0.50);
+
+	// +X
+	(*outIndices)[0] = 4;
+	(*outIndices)[1] = 0;
+	(*outIndices)[2] = 6;
+	(*outIndices)[3] = 2;
+
+	// -X
+	(*outIndices)[4] = 1;
+	(*outIndices)[5] = 5;
+	(*outIndices)[6] = 3;
+	(*outIndices)[7] = 7;
+
+	// +Z
+	(*outIndices)[8] = 0;
+	(*outIndices)[9] = 1;
+	(*outIndices)[10] = 2;
+	(*outIndices)[11] = 3;
+
+	// -Z
+	(*outIndices)[12] = 5;
+	(*outIndices)[13] = 4;
+	(*outIndices)[14] = 7;
+	(*outIndices)[15] = 6;
 }

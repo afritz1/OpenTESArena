@@ -1,6 +1,7 @@
 #ifndef RENDERER_UTILS_H
 #define RENDERER_UTILS_H
 
+#include <array>
 #include <optional>
 #include <vector>
 
@@ -32,6 +33,13 @@ namespace RendererUtils
 	// @todo: this should eventually be a hash table of texture asset refs to texture handles
 	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
 	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
+
+	// Vertices used with fog geometry in screen-space around the player.
+	constexpr int FOG_GEOMETRY_VERTEX_COUNT = 8;
+	constexpr int FOG_GEOMETRY_INDEX_COUNT = 16;
+	constexpr int FOG_GEOMETRY_INDICES_PER_QUAD = 4;
+	using FogVertexArray = std::array<Double3, FOG_GEOMETRY_VERTEX_COUNT>; // Corners of a cube.
+	using FogIndexArray = std::array<int, FOG_GEOMETRY_INDEX_COUNT>; // 4 faces.
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
@@ -103,6 +111,10 @@ namespace RendererUtils
 
 	// Gets the lightning bolt percent if it's a thunderstorm and a lightning bolt is present.
 	std::optional<double> getLightningBoltPercent(const WeatherInstance &weatherInst);
+
+	// Gets the vertex buffer and index buffer for screen-space fog. Every quad is ordered in
+	// UV space, where (0, 0) is the top left and (1, 0) is the top right.
+	void getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices);
 }
 
 #endif

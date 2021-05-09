@@ -7816,75 +7816,100 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Camera &camera, 
 	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
-	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
-
 	if (weatherInst.hasFog())
 	{
-		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+		// Make a new transform matrix centered at the origin.
+		const Matrix4d viewMatrix = Matrix4d::view(
+			Double3::Zero,
+			Double3(camera.forwardX, 0.0, camera.forwardZ),
+			Double3(camera.rightX, 0.0, camera.rightZ),
+			Double3::UnitY);
+		const Matrix4d perspectiveMatrix = Matrix4d::perspective(
+			camera.fovY, camera.aspect, SoftwareRenderer::NEAR_PLANE, 1.0);
+		const Matrix4d transform = perspectiveMatrix * viewMatrix;
 
-		// @todo: clip against camera near plane to avoid projecting behind camera
-		const NewDouble3 p1 = absoluteEye + Double3(-0.50, -0.50, -0.50);
-		const NewDouble3 p2 = p1 + Double3::UnitX;
-		const NewDouble3 p3 = p2 + Double3::UnitY;
-		const NewDouble3 p4 = p1 + Double3::UnitY;
+		// Four quads surrounding the player.
+		RendererUtils::FogVertexArray vertexArray;
+		RendererUtils::FogIndexArray indexArray;
+		RendererUtils::getFogGeometry(&vertexArray, &indexArray);
+		constexpr int quadCount = static_cast<int>(indexArray.size()) / RendererUtils::FOG_GEOMETRY_INDICES_PER_QUAD;
 
-		Double2 projP1, projP2, projP3, projP4;
-		bool success = true;
-		success &= RendererUtils::tryGetProjectedXY(p1, camera.transform, camera.aspect, camera.yShear, &projP1);
-		success &= RendererUtils::tryGetProjectedXY(p2, camera.transform, camera.aspect, camera.yShear, &projP2);
-		success &= RendererUtils::tryGetProjectedXY(p3, camera.transform, camera.aspect, camera.yShear, &projP3);
-		success &= RendererUtils::tryGetProjectedXY(p4, camera.transform, camera.aspect, camera.yShear, &projP4);
-		if (!success)
+		for (int i = 0; i < quadCount; i++)
 		{
-			return;
-		}
+			const int indexArrayOffset = i * RendererUtils::FOG_GEOMETRY_INDICES_PER_QUAD;
 
-		// Convert projections to pixel coordinates with fractional pixels.
-		const Double2 frameMults(frame.widthReal, frame.heightReal);
-		const Double2 projP1Scaled = projP1 * frameMults;
-		const Double2 projP2Scaled = projP2 * frameMults;
-		const Double2 projP3Scaled = projP3 * frameMults;
-		const Double2 projP4Scaled = projP4 * frameMults;
+			const int index1 = indexArray[indexArrayOffset];
+			const int index2 = indexArray[indexArrayOffset + 1];
+			const int index3 = indexArray[indexArrayOffset + 2];
+			const int index4 = indexArray[indexArrayOffset + 3];
+			const NewDouble3 p1 = vertexArray[index1];
+			const NewDouble3 p2 = vertexArray[index2];
+			const NewDouble3 p3 = vertexArray[index3];
+			const NewDouble3 p4 = vertexArray[index4];
 
-		// Get the pixel coordinate ranges with valid center-of-pixel sample points.
-		const Int2 screenP1(
-			RendererUtils::getLowerBoundedPixel(projP1Scaled.x, frame.width),
-			RendererUtils::getUpperBoundedPixel(projP1Scaled.y, frame.height));
-		const Int2 screenP2(
-			RendererUtils::getUpperBoundedPixel(projP2Scaled.x, frame.width),
-			RendererUtils::getUpperBoundedPixel(projP2Scaled.y, frame.height));
+			// @todo: clip against camera near plane to avoid projecting behind camera
 
-		const double projectedXStart = projP1Scaled.x;
-		const double projectedXEnd = projP2Scaled.x;
-
-		const double projectedY1Start = projP4Scaled.y;
-		const double projectedY1End = projP1Scaled.y;
-		const double projectedY2Start = projP3Scaled.y;
-		const double projectedY2End = projP2Scaled.y;
-
-		const int startX = screenP1.x;
-		const int endX = screenP2.x;
-
-		for (int x = startX; x < endX; x++)
-		{
-			// @todo: needs to be perspective-correct.
-			const double u = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
-
-			const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * u);
-			const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * u);
-			const int startY = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
-			const int endY = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
-
-			for (int y = startY; y < endY; y++)
+			Double2 projP1, projP2, projP3, projP4;
+			bool success = true;
+			success &= RendererUtils::tryGetProjectedXY(p1, transform, camera.aspect, camera.yShear, &projP1);
+			success &= RendererUtils::tryGetProjectedXY(p2, transform, camera.aspect, camera.yShear, &projP2);
+			success &= RendererUtils::tryGetProjectedXY(p3, transform, camera.aspect, camera.yShear, &projP3);
+			success &= RendererUtils::tryGetProjectedXY(p4, transform, camera.aspect, camera.yShear, &projP4);
+			if (!success)
 			{
-				const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
-				const Double3 color(u, v, 0.0);
+				continue;
+			}
 
-				const int dstIndex = x + (y * frame.width);
-				frame.colorBuffer[dstIndex] = color.toRGB();
+			// Convert projections to pixel coordinates with fractional pixels.
+			const Double2 frameMults(frame.widthReal, frame.heightReal);
+			const Double2 projP1Scaled = projP1 * frameMults;
+			const Double2 projP2Scaled = projP2 * frameMults;
+			const Double2 projP3Scaled = projP3 * frameMults;
+			const Double2 projP4Scaled = projP4 * frameMults;
+
+			// Get the pixel coordinate ranges with valid center-of-pixel sample points.
+			const Int2 screenP1(
+				RendererUtils::getLowerBoundedPixel(projP1Scaled.x, frame.width),
+				RendererUtils::getUpperBoundedPixel(projP1Scaled.y, frame.height));
+			const Int2 screenP2(
+				RendererUtils::getUpperBoundedPixel(projP2Scaled.x, frame.width),
+				RendererUtils::getUpperBoundedPixel(projP2Scaled.y, frame.height));
+
+			const double projectedXStart = projP1Scaled.x;
+			const double projectedXEnd = projP2Scaled.x;
+
+			const double projectedY1Start = projP1Scaled.y;
+			const double projectedY1End = projP3Scaled.y;
+			const double projectedY2Start = projP2Scaled.y;
+			const double projectedY2End = projP4Scaled.y;
+
+			const int startX = screenP1.x;
+			const int endX = screenP2.x;
+
+			// Draw the fog by column left to right.
+			for (int x = startX; x < endX; x++)
+			{
+				// @todo: needs to be perspective-correct.
+				const double u = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+
+				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * u);
+				const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * u);
+				const int startY = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
+				const int endY = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
+
+				for (int y = startY; y < endY; y++)
+				{
+					const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
+					const Double3 color(u, v, 0.0);
+
+					const int dstIndex = x + (y * frame.width);
+					frame.colorBuffer[dstIndex] = color.toRGB();
+				}
 			}
 		}
 	}
+	
+	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 
 	if (weatherInst.hasRain())
 	{
