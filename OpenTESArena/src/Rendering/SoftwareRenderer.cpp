@@ -7813,14 +7813,77 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	}
 }
 
-void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Camera &camera, 
+	const ShadingInfo &shadingInfo, const FrameView &frame)
 {
 	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 
 	if (weatherInst.hasFog())
 	{
-		DebugLogWarning("Fog rendering not implemented.");
+		const NewDouble3 absoluteEye = VoxelUtils::coordToNewPoint(camera.eye);
+
+		// @todo: clip against camera near plane to avoid projecting behind camera
+		const NewDouble3 p1 = absoluteEye + Double3(-0.50, -0.50, -0.50);
+		const NewDouble3 p2 = p1 + Double3::UnitX;
+		const NewDouble3 p3 = p2 + Double3::UnitY;
+		const NewDouble3 p4 = p1 + Double3::UnitY;
+
+		Double2 projP1, projP2, projP3, projP4;
+		bool success = true;
+		success &= RendererUtils::tryGetProjectedXY(p1, camera.transform, camera.aspect, camera.yShear, &projP1);
+		success &= RendererUtils::tryGetProjectedXY(p2, camera.transform, camera.aspect, camera.yShear, &projP2);
+		success &= RendererUtils::tryGetProjectedXY(p3, camera.transform, camera.aspect, camera.yShear, &projP3);
+		success &= RendererUtils::tryGetProjectedXY(p4, camera.transform, camera.aspect, camera.yShear, &projP4);
+		if (!success)
+		{
+			return;
+		}
+
+		// Convert projections to pixel coordinates with fractional pixels.
+		const Double2 frameMults(frame.widthReal, frame.heightReal);
+		const Double2 projP1Scaled = projP1 * frameMults;
+		const Double2 projP2Scaled = projP2 * frameMults;
+		const Double2 projP3Scaled = projP3 * frameMults;
+		const Double2 projP4Scaled = projP4 * frameMults;
+
+		// Get the pixel coordinate ranges with valid center-of-pixel sample points.
+		const Int2 screenP1(
+			RendererUtils::getLowerBoundedPixel(projP1Scaled.x, frame.width),
+			RendererUtils::getUpperBoundedPixel(projP1Scaled.y, frame.height));
+		const Int2 screenP2(
+			RendererUtils::getUpperBoundedPixel(projP2Scaled.x, frame.width),
+			RendererUtils::getUpperBoundedPixel(projP2Scaled.y, frame.height));
+
+		const double projectedXStart = projP1Scaled.x;
+		const double projectedXEnd = projP2Scaled.x;
+
+		const double projectedY1Start = projP4Scaled.y;
+		const double projectedY1End = projP1Scaled.y;
+		const double projectedY2Start = projP3Scaled.y;
+		const double projectedY2End = projP2Scaled.y;
+
+		const int startX = screenP1.x;
+		const int endX = screenP2.x;
+
+		for (int x = startX; x < endX; x++)
+		{
+			// @todo: needs to be perspective-correct.
+			const double u = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+
+			const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * u);
+			const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * u);
+			const int startY = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
+			const int endY = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
+
+			for (int y = startY; y < endY; y++)
+			{
+				const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
+				const Double3 color(u, v, 0.0);
+
+				const int dstIndex = x + (y * frame.width);
+				frame.colorBuffer[dstIndex] = color.toRGB();
+			}
+		}
 	}
 
 	if (weatherInst.hasRain())
@@ -8224,7 +8287,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	});
 
 	// Draw weather (if any) on the main thread.
-	this->drawWeather(weatherInst, shadingInfo, frame);
+	this->drawWeather(weatherInst, camera, shadingInfo, frame);
 }
 
 void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,

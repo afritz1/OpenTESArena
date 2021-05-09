@@ -67,6 +67,10 @@ namespace RendererUtils
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
+	// Like getProjectedY() but keeps the X component too and fails if the point is behind the camera.
+	bool tryGetProjectedXY(const Double3 &point, const Matrix4d &transform, double aspectRatio,
+		double yShear, Double2 *outXY);
+
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
 	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.

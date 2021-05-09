@@ -897,8 +897,8 @@ private:
 		const VisibleLightLists &visLightLists, const FrameView &frame);
 
 	// Handles drawing the current weather (if any).
-	static void drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+	static void drawWeather(const WeatherInstance &weatherInst, const Camera &camera,
+		const ShadingInfo &shadingInfo, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,

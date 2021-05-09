@@ -49,12 +49,12 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 
 void WeatherInstance::FogInstance::init()
 {
-	DebugNotImplemented();
+	DebugLogWarning("FogInstance::init() not implemented");
 }
 
 void WeatherInstance::FogInstance::update(double dt)
 {
-	DebugNotImplemented();
+	DebugLogWarning("FogInstance::update() not implemented");
 }
 
 void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
