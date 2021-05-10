@@ -219,14 +219,10 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 template <typename T>
 Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &v) const
 {
-	const T newX = (this->x.x * v.x) + (this->y.x * v.y) +
-		(this->z.x * v.z) + (this->w.x * v.w);
-	const T newY = (this->x.y * v.x) + (this->y.y * v.y) +
-		(this->z.y * v.z) + (this->w.y * v.w);
-	const T newZ = (this->x.z * v.x) + (this->y.z * v.y) +
-		(this->z.z * v.z) + (this->w.z * v.w);
-	const T newW = (this->x.w * v.x) + (this->y.w * v.y) +
-		(this->z.w * v.z) + (this->w.w * v.w);
+	const T newX = (this->x.x * v.x) + (this->y.x * v.y) + (this->z.x * v.z) + (this->w.x * v.w);
+	const T newY = (this->x.y * v.x) + (this->y.y * v.y) + (this->z.y * v.z) + (this->w.y * v.w);
+	const T newZ = (this->x.z * v.x) + (this->y.z * v.y) + (this->z.z * v.z) + (this->w.z * v.w);
+	const T newW = (this->x.w * v.x) + (this->y.w * v.y) + (this->z.w * v.z) + (this->w.w * v.w);
 	return Vector4f<T>(newX, newY, newZ, newW);
 }
 

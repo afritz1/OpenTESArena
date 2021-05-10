@@ -186,6 +186,32 @@ bool RendererUtils::tryGetProjectedXY(const Double3 &point, const Matrix4d &tran
 	return true;
 }
 
+Double4 RendererUtils::worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform)
+{
+	return transform * Double4(point, 1.0);
+}
+
+Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
+{
+	const double wRecip = 1.0 / point.w;
+	return Double3(point.x * wRecip, point.y * wRecip, point.z * wRecip);
+}
+
+Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear)
+{
+	return Double3(
+		0.50 + point.x,
+		(0.50 + yShear) - (point.y * 0.50),
+		point.z);
+}
+
+bool RendererUtils::clipLineSegment(const Double4 &p1, const Double4 &p2, Double4 *outP1, Double4 *outP2,
+	double *outStart, double *outEnd)
+{
+	DebugNotImplemented();
+	return false;
+}
+
 int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)
 {
 	return std::clamp(static_cast<int>(std::ceil(projected - 0.50)), 0, frameDim);

@@ -79,6 +79,25 @@ namespace RendererUtils
 	bool tryGetProjectedXY(const Double3 &point, const Matrix4d &transform, double aspectRatio,
 		double yShear, Double2 *outXY);
 
+	// Projects a 3D point to homogeneous coordinates (does not divide by W).
+	Double4 worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform);
+
+	// Converts a point in homogeneous coordinates to normalized device coordinates by dividing by W.
+	Double3 clipSpaceToNDC(const Double4 &point);
+
+	// Converts a point in normalized device coordinates to "usable" screen space (i.e. the space expected
+	// by pixel shading) by applying XY translations and scaling to position it properly in the screen.
+	// In other 3D engines this extra step might not be needed but I think I'm doing something different,
+	// can't remember. Ideally this step would be merged with the previous?
+	Double3 ndcToScreenSpace(const Double3 &point, double yShear);
+
+	// Modifies the given clip space line segment so it fits in the frustum. Returns whether the line
+	// segment is visible at all (false means that the line segment was completely clipped away).
+	// The output parameters are the revised p1 and p2 points, and revisions to the 0->1 percent
+	// of the line connecting the original points together.
+	bool clipLineSegment(const Double4 &p1, const Double4 &p2, Double4 *outP1, Double4 *outP2,
+		double *outStart, double *outEnd);
+
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
 	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.
