@@ -7879,26 +7879,17 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const Double3 ndcP3 = RendererUtils::clipSpaceToNDC(clipP3);
 			const Double3 ndcP4 = RendererUtils::clipSpaceToNDC(clipP4);
 
-			const Double3 screenSpaceP1 = RendererUtils::ndcToScreenSpace(ndcP1, camera.yShear);
-			const Double3 screenSpaceP2 = RendererUtils::ndcToScreenSpace(ndcP2, camera.yShear);
-			const Double3 screenSpaceP3 = RendererUtils::ndcToScreenSpace(ndcP3, camera.yShear);
-			const Double3 screenSpaceP4 = RendererUtils::ndcToScreenSpace(ndcP4, camera.yShear);
+			const Double3 screenSpaceP1 = RendererUtils::ndcToScreenSpace(ndcP1, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP2 = RendererUtils::ndcToScreenSpace(ndcP2, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP3 = RendererUtils::ndcToScreenSpace(ndcP3, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP4 = RendererUtils::ndcToScreenSpace(ndcP4, camera.yShear, frame.widthReal, frame.heightReal);
 
-			// Convert percents to pixel coordinates with fractional pixels in the decimals.
-			// @todo: should this be moved into the NDC->screen-space function?
-			const Double3 frameDimensionMultipliers(frame.widthReal, frame.heightReal, 1.0);
-			const Double3 screenSpaceDimP1 = screenSpaceP1 * frameDimensionMultipliers;
-			const Double3 screenSpaceDimP2 = screenSpaceP2 * frameDimensionMultipliers;
-			const Double3 screenSpaceDimP3 = screenSpaceP3 * frameDimensionMultipliers;
-			const Double3 screenSpaceDimP4 = screenSpaceP4 * frameDimensionMultipliers;
-
-			const double projectedXStart = screenSpaceDimP1.x;
-			const double projectedXEnd = screenSpaceDimP2.x;
-
-			const double projectedY1Start = screenSpaceDimP1.y;
-			const double projectedY1End = screenSpaceDimP3.y;
-			const double projectedY2Start = screenSpaceDimP2.y;
-			const double projectedY2End = screenSpaceDimP4.y;
+			const double projectedXStart = screenSpaceP1.x;
+			const double projectedXEnd = screenSpaceP2.x;
+			const double projectedY1Start = screenSpaceP1.y;
+			const double projectedY1End = screenSpaceP3.y;
+			const double projectedY2Start = screenSpaceP2.y;
+			const double projectedY2End = screenSpaceP4.y;
 
 			const int startX = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
 			const int endX = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);

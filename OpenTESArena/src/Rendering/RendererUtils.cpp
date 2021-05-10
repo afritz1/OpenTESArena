@@ -191,12 +191,17 @@ Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
 	return Double3(point.x * wRecip, point.y * wRecip, point.z * wRecip);
 }
 
-Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear)
+Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight)
 {
-	return Double3(
+	const Double3 screenSpacePoint(
 		0.50 + point.x,
 		(0.50 + yShear) - (point.y * 0.50),
 		point.z);
+
+	return Double3(
+		screenSpacePoint.x * frameWidth,
+		screenSpacePoint.y * frameHeight,
+		screenSpacePoint.z);
 }
 
 bool RendererUtils::clipLineSegment(const Double4 &p1, const Double4 &p2, Double4 *outP1, Double4 *outP2,
