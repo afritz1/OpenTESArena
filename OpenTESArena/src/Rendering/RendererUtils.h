@@ -92,6 +92,7 @@ namespace RendererUtils
 	// Converts a point in normalized device coordinates to screen space (pixel coordinates with fractions in
 	// the decimals; the space expected by pixel shading). In other 3D engines this extra step might not be needed
 	// but I think I'm doing something different, can't remember.
+	// - In theory, this would return an Int2+double later on if sub-pixel precision worked with integers instead.
 	Double3 ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight);
 
 	// Modifies the given clip space line segment so it fits in the frustum. Returns whether the line
