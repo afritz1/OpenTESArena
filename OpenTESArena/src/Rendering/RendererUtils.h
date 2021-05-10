@@ -79,16 +79,24 @@ namespace RendererUtils
 	bool tryGetProjectedXY(const Double3 &point, const Matrix4d &transform, double aspectRatio,
 		double yShear, Double2 *outXY);
 
-	// Projects a 3D point to homogeneous coordinates (does not divide by W).
+	// Converts a 3D point in world space to camera space (where Z distance to vertices is relevant).
+	Double3 worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view);
+
+	// Projects a 3D point in camera space to clip space (homogeneous coordinates; does not divide by W).
+	Double4 cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective);
+
+	// Projects a 3D point in world space to clip space (homogeneous coordinates; does not divide by W). The given
+	// transformation matrix is the product of a model, view, and perspective matrix. This function combines the 
+	// camera space step for convenience.
 	Double4 worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform);
 
 	// Converts a point in homogeneous coordinates to normalized device coordinates by dividing by W.
 	Double3 clipSpaceToNDC(const Double4 &point);
 
-	// Converts a point in normalized device coordinates to "usable" screen space (i.e. the space expected
-	// by pixel shading) by applying XY translations and scaling to position it properly in the screen.
-	// In other 3D engines this extra step might not be needed but I think I'm doing something different,
-	// can't remember. Ideally this step would be merged with the previous?
+	// Converts a point in normalized device coordinates to "usable" screen space (the space expected by pixel
+	// shading) by applying XY translations and scaling to position it properly in the screen. In other 3D engines
+	// this extra step might not be needed but I think I'm doing something different, can't remember. Ideally this
+	// step would be merged with the previous?
 	Double3 ndcToScreenSpace(const Double3 &point, double yShear);
 
 	// Modifies the given clip space line segment so it fits in the frustum. Returns whether the line

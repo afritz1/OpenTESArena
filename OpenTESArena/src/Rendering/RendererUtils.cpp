@@ -186,6 +186,18 @@ bool RendererUtils::tryGetProjectedXY(const Double3 &point, const Matrix4d &tran
 	return true;
 }
 
+Double3 RendererUtils::worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view)
+{
+	// Technically the view matrix would be fine as 3x3 but this isn't a big deal.
+	const Double4 viewPoint = view * Double4(point, 1.0);
+	return Double3(viewPoint.x, viewPoint.y, viewPoint.z);
+}
+
+Double4 RendererUtils::cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective)
+{
+	return perspective * Double4(point, 1.0);
+}
+
 Double4 RendererUtils::worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform)
 {
 	return transform * Double4(point, 1.0);
