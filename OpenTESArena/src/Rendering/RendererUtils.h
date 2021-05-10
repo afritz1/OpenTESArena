@@ -75,10 +75,6 @@ namespace RendererUtils
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
-	// Like getProjectedY() but keeps the X component too and fails if the point is behind the camera.
-	bool tryGetProjectedXY(const Double3 &point, const Matrix4d &transform, double aspectRatio,
-		double yShear, Double2 *outXY);
-
 	// Converts a 3D point in world space to camera space (where Z distance to vertices is relevant).
 	Double3 worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view);
 

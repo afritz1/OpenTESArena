@@ -7847,33 +7847,58 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const NewDouble3 p3 = vertexArray[index3];
 			const NewDouble3 p4 = vertexArray[index4];
 
-			// @todo: clip against camera near plane to avoid projecting behind camera
+			const Double3 viewP1 = RendererUtils::worldSpaceToCameraSpace(p1, viewMatrix);
+			const Double3 viewP2 = RendererUtils::worldSpaceToCameraSpace(p2, viewMatrix);
+			const Double3 viewP3 = RendererUtils::worldSpaceToCameraSpace(p3, viewMatrix);
+			const Double3 viewP4 = RendererUtils::worldSpaceToCameraSpace(p4, viewMatrix);
 
-			Double2 projP1, projP2, projP3, projP4;
+			// Z distances for perspective-correctness.
+			const double startZ = viewP1.z;
+			const double endZ = viewP2.z;
+
+			const Double4 clipP1 = RendererUtils::cameraSpaceToClipSpace(viewP1, perspectiveMatrix);
+			const Double4 clipP2 = RendererUtils::cameraSpaceToClipSpace(viewP2, perspectiveMatrix);
+			const Double4 clipP3 = RendererUtils::cameraSpaceToClipSpace(viewP3, perspectiveMatrix);
+			const Double4 clipP4 = RendererUtils::cameraSpaceToClipSpace(viewP4, perspectiveMatrix);
+			
+			// @todo: clip p1p2 and p3p4 against camera near plane to avoid projecting behind camera
+
 			bool success = true;
-			success &= RendererUtils::tryGetProjectedXY(p1, transform, camera.aspect, camera.yShear, &projP1);
-			success &= RendererUtils::tryGetProjectedXY(p2, transform, camera.aspect, camera.yShear, &projP2);
-			success &= RendererUtils::tryGetProjectedXY(p3, transform, camera.aspect, camera.yShear, &projP3);
-			success &= RendererUtils::tryGetProjectedXY(p4, transform, camera.aspect, camera.yShear, &projP4);
+			success &= clipP1.w > 0.0;
+			success &= clipP2.w > 0.0;
+			success &= clipP3.w > 0.0;
+			success &= clipP4.w > 0.0;
+
 			if (!success)
 			{
 				continue;
 			}
 
-			// Convert projections to pixel coordinates with fractional pixels.
-			const Double2 frameMults(frame.widthReal, frame.heightReal);
-			const Double2 projP1Scaled = projP1 * frameMults;
-			const Double2 projP2Scaled = projP2 * frameMults;
-			const Double2 projP3Scaled = projP3 * frameMults;
-			const Double2 projP4Scaled = projP4 * frameMults;
+			const Double3 ndcP1 = RendererUtils::clipSpaceToNDC(clipP1);
+			const Double3 ndcP2 = RendererUtils::clipSpaceToNDC(clipP2);
+			const Double3 ndcP3 = RendererUtils::clipSpaceToNDC(clipP3);
+			const Double3 ndcP4 = RendererUtils::clipSpaceToNDC(clipP4);
 
-			const double projectedXStart = projP1Scaled.x;
-			const double projectedXEnd = projP2Scaled.x;
+			const Double3 screenSpaceP1 = RendererUtils::ndcToScreenSpace(ndcP1, camera.yShear);
+			const Double3 screenSpaceP2 = RendererUtils::ndcToScreenSpace(ndcP2, camera.yShear);
+			const Double3 screenSpaceP3 = RendererUtils::ndcToScreenSpace(ndcP3, camera.yShear);
+			const Double3 screenSpaceP4 = RendererUtils::ndcToScreenSpace(ndcP4, camera.yShear);
 
-			const double projectedY1Start = projP1Scaled.y;
-			const double projectedY1End = projP3Scaled.y;
-			const double projectedY2Start = projP2Scaled.y;
-			const double projectedY2End = projP4Scaled.y;
+			// Convert percents to pixel coordinates with fractional pixels in the decimals.
+			// @todo: should this be moved into the NDC->screen-space function?
+			const Double3 frameDimensionMultipliers(frame.widthReal, frame.heightReal, 1.0);
+			const Double3 screenSpaceDimP1 = screenSpaceP1 * frameDimensionMultipliers;
+			const Double3 screenSpaceDimP2 = screenSpaceP2 * frameDimensionMultipliers;
+			const Double3 screenSpaceDimP3 = screenSpaceP3 * frameDimensionMultipliers;
+			const Double3 screenSpaceDimP4 = screenSpaceP4 * frameDimensionMultipliers;
+
+			const double projectedXStart = screenSpaceDimP1.x;
+			const double projectedXEnd = screenSpaceDimP2.x;
+
+			const double projectedY1Start = screenSpaceDimP1.y;
+			const double projectedY1End = screenSpaceDimP3.y;
+			const double projectedY2Start = screenSpaceDimP2.y;
+			const double projectedY2End = screenSpaceDimP4.y;
 
 			const int startX = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
 			const int endX = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);

@@ -168,24 +168,6 @@ double RendererUtils::getProjectedY(const Double3 &point, const Matrix4d &transf
 	return (0.50 + yShear) - (projectedY * 0.50);
 }
 
-bool RendererUtils::tryGetProjectedXY(const Double3 &point, const Matrix4d &transform, double aspectRatio,
-	double yShear, Double2 *outXY)
-{
-	Double4 projPoint = transform * Double4(point, 1.0);
-	if (projPoint.w <= 0.0)
-	{
-		return false;
-	}
-
-	// Convert to normalized coordinates.
-	projPoint.x /= projPoint.w;
-	projPoint.y /= projPoint.w;
-
-	outXY->x = 0.50 + (projPoint.x / aspectRatio); // @todo: isn't correct for all aspect ratios
-	outXY->y = (0.50 + yShear) - (projPoint.y * 0.50);
-	return true;
-}
-
 Double3 RendererUtils::worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view)
 {
 	// Technically the view matrix would be fine as 3x3 but this isn't a big deal.
