@@ -49,7 +49,9 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 
 void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureManager)
 {
-	if (!ArenaRenderUtils::tryMakeFogMatrix(random, textureManager, &this->fogMatrix))
+	// Put the zeroed row in the middle of the texture since fog works a bit differently in this engine.
+	constexpr int zeroedRow = ArenaRenderUtils::FOG_MATRIX_HEIGHT / 2;
+	if (!ArenaRenderUtils::tryMakeFogMatrix(zeroedRow, random, textureManager, &this->fogMatrix))
 	{
 		DebugLogWarning("Couldn't make fog matrix.");
 	}

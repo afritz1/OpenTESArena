@@ -67,7 +67,7 @@ namespace ArenaRenderUtils
 
 	// Fog matrix for fog light levels.
 	// @todo: maybe pass zeroed row as a parameter to support modern interface mode.
-	bool tryMakeFogMatrix(Random &random, TextureManager &textureManager, FogMatrix *outMatrix);
+	bool tryMakeFogMatrix(int zeroedRow, Random &random, TextureManager &textureManager, FogMatrix *outMatrix);
 
 	// Draws to an 8-bit 320x200 color buffer.
 	void drawFog(const FogMatrix &fogMatrix, Random &random, uint8_t *outPixels);
