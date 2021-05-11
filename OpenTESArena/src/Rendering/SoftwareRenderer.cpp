@@ -7912,9 +7912,13 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			{
 				const double xPercent = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
 
-				// Perspective-correct depth.
-				const double z = 1.0 / (startZRecip + ((endZRecip - startZRecip) * xPercent));
-				const double u = (z - startZ) / (endZ - startZ);
+				// Perspective-correct depth for texture coordinate.
+				const double uStart = 0.0; // @todo: start and end will eventually depend on clipping.
+				const double uEnd = 1.0;
+				const double oneMinusXPercent = 1.0 - xPercent;
+				const double numerator = (oneMinusXPercent * (uStart * startZRecip)) + (xPercent * (uEnd * endZRecip));
+				const double denominator = (oneMinusXPercent * startZRecip) + (xPercent * endZRecip);
+				const double u = numerator / denominator;
 				const int textureX = std::clamp(static_cast<int>(u * fogTextureWidthReal), 0, fogTextureWidth - 1);
 
 				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * xPercent);
