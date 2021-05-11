@@ -47,9 +47,12 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::FogInstance::init()
+void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureManager)
 {
-	DebugLogWarning("FogInstance::init() not implemented");
+	if (!ArenaRenderUtils::tryMakeFogMatrix(random, textureManager, &this->fogMatrix))
+	{
+		DebugLogWarning("Couldn't make fog matrix.");
+	}
 }
 
 void WeatherInstance::FogInstance::update(double dt)
@@ -327,6 +330,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 	{
 		const WeatherDefinition::OvercastDefinition &overcastDef = weatherDef.getOvercast();
 		this->fog = overcastDef.heavyFog;
+		this->fogInst.init(random, textureManager);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Rain)
 	{

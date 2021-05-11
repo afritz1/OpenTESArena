@@ -7828,6 +7828,15 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			camera.fovY, camera.aspect, SoftwareRenderer::NEAR_PLANE, 1.0);
 		const Matrix4d transform = perspectiveMatrix * viewMatrix;
 
+		// Fog texture.
+		// @todo: put this in a renderer texture? reading from WeatherInstance directly is bad design.
+		const WeatherInstance::FogInstance &fogInst = weatherInst.getFog();
+		const uint8_t *fogTexture = fogInst.fogMatrix.data();
+		constexpr int fogTextureWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
+		constexpr int fogTextureHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT;
+		constexpr double fogTextureWidthReal = static_cast<double>(fogTextureWidth);
+		constexpr double fogTextureHeightReal = static_cast<double>(fogTextureHeight);
+
 		// Four quads surrounding the player.
 		RendererUtils::FogVertexArray vertexArray;
 		RendererUtils::FogIndexArray indexArray;
@@ -7899,6 +7908,7 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			{
 				// @todo: needs to be perspective-correct.
 				const double u = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+				const int textureX = std::clamp(static_cast<int>(u * fogTextureWidthReal), 0, fogTextureWidth - 1);
 
 				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * u);
 				const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * u);
@@ -7908,10 +7918,19 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 				for (int y = startY; y < endY; y++)
 				{
 					const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
-					const Double3 color(u, v, 0.0);
+					const int textureY = std::clamp(static_cast<int>(v * fogTextureHeightReal), 0, fogTextureHeight - 1);
+					const int textureIndex = textureX + (textureY * fogTextureWidth);
+					const uint8_t fogTexel = fogTexture[textureIndex];
+
+					// @temp: convert to true color.
+					const double fogPercent = static_cast<double>(fogTexel) /
+						static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+					const Double3 fogColor(1.0, 1.0, 1.0);
 
 					const int dstIndex = x + (y * frame.width);
-					frame.colorBuffer[dstIndex] = color.toRGB();
+					const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[dstIndex]);
+					const Double3 newColor = prevColor + ((fogColor - prevColor) * fogPercent);
+					frame.colorBuffer[dstIndex] = newColor.toRGB();
 				}
 			}
 		}
