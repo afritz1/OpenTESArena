@@ -347,6 +347,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 		const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
 		this->fog = snowDef.heavyFog;
 		this->snow = true;
+		this->fogInst.init(random, textureManager);
 		this->snowInst.init(random);
 	}
 	else
