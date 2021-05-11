@@ -7900,24 +7900,32 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const double projectedY2Start = screenSpaceP2.y;
 			const double projectedY2End = screenSpaceP4.y;
 
+			// Values for perspective-correct interpolation.
+			const double startZRecip = 1.0 / startZ;
+			const double endZRecip = 1.0 / endZ;
+
 			const int startX = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
 			const int endX = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);
 
 			// Draw the fog by column left to right.
 			for (int x = startX; x < endX; x++)
 			{
-				// @todo: needs to be perspective-correct.
-				const double u = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+				const double xPercent = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+
+				// Perspective-correct depth.
+				const double z = 1.0 / (startZRecip + ((endZRecip - startZRecip) * xPercent));
+				const double u = (z - startZ) / (endZ - startZ);
 				const int textureX = std::clamp(static_cast<int>(u * fogTextureWidthReal), 0, fogTextureWidth - 1);
 
-				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * u);
-				const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * u);
+				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * xPercent);
+				const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * xPercent);
 				const int startY = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
 				const int endY = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
 
 				for (int y = startY; y < endY; y++)
 				{
-					const double v = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
+					const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
+					const double v = yPercent;
 					const int textureY = std::clamp(static_cast<int>(v * fogTextureHeightReal), 0, fogTextureHeight - 1);
 					const int textureIndex = textureX + (textureY * fogTextureWidth);
 					const uint8_t fogTexel = fogTexture[textureIndex];
