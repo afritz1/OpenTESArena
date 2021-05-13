@@ -7865,20 +7865,17 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const double startZ = viewP1.z;
 			const double endZ = viewP2.z;
 
-			const Double4 clipP1 = RendererUtils::cameraSpaceToClipSpace(viewP1, perspectiveMatrix);
-			const Double4 clipP2 = RendererUtils::cameraSpaceToClipSpace(viewP2, perspectiveMatrix);
-			const Double4 clipP3 = RendererUtils::cameraSpaceToClipSpace(viewP3, perspectiveMatrix);
-			const Double4 clipP4 = RendererUtils::cameraSpaceToClipSpace(viewP4, perspectiveMatrix);
+			Double4 clipP1 = RendererUtils::cameraSpaceToClipSpace(viewP1, perspectiveMatrix);
+			Double4 clipP2 = RendererUtils::cameraSpaceToClipSpace(viewP2, perspectiveMatrix);
+			Double4 clipP3 = RendererUtils::cameraSpaceToClipSpace(viewP3, perspectiveMatrix);
+			Double4 clipP4 = RendererUtils::cameraSpaceToClipSpace(viewP4, perspectiveMatrix);
 			
-			// @todo: clip p1p2 and p3p4 against camera near plane to avoid projecting behind camera
-
-			bool success = true;
-			success &= clipP1.w > 0.0;
-			success &= clipP2.w > 0.0;
-			success &= clipP3.w > 0.0;
-			success &= clipP4.w > 0.0;
-
-			if (!success)
+			// Clip line segments against camera near plane to avoid projecting behind camera.
+			double clipP1Percent, clipP2Percent, clipP3Percent, clipP4Percent;
+			bool isClippedQuadValid = true;
+			isClippedQuadValid &= RendererUtils::clipLineSegment(&clipP1, &clipP2, &clipP1Percent, &clipP2Percent);
+			isClippedQuadValid &= RendererUtils::clipLineSegment(&clipP3, &clipP4, &clipP3Percent, &clipP4Percent);
+			if (!isClippedQuadValid)
 			{
 				continue;
 			}

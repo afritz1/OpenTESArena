@@ -99,8 +99,7 @@ namespace RendererUtils
 	// segment is visible at all (false means that the line segment was completely clipped away).
 	// The output parameters are the revised p1 and p2 points, and revisions to the 0->1 percent
 	// of the line connecting the original points together.
-	bool clipLineSegment(const Double4 &p1, const Double4 &p2, Double4 *outP1, Double4 *outP2,
-		double *outStart, double *outEnd);
+	bool clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd);
 
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such

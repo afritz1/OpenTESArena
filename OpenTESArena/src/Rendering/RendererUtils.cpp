@@ -204,11 +204,46 @@ Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, dou
 		screenSpacePoint.z);
 }
 
-bool RendererUtils::clipLineSegment(const Double4 &p1, const Double4 &p2, Double4 *outP1, Double4 *outP2,
-	double *outStart, double *outEnd)
+bool RendererUtils::clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd)
 {
-	DebugNotImplemented();
-	return false;
+	const bool isP1XValid = (p1->x <= p1->w) && (p1->x >= -p1->w);
+	const bool isP1YValid = (p1->y <= p1->w) && (p1->y >= -p1->w);
+	const bool isP1ZValid = (p1->z <= p1->w) && (p1->z >= -p1->w);
+	const bool isP1Valid = isP1XValid && isP1YValid && isP1ZValid;
+
+	const bool isP2XValid = (p2->x <= p2->w) && (p2->x >= -p2->w);
+	const bool isP2YValid = (p2->y <= p2->w) && (p2->y >= -p2->w);
+	const bool isP2ZValid = (p2->z <= p2->w) && (p2->z >= -p2->w);
+	const bool isP2Valid = isP2XValid && isP2YValid && isP2ZValid;
+
+	if (isP1Valid)
+	{
+		if (isP2Valid)
+		{
+			// Both points are in.
+			*outStart = 0.0;
+			*outEnd = 1.0;
+			return true;
+		}
+		else
+		{
+			// P1 is in, P2 is out. Set outStart=0, set outEnd=1-value.
+			return false; // @todo
+		}
+	}
+	else
+	{
+		if (isP2Valid)
+		{
+			// P1 is out, P2 is in. Set outStart=value, set outEnd=1.
+			return false; // @todo
+		}
+		else
+		{
+			// Both points are out.
+			return false;
+		}
+	}
 }
 
 int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)
