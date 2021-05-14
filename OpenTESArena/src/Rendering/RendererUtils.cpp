@@ -209,12 +209,19 @@ bool RendererUtils::clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, 
 	const bool isP1XValid = (p1->x <= p1->w) && (p1->x >= -p1->w);
 	const bool isP1YValid = (p1->y <= p1->w) && (p1->y >= -p1->w);
 	const bool isP1ZValid = (p1->z <= p1->w) && (p1->z >= -p1->w);
-	const bool isP1Valid = isP1XValid && isP1YValid && isP1ZValid;
+	const bool isP1WValid = p1->w > 0.0;
+	const bool isP1Valid = /*isP1XValid && isP1YValid && isP1ZValid && */isP1WValid;
 
 	const bool isP2XValid = (p2->x <= p2->w) && (p2->x >= -p2->w);
 	const bool isP2YValid = (p2->y <= p2->w) && (p2->y >= -p2->w);
 	const bool isP2ZValid = (p2->z <= p2->w) && (p2->z >= -p2->w);
-	const bool isP2Valid = isP2XValid && isP2YValid && isP2ZValid;
+	const bool isP2WValid = p2->w > 0.0;
+	const bool isP2Valid = /*isP2XValid && isP2YValid && isP2ZValid && */isP2WValid;
+
+	const double t = p1->w / (p1->w - p2->w);
+	const double tX = (p1->w - p1->x) / ((p1->w - p1->x) - (p2->w - p2->x)); // X=W
+	const double tY = (p1->w - p1->y) / ((p1->w - p1->y) - (p2->w - p2->y)); // Y=W
+	const double tZ = (p1->w - p1->z) / ((p1->w - p1->z) - (p2->w - p2->z)); // Z=W
 
 	if (isP1Valid)
 	{
@@ -227,16 +234,24 @@ bool RendererUtils::clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, 
 		}
 		else
 		{
-			// P1 is in, P2 is out. Set outStart=0, set outEnd=1-value.
-			return false; // @todo
+			// P1 is in, P2 is out.
+			const double percent = 1.0 - t;
+			*p2 = *p1 + ((*p2 - *p1) * percent);
+			*outStart = 0.0;
+			*outEnd = percent;
+			return true;
 		}
 	}
 	else
 	{
 		if (isP2Valid)
 		{
-			// P1 is out, P2 is in. Set outStart=value, set outEnd=1.
-			return false; // @todo
+			// P1 is out, P2 is in.
+			const double percent = 1.0 - t;
+			*p1 = *p1 + ((*p2 - *p1) * percent);
+			*outStart = percent;
+			*outEnd = 1.0;
+			return true;
 		}
 		else
 		{
