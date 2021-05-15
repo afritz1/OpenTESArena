@@ -501,10 +501,21 @@ private:
 				const EntityTextures &entityTextures);
 		};
 
+		struct Weather
+		{
+			int threadsDone;
+			const WeatherInstance *weatherInst;
+			Random *random;
+			bool doneDrawingFlats; // True when render threads can start rendering weather.
+
+			void init(const WeatherInstance &weatherInst, Random &random);
+		};
+
 		SkyGradient skyGradient;
 		DistantSky distantSky;
 		Voxels voxels;
 		Flats flats;
+		Weather weather;
 		const Camera *camera;
 		const ShadingInfo *shadingInfo;
 		const FrameView *frame;
@@ -901,7 +912,7 @@ private:
 		const VisibleLightLists &visLightLists, const FrameView &frame);
 
 	// Handles drawing the current weather (if any).
-	static void drawWeather(const WeatherInstance &weatherInst, const Camera &camera,
+	static void drawWeather(int threadStartX, int threadEndX, const WeatherInstance &weatherInst, const Camera &camera,
 		const ShadingInfo &shadingInfo, Random &random, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and

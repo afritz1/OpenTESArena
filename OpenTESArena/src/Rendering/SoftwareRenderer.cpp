@@ -939,6 +939,14 @@ void SoftwareRenderer::RenderThreadData::Flats::init(const VoxelDouble3 &flatNor
 	this->doneSorting = false;
 }
 
+void SoftwareRenderer::RenderThreadData::Weather::init(const WeatherInstance &weatherInst, Random &random)
+{
+	this->threadsDone = 0;
+	this->weatherInst = &weatherInst;
+	this->random = &random;
+	this->doneDrawingFlats = false;
+}
+
 SoftwareRenderer::RenderThreadData::RenderThreadData()
 {
 	// Make sure 'go' is initialized to false.
@@ -7872,8 +7880,8 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	}
 }
 
-void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Camera &camera, 
-	const ShadingInfo &shadingInfo, Random &random, const FrameView &frame)
+void SoftwareRenderer::drawWeather(int threadStartX, int threadEndX, const WeatherInstance &weatherInst,
+	const Camera &camera, const ShadingInfo &shadingInfo, Random &random, const FrameView &frame)
 {
 	if (weatherInst.hasFog())
 	{
@@ -7961,8 +7969,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const double startZRecip = 1.0 / startZ;
 			const double endZRecip = 1.0 / endZ;
 
-			const int startX = RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width);
-			const int endX = RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width);
+			const int startX = std::max(RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width), threadStartX);
+			const int endX = std::min(RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width), threadEndX);
 
 			// Draw the fog by column left to right.
 			for (int x = startX; x < endX; x++)
@@ -8055,8 +8063,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			const double raindropTop = particle.yPercent;
 			const double raindropBottom = raindropTop + raindropBaseHeightPercent;
 
-			const int startX = RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width);
-			const int endX = RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width);
+			const int startX = std::max(RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width), threadStartX);
+			const int endX = std::min(RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width), threadEndX);
 			const int startY = RendererUtils::getLowerBoundedPixel(raindropTop * frame.heightReal, frame.height);
 			const int endY = RendererUtils::getUpperBoundedPixel(raindropBottom * frame.heightReal, frame.height);
 
@@ -8068,14 +8076,12 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 			for (int y = startY; y < endY; y++)
 			{
 				const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+				const int textureY = std::clamp(static_cast<int>(yPercent * raindropTextureHeightReal), 0, raindropTextureHeight - 1);
+
 				for (int x = startX; x < endX; x++)
 				{
 					const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
-
-					const int textureX = std::clamp(
-						static_cast<int>(xPercent * raindropTextureWidthReal), 0, raindropTextureWidth - 1);
-					const int textureY = std::clamp(
-						static_cast<int>(yPercent * raindropTextureHeightReal), 0, raindropTextureHeight - 1);
+					const int textureX = std::clamp(static_cast<int>(xPercent * raindropTextureWidthReal), 0, raindropTextureWidth - 1);
 					const int textureIndex = textureX + (textureY * raindropTextureWidth);
 					const uint32_t texel = raindropTexture[textureIndex];
 
@@ -8150,8 +8156,9 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 		const WeatherInstance::SnowInstance &snowInst = weatherInst.getSnow();
 		const Buffer<WeatherInstance::Particle> &particles = snowInst.particles;
 
-		auto drawSnowflakeRange = [&frame, &snowflakeDims, &snowflakeRealDims, &snowflakeBaseHeightPercents,
-			&snowflakeScaledWidthPercents, &snowflakeTextures, &particles](int startIndex, int endIndex, int snowflakeType)
+		auto drawSnowflakeRange = [threadStartX, threadEndX, &frame, &snowflakeDims, &snowflakeRealDims,
+			&snowflakeBaseHeightPercents, &snowflakeScaledWidthPercents, &snowflakeTextures,
+			&particles](int startIndex, int endIndex, int snowflakeType)
 		{
 			const double scaledWidthPercent = snowflakeScaledWidthPercents[snowflakeType];
 			const double baseHeightPercent = snowflakeBaseHeightPercents[snowflakeType];
@@ -8171,8 +8178,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 				const double snowflakeTop = particle.yPercent;
 				const double snowflakeBottom = snowflakeTop + baseHeightPercent;
 
-				const int startX = RendererUtils::getLowerBoundedPixel(snowflakeLeft * frame.widthReal, frame.width);
-				const int endX = RendererUtils::getUpperBoundedPixel(snowflakeRight * frame.widthReal, frame.width);
+				const int startX = std::max(RendererUtils::getLowerBoundedPixel(snowflakeLeft * frame.widthReal, frame.width), threadStartX);
+				const int endX = std::min(RendererUtils::getUpperBoundedPixel(snowflakeRight * frame.widthReal, frame.width), threadEndX);
 				const int startY = RendererUtils::getLowerBoundedPixel(snowflakeTop * frame.heightReal, frame.height);
 				const int endY = RendererUtils::getUpperBoundedPixel(snowflakeBottom * frame.heightReal, frame.height);
 
@@ -8184,14 +8191,12 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 				for (int y = startY; y < endY; y++)
 				{
 					const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+					const int textureY = std::clamp(static_cast<int>(yPercent * textureHeightReal), 0, textureHeight - 1);
+
 					for (int x = startX; x < endX; x++)
 					{
 						const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
-
-						const int textureX = std::clamp(
-							static_cast<int>(xPercent * textureWidthReal), 0, textureWidth - 1);
-						const int textureY = std::clamp(
-							static_cast<int>(yPercent * textureHeightReal), 0, textureHeight - 1);
+						const int textureX = std::clamp(static_cast<int>(xPercent * textureWidthReal), 0, textureWidth - 1);
 						const int textureIndex = textureX + (textureY * textureWidth);
 						const uint32_t texel = texture[textureIndex];
 						const int index = x + (y * frame.width);
@@ -8307,6 +8312,18 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Wait for other threads to finish flats.
 		threadBarrier(flats);
+
+		RenderThreadData::Weather &weather = threadData.weather;
+		lk.lock();
+		threadData.condVar.wait(lk, [&weather]() { return weather.doneDrawingFlats; });
+		lk.unlock();
+
+		// Draw this thread's portion of the weather.
+		SoftwareRenderer::drawWeather(startX, endX, *weather.weatherInst, *threadData.camera, *threadData.shadingInfo,
+			*weather.random, *threadData.frame);
+
+		// Wait for other threads to finish the weather.
+		threadBarrier(weather);
 	}
 }
 
@@ -8348,6 +8365,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 		this->visLightLists, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights, this->visLightLists,
 		this->entityTextures);
+	this->threadData.weather.init(weatherInst, random);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.
@@ -8407,19 +8425,25 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 
 	// Let the render threads know that they can start drawing flats.
 	this->threadData.flats.doneSorting = true;
-
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
-	// Wait until render threads are done drawing flats.
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
 	{
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
 
-	// Draw weather (if any) on the main thread.
-	this->drawWeather(weatherInst, camera, shadingInfo, random, frame);
+	// Let the render threads know that they can start drawing weather.
+	this->threadData.weather.doneDrawingFlats = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
+
+	lk.lock();
+	this->threadData.condVar.wait(lk, [this]()
+	{
+		return this->threadData.weather.threadsDone == this->threadData.totalThreads;
+	});
 }
 
 void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,
