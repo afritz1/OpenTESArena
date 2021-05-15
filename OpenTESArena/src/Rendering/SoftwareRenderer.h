@@ -695,6 +695,10 @@ private:
 	static void sampleChasmTexture(const ChasmTexture &texture, double screenXPercent,
 		double screenYPercent, double *r, double *g, double *b);
 
+	// Low-level fog matrix sampling function.
+	template <int TextureWidth, int TextureHeight>
+	static uint8_t sampleFogMatrixTexture(const ArenaRenderUtils::FogMatrix &fogMatrix, double u, double v);
+
 	// Low-level shader for wall pixel rendering. Template parameters are used for
 	// compile-time generation of shader permutations.
 	template <bool Fading>
