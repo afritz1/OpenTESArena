@@ -2985,7 +2985,7 @@ void GameWorldPanel::render(Renderer &renderer)
 		ambientPercent, gameState.getDaytimePercent(), gameState.getChasmAnimPercent(), latitude,
 		gameState.nightLightsAreActive(), isExterior, options.getMisc_PlayerHasLight(),
 		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
-		activeWeatherInst, game.getEntityDefinitionLibrary(), defaultPalette);
+		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
 		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);

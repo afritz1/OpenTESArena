@@ -256,7 +256,8 @@ public:
 	void renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient, double daytimePercent,
 		double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior, bool playerHasLight,
 		int chunkDistance, double ceilingScale, const LevelInstance &levelInst, const SkyInstance &skyInst,
-		const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette);
+		const WeatherInstance &weatherInst, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
+		const Palette &palette);
 
 	// Draws the given cursor texture to the native frame buffer. The exact position 
 	// of the cursor is modified by the cursor alignment.

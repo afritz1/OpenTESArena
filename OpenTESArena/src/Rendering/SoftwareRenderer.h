@@ -902,7 +902,7 @@ private:
 
 	// Handles drawing the current weather (if any).
 	static void drawWeather(const WeatherInstance &weatherInst, const Camera &camera,
-		const ShadingInfo &shadingInfo, const FrameView &frame);
+		const ShadingInfo &shadingInfo, Random &random, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
@@ -976,7 +976,7 @@ public:
 	void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, const WeatherInstance &weatherInst,
+		const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from

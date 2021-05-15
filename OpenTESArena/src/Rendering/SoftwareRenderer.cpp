@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <tuple>
 
 #include "ArenaRenderUtils.h"
 #include "RendererUtils.h"
@@ -14,6 +15,7 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
+#include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Media/Palette.h"
 #include "../Media/TextureBuilder.h"
@@ -3401,6 +3403,7 @@ void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double sc
 template <int TextureWidth, int TextureHeight>
 uint8_t SoftwareRenderer::sampleFogMatrixTexture(const ArenaRenderUtils::FogMatrix &fogMatrix, double u, double v)
 {
+	static_assert((TextureWidth * TextureHeight) == std::tuple_size_v<std::remove_reference_t<decltype(fogMatrix)>>);
 	constexpr double textureWidthReal = static_cast<double>(TextureWidth);
 	constexpr double textureHeightReal = static_cast<double>(TextureHeight);
 	const double texelWidth = 1.0 / textureWidthReal;
@@ -7870,7 +7873,7 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 }
 
 void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Camera &camera, 
-	const ShadingInfo &shadingInfo, const FrameView &frame)
+	const ShadingInfo &shadingInfo, Random &random, const FrameView &frame)
 {
 	if (weatherInst.hasFog())
 	{
@@ -7985,10 +7988,23 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Cam
 					const double v = yPercent;
 					const uint8_t fogTexel = SoftwareRenderer::sampleFogMatrixTexture<
 						ArenaRenderUtils::FOG_MATRIX_WIDTH, ArenaRenderUtils::FOG_MATRIX_HEIGHT>(fogMatrix, u, v);
+					double fogPercent = static_cast<double>(fogTexel) /
+						static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+
+					// Texture coordinates might be affected by current pixel coordinate.
+					// @todo: this is a placeholder until fog is more understood.
+					if (((x + y) & 1) != 0)
+					{
+						const double uRevised = random.nextReal();
+						const double vRevised = random.nextReal();
+						const uint8_t randomFogTexel = SoftwareRenderer::sampleFogMatrixTexture<
+							ArenaRenderUtils::FOG_MATRIX_WIDTH, ArenaRenderUtils::FOG_MATRIX_HEIGHT>(fogMatrix, uRevised, vRevised);
+						const double randomFogPercent = static_cast<double>(fogTexel) /
+							static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+						fogPercent *= randomFogPercent * random.nextReal();
+					}
 
 					// @temp: convert to true color.
-					const double fogPercent = static_cast<double>(fogTexel) /
-						static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
 					const Double3 fogColor(1.0, 1.0, 1.0);
 
 					const int dstIndex = x + (y * frame.width);
@@ -8297,8 +8313,8 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary,
-	const Palette &palette, uint32_t *colorBuffer)
+	const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random, 
+	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -8403,7 +8419,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 	});
 
 	// Draw weather (if any) on the main thread.
-	this->drawWeather(weatherInst, camera, shadingInfo, frame);
+	this->drawWeather(weatherInst, camera, shadingInfo, random, frame);
 }
 
 void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,
