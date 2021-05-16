@@ -501,10 +501,21 @@ private:
 				const EntityTextures &entityTextures);
 		};
 
+		struct Weather
+		{
+			int threadsDone;
+			const WeatherInstance *weatherInst;
+			Random *random;
+			bool doneDrawingFlats; // True when render threads can start rendering weather.
+
+			void init(const WeatherInstance &weatherInst, Random &random);
+		};
+
 		SkyGradient skyGradient;
 		DistantSky distantSky;
 		Voxels voxels;
 		Flats flats;
+		Weather weather;
 		const Camera *camera;
 		const ShadingInfo *shadingInfo;
 		const FrameView *frame;
@@ -694,6 +705,10 @@ private:
 	// Low-level screen-space chasm texture sampling function.
 	static void sampleChasmTexture(const ChasmTexture &texture, double screenXPercent,
 		double screenYPercent, double *r, double *g, double *b);
+
+	// Low-level fog matrix sampling function.
+	template <int TextureWidth, int TextureHeight>
+	static uint8_t sampleFogMatrixTexture(const ArenaRenderUtils::FogMatrix &fogMatrix, double u, double v);
 
 	// Low-level shader for wall pixel rendering. Template parameters are used for
 	// compile-time generation of shader permutations.
@@ -897,8 +912,8 @@ private:
 		const VisibleLightLists &visLightLists, const FrameView &frame);
 
 	// Handles drawing the current weather (if any).
-	static void drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
-		const FrameView &frame);
+	static void drawWeather(int threadStartX, int threadEndX, const WeatherInstance &weatherInst, const Camera &camera,
+		const ShadingInfo &shadingInfo, Random &random, const FrameView &frame);
 
 	// Thread loop for each render thread. All threads are initialized in the constructor and
 	// wait for a go signal at the beginning of each render(). If the renderer is destructing,
@@ -972,7 +987,7 @@ public:
 	void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, const WeatherInstance &weatherInst,
+		const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) override;
 
 	// @todo: might want to simplify the various set() function lifetimes of the renderer from

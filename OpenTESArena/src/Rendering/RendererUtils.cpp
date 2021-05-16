@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <tuple>
 
 #include "RendererUtils.h"
 #include "../Game/CardinalDirection.h"
@@ -167,6 +168,99 @@ double RendererUtils::getProjectedY(const Double3 &point, const Matrix4d &transf
 	return (0.50 + yShear) - (projectedY * 0.50);
 }
 
+Double3 RendererUtils::worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view)
+{
+	// Technically the view matrix would be fine as 3x3 but this isn't a big deal.
+	const Double4 viewPoint = view * Double4(point, 1.0);
+	return Double3(viewPoint.x, viewPoint.y, viewPoint.z);
+}
+
+Double4 RendererUtils::cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective)
+{
+	return perspective * Double4(point, 1.0);
+}
+
+Double4 RendererUtils::worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform)
+{
+	return transform * Double4(point, 1.0);
+}
+
+Double3 RendererUtils::clipSpaceToNDC(const Double4 &point)
+{
+	const double wRecip = 1.0 / point.w;
+	return Double3(point.x * wRecip, point.y * wRecip, point.z * wRecip);
+}
+
+Double3 RendererUtils::ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight)
+{
+	const Double3 screenSpacePoint(
+		0.50 + point.x,
+		(0.50 + yShear) - (point.y * 0.50),
+		point.z);
+
+	return Double3(
+		screenSpacePoint.x * frameWidth,
+		screenSpacePoint.y * frameHeight,
+		screenSpacePoint.z);
+}
+
+bool RendererUtils::clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd)
+{
+	const bool isP1XValid = (p1->x <= p1->w) && (p1->x >= -p1->w);
+	const bool isP1YValid = (p1->y <= p1->w) && (p1->y >= -p1->w);
+	const bool isP1ZValid = (p1->z <= p1->w) && (p1->z >= -p1->w);
+	const bool isP1WValid = p1->w > 0.0;
+	const bool isP1Valid = /*isP1XValid && isP1YValid && isP1ZValid && */isP1WValid;
+
+	const bool isP2XValid = (p2->x <= p2->w) && (p2->x >= -p2->w);
+	const bool isP2YValid = (p2->y <= p2->w) && (p2->y >= -p2->w);
+	const bool isP2ZValid = (p2->z <= p2->w) && (p2->z >= -p2->w);
+	const bool isP2WValid = p2->w > 0.0;
+	const bool isP2Valid = /*isP2XValid && isP2YValid && isP2ZValid && */isP2WValid;
+
+	const double t = p1->w / (p1->w - p2->w);
+	const double tX = (p1->w - p1->x) / ((p1->w - p1->x) - (p2->w - p2->x)); // X=W
+	const double tY = (p1->w - p1->y) / ((p1->w - p1->y) - (p2->w - p2->y)); // Y=W
+	const double tZ = (p1->w - p1->z) / ((p1->w - p1->z) - (p2->w - p2->z)); // Z=W
+
+	if (isP1Valid)
+	{
+		if (isP2Valid)
+		{
+			// Both points are in.
+			*outStart = 0.0;
+			*outEnd = 1.0;
+			return true;
+		}
+		else
+		{
+			// P1 is in, P2 is out.
+			const double percent = 1.0 - t;
+			*p2 = *p1 + ((*p2 - *p1) * percent);
+			*outStart = 0.0;
+			*outEnd = percent;
+			return true;
+		}
+	}
+	else
+	{
+		if (isP2Valid)
+		{
+			// P1 is out, P2 is in.
+			const double percent = 1.0 - t;
+			*p1 = *p1 + ((*p2 - *p1) * percent);
+			*outStart = percent;
+			*outEnd = 1.0;
+			return true;
+		}
+		else
+		{
+			// Both points are out.
+			return false;
+		}
+	}
+}
+
 int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)
 {
 	return std::clamp(static_cast<int>(std::ceil(projected - 0.50)), 0, frameDim);
@@ -287,4 +381,44 @@ std::optional<double> RendererUtils::getLightningBoltPercent(const WeatherInstan
 	}
 
 	return thunderstorm->getLightningBoltPercent();
+}
+
+void RendererUtils::getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices)
+{
+	// Working with a cube with 4 faces (no top/bottom).
+	static_assert(std::tuple_size_v<FogVertexArray> == 8);
+	static_assert(std::tuple_size_v<FogIndexArray> == 16);
+
+	(*outVertices)[0] = Double3(0.50, 0.50, 0.50);
+	(*outVertices)[1] = Double3(-0.50, 0.50, 0.50);
+	(*outVertices)[2] = Double3(0.50, -0.50, 0.50);
+	(*outVertices)[3] = Double3(-0.50, -0.50, 0.50);
+	(*outVertices)[4] = Double3(0.50, 0.50, -0.50);
+	(*outVertices)[5] = Double3(-0.50, 0.50, -0.50);
+	(*outVertices)[6] = Double3(0.50, -0.50, -0.50);
+	(*outVertices)[7] = Double3(-0.50, -0.50, -0.50);
+
+	// +X
+	(*outIndices)[0] = 4;
+	(*outIndices)[1] = 0;
+	(*outIndices)[2] = 6;
+	(*outIndices)[3] = 2;
+
+	// -X
+	(*outIndices)[4] = 1;
+	(*outIndices)[5] = 5;
+	(*outIndices)[6] = 3;
+	(*outIndices)[7] = 7;
+
+	// +Z
+	(*outIndices)[8] = 0;
+	(*outIndices)[9] = 1;
+	(*outIndices)[10] = 2;
+	(*outIndices)[11] = 3;
+
+	// -Z
+	(*outIndices)[12] = 5;
+	(*outIndices)[13] = 4;
+	(*outIndices)[14] = 7;
+	(*outIndices)[15] = 6;
 }

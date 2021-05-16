@@ -29,8 +29,12 @@ bool ArenaRenderUtils::isCloudTexel(uint8_t texel)
 		(texel <= ArenaRenderUtils::PALETTE_INDEX_SKY_LEVEL_HIGHEST);
 }
 
-bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureManager, FogMatrix *outMatrix)
+bool ArenaRenderUtils::tryMakeFogMatrix(int zeroedRow, Random &random, TextureManager &textureManager,
+	FogMatrix *outMatrix)
 {
+	DebugAssert(zeroedRow >= 0);
+	DebugAssert(zeroedRow < ArenaRenderUtils::FOG_MATRIX_HEIGHT);
+
 	const std::string filename = "FOG.TXT";
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
 	if (!textureBuilderID.has_value())
@@ -63,7 +67,7 @@ bool ArenaRenderUtils::tryMakeFogMatrix(Random &random, TextureManager &textureM
 	constexpr int matrixWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
 	for (int x = 0; x < matrixWidth; x++)
 	{
-		constexpr int y = ArenaRenderUtils::FOG_MATRIX_ZEROED_ROW;
+		const int y = zeroedRow;
 		const int index = x + (y * matrixWidth);
 		(*outMatrix)[index] = 0;
 	}

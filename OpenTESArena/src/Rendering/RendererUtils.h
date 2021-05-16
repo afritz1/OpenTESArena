@@ -1,6 +1,7 @@
 #ifndef RENDERER_UTILS_H
 #define RENDERER_UTILS_H
 
+#include <array>
 #include <optional>
 #include <vector>
 
@@ -32,6 +33,13 @@ namespace RendererUtils
 	// @todo: this should eventually be a hash table of texture asset refs to texture handles
 	using LoadedVoxelTextureCache = std::vector<TextureAssetReference>;
 	using LoadedEntityTextureCache = std::vector<LoadedEntityTextureEntry>;
+
+	// Vertices used with fog geometry in screen-space around the player.
+	constexpr int FOG_GEOMETRY_VERTEX_COUNT = 8;
+	constexpr int FOG_GEOMETRY_INDEX_COUNT = 16;
+	constexpr int FOG_GEOMETRY_INDICES_PER_QUAD = 4;
+	using FogVertexArray = std::array<Double3, FOG_GEOMETRY_VERTEX_COUNT>; // Corners of a cube.
+	using FogIndexArray = std::array<int, FOG_GEOMETRY_INDEX_COUNT>; // 4 faces.
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
@@ -67,6 +75,32 @@ namespace RendererUtils
 	// Calculates the projected Y coordinate of a 3D point given a transform and Y-shear value.
 	double getProjectedY(const Double3 &point, const Matrix4d &transform, double yShear);
 
+	// Converts a 3D point in world space to camera space (where Z distance to vertices is relevant).
+	Double3 worldSpaceToCameraSpace(const Double3 &point, const Matrix4d &view);
+
+	// Projects a 3D point in camera space to clip space (homogeneous coordinates; does not divide by W).
+	Double4 cameraSpaceToClipSpace(const Double3 &point, const Matrix4d &perspective);
+
+	// Projects a 3D point in world space to clip space (homogeneous coordinates; does not divide by W). The given
+	// transformation matrix is the product of a model, view, and perspective matrix. This function combines the 
+	// camera space step for convenience.
+	Double4 worldSpaceToClipSpace(const Double3 &point, const Matrix4d &transform);
+
+	// Converts a point in homogeneous coordinates to normalized device coordinates by dividing by W.
+	Double3 clipSpaceToNDC(const Double4 &point);
+
+	// Converts a point in normalized device coordinates to screen space (pixel coordinates with fractions in
+	// the decimals; the space expected by pixel shading). In other 3D engines this extra step might not be needed
+	// but I think I'm doing something different, can't remember.
+	// - In theory, this would return an Int2+double later on if sub-pixel precision worked with integers instead.
+	Double3 ndcToScreenSpace(const Double3 &point, double yShear, double frameWidth, double frameHeight);
+
+	// Modifies the given clip space line segment so it fits in the frustum. Returns whether the line
+	// segment is visible at all (false means that the line segment was completely clipped away).
+	// The output parameters are the revised p1 and p2 points, and revisions to the 0->1 percent
+	// of the line connecting the original points together.
+	bool clipLineSegment(Double4 *p1, Double4 *p2, double *outStart, double *outEnd);
+
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
 	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.
@@ -99,6 +133,10 @@ namespace RendererUtils
 
 	// Gets the lightning bolt percent if it's a thunderstorm and a lightning bolt is present.
 	std::optional<double> getLightningBoltPercent(const WeatherInstance &weatherInst);
+
+	// Gets the vertex buffer and index buffer for screen-space fog. Every quad is ordered in
+	// UV space, where (0, 0) is the top left and (1, 0) is the top right.
+	void getFogGeometry(FogVertexArray *outVertices, FogIndexArray *outIndices);
 }
 
 #endif

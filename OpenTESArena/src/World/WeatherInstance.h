@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "../Math/MathUtils.h"
+#include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -27,7 +28,10 @@ public:
 
 	struct FogInstance
 	{
-		void init();
+		ArenaRenderUtils::FogMatrix fogMatrix; // Used for drawing fog.
+		// @todo: other fog state values (position changing over time, etc.)
+
+		void init(Random &random, TextureManager &textureManager);
 
 		void update(double dt);
 	};

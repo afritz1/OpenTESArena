@@ -20,6 +20,7 @@ class EntityAnimationDefinition;
 class EntityAnimationInstance;
 class EntityDefinitionLibrary;
 class LevelInstance;
+class Random;
 class RenderCamera;
 class RenderDefinitionGroup;
 class RenderFrameSettings;
@@ -97,7 +98,7 @@ public:
 	virtual void render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 		double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 		bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-		const SkyInstance &skyInst, const WeatherInstance &weatherInst,
+		const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer) = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame

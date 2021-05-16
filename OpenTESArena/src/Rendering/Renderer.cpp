@@ -960,8 +960,8 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive, bool isExterior,
 	bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary,
-	const Palette &palette)
+	const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random, 
+	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette)
 {
 	// The 3D renderer must be initialized.
 	DebugAssert(this->renderer3D->isInited());
@@ -979,7 +979,7 @@ void Renderer::renderWorld(const CoordDouble3 &eye, const Double3 &direction, do
 	const auto startTime = std::chrono::high_resolution_clock::now();
 	this->renderer3D->render(eye, direction, fovY, ambient, daytimePercent, chasmAnimPercent, latitude,
 		nightLightsAreActive, isExterior, playerHasLight, chunkDistance, ceilingScale, levelInst,
-		skyInst, weatherInst, entityDefLibrary, palette, gameWorldPixels);
+		skyInst, weatherInst, random, entityDefLibrary, palette, gameWorldPixels);
 	const auto endTime = std::chrono::high_resolution_clock::now();
 	const double frameTime = static_cast<double>((endTime - startTime).count()) / static_cast<double>(std::nano::den);
 

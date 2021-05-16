@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <tuple>
 
 #include "ArenaRenderUtils.h"
 #include "RendererUtils.h"
@@ -14,6 +15,7 @@
 #include "../Game/Options.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
+#include "../Math/Random.h"
 #include "../Media/Color.h"
 #include "../Media/Palette.h"
 #include "../Media/TextureBuilder.h"
@@ -935,6 +937,14 @@ void SoftwareRenderer::RenderThreadData::Flats::init(const VoxelDouble3 &flatNor
 	this->visLightLists = &visLightLists;
 	this->entityTextures = &entityTextures;
 	this->doneSorting = false;
+}
+
+void SoftwareRenderer::RenderThreadData::Weather::init(const WeatherInstance &weatherInst, Random &random)
+{
+	this->threadsDone = 0;
+	this->weatherInst = &weatherInst;
+	this->random = &random;
+	this->doneDrawingFlats = false;
 }
 
 SoftwareRenderer::RenderThreadData::RenderThreadData()
@@ -3396,6 +3406,63 @@ void SoftwareRenderer::sampleChasmTexture(const ChasmTexture &texture, double sc
 	*r = texel.r;
 	*g = texel.g;
 	*b = texel.b;
+}
+
+template <int TextureWidth, int TextureHeight>
+uint8_t SoftwareRenderer::sampleFogMatrixTexture(const ArenaRenderUtils::FogMatrix &fogMatrix, double u, double v)
+{
+	static_assert((TextureWidth * TextureHeight) == std::tuple_size_v<std::remove_reference_t<decltype(fogMatrix)>>);
+	constexpr double textureWidthReal = static_cast<double>(TextureWidth);
+	constexpr double textureHeightReal = static_cast<double>(TextureHeight);
+	const double texelWidth = 1.0 / textureWidthReal;
+	const double texelHeight = 1.0 / textureHeightReal;
+	const double halfTexelWidth = texelWidth * 0.50;
+	const double halfTexelHeight = texelHeight * 0.50;
+
+	// Neighboring percents that might land in an adjacent texel.
+	const double uLow = std::max(u - halfTexelWidth, 0.0);
+	const double uHigh = std::min(u + halfTexelWidth, Constants::JustBelowOne);
+	const double vLow = std::max(v - halfTexelHeight, 0.0);
+	const double vHigh = std::min(v + halfTexelHeight, Constants::JustBelowOne);
+
+	const double uLowWidth = uLow * textureWidthReal;
+	const double vLowHeight = vLow * textureHeightReal;
+	const double uLowPercent = 1.0 - (uLowWidth - std::floor(uLowWidth));
+	const double uHighPercent = 1.0 - uLowPercent;
+	const double vLowPercent = 1.0 - (vLowHeight - std::floor(vLowHeight));
+	const double vHighPercent = 1.0 - vLowPercent;
+	const double tlPercent = uLowPercent * vLowPercent;
+	const double trPercent = uHighPercent * vLowPercent;
+	const double blPercent = uLowPercent * vHighPercent;
+	const double brPercent = uHighPercent * vHighPercent;
+	const int textureXL = std::clamp(static_cast<int>(uLow * textureWidthReal), 0, TextureWidth - 1);
+	const int textureXR = std::clamp(static_cast<int>(uHigh * textureWidthReal), 0, TextureWidth - 1);
+	const int textureYT = std::clamp(static_cast<int>(vLow * textureHeightReal), 0, TextureHeight - 1);
+	const int textureYB = std::clamp(static_cast<int>(vHigh * textureHeightReal), 0, TextureHeight - 1);
+	const int textureIndexTL = textureXL + (textureYT * TextureWidth);
+	const int textureIndexTR = textureXR + (textureYT * TextureWidth);
+	const int textureIndexBL = textureXL + (textureYB * TextureWidth);
+	const int textureIndexBR = textureXR + (textureYB * TextureWidth);
+
+	const uint8_t texelTL = fogMatrix[textureIndexTL];
+	const uint8_t texelTR = fogMatrix[textureIndexTR];
+	const uint8_t texelBL = fogMatrix[textureIndexBL];
+	const uint8_t texelBR = fogMatrix[textureIndexBR];
+
+	constexpr int percentMultiplier = 100;
+	constexpr double percentMultiplierReal = static_cast<double>(percentMultiplier);
+	const uint16_t tlPercentInteger = static_cast<uint16_t>(tlPercent * percentMultiplierReal);
+	const uint16_t trPercentInteger = static_cast<uint16_t>(trPercent * percentMultiplierReal);
+	const uint16_t blPercentInteger = static_cast<uint16_t>(blPercent * percentMultiplierReal);
+	const uint16_t brPercentInteger = static_cast<uint16_t>(brPercent * percentMultiplierReal);
+
+	const uint16_t texelTLScaled = texelTL * tlPercentInteger;
+	const uint16_t texelTRScaled = texelTR * trPercentInteger;
+	const uint16_t texelBLScaled = texelBL * blPercentInteger;
+	const uint16_t texelBRScaled = texelBR * brPercentInteger;
+
+	const uint16_t texelSumScaled = texelTLScaled + texelTRScaled + texelBLScaled + texelBRScaled;
+	return static_cast<uint8_t>(texelSumScaled / percentMultiplier);
 }
 
 template <bool Fading>
@@ -7813,15 +7880,151 @@ void SoftwareRenderer::drawFlats(int startX, int endX, const Camera &camera,
 	}
 }
 
-void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const ShadingInfo &shadingInfo,
-	const FrameView &frame)
+void SoftwareRenderer::drawWeather(int threadStartX, int threadEndX, const WeatherInstance &weatherInst,
+	const Camera &camera, const ShadingInfo &shadingInfo, Random &random, const FrameView &frame)
 {
-	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
-
 	if (weatherInst.hasFog())
 	{
-		DebugLogWarning("Fog rendering not implemented.");
+		// Make a new transform matrix centered at the origin.
+		const Matrix4d viewMatrix = Matrix4d::view(
+			Double3::Zero,
+			Double3(camera.forwardX, 0.0, camera.forwardZ),
+			Double3(camera.rightX, 0.0, camera.rightZ),
+			Double3::UnitY);
+		const Matrix4d perspectiveMatrix = Matrix4d::perspective(
+			camera.fovY, camera.aspect, SoftwareRenderer::NEAR_PLANE, 1.0);
+		const Matrix4d transform = perspectiveMatrix * viewMatrix;
+
+		// Fog texture.
+		// @todo: put this in a renderer texture? reading from WeatherInstance directly is bad design.
+		const WeatherInstance::FogInstance &fogInst = weatherInst.getFog();
+		const ArenaRenderUtils::FogMatrix &fogMatrix = fogInst.fogMatrix;
+		constexpr int fogTextureWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
+		constexpr int fogTextureHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT;
+		constexpr double fogTextureWidthReal = static_cast<double>(fogTextureWidth);
+		constexpr double fogTextureHeightReal = static_cast<double>(fogTextureHeight);
+
+		// Four quads surrounding the player.
+		RendererUtils::FogVertexArray vertexArray;
+		RendererUtils::FogIndexArray indexArray;
+		RendererUtils::getFogGeometry(&vertexArray, &indexArray);
+		constexpr int quadCount = static_cast<int>(indexArray.size()) / RendererUtils::FOG_GEOMETRY_INDICES_PER_QUAD;
+
+		for (int i = 0; i < quadCount; i++)
+		{
+			const int indexArrayOffset = i * RendererUtils::FOG_GEOMETRY_INDICES_PER_QUAD;
+
+			const int index1 = indexArray[indexArrayOffset];
+			const int index2 = indexArray[indexArrayOffset + 1];
+			const int index3 = indexArray[indexArrayOffset + 2];
+			const int index4 = indexArray[indexArrayOffset + 3];
+			const NewDouble3 p1 = vertexArray[index1];
+			const NewDouble3 p2 = vertexArray[index2];
+			const NewDouble3 p3 = vertexArray[index3];
+			const NewDouble3 p4 = vertexArray[index4];
+
+			const Double3 viewP1 = RendererUtils::worldSpaceToCameraSpace(p1, viewMatrix);
+			const Double3 viewP2 = RendererUtils::worldSpaceToCameraSpace(p2, viewMatrix);
+			const Double3 viewP3 = RendererUtils::worldSpaceToCameraSpace(p3, viewMatrix);
+			const Double3 viewP4 = RendererUtils::worldSpaceToCameraSpace(p4, viewMatrix);
+
+			// Z distances for perspective-correctness.
+			const double startZ = viewP1.z;
+			const double endZ = viewP2.z;
+
+			Double4 clipP1 = RendererUtils::cameraSpaceToClipSpace(viewP1, perspectiveMatrix);
+			Double4 clipP2 = RendererUtils::cameraSpaceToClipSpace(viewP2, perspectiveMatrix);
+			Double4 clipP3 = RendererUtils::cameraSpaceToClipSpace(viewP3, perspectiveMatrix);
+			Double4 clipP4 = RendererUtils::cameraSpaceToClipSpace(viewP4, perspectiveMatrix);
+			
+			// Clip line segments against camera near plane to avoid projecting behind camera.
+			// @todo: use the clip percents with texture coordinates.
+			double clipP1Percent, clipP2Percent, clipP3Percent, clipP4Percent;
+			bool isClippedQuadValid = true;
+			isClippedQuadValid &= RendererUtils::clipLineSegment(&clipP1, &clipP2, &clipP1Percent, &clipP2Percent);
+			isClippedQuadValid &= RendererUtils::clipLineSegment(&clipP3, &clipP4, &clipP3Percent, &clipP4Percent);
+			if (!isClippedQuadValid)
+			{
+				continue;
+			}
+
+			const Double3 ndcP1 = RendererUtils::clipSpaceToNDC(clipP1);
+			const Double3 ndcP2 = RendererUtils::clipSpaceToNDC(clipP2);
+			const Double3 ndcP3 = RendererUtils::clipSpaceToNDC(clipP3);
+			const Double3 ndcP4 = RendererUtils::clipSpaceToNDC(clipP4);
+
+			const Double3 screenSpaceP1 = RendererUtils::ndcToScreenSpace(ndcP1, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP2 = RendererUtils::ndcToScreenSpace(ndcP2, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP3 = RendererUtils::ndcToScreenSpace(ndcP3, camera.yShear, frame.widthReal, frame.heightReal);
+			const Double3 screenSpaceP4 = RendererUtils::ndcToScreenSpace(ndcP4, camera.yShear, frame.widthReal, frame.heightReal);
+
+			const double projectedXStart = screenSpaceP1.x;
+			const double projectedXEnd = screenSpaceP2.x;
+			const double projectedY1Start = screenSpaceP1.y;
+			const double projectedY1End = screenSpaceP3.y;
+			const double projectedY2Start = screenSpaceP2.y;
+			const double projectedY2End = screenSpaceP4.y;
+
+			// Values for perspective-correct interpolation.
+			const double startZRecip = 1.0 / startZ;
+			const double endZRecip = 1.0 / endZ;
+
+			const int startX = std::max(RendererUtils::getLowerBoundedPixel(projectedXStart, frame.width), threadStartX);
+			const int endX = std::min(RendererUtils::getUpperBoundedPixel(projectedXEnd, frame.width), threadEndX);
+
+			// Draw the fog by column left to right.
+			for (int x = startX; x < endX; x++)
+			{
+				const double xPercent = ((static_cast<double>(x) + 0.50) - projectedXStart) / (projectedXEnd - projectedXStart);
+
+				// Perspective-correct texture coordinate.
+				const double uStart = 0.0; // @todo: start and end will eventually depend on clipping.
+				const double uEnd = 1.0;
+				const double oneMinusXPercent = 1.0 - xPercent;
+				const double numerator = (oneMinusXPercent * (uStart * startZRecip)) + (xPercent * (uEnd * endZRecip));
+				const double denominator = (oneMinusXPercent * startZRecip) + (xPercent * endZRecip);
+				const double u = numerator / denominator;
+
+				const double projectedYStart = projectedY1Start + ((projectedY2Start - projectedY1Start) * xPercent);
+				const double projectedYEnd = projectedY1End + ((projectedY2End - projectedY1End) * xPercent);
+				const int startY = RendererUtils::getLowerBoundedPixel(projectedYStart, frame.height);
+				const int endY = RendererUtils::getUpperBoundedPixel(projectedYEnd, frame.height);
+
+				for (int y = startY; y < endY; y++)
+				{
+					const double yPercent = ((static_cast<double>(y) + 0.50) - projectedYStart) / (projectedYEnd - projectedYStart);
+					const double v = yPercent;
+					const uint8_t fogTexel = SoftwareRenderer::sampleFogMatrixTexture<
+						ArenaRenderUtils::FOG_MATRIX_WIDTH, ArenaRenderUtils::FOG_MATRIX_HEIGHT>(fogMatrix, u, v);
+					double fogPercent = static_cast<double>(fogTexel) /
+						static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+
+					// Texture coordinates might be affected by current pixel coordinate.
+					// @todo: this is a placeholder until fog is more understood.
+					if (((x + y) & 1) != 0)
+					{
+						const double uRevised = random.nextReal();
+						const double vRevised = random.nextReal();
+						const uint8_t randomFogTexel = SoftwareRenderer::sampleFogMatrixTexture<
+							ArenaRenderUtils::FOG_MATRIX_WIDTH, ArenaRenderUtils::FOG_MATRIX_HEIGHT>(fogMatrix, uRevised, vRevised);
+						const double randomFogPercent = static_cast<double>(fogTexel) /
+							static_cast<double>(ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DIVISOR);
+						fogPercent *= randomFogPercent * random.nextReal();
+					}
+
+					// @temp: convert to true color.
+					const Double3 fogColor(1.0, 1.0, 1.0);
+
+					const int dstIndex = x + (y * frame.width);
+					const Double3 prevColor = Double3::fromRGB(frame.colorBuffer[dstIndex]);
+					const Double3 newColor = (prevColor + ((fogColor - prevColor) * fogPercent)).clamped();
+					frame.colorBuffer[dstIndex] = newColor.toRGB();
+				}
+			}
+		}
 	}
+	
+	const double correctedAspectRatio = ArenaRenderUtils::ASPECT_RATIO / frame.aspectRatio;
 
 	if (weatherInst.hasRain())
 	{
@@ -7860,8 +8063,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 			const double raindropTop = particle.yPercent;
 			const double raindropBottom = raindropTop + raindropBaseHeightPercent;
 
-			const int startX = RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width);
-			const int endX = RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width);
+			const int startX = std::max(RendererUtils::getLowerBoundedPixel(raindropLeft * frame.widthReal, frame.width), threadStartX);
+			const int endX = std::min(RendererUtils::getUpperBoundedPixel(raindropRight * frame.widthReal, frame.width), threadEndX);
 			const int startY = RendererUtils::getLowerBoundedPixel(raindropTop * frame.heightReal, frame.height);
 			const int endY = RendererUtils::getUpperBoundedPixel(raindropBottom * frame.heightReal, frame.height);
 
@@ -7873,14 +8076,12 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 			for (int y = startY; y < endY; y++)
 			{
 				const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+				const int textureY = std::clamp(static_cast<int>(yPercent * raindropTextureHeightReal), 0, raindropTextureHeight - 1);
+
 				for (int x = startX; x < endX; x++)
 				{
 					const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
-
-					const int textureX = std::clamp(
-						static_cast<int>(xPercent * raindropTextureWidthReal), 0, raindropTextureWidth - 1);
-					const int textureY = std::clamp(
-						static_cast<int>(yPercent * raindropTextureHeightReal), 0, raindropTextureHeight - 1);
+					const int textureX = std::clamp(static_cast<int>(xPercent * raindropTextureWidthReal), 0, raindropTextureWidth - 1);
 					const int textureIndex = textureX + (textureY * raindropTextureWidth);
 					const uint32_t texel = raindropTexture[textureIndex];
 
@@ -7955,8 +8156,9 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 		const WeatherInstance::SnowInstance &snowInst = weatherInst.getSnow();
 		const Buffer<WeatherInstance::Particle> &particles = snowInst.particles;
 
-		auto drawSnowflakeRange = [&frame, &snowflakeDims, &snowflakeRealDims, &snowflakeBaseHeightPercents,
-			&snowflakeScaledWidthPercents, &snowflakeTextures, &particles](int startIndex, int endIndex, int snowflakeType)
+		auto drawSnowflakeRange = [threadStartX, threadEndX, &frame, &snowflakeDims, &snowflakeRealDims,
+			&snowflakeBaseHeightPercents, &snowflakeScaledWidthPercents, &snowflakeTextures,
+			&particles](int startIndex, int endIndex, int snowflakeType)
 		{
 			const double scaledWidthPercent = snowflakeScaledWidthPercents[snowflakeType];
 			const double baseHeightPercent = snowflakeBaseHeightPercents[snowflakeType];
@@ -7976,8 +8178,8 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 				const double snowflakeTop = particle.yPercent;
 				const double snowflakeBottom = snowflakeTop + baseHeightPercent;
 
-				const int startX = RendererUtils::getLowerBoundedPixel(snowflakeLeft * frame.widthReal, frame.width);
-				const int endX = RendererUtils::getUpperBoundedPixel(snowflakeRight * frame.widthReal, frame.width);
+				const int startX = std::max(RendererUtils::getLowerBoundedPixel(snowflakeLeft * frame.widthReal, frame.width), threadStartX);
+				const int endX = std::min(RendererUtils::getUpperBoundedPixel(snowflakeRight * frame.widthReal, frame.width), threadEndX);
 				const int startY = RendererUtils::getLowerBoundedPixel(snowflakeTop * frame.heightReal, frame.height);
 				const int endY = RendererUtils::getUpperBoundedPixel(snowflakeBottom * frame.heightReal, frame.height);
 
@@ -7989,14 +8191,12 @@ void SoftwareRenderer::drawWeather(const WeatherInstance &weatherInst, const Sha
 				for (int y = startY; y < endY; y++)
 				{
 					const double yPercent = ((static_cast<double>(y) + 0.50) - startYReal) / (endYReal - startYReal);
+					const int textureY = std::clamp(static_cast<int>(yPercent * textureHeightReal), 0, textureHeight - 1);
+
 					for (int x = startX; x < endX; x++)
 					{
 						const double xPercent = ((static_cast<double>(x) + 0.50) - startXReal) / (endXReal - startXReal);
-
-						const int textureX = std::clamp(
-							static_cast<int>(xPercent * textureWidthReal), 0, textureWidth - 1);
-						const int textureY = std::clamp(
-							static_cast<int>(yPercent * textureHeightReal), 0, textureHeight - 1);
+						const int textureX = std::clamp(static_cast<int>(xPercent * textureWidthReal), 0, textureWidth - 1);
 						const int textureIndex = textureX + (textureY * textureWidth);
 						const uint32_t texel = texture[textureIndex];
 						const int index = x + (y * frame.width);
@@ -8112,14 +8312,26 @@ void SoftwareRenderer::renderThreadLoop(RenderThreadData &threadData, int thread
 
 		// Wait for other threads to finish flats.
 		threadBarrier(flats);
+
+		RenderThreadData::Weather &weather = threadData.weather;
+		lk.lock();
+		threadData.condVar.wait(lk, [&weather]() { return weather.doneDrawingFlats; });
+		lk.unlock();
+
+		// Draw this thread's portion of the weather.
+		SoftwareRenderer::drawWeather(startX, endX, *weather.weatherInst, *threadData.camera, *threadData.shadingInfo,
+			*weather.random, *threadData.frame);
+
+		// Wait for other threads to finish the weather.
+		threadBarrier(weather);
 	}
 }
 
 void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction, double fovY, double ambient,
 	double daytimePercent, double chasmAnimPercent, double latitude, bool nightLightsAreActive,
 	bool isExterior, bool playerHasLight, int chunkDistance, double ceilingScale, const LevelInstance &levelInst,
-	const SkyInstance &skyInst, const WeatherInstance &weatherInst, const EntityDefinitionLibrary &entityDefLibrary,
-	const Palette &palette, uint32_t *colorBuffer)
+	const SkyInstance &skyInst, const WeatherInstance &weatherInst, Random &random, 
+	const EntityDefinitionLibrary &entityDefLibrary, const Palette &palette, uint32_t *colorBuffer)
 {
 	// Constants for screen dimensions.
 	const double widthReal = static_cast<double>(this->width);
@@ -8153,6 +8365,7 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 		this->visLightLists, this->voxelTextures, this->chasmTextureGroups, this->occlusion);
 	this->threadData.flats.init(flatNormal, this->visibleFlats, this->visibleLights, this->visLightLists,
 		this->entityTextures);
+	this->threadData.weather.init(weatherInst, random);
 
 	// Give the render threads the go signal. They can work on the sky and voxels while this thread
 	// does things like resetting occlusion and doing visible flat determination.
@@ -8212,19 +8425,25 @@ void SoftwareRenderer::render(const CoordDouble3 &eye, const Double3 &direction,
 
 	// Let the render threads know that they can start drawing flats.
 	this->threadData.flats.doneSorting = true;
-
 	lk.unlock();
 	this->threadData.condVar.notify_all();
 
-	// Wait until render threads are done drawing flats.
 	lk.lock();
 	this->threadData.condVar.wait(lk, [this]()
 	{
 		return this->threadData.flats.threadsDone == this->threadData.totalThreads;
 	});
 
-	// Draw weather (if any) on the main thread.
-	this->drawWeather(weatherInst, shadingInfo, frame);
+	// Let the render threads know that they can start drawing weather.
+	this->threadData.weather.doneDrawingFlats = true;
+	lk.unlock();
+	this->threadData.condVar.notify_all();
+
+	lk.lock();
+	this->threadData.condVar.wait(lk, [this]()
+	{
+		return this->threadData.weather.threadsDone == this->threadData.totalThreads;
+	});
 }
 
 void SoftwareRenderer::submitFrame(const RenderDefinitionGroup &defGroup, const RenderInstanceGroup &instGroup,

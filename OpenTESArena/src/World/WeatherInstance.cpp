@@ -47,14 +47,19 @@ void WeatherInstance::Particle::init(double xPercent, double yPercent)
 	this->yPercent = yPercent;
 }
 
-void WeatherInstance::FogInstance::init()
+void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureManager)
 {
-	DebugNotImplemented();
+	// Put the zeroed row in the middle of the texture since fog works a bit differently in this engine.
+	constexpr int zeroedRow = ArenaRenderUtils::FOG_MATRIX_HEIGHT / 2;
+	if (!ArenaRenderUtils::tryMakeFogMatrix(zeroedRow, random, textureManager, &this->fogMatrix))
+	{
+		DebugLogWarning("Couldn't make fog matrix.");
+	}
 }
 
 void WeatherInstance::FogInstance::update(double dt)
 {
-	DebugNotImplemented();
+	// Do nothing for now.
 }
 
 void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
@@ -327,6 +332,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 	{
 		const WeatherDefinition::OvercastDefinition &overcastDef = weatherDef.getOvercast();
 		this->fog = overcastDef.heavyFog;
+		this->fogInst.init(random, textureManager);
 	}
 	else if (weatherDefType == WeatherDefinition::Type::Rain)
 	{
@@ -341,6 +347,7 @@ void WeatherInstance::init(const WeatherDefinition &weatherDef, const Clock &clo
 		const WeatherDefinition::SnowDefinition &snowDef = weatherDef.getSnow();
 		this->fog = snowDef.heavyFog;
 		this->snow = true;
+		this->fogInst.init(random, textureManager);
 		this->snowInst.init(random);
 	}
 	else
