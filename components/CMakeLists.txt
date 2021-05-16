@@ -37,9 +37,11 @@ IF (WIN32)
 		misc/*.h
 		misc/*.hpp
 		misc/*.cpp)
+
+	SET(COMP_SOURCES ${COMP_SOURCES} ${COMP_WIN32_SOURCES})
 ENDIF (WIN32)
 
-ADD_LIBRARY (components STATIC ${COMP_SOURCES} ${COMP_WIN32_SOURCES})
+ADD_LIBRARY (components STATIC ${COMP_SOURCES})
 
 # Visual Studio filters.
 SOURCE_GROUP("archives" FILES ${COMP_ARCHIVES})
