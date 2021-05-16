@@ -59,7 +59,7 @@ void WeatherInstance::FogInstance::init(Random &random, TextureManager &textureM
 
 void WeatherInstance::FogInstance::update(double dt)
 {
-	DebugLogWarning("FogInstance::update() not implemented");
+	// Do nothing for now.
 }
 
 void WeatherInstance::RainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
