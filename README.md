@@ -109,17 +109,19 @@ If you would like to use a different sound patches library like OPL3, edit `Midi
 - [WildMIDI 0.4.3](https://github.com/Mindwerks/wildmidi/releases) (optional; required for music)
 
 ### Building the executable
-- Create a `build` folder in the project's top-level directory.
-- Use CMake to generate your project files in `build`. In a Unix terminal, the command might look like:
-```bash
-cd build
-cmake ..
-make -j4
-```
-- Other user-specific parameters may be necessary for CMake depending on your IDE.
+- Navigate to the root of the repository
+- Use CMake to generate your project file (Visual Studio .sln, Unix Makefile, etc.). In a Unix terminal, the commands might look like:
+    ```bash
+    mkdir build
+    cd build
+    cmake -DCMAKE_BUILD_TYPE=<?> ..
+    make -j8
+    ```
+    where `CMAKE_BUILD_TYPE` is one of `Debug`|`DebugFast`|`ReleaseGeneric`|`ReleaseNative`. For maximum optimizations, `ReleaseNative` should be used.
+- Other parameters for CMake may be necessary depending on the IDE you are using.
 
 ### Running the executable
-- Verify that the `data` and `options` folders are in the same folder as the executable. If not, then copy them from the project's root folder.
+- Verify that the `data` and `options` folders are in the same folder as the executable. If not, then copy them from the project's root folder (this should be fixed in the future with a post-build command).
 - Make sure that `MidiConfig` and `ArenaPath` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively).
 
 If you struggle, here are some more detailed guides:
