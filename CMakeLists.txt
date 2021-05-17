@@ -13,46 +13,56 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-# Configure for GNU Compiler (also affects MSYS2). Use "MATCHES" instead of "STREQUAL"
-# to cover both Clang and AppleClang.
-IF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC
+# Replace default configurations (Debug/Release/RelWithDebInfo/MinSizeRel) with custom ones.
+# - Debug: maximum debugging
+# - DebugFast: like Debug but for typical development
+# - ReleaseGeneric: distributed at project releases, works with the most CPUs
+# - ReleaseNative: maximum performance for the computer it's compiled on
+set(CMAKE_CONFIGURATION_TYPES "Debug;DebugFast;ReleaseGeneric;ReleaseNative" CACHE STRING "" FORCE)
+
+# CMake-required flags for new configurations.
+SET(CMAKE_EXE_LINKER_FLAGS_DEBUGFAST "${CMAKE_EXE_LINKER_FLAGS_DEBUG}")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
+
+# Compiler settings (optimizations, debugging, etc.)
+IF (MSVC)
+    # Multi-processor compilation.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
+    # Add custom debug flags to DebugFast (/RTCs and /RTCu are not compatible with /Ox).
+    SET(CMAKE_CXX_FLAGS_DEBUGFAST "/DEBUG /Zi /MDd /Ox /Ob0")
+    SET(CMAKE_RC_FLAGS_DEBUGFAST "${CMAKE_RC_FLAGS_DEBUG}")
+
+    # Add various optimizations to release builds.
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "/O2 /Ob2 /Oi /Ot /Oy /GL /fp:fast")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASEGENERIC}")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} /arch:AVX2")
+    SET(CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC "${CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC} /LTCG")
+    SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASEGENERIC}")
+ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC, {Apple}Clang, MSYS2.
+    # To use std::thread and friends, we must pass -lpthread and -pthread to the compiler and Linker for GCC.
     IF (NOT WIN32 AND NOT APPLE)
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread")
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
 
-    # Keep debug info.
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+    # Debug builds.
+    SET(CMAKE_CXX_FLAGS_DEBUG "-g")
+    SET(CMAKE_CXX_FLAGS_DEBUGFAST "-g -Og")
 
-    # Optimizations. These settings are meant to work with a variety of CPUs.
-    # Modify for your personal build if desired.
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.1")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx")
-    #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=neon")
+    # Generic release build (works with a variety of CPUs).
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "-g -O3 -flto")
 
-    # Sanitizers (some can affect performance).
+    # Native release build for the computer compiling it.
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -Ofast -flto -march=native")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mavx")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mfpu=neon")
+
+    # Sanitizers (can affect performance).
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
-ENDIF ()
-
-# We want RelWithDebInfo to actually include debug stuff (define _DEBUG
-# instead of NDEBUG)
-FOREACH(flag_var CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-    IF(${flag_var} MATCHES "-DNDEBUG")
-        STRING(REGEX REPLACE "-DNDEBUG" "-D_DEBUG" ${flag_var} "${${flag_var}}")
-    ENDIF()
-ENDFOREACH()
-
-IF (MSVC)
-    # Add multi-processor compilation.
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 ENDIF ()
 
 ADD_SUBDIRECTORY(components)

@@ -106,6 +106,10 @@ IF (NOT APPLE)
     FILE(COPY ${TES_DATA_FOLDER} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+    # @todo: probably need to add some post-build command here for data/options folders for
+    # the folder the executable goes into. This is necessary on MSVC and Linux/Raspberry Pi.
+    # The destination is probably ${OpenTESArena_BINARY_DIR}.
+
     # Add the rest
     ADD_EXECUTABLE(TESArena ${TES_SOURCES} ${TES_WIN32_RESOURCES})
 ELSE (APPLE)
