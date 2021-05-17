@@ -16,7 +16,7 @@ set(CMAKE_CXX_EXTENSIONS ON)
 # Replace default configurations (Debug/Release/RelWithDebInfo/MinSizeRel) with custom ones.
 # - Debug: maximum debugging
 # - DebugFast: like Debug but for typical development
-# - ReleaseGeneric: distributed at project releases, works with most CPUs
+# - ReleaseGeneric: distributed at project releases, works with the most CPUs
 # - ReleaseNative: maximum performance for the computer it's compiled on
 set(CMAKE_CONFIGURATION_TYPES "Debug;DebugFast;ReleaseGeneric;ReleaseNative" CACHE STRING "" FORCE)
 
