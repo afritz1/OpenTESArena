@@ -11,6 +11,7 @@
 #include "ImageSequencePanel.h"
 #include "LoadSavePanel.h"
 #include "MainMenuPanel.h"
+#include "MainMenuUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
@@ -55,14 +56,36 @@ namespace
 	const int TestType_Wilderness = 3;
 	const int TestType_Dungeon = 4;
 
-	const Rect TestButtonRect(135, ArenaRenderUtils::SCREEN_HEIGHT - 17, 30, 14);
-
 	// Main quest locations. There are eight map dungeons and eight staff dungeons.
 	// The special cases are the start dungeon and the final dungeon.
 	const int MainQuestLocationCount = 18;
 
 	// Small hack for main menu testing.
 	enum class SpecialCaseType { None, StartDungeon };
+
+	std::string GetTestTypeName(int type)
+	{
+		if (type == TestType_MainQuest)
+		{
+			return "Main Quest";
+		}
+		else if (type == TestType_Interior)
+		{
+			return "Interior";
+		}
+		else if (type == TestType_City)
+		{
+			return "City";
+		}
+		else if (type == TestType_Wilderness)
+		{
+			return "Wilderness";
+		}
+		else
+		{
+			return "Dungeon";
+		}
+	}
 
 	void GetMainQuestLocationFromIndex(int testIndex, const ExeData &exeData,
 		int *outLocationID, int *outProvinceID, SpecialCaseType *outSpecialCaseType)
@@ -184,9 +207,10 @@ namespace
 		RandomVillage
 	};
 
+	const std::string WildPlaceholderName = "WILD";
 	const std::vector<std::string> WildernessLocations =
 	{
-		"WILD" // Arbitrary name (since it's not loading WILD.MIF anymore).
+		WildPlaceholderName
 	};
 
 	const std::string RandomNamedDungeon = "Random Named";
@@ -228,21 +252,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 {
 	this->loadButton = []()
 	{
-		Int2 center(168, 58);
-		int width = 150;
-		int height = 20;
 		auto function = [](Game &game)
 		{
 			game.setPanel<LoadSavePanel>(game, LoadSavePanel::Type::Load);
 		};
-		return Button<Game&>(center, width, height, function);
+
+		return Button<Game&>(
+			MainMenuUiView::LoadButtonCenterPoint,
+			MainMenuUiView::LoadButtonWidth,
+			MainMenuUiView::LoadButtonHeight,
+			function);
 	}();
 
 	this->newButton = []()
 	{
-		Int2 center(168, 112);
-		int width = 150;
-		int height = 20;
 		auto function = [](Game &game)
 		{
 			// Link together the opening scroll, intro cinematic, and character creation.
@@ -318,7 +341,11 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			audioManager.setMusic(musicDef);
 		};
 
-		return Button<Game&>(center, width, height, function);
+		return Button<Game&>(
+			MainMenuUiView::NewGameButtonCenterPoint,
+			MainMenuUiView::NewGameButtonWidth,
+			MainMenuUiView::NewGameButtonHeight,
+			function);
 	}();
 
 	this->quickStartButton = [&game]()
@@ -815,9 +842,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 	this->exitButton = []()
 	{
-		Int2 center(168, 158);
-		int width = 45;
-		int height = 20;
 		auto function = []()
 		{
 			SDL_Event e;
@@ -825,15 +849,16 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			e.quit.timestamp = 0;
 			SDL_PushEvent(&e);
 		};
-		return Button<>(center, width, height, function);
+
+		return Button<>(
+			MainMenuUiView::ExitButtonCenterPoint,
+			MainMenuUiView::ExitButtonWidth,
+			MainMenuUiView::ExitButtonHeight,
+			function);
 	}();
 
 	this->testTypeUpButton = []()
 	{
-		const int x = 312;
-		const int y = 164;
-		const int width = 8;
-		const int height = 8;
 		auto function = [](MainMenuPanel &panel)
 		{
 			panel.testType = (panel.testType > 0) ? (panel.testType - 1) : (MaxTestTypes - 1);
@@ -843,15 +868,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			panel.testIndex2 = 1;
 			panel.testWeather = 0;
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestTypeUpButtonX,
+			MainMenuUiView::TestTypeUpButtonY,
+			MainMenuUiView::TestTypeUpButtonWidth,
+			MainMenuUiView::TestTypeUpButtonHeight,
+			function);
 	}();
 
-	this->testTypeDownButton = [this]()
+	this->testTypeDownButton = []()
 	{
-		const int x = this->testTypeUpButton.getX();
-		const int y = this->testTypeUpButton.getY() + this->testTypeUpButton.getHeight();
-		const int width = this->testTypeUpButton.getWidth();
-		const int height = this->testTypeUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			panel.testType = (panel.testType < (MaxTestTypes - 1)) ? (panel.testType + 1) : 0;
@@ -861,16 +888,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 			panel.testIndex2 = 1;
 			panel.testWeather = 0;
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestTypeDownButtonX,
+			MainMenuUiView::TestTypeDownButtonY,
+			MainMenuUiView::TestTypeDownButtonWidth,
+			MainMenuUiView::TestTypeDownButtonHeight,
+			function);
 	}();
 
-	this->testIndexUpButton = [this]()
+	this->testIndexUpButton = []()
 	{
-		const int x = this->testTypeUpButton.getX() - this->testTypeUpButton.getWidth() - 2;
-		const int y = this->testTypeUpButton.getY() +
-			(this->testTypeUpButton.getHeight() * 2) + 2;
-		const int width = this->testTypeDownButton.getWidth();
-		const int height = this->testTypeDownButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			const int count = [&panel]()
@@ -906,15 +934,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				panel.testIndex2 = 1;
 			}
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestIndexUpButtonX,
+			MainMenuUiView::TestIndexUpButtonY,
+			MainMenuUiView::TestIndexUpButtonWidth,
+			MainMenuUiView::TestIndexUpButtonHeight,
+			function);
 	}();
 
-	this->testIndexDownButton = [this]()
+	this->testIndexDownButton = []()
 	{
-		const int x = this->testIndexUpButton.getX();
-		const int y = this->testIndexUpButton.getY() + this->testIndexUpButton.getHeight();
-		const int width = this->testIndexUpButton.getWidth();
-		const int height = this->testIndexUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			const int count = [&panel]()
@@ -950,15 +980,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				panel.testIndex2 = 1;
 			}
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestIndexDownButtonX,
+			MainMenuUiView::TestIndexDownButtonY,
+			MainMenuUiView::TestIndexDownButtonWidth,
+			MainMenuUiView::TestIndexDownButtonHeight,
+			function);
 	}();
 
-	this->testIndex2UpButton = [this]()
+	this->testIndex2UpButton = []()
 	{
-		const int x = this->testIndexUpButton.getX() + 10;
-		const int y = this->testIndexUpButton.getY();
-		const int width = this->testIndexUpButton.getWidth();
-		const int height = this->testIndexUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			DebugAssert(panel.testType == TestType_Interior);
@@ -970,15 +1002,17 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			panel.testIndex2 = (panel.testIndex2 < maxIndex) ? (panel.testIndex2 + 1) : minIndex;
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestIndex2UpButtonX,
+			MainMenuUiView::TestIndex2UpButtonY, 
+			MainMenuUiView::TestIndex2UpButtonWidth,
+			MainMenuUiView::TestIndex2UpButtonHeight,
+			function);
 	}();
 
-	this->testIndex2DownButton = [this]()
+	this->testIndex2DownButton = []()
 	{
-		const int x = this->testIndex2UpButton.getX();
-		const int y = this->testIndex2UpButton.getY() + this->testIndex2UpButton.getHeight();
-		const int width = this->testIndex2UpButton.getWidth();
-		const int height = this->testIndex2UpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
 			DebugAssert(panel.testType == TestType_Interior);
@@ -990,20 +1024,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 
 			panel.testIndex2 = (panel.testIndex2 > minIndex) ? (panel.testIndex2 - 1) : maxIndex;
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestIndex2DownButtonX,
+			MainMenuUiView::TestIndex2DownButtonY,
+			MainMenuUiView::TestIndex2DownButtonWidth,
+			MainMenuUiView::TestIndex2DownButtonHeight,
+			function);
 	}();
 
-	this->testWeatherUpButton = [this]()
+	this->testWeatherUpButton = []()
 	{
-		const int x = this->testTypeUpButton.getX();
-		const int y = this->testTypeUpButton.getY() - 2 -
-			(2 * this->testTypeUpButton.getHeight());
-		const int width = this->testTypeUpButton.getWidth();
-		const int height = this->testTypeUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			DebugAssert((panel.testType == TestType_City) ||
-				(panel.testType == TestType_Wilderness));
+			DebugAssert((panel.testType == TestType_City) || (panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
 			{
@@ -1011,19 +1045,20 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				return (panel.testWeather > 0) ? (panel.testWeather - 1) : (count - 1);
 			}();
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestWeatherUpButtonX,
+			MainMenuUiView::TestWeatherUpButtonY,
+			MainMenuUiView::TestWeatherUpButtonWidth,
+			MainMenuUiView::TestWeatherUpButtonHeight,
+			function);
 	}();
 
-	this->testWeatherDownButton = [this]()
+	this->testWeatherDownButton = []()
 	{
-		const int x = this->testWeatherUpButton.getX();
-		const int y = this->testWeatherUpButton.getY() + this->testWeatherUpButton.getHeight();
-		const int width = this->testWeatherUpButton.getWidth();
-		const int height = this->testWeatherUpButton.getHeight();
 		auto function = [](MainMenuPanel &panel)
 		{
-			DebugAssert((panel.testType == TestType_City) ||
-				(panel.testType == TestType_Wilderness));
+			DebugAssert((panel.testType == TestType_City) || (panel.testType == TestType_Wilderness));
 
 			panel.testWeather = [&panel]()
 			{
@@ -1031,7 +1066,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 				return (panel.testWeather < (count - 1)) ? (panel.testWeather + 1) : 0;
 			}();
 		};
-		return Button<MainMenuPanel&>(x, y, width, height, function);
+
+		return Button<MainMenuPanel&>(
+			MainMenuUiView::TestWeatherDownButtonX,
+			MainMenuUiView::TestWeatherDownButtonY,
+			MainMenuUiView::TestWeatherDownButtonWidth,
+			MainMenuUiView::TestWeatherDownButtonHeight,
+			function);
 	}();
 
 	this->testType = 0;
@@ -1206,7 +1247,7 @@ void MainMenuPanel::handleEvent(const SDL_Event &e)
 		{
 			this->exitButton.click();
 		}
-		else if (TestButtonRect.contains(originalPoint))
+		else if (MainMenuUiView::TestButtonRect.contains(originalPoint))
 		{
 			// Enter the game world immediately (for testing purposes). Use the test traits
 			// selected on the main menu.
@@ -1277,20 +1318,19 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 {
 	// Draw test buttons.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &arrowsPaletteFilename = ArenaPaletteName::CharSheet;
-	const std::optional<PaletteID> arrowsPaletteID = textureManager.tryGetPaletteID(arrowsPaletteFilename.c_str());
+	const TextureAssetReference &arrowsPaletteTextureAssetRef = MainMenuUiView::getTestArrowsPaletteTextureAssetRef();
+	const std::optional<PaletteID> arrowsPaletteID = textureManager.tryGetPaletteID(arrowsPaletteTextureAssetRef);
 	if (!arrowsPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get arrows palette ID for \"" + arrowsPaletteFilename + "\".");
+		DebugLogError("Couldn't get arrows palette ID for \"" + arrowsPaletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	const std::string &arrowsTextureFilename = ArenaTextureName::UpDown;
-	const std::optional<TextureBuilderID> arrowsTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(arrowsTextureFilename.c_str());
+	const TextureAssetReference &arrowsTextureAssetRef = MainMenuUiView::getTestArrowsTextureAssetRef();
+	const std::optional<TextureBuilderID> arrowsTextureBuilderID = textureManager.tryGetTextureBuilderID(arrowsTextureAssetRef);
 	if (!arrowsTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get arrows texture builder ID for \"" + arrowsTextureFilename + "\".");
+		DebugLogError("Couldn't get arrows texture builder ID for \"" + arrowsTextureAssetRef.filename + "\".");
 		return;
 	}
 
@@ -1310,52 +1350,25 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 			this->testWeatherUpButton.getX(), this->testWeatherUpButton.getY(), textureManager);
 	}
 
-	const Texture testButton = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		TestButtonRect.getWidth(), TestButtonRect.getHeight(), textureManager, renderer);
-	renderer.drawOriginal(testButton, TestButtonRect.getLeft(), TestButtonRect.getTop(),
+	const Rect &testButtonRect = MainMenuUiView::TestButtonRect;
+	const Texture testButton = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
+		testButtonRect.getWidth(), testButtonRect.getHeight(), textureManager, renderer);
+	renderer.drawOriginal(testButton, testButtonRect.getLeft(), testButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 
 	// Draw test text.
 	const auto &fontLibrary = this->getGame().getFontLibrary();
 	const RichTextString testButtonText(
 		"Test",
-		FontName::Arena,
-		Color::White,
-		TextAlignment::Center,
+		MainMenuUiView::TestButtonFontName,
+		MainMenuUiView::getTestButtonTextColor(),
+		MainMenuUiView::TestButtonTextAlignment,
 		fontLibrary);
 
-	const Int2 testButtonTextBoxPoint(
-		TestButtonRect.getLeft() + (TestButtonRect.getWidth() / 2),
-		TestButtonRect.getTop() + (TestButtonRect.getHeight() / 2));
-	const TextBox testButtonTextBox(testButtonTextBoxPoint, testButtonText, fontLibrary, renderer);
+	const TextBox testButtonTextBox(MainMenuUiView::TestButtonTextBoxPoint, testButtonText, fontLibrary, renderer);
+	renderer.drawOriginal(testButtonTextBox.getTexture(), testButtonTextBox.getX(), testButtonTextBox.getY());
 
-	renderer.drawOriginal(testButtonTextBox.getTexture(),
-		testButtonTextBox.getX(), testButtonTextBox.getY());
-
-	const std::string testTypeName = [this]()
-	{
-		if (this->testType == TestType_MainQuest)
-		{
-			return "Main Quest";
-		}
-		else if (this->testType == TestType_Interior)
-		{
-			return "Interior";
-		}
-		else if (this->testType == TestType_City)
-		{
-			return "City";
-		}
-		else if (this->testType == TestType_Wilderness)
-		{
-			return "Wilderness";
-		}
-		else
-		{
-			return "Dungeon";
-		}
-	}();
-
+	const std::string testTypeName = GetTestTypeName(this->testType);
 	const RichTextString testTypeText(
 		"Test type: " + testTypeName,
 		testButtonText.getFontName(),
@@ -1363,15 +1376,10 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		TextAlignment::Left,
 		fontLibrary);
 
-	const int testTypeTextBoxX = this->testTypeUpButton.getX() -
-		testTypeText.getDimensions().x - 2;
-	const int testTypeTextBoxY = this->testTypeUpButton.getY() +
-		(testTypeText.getDimensions().y / 2);
-	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY,
-		testTypeText, fontLibrary, renderer);
-
-	renderer.drawOriginal(testTypeTextBox.getTexture(),
-		testTypeTextBox.getX(), testTypeTextBox.getY());
+	const int testTypeTextBoxX = this->testTypeUpButton.getX() - testTypeText.getDimensions().x - 2;
+	const int testTypeTextBoxY = this->testTypeUpButton.getY() + (testTypeText.getDimensions().y / 2);
+	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY, testTypeText, fontLibrary, renderer);
+	renderer.drawOriginal(testTypeTextBox.getTexture(), testTypeTextBox.getX(), testTypeTextBox.getY());
 
 	const RichTextString testNameText(
 		"Test location: " + this->getSelectedTestName(),
@@ -1379,14 +1387,10 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		testTypeText.getColor(),
 		testTypeText.getAlignment(),
 		fontLibrary);
-	const int testNameTextBoxX = this->testIndexUpButton.getX() -
-		testNameText.getDimensions().x - 2;
-	const int testNameTextBoxY = this->testIndexUpButton.getY() +
-		(testNameText.getDimensions().y / 2);
-	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY,
-		testNameText, fontLibrary, renderer);
-	renderer.drawOriginal(testNameTextBox.getTexture(),
-		testNameTextBox.getX(), testNameTextBox.getY());
+	const int testNameTextBoxX = this->testIndexUpButton.getX() - testNameText.getDimensions().x - 2;
+	const int testNameTextBoxY = this->testIndexUpButton.getY() + (testNameText.getDimensions().y / 2);
+	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY, testNameText, fontLibrary, renderer);
+	renderer.drawOriginal(testNameTextBox.getTexture(), testNameTextBox.getX(), testNameTextBox.getY());
 
 	// Draw weather text if applicable.
 	if ((this->testType == TestType_City) || (this->testType == TestType_Wilderness))
@@ -1401,15 +1405,12 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 			testTypeText.getAlignment(),
 			fontLibrary);
 
-		const int testWeatherTextBoxX = this->testWeatherUpButton.getX() -
-			testWeatherText.getDimensions().x - 2;
-		const int testWeatherTextBoxY = this->testWeatherUpButton.getY() +
-			(testWeatherText.getDimensions().y / 2);
+		const int testWeatherTextBoxX = this->testWeatherUpButton.getX() - testWeatherText.getDimensions().x - 2;
+		const int testWeatherTextBoxY = this->testWeatherUpButton.getY() + (testWeatherText.getDimensions().y / 2);
 		const TextBox testWeatherTextBox(testWeatherTextBoxX, testWeatherTextBoxY,
 			testWeatherText, fontLibrary, renderer);
 
-		renderer.drawOriginal(testWeatherTextBox.getTexture(),
-			testWeatherTextBox.getX(), testWeatherTextBox.getY());
+		renderer.drawOriginal(testWeatherTextBox.getTexture(), testWeatherTextBox.getX(), testWeatherTextBox.getY());
 	}
 }
 
@@ -1420,20 +1421,19 @@ void MainMenuPanel::render(Renderer &renderer)
 
 	// Draw main menu.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &mainMenuTextureFilename = ArenaTextureName::MainMenu;
-	const std::string &mainMenuPaletteFilename = mainMenuTextureFilename;
-	const std::optional<PaletteID> mainMenuPaletteID = textureManager.tryGetPaletteID(mainMenuPaletteFilename.c_str());
+	const TextureAssetReference &backgroundPaletteTextureAssetRef = MainMenuUiView::getPaletteTextureAssetRef();
+	const std::optional<PaletteID> mainMenuPaletteID = textureManager.tryGetPaletteID(backgroundPaletteTextureAssetRef);
 	if (!mainMenuPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get main menu palette ID for \"" + mainMenuPaletteFilename + "\".");
+		DebugLogError("Couldn't get main menu palette ID for \"" + backgroundPaletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	const std::optional<TextureBuilderID> mainMenuTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(mainMenuTextureFilename.c_str());
+	const TextureAssetReference &backgroundTextureAssetRef = MainMenuUiView::getBackgroundTextureAssetRef();
+	const std::optional<TextureBuilderID> mainMenuTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
 	if (!mainMenuTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get main menu texture builder ID for \"" + mainMenuTextureFilename + "\".");
+		DebugLogError("Couldn't get main menu texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
