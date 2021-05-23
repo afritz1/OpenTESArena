@@ -77,6 +77,11 @@ TextureAssetReference CharacterSheetUiView::getStatsBackgroundTextureAssetRef()
 	return TextureAssetReference(std::string(ArenaTextureName::CharacterStats));
 }
 
+TextureAssetReference CharacterSheetUiView::getEquipmentBackgroundTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::CharacterEquipment));
+}
+
 TextureAssetReference CharacterSheetUiView::getNextPageButtonTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::NextPage));

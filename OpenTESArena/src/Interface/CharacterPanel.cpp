@@ -151,6 +151,7 @@ void CharacterPanel::render(Renderer &renderer)
 	const std::optional<TextureBuilderID> pantsTextureBuilderID = textureManager.tryGetTextureBuilderID(pantsTextureAssetRef);
 	const std::optional<TextureBuilderID> statsBackgroundTextureID = textureManager.tryGetTextureBuilderID(statsBackgroundTextureAssetRef);
 	const std::optional<TextureBuilderID> nextPageTextureID = textureManager.tryGetTextureBuilderID(nextPageTextureAssetRef);
+	DebugAssert(headTextureBuilderID.has_value());
 	DebugAssert(bodyTextureBuilderID.has_value());
 	DebugAssert(shirtTextureBuilderID.has_value());
 	DebugAssert(pantsTextureBuilderID.has_value());
