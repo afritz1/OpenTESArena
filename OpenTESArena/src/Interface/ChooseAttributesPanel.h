@@ -22,10 +22,10 @@ class ChooseAttributesPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
-	Button<Game&> backToRaceButton, doneButton;
-	Button<ChooseAttributesPanel&, bool> portraitButton;
-	std::vector<Int2> headOffsets;
-	bool canChangePortrait;
+	Button<Game&> backToRaceButton;
+	Button<Game&, bool*> doneButton;
+	Button<Game&, bool> portraitButton;
+	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 public:
 	ChooseAttributesPanel(Game &game);
 	virtual ~ChooseAttributesPanel() = default;
