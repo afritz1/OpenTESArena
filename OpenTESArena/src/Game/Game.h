@@ -16,7 +16,6 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputManager.h"
-#include "../Interface/FPSCounter.h"
 #include "../Interface/Panel.h"
 #include "../Media/CinematicLibrary.h"
 #include "../Media/TextureManager.h"
@@ -24,6 +23,7 @@
 #include "../UI/FontLibrary.h"
 
 #include "components/utilities/Allocator.h"
+#include "components/utilities/FPSCounter.h"
 #include "components/utilities/Profiler.h"
 
 // This class holds the current game state, manages the primary game loop, and 
