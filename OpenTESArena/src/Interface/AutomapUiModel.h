@@ -6,9 +6,6 @@
 
 namespace AutomapUiModel
 {
-	// How fast the automap moves when scrolling.
-	constexpr double ScrollSpeed = 100.0;
-
 	// Calculates automap screen offset in pixels for rendering.
 	Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
 

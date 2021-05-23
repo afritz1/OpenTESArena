@@ -30,6 +30,9 @@ namespace AutomapUiView
 	// Number of chunks away from the player to display in the automap.
 	constexpr int ChunkDistance = 1;
 
+	// How fast the automap moves when scrolling.
+	constexpr double ScrollSpeed = 100.0;
+
 	// Click areas for compass directions.
 	const Rect CompassUpRegion(264, 23, 14, 14);
 	const Rect CompassDownRegion(264, 60, 14, 14);

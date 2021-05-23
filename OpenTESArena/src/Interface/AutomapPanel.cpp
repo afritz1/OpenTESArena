@@ -171,7 +171,7 @@ void AutomapPanel::handleMouse(double dt)
 	{
 		// @todo: move to AutomapUiController
 
-		const double scrollSpeed = AutomapUiModel::ScrollSpeed * dt;
+		const double scrollSpeed = AutomapUiView::ScrollSpeed * dt;
 
 		// Modify the automap offset based on input. The directions are reversed because
 		// to go right means to push the map left.
