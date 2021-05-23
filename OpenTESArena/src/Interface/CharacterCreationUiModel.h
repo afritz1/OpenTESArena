@@ -11,6 +11,12 @@ namespace CharacterCreationUiModel
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
 
+	std::string getChooseClassCreationTitleText(Game &game);
+	std::string getGenerateClassButtonText(Game &game);
+	std::string getGenerateClassButtonTooltipText();
+	std::string getSelectClassButtonText(Game &game);
+	std::string getSelectClassButtonTooltipText();
+
 	std::string getChooseAttributesText(Game &game);
 
 	std::string getAttributesMessageBoxTitleText(Game &game);

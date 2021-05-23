@@ -13,6 +13,34 @@ class Game;
 
 namespace CharacterCreationUiView
 {
+	constexpr int ChooseClassCreationPopUpTextureWidth = 180;
+	constexpr int ChooseClassCreationPopUpTextureHeight = 40;
+	constexpr TextureUtils::PatternType ChooseClassCreationPopUpPatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseClassCreationTitleCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
+	constexpr FontName ChooseClassCreationTitleFontName = FontName::A;
+	const Color ChooseClassCreationTitleColor(48, 12, 12);
+	constexpr TextAlignment ChooseClassCreationTitleAlignment = TextAlignment::Center;
+	constexpr int ChooseClassCreationTitleLineSpacing = 1;
+
+	const Int2 GenerateClassTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
+	constexpr FontName GenerateClassTextFontName = FontName::A;
+	const Color GenerateClassTextColor(48, 12, 12);
+	constexpr TextAlignment GenerateClassTextAlignment = TextAlignment::Center;
+
+	const Int2 GenerateClassButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
+	constexpr int GenerateClassButtonWidth = 175;
+	constexpr int GenerateClassButtonHeight = 35;
+
+	const Int2 SelectClassTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
+	constexpr FontName SelectClassTextFontName = FontName::A;
+	const Color SelectClassTextColor(48, 12, 12);
+	constexpr TextAlignment SelectClassTextAlignment = TextAlignment::Center;
+
+	const Int2 SelectClassButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
+	constexpr int SelectClassButtonWidth = 175;
+	constexpr int SelectClassButtonHeight = 35;
+
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 2);
@@ -62,6 +90,9 @@ namespace CharacterCreationUiView
 	constexpr int AppearancePortraitButtonWidth = 60;
 	constexpr int AppearancePortraitButtonHeight = 42;
 
+	int getChooseClassCreationTitleTextureX(int textureWidth);
+	int getChooseClassCreationTitleTextureY(int textureHeight);
+
 	int getChooseAttributesTextureWidth();
 	int getChooseAttributesTextureHeight();
 
@@ -82,6 +113,8 @@ namespace CharacterCreationUiView
 	TextureAssetReference getHeadTextureAssetRef(Game &game);
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
+
+	TextureAssetReference getNightSkyTextureAssetRef();
 }
 
 #endif

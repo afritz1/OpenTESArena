@@ -5,6 +5,11 @@ class Game;
 
 namespace CharacterCreationUiController
 {
+	// Choose class creation screen.
+	void onBackToMainMenuButtonSelected(Game &game);
+	void onGenerateClassButtonSelected(Game &game);
+	void onSelectClassButtonSelected(Game &game);
+
 	// Choose attributes screen.
 	void onBackToRaceSelectionButtonSelected(Game &game);
 	void onChooseAttributesPopUpSelected(Game &game);

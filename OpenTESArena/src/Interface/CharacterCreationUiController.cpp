@@ -1,8 +1,10 @@
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "ChooseClassPanel.h"
 #include "ChooseRacePanel.h"
 #include "GameWorldPanel.h"
+#include "MainMenuPanel.h"
 #include "MessageBoxSubPanel.h"
 #include "TextCinematicPanel.h"
 #include "TextSubPanel.h"
@@ -12,6 +14,34 @@
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/utilities/String.h"
+
+void CharacterCreationUiController::onBackToMainMenuButtonSelected(Game &game)
+{
+	game.setCharacterCreationState(nullptr);
+	game.setPanel<MainMenuPanel>(game);
+
+	const MusicLibrary &musicLibrary = game.getMusicLibrary();
+	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+		MusicDefinition::Type::MainMenu, game.getRandom());
+
+	if (musicDef == nullptr)
+	{
+		DebugLogWarning("Missing main menu music.");
+	}
+
+	AudioManager &audioManager = game.getAudioManager();
+	audioManager.setMusic(musicDef);
+}
+
+void CharacterCreationUiController::onGenerateClassButtonSelected(Game &game)
+{
+	// @todo: eventually go to a "ChooseQuestionsPanel" with "pop-up" message
+}
+
+void CharacterCreationUiController::onSelectClassButtonSelected(Game &game)
+{
+	game.setPanel<ChooseClassPanel>(game);
+}
 
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)
 {

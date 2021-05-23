@@ -1,7 +1,18 @@
 #include "CharacterCreationUiView.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/CIFFile.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
+
+int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
+{
+	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
+}
+
+int CharacterCreationUiView::getChooseClassCreationTitleTextureY(int textureHeight)
+{
+	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) + 1;
+}
 
 int CharacterCreationUiView::getChooseAttributesTextureWidth()
 {
@@ -148,4 +159,9 @@ TextureAssetReference CharacterCreationUiView::getPantsTextureAssetRef(Game &gam
 
 	std::string pantsFilename = PortraitFile::getPants(isMale);
 	return TextureAssetReference(std::move(pantsFilename));
+}
+
+TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
 }
