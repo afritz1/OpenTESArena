@@ -79,6 +79,29 @@ void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Gam
 	game.setPanel<ChooseNamePanel>(game);
 }
 
+void CharacterCreationUiController::onBackToChooseNameButtonSelected(Game &game)
+{
+	game.setPanel<ChooseNamePanel>(game);
+}
+
+void CharacterCreationUiController::onChooseGenderMaleButtonSelected(Game &game)
+{
+	constexpr bool male = true;
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setGender(male);
+
+	game.setPanel<ChooseRacePanel>(game);
+}
+
+void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &game)
+{
+	constexpr bool male = false;
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setGender(male);
+
+	game.setPanel<ChooseRacePanel>(game);
+}
+
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)
 {
 	game.setPanel<ChooseRacePanel>(game);

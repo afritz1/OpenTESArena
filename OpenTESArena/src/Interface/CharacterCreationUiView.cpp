@@ -47,6 +47,16 @@ TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAsset
 	return TextureAssetReference(std::string(ArenaTextureName::PopUp2));
 }
 
+int CharacterCreationUiView::getChooseGenderTitleTextureX(int textureWidth)
+{
+	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
+}
+
+int CharacterCreationUiView::getChooseGenderTitleTextureY(int textureHeight)
+{
+	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+}
+
 int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;

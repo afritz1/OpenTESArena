@@ -17,6 +17,11 @@ namespace CharacterCreationUiController
 	void onChooseClassListBoxDownButtonSelected(ListBox &listBox);
 	void onChooseClassListBoxAcceptButtonSelected(Game &game, int charClassDefID);
 
+	// -- Choose gender --
+	void onBackToChooseNameButtonSelected(Game &game);
+	void onChooseGenderMaleButtonSelected(Game &game);
+	void onChooseGenderFemaleButtonSelected(Game &game);
+
 	// -- Choose attributes --
 	void onBackToRaceSelectionButtonSelected(Game &game);
 	void onChooseAttributesPopUpSelected(Game &game);

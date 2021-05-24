@@ -24,6 +24,10 @@ namespace CharacterCreationUiModel
 	std::string getChooseClassWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
 	std::string getChooseClassFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
 
+	std::string getChooseGenderTitleText(Game &game);
+	std::string getChooseGenderMaleText(Game &game);
+	std::string getChooseGenderFemaleText(Game &game);
+
 	std::string getChooseAttributesText(Game &game);
 
 	std::string getAttributesMessageBoxTitleText(Game &game);

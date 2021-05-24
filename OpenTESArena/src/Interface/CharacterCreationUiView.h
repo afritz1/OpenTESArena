@@ -70,6 +70,37 @@ namespace CharacterCreationUiView
 	
 	TextureAssetReference getChooseClassListBoxTextureAssetRef();
 
+	// -- Choose gender --
+	constexpr int ChooseGenderTextureWidth = 180;
+	constexpr int ChooseGenderTextureHeight = 40;
+	constexpr TextureUtils::PatternType ChooseGenderTexturePatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseGenderTitleCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	constexpr FontName ChooseGenderTitleFontName = FontName::A;
+	const Color ChooseGenderTitleColor(48, 12, 12);
+	constexpr TextAlignment ChooseGenderTitleAlignment = TextAlignment::Center;
+
+	const Int2 ChooseGenderMaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
+	constexpr FontName ChooseGenderMaleFontName = FontName::A;
+	const Color ChooseGenderMaleColor(48, 12, 12);
+	constexpr TextAlignment ChooseGenderMaleAlignment = TextAlignment::Center;
+
+	const Int2 ChooseGenderMaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
+	constexpr int ChooseGenderMaleButtonWidth = 175;
+	constexpr int ChooseGenderMaleButtonHeight = 35;
+
+	const Int2 ChooseGenderFemaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+	constexpr FontName ChooseGenderFemaleFontName = FontName::A;
+	const Color ChooseGenderFemaleColor(48, 12, 12);
+	constexpr TextAlignment ChooseGenderFemaleAlignment = TextAlignment::Center;
+
+	const Int2 ChooseGenderFemaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+	constexpr int ChooseGenderFemaleButtonWidth = 175;
+	constexpr int ChooseGenderFemaleButtonHeight = 35;
+
+	int getChooseGenderTitleTextureX(int textureWidth);
+	int getChooseGenderTitleTextureY(int textureHeight);
+
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,

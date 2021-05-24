@@ -251,6 +251,24 @@ std::string CharacterCreationUiModel::getChooseClassFullTooltipText(const Charac
 	return text;
 }
 
+std::string CharacterCreationUiModel::getChooseGenderTitleText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	return exeData.charCreation.chooseGender;
+}
+
+std::string CharacterCreationUiModel::getChooseGenderMaleText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	return exeData.charCreation.chooseGenderMale;
+}
+
+std::string CharacterCreationUiModel::getChooseGenderFemaleText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	return exeData.charCreation.chooseGenderFemale;
+}
+
 std::string CharacterCreationUiModel::getChooseAttributesText(Game &game)
 {
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();

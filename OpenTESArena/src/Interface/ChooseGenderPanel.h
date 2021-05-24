@@ -1,8 +1,6 @@
 #ifndef CHOOSE_GENDER_PANEL_H
 #define CHOOSE_GENDER_PANEL_H
 
-#include <string>
-
 #include "Panel.h"
 #include "../UI/Button.h"
 #include "../UI/Texture.h"
@@ -15,8 +13,7 @@ class ChooseGenderPanel : public Panel
 private:
 	Texture parchment;
 	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
-	Button<Game&> backToNameButton;
-	Button<Game&> maleButton, femaleButton;
+	Button<Game&> backToNameButton, maleButton, femaleButton;
 public:
 	ChooseGenderPanel(Game &game);
 	virtual ~ChooseGenderPanel() = default;
