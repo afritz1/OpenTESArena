@@ -1,7 +1,9 @@
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "ChooseClassCreationPanel.h"
 #include "ChooseClassPanel.h"
+#include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
 #include "GameWorldPanel.h"
 #include "MainMenuPanel.h"
@@ -41,6 +43,40 @@ void CharacterCreationUiController::onGenerateClassButtonSelected(Game &game)
 void CharacterCreationUiController::onSelectClassButtonSelected(Game &game)
 {
 	game.setPanel<ChooseClassPanel>(game);
+}
+
+void CharacterCreationUiController::onBackToChooseClassCreationButtonSelected(Game &game)
+{
+	game.setPanel<ChooseClassCreationPanel>(game);
+}
+
+void CharacterCreationUiController::onChooseClassListBoxUpButtonSelected(ListBox &listBox)
+{
+	// Scroll the list box up one if able.
+	if (listBox.getScrollIndex() > 0)
+	{
+		listBox.scrollUp();
+	}
+}
+
+void CharacterCreationUiController::onChooseClassListBoxDownButtonSelected(ListBox &listBox)
+{
+	// Scroll the list box down one if able.
+	const int scrollIndex = listBox.getScrollIndex();
+	const int elementCount = listBox.getElementCount();
+	const int maxDisplayedCount = listBox.getMaxDisplayedCount();
+	if (scrollIndex < (elementCount - maxDisplayedCount))
+	{
+		listBox.scrollDown();
+	}
+}
+
+void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Game &game, int charClassDefID)
+{
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setClassDefID(charClassDefID);
+
+	game.setPanel<ChooseNamePanel>(game);
 }
 
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)

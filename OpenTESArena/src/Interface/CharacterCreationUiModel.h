@@ -3,6 +3,7 @@
 
 #include <string>
 
+class CharacterClassDefinition;
 class Game;
 
 namespace CharacterCreationUiModel
@@ -16,6 +17,12 @@ namespace CharacterCreationUiModel
 	std::string getGenerateClassButtonTooltipText();
 	std::string getSelectClassButtonText(Game &game);
 	std::string getSelectClassButtonTooltipText();
+
+	std::string getChooseClassTitleText(Game &game);
+	std::string getChooseClassArmorTooltipText(const CharacterClassDefinition &charClassDef);
+	std::string getChooseClassShieldTooltipText(const CharacterClassDefinition &charClassDef);
+	std::string getChooseClassWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
+	std::string getChooseClassFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
 
 	std::string getChooseAttributesText(Game &game);
 

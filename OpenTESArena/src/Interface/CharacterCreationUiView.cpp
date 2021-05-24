@@ -4,6 +4,49 @@
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 
+TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
+}
+
+Rect CharacterCreationUiView::getClassListRect(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &chooseClassListUI = exeData.ui.chooseClassList;
+	return Rect(
+		chooseClassListUI.area.x,
+		chooseClassListUI.area.y,
+		chooseClassListUI.area.w,
+		chooseClassListUI.area.h);
+}
+
+Rect CharacterCreationUiView::getClassListUpButtonRect(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &chooseClassListUI = exeData.ui.chooseClassList;
+	return Rect(
+		chooseClassListUI.buttonUp.x,
+		chooseClassListUI.buttonUp.y,
+		chooseClassListUI.buttonUp.w,
+		chooseClassListUI.buttonUp.h);
+}
+
+Rect CharacterCreationUiView::getClassListDownButtonRect(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &chooseClassListUI = exeData.ui.chooseClassList;
+	return Rect(
+		chooseClassListUI.buttonDown.x,
+		chooseClassListUI.buttonDown.y,
+		chooseClassListUI.buttonDown.w,
+		chooseClassListUI.buttonDown.h);
+}
+
+TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::PopUp2));
+}
+
 int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
@@ -159,9 +202,4 @@ TextureAssetReference CharacterCreationUiView::getPantsTextureAssetRef(Game &gam
 
 	std::string pantsFilename = PortraitFile::getPants(isMale);
 	return TextureAssetReference(std::move(pantsFilename));
-}
-
-TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
-{
-	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
 }

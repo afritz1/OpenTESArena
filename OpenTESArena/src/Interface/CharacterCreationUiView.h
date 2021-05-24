@@ -9,10 +9,18 @@
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 
+class ExeData;
 class Game;
+class Rect;
 
 namespace CharacterCreationUiView
 {
+	// -- Common --
+	constexpr int MaxTooltipLineLength = 14;
+
+	TextureAssetReference getNightSkyTextureAssetRef();
+
+	// -- Choose class creation --
 	constexpr int ChooseClassCreationPopUpTextureWidth = 180;
 	constexpr int ChooseClassCreationPopUpTextureHeight = 40;
 	constexpr TextureUtils::PatternType ChooseClassCreationPopUpPatternType = TextureUtils::PatternType::Parchment;
@@ -41,6 +49,28 @@ namespace CharacterCreationUiView
 	constexpr int SelectClassButtonWidth = 175;
 	constexpr int SelectClassButtonHeight = 35;
 
+	// -- Choose class --
+	constexpr int ChooseClassTitleX = 89;
+	constexpr int ChooseClassTitleY = 32;
+	constexpr FontName ChooseClassTitleFontName = FontName::C;
+	const Color ChooseClassTitleColor(211, 211, 211);
+	constexpr TextAlignment ChooseClassTitleAlignment = TextAlignment::Left;
+
+	constexpr int ChooseClassListBoxTextureX = 55;
+	constexpr int ChooseClassListBoxTextureY = 9;
+	const Color ChooseClassListBoxTextColor(85, 44, 20);
+	constexpr FontName ChooseClassListBoxFontName = FontName::A;
+	constexpr int ChooseClassListBoxMaxDisplayedItems = 6;
+
+	constexpr FontName ChooseClassTooltipFontName = FontName::D;
+
+	Rect getClassListRect(Game &game);
+	Rect getClassListUpButtonRect(Game &game);
+	Rect getClassListDownButtonRect(Game &game);
+	
+	TextureAssetReference getChooseClassListBoxTextureAssetRef();
+
+	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 2);
@@ -113,8 +143,6 @@ namespace CharacterCreationUiView
 	TextureAssetReference getHeadTextureAssetRef(Game &game);
 	TextureAssetReference getShirtTextureAssetRef(Game &game);
 	TextureAssetReference getPantsTextureAssetRef(Game &game);
-
-	TextureAssetReference getNightSkyTextureAssetRef();
 }
 
 #endif
