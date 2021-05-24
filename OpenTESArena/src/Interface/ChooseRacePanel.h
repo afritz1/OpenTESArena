@@ -15,18 +15,15 @@ class ChooseRacePanel : public Panel
 {
 private:
 	Button<Game&> backToGenderButton;
-	Button<Game&, int> acceptButton;
-
-	// Gets the initial parchment pop-up.
-	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
-
-	// Gets the mask ID associated with some pixel location, or "no ID" if none found.
-	std::optional<int> getProvinceMaskID(const Int2 &position) const;
+	Button<Game&, int> selectProvinceButton;
 
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
 	ChooseRacePanel(Game &game);
 	virtual ~ChooseRacePanel() = default;
+
+	// Gets the initial parchment pop-up (public for the UI controller function).
+	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -1,7 +1,10 @@
 #ifndef CHARACTER_CREATION_UI_MODEL_H
 #define CHARACTER_CREATION_UI_MODEL_H
 
+#include <optional>
 #include <string>
+
+#include "../Math/Vector2.h"
 
 class CharacterClassDefinition;
 class Game;
@@ -30,6 +33,11 @@ namespace CharacterCreationUiModel
 
 	std::string getChooseNameTitleText(Game &game);
 	bool isPlayerNameCharacterAccepted(char c);
+
+	std::string getChooseRaceTitleText(Game &game);
+	std::string getChooseRaceProvinceConfirmTitleText(Game &game);
+	std::string getChooseRaceProvinceTooltipText(Game &game, int provinceID);
+	std::optional<int> getChooseRaceProvinceID(Game &game, const Int2 &originalPosition);
 
 	std::string getChooseAttributesText(Game &game);
 

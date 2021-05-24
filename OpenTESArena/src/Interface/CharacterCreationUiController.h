@@ -28,6 +28,13 @@ namespace CharacterCreationUiController
 	void onBackToChooseClassButtonSelected(Game &game);
 	void onChooseNameAcceptButtonSelected(Game &game, const std::string &acceptedName);
 
+	// -- Choose race --
+	void onBackToChooseGenderButtonSelected(Game &game);
+	void onChooseRaceInitialPopUpButtonSelected(Game &game);
+	void onChooseRaceProvinceButtonSelected(Game &game, int raceID);
+	void onChooseRaceProvinceConfirmButtonSelected(Game &game, int raceID);
+	void onChooseRaceProvinceCancelButtonSelected(Game &game);
+
 	// -- Choose attributes --
 	void onBackToRaceSelectionButtonSelected(Game &game);
 	void onChooseAttributesPopUpSelected(Game &game);

@@ -6,6 +6,7 @@
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
 #include "../Items/ShieldType.h"
+#include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -286,6 +287,100 @@ bool CharacterCreationUiModel::isPlayerNameCharacterAccepted(char c)
 {
 	// Only letters and spaces are allowed.
 	return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
+}
+
+std::string CharacterCreationUiModel::getChooseRaceTitleText(Game &game)
+{
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	std::string text = exeData.charCreation.chooseRace;
+	text = String::replace(text, '\r', '\n');
+
+	const auto &charCreationState = game.getCharacterCreationState();
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const int charClassDefID = charCreationState.getClassDefID();
+	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+	// Replace first "%s" with player name.
+	size_t index = text.find("%s");
+	text.replace(index, 2, charCreationState.getName());
+
+	// Replace second "%s" with character class.
+	index = text.find("%s");
+	text.replace(index, 2, charClassDef.getName());
+
+	return text;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string text = exeData.charCreation.confirmRace;
+	text = String::replace(text, '\r', '\n');
+
+	const auto &charCreationState = game.getCharacterCreationState();
+	const int raceIndex = charCreationState.getRaceIndex();
+
+	const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
+	DebugAssertIndex(charCreationProvinceNames, raceIndex);
+	const std::string &provinceName = charCreationProvinceNames[raceIndex];
+
+	const auto &pluralRaceNames = exeData.races.pluralNames;
+	DebugAssertIndex(pluralRaceNames, raceIndex);
+	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+
+	// Replace first %s with province name.
+	size_t index = text.find("%s");
+	text.replace(index, 2, provinceName);
+
+	// Replace second %s with plural race name.
+	index = text.find("%s");
+	text.replace(index, 2, pluralRaceName);
+
+	return text;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceTooltipText(Game &game, int provinceID)
+{
+	// Get the race name associated with the province.
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &pluralNames = exeData.races.pluralNames;
+	DebugAssertIndex(pluralNames, provinceID);
+	const std::string &raceName = pluralNames[provinceID];
+	return "Land of the " + raceName;
+}
+
+std::optional<int> CharacterCreationUiModel::getChooseRaceProvinceID(Game &game, const Int2 &originalPosition)
+{
+	const auto &worldMapMasks =game.getBinaryAssetLibrary().getWorldMapMasks();
+	const int maskCount = static_cast<int>(worldMapMasks.size());
+	for (int maskID = 0; maskID < maskCount; maskID++)
+	{
+		// Ignore the center province and the "Exit" button.
+		constexpr int exitButtonID = 9;
+		if ((maskID == LocationUtils::CENTER_PROVINCE_ID) || (maskID == exitButtonID))
+		{
+			continue;
+		}
+
+		const WorldMapMask &mapMask = worldMapMasks.at(maskID);
+		const Rect &maskRect = mapMask.getRect();
+
+		if (maskRect.contains(originalPosition))
+		{
+			// See if the pixel is set in the bitmask.
+			const bool success = mapMask.get(originalPosition.x, originalPosition.y);
+
+			if (success)
+			{
+				// Return the mask's ID.
+				return maskID;
+			}
+		}
+	}
+
+	// No province mask found at the given location.
+	return std::nullopt;
 }
 
 std::string CharacterCreationUiModel::getChooseAttributesText(Game &game)

@@ -121,6 +121,28 @@ namespace CharacterCreationUiView
 	int getChooseNameTitleTextureX(int textureWidth);
 	int getChooseNameTitleTextureY(int textureHeight);
 
+	// -- Choose race --
+	const Int2 ChooseRaceInitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	constexpr FontName ChooseRaceInitialPopUpFontName = FontName::A;
+	const Color ChooseRaceInitialPopUpColor(48, 12, 12);
+	constexpr TextAlignment ChooseRaceInitialPopUpAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceInitialPopUpLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceInitialPopUpPatternType = TextureUtils::PatternType::Parchment;
+
+	constexpr int ChooseRaceInitialPopUpTextureWidth = 240;
+	constexpr int ChooseRaceInitialPopUpTextureHeight = 60;
+	const Int2 ChooseRaceInitialPopUpTextureCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+
+	constexpr FontName ChooseRaceProvinceTooltipFontName = FontName::D;
+
+	TextureAssetReference getChooseRaceBackgroundTextureAssetRef();
+	TextureAssetReference getChooseRaceNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
+
+	int getChooseRaceNoExitTextureX(int textureWidth);
+	int getChooseRaceNoExitTextureY(int textureHeight);
+
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,

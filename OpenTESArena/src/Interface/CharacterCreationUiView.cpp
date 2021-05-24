@@ -67,6 +67,26 @@ int CharacterCreationUiView::getChooseNameTitleTextureY(int textureHeight)
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
 }
 
+TextureAssetReference CharacterCreationUiView::getChooseRaceBackgroundTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::RaceSelect));
+}
+
+TextureAssetReference CharacterCreationUiView::getChooseRaceNoExitTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::NoExit));
+}
+
+int CharacterCreationUiView::getChooseRaceNoExitTextureX(int textureWidth)
+{
+	return ArenaRenderUtils::SCREEN_WIDTH - textureWidth;
+}
+
+int CharacterCreationUiView::getChooseRaceNoExitTextureY(int textureHeight)
+{
+	return ArenaRenderUtils::SCREEN_HEIGHT - textureHeight;
+}
+
 int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
