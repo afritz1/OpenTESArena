@@ -101,6 +101,26 @@ namespace CharacterCreationUiView
 	int getChooseGenderTitleTextureX(int textureWidth);
 	int getChooseGenderTitleTextureY(int textureHeight);
 
+	// -- Choose name --
+	constexpr int ChooseNameTextureWidth = 300;
+	constexpr int ChooseNameTextureHeight = 60;
+	constexpr TextureUtils::PatternType ChooseNameTexturePatternType = TextureUtils::PatternType::Parchment;
+
+	constexpr int ChooseNameTitleTextBoxX = 26;
+	constexpr int ChooseNameTitleTextBoxY = 82;
+	constexpr FontName ChooseNameTitleFontName = FontName::A;
+	const Color ChooseNameTitleColor(48, 12, 12);
+	constexpr TextAlignment ChooseNameTitleAlignment = TextAlignment::Left;
+
+	constexpr int ChooseNameEntryTextBoxX = 61;
+	constexpr int ChooseNameEntryTextBoxY = 101;
+	constexpr FontName ChooseNameEntryFontName = FontName::A;
+	const Color ChooseNameEntryColor(48, 12, 12);
+	constexpr TextAlignment ChooseNameEntryAlignment = TextAlignment::Left;
+
+	int getChooseNameTitleTextureX(int textureWidth);
+	int getChooseNameTitleTextureY(int textureHeight);
+
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,

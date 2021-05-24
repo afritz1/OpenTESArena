@@ -2,6 +2,9 @@
 
 #include "SDL.h"
 
+#include "CharacterCreationUiController.h"
+#include "CharacterCreationUiModel.h"
+#include "CharacterCreationUiView.h"
 #include "ChooseClassPanel.h"
 #include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
@@ -31,79 +34,51 @@
 ChooseNamePanel::ChooseNamePanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 300, 60,
-		game.getTextureManager(), game.getRenderer());
+	this->parchment = TextureUtils::generate(
+		CharacterCreationUiView::ChooseNameTexturePatternType,
+		CharacterCreationUiView::ChooseNameTextureWidth,
+		CharacterCreationUiView::ChooseNameTextureHeight,
+		game.getTextureManager(),
+		game.getRenderer());
 
 	this->titleTextBox = [&game]()
 	{
-		const int x = 26;
-		const int y = 82;
-
-		const auto &charCreationState = game.getCharacterCreationState();
-		const auto &charClassLibrary = game.getCharacterClassLibrary();
-		const int charClassDefID = charCreationState.getClassDefID();
-		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		std::string text = exeData.charCreation.chooseName;
-		text = String::replace(text, "%s", charClassDef.getName());
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::A,
-			Color(48, 12, 12),
-			TextAlignment::Left,
+			CharacterCreationUiModel::getChooseNameTitleText(game),
+			CharacterCreationUiView::ChooseNameTitleFontName,
+			CharacterCreationUiView::ChooseNameTitleColor,
+			CharacterCreationUiView::ChooseNameTitleAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterCreationUiView::ChooseNameTitleTextBoxX,
+			CharacterCreationUiView::ChooseNameTitleTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->nameTextBox = [&game]()
 	{
-		const int x = 61;
-		const int y = 101;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			std::string(),
-			FontName::A,
-			Color(48, 12, 12),
-			TextAlignment::Left,
+			CharacterCreationUiView::ChooseNameEntryFontName,
+			CharacterCreationUiView::ChooseNameEntryColor,
+			CharacterCreationUiView::ChooseNameEntryAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterCreationUiView::ChooseNameEntryTextBoxX,
+			CharacterCreationUiView::ChooseNameEntryTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
-	this->backToClassButton = []()
-	{
-		auto function = [](Game &game)
-		{
-			SDL_StopTextInput();
-
-			auto &charCreationState = game.getCharacterCreationState();
-			charCreationState.setName(nullptr);
-
-			game.setPanel<ChooseClassPanel>(game);
-		};
-
-		return Button<Game&>(function);
-	}();
-
-	this->acceptButton = []()
-	{
-		auto function = [](Game &game, const std::string &name)
-		{
-			SDL_StopTextInput();
-
-			auto &charCreationState = game.getCharacterCreationState();
-			charCreationState.setName(name.c_str());
-
-			game.setPanel<ChooseGenderPanel>(game);
-		};
-
-		return Button<Game&, const std::string&>(function);
-	}();
+	this->backToClassButton = Button<Game&>(CharacterCreationUiController::onBackToChooseClassButtonSelected);
+	this->acceptButton = Button<Game&, const std::string&>(CharacterCreationUiController::onChooseNameAcceptButtonSelected);
 
 	// Activate SDL text input (handled in handleEvent()).
 	SDL_StartTextInput();
@@ -119,8 +94,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	auto &game = this->getGame();
 	const auto &inputManager = game.getInputManager();
 	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
+	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
 	const bool backspacePressed = inputManager.keyPressed(e, SDLK_BACKSPACE) ||
 		inputManager.keyPressed(e, SDLK_KP_BACKSPACE);
 
@@ -135,23 +109,15 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	}
 	else
 	{
-		// Listen for SDL text input and changes in text. Only letters and spaces are allowed.
-		auto charIsAllowed = [](char c)
-		{
-			return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
-		};
-		
-		const bool textChanged = TextEntry::updateText(this->name, e,
-			backspacePressed, charIsAllowed, CharacterCreationState::MAX_NAME_LENGTH);
+		// Listen for SDL text input and changes in text.
+		const bool textChanged = TextEntry::updateText(this->name, e, backspacePressed,
+			CharacterCreationUiModel::isPlayerNameCharacterAccepted, CharacterCreationState::MAX_NAME_LENGTH);
 
 		if (textChanged)
 		{
 			// Update the displayed name.
 			this->nameTextBox = [this]()
 			{
-				const int x = 61;
-				const int y = 101;
-
 				auto &game = this->getGame();
 				const RichTextString &oldRichText = this->nameTextBox->getRichText();
 
@@ -163,7 +129,12 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 					oldRichText.getAlignment(),
 					fontLibrary);
 
-				return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+				return std::make_unique<TextBox>(
+					CharacterCreationUiView::ChooseNameEntryTextBoxX,
+					CharacterCreationUiView::ChooseNameEntryTextBoxY,
+					richText,
+					fontLibrary,
+					game.getRenderer());
 			}();
 		}
 	}
@@ -176,32 +147,29 @@ void ChooseNamePanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
 	if (!backgroundPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
 	if (!backgroundTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchment: title.
-	renderer.drawOriginal(this->parchment,
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2),
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2));
+	const int titleParchmentX = CharacterCreationUiView::getChooseNameTitleTextureX(this->parchment.getWidth());
+	const int titleParchmentY = CharacterCreationUiView::getChooseNameTitleTextureY(this->parchment.getHeight());
+	renderer.drawOriginal(this->parchment, titleParchmentX, titleParchmentY);
 
 	// Draw text: title, name.
-	renderer.drawOriginal(this->titleTextBox->getTexture(),
-		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->nameTextBox->getTexture(),
-		this->nameTextBox->getX(), this->nameTextBox->getY());
+	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawOriginal(this->nameTextBox->getTexture(), this->nameTextBox->getX(), this->nameTextBox->getY());
 }

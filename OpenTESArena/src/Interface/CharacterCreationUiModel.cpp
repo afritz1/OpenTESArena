@@ -269,6 +269,25 @@ std::string CharacterCreationUiModel::getChooseGenderFemaleText(Game &game)
 	return exeData.charCreation.chooseGenderFemale;
 }
 
+std::string CharacterCreationUiModel::getChooseNameTitleText(Game &game)
+{
+	const auto &charCreationState = game.getCharacterCreationState();
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const int charClassDefID = charCreationState.getClassDefID();
+	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string text = exeData.charCreation.chooseName;
+	text = String::replace(text, "%s", charClassDef.getName());
+	return text;
+}
+
+bool CharacterCreationUiModel::isPlayerNameCharacterAccepted(char c)
+{
+	// Only letters and spaces are allowed.
+	return (c == ' ') || ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
+}
+
 std::string CharacterCreationUiModel::getChooseAttributesText(Game &game)
 {
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();

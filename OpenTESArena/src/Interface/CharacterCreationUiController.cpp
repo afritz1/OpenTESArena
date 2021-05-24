@@ -1,8 +1,11 @@
+#include "SDL.h"
+
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "ChooseClassCreationPanel.h"
 #include "ChooseClassPanel.h"
+#include "ChooseGenderPanel.h"
 #include "ChooseNamePanel.h"
 #include "ChooseRacePanel.h"
 #include "GameWorldPanel.h"
@@ -100,6 +103,26 @@ void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &gam
 	charCreationState.setGender(male);
 
 	game.setPanel<ChooseRacePanel>(game);
+}
+
+void CharacterCreationUiController::onBackToChooseClassButtonSelected(Game &game)
+{
+	SDL_StopTextInput();
+
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setName(nullptr);
+
+	game.setPanel<ChooseClassPanel>(game);
+}
+
+void CharacterCreationUiController::onChooseNameAcceptButtonSelected(Game &game, const std::string &acceptedName)
+{
+	SDL_StopTextInput();
+
+	auto &charCreationState = game.getCharacterCreationState();
+	charCreationState.setName(acceptedName.c_str());
+
+	game.setPanel<ChooseGenderPanel>(game);
 }
 
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)

@@ -1,6 +1,8 @@
 #ifndef CHARACTER_CREATION_UI_CONTROLLER_H
 #define CHARACTER_CREATION_UI_CONTROLLER_H
 
+#include <string>
+
 class Game;
 class ListBox;
 
@@ -21,6 +23,10 @@ namespace CharacterCreationUiController
 	void onBackToChooseNameButtonSelected(Game &game);
 	void onChooseGenderMaleButtonSelected(Game &game);
 	void onChooseGenderFemaleButtonSelected(Game &game);
+
+	// -- Choose name --
+	void onBackToChooseClassButtonSelected(Game &game);
+	void onChooseNameAcceptButtonSelected(Game &game, const std::string &acceptedName);
 
 	// -- Choose attributes --
 	void onBackToRaceSelectionButtonSelected(Game &game);

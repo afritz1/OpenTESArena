@@ -28,6 +28,9 @@ namespace CharacterCreationUiModel
 	std::string getChooseGenderMaleText(Game &game);
 	std::string getChooseGenderFemaleText(Game &game);
 
+	std::string getChooseNameTitleText(Game &game);
+	bool isPlayerNameCharacterAccepted(char c);
+
 	std::string getChooseAttributesText(Game &game);
 
 	std::string getAttributesMessageBoxTitleText(Game &game);

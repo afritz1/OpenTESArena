@@ -57,6 +57,16 @@ int CharacterCreationUiView::getChooseGenderTitleTextureY(int textureHeight)
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
 }
 
+int CharacterCreationUiView::getChooseNameTitleTextureX(int textureWidth)
+{
+	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
+}
+
+int CharacterCreationUiView::getChooseNameTitleTextureY(int textureHeight)
+{
+	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+}
+
 int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
