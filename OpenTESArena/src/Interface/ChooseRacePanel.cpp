@@ -507,7 +507,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		std::move(texture), textureCenter);
 }
 
-int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
+std::optional<int> ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 {
 	const auto &worldMapMasks = this->getGame().getBinaryAssetLibrary().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
@@ -537,7 +537,7 @@ int ChooseRacePanel::getProvinceMaskID(const Int2 &position) const
 	}
 
 	// No province mask found at the given location.
-	return ChooseRacePanel::NO_ID;
+	return std::nullopt;
 }
 
 std::optional<Panel::CursorData> ChooseRacePanel::getCurrentCursor() const
@@ -564,11 +564,11 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map, checking if the mouse is over a province mask.
-		const int maskID = this->getProvinceMaskID(originalPoint);
-		if (maskID != ChooseRacePanel::NO_ID)
+		const std::optional<int> maskID = this->getProvinceMaskID(originalPoint);
+		if (maskID.has_value())
 		{
 			// Choose the selected province.
-			this->acceptButton.click(game, maskID);
+			this->acceptButton.click(game, *maskID);
 		}
 	}
 }
@@ -645,9 +645,9 @@ void ChooseRacePanel::renderSecondary(Renderer &renderer)
 	const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.
-	const int maskID = this->getProvinceMaskID(originalPoint);
-	if (maskID != ChooseRacePanel::NO_ID)
+	const std::optional<int> maskID = this->getProvinceMaskID(originalPoint);
+	if (maskID.has_value())
 	{
-		this->drawProvinceTooltip(maskID, renderer);
+		this->drawProvinceTooltip(*maskID, renderer);
 	}
 }

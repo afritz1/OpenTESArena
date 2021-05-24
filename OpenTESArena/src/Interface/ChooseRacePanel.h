@@ -1,6 +1,7 @@
 #ifndef CHOOSE_RACE_PANEL_H
 #define CHOOSE_RACE_PANEL_H
 
+#include <optional>
 #include <string>
 
 #include "Panel.h"
@@ -13,9 +14,6 @@ class Renderer;
 class ChooseRacePanel : public Panel
 {
 private:
-	// The mask ID for no selected province.
-	static constexpr int NO_ID = -1;
-
 	Button<Game&> backToGenderButton;
 	Button<Game&, int> acceptButton;
 
@@ -23,7 +21,7 @@ private:
 	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 
 	// Gets the mask ID associated with some pixel location, or "no ID" if none found.
-	int getProvinceMaskID(const Int2 &position) const;
+	std::optional<int> getProvinceMaskID(const Int2 &position) const;
 
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
