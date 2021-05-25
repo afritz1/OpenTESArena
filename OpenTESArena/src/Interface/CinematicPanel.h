@@ -5,6 +5,7 @@
 #include <string>
 
 #include "Panel.h"
+#include "../Assets/TextureAssetReference.h"
 #include "../UI/Button.h"
 
 // Designed for sets of images (i.e., videos) that play one after another and
@@ -17,13 +18,14 @@ class CinematicPanel : public Panel
 {
 private:
 	Button<Game&> skipButton;
-	std::string paletteName;
-	std::string sequenceName;
+	TextureAssetReference paletteTextureAssetRef;
+	std::string sequenceFilename;
 	double secondsPerImage, currentSeconds;
 	int imageIndex;
+
+	TextureAssetReference getCurrentSequenceTextureAssetRef();
 public:
-	CinematicPanel(Game &game, const std::string &paletteName,
-		const std::string &sequenceName, double secondsPerImage,
+	CinematicPanel(Game &game, const std::string &paletteName, const std::string &sequenceName, double secondsPerImage,
 		const std::function<void(Game&)> &endingAction);
 	virtual ~CinematicPanel() = default;
 
