@@ -39,9 +39,6 @@ private:
 	// the current window correctly represent regions for different arrow cursors.
 	void updateCursorRegions(int width, int height);
 
-	// Sets whether to change the mouse input for modern mode.
-	void setFreeLookActive(bool active);
-
 	// Handles input for the player camera.
 	void handlePlayerTurning(double dt, const Int2 &mouseDelta);
 
@@ -76,11 +73,7 @@ private:
 	void drawTooltip(const std::string &text, Renderer &renderer);
 
 	// Draws the compass for some given player direction in the XZ plane.
-	void drawCompass(const NewDouble2 &direction, TextureManager &textureManager,
-		Renderer &renderer);
-
-	// Draws some debug profiler text.
-	void drawProfiler(int profilerLevel, Renderer &renderer);
+	void drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer);
 public:
 	// Constructs the game world panel. The GameState object in Game must be initialized.
 	GameWorldPanel(Game &game);

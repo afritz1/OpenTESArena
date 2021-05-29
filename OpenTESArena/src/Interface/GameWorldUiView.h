@@ -16,17 +16,36 @@ class Game;
 
 namespace GameWorldUiView
 {
-	// Original arrow cursor rectangles for each part of the letterbox. Their components can be multiplied by
+	// Original arrow cursor rectangles for each part of the classic UI. Their components can be multiplied by
 	// the ratio of the native and the original resolution so they're flexible with most resolutions.
-	const Rect TopLeftRegion(0, 0, 141, 49);
-	const Rect TopMiddleRegion(141, 0, 38, 49);
-	const Rect TopRightRegion(179, 0, 141, 49);
-	const Rect MiddleLeftRegion(0, 49, 90, 70);
-	const Rect MiddleRegion(90, 49, 140, 70);
-	const Rect MiddleRightRegion(230, 49, 90, 70);
-	const Rect BottomLeftRegion(0, 119, 141, 28);
-	const Rect BottomMiddleRegion(141, 119, 38, 28);
-	const Rect BottomRightRegion(179, 119, 141, 28);
+	const std::array<Rect, 9> CursorRegions =
+	{
+		Rect(0, 0, 141, 49),
+		Rect(141, 0, 38, 49),
+		Rect(179, 0, 141, 49),
+		Rect(0, 49, 90, 70),
+		Rect(90, 49, 140, 70),
+		Rect(230, 49, 90, 70),
+		Rect(0, 119, 141, 28),
+		Rect(141, 119, 38, 28),
+		Rect(179, 119, 141, 28),
+	};
+
+	// Arrow cursor rectangle array indices.
+	constexpr int CursorTopLeftIndex = 0;
+	constexpr int CursorTopMiddleIndex = 1;
+	constexpr int CursorTopRightIndex = 2;
+	constexpr int CursorMiddleLeftIndex = 3;
+	constexpr int CursorMiddleIndex = 4;
+	constexpr int CursorMiddleRightIndex = 5;
+	constexpr int CursorBottomLeftIndex = 6;
+	constexpr int CursorBottomMiddleIndex = 7;
+	constexpr int CursorBottomRightIndex = 8;
+
+	// Makes a cursor region that scales to the current resolution.
+	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
+
+	// Game world interface UI area.
 	const Rect UiBottomRegion(0, 147, 320, 53);
 
 	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse position so the cursor's
@@ -117,7 +136,28 @@ namespace GameWorldUiView
 	constexpr int MapButtonWidth = 29;
 	constexpr int MapButtonHeight = 22;
 
+	constexpr int PlayerPortraitX = 14;
+	constexpr int PlayerPortraitY = 166;
+
+	Int2 getGameWorldInterfacePosition(int textureHeight);
+
+	Int2 getNoMagicTexturePosition();
+
+	Int2 getTriggerTextPosition(Game &game, int textWidth, int textHeight, int gameWorldInterfaceTextureHeight);
+	Int2 getActionTextPosition(int textWidth);
+	Int2 getEffectTextPosition();
+
+	constexpr FontName TooltipFontName = FontName::D;
+
+	Int2 getTooltipPosition(Game &game, int textureHeight);
+
+	Rect getCompassClipRect(Game &game, const VoxelDouble2 &playerDirection, int textureHeight);
+	Int2 getCompassSliderPosition(int clipWidth, int clipHeight);
+	Int2 getCompassFramePosition(int textureWidth);
+	TextureAssetReference getCompassSliderPaletteTextureAssetRef();
+
 	Int2 getCurrentWeaponAnimationOffset(Game &game);
+	std::optional<TextureBuilderID> getActiveWeaponAnimationTextureBuilderID(Game &game);
 
 	// Gets the center of the screen for pop-up related functions. The position depends on
 	// whether modern interface mode is set.
@@ -132,6 +172,12 @@ namespace GameWorldUiView
 	TextureBuilderID getStatusGradientTextureBuilderID(Game &game, int gradientID);
 	TextureBuilderID getNoSpellTextureBuilderID(Game &game);
 	TextureBuilderID getWeaponTextureBuilderID(Game &game, const std::string &weaponFilename, int index);
+
+	TextureAssetReference getDefaultPaletteTextureAssetRef();
+
+	void DEBUG_ColorRaycastPixel(Game &game);
+	void DEBUG_PhysicsRaycast(Game &game);
+	void DEBUG_DrawProfiler(Game &game, Renderer &renderer);
 }
 
 #endif

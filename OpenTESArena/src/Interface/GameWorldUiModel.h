@@ -3,13 +3,34 @@
 
 #include <string>
 
+#include "../Math/MathUtils.h"
+#include "../World/Coord.h"
+
 class Game;
 
 namespace GameWorldUiModel
 {
 	std::string getPlayerNameText(Game &game);
-
 	std::string getStatusButtonText(Game &game);
+	std::string getPlayerPositionText(Game &game);
+
+	// Tooltips.
+	std::string getCharacterSheetTooltipText();
+	std::string getWeaponTooltipText();
+	std::string getMapTooltipText();
+	std::string getStealTooltipText();
+	std::string getStatusTooltipText();
+	std::string getMagicTooltipText();
+	std::string getLogbookTooltipText();
+	std::string getUseItemTooltipText();
+	std::string getCampTooltipText();
+
+	void setFreeLookActive(Game &game, bool active);
+
+	// Converts a screen point to a 3D direction in the world.
+	VoxelDouble3 screenToWorldRayDirection(Game &game, const Int2 &windowPoint);
+
+	Radians getCompassAngle(const VoxelDouble2 &direction);
 }
 
 #endif
