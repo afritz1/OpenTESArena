@@ -1,4 +1,5 @@
 #include "GameWorldPanel.h"
+#include "GameWorldUiView.h"
 #include "WorldMapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
@@ -25,9 +26,7 @@ TextureAssetReference WorldMapUiView::getFastTravelPaletteTextureAssetRef()
 
 Int2 WorldMapUiView::getCityArrivalPopUpTextCenterPoint(Game &game)
 {
-	const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-	auto &textureManager = game.getTextureManager();
-	return GameWorldPanel::getInterfaceCenter(modernInterface, textureManager) - Int2(0, 1);
+	return GameWorldUiView::getInterfaceCenter(game) - Int2(0, 1);
 }
 
 Int2 WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(Game &game)

@@ -28,23 +28,12 @@ class GameWorldPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox;
-	Button<Game&> characterSheetButton, statusButton,
-		logbookButton, pauseButton;
+	Button<Game&> characterSheetButton, statusButton, logbookButton, pauseButton;
 	Button<Player&> drawWeaponButton;
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
-	std::vector<Int2> weaponOffsets;
-
-	// Helper functions for various UI textures.
-	static TextureBuilderID getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager);
-	TextureBuilderID getCompassFrameTextureBuilderID() const;
-	TextureBuilderID getCompassSliderTextureBuilderID() const;
-	TextureBuilderID getPlayerPortraitTextureBuilderID(const std::string &portraitsFilename, int portraitID) const;
-	TextureBuilderID getStatusGradientTextureBuilderID(int gradientID) const;
-	TextureBuilderID getNoSpellTextureBuilderID() const;
-	TextureBuilderID getWeaponTextureBuilderID(const std::string &weaponFilename, int index) const;
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
@@ -96,10 +85,6 @@ public:
 	// Constructs the game world panel. The GameState object in Game must be initialized.
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
-
-	// Gets the center of the screen for pop-up related functions. The position depends on
-	// whether modern interface mode is set.
-	static Int2 getInterfaceCenter(bool modernInterface, TextureManager &textureManager);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
