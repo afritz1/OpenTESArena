@@ -6,16 +6,11 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
-ImagePanel::ImagePanel(Game &game, const std::string &paletteName, 
-	const std::string &textureName, double secondsToDisplay,
-	const std::function<void(Game&)> &endingAction)
+ImagePanel::ImagePanel(Game &game, const std::string &paletteName, const std::string &textureName,
+	double secondsToDisplay, const std::function<void(Game&)> &endingAction)
 	: Panel(game), paletteName(paletteName), textureName(textureName)
 {
-	this->skipButton = [&endingAction]()
-	{
-		return Button<Game&>(endingAction);
-	}();
-
+	this->skipButton = Button<Game&>(endingAction);
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
 }
@@ -23,13 +18,12 @@ ImagePanel::ImagePanel(Game &game, const std::string &paletteName,
 void ImagePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	bool skipHotkeyPressed = spacePressed || enterPressed || escapePressed;
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	
+	const bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
+	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool skipHotkeyPressed = spacePressed || enterPressed || escapePressed;
 
 	if (leftClick || skipHotkeyPressed)
 	{

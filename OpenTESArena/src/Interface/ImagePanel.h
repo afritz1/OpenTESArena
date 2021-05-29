@@ -7,8 +7,7 @@
 #include "Panel.h"
 #include "../UI/Button.h"
 
-// For rendering still images in a similar fashion to a cinematic, only now
-// it's one image.
+// For rendering still images in a similar fashion to a cinematic, only now it's one image.
 
 class Game;
 class Renderer;
@@ -21,8 +20,7 @@ private:
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;
 public:
-	ImagePanel(Game &game, const std::string &paletteName, 
-		const std::string &textureName, double secondsToDisplay, 
+	ImagePanel(Game &game, const std::string &paletteName, const std::string &textureName, double secondsToDisplay, 
 		const std::function<void(Game&)> &endingAction);
 	virtual ~ImagePanel() = default;
 
