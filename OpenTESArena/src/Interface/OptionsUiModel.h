@@ -2,6 +2,7 @@
 #define OPTIONS_UI_MODEL_H
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
