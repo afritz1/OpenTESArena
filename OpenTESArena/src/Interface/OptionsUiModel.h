@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+class Game;
+
 namespace OptionsUiModel
 {
 	// Options panel tabs.
@@ -155,6 +157,39 @@ namespace OptionsUiModel
 
 		void set(std::string &&value);
 	};
+
+	// Graphics options.
+	std::unique_ptr<OptionsUiModel::IntOption> makeWindowModeOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeFpsLimitOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeResolutionScaleOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalFovOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeLetterboxModeOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeCursorScaleOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeModernInterfaceOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeRenderThreadsModeOption(Game &game);
+
+	// Audio options.
+	std::unique_ptr<OptionsUiModel::IntOption> makeSoundChannelsOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeSoundResamplingOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeIs3dAudioOption(Game &game);
+
+	// Input options.
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makePixelPerfectSelectionOption(Game &game);
+
+	// Miscellaneous options.
+	std::unique_ptr<OptionsUiModel::BoolOption> makeShowCompassOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeShowIntroOption(Game &game);
+	std::unique_ptr<OptionsUiModel::DoubleOption> makeTimeScaleOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeChunkDistanceOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeStarDensityOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makePlayerHasLightOption(Game &game);
+
+	// Developer options
+	std::unique_ptr<OptionsUiModel::BoolOption> makeCollisionOption(Game &game);
+	std::unique_ptr<OptionsUiModel::IntOption> makeProfilerLevelOption(Game &game);
 }
 
 #endif
