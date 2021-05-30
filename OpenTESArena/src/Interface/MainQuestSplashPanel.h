@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Panel.h"
+#include "../Assets/TextureAssetReference.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 
@@ -12,7 +13,7 @@ class MainQuestSplashPanel : public Panel
 private:
 	std::unique_ptr<TextBox> textBox;
 	Button<Game&> exitButton;
-	std::string splashFilename;
+	TextureAssetReference splashTextureAssetRef;
 public:
 	MainQuestSplashPanel(Game &game, int provinceID);
 	virtual ~MainQuestSplashPanel() = default;
