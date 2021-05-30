@@ -37,12 +37,7 @@ namespace MainMenuUiView
 	constexpr FontName TestButtonFontName = FontName::Arena;
 	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::Center;
 
-	// Can't rely on Color statics being initialized first.
-	// @todo: change Color constructors to constexpr? Or is there still an ordering problem?
-	Color getTestButtonTextColor()
-	{
-		return Color::White;
-	}
+	Color getTestButtonTextColor(); // Global initialization order workaround.
 
 	constexpr int TestTypeUpButtonX = 312;
 	constexpr int TestTypeUpButtonY = 164;
@@ -84,25 +79,10 @@ namespace MainMenuUiView
 	constexpr int TestWeatherDownButtonWidth = TestWeatherUpButtonWidth;
 	constexpr int TestWeatherDownButtonHeight = TestWeatherUpButtonHeight;
 
-	TextureAssetReference getBackgroundTextureAssetRef()
-	{
-		return TextureAssetReference(std::string(ArenaTextureName::MainMenu));
-	}
-
-	TextureAssetReference getPaletteTextureAssetRef()
-	{
-		return MainMenuUiView::getBackgroundTextureAssetRef();
-	}
-
-	TextureAssetReference getTestArrowsTextureAssetRef()
-	{
-		return TextureAssetReference(std::string(ArenaTextureName::UpDown));
-	}
-
-	TextureAssetReference getTestArrowsPaletteTextureAssetRef()
-	{
-		return TextureAssetReference(std::string(ArenaPaletteName::CharSheet));
-	}
+	TextureAssetReference getBackgroundTextureAssetRef();
+	TextureAssetReference getPaletteTextureAssetRef();
+	TextureAssetReference getTestArrowsTextureAssetRef();
+	TextureAssetReference getTestArrowsPaletteTextureAssetRef();
 }
 
 #endif
