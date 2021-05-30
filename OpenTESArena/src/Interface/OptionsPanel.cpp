@@ -179,14 +179,16 @@ std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOp
 void OptionsPanel::updateOptionTextBox(int index)
 {
 	auto &game = this->getGame();
-	const auto &visibleOption = this->getVisibleOptions().at(index);
+	const auto &visibleOptions = this->getVisibleOptions();
+	DebugAssertIndex(visibleOptions, index);
+	const auto &visibleOption = visibleOptions[index];
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const RichTextString richText(
 		visibleOption->getName() + ": " + visibleOption->getDisplayedValue(),
-		FontName::Arena,
-		Color::White,
-		TextAlignment::Left,
+		OptionsUiView::OptionTextBoxFontName,
+		OptionsUiView::getOptionTextBoxColor(),
+		OptionsUiView::OptionTextBoxTextAlignment,
 		fontLibrary);
 
 	const Int2 &point = OptionsUiView::ListOrigin;
@@ -216,9 +218,14 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 {
 	auto &textureManager = this->getGame().getTextureManager();
 	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
-	Texture tabBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		graphicsTabRect.getWidth(), graphicsTabRect.getHeight(), textureManager, renderer);
+	Texture tabBackground = TextureUtils::generate(
+		OptionsUiView::TabBackgroundPatternType,
+		graphicsTabRect.getWidth(),
+		graphicsTabRect.getHeight(),
+		textureManager,
+		renderer);
 
+	// @todo: this loop condition should be driven by actual tab count
 	for (int i = 0; i < 5; i++)
 	{
 		const int tabX = graphicsTabRect.getLeft();
@@ -226,31 +233,28 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 		renderer.drawOriginal(tabBackground, tabX, tabY);
 	}
 
-	Texture returnBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		this->backToPauseMenuButton.getWidth(), this->backToPauseMenuButton.getHeight(),
-		textureManager, renderer);
-	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(),
-		this->backToPauseMenuButton.getY());
+	Texture returnBackground = TextureUtils::generate(
+		OptionsUiView::TabBackgroundPatternType,
+		this->backToPauseMenuButton.getWidth(),
+		this->backToPauseMenuButton.getHeight(),
+		textureManager,
+		renderer);
+
+	renderer.drawOriginal(returnBackground, this->backToPauseMenuButton.getX(), this->backToPauseMenuButton.getY());
 }
 
 void OptionsPanel::drawText(Renderer &renderer)
 {
-	renderer.drawOriginal(this->titleTextBox->getTexture(),
-		this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
 	renderer.drawOriginal(this->backToPauseMenuTextBox->getTexture(),
 		this->backToPauseMenuTextBox->getX(), this->backToPauseMenuTextBox->getY());
 
 	// Tabs.
-	renderer.drawOriginal(this->graphicsTextBox->getTexture(),
-		this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
-	renderer.drawOriginal(this->audioTextBox->getTexture(),
-		this->audioTextBox->getX(), this->audioTextBox->getY());
-	renderer.drawOriginal(this->inputTextBox->getTexture(),
-		this->inputTextBox->getX(), this->inputTextBox->getY());
-	renderer.drawOriginal(this->miscTextBox->getTexture(),
-		this->miscTextBox->getX(), this->miscTextBox->getY());
-	renderer.drawOriginal(this->devTextBox->getTexture(),
-		this->devTextBox->getX(), this->devTextBox->getY());
+	renderer.drawOriginal(this->graphicsTextBox->getTexture(), this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
+	renderer.drawOriginal(this->audioTextBox->getTexture(), this->audioTextBox->getX(), this->audioTextBox->getY());
+	renderer.drawOriginal(this->inputTextBox->getTexture(), this->inputTextBox->getX(), this->inputTextBox->getY());
+	renderer.drawOriginal(this->miscTextBox->getTexture(), this->miscTextBox->getX(), this->miscTextBox->getY());
+	renderer.drawOriginal(this->devTextBox->getTexture(), this->devTextBox->getX(), this->devTextBox->getY());
 }
 
 void OptionsPanel::drawTextOfOptions(Renderer &renderer)
@@ -275,23 +279,21 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 		// If the options rect contains the mouse cursor, highlight it before drawing text.
 		if (optionRectContainsMouse)
 		{
-			const Color highlightColor = OptionsUiView::BackgroundColor + Color(20, 20, 20);
-			renderer.fillOriginalRect(highlightColor,
-				optionRect.getLeft(), optionRect.getTop(),
-				optionRect.getWidth(), optionRect.getHeight());
+			renderer.fillOriginalRect(OptionsUiView::HighlightColor, optionRect.getLeft(),
+				optionRect.getTop(), optionRect.getWidth(), optionRect.getHeight());
 
 			// Store the highlighted option index for tooltip drawing.
 			highlightedOptionIndex = i;
 		}
 
 		// Draw option text.
-		renderer.drawOriginal(optionTextBox->getTexture(),
-			optionTextBox->getX(), optionTextBox->getY());
+		renderer.drawOriginal(optionTextBox->getTexture(), optionTextBox->getX(), optionTextBox->getY());
 
 		// Draw description if hovering over an option with a non-empty tooltip.
 		if (highlightedOptionIndex.has_value())
 		{
-			const auto &visibleOption = visibleOptions.at(*highlightedOptionIndex);
+			DebugAssertIndex(visibleOptions, *highlightedOptionIndex);
+			const auto &visibleOption = visibleOptions[*highlightedOptionIndex];
 			const std::string &tooltip = visibleOption->getTooltip();
 
 			// Only draw if the tooltip has text.
@@ -309,9 +311,9 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 	const auto &fontLibrary = game.getFontLibrary();
 	const RichTextString richText(
 		text,
-		FontName::Arena,
-		Color::White,
-		TextAlignment::Left,
+		OptionsUiView::DescriptionTextFontName,
+		OptionsUiView::getDescriptionTextColor(),
+		OptionsUiView::DescriptionTextAlignment,
 		fontLibrary);
 
 	const Int2 &point = OptionsUiView::DescriptionOrigin;

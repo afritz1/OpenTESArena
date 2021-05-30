@@ -14,3 +14,13 @@ Color OptionsUiView::getTabTextColor()
 {
 	return Color::White;
 }
+
+Color OptionsUiView::getOptionTextBoxColor()
+{
+	return Color::White;
+}
+
+Color OptionsUiView::getDescriptionTextColor()
+{
+	return Color::White;
+}

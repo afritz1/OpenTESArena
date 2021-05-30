@@ -4,6 +4,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
@@ -11,6 +12,7 @@
 namespace OptionsUiView
 {
 	const Color BackgroundColor(60, 60, 68);
+	const Color HighlightColor = BackgroundColor + Color(20, 20, 20);
 
 	// Screen locations for various options things.
 	const Int2 TabsOrigin(3, 38);
@@ -70,6 +72,15 @@ namespace OptionsUiView
 	constexpr FontName TabFontName = FontName::Arena;
 	Color getTabTextColor();
 	constexpr TextAlignment TabTextAlignment = TextAlignment::Center;
+	constexpr TextureUtils::PatternType TabBackgroundPatternType = TextureUtils::PatternType::Custom1;
+
+	constexpr FontName OptionTextBoxFontName = FontName::Arena;
+	Color getOptionTextBoxColor();
+	constexpr TextAlignment OptionTextBoxTextAlignment = TextAlignment::Left;
+
+	constexpr FontName DescriptionTextFontName = FontName::Arena;
+	Color getDescriptionTextColor();
+	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Left;
 }
 
 #endif
