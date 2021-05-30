@@ -12,118 +12,71 @@
 MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game)
 {
-	this->loadButton = []()
-	{
-		return Button<Game&>(
-			MainMenuUiView::LoadButtonCenterPoint,
-			MainMenuUiView::LoadButtonWidth,
-			MainMenuUiView::LoadButtonHeight,
-			MainMenuUiController::onLoadGameButtonSelected);
-	}();
-
-	this->newButton = []()
-	{
-		return Button<Game&>(
-			MainMenuUiView::NewGameButtonCenterPoint,
-			MainMenuUiView::NewGameButtonWidth,
-			MainMenuUiView::NewGameButtonHeight,
-			MainMenuUiController::onNewGameButtonSelected);
-	}();
-
-	this->exitButton = []()
-	{
-		return Button<>(
-			MainMenuUiView::ExitButtonCenterPoint,
-			MainMenuUiView::ExitButtonWidth,
-			MainMenuUiView::ExitButtonHeight,
-			MainMenuUiController::onExitGameButtonSelected);
-	}();
-
-	this->quickStartButton = []()
-	{
-		return Button<Game&, int, int, const std::string&, const std::optional<ArenaTypes::InteriorType>&,
-			ArenaTypes::WeatherType, MapType>(MainMenuUiController::onQuickStartButtonSelected);
-	}();
-
-	this->testTypeUpButton = []()
-	{
-		return Button<int*, int*, int*, int*>(
-			MainMenuUiView::TestTypeUpButtonX,
-			MainMenuUiView::TestTypeUpButtonY,
-			MainMenuUiView::TestTypeUpButtonWidth,
-			MainMenuUiView::TestTypeUpButtonHeight,
-			MainMenuUiController::onTestTypeUpButtonSelected);
-	}();
-
-	this->testTypeDownButton = []()
-	{
-		return Button<int*, int*, int*, int*>(
-			MainMenuUiView::TestTypeDownButtonX,
-			MainMenuUiView::TestTypeDownButtonY,
-			MainMenuUiView::TestTypeDownButtonWidth,
-			MainMenuUiView::TestTypeDownButtonHeight,
-			MainMenuUiController::onTestTypeDownButtonSelected);
-	}();
-
-	this->testIndexUpButton = []()
-	{
-		return Button<int*, int*, int*>(
-			MainMenuUiView::TestIndexUpButtonX,
-			MainMenuUiView::TestIndexUpButtonY,
-			MainMenuUiView::TestIndexUpButtonWidth,
-			MainMenuUiView::TestIndexUpButtonHeight,
-			MainMenuUiController::onTestIndexUpButtonSelected);
-	}();
-
-	this->testIndexDownButton = []()
-	{
-		return Button<int*, int*, int*>(
-			MainMenuUiView::TestIndexDownButtonX,
-			MainMenuUiView::TestIndexDownButtonY,
-			MainMenuUiView::TestIndexDownButtonWidth,
-			MainMenuUiView::TestIndexDownButtonHeight,
-			MainMenuUiController::onTestIndexDownButtonSelected);
-	}();
-
-	this->testIndex2UpButton = []()
-	{
-		return Button<int, int, int*>(
-			MainMenuUiView::TestIndex2UpButtonX,
-			MainMenuUiView::TestIndex2UpButtonY,
-			MainMenuUiView::TestIndex2UpButtonWidth,
-			MainMenuUiView::TestIndex2UpButtonHeight,
-			MainMenuUiController::onTestIndex2UpButtonSelected);
-	}();
-
-	this->testIndex2DownButton = []()
-	{
-		return Button<int, int, int*>(
-			MainMenuUiView::TestIndex2DownButtonX,
-			MainMenuUiView::TestIndex2DownButtonY,
-			MainMenuUiView::TestIndex2DownButtonWidth,
-			MainMenuUiView::TestIndex2DownButtonHeight,
-			MainMenuUiController::onTestIndex2DownButtonSelected);
-	}();
-
-	this->testWeatherUpButton = []()
-	{
-		return Button<int, int*>(
-			MainMenuUiView::TestWeatherUpButtonX,
-			MainMenuUiView::TestWeatherUpButtonY,
-			MainMenuUiView::TestWeatherUpButtonWidth,
-			MainMenuUiView::TestWeatherUpButtonHeight,
-			MainMenuUiController::onTestWeatherUpButtonSelected);
-	}();
-
-	this->testWeatherDownButton = []()
-	{
-		return Button<int, int*>(
-			MainMenuUiView::TestWeatherDownButtonX,
-			MainMenuUiView::TestWeatherDownButtonY,
-			MainMenuUiView::TestWeatherDownButtonWidth,
-			MainMenuUiView::TestWeatherDownButtonHeight,
-			MainMenuUiController::onTestWeatherDownButtonSelected);
-	}();
+	this->loadButton = Button<Game&>(
+		MainMenuUiView::LoadButtonCenterPoint,
+		MainMenuUiView::LoadButtonWidth,
+		MainMenuUiView::LoadButtonHeight,
+		MainMenuUiController::onLoadGameButtonSelected);
+	this->newButton = Button<Game&>(
+		MainMenuUiView::NewGameButtonCenterPoint,
+		MainMenuUiView::NewGameButtonWidth,
+		MainMenuUiView::NewGameButtonHeight,
+		MainMenuUiController::onNewGameButtonSelected);
+	this->exitButton = Button<>(
+		MainMenuUiView::ExitButtonCenterPoint,
+		MainMenuUiView::ExitButtonWidth,
+		MainMenuUiView::ExitButtonHeight,
+		MainMenuUiController::onExitGameButtonSelected);
+	this->quickStartButton = Button<Game&, int, int, const std::string&, const std::optional<ArenaTypes::InteriorType>&,
+		ArenaTypes::WeatherType, MapType>(MainMenuUiController::onQuickStartButtonSelected);
+	this->testTypeUpButton = Button<int*, int*, int*, int*>(
+		MainMenuUiView::TestTypeUpButtonX,
+		MainMenuUiView::TestTypeUpButtonY,
+		MainMenuUiView::TestTypeUpButtonWidth,
+		MainMenuUiView::TestTypeUpButtonHeight,
+		MainMenuUiController::onTestTypeUpButtonSelected);
+	this->testTypeDownButton = Button<int*, int*, int*, int*>(
+		MainMenuUiView::TestTypeDownButtonX,
+		MainMenuUiView::TestTypeDownButtonY,
+		MainMenuUiView::TestTypeDownButtonWidth,
+		MainMenuUiView::TestTypeDownButtonHeight,
+		MainMenuUiController::onTestTypeDownButtonSelected);
+	this->testIndexUpButton = Button<int*, int*, int*>(
+		MainMenuUiView::TestIndexUpButtonX,
+		MainMenuUiView::TestIndexUpButtonY,
+		MainMenuUiView::TestIndexUpButtonWidth,
+		MainMenuUiView::TestIndexUpButtonHeight,
+		MainMenuUiController::onTestIndexUpButtonSelected);
+	this->testIndexDownButton = Button<int*, int*, int*>(
+		MainMenuUiView::TestIndexDownButtonX,
+		MainMenuUiView::TestIndexDownButtonY,
+		MainMenuUiView::TestIndexDownButtonWidth,
+		MainMenuUiView::TestIndexDownButtonHeight,
+		MainMenuUiController::onTestIndexDownButtonSelected);
+	this->testIndex2UpButton = Button<int, int, int*>(
+		MainMenuUiView::TestIndex2UpButtonX,
+		MainMenuUiView::TestIndex2UpButtonY,
+		MainMenuUiView::TestIndex2UpButtonWidth,
+		MainMenuUiView::TestIndex2UpButtonHeight,
+		MainMenuUiController::onTestIndex2UpButtonSelected);
+	this->testIndex2DownButton = Button<int, int, int*>(
+		MainMenuUiView::TestIndex2DownButtonX,
+		MainMenuUiView::TestIndex2DownButtonY,
+		MainMenuUiView::TestIndex2DownButtonWidth,
+		MainMenuUiView::TestIndex2DownButtonHeight,
+		MainMenuUiController::onTestIndex2DownButtonSelected);
+	this->testWeatherUpButton = Button<int, int*>(
+		MainMenuUiView::TestWeatherUpButtonX,
+		MainMenuUiView::TestWeatherUpButtonY,
+		MainMenuUiView::TestWeatherUpButtonWidth,
+		MainMenuUiView::TestWeatherUpButtonHeight,
+		MainMenuUiController::onTestWeatherUpButtonSelected);
+	this->testWeatherDownButton = Button<int, int*>(
+		MainMenuUiView::TestWeatherDownButtonX,
+		MainMenuUiView::TestWeatherDownButtonY,
+		MainMenuUiView::TestWeatherDownButtonWidth,
+		MainMenuUiView::TestWeatherDownButtonHeight,
+		MainMenuUiController::onTestWeatherDownButtonSelected);
 
 	this->testType = 0;
 	this->testIndex = 0;
