@@ -5,6 +5,8 @@
 #include "SDL.h"
 
 #include "OptionsPanel.h"
+#include "OptionsUiController.h"
+#include "OptionsUiView.h"
 #include "PauseMenuPanel.h"
 #include "../Audio/AudioManager.h"
 #include "../Entities/Player.h"
@@ -26,230 +28,6 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
-
-namespace
-{
-	const Color BackgroundColor(60, 60, 68);
-
-	// Screen locations for various options things.
-	const Int2 TabsOrigin(3, 38);
-	const Int2 TabsDimensions(54, 16);
-	const Int2 ListOrigin(
-		TabsOrigin.x + TabsDimensions.x + 5,
-		TabsOrigin.y);
-	const Int2 ListDimensions(254, TabsDimensions.y * 5);
-	const Int2 DescriptionOrigin(
-		TabsOrigin.x + 2,
-		TabsOrigin.y + (TabsDimensions.y * 5) + 4);
-
-	const Rect GraphicsTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y,
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect AudioTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + TabsDimensions.y,
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect InputTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 2),
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect MiscTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 3),
-		TabsDimensions.x,
-		TabsDimensions.y);
-	const Rect DevTabRect(
-		TabsOrigin.x,
-		TabsOrigin.y + (TabsDimensions.y * 4),
-		TabsDimensions.x,
-		TabsDimensions.y);
-}
-
-OptionsPanel::Option::Option(const std::string &name, std::string &&tooltip, Type type)
-	: name(name), tooltip(std::move(tooltip))
-{
-	this->type = type;
-}
-
-OptionsPanel::Option::Option(const std::string &name, Type type)
-	: Option(name, std::string(), type) { }
-
-const std::string &OptionsPanel::Option::getName() const
-{
-	return this->name;
-}
-
-const std::string &OptionsPanel::Option::getTooltip() const
-{
-	return this->tooltip;
-}
-
-OptionsPanel::Option::Type OptionsPanel::Option::getType() const
-{
-	return this->type;
-}
-
-OptionsPanel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip,
-	bool value, Callback &&callback)
-	: Option(name, std::move(tooltip), Option::Type::Bool), callback(std::move(callback))
-{
-	this->value = value;
-}
-
-OptionsPanel::BoolOption::BoolOption(const std::string &name, bool value, Callback &&callback)
-	: BoolOption(name, std::string(), value, std::move(callback)) { }
-
-std::string OptionsPanel::BoolOption::getDisplayedValue() const
-{
-	return this->value ? "true" : "false";
-}
-
-void OptionsPanel::BoolOption::toggle()
-{
-	this->value = !this->value;
-	this->callback(this->value);
-}
-
-OptionsPanel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value,
-	int delta, int min, int max, Callback &&callback)
-	: Option(name, std::move(tooltip), Option::Type::Int), callback(std::move(callback))
-{
-	this->value = value;
-	this->delta = delta;
-	this->min = min;
-	this->max = max;
-}
-
-OptionsPanel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
-	Callback &&callback)
-	: IntOption(name, std::string(), value, delta, min, max, std::move(callback)) { }
-
-int OptionsPanel::IntOption::getNext() const
-{
-	return std::min(this->value + this->delta, this->max);
-}
-
-int OptionsPanel::IntOption::getPrev() const
-{
-	return std::max(this->value - this->delta, this->min);
-}
-
-std::string OptionsPanel::IntOption::getDisplayedValue() const
-{
-	return (this->displayOverrides.size() > 0) ?
-		this->displayOverrides.at(this->value) : std::to_string(this->value);
-}
-
-void OptionsPanel::IntOption::set(int value)
-{
-	this->value = value;
-	this->callback(this->value);
-}
-
-void OptionsPanel::IntOption::setDisplayOverrides(std::vector<std::string> &&displayOverrides)
-{
-	this->displayOverrides = std::move(displayOverrides);
-}
-
-OptionsPanel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,
-	double value, double delta, double min, double max, int precision, Callback &&callback)
-	: Option(name, std::move(tooltip), Option::Type::Double), callback(std::move(callback))
-{
-	this->value = value;
-	this->delta = delta;
-	this->min = min;
-	this->max = max;
-	this->precision = precision;
-}
-
-OptionsPanel::DoubleOption::DoubleOption(const std::string &name, double value, double delta,
-	double min, double max, int precision, Callback &&callback)
-	: DoubleOption(name, std::string(), value, delta, min, max, precision, std::move(callback)) { }
-
-double OptionsPanel::DoubleOption::getNext() const
-{
-	return std::min(this->value + this->delta, this->max);
-}
-
-double OptionsPanel::DoubleOption::getPrev() const
-{
-	return std::max(this->value - this->delta, this->min);
-}
-
-std::string OptionsPanel::DoubleOption::getDisplayedValue() const
-{
-	return String::fixedPrecision(this->value, this->precision);
-}
-
-void OptionsPanel::DoubleOption::set(double value)
-{
-	this->value = value;
-	this->callback(this->value);
-}
-
-OptionsPanel::StringOption::StringOption(const std::string &name, std::string &&tooltip,
-	std::string &&value, Callback &&callback)
-	: Option(name, std::move(tooltip), Option::Type::String), value(std::move(value)),
-	callback(std::move(callback)) { }
-
-OptionsPanel::StringOption::StringOption(const std::string &name, std::string &&value,
-	Callback &&callback)
-	: StringOption(name, std::string(), std::move(value), std::move(callback)) { }
-
-std::string OptionsPanel::StringOption::getDisplayedValue() const
-{
-	return this->value;
-}
-
-void OptionsPanel::StringOption::set(std::string &&value)
-{
-	this->value = std::move(value);
-	this->callback(this->value);
-}
-
-// Tabs.
-const std::string OptionsPanel::GRAPHICS_TAB_NAME = "Graphics";
-const std::string OptionsPanel::AUDIO_TAB_NAME = "Audio";
-const std::string OptionsPanel::INPUT_TAB_NAME = "Input";
-const std::string OptionsPanel::MISC_TAB_NAME = "Misc";
-const std::string OptionsPanel::DEV_TAB_NAME = "Dev";
-
-// Graphics.
-const std::string OptionsPanel::CURSOR_SCALE_NAME = "Cursor Scale";
-const std::string OptionsPanel::FPS_LIMIT_NAME = "FPS Limit";
-const std::string OptionsPanel::WINDOW_MODE_NAME = "Window Mode";
-const std::string OptionsPanel::LETTERBOX_MODE_NAME = "Letterbox Mode";
-const std::string OptionsPanel::MODERN_INTERFACE_NAME = "Modern Interface";
-const std::string OptionsPanel::RENDER_THREADS_MODE_NAME = "Render Threads Mode";
-const std::string OptionsPanel::RESOLUTION_SCALE_NAME = "Resolution Scale";
-const std::string OptionsPanel::VERTICAL_FOV_NAME = "Vertical FOV";
-
-// Audio.
-const std::string OptionsPanel::SOUND_CHANNELS_NAME = "Sound Channels";
-const std::string OptionsPanel::SOUND_RESAMPLING_NAME = "Sound Resampling";
-const std::string OptionsPanel::IS_3D_AUDIO_NAME = "Is 3D Audio";
-
-// Input.
-const std::string OptionsPanel::HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
-const std::string OptionsPanel::VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
-const std::string OptionsPanel::CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
-const std::string OptionsPanel::PIXEL_PERFECT_SELECTION_NAME = "Pixel-Perfect Selection";
-
-// Misc.
-const std::string OptionsPanel::SHOW_COMPASS_NAME = "Show Compass";
-const std::string OptionsPanel::SHOW_INTRO_NAME = "Show Intro";
-const std::string OptionsPanel::TIME_SCALE_NAME = "Time Scale";
-const std::string OptionsPanel::CHUNK_DISTANCE_NAME = "Chunk Distance";
-const std::string OptionsPanel::STAR_DENSITY_NAME = "Star Density";
-const std::string OptionsPanel::PLAYER_HAS_LIGHT_NAME = "Player Has Light";
-
-// Dev.
-const std::string OptionsPanel::COLLISION_NAME = "Collision";
-const std::string OptionsPanel::PROFILER_LEVEL_NAME = "Profiler Level";
 
 OptionsPanel::OptionsPanel(Game &game)
 	: Panel(game)
@@ -300,23 +78,25 @@ OptionsPanel::OptionsPanel(Game &game)
 		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
 	};
 
+	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
+	const Int2 &tabsDimensions = OptionsUiView::TabsDimensions;
 	const Int2 initialTabCenter(
-		GraphicsTabRect.getLeft() + (GraphicsTabRect.getWidth() / 2),
-		GraphicsTabRect.getTop() + (GraphicsTabRect.getHeight() / 2));
+		graphicsTabRect.getLeft() + (graphicsTabRect.getWidth() / 2),
+		graphicsTabRect.getTop() + (graphicsTabRect.getHeight() / 2));
 	this->graphicsTextBox = makeTabTextBox(
-		initialTabCenter, OptionsPanel::GRAPHICS_TAB_NAME);
+		initialTabCenter, OptionsUiModel::GRAPHICS_TAB_NAME);
 	this->audioTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, TabsDimensions.y),
-		OptionsPanel::AUDIO_TAB_NAME);
+		initialTabCenter + Int2(0, tabsDimensions.y),
+		OptionsUiModel::AUDIO_TAB_NAME);
 	this->inputTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, TabsDimensions.y * 2),
-		OptionsPanel::INPUT_TAB_NAME);
+		initialTabCenter + Int2(0, tabsDimensions.y * 2),
+		OptionsUiModel::INPUT_TAB_NAME);
 	this->miscTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, TabsDimensions.y * 3),
-		OptionsPanel::MISC_TAB_NAME);
+		initialTabCenter + Int2(0, tabsDimensions.y * 3),
+		OptionsUiModel::MISC_TAB_NAME);
 	this->devTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, TabsDimensions.y * 4),
-		OptionsPanel::DEV_TAB_NAME);
+		initialTabCenter + Int2(0, tabsDimensions.y * 4),
+		OptionsUiModel::DEV_TAB_NAME);
 
 	this->backToPauseMenuButton = [this]()
 	{
@@ -352,8 +132,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	const auto &options = game.getOptions();
 
 	// Create graphics options.
-	auto windowModeOption = std::make_unique<IntOption>(
-		OptionsPanel::WINDOW_MODE_NAME,
+	auto windowModeOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::WINDOW_MODE_NAME,
 		options.getGraphics_WindowMode(),
 		1,
 		Options::MIN_WINDOW_MODE,
@@ -384,8 +164,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	windowModeOption->setDisplayOverrides({ "Window", "Borderless Full" });
 	this->graphicsOptions.push_back(std::move(windowModeOption));
 
-	this->graphicsOptions.push_back(std::make_unique<IntOption>(
-		OptionsPanel::FPS_LIMIT_NAME,
+	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::FPS_LIMIT_NAME,
 		options.getGraphics_TargetFPS(),
 		5,
 		Options::MIN_FPS,
@@ -397,8 +177,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_TargetFPS(value);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::RESOLUTION_SCALE_NAME,
+	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::RESOLUTION_SCALE_NAME,
 		"Percent of the window resolution to use for software rendering.\nThis has a significant impact on performance.",
 		options.getGraphics_ResolutionScale(),
 		0.050,
@@ -419,8 +199,8 @@ OptionsPanel::OptionsPanel(Game &game)
 			value, fullGameWindow);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::VERTICAL_FOV_NAME,
+	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::VERTICAL_FOV_NAME,
 		"Recommended 60.0 for classic mode.",
 		options.getGraphics_VerticalFOV(),
 		5.0,
@@ -434,8 +214,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_VerticalFOV(value);
 	}));
 
-	auto letterboxModeOption = std::make_unique<IntOption>(
-		OptionsPanel::LETTERBOX_MODE_NAME,
+	auto letterboxModeOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::LETTERBOX_MODE_NAME,
 		"Determines the aspect ratio of the game UI. The weapon animation\nin modern mode is unaffected by this.",
 		options.getGraphics_LetterboxMode(),
 		1,
@@ -453,8 +233,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	letterboxModeOption->setDisplayOverrides({ "16:10", "4:3", "Stretch" });
 	this->graphicsOptions.push_back(std::move(letterboxModeOption));
 
-	this->graphicsOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::CURSOR_SCALE_NAME,
+	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::CURSOR_SCALE_NAME,
 		options.getGraphics_CursorScale(),
 		0.10,
 		Options::MIN_CURSOR_SCALE,
@@ -467,8 +247,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_CursorScale(value);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::MODERN_INTERFACE_NAME,
+	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::MODERN_INTERFACE_NAME,
 		"Modern mode uses a minimal interface with free-look.",
 		options.getGraphics_ModernInterface(),
 		[this](bool value)
@@ -494,8 +274,8 @@ OptionsPanel::OptionsPanel(Game &game)
 			options.getGraphics_ResolutionScale(), fullGameWindow);
 	}));
 
-	auto renderThreadsModeOption = std::make_unique<IntOption>(
-		OptionsPanel::RENDER_THREADS_MODE_NAME,
+	auto renderThreadsModeOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::RENDER_THREADS_MODE_NAME,
 		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
@@ -514,8 +294,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	this->graphicsOptions.push_back(std::move(renderThreadsModeOption));
 
 	// Create audio options.
-	this->audioOptions.push_back(std::make_unique<IntOption>(
-		OptionsPanel::SOUND_CHANNELS_NAME,
+	this->audioOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::SOUND_CHANNELS_NAME,
 		"Determines max number of concurrent sounds (including music).\nChanges are applied on next program start.",
 		options.getAudio_SoundChannels(),
 		1,
@@ -528,8 +308,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setAudio_SoundChannels(value);
 	}));
 
-	auto soundResamplingOption = std::make_unique<IntOption>(
-		OptionsPanel::SOUND_RESAMPLING_NAME,
+	auto soundResamplingOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::SOUND_RESAMPLING_NAME,
 		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
@@ -552,8 +332,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	soundResamplingOption->setDisplayOverrides({ "Default", "Fastest", "Medium", "Best" });
 	this->audioOptions.push_back(std::move(soundResamplingOption));
 
-	this->audioOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::IS_3D_AUDIO_NAME,
+	this->audioOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::IS_3D_AUDIO_NAME,
 		"Determines whether sounds in the game world have a 3D position.\nSet to false for classic behavior.",
 		options.getAudio_Is3DAudio(),
 		[this](bool value)
@@ -567,8 +347,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create input options.
-	this->inputOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::HORIZONTAL_SENSITIVITY_NAME,
+	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::HORIZONTAL_SENSITIVITY_NAME,
 		options.getInput_HorizontalSensitivity(),
 		0.10,
 		Options::MIN_HORIZONTAL_SENSITIVITY,
@@ -581,8 +361,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setInput_HorizontalSensitivity(value);
 	}));
 
-	this->inputOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::VERTICAL_SENSITIVITY_NAME,
+	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::VERTICAL_SENSITIVITY_NAME,
 		"Only affects camera look in modern mode.",
 		options.getInput_VerticalSensitivity(),
 		0.10,
@@ -596,8 +376,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setInput_VerticalSensitivity(value);
 	}));
 
-	this->inputOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::CAMERA_PITCH_LIMIT_NAME,
+	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::CAMERA_PITCH_LIMIT_NAME,
 		"Determines how far above or below the horizon the camera can\nlook in modern mode.",
 		options.getInput_CameraPitchLimit(),
 		5.0,
@@ -615,8 +395,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		player.setDirectionToHorizon();
 	}));
 
-	this->inputOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::PIXEL_PERFECT_SELECTION_NAME,
+	this->inputOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::PIXEL_PERFECT_SELECTION_NAME,
 		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
 		options.getInput_PixelPerfectSelection(),
 		[this](bool value)
@@ -627,8 +407,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create miscellaneous options.
-	this->miscOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::SHOW_COMPASS_NAME,
+	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::SHOW_COMPASS_NAME,
 		options.getMisc_ShowCompass(),
 		[this](bool value)
 	{
@@ -637,8 +417,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ShowCompass(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::SHOW_INTRO_NAME,
+	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::SHOW_INTRO_NAME,
 		"Shows startup logo and related screens.",
 		options.getMisc_ShowIntro(),
 		[this](bool value)
@@ -648,8 +428,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ShowIntro(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<DoubleOption>(
-		OptionsPanel::TIME_SCALE_NAME,
+	this->miscOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+		OptionsUiModel::TIME_SCALE_NAME,
 		"Affects speed of gameplay. Lower this to simulate the speed of\nlower cycles in DOSBox.",
 		options.getMisc_TimeScale(),
 		0.050,
@@ -663,8 +443,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_TimeScale(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<IntOption>(
-		OptionsPanel::CHUNK_DISTANCE_NAME,
+	this->miscOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::CHUNK_DISTANCE_NAME,
 		"Affects how many chunks away from the player chunks are\nsimulated and rendered.",
 		options.getMisc_ChunkDistance(),
 		1,
@@ -677,8 +457,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ChunkDistance(value);
 	}));
 
-	auto starDensityOption = std::make_unique<IntOption>(
-		OptionsPanel::STAR_DENSITY_NAME,
+	auto starDensityOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::STAR_DENSITY_NAME,
 		"Determines number of stars in the sky. Changes take effect the next\ntime stars are generated.",
 		options.getMisc_StarDensity(),
 		1,
@@ -694,8 +474,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	starDensityOption->setDisplayOverrides({ "Classic", "Moderate", "High" });
 	this->miscOptions.push_back(std::move(starDensityOption));
 
-	this->miscOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::PLAYER_HAS_LIGHT_NAME,
+	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::PLAYER_HAS_LIGHT_NAME,
 		"Whether the player has a light attached like in the original game.",
 		options.getMisc_PlayerHasLight(),
 		[this](bool value)
@@ -706,8 +486,8 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create developer options.
-	this->devOptions.push_back(std::make_unique<BoolOption>(
-		OptionsPanel::COLLISION_NAME,
+	this->devOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::COLLISION_NAME,
 		"Enables player collision (not fully implemented yet).",
 		options.getMisc_Collision(),
 		[this](bool value)
@@ -717,8 +497,8 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_Collision(value);
 	}));
 
-	this->devOptions.push_back(std::make_unique<IntOption>(
-		OptionsPanel::PROFILER_LEVEL_NAME,
+	this->devOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
 		options.getMisc_ProfilerLevel(),
 		1,
@@ -738,7 +518,7 @@ OptionsPanel::OptionsPanel(Game &game)
 	this->updateVisibleOptionTextBoxes();
 }
 
-std::vector<std::unique_ptr<OptionsPanel::Option>> &OptionsPanel::getVisibleOptions()
+std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOptions()
 {
 	if (this->tab == OptionsPanel::Tab::Graphics)
 	{
@@ -780,9 +560,10 @@ void OptionsPanel::updateOptionTextBox(int index)
 		TextAlignment::Left,
 		fontLibrary);
 
+	const Int2 &point = OptionsUiView::ListOrigin;
 	this->currentTabTextBoxes.at(index) = std::make_unique<TextBox>(
-		ListOrigin.x,
-		ListOrigin.y + (richText.getDimensions().y * index),
+		point.x,
+		point.y + (richText.getDimensions().y * index),
 		richText,
 		fontLibrary,
 		game.getRenderer());
@@ -805,13 +586,14 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 {
 	auto &textureManager = this->getGame().getTextureManager();
+	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
 	Texture tabBackground = TextureUtils::generate(TextureUtils::PatternType::Custom1,
-		GraphicsTabRect.getWidth(), GraphicsTabRect.getHeight(), textureManager, renderer);
+		graphicsTabRect.getWidth(), graphicsTabRect.getHeight(), textureManager, renderer);
 
 	for (int i = 0; i < 5; i++)
 	{
-		const int tabX = GraphicsTabRect.getLeft();
-		const int tabY = GraphicsTabRect.getTop() + (tabBackground.getHeight() * i);
+		const int tabX = graphicsTabRect.getLeft();
+		const int tabY = graphicsTabRect.getTop() + (tabBackground.getHeight() * i);
 		renderer.drawOriginal(tabBackground, tabX, tabY);
 	}
 
@@ -851,9 +633,9 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
 		const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
 		const Rect optionRect(
-			ListOrigin.x,
-			ListOrigin.y + (optionTextBoxHeight * i),
-			ListDimensions.x,
+			OptionsUiView::ListOrigin.x,
+			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
+			OptionsUiView::ListDimensions.x,
 			optionTextBoxHeight);
 
 		const auto &inputManager = this->getGame().getInputManager();
@@ -864,7 +646,7 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 		// If the options rect contains the mouse cursor, highlight it before drawing text.
 		if (optionRectContainsMouse)
 		{
-			const Color highlightColor = BackgroundColor + Color(20, 20, 20);
+			const Color highlightColor = OptionsUiView::BackgroundColor + Color(20, 20, 20);
 			renderer.fillOriginalRect(highlightColor,
 				optionRect.getLeft(), optionRect.getTop(),
 				optionRect.getWidth(), optionRect.getHeight());
@@ -903,8 +685,13 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 		TextAlignment::Left,
 		fontLibrary);
 
+	const Int2 &point = OptionsUiView::DescriptionOrigin;
 	auto descriptionTextBox = std::make_unique<TextBox>(
-		DescriptionOrigin.x, DescriptionOrigin.y, richText, fontLibrary, game.getRenderer());
+		point.x,
+		point.y,
+		richText,
+		fontLibrary,
+		game.getRenderer());
 
 	renderer.drawOriginal(descriptionTextBox->getTexture(),
 		descriptionTextBox->getX(), descriptionTextBox->getY());
@@ -923,8 +710,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
+	const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 	if (escapePressed)
 	{
@@ -933,27 +719,28 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 	else if (leftClick)
 	{
 		// Check for various button clicks.
+		// @todo: the tab rects should be pretty easy to iterate over
 		if (this->backToPauseMenuButton.contains(originalPoint))
 		{
 			this->backToPauseMenuButton.click(this->getGame());
 		}
-		else if (GraphicsTabRect.contains(originalPoint))
+		else if (OptionsUiView::GraphicsTabRect.contains(originalPoint))
 		{
 			this->tabButton.click(*this, OptionsPanel::Tab::Graphics);
 		}
-		else if (AudioTabRect.contains(originalPoint))
+		else if (OptionsUiView::AudioTabRect.contains(originalPoint))
 		{
 			this->tabButton.click(*this, OptionsPanel::Tab::Audio);
 		}
-		else if (InputTabRect.contains(originalPoint))
+		else if (OptionsUiView::InputTabRect.contains(originalPoint))
 		{
 			this->tabButton.click(*this, OptionsPanel::Tab::Input);
 		}
-		else if (MiscTabRect.contains(originalPoint))
+		else if (OptionsUiView::MiscTabRect.contains(originalPoint))
 		{
 			this->tabButton.click(*this, OptionsPanel::Tab::Misc);
 		}
-		else if (DevTabRect.contains(originalPoint))
+		else if (OptionsUiView::DevTabRect.contains(originalPoint))
 		{
 			this->tabButton.click(*this, OptionsPanel::Tab::Dev);
 		}
@@ -971,9 +758,9 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 			const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
 
 			const Rect optionRect(
-				ListOrigin.x,
-				ListOrigin.y + (optionTextBoxHeight * i),
-				ListDimensions.x,
+				OptionsUiView::ListOrigin.x,
+				OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
+				OptionsUiView::ListDimensions.x,
 				optionTextBoxHeight);
 
 			// See if the option's rectangle contains the mouse click.
@@ -985,22 +772,22 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 				// to try and increment it or decrement it (if that has any meaning).
 				auto tryIncrement = [&option]()
 				{
-					if (option->getType() == Option::Type::Bool)
+					if (option->getType() == OptionsUiModel::OptionType::Bool)
 					{
-						BoolOption *boolOpt = static_cast<BoolOption*>(option.get());
+						OptionsUiModel::BoolOption *boolOpt = static_cast<OptionsUiModel::BoolOption*>(option.get());
 						boolOpt->toggle();
 					}
-					else if (option->getType() == Option::Type::Int)
+					else if (option->getType() == OptionsUiModel::OptionType::Int)
 					{
-						IntOption *intOpt = static_cast<IntOption*>(option.get());
+						OptionsUiModel::IntOption *intOpt = static_cast<OptionsUiModel::IntOption*>(option.get());
 						intOpt->set(intOpt->getNext());
 					}
-					else if (option->getType() == Option::Type::Double)
+					else if (option->getType() == OptionsUiModel::OptionType::Double)
 					{
-						DoubleOption *doubleOpt = static_cast<DoubleOption*>(option.get());
+						OptionsUiModel::DoubleOption *doubleOpt = static_cast<OptionsUiModel::DoubleOption*>(option.get());
 						doubleOpt->set(doubleOpt->getNext());
 					}
-					else if (option->getType() == Option::Type::String)
+					else if (option->getType() == OptionsUiModel::OptionType::String)
 					{
 						// Do nothing.
 						static_cast<void>(option);
@@ -1014,22 +801,22 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 
 				auto tryDecrement = [&option]()
 				{
-					if (option->getType() == Option::Type::Bool)
+					if (option->getType() == OptionsUiModel::OptionType::Bool)
 					{
-						BoolOption *boolOpt = static_cast<BoolOption*>(option.get());
+						OptionsUiModel::BoolOption *boolOpt = static_cast<OptionsUiModel::BoolOption*>(option.get());
 						boolOpt->toggle();
 					}
-					else if (option->getType() == Option::Type::Int)
+					else if (option->getType() == OptionsUiModel::OptionType::Int)
 					{
-						IntOption *intOpt = static_cast<IntOption*>(option.get());
+						OptionsUiModel::IntOption *intOpt = static_cast<OptionsUiModel::IntOption*>(option.get());
 						intOpt->set(intOpt->getPrev());
 					}
-					else if (option->getType() == Option::Type::Double)
+					else if (option->getType() == OptionsUiModel::OptionType::Double)
 					{
-						DoubleOption *doubleOpt = static_cast<DoubleOption*>(option.get());
+						OptionsUiModel::DoubleOption *doubleOpt = static_cast<OptionsUiModel::DoubleOption*>(option.get());
 						doubleOpt->set(doubleOpt->getPrev());
 					}
-					else if (option->getType() == Option::Type::String)
+					else if (option->getType() == OptionsUiModel::OptionType::String)
 					{
 						// Do nothing.
 						static_cast<void>(option);
@@ -1065,7 +852,7 @@ void OptionsPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	// Draw solid background.
-	renderer.clearOriginal(BackgroundColor);
+	renderer.clearOriginal(OptionsUiView::BackgroundColor);
 
 	// Draw elements.
 	this->drawReturnButtonsAndTabs(renderer);
