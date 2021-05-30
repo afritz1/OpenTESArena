@@ -2,7 +2,6 @@
 #define LOGBOOK_PANEL_H
 
 #include "Panel.h"
-#include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
 
 class Renderer;
