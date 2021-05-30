@@ -110,12 +110,13 @@ OptionsPanel::OptionsPanel(Game &game)
 	const auto &options = game.getOptions();
 
 	// Create graphics options.
-	auto windowModeOption = std::make_unique<OptionsUiModel::IntOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::WINDOW_MODE_NAME,
 		options.getGraphics_WindowMode(),
 		1,
 		Options::MIN_WINDOW_MODE,
 		Options::MAX_WINDOW_MODE,
+		std::vector<std::string> { "Window", "Borderless Full" },
 		[this](int value)
 	{
 		auto &game = this->getGame();
@@ -137,12 +138,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		}();
 
 		renderer.setWindowMode(mode);
-	});
+	}));
 
-	windowModeOption->setDisplayOverrides({ "Window", "Borderless Full" });
-	this->graphicsOptions.push_back(std::move(windowModeOption));
-
-	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::FPS_LIMIT_NAME,
 		options.getGraphics_TargetFPS(),
 		5,
@@ -155,7 +153,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_TargetFPS(value);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::RESOLUTION_SCALE_NAME,
 		"Percent of the window resolution to use for software rendering.\nThis has a significant impact on performance.",
 		options.getGraphics_ResolutionScale(),
@@ -177,7 +175,7 @@ OptionsPanel::OptionsPanel(Game &game)
 			value, fullGameWindow);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::VERTICAL_FOV_NAME,
 		"Recommended 60.0 for classic mode.",
 		options.getGraphics_VerticalFOV(),
@@ -192,13 +190,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_VerticalFOV(value);
 	}));
 
-	auto letterboxModeOption = std::make_unique<OptionsUiModel::IntOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::LETTERBOX_MODE_NAME,
 		"Determines the aspect ratio of the game UI. The weapon animation\nin modern mode is unaffected by this.",
 		options.getGraphics_LetterboxMode(),
 		1,
 		Options::MIN_LETTERBOX_MODE,
 		Options::MAX_LETTERBOX_MODE,
+		std::vector<std::string> { "16:10", "4:3", "Stretch" },
 		[this](int value)
 	{
 		auto &game = this->getGame();
@@ -206,12 +205,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &renderer = game.getRenderer();
 		options.setGraphics_LetterboxMode(value);
 		renderer.setLetterboxMode(value);
-	});
+	}));
 
-	letterboxModeOption->setDisplayOverrides({ "16:10", "4:3", "Stretch" });
-	this->graphicsOptions.push_back(std::move(letterboxModeOption));
-
-	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CURSOR_SCALE_NAME,
 		options.getGraphics_CursorScale(),
 		0.10,
@@ -225,7 +221,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setGraphics_CursorScale(value);
 	}));
 
-	this->graphicsOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::MODERN_INTERFACE_NAME,
 		"Modern mode uses a minimal interface with free-look.",
 		options.getGraphics_ModernInterface(),
@@ -252,13 +248,14 @@ OptionsPanel::OptionsPanel(Game &game)
 			options.getGraphics_ResolutionScale(), fullGameWindow);
 	}));
 
-	auto renderThreadsModeOption = std::make_unique<OptionsUiModel::IntOption>(
+	this->graphicsOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::RENDER_THREADS_MODE_NAME,
 		"Determines the number of CPU threads to use for rendering.\nThis has a significant impact on performance.\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
 		options.getGraphics_RenderThreadsMode(),
 		1,
 		Options::MIN_RENDER_THREADS_MODE,
 		Options::MAX_RENDER_THREADS_MODE,
+		std::vector<std::string> { "Very Low", "Low", "Medium", "High", "Very High", "Max" },
 		[this](int value)
 	{
 		auto &game = this->getGame();
@@ -266,13 +263,10 @@ OptionsPanel::OptionsPanel(Game &game)
 		auto &renderer = game.getRenderer();
 		options.setGraphics_RenderThreadsMode(value);
 		renderer.setRenderThreadsMode(value);
-	});
-
-	renderThreadsModeOption->setDisplayOverrides({ "Very Low", "Low", "Medium", "High", "Very High", "Max" });
-	this->graphicsOptions.push_back(std::move(renderThreadsModeOption));
+	}));
 
 	// Create audio options.
-	this->audioOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+	this->audioOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::SOUND_CHANNELS_NAME,
 		"Determines max number of concurrent sounds (including music).\nChanges are applied on next program start.",
 		options.getAudio_SoundChannels(),
@@ -286,13 +280,14 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setAudio_SoundChannels(value);
 	}));
 
-	auto soundResamplingOption = std::make_unique<OptionsUiModel::IntOption>(
+	this->audioOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::SOUND_RESAMPLING_NAME,
 		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
 		0,
 		Options::RESAMPLING_OPTION_COUNT - 1,
+		std::vector<std::string> { "Default", "Fastest", "Medium", "Best" },
 		[this](int value)
 	{
 		auto &game = this->getGame();
@@ -305,12 +300,9 @@ OptionsPanel::OptionsPanel(Game &game)
 		{
 			audioManager.setResamplingOption(value);
 		}
-	});
+	}));
 
-	soundResamplingOption->setDisplayOverrides({ "Default", "Fastest", "Medium", "Best" });
-	this->audioOptions.push_back(std::move(soundResamplingOption));
-
-	this->audioOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->audioOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::IS_3D_AUDIO_NAME,
 		"Determines whether sounds in the game world have a 3D position.\nSet to false for classic behavior.",
 		options.getAudio_Is3DAudio(),
@@ -325,7 +317,7 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create input options.
-	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->inputOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::HORIZONTAL_SENSITIVITY_NAME,
 		options.getInput_HorizontalSensitivity(),
 		0.10,
@@ -339,7 +331,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setInput_HorizontalSensitivity(value);
 	}));
 
-	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->inputOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::VERTICAL_SENSITIVITY_NAME,
 		"Only affects camera look in modern mode.",
 		options.getInput_VerticalSensitivity(),
@@ -354,7 +346,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setInput_VerticalSensitivity(value);
 	}));
 
-	this->inputOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->inputOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CAMERA_PITCH_LIMIT_NAME,
 		"Determines how far above or below the horizon the camera can\nlook in modern mode.",
 		options.getInput_CameraPitchLimit(),
@@ -373,7 +365,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		player.setDirectionToHorizon();
 	}));
 
-	this->inputOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->inputOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::PIXEL_PERFECT_SELECTION_NAME,
 		"Changes entity selection so only clicks on opaque places are\nregistered, if enabled.",
 		options.getInput_PixelPerfectSelection(),
@@ -385,7 +377,7 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create miscellaneous options.
-	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::SHOW_COMPASS_NAME,
 		options.getMisc_ShowCompass(),
 		[this](bool value)
@@ -395,7 +387,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ShowCompass(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::SHOW_INTRO_NAME,
 		"Shows startup logo and related screens.",
 		options.getMisc_ShowIntro(),
@@ -406,7 +398,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ShowIntro(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<OptionsUiModel::DoubleOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::TIME_SCALE_NAME,
 		"Affects speed of gameplay. Lower this to simulate the speed of\nlower cycles in DOSBox.",
 		options.getMisc_TimeScale(),
@@ -421,7 +413,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_TimeScale(value);
 	}));
 
-	this->miscOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::CHUNK_DISTANCE_NAME,
 		"Affects how many chunks away from the player chunks are\nsimulated and rendered.",
 		options.getMisc_ChunkDistance(),
@@ -435,24 +427,22 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_ChunkDistance(value);
 	}));
 
-	auto starDensityOption = std::make_unique<OptionsUiModel::IntOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::STAR_DENSITY_NAME,
 		"Determines number of stars in the sky. Changes take effect the next\ntime stars are generated.",
 		options.getMisc_StarDensity(),
 		1,
 		Options::MIN_STAR_DENSITY_MODE,
 		Options::MAX_STAR_DENSITY_MODE,
+		std::vector<std::string> { "Classic", "Moderate", "High" },
 		[this](int value)
 	{
 		auto &game = this->getGame();
 		auto &options = game.getOptions();
 		options.setMisc_StarDensity(value);
-	});
+	}));
 
-	starDensityOption->setDisplayOverrides({ "Classic", "Moderate", "High" });
-	this->miscOptions.push_back(std::move(starDensityOption));
-
-	this->miscOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->miscOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::PLAYER_HAS_LIGHT_NAME,
 		"Whether the player has a light attached like in the original game.",
 		options.getMisc_PlayerHasLight(),
@@ -464,7 +454,7 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Create developer options.
-	this->devOptions.push_back(std::make_unique<OptionsUiModel::BoolOption>(
+	this->devOptions.emplace_back(std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::COLLISION_NAME,
 		"Enables player collision (not fully implemented yet).",
 		options.getMisc_Collision(),
@@ -475,7 +465,7 @@ OptionsPanel::OptionsPanel(Game &game)
 		options.setMisc_Collision(value);
 	}));
 
-	this->devOptions.push_back(std::make_unique<OptionsUiModel::IntOption>(
+	this->devOptions.emplace_back(std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
 		options.getMisc_ProfilerLevel(),

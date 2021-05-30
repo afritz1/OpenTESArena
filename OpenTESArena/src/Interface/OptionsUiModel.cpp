@@ -47,15 +47,24 @@ void OptionsUiModel::BoolOption::toggle()
 	this->callback(this->value);
 }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value,
-	int delta, int min, int max, Callback &&callback)
-	: Option(name, std::move(tooltip), OptionType::Int), callback(std::move(callback))
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min,
+	int max, std::vector<std::string> &&displayOverrides, Callback &&callback)
+	: Option(name, std::move(tooltip), OptionType::Int), displayOverrides(std::move(displayOverrides)),
+	callback(std::move(callback))
 {
 	this->value = value;
 	this->delta = delta;
 	this->min = min;
 	this->max = max;
 }
+
+OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
+	std::vector<std::string> &&displayOverrides, Callback &&callback)
+	: IntOption(name, std::string(), value, delta, min, max, std::move(displayOverrides), std::move(callback)) { }
+
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta,
+	int min, int max, Callback &&callback)
+	: IntOption(name, std::move(tooltip), value, delta, min, max, std::vector<std::string>(), std::move(callback)) { }
 
 OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
 	Callback &&callback)
@@ -81,11 +90,6 @@ void OptionsUiModel::IntOption::set(int value)
 {
 	this->value = value;
 	this->callback(this->value);
-}
-
-void OptionsUiModel::IntOption::setDisplayOverrides(std::vector<std::string> &&displayOverrides)
-{
-	this->displayOverrides = std::move(displayOverrides);
 }
 
 OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,

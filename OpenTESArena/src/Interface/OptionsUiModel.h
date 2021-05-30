@@ -83,8 +83,7 @@ namespace OptionsUiModel
 		bool value;
 		Callback callback;
 	public:
-		BoolOption(const std::string &name, std::string &&tooltip, bool value,
-			Callback &&callback);
+		BoolOption(const std::string &name, std::string &&tooltip, bool value, Callback &&callback);
 		BoolOption(const std::string &name, bool value, Callback &&callback);
 		virtual ~BoolOption() = default;
 
@@ -99,13 +98,16 @@ namespace OptionsUiModel
 		using Callback = std::function<void(int)>;
 	private:
 		int value, delta, min, max;
-		Callback callback;
 		std::vector<std::string> displayOverrides; // For displaying names instead of integers.
+		Callback callback;
 	public:
-		IntOption(const std::string &name, std::string &&tooltip, int value, int delta,
-			int min, int max, Callback &&callback);
+		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
+			std::vector<std::string> &&displayOverrides, Callback &&callback);
 		IntOption(const std::string &name, int value, int delta, int min, int max,
+			std::vector<std::string> &&displayOverrides, Callback &&callback);
+		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
 			Callback &&callback);
+		IntOption(const std::string &name, int value, int delta, int min, int max, Callback &&callback);
 		virtual ~IntOption() = default;
 
 		int getNext() const; // Adds delta to current value, clamped between [min, max].
@@ -113,7 +115,6 @@ namespace OptionsUiModel
 		virtual std::string getDisplayedValue() const override;
 
 		void set(int value);
-		void setDisplayOverrides(std::vector<std::string> &&displayOverrides);
 	};
 
 	class DoubleOption : public Option
@@ -127,8 +128,8 @@ namespace OptionsUiModel
 	public:
 		DoubleOption(const std::string &name, std::string &&tooltip, double value, double delta,
 			double min, double max, int precision, Callback &&callback);
-		DoubleOption(const std::string &name, double value, double delta, double min,
-			double max, int precision, Callback &&callback);
+		DoubleOption(const std::string &name, double value, double delta, double min, double max,
+			int precision, Callback &&callback);
 		virtual ~DoubleOption() = default;
 
 		double getNext() const; // Adds delta to current value, clamped between [min, max].
@@ -146,8 +147,7 @@ namespace OptionsUiModel
 		std::string value;
 		Callback callback;
 	public:
-		StringOption(const std::string &name, std::string &&tooltip, std::string &&value,
-			Callback &&callback);
+		StringOption(const std::string &name, std::string &&tooltip, std::string &&value, Callback &&callback);
 		StringOption(const std::string &name, std::string &&value, Callback &&callback);
 		virtual ~StringOption() = default;
 
