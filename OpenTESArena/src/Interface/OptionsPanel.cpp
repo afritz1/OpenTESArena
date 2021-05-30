@@ -34,100 +34,78 @@ OptionsPanel::OptionsPanel(Game &game)
 {
 	this->titleTextBox = [&game]()
 	{
-		const Int2 center(160, 24);
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			"Options",
-			FontName::A,
-			Color::White,
-			TextAlignment::Center,
+			OptionsUiModel::OptionsTitleText,
+			OptionsUiView::TitleFontName,
+			OptionsUiView::getTitleTextColor(),
+			OptionsUiView::TitleTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			OptionsUiView::TitleTextBoxCenterPoint,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->backToPauseMenuTextBox = [&game]()
 	{
-		const Int2 center(
-			ArenaRenderUtils::SCREEN_WIDTH - 30,
-			ArenaRenderUtils::SCREEN_HEIGHT - 15);
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			"Return",
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Center,
+			OptionsUiModel::BackToPauseMenuText,
+			OptionsUiView::BackToPauseMenuFontName,
+			OptionsUiView::getBackToPauseMenuTextColor(),
+			OptionsUiView::BackToPauseMenuTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			OptionsUiView::BackToPauseMenuTextBoxCenterPoint,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	// Lambda for creating tab text boxes.
-	auto makeTabTextBox = [&game](const Int2 &center, const std::string &text)
+	auto makeTabTextBox = [&game](int tabIndex, const std::string &text)
 	{
+		const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
+		const Int2 &tabsDimensions = OptionsUiView::TabsDimensions;
+		const Int2 initialTabTextCenter(
+			graphicsTabRect.getLeft() + (graphicsTabRect.getWidth() / 2),
+			graphicsTabRect.getTop() + (graphicsTabRect.getHeight() / 2));
+		const Int2 tabOffset(0, tabsDimensions.y * tabIndex);
+		const Int2 center = initialTabTextCenter + tabOffset;
+
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
 			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Center,
+			OptionsUiView::TabFontName,
+			OptionsUiView::getTabTextColor(),
+			OptionsUiView::TabTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			center,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	};
 
-	const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
-	const Int2 &tabsDimensions = OptionsUiView::TabsDimensions;
-	const Int2 initialTabCenter(
-		graphicsTabRect.getLeft() + (graphicsTabRect.getWidth() / 2),
-		graphicsTabRect.getTop() + (graphicsTabRect.getHeight() / 2));
-	this->graphicsTextBox = makeTabTextBox(
-		initialTabCenter, OptionsUiModel::GRAPHICS_TAB_NAME);
-	this->audioTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, tabsDimensions.y),
-		OptionsUiModel::AUDIO_TAB_NAME);
-	this->inputTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, tabsDimensions.y * 2),
-		OptionsUiModel::INPUT_TAB_NAME);
-	this->miscTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, tabsDimensions.y * 3),
-		OptionsUiModel::MISC_TAB_NAME);
-	this->devTextBox = makeTabTextBox(
-		initialTabCenter + Int2(0, tabsDimensions.y * 4),
-		OptionsUiModel::DEV_TAB_NAME);
+	// @todo: should make this iterable
+	this->graphicsTextBox = makeTabTextBox(0, OptionsUiModel::GRAPHICS_TAB_NAME);
+	this->audioTextBox = makeTabTextBox(1, OptionsUiModel::AUDIO_TAB_NAME);
+	this->inputTextBox = makeTabTextBox(2, OptionsUiModel::INPUT_TAB_NAME);
+	this->miscTextBox = makeTabTextBox(3, OptionsUiModel::MISC_TAB_NAME);
+	this->devTextBox = makeTabTextBox(4, OptionsUiModel::DEV_TAB_NAME);
 
-	this->backToPauseMenuButton = [this]()
-	{
-		const Int2 center(
-			ArenaRenderUtils::SCREEN_WIDTH - 30,
-			ArenaRenderUtils::SCREEN_HEIGHT - 15);
-
-		auto function = [](Game &game)
-		{
-			game.setPanel<PauseMenuPanel>(game);
-		};
-
-		return Button<Game&>(center, 40, 16, function);
-	}();
-
-	this->tabButton = []()
-	{
-		auto function = [](OptionsPanel &panel, OptionsPanel::Tab tab)
-		{
-			// Update display if the tab values are different.
-			const bool tabsAreEqual = panel.tab == tab;
-			panel.tab = tab;
-
-			if (!tabsAreEqual)
-			{
-				panel.updateVisibleOptionTextBoxes();
-			}
-		};
-
-		return Button<OptionsPanel&, OptionsPanel::Tab>(function);
-	}();
+	this->backToPauseMenuButton = Button<Game&>(
+		OptionsUiView::BackToPauseMenuButtonCenterPoint,
+		OptionsUiView::BackToPauseMenuButtonWidth,
+		OptionsUiView::BackToPauseMenuButtonHeight,
+		OptionsUiController::onBackToPauseMenuButtonSelected);
+	this->tabButton = Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab>(
+		OptionsUiController::onTabButtonSelected);
 
 	const auto &options = game.getOptions();
 
@@ -512,7 +490,7 @@ OptionsPanel::OptionsPanel(Game &game)
 	}));
 
 	// Set initial tab.
-	this->tab = OptionsPanel::Tab::Graphics;
+	this->tab = OptionsUiModel::Tab::Graphics;
 
 	// Initialize all option text boxes for the initial tab.
 	this->updateVisibleOptionTextBoxes();
@@ -520,23 +498,23 @@ OptionsPanel::OptionsPanel(Game &game)
 
 std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOptions()
 {
-	if (this->tab == OptionsPanel::Tab::Graphics)
+	if (this->tab == OptionsUiModel::Tab::Graphics)
 	{
 		return this->graphicsOptions;
 	}
-	else if (this->tab == OptionsPanel::Tab::Audio)
+	else if (this->tab == OptionsUiModel::Tab::Audio)
 	{
 		return this->audioOptions;
 	}
-	else if (this->tab == OptionsPanel::Tab::Input)
+	else if (this->tab == OptionsUiModel::Tab::Input)
 	{
 		return this->inputOptions;
 	}
-	else if (this->tab == OptionsPanel::Tab::Misc)
+	else if (this->tab == OptionsUiModel::Tab::Misc)
 	{
 		return this->miscOptions;
 	}
-	else if (this->tab == OptionsPanel::Tab::Dev)
+	else if (this->tab == OptionsUiModel::Tab::Dev)
 	{
 		return this->devOptions;
 	}
@@ -726,23 +704,23 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (OptionsUiView::GraphicsTabRect.contains(originalPoint))
 		{
-			this->tabButton.click(*this, OptionsPanel::Tab::Graphics);
+			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Graphics);
 		}
 		else if (OptionsUiView::AudioTabRect.contains(originalPoint))
 		{
-			this->tabButton.click(*this, OptionsPanel::Tab::Audio);
+			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Audio);
 		}
 		else if (OptionsUiView::InputTabRect.contains(originalPoint))
 		{
-			this->tabButton.click(*this, OptionsPanel::Tab::Input);
+			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Input);
 		}
 		else if (OptionsUiView::MiscTabRect.contains(originalPoint))
 		{
-			this->tabButton.click(*this, OptionsPanel::Tab::Misc);
+			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Misc);
 		}
 		else if (OptionsUiView::DevTabRect.contains(originalPoint))
 		{
-			this->tabButton.click(*this, OptionsPanel::Tab::Dev);
+			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Dev);
 		}
 	}
 

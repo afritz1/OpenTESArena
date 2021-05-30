@@ -22,26 +22,20 @@ enum class PlayerInterface;
 class OptionsPanel : public Panel
 {
 private:
-	// Options panel tabs.
-	enum class Tab { Graphics, Audio, Input, Misc, Dev };
-
 	std::unique_ptr<TextBox> titleTextBox, backToPauseMenuTextBox, graphicsTextBox, audioTextBox,
 		inputTextBox, miscTextBox, devTextBox;
 	Button<Game&> backToPauseMenuButton;
-	Button<OptionsPanel&, OptionsPanel::Tab> tabButton;
+	Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab> tabButton;
 	std::vector<std::unique_ptr<OptionsUiModel::Option>> graphicsOptions, audioOptions,
 		inputOptions, miscOptions, devOptions;
 	std::vector<std::unique_ptr<TextBox>> currentTabTextBoxes;
-	OptionsPanel::Tab tab;
+	OptionsUiModel::Tab tab;
 
 	// Gets the visible options group based on the current tab.
 	std::vector<std::unique_ptr<OptionsUiModel::Option>> &getVisibleOptions();
 
 	// Regenerates option text for one option.
 	void updateOptionTextBox(int index);
-
-	// Regenerates all option text boxes in the current tab.
-	void updateVisibleOptionTextBoxes();
 
 	// Draws return buttons and tabs.
 	void drawReturnButtonsAndTabs(Renderer &renderer);
@@ -58,6 +52,9 @@ private:
 public:
 	OptionsPanel(Game &game);
 	virtual ~OptionsPanel() = default;
+
+	// Regenerates all option text boxes in the current tab (public for UiController function).
+	void updateVisibleOptionTextBoxes();
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

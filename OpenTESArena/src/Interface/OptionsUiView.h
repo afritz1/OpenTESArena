@@ -4,6 +4,9 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Rendering/ArenaRenderUtils.h"
+#include "../UI/FontName.h"
+#include "../UI/TextAlignment.h"
 
 namespace OptionsUiView
 {
@@ -47,6 +50,26 @@ namespace OptionsUiView
 		TabsOrigin.y + (TabsDimensions.y * 4),
 		TabsDimensions.x,
 		TabsDimensions.y);
+
+	const Int2 TitleTextBoxCenterPoint(160, 24);
+	constexpr FontName TitleFontName = FontName::A;
+	Color getTitleTextColor();  // Global initialization order workaround.
+	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
+
+	const Int2 BackToPauseMenuTextBoxCenterPoint(
+		ArenaRenderUtils::SCREEN_WIDTH - 30,
+		ArenaRenderUtils::SCREEN_HEIGHT - 15);
+	constexpr FontName BackToPauseMenuFontName = FontName::Arena;
+	Color getBackToPauseMenuTextColor();
+	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::Center;
+
+	const Int2 BackToPauseMenuButtonCenterPoint = BackToPauseMenuTextBoxCenterPoint;
+	constexpr int BackToPauseMenuButtonWidth = 40;
+	constexpr int BackToPauseMenuButtonHeight = 16;
+
+	constexpr FontName TabFontName = FontName::Arena;
+	Color getTabTextColor();
+	constexpr TextAlignment TabTextAlignment = TextAlignment::Center;
 }
 
 #endif

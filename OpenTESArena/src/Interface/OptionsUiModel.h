@@ -7,6 +7,12 @@
 
 namespace OptionsUiModel
 {
+	// Options panel tabs.
+	enum class Tab { Graphics, Audio, Input, Misc, Dev };
+
+	const std::string OptionsTitleText = "Options";
+	const std::string BackToPauseMenuText = "Return";
+
 	// Tabs.
 	const std::string GRAPHICS_TAB_NAME = "Graphics";
 	const std::string AUDIO_TAB_NAME = "Audio";
