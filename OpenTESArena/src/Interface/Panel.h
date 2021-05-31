@@ -56,8 +56,6 @@ public:
 	Panel(Game &game);
 	virtual ~Panel() = default;
 
-	static std::unique_ptr<Panel> defaultPanel(Game &game);
-
 	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
 	// least one cursor defined.
 	virtual std::optional<CursorData> getCurrentCursor() const;
