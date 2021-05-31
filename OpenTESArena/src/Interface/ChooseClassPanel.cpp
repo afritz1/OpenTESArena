@@ -209,14 +209,8 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 		DebugAssertIndex(this->charClasses, tooltipIndex);
 		const auto &charClassDef = this->charClasses[tooltipIndex];
 		const std::string text = CharacterCreationUiModel::getChooseClassFullTooltipText(charClassDef, game);
-		Texture texture = Panel::createTooltip(
-			text,
-			CharacterCreationUiView::ChooseClassTooltipFontName,
-			game.getFontLibrary(),
-			renderer);
-
-		tooltipIter = this->tooltipTextures.emplace(
-			std::make_pair(tooltipIndex, std::move(texture))).first;
+		Texture texture = TextureUtils::createTooltip(text, game.getFontLibrary(), renderer);
+		tooltipIter = this->tooltipTextures.emplace(std::make_pair(tooltipIndex, std::move(texture))).first;
 	}
 
 	const Texture &tooltip = tooltipIter->second;

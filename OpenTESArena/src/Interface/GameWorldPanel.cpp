@@ -1819,12 +1819,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
 	auto &game = this->getGame();
-	const Texture tooltip = Panel::createTooltip(
-		text,
-		GameWorldUiView::TooltipFontName,
-		game.getFontLibrary(),
-		renderer);
-	
+	const Texture tooltip = TextureUtils::createTooltip(text, game.getFontLibrary(), renderer);	
 	const Int2 tooltipPosition = GameWorldUiView::getTooltipPosition(game, tooltip.getHeight());
 	renderer.drawOriginal(tooltip, tooltipPosition.x, tooltipPosition.y);
 }

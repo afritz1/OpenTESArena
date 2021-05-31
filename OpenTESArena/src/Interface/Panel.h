@@ -48,11 +48,6 @@ public:
 private:
 	Game &game;
 protected:
-	// Generates a tooltip texture with the default white foreground and gray
-	// background with alpha blending.
-	static Texture createTooltip(const std::string &text,
-		FontName fontName, FontLibrary &fontLibrary, Renderer &renderer);
-
 	Game &getGame() const;
 
 	// Default cursor used by most panels.

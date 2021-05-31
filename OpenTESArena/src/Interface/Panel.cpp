@@ -49,50 +49,6 @@ CursorAlignment Panel::CursorData::getAlignment() const
 Panel::Panel(Game &game)
 	: game(game) { }
 
-Texture Panel::createTooltip(const std::string &text,
-	FontName fontName, FontLibrary &fontLibrary, Renderer &renderer)
-{
-	const Color textColor(255, 255, 255, 255);
-	const Color backColor(32, 32, 32, 192);
-
-	const int x = 0;
-	const int y = 0;
-
-	const RichTextString richText(
-		text,
-		fontName,
-		textColor,
-		TextAlignment::Left,
-		fontLibrary);
-
-	// Create text.
-	const TextBox textBox(x, y, richText, fontLibrary, renderer);
-	const Surface &textSurface = textBox.getSurface();
-
-	// Create background. Make it a little bigger than the text box.
-	constexpr int padding = 4;
-	Surface background = Surface::createWithFormat(
-		textSurface.getWidth() + padding, textSurface.getHeight() + padding,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	background.fill(backColor.r, backColor.g, backColor.b, backColor.a);
-
-	// Offset the text from the top left corner by a bit so it isn't against the side 
-	// of the tooltip (for aesthetic purposes).
-	const Rect dstRect(
-		padding / 2,
-		padding / 2,
-		textSurface.getWidth(),
-		textSurface.getHeight());
-
-	// Draw the text onto the background.
-	textSurface.blit(background, dstRect);
-
-	// Create a hardware texture for the tooltip.
-	Texture tooltip = renderer.createTextureFromSurface(background);
-
-	return tooltip;
-}
-
 std::unique_ptr<Panel> Panel::defaultPanel(Game &game)
 {
 	// If not showing the intro, then jump to the main menu.

@@ -147,8 +147,6 @@ namespace GameWorldUiView
 	Int2 getActionTextPosition(int textWidth);
 	Int2 getEffectTextPosition();
 
-	constexpr FontName TooltipFontName = FontName::D;
-
 	Int2 getTooltipPosition(Game &game, int textureHeight);
 
 	Rect getCompassClipRect(Game &game, const VoxelDouble2 &playerDirection, int textureHeight);

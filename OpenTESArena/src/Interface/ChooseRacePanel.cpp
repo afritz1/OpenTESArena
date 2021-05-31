@@ -82,9 +82,8 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	auto &game = this->getGame();
-	const Texture tooltip = Panel::createTooltip(
+	const Texture tooltip = TextureUtils::createTooltip(
 		CharacterCreationUiModel::getChooseRaceProvinceTooltipText(game, provinceID),
-		CharacterCreationUiView::ChooseRaceProvinceTooltipFontName,
 		this->getGame().getFontLibrary(),
 		renderer);
 

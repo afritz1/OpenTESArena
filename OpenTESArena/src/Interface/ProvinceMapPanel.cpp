@@ -941,9 +941,7 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 void ProvinceMapPanel::drawButtonTooltip(ProvinceMapPanel::ButtonName buttonName, Renderer &renderer)
 {
 	const std::string &text = ProvinceButtonTooltips.at(buttonName);
-
-	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontLibrary(), renderer);
+	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

@@ -137,8 +137,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontLibrary(), renderer);
+	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

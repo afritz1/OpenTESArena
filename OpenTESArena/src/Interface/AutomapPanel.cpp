@@ -196,8 +196,7 @@ void AutomapPanel::handleMouse(double dt)
 
 void AutomapPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontLibrary(), renderer);
+	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();

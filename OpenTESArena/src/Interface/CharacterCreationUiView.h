@@ -62,8 +62,6 @@ namespace CharacterCreationUiView
 	constexpr FontName ChooseClassListBoxFontName = FontName::A;
 	constexpr int ChooseClassListBoxMaxDisplayedItems = 6;
 
-	constexpr FontName ChooseClassTooltipFontName = FontName::D;
-
 	Rect getClassListRect(Game &game);
 	Rect getClassListUpButtonRect(Game &game);
 	Rect getClassListDownButtonRect(Game &game);
@@ -134,8 +132,6 @@ namespace CharacterCreationUiView
 	const Int2 ChooseRaceInitialPopUpTextureCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-
-	constexpr FontName ChooseRaceProvinceTooltipFontName = FontName::D;
 
 	TextureAssetReference getChooseRaceBackgroundTextureAssetRef();
 	TextureAssetReference getChooseRaceNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
