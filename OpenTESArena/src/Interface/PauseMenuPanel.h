@@ -5,9 +5,8 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/Texture.h"
 
-class AudioManager;
-class Options;
 class Renderer;
 class TextBox;
 
@@ -15,17 +14,16 @@ class PauseMenuPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
-	Button<Game&> loadButton;
-	Button<> exitButton;
+	Button<Game&> loadButton, exitButton;
 	Button<Game&> newButton, saveButton, resumeButton, optionsButton;
-	Button<Options&, AudioManager&, PauseMenuPanel&> musicUpButton,
-		musicDownButton, soundUpButton, soundDownButton;
-
-	void updateMusicText(double volume);
-	void updateSoundText(double volume);
+	Button<Game&, PauseMenuPanel&> soundUpButton, soundDownButton, musicUpButton, musicDownButton;
+	Texture optionsButtonTexture;
 public:
 	PauseMenuPanel(Game &game);
 	virtual ~PauseMenuPanel() = default;
+
+	void updateMusicText(double volume);
+	void updateSoundText(double volume);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
