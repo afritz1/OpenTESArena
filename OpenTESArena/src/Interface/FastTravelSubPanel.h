@@ -1,11 +1,9 @@
 #ifndef FAST_TRAVEL_SUB_PANEL_H
 #define FAST_TRAVEL_SUB_PANEL_H
 
-#include <string>
-#include <vector>
-
 #include "Panel.h"
 #include "ProvinceMapPanel.h"
+#include "ProvinceMapUiModel.h"
 #include "../Media/TextureUtils.h"
 
 // This sub-panel is the glue between the province map's travel button and the game world.
@@ -17,11 +15,11 @@ class Texture;
 class FastTravelSubPanel : public Panel
 {
 private:
-	ProvinceMapPanel::TravelData travelData; // To give to the game world's arrival pop-up.
+	ProvinceMapUiModel::TravelData travelData; // To give to the game world's arrival pop-up.
 	double currentSeconds, totalSeconds, targetSeconds;
 	size_t frameIndex;
 public:
-	FastTravelSubPanel(Game &game, const ProvinceMapPanel::TravelData &travelData);
+	FastTravelSubPanel(Game &game, const ProvinceMapUiModel::TravelData &travelData);
 	virtual ~FastTravelSubPanel() = default;
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;

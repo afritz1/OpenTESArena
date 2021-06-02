@@ -1,10 +1,12 @@
+#include <algorithm>
+
 #include "FastTravelSubPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
 
-FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapPanel::TravelData &travelData)
+FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapUiModel::TravelData &travelData)
 	: Panel(game), travelData(travelData)
 {
 	this->currentSeconds = 0.0;

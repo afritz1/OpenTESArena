@@ -19,7 +19,7 @@
 
 #include "components/debug/Debug.h"
 
-WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
+WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
 	: Panel(game), travelData(std::move(travelData))
 {
 	this->backToGameButton = []()
@@ -37,11 +37,11 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::Trave
 	this->provinceButton = []()
 	{
 		auto function = [](Game &game, int provinceID,
-			std::unique_ptr<ProvinceMapPanel::TravelData> travelData)
+			std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
 		{
 			game.setPanel<ProvinceMapPanel>(game, provinceID, std::move(travelData));
 		};
-		return Button<Game&, int, std::unique_ptr<ProvinceMapPanel::TravelData>>(function);
+		return Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>>(function);
 	}();
 
 	// Load province name offsets.
