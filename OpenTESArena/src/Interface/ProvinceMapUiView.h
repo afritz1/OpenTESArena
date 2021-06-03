@@ -17,6 +17,8 @@ struct TextureAssetReference;
 
 namespace ProvinceMapUiView
 {
+	// -- Province panel --
+
 	const Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
@@ -67,6 +69,47 @@ namespace ProvinceMapUiView
 
 	std::string getMapIconOutlinesFilename();
 	std::string getMapIconBlinkingOutlinesFilename();
+
+	// -- Search sub-panel --
+
+	const Int2 SearchSubPanelDefaultTextCursorPosition(85, 100);
+
+	const int SearchSubPanelTitleTextBoxX = 30;
+	const int SearchSubPanelTitleTextBoxY = 89;
+	constexpr FontName SearchSubPanelTitleFontName = FontName::Arena;
+	const Color SearchSubPanelTitleColor(52, 24, 8);
+	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::Left;
+
+	constexpr FontName SearchSubPanelTextEntryFontName = FontName::Arena;
+	const Color SearchSubPanelTextEntryColor(52, 24, 8);
+	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::Left;
+
+	int getSearchSubPanelTextEntryTextureX(int textureWidth);
+	int getSearchSubPanelTextEntryTextureY(int textureHeight);
+	constexpr int SearchSubPanelTextureWidth = 280;
+	constexpr int SearchSubPanelTextureHeight = 40;
+	constexpr TextureUtils::PatternType SearchSubPanelTexturePattern = TextureUtils::PatternType::Parchment;
+
+	const Int2 SearchSubPanelListUpButtonCenterPoint(70, 24);
+	constexpr int SearchSubPanelListUpButtonWidth = 8;
+	constexpr int SearchSubPanelListUpButtonHeight = 8;
+
+	const Int2 SearchSubPanelListDownButtonCenterPoint(70, 97);
+	constexpr int SearchSubPanelListDownButtonWidth = 8;
+	constexpr int SearchSubPanelListDownButtonHeight = 8;
+
+	constexpr int SearchSubPanelListTextureX = 57;
+	constexpr int SearchSubPanelListTextureY = 11;
+
+	constexpr int SearchSubPanelListBoxX = 85;
+	constexpr int SearchSubPanelListBoxY = 34;
+	constexpr int SearchSubPanelListBoxWidth = 147; // Only width here since it is a custom fit to occupy more space.
+	constexpr FontName SearchSubPanelListBoxFontName = FontName::Arena;
+	const Color SearchSubPanelListBoxTextColor(52, 24, 8);
+	constexpr int SearchSubPanelListBoxMaxDisplayed = 6;
+
+	TextureAssetReference getSearchSubPanelListTextureAssetRef();
+	TextureAssetReference getSearchSubPanelListPaletteTextureAssetRef(Game &game, int provinceID);
 }
 
 #endif

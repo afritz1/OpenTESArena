@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "ProvinceMapUiModel.h"
 #include "../Math/Vector2.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
@@ -18,35 +19,12 @@ class ProvinceMapPanel;
 class ProvinceSearchSubPanel : public Panel
 {
 private:
-	enum class Mode { TextEntry, List };
-
-	static constexpr int MAX_NAME_LENGTH = 20;
-	static const Int2 DEFAULT_TEXT_CURSOR_POSITION;
-
 	Texture parchment;
 	std::unique_ptr<TextBox> textTitleTextBox, textEntryTextBox;
 	std::unique_ptr<ListBox> locationsListBox;
 	Button<Game&, ProvinceSearchSubPanel&> textAcceptButton;
 	Button<Game&, ProvinceSearchSubPanel&, int> listAcceptButton;
-	Button<ProvinceSearchSubPanel&> listUpButton, listDownButton;
-	ProvinceMapPanel &provinceMapPanel;
-	std::vector<int> locationsListIndices;
-	std::string locationName;
-	Mode mode;
-	int provinceID;
-
-	// Returns a list of all visible location indices in the given province that have a match with
-	// the given location name. Technically, this should only return up to one index, but returning
-	// a list allows functionality for approximate matches. The exact location index points into
-	// the vector if there is an exact match, or null otherwise.
-	static std::vector<int> getMatchingLocations(Game &game, const std::string &locationName,
-		int provinceIndex, const int **exactLocationIndex);
-
-	// Gets the .IMG filename of the background image.
-	std::string getBackgroundFilename() const;
-
-	// Initializes the locations list box based on the locations list IDs.
-	void initLocationsListBox();
+	Button<ListBox&> listUpButton, listDownButton;
 
 	void handleTextEntryEvent(const SDL_Event &e);
 	void handleListEvent(const SDL_Event &e);
@@ -55,6 +33,18 @@ private:
 public:
 	ProvinceSearchSubPanel(Game &game, ProvinceMapPanel &provinceMapPanel, int provinceID);
 	virtual ~ProvinceSearchSubPanel() = default;
+
+	// Public for UI controller.
+	// - @todo: probably don't leave these as public forever
+	ProvinceMapPanel &provinceMapPanel;
+	std::vector<int> locationsListIndices;
+	std::string locationName;
+	ProvinceMapUiModel::SearchMode mode;
+	int provinceID;
+
+	// Initializes the locations list box based on the locations list IDs.
+	// - Public for UI controller
+	void initLocationsListBox();
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 class Game;
 class LocationDefinition;
@@ -20,6 +21,8 @@ namespace ProvinceMapUiModel
 		TravelData(int locationID, int provinceID, int travelDays);
 	};
 
+	// -- Province panel --
+
 	const std::string SearchButtonTooltip = "Search";
 	const std::string TravelButtonTooltip = "Travel";
 	const std::string BackToWorldMapButtonTooltip = "Back to World Map";
@@ -32,6 +35,23 @@ namespace ProvinceMapUiModel
 
 	// Generates a text sub-panel with a parchment message.
 	std::unique_ptr<Panel> makeTextPopUp(Game &game, const std::string &text);
+
+	// -- Search sub-panel --
+
+	enum class SearchMode { TextEntry, List };
+
+	constexpr int SearchSubPanelMaxNameLength = 20;
+
+	bool isCharAllowedInSearchText(char c);
+
+	std::string getSearchSubPanelTitleText(Game &game);
+
+	// Returns a list of all visible location indices in the given province that have a match with
+	// the given location name. Technically, this should only return up to one index, but returning
+	// a list allows functionality for approximate matches. The exact location index points into
+	// the vector if there is an exact match, or null otherwise.
+	std::vector<int> getMatchingLocations(Game &game, const std::string &locationName,
+		int provinceIndex, const int **exactLocationIndex);
 }
 
 #endif

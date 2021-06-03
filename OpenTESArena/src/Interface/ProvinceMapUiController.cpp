@@ -1,5 +1,6 @@
 #include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
+#include "ProvinceMapUiModel.h"
 #include "ProvinceSearchSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
@@ -50,4 +51,65 @@ void ProvinceMapUiController::onBackToWorldMapButtonSelected(Game &game,
 void ProvinceMapUiController::onTextPopUpSelected(Game &game)
 {
 	game.popSubPanel();
+}
+
+void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSubPanel &panel)
+{
+	SDL_StopTextInput();
+
+	// Determine what to do with the current location name. If it is a valid match
+	// with one of the visible locations in the province, then select that location.
+	// Otherwise, display the list box of locations sorted by their location index.
+	const int *exactLocationIndex = nullptr;
+	panel.locationsListIndices = ProvinceMapUiModel::getMatchingLocations(game,
+		panel.locationName, panel.provinceID, &exactLocationIndex);
+
+	if (exactLocationIndex != nullptr)
+	{
+		// The location name is an exact match. Try to select the location in the province
+		// map panel based on whether the player is already there.
+		panel.provinceMapPanel.trySelectLocation(*exactLocationIndex);
+
+		// Return to the province map panel.
+		game.popSubPanel();
+	}
+	else
+	{
+		// No exact match. Change to list mode.
+		panel.initLocationsListBox();
+		panel.mode = ProvinceMapUiModel::SearchMode::List;
+	}
+}
+
+void ProvinceMapUiController::onSearchListLocationSelected(Game &game, ProvinceSearchSubPanel &panel, int locationID)
+{
+	// Try to select the location in the province map panel based on whether the
+	// player is already there.
+	panel.provinceMapPanel.trySelectLocation(locationID);
+
+	// Return to the province map panel.
+	game.popSubPanel();
+}
+
+void ProvinceMapUiController::onSearchListUpButtonSelected(ListBox &listBox)
+{
+	// Scroll the list box up one if able.
+	// @todo: this should be built into the ListBox
+	if (listBox.getScrollIndex() > 0)
+	{
+		listBox.scrollUp();
+	}
+}
+
+void ProvinceMapUiController::onSearchListDownButtonSelected(ListBox &listBox)
+{
+	// Scroll the list box down one if able.
+	// @todo: this should be built into the ListBox
+	const int scrollIndex = listBox.getScrollIndex();
+	const int elementCount = listBox.getElementCount();
+	const int maxDisplayedCount = listBox.getMaxDisplayedCount();
+	if (scrollIndex < (elementCount - maxDisplayedCount))
+	{
+		listBox.scrollDown();
+	}
 }

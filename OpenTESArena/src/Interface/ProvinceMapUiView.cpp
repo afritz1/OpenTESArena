@@ -82,3 +82,30 @@ std::string ProvinceMapUiView::getMapIconBlinkingOutlinesFilename()
 {
 	return ArenaTextureName::MapIconOutlinesBlinking;
 }
+
+int ProvinceMapUiView::getSearchSubPanelTextEntryTextureX(int textureWidth)
+{
+	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
+}
+
+int ProvinceMapUiView::getSearchSubPanelTextEntryTextureY(int textureHeight)
+{
+	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 1;
+}
+
+TextureAssetReference ProvinceMapUiView::getSearchSubPanelListTextureAssetRef()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::PopUp8));
+}
+
+TextureAssetReference ProvinceMapUiView::getSearchSubPanelListPaletteTextureAssetRef(Game &game, int provinceID)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
+	DebugAssertIndex(provinceImgFilenames, provinceID);
+	const std::string &filename = provinceImgFilenames[provinceID];
+
+	// Set all characters to uppercase because the texture manager expects 
+	// extensions to be uppercase, and most filenames in A.EXE are lowercase.
+	return String::toUppercase(filename);
+}

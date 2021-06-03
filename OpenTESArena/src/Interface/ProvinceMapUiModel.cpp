@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiModel.h"
 #include "ProvinceMapUiView.h"
@@ -279,4 +281,109 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	}();
 
 	return locationFormatText + startDateString + "\n\n" + dayString + distanceString + arrivalDateString;
+}
+
+bool ProvinceMapUiModel::isCharAllowedInSearchText(char c)
+{
+	// Letters, numbers, spaces, and symbols are allowed.
+	return (c >= ' ') && (c < 127);
+}
+
+std::string ProvinceMapUiModel::getSearchSubPanelTitleText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	return exeData.travel.searchTitleText;
+}
+
+std::vector<int> ProvinceMapUiModel::getMatchingLocations(Game &game, const std::string &locationName,
+	int provinceIndex, const int **exactLocationIndex)
+{
+	auto &gameState = game.getGameState();
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
+	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+	// Iterate through all locations in the province. If any visible location's name has
+	// a match with the one entered, then add the location to the matching IDs.
+	std::vector<int> locationIndices;
+	for (int i = 0; i < provinceInst.getLocationCount(); i++)
+	{
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+
+		// Only check visible locations.
+		if (locationInst.isVisible())
+		{
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+			const std::string &curLocationName = locationInst.getName(locationDef);
+
+			// See if the location names are an exact match.
+			const bool isExactMatch = String::caseInsensitiveEquals(locationName, curLocationName);
+
+			if (isExactMatch)
+			{
+				locationIndices.push_back(i);
+				*exactLocationIndex = &locationIndices.back();
+				break;
+			}
+			else
+			{
+				// Approximate match behavior. If the given location name is a case-insensitive
+				// substring of the current location, it's a match.
+				const std::string locNameLower = String::toLowercase(locationName);
+				const std::string locDataNameLower = String::toLowercase(curLocationName);
+				const bool isApproxMatch = locDataNameLower.find(locNameLower) != std::string::npos;
+
+				if (isApproxMatch)
+				{
+					locationIndices.push_back(i);
+				}
+			}
+		}
+	}
+
+	// If no exact or approximate matches, just fill the list with all visible location IDs.
+	if (locationIndices.empty())
+	{
+		for (int i = 0; i < provinceInst.getLocationCount(); i++)
+		{
+			const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+			if (locationInst.isVisible())
+			{
+				locationIndices.push_back(i);
+			}
+		}
+	}
+
+	// If one approximate match was found and no exact match was found, treat the approximate
+	// match as the nearest.
+	if ((locationIndices.size() == 1) && (*exactLocationIndex == nullptr))
+	{
+		*exactLocationIndex = &locationIndices.front();
+	}
+
+	// The original game orders locations by their location ID, but that's hardly helpful for the
+	// player because they memorize places by name. Therefore, this feature will deviate from
+	// the original behavior for the sake of convenience. If the list isn't sorted alphabetically,
+	// then it takes the player linear time to find a location in it, which essentially isn't any
+	// faster than hovering over each location individually.
+	std::sort(locationIndices.begin(), locationIndices.end(),
+		[&provinceInst, &provinceDef](int a, int b)
+	{
+		const LocationInstance &locationInstA = provinceInst.getLocationInstance(a);
+		const LocationInstance &locationInstB = provinceInst.getLocationInstance(b);
+		const int locationDefIndexA = locationInstA.getLocationDefIndex();
+		const int locationDefIndexB = locationInstB.getLocationDefIndex();
+		const LocationDefinition &locationDefA = provinceDef.getLocationDef(locationDefIndexA);
+		const LocationDefinition &locationDefB = provinceDef.getLocationDef(locationDefIndexB);
+
+		const std::string &aName = locationInstA.getName(locationDefA);
+		const std::string &bName = locationInstB.getName(locationDefB);
+		return aName.compare(bName) < 0;
+	});
+
+	return locationIndices;
 }
