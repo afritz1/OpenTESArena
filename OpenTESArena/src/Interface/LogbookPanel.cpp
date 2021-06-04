@@ -2,6 +2,9 @@
 
 #include "GameWorldPanel.h"
 #include "LogbookPanel.h"
+#include "LogbookUiController.h"
+#include "LogbookUiModel.h"
+#include "LogbookUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
@@ -24,36 +27,26 @@ LogbookPanel::LogbookPanel(Game &game)
 {
 	this->titleTextBox = [&game]()
 	{
-		const Int2 center(
-			ArenaRenderUtils::SCREEN_WIDTH / 2,
-			ArenaRenderUtils::SCREEN_HEIGHT / 2);
-
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const std::string &text = exeData.logbook.isEmpty;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::A,
-			Color(255, 207, 12),
-			TextAlignment::Center,
+			LogbookUiModel::getTitleText(game),
+			LogbookUiView::TitleFontName,
+			LogbookUiView::TitleTextColor,
+			LogbookUiView::TitleTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			LogbookUiView::TitleTextCenterPoint,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
-	this->backButton = []()
-	{
-		const Int2 center(
-			ArenaRenderUtils::SCREEN_WIDTH - 40,
-			ArenaRenderUtils::SCREEN_HEIGHT - 13);
-
-		auto function = [](Game &game)
-		{
-			game.setPanel<GameWorldPanel>(game);
-		};
-		return Button<Game&>(center, 34, 14, function);
-	}();
+	this->backButton = Button<Game&>(
+		LogbookUiView::BackButtonCenterPoint,
+		LogbookUiView::BackButtonWidth,
+		LogbookUiView::BackButtonHeight,
+		LogbookUiController::onBackButtonSelected);
 }
 
 std::optional<Panel::CursorData> LogbookPanel::getCurrentCursor() const
@@ -64,21 +57,20 @@ std::optional<Panel::CursorData> LogbookPanel::getCurrentCursor() const
 void LogbookPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool lPressed = inputManager.keyPressed(e, SDLK_l);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool lPressed = inputManager.keyPressed(e, SDLK_l);
 
 	if (escapePressed || lPressed)
 	{
 		this->backButton.click(this->getGame());
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 		if (this->backButton.contains(mouseOriginalPoint))
 		{
@@ -94,24 +86,24 @@ void LogbookPanel::render(Renderer &renderer)
 
 	// Logbook background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &backgroundTextureName = ArenaTextureName::Logbook;
-	const std::string &backgroundPaletteName = backgroundTextureName;
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteName.c_str());
-	if (!backgroundPaletteID.has_value())
+	const TextureAssetReference paletteTextureAssetRef = LogbookUiView::getBackgroundPaletteTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
+	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + backgroundPaletteName + "\".");
+		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
+	const TextureAssetReference backgroundTextureAssetRef = LogbookUiView::getBackgroundTextureAssetRef();
 	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(backgroundTextureName.c_str());
+		textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
 	if (!backgroundTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + backgroundTextureName + "\".");
+		DebugLogError("Couldn't get texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
+	renderer.drawOriginal(*backgroundTextureBuilderID, *paletteID, textureManager);
 
 	// Draw text: title.
 	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());

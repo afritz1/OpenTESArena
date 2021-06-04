@@ -23,22 +23,13 @@ class TextBox;
 class ChooseClassPanel : public Panel
 {
 private:
-	static constexpr int MAX_TOOLTIP_LINE_LENGTH = 14;
-
 	std::unique_ptr<TextBox> titleTextBox;
 	std::unique_ptr<ListBox> classesListBox;
 	Button<Game&> backToClassCreationButton;
-	Button<ChooseClassPanel&> upButton, downButton;
+	Button<ListBox&> upButton, downButton;
 	Button<Game&, int> acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClassDefinition> charClasses;
-
-	std::string getClassArmors(const CharacterClassDefinition &charClassDef) const;
-	std::string getClassShields(const CharacterClassDefinition &charClassDef) const;
-	std::string getClassWeapons(const CharacterClassDefinition &charClassDef) const;
-
-	// Gets the rectangle for the class list's area.
-	static Rect getClassListRect(const ExeData &exeData);
 
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 public:

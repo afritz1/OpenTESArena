@@ -90,10 +90,12 @@ public:
 
 	// Decrement the scroll index by one. Without bounds checking on the caller's behalf,
 	// it will go out-of-bounds when the scroll index is -1.
+	// @todo: change to tryScrollUp()
 	void scrollUp();
 
 	// Increment the scroll index by one. Without bounds checking on the caller's behalf, 
 	// it can keep scrolling down for a really long time.
+	// @todo: change to tryScrollDown()
 	void scrollDown();
 
 	// Instead of a remove() method, just recreate the list box.

@@ -10,22 +10,15 @@
 
 #include "components/debug/Debug.h"
 
-ImageSequencePanel::ImageSequencePanel(Game &game,
-	const std::vector<std::string> &paletteNames,
-	const std::vector<std::string> &textureNames,
-	const std::vector<double> &imageDurations,
+ImageSequencePanel::ImageSequencePanel(Game &game, const std::vector<std::string> &paletteNames,
+	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
 	const std::function<void(Game&)> &endingAction)
-	: Panel(game), paletteNames(paletteNames), textureNames(textureNames),
-	imageDurations(imageDurations)
+	: Panel(game), paletteNames(paletteNames), textureNames(textureNames), imageDurations(imageDurations)
 {
 	DebugAssert(paletteNames.size() == textureNames.size());
 	DebugAssert(paletteNames.size() == imageDurations.size());
 
-	this->skipButton = [&endingAction]()
-	{
-		return Button<Game&>(endingAction);
-	}();
-
+	this->skipButton = Button<Game&>(endingAction);
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
 }
@@ -33,11 +26,10 @@ ImageSequencePanel::ImageSequencePanel(Game &game,
 void ImageSequencePanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool skipAllHotkeyPressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool skipOneHotkeyPressed = inputManager.keyPressed(e, SDLK_SPACE) ||
-		inputManager.keyPressed(e, SDLK_RETURN) || 
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool skipAllHotkeyPressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool skipOneHotkeyPressed = inputManager.keyPressed(e, SDLK_SPACE) ||
+		inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
 
 	if (skipAllHotkeyPressed)
 	{
@@ -48,7 +40,6 @@ void ImageSequencePanel::handleEvent(const SDL_Event &e)
 		this->currentSeconds = 0.0;
 
 		const int imageCount = static_cast<int>(this->textureNames.size());
-
 		this->imageIndex = std::min(this->imageIndex + 1, imageCount);
 
 		if (this->imageIndex == imageCount)
@@ -103,8 +94,7 @@ void ImageSequencePanel::render(Renderer &renderer)
 
 	DebugAssertIndex(this->textureNames, this->imageIndex);
 	const std::string &textureName = this->textureNames[this->imageIndex];
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureName.c_str());
+	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureName.c_str());
 	if (!textureBuilderID.has_value())
 	{
 		DebugLogError("Couldn't get texture builder ID for \"" + textureName + "\".");

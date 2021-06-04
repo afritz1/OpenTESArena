@@ -41,25 +41,6 @@ private:
 	// XZ coordinate offset in automap space, stored as a real so scroll position can be sub-pixel.
 	Double2 automapOffset;
 
-	// Gets the display color for a pixel on the automap, given its associated floor and wall
-	// voxel data definitions. The color depends on a couple factors, like whether the voxel is
-	// a wall, door, water, etc., and some context-sensitive cases like whether a dry chasm
-	// has a wall over it.
-	static const Color &getPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const TransitionDefinition *transitionDef);
-	static const Color &getWildPixelColor(const VoxelDefinition &floorDef, const VoxelDefinition &wallDef,
-		const TransitionDefinition *transitionDef);
-
-	// Generates a texture of the automap.
-	static Texture makeAutomap(const CoordInt2 &playerCoord, CardinalDirectionName playerCompassDir,
-		bool isWild, const ChunkManager &chunkManager, Renderer &renderer);
-
-	// Calculates automap screen offset in pixels for rendering.
-	static Double2 makeAutomapOffset(const VoxelInt2 &playerVoxel);
-
-	// Helper function for obtaining relative wild origin in new coordinate system.
-	static NewInt2 makeRelativeWildOrigin(const NewInt2 &voxel, SNInt gridWidth, WEInt gridDepth);
-
 	// Listen for when the LMB is held on a compass direction.
 	void handleMouse(double dt);
 

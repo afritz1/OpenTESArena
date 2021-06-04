@@ -48,11 +48,6 @@ public:
 private:
 	Game &game;
 protected:
-	// Generates a tooltip texture with the default white foreground and gray
-	// background with alpha blending.
-	static Texture createTooltip(const std::string &text,
-		FontName fontName, FontLibrary &fontLibrary, Renderer &renderer);
-
 	Game &getGame() const;
 
 	// Default cursor used by most panels.
@@ -60,8 +55,6 @@ protected:
 public:
 	Panel(Game &game);
 	virtual ~Panel() = default;
-
-	static std::unique_ptr<Panel> defaultPanel(Game &game);
 
 	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
 	// least one cursor defined.

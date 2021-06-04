@@ -4,8 +4,7 @@
 #include <tuple>
 
 #include "FPSCounter.h"
-
-#include "components/debug/Debug.h"
+#include "../debug/Debug.h"
 
 FPSCounter::FPSCounter()
 {

@@ -1,5 +1,8 @@
 #include "SDL.h"
 
+#include "CharacterCreationUiController.h"
+#include "CharacterCreationUiModel.h"
+#include "CharacterCreationUiView.h"
 #include "ChooseClassCreationPanel.h"
 #include "ChooseClassPanel.h"
 #include "MainMenuPanel.h"
@@ -25,109 +28,77 @@
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	: Panel(game)
 {
-	this->parchment = TextureUtils::generate(TextureUtils::PatternType::Parchment, 180, 40,
-		game.getTextureManager(), game.getRenderer());
+	this->parchment = TextureUtils::generate(
+		CharacterCreationUiView::ChooseClassCreationPopUpPatternType,
+		CharacterCreationUiView::ChooseClassCreationPopUpTextureWidth,
+		CharacterCreationUiView::ChooseClassCreationPopUpTextureHeight,
+		game.getTextureManager(),
+		game.getRenderer());
 
 	this->titleTextBox = [&game]()
 	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
-
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		std::string text = exeData.charCreation.chooseClassCreation;
-		text = String::replace(text, '\r', '\n');
-
-		const int lineSpacing = 1;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::A,
-			Color(48, 12, 12),
-			TextAlignment::Center,
-			lineSpacing,
+			CharacterCreationUiModel::getChooseClassCreationTitleText(game),
+			CharacterCreationUiView::ChooseClassCreationTitleFontName,
+			CharacterCreationUiView::ChooseClassCreationTitleColor,
+			CharacterCreationUiView::ChooseClassCreationTitleAlignment,
+			CharacterCreationUiView::ChooseClassCreationTitleLineSpacing,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterCreationUiView::ChooseClassCreationTitleCenter,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->generateTextBox = [&game]()
 	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const std::string &text = exeData.charCreation.chooseClassCreationGenerate;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::A,
-			Color(48, 12, 12),
-			TextAlignment::Center,
+			CharacterCreationUiModel::getGenerateClassButtonText(game),
+			CharacterCreationUiView::GenerateClassTextFontName,
+			CharacterCreationUiView::GenerateClassTextColor,
+			CharacterCreationUiView::GenerateClassTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterCreationUiView::GenerateClassTextCenterPoint,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->selectTextBox = [&game]()
 	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const std::string &text = exeData.charCreation.chooseClassCreationSelect;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::A,
-			Color(48, 12, 12),
-			TextAlignment::Center,
+			CharacterCreationUiModel::getSelectClassButtonText(game),
+			CharacterCreationUiView::SelectClassTextFontName,
+			CharacterCreationUiView::SelectClassTextColor,
+			CharacterCreationUiView::SelectClassTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterCreationUiView::SelectClassTextCenterPoint,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
-	this->backToMainMenuButton = []()
-	{
-		auto function = [](Game &game)
-		{
-			game.setCharacterCreationState(nullptr);
-			game.setPanel<MainMenuPanel>(game);
+	this->backToMainMenuButton = Button<Game&>(CharacterCreationUiController::onBackToMainMenuButtonSelected);
 
-			const MusicLibrary &musicLibrary = game.getMusicLibrary();
-			const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-				MusicDefinition::Type::MainMenu, game.getRandom());
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing main menu music.");
-			}
-
-			AudioManager &audioManager = game.getAudioManager();
-			audioManager.setMusic(musicDef);
-		};
-
-		return Button<Game&>(function);
-	}();
-
-	this->generateButton = []()
-	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-		auto function = [](Game &game)
-		{
-			// Eventually go to a "ChooseQuestionsPanel". What about the "pop-up" message?
-		};
-		return Button<Game&>(center, 175, 35, function);
-	}();
-
-	this->selectButton = []()
-	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-		auto function = [](Game &game)
-		{
-			game.setPanel<ChooseClassPanel>(game);
-		};
-		return Button<Game&>(center, 175, 35, function);
-	}();
+	this->generateButton = Button<Game&>(
+		CharacterCreationUiView::GenerateClassButtonCenterPoint,
+		CharacterCreationUiView::GenerateClassButtonWidth,
+		CharacterCreationUiView::GenerateClassButtonHeight,
+		CharacterCreationUiController::onGenerateClassButtonSelected);
+	this->selectButton = Button<Game&>(
+		CharacterCreationUiView::SelectClassButtonCenterPoint,
+		CharacterCreationUiView::SelectClassButtonWidth,
+		CharacterCreationUiView::SelectClassButtonHeight,
+		CharacterCreationUiController::onSelectClassButtonSelected);
 }
 
 std::optional<Panel::CursorData> ChooseClassCreationPanel::getCurrentCursor() const
@@ -166,8 +137,7 @@ void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
 
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontLibrary(), renderer);
+	const Texture tooltip = TextureUtils::createTooltip(text, this->getGame().getFontLibrary(), renderer);
 
 	const auto &inputManager = this->getGame().getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -189,39 +159,34 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	// Draw background.
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &backgroundFilename = ArenaTextureName::CharacterCreation;
-	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundFilename.c_str());
+	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getNightSkyTextureAssetRef();
+	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
 	if (!backgroundPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get background palette ID for \"" + backgroundFilename + "\".");
+		DebugLogError("Couldn't get background palette ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	const std::optional<TextureBuilderID> backgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(backgroundFilename.c_str());
+	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
 	if (!backgroundTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundFilename + "\".");
+		DebugLogError("Couldn't get background texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
 		return;
 	}
 
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, generate, select.
-	const int parchmentX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (this->parchment.getWidth() / 2) - 1;
-	const int parchmentY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (this->parchment.getHeight() / 2) + 1;
-
+	const int parchmentX = CharacterCreationUiView::getChooseClassCreationTitleTextureX(this->parchment.getWidth());
+	const int parchmentY = CharacterCreationUiView::getChooseClassCreationTitleTextureY(this->parchment.getHeight());
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
 
 	// Draw text: title, generate, select.
-	renderer.drawOriginal(this->titleTextBox->getTexture(),
-		this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->generateTextBox->getTexture(),
-		this->generateTextBox->getX(), this->generateTextBox->getY());
-	renderer.drawOriginal(this->selectTextBox->getTexture(),
-		this->selectTextBox->getX(), this->selectTextBox->getY());
+	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
+	renderer.drawOriginal(this->generateTextBox->getTexture(), this->generateTextBox->getX(), this->generateTextBox->getY());
+	renderer.drawOriginal(this->selectTextBox->getTexture(), this->selectTextBox->getX(), this->selectTextBox->getY());
 
 	// Check if the mouse is hovered over one of the boxes for tooltips.
 	const auto &inputManager = this->getGame().getInputManager();
@@ -230,10 +195,10 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	if (this->generateButton.contains(originalPoint))
 	{
-		this->drawTooltip("Answer questions\n(not implemented)", renderer);
+		this->drawTooltip(CharacterCreationUiModel::getGenerateClassButtonTooltipText(), renderer);
 	}
 	else if (this->selectButton.contains(originalPoint))
 	{
-		this->drawTooltip("Choose from a list", renderer);
+		this->drawTooltip(CharacterCreationUiModel::getSelectClassButtonTooltipText(), renderer);
 	}
 }

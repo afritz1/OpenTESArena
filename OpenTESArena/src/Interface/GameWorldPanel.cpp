@@ -6,6 +6,9 @@
 #include "AutomapPanel.h"
 #include "CharacterPanel.h"
 #include "GameWorldPanel.h"
+#include "GameWorldUiController.h"
+#include "GameWorldUiModel.h"
+#include "GameWorldUiView.h"
 #include "LogbookPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextSubPanel.h"
@@ -14,8 +17,6 @@
 #include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Assets/CFAFile.h"
-#include "../Assets/CIFFile.h"
 #include "../Assets/ExeData.h"
 #include "../Audio/AudioManager.h"
 #include "../Audio/MusicUtils.h"
@@ -67,256 +68,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-namespace
-{
-	// Original arrow cursor rectangles for each part of the letterbox. Their
-	// components can be multiplied by the ratio of the native and the original
-	// resolution so they're flexible with most resolutions.
-	const Rect TopLeftRegion(0, 0, 141, 49);
-	const Rect TopMiddleRegion(141, 0, 38, 49);
-	const Rect TopRightRegion(179, 0, 141, 49);
-	const Rect MiddleLeftRegion(0, 49, 90, 70);
-	const Rect MiddleRegion(90, 49, 140, 70);
-	const Rect MiddleRightRegion(230, 49, 90, 70);
-	const Rect BottomLeftRegion(0, 119, 141, 28);
-	const Rect BottomMiddleRegion(141, 119, 38, 28);
-	const Rect BottomRightRegion(179, 119, 141, 28);
-	const Rect UiBottomRegion(0, 147, 320, 53);
-
-	// Arrow cursor alignments. These offset the drawn cursor relative to the mouse
-	// position so the cursor's click area is closer to the tip of each arrow, as is
-	// done in the original game (slightly differently, though. I think the middle
-	// cursor was originally top-aligned, not middle-aligned, which is strange).
-	constexpr std::array<CursorAlignment, 9> ArrowCursorAlignments =
-	{
-		CursorAlignment::TopLeft,
-		CursorAlignment::Top,
-		CursorAlignment::TopRight,
-		CursorAlignment::TopLeft,
-		CursorAlignment::Middle,
-		CursorAlignment::TopRight,
-		CursorAlignment::Left,
-		CursorAlignment::Bottom,
-		CursorAlignment::Right
-	};
-
-	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
-	void DEBUG_ColorRaycastPixel(Game &game, Renderer &renderer)
-	{
-		const int selectionDim = 3;
-		const Int2 windowDims = renderer.getWindowDimensions();
-
-		constexpr int xOffset = 16;
-		constexpr int yOffset = 16;
-
-		auto &gameState = game.getGameState();
-		
-		const auto &options = game.getOptions();
-		const double verticalFOV = options.getGraphics_VerticalFOV();
-		const bool pixelPerfect = options.getInput_PixelPerfectSelection();
-
-		const auto &player = gameState.getPlayer();
-		const CoordDouble3 &rayStart = player.getPosition();
-		const VoxelDouble3 &cameraDirection = player.getDirection();
-		const int viewWidth = windowDims.x;
-		const int viewHeight = renderer.getViewHeight();
-		const double viewAspectRatio = static_cast<double>(viewWidth) / static_cast<double>(viewHeight);
-
-		const MapInstance &mapInst = gameState.getActiveMapInst();
-		const LevelInstance &levelInst = mapInst.getActiveLevel();
-		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const EntityManager &entityManager = levelInst.getEntityManager();
-		const double ceilingScale = levelInst.getCeilingScale();
-
-		const std::string &paletteFilename = ArenaPaletteName::Default;
-		auto &textureManager = game.getTextureManager();
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-		if (!paletteID.has_value())
-		{
-			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		}
-
-		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
-		for (int y = 0; y < windowDims.y; y += yOffset)
-		{
-			for (int x = 0; x < windowDims.x; x += xOffset)
-			{
-				// Position percents across the screen. Add 0.50 to sample at the center of the pixel.
-				const double pixelXPercent = (static_cast<double>(x) + 0.50) / static_cast<double>(viewWidth);
-				const double pixelYPercent = (static_cast<double>(y) + 0.50) / static_cast<double>(viewHeight);
-				const Double3 rayDirection = renderer.screenPointToRay(
-					pixelXPercent, pixelYPercent, cameraDirection, verticalFOV, viewAspectRatio);
-
-				// Not registering entities with ray cast hits for efficiency since this debug
-				// visualization is for voxels.
-				constexpr bool includeEntities = false;
-
-				Physics::Hit hit;
-				const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-					pixelPerfect, palette, includeEntities, levelInst, game.getEntityDefinitionLibrary(),
-					renderer, hit);
-
-				if (success)
-				{
-					Color color;
-					switch (hit.getType())
-					{
-						case Physics::Hit::Type::Voxel:
-						{
-							const std::array<Color, 5> colors =
-							{
-								Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow
-							};
-
-							const VoxelInt3 &voxel = hit.getVoxelHit().voxel;
-							const int colorsIndex = std::min(voxel.y, 4);
-							color = colors[colorsIndex];
-							break;
-						}
-						case Physics::Hit::Type::Entity:
-						{
-							color = Color::Yellow;
-							break;
-						}
-					}
-
-					renderer.drawRect(color, x, y, selectionDim, selectionDim);
-				}
-			}
-		}
-	}
-
-	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
-	void DEBUG_PhysicsRaycast(Game &game, Renderer &renderer)
-	{
-		// ray cast out from center and display hit info (faster/better than console logging).
-		DEBUG_ColorRaycastPixel(game, renderer);
-
-		auto &gameState = game.getGameState();
-		const auto &options = game.getOptions();
-		const auto &player = gameState.getPlayer();
-		const Double3 &cameraDirection = player.getDirection();
-
-		const CoordDouble3 rayStart = player.getPosition();
-		const VoxelDouble3 rayDirection = [&game, &options, &cameraDirection]()
-		{
-			const auto &renderer = game.getRenderer();
-			const Int2 windowDims = renderer.getWindowDimensions();
-			const int viewWidth = windowDims.x;
-			const int viewHeight = renderer.getViewHeight();
-			const double viewAspectRatio = static_cast<double>(viewWidth) /
-				static_cast<double>(viewHeight);
-
-			// Position percents across the screen. Add 0.50 to sample at the center
-			// of the pixel.
-			const double pixelXPercent = (static_cast<double>(viewWidth / 2) + 0.50) /
-				static_cast<double>(viewWidth);
-			const double pixelYPercent = (static_cast<double>(viewHeight / 2) + 0.50) /
-				static_cast<double>(viewHeight);
-
-			return renderer.screenPointToRay(pixelXPercent, pixelYPercent, cameraDirection,
-				options.getGraphics_VerticalFOV(), viewAspectRatio);
-		}();
-
-		const MapInstance &mapInst = gameState.getActiveMapInst();
-		const LevelInstance &levelInst = mapInst.getActiveLevel();
-		const ChunkManager &chunkManager = levelInst.getChunkManager();
-		const EntityManager &entityManager = levelInst.getEntityManager();
-		const double ceilingScale = levelInst.getCeilingScale();
-
-		const std::string &paletteFilename = ArenaPaletteName::Default;
-		auto &textureManager = game.getTextureManager();
-		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-		if (!paletteID.has_value())
-		{
-			DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-		}
-
-		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-
-		const bool includeEntities = true;
-
-		Physics::Hit hit;
-		const bool success = Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraDirection,
-			options.getInput_PixelPerfectSelection(), palette, includeEntities, levelInst,
-			game.getEntityDefinitionLibrary(), renderer, hit);
-
-		std::string text;
-		if (success)
-		{
-			switch (hit.getType())
-			{
-			case Physics::Hit::Type::Voxel:
-			{
-				const ChunkInt2 chunk = hit.getCoord().chunk;
-				const Chunk *chunkPtr = chunkManager.tryGetChunk(chunk);
-				DebugAssert(chunkPtr != nullptr);
-
-				const Physics::Hit::VoxelHit &voxelHit = hit.getVoxelHit();
-				const VoxelInt3 &voxel = voxelHit.voxel;
-				const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
-				const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
-
-				text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelDef.type)) +
-					' ' + std::to_string(hit.getT());
-				break;
-			}
-			case Physics::Hit::Type::Entity:
-			{
-				const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
-				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-
-				// Try inspecting the entity (can be from any distance). If they have a display name,
-				// then show it.
-				ConstEntityRef entityRef = entityManager.getEntityRef(entityHit.id, entityHit.type);
-				DebugAssert(entityRef.getID() != EntityManager::NO_ID);
-
-				const EntityDefinition &entityDef = entityManager.getEntityDef(
-					entityRef.get()->getDefinitionID(), game.getEntityDefinitionLibrary());
-				const auto &charClassLibrary = game.getCharacterClassLibrary();
-
-				std::string entityName;
-				if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
-				{
-					text = std::move(entityName);
-				}
-				else
-				{
-					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityHit.id);
-				}
-
-				text.append(' ' + std::to_string(hit.getT()));
-				break;
-			}
-			default:
-				text.append("Unknown hit type");
-				break;
-			}
-		}
-		else
-		{
-			text = "No hit";
-		}
-
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color::White,
-			TextAlignment::Left,
-			fontLibrary);
-
-		const TextBox textBox(0, 0, richText, fontLibrary, renderer);
-		const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
-		const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
-		renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
-	}
-}
-
 GameWorldPanel::GameWorldPanel(Game &game)
 	: Panel(game)
 {
@@ -324,352 +75,93 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 	this->playerNameTextBox = [&game]()
 	{
-		const int x = 17;
-		const int y = 154;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameState().getPlayer().getFirstName(),
-			FontName::Char,
-			Color(215, 121, 8),
-			TextAlignment::Left,
+			GameWorldUiModel::getPlayerNameText(game),
+			GameWorldUiView::PlayerNameFontName,
+			GameWorldUiView::PlayerNameTextColor,
+			GameWorldUiView::PlayerNameTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			GameWorldUiView::PlayerNameTextBoxX,
+			GameWorldUiView::PlayerNameTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
-	this->characterSheetButton = []()
-	{
-		auto function = [](Game &game)
-		{
-			game.setPanel<CharacterPanel>(game);
-		};
-		return Button<Game&>(14, 166, 40, 29, function);
-	}();
-
-	this->drawWeaponButton = []()
-	{
-		auto function = [](Player &player)
-		{
-			WeaponAnimation &weaponAnimation = player.getWeaponAnimation();
-
-			if (weaponAnimation.isSheathed())
-			{
-				// Begin unsheathing the weapon.
-				weaponAnimation.setState(WeaponAnimation::State::Unsheathing);
-			}
-			else if (weaponAnimation.isIdle())
-			{
-				// Begin sheathing the weapon.
-				weaponAnimation.setState(WeaponAnimation::State::Sheathing);
-			}
-		};
-		return Button<Player&>(88, 151, 29, 22, function);
-	}();
-
-	this->stealButton = []()
-	{
-		auto function = []()
-		{
-			DebugLog("Steal.");
-		};
-		return Button<>(147, 151, 29, 22, function);
-	}();
-
-	this->statusButton = [this]()
-	{
-		auto function = [this](Game &game)
-		{
-			auto &textureManager = game.getTextureManager();
-			const bool modernInterface = game.getOptions().getGraphics_ModernInterface();
-
-			// The center of the pop-up depends on the interface mode.
-			const Int2 center = GameWorldPanel::getInterfaceCenter(modernInterface, textureManager);
-
-			const std::string text = [&game]()
-			{
-				auto &gameState = game.getGameState();
-				const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-				const auto &exeData = binaryAssetLibrary.getExeData();
-				const LocationDefinition &locationDef = gameState.getLocationDefinition();
-				const LocationInstance &locationInst = gameState.getLocationInstance();
-				const std::string &locationName = locationInst.getName(locationDef);
-
-				const std::string timeString = [&game, &gameState, &exeData]()
-				{
-					const Clock &clock = gameState.getClock();
-					const int hours = clock.getHours12();
-					const int minutes = clock.getMinutes();
-					const std::string clockTimeString = std::to_string(hours) + ":" +
-						((minutes < 10) ? "0" : "") + std::to_string(minutes);
-
-					const int timeOfDayIndex = [&gameState]()
-					{
-						// Arena has eight time ranges for each time of day. They aren't
-						// uniformly distributed -- midnight and noon are only one minute.
-						const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
-						{
-							std::make_pair(ArenaClockUtils::Midnight, 6),
-							std::make_pair(ArenaClockUtils::Night1, 5),
-							std::make_pair(ArenaClockUtils::EarlyMorning, 0),
-							std::make_pair(ArenaClockUtils::Morning, 1),
-							std::make_pair(ArenaClockUtils::Noon, 2),
-							std::make_pair(ArenaClockUtils::Afternoon, 3),
-							std::make_pair(ArenaClockUtils::Evening, 4),
-							std::make_pair(ArenaClockUtils::Night2, 5)
-						};
-
-						const Clock &presentClock = gameState.getClock();
-
-						// Reverse iterate, checking which range the active clock is in.
-						const auto pairIter = std::find_if(
-							clocksAndIndices.rbegin(), clocksAndIndices.rend(),
-							[&presentClock](const std::pair<Clock, int> &pair)
-						{
-							const Clock &clock = pair.first;
-							return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
-						});
-
-						DebugAssertMsg(pairIter != clocksAndIndices.rend(), "No valid time of day.");
-						return pairIter->second;
-					}();
-
-					const std::string &timeOfDayString =
-						exeData.calendar.timesOfDay.at(timeOfDayIndex);
-
-					return clockTimeString + ' ' + timeOfDayString;
-				}();
-
-				// Get the base status text.
-				std::string baseText = exeData.status.popUp;
-
-				// Replace carriage returns with newlines.
-				baseText = String::replace(baseText, '\r', '\n');
-
-				// Replace first %s with location name.
-				size_t index = baseText.find("%s");
-				baseText.replace(index, 2, locationName);
-
-				// Replace second %s with time string.
-				index = baseText.find("%s", index);
-				baseText.replace(index, 2, timeString);
-
-				// Replace third %s with date string, filled in with each value.
-				std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
-				dateString.back() = '\n'; // Replace \r with \n.
-
-				index = baseText.find("%s", index);
-				baseText.replace(index, 2, dateString);
-
-				// Replace %d's with current and total weight.
-				const int currentWeight = 0;
-				index = baseText.find("%d", index);
-				baseText.replace(index, 2, std::to_string(currentWeight));
-
-				const int weightCapacity = 0;
-				index = baseText.find("%d", index);
-				baseText.replace(index, 2, std::to_string(weightCapacity));
-
-				// Append the list of effects at the bottom (healthy/diseased...).
-				const std::string effectText = [&exeData]()
-				{
-					std::string text = exeData.status.effect;
-
-					// Replace carriage returns with newlines.
-					text = String::replace(text, '\r', '\n');
-
-					// Replace %s with placeholder.
-					const std::string &effectStr = exeData.status.effectsList.front();
-					size_t index = text.find("%s");
-					text.replace(index, 2, effectStr);
-
-					// Remove newline on end.
-					text.pop_back();
-
-					return text;
-				}();
-
-				return baseText + effectText;
-			}();
-
-			const Color color(251, 239, 77);
-			const int lineSpacing = 1;
-
-			const RichTextString richText(
-				text,
-				FontName::Arena,
-				color,
-				TextAlignment::Center,
-				lineSpacing,
-				game.getFontLibrary());
-
-			const Int2 &richTextDimensions = richText.getDimensions();
-
-			auto &renderer = game.getRenderer();
-			Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
-				richTextDimensions.x + 12, richTextDimensions.y + 12, textureManager, renderer);
-
-			const Int2 textureCenter = center;
-
-			auto function = [](Game &game)
-			{
-				game.popSubPanel();
-			};
-
-			game.pushSubPanel<TextSubPanel>(game, center, richText, function,
-				std::move(texture), textureCenter);
-		};
-		return Button<Game&>(177, 151, 29, 22, function);
-	}();
-
-	this->magicButton = []()
-	{
-		auto function = []()
-		{
-			DebugLog("Magic.");
-		};
-		return Button<>(88, 175, 29, 22, function);
-	}();
-
-	this->logbookButton = []()
-	{
-		auto function = [](Game &game)
-		{
-			game.setPanel<LogbookPanel>(game);
-		};
-		return Button<Game&>(118, 175, 29, 22, function);
-	}();
-
-	this->useItemButton = []()
-	{
-		auto function = []()
-		{
-			DebugLog("Use item.");
-		};
-		return Button<>(147, 175, 29, 22, function);
-	}();
-
-	this->campButton = []()
-	{
-		auto function = []()
-		{
-			DebugLog("Camp.");
-		};
-		return Button<>(177, 175, 29, 22, function);
-	}();
-
-	this->scrollUpButton = []()
-	{
-		// Y position is based on height of interface image.
-		const int x = 208;
-		const int y = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 3;
-
-		auto function = [](GameWorldPanel &panel)
-		{
-			// Nothing yet.
-		};
-
-		return Button<GameWorldPanel&>(x, y, 9, 9, function);
-	}();
-
-	this->scrollDownButton = []()
-	{
-		// Y position is based on height of interface image.
-		const int x = 208;
-		const int y = (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 44;
-
-		auto function = [](GameWorldPanel &panel)
-		{
-			// Nothing yet.
-		};
-		return Button<GameWorldPanel&>(x, y, 9, 9, function);
-	}();
-
-	this->pauseButton = []()
-	{
-		auto function = [](Game &game)
-		{
-			game.setPanel<PauseMenuPanel>(game);
-		};
-		return Button<Game&>(function);
-	}();
-
-	this->mapButton = []()
-	{
-		auto function = [](Game &game, bool goToAutomap)
-		{
-			if (goToAutomap)
-			{
-				const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-				auto &gameState = game.getGameState();
-				const LocationDefinition &locationDef = gameState.getLocationDefinition();
-				const LocationInstance &locationInst = gameState.getLocationInstance();
-				const auto &player = gameState.getPlayer();
-				const MapDefinition &mapDef = gameState.getActiveMapDef();
-				const MapInstance &mapInst = gameState.getActiveMapInst();
-				const int activeLevelIndex = mapInst.getActiveLevelIndex();
-				const LevelDefinition &levelDef = mapDef.getLevel(activeLevelIndex);
-				const LevelInfoDefinition &levelInfoDef = mapDef.getLevelInfoForLevel(activeLevelIndex);
-				const LevelInstance &levelInst = mapInst.getLevel(activeLevelIndex);
-
-				// Some places (like named/wild dungeons) do not display a name on the automap.
-				const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
-				{
-					const std::string &locationName = locationInst.getName(locationDef);
-					const bool isCity = locationDef.getType() == LocationDefinition::Type::City;
-					const bool isMainQuestDungeon = locationDef.getType() == LocationDefinition::Type::MainQuestDungeon;
-					return (isCity || isMainQuestDungeon) ? locationName : std::string();
-				}();
-
-				game.setPanel<AutomapPanel>(game, player.getPosition(), player.getGroundDirection(),
-					levelInst.getChunkManager(), automapLocationName);
-			}
-			else
-			{
-				game.setPanel<WorldMapPanel>(game, nullptr);
-			}
-		};
-		return Button<Game&, bool>(118, 151, 29, 22, function);
-	}();
+	this->characterSheetButton = Button<Game&>(
+		GameWorldUiView::CharacterSheetButtonX,
+		GameWorldUiView::CharacterSheetButtonY,
+		GameWorldUiView::CharacterSheetButtonWidth,
+		GameWorldUiView::CharacterSheetButtonHeight,
+		GameWorldUiController::onCharacterSheetButtonSelected);
+	this->drawWeaponButton = Button<Player&>(
+		GameWorldUiView::WeaponSheathButtonX,
+		GameWorldUiView::WeaponSheathButtonY,
+		GameWorldUiView::WeaponSheathButtonWidth,
+		GameWorldUiView::WeaponSheathButtonHeight,
+		GameWorldUiController::onWeaponButtonSelected);
+	this->stealButton = Button<>(
+		GameWorldUiView::StealButtonX,
+		GameWorldUiView::StealButtonY,
+		GameWorldUiView::StealButtonWidth,
+		GameWorldUiView::StealButtonHeight,
+		GameWorldUiController::onStealButtonSelected);
+	this->statusButton = Button<Game&>(
+		GameWorldUiView::StatusButtonX,
+		GameWorldUiView::StatusButtonY,
+		GameWorldUiView::StatusButtonWidth,
+		GameWorldUiView::StatusButtonHeight,
+		GameWorldUiController::onStatusButtonSelected);
+	this->magicButton = Button<>(
+		GameWorldUiView::MagicButtonX,
+		GameWorldUiView::MagicButtonY,
+		GameWorldUiView::MagicButtonWidth,
+		GameWorldUiView::MagicButtonHeight,
+		GameWorldUiController::onMagicButtonSelected);
+	this->logbookButton = Button<Game&>(
+		GameWorldUiView::LogbookButtonX,
+		GameWorldUiView::LogbookButtonY,
+		GameWorldUiView::LogbookButtonWidth,
+		GameWorldUiView::LogbookButtonHeight,
+		GameWorldUiController::onLogbookButtonSelected);
+	this->useItemButton = Button<>(
+		GameWorldUiView::UseItemButtonX,
+		GameWorldUiView::UseItemButtonY,
+		GameWorldUiView::UseItemButtonWidth,
+		GameWorldUiView::UseItemButtonHeight,
+		GameWorldUiController::onUseItemButtonSelected);
+	this->campButton = Button<>(
+		GameWorldUiView::CampButtonX,
+		GameWorldUiView::CampButtonY,
+		GameWorldUiView::CampButtonWidth,
+		GameWorldUiView::CampButtonHeight,
+		GameWorldUiController::onCampButtonSelected);
+	this->scrollUpButton = Button<GameWorldPanel&>(
+		GameWorldUiView::ScrollUpButtonX,
+		GameWorldUiView::ScrollUpButtonY,
+		GameWorldUiView::ScrollUpButtonWidth,
+		GameWorldUiView::ScrollUpButtonHeight,
+		GameWorldUiController::onScrollUpButtonSelected);
+	this->scrollDownButton = Button<GameWorldPanel&>(
+		GameWorldUiView::ScrollDownButtonX,
+		GameWorldUiView::ScrollDownButtonY,
+		GameWorldUiView::ScrollDownButtonWidth,
+		GameWorldUiView::ScrollDownButtonHeight,
+		GameWorldUiController::onScrollDownButtonSelected);
+	this->pauseButton = Button<Game&>(GameWorldUiController::onPauseButtonSelected);
+	this->mapButton = Button<Game&, bool>(
+		GameWorldUiView::MapButtonX,
+		GameWorldUiView::MapButtonY,
+		GameWorldUiView::MapButtonWidth,
+		GameWorldUiView::MapButtonHeight,
+		GameWorldUiController::onMapButtonSelected);
 
 	// Set all of the cursor regions relative to the current window.
 	const Int2 screenDims = game.getRenderer().getWindowDimensions();
 	this->updateCursorRegions(screenDims.x, screenDims.y);
-
-	// Load all the weapon offsets for the player's currently equipped weapon. If the
-	// player can ever change weapons in-game (i.e., with a hotkey), then this will
-	// need to be moved into update() instead.
-	const auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
-	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-
-	if (!weaponAnimation.isRanged())
-	{
-		// Melee weapon offsets.
-		CIFFile cifFile;
-		if (!cifFile.init(weaponFilename.c_str()))
-		{
-			DebugCrash("Could not init .CIF file \"" + weaponFilename + "\".");
-		}
-
-		for (int i = 0; i < cifFile.getImageCount(); i++)
-		{
-			this->weaponOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
-		}
-	}
-	else
-	{
-		// Ranged weapon offsets.
-		CFAFile cfaFile;
-		if (!cfaFile.init(weaponFilename.c_str()))
-		{
-			DebugCrash("Could not init .CFA file \"" + weaponFilename + "\".");
-		}
-
-		for (int i = 0; i < cfaFile.getImageCount(); i++)
-		{
-			this->weaponOffsets.push_back(Int2(cfaFile.getXOffset(), cfaFile.getYOffset()));
-		}
-	}
 
 	// If in modern mode, lock mouse to center of screen for free-look.
 	const auto &options = game.getOptions();
@@ -677,7 +169,7 @@ GameWorldPanel::GameWorldPanel(Game &game)
 
 	if (modernInterface)
 	{
-		this->setFreeLookActive(true);
+		GameWorldUiModel::setFreeLookActive(game, true);
 	}
 }
 
@@ -690,25 +182,7 @@ GameWorldPanel::~GameWorldPanel()
 
 	if (modernInterface)
 	{
-		this->setFreeLookActive(false);
-	}
-}
-
-Int2 GameWorldPanel::getInterfaceCenter(bool modernInterface, TextureManager &textureManager)
-{
-	if (modernInterface)
-	{
-		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
-	}
-	else
-	{
-		const TextureBuilderID gameInterfaceTextureBuilderID =
-			GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
-		const TextureBuilder &gameInterfaceTextureBuilder =
-			textureManager.getTextureBuilderHandle(gameInterfaceTextureBuilderID);
-
-		return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2,
-			(ArenaRenderUtils::SCREEN_HEIGHT - gameInterfaceTextureBuilder.getHeight()) / 2);
+		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 }
 
@@ -750,7 +224,9 @@ std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 				}
 
 				const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
-				const CursorAlignment cursorAlignment = ArrowCursorAlignments.at(i);
+
+				DebugAssertIndex(GameWorldUiView::ArrowCursorAlignments, i);
+				const CursorAlignment cursorAlignment = GameWorldUiView::ArrowCursorAlignments[i];
 				return CursorData(textureBuilderID, *paletteID, cursorAlignment);
 			}
 		}
@@ -760,149 +236,16 @@ std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
 	}
 }
 
-TextureBuilderID GameWorldPanel::getGameWorldInterfaceTextureBuilderID(TextureManager &textureManager)
-{
-	const std::string &textureFilename = ArenaTextureName::GameWorldInterface;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldPanel::getCompassFrameTextureBuilderID() const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::CompassFrame;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldPanel::getCompassSliderTextureBuilderID() const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::CompassSlider;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldPanel::getPlayerPortraitTextureBuilderID(
-	const std::string &portraitsFilename, int portraitID) const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(portraitsFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + portraitsFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(portraitID);
-}
-
-TextureBuilderID GameWorldPanel::getStatusGradientTextureBuilderID(int gradientID) const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &statusGradientsFilename = ArenaTextureName::StatusGradients;
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(statusGradientsFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + statusGradientsFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(gradientID);
-}
-
-TextureBuilderID GameWorldPanel::getNoSpellTextureBuilderID() const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &textureFilename = ArenaTextureName::NoSpell;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return *textureBuilderID;
-}
-
-TextureBuilderID GameWorldPanel::getWeaponTextureBuilderID(const std::string &weaponFilename, int index) const
-{
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::optional<TextureBuilderIdGroup> textureBuilderIDs =
-		textureManager.tryGetTextureBuilderIDs(weaponFilename.c_str());
-	if (!textureBuilderIDs.has_value())
-	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + weaponFilename + "\".");
-	}
-
-	return textureBuilderIDs->getID(index);
-}
-
 void GameWorldPanel::updateCursorRegions(int width, int height)
 {
-	// Scale ratios.
+	// @todo: maybe the classic rects should be converted to vector space then scaled by the ratio of aspect ratios?
 	const double xScale = static_cast<double>(width) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
 	const double yScale = static_cast<double>(height) / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
 
-	// Lambda for making a cursor region that scales to the current resolution.
-	auto scaleRect = [xScale, yScale](const Rect &rect)
+	for (int i = 0; i < static_cast<int>(this->nativeCursorRegions.size()); i++)
 	{
-		const int x = static_cast<int>(std::ceil(static_cast<double>(rect.getLeft()) * xScale));
-		const int y = static_cast<int>(std::ceil(static_cast<double>(rect.getTop()) * yScale));
-		const int width = static_cast<int>(std::ceil(static_cast<double>(rect.getWidth()) * xScale));
-		const int height = static_cast<int>(std::ceil(static_cast<double>(rect.getHeight()) * yScale));
-		return Rect(x, y, width, height);
-	};
-
-	// @todo: maybe replace this with an index array into the global regions and a std::generate?
-
-	// Top row.
-	this->nativeCursorRegions.at(0) = scaleRect(TopLeftRegion);
-	this->nativeCursorRegions.at(1) = scaleRect(TopMiddleRegion);
-	this->nativeCursorRegions.at(2) = scaleRect(TopRightRegion);
-
-	// Middle row.
-	this->nativeCursorRegions.at(3) = scaleRect(MiddleLeftRegion);
-	this->nativeCursorRegions.at(4) = scaleRect(MiddleRegion);
-	this->nativeCursorRegions.at(5) = scaleRect(MiddleRightRegion);
-
-	// Bottom row.
-	this->nativeCursorRegions.at(6) = scaleRect(BottomLeftRegion);
-	this->nativeCursorRegions.at(7) = scaleRect(BottomMiddleRegion);
-	this->nativeCursorRegions.at(8) = scaleRect(BottomRightRegion);
-}
-
-void GameWorldPanel::setFreeLookActive(bool active)
-{
-	auto &game = this->getGame();
-
-	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but
-	// relative motion events are still recorded.
-	auto &inputManager = game.getInputManager();
-	inputManager.setRelativeMouseMode(active);
-
-	// Warp mouse to center of screen.
-	auto &renderer = game.getRenderer();
-	const Int2 windowDims = renderer.getWindowDimensions();
-	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
+		this->nativeCursorRegions[i] = GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale);
+	}
 }
 
 void GameWorldPanel::handleEvent(const SDL_Event &e)
@@ -931,8 +274,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 	const bool drawWeaponHotkeyPressed = inputManager.keyPressed(e, SDLK_f);
 	const bool automapHotkeyPressed = inputManager.keyPressed(e, SDLK_n);
 	const bool logbookHotkeyPressed = inputManager.keyPressed(e, SDLK_l);
-	const bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) ||
-		inputManager.keyPressed(e, SDLK_F1);
+	const bool sheetHotkeyPressed = inputManager.keyPressed(e, SDLK_TAB) || inputManager.keyPressed(e, SDLK_F1);
 	const bool statusHotkeyPressed = inputManager.keyPressed(e, SDLK_v);
 	const bool worldMapHotkeyPressed = inputManager.keyPressed(e, SDLK_m);
 	const bool toggleCompassHotkeyPressed = inputManager.keyPressed(e, SDLK_F8);
@@ -974,50 +316,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 	if (f2Pressed)
 	{
-		// Refresh player coordinates display (probably intended for debugging in the
-		// original game). These coordinates are in Arena's coordinate system.
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		GameState &gameState = game.getGameState();
-		const MapDefinition &mapDef = gameState.getActiveMapDef();
-
-		const std::string text = [&player, &exeData, &mapDef]()
-		{
-			const MapType mapType = mapDef.getMapType();
-			const OriginalInt2 displayedCoords = [&player, mapType]()
-			{
-				const NewDouble3 absolutePlayerPosition = VoxelUtils::coordToNewPoint(player.getPosition());
-				const NewInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
-				const NewInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
-				const OriginalInt2 originalVoxel = VoxelUtils::newVoxelToOriginalVoxel(playerVoxelXZ);
-
-				// The displayed coordinates in the wilderness behave differently in the original
-				// game due to how the 128x128 grid shifts to keep the player roughly centered.
-				if (mapType != MapType::Wilderness)
-				{
-					return originalVoxel;
-				}
-				else
-				{
-					const int halfWidth = RMDFile::WIDTH / 2;
-					const int halfDepth = RMDFile::DEPTH / 2;
-					return OriginalInt2(
-						halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
-						halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
-				}
-			}();
-
-			std::string str = exeData.ui.currentWorldPosition;
-
-			// Replace first %d with X, second %d with Y.
-			size_t index = str.find("%d");
-			str.replace(index, 2, std::to_string(displayedCoords.x));
-
-			index = str.find("%d", index);
-			str.replace(index, 2, std::to_string(displayedCoords.y));
-
-			return str;
-		}();
-
+		// Refresh player coordinates display (probably intended for debugging in the original game).
+		// These coordinates are in Arena's coordinate system.
+		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
+		auto &gameState = game.getGameState();
 		gameState.setActionText(text, game.getFontLibrary(), game.getRenderer());
 	}
 
@@ -1140,7 +442,7 @@ void GameWorldPanel::onPauseChanged(bool paused)
 
 	if (modernInterface)
 	{
-		this->setFreeLookActive(!paused);
+		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 }
 
@@ -1152,6 +454,8 @@ void GameWorldPanel::resize(int windowWidth, int windowHeight)
 
 void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 {
+	// @todo: move this to some game/player logic controller namespace
+
 	// In the future, maybe this could be separated into two methods:
 	// 1) handleClassicTurning()
 	// 2) handleModernTurning()
@@ -1190,10 +494,10 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 					const int mouseX = mousePosition.x;
 
 					// Native cursor regions for turning (scaled to the current window).
-					const Rect &topLeft = this->nativeCursorRegions.at(0);
-					const Rect &topRight = this->nativeCursorRegions.at(2);
-					const Rect &middleLeft = this->nativeCursorRegions.at(3);
-					const Rect &middleRight = this->nativeCursorRegions.at(5);
+					const Rect &topLeft = this->nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+					const Rect &topRight = this->nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+					const Rect &middleLeft = this->nativeCursorRegions[GameWorldUiView::CursorMiddleLeftIndex];
+					const Rect &middleRight = this->nativeCursorRegions[GameWorldUiView::CursorMiddleRightIndex];
 
 					if (topLeft.contains(mousePosition))
 					{
@@ -1201,8 +505,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 					}
 					else if (topRight.contains(mousePosition))
 					{
-						return static_cast<double>(mouseX - topRight.getLeft()) /
-							topRight.getWidth();
+						return static_cast<double>(mouseX - topRight.getLeft()) / topRight.getWidth();
 					}
 					else if (middleLeft.contains(mousePosition))
 					{
@@ -1210,8 +513,7 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 					}
 					else if (middleRight.contains(mousePosition))
 					{
-						return static_cast<double>(mouseX - middleRight.getLeft()) /
-							middleRight.getWidth();
+						return static_cast<double>(mouseX - middleRight.getLeft()) / middleRight.getWidth();
 					}
 					else
 					{
@@ -1277,6 +579,8 @@ void GameWorldPanel::handlePlayerTurning(double dt, const Int2 &mouseDelta)
 
 void GameWorldPanel::handlePlayerMovement(double dt)
 {
+	// @todo: this should be in some game/player logic controller namespace
+
 	// In the future, maybe this could be separated into two methods:
 	// 1) handleClassicMovement()
 	// 2) handleModernMovement()
@@ -1285,8 +589,8 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 	const auto &inputManager = game.getInputManager();
 
 	// Arbitrary movement speeds.
-	const double walkSpeed = 15.0;
-	const double runSpeed = 30.0;
+	constexpr double walkSpeed = 15.0;
+	constexpr double runSpeed = 30.0;
 
 	const GameState &gameState = game.getGameState();
 	const MapInstance &mapInst = gameState.getActiveMapInst();
@@ -1334,12 +638,12 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			const int mouseY = mousePosition.y;
 
 			// Native cursor regions for motion (scaled to the current window).
-			const Rect &topLeft = this->nativeCursorRegions.at(0);
-			const Rect &top = this->nativeCursorRegions.at(1);
-			const Rect &topRight = this->nativeCursorRegions.at(2);
-			const Rect &bottomLeft = this->nativeCursorRegions.at(6);
-			const Rect &bottom = this->nativeCursorRegions.at(7);
-			const Rect &bottomRight = this->nativeCursorRegions.at(8);
+			const Rect &topLeft = this->nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+			const Rect &top = this->nativeCursorRegions[GameWorldUiView::CursorTopMiddleIndex];
+			const Rect &topRight = this->nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+			const Rect &bottomLeft = this->nativeCursorRegions[GameWorldUiView::CursorBottomLeftIndex];
+			const Rect &bottom = this->nativeCursorRegions[GameWorldUiView::CursorBottomMiddleIndex];
+			const Rect &bottomRight = this->nativeCursorRegions[GameWorldUiView::CursorBottomRightIndex];
 
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
@@ -1373,15 +677,13 @@ void GameWorldPanel::handlePlayerMovement(double dt)
 			{
 				// Backwards.
 				accelDirection = accelDirection - groundDirection3D;
-				percent = static_cast<double>(mouseY - bottom.getTop()) /
-					bottom.getHeight();
+				percent = static_cast<double>(mouseY - bottom.getTop()) / bottom.getHeight();
 			}
 			else if (bottomRight.contains(mousePosition))
 			{
 				// Right.
 				accelDirection = accelDirection + rightDirection;
-				percent = static_cast<double>(mouseX - bottomRight.getLeft()) /
-					bottomRight.getWidth();
+				percent = static_cast<double>(mouseX - bottomRight.getLeft()) / bottomRight.getWidth();
 			}
 
 			// Only attempt to accelerate if a direction was chosen.
@@ -1630,7 +932,7 @@ void GameWorldPanel::handlePlayerAttack(const Int2 &mouseDelta)
 					auto &textureManager = game.getTextureManager();
 					auto &renderer = game.getRenderer();
 					const TextureBuilderID gameWorldInterfaceTextureID =
-						GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+						GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
 					const TextureBuilder &gameWorldInterfaceTextureBuilder =
 						textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureID);
 					const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
@@ -1672,25 +974,7 @@ void GameWorldPanel::handleClickInWorld(const Int2 &nativePoint, bool primaryCli
 	const double ceilingScale = levelInst.getCeilingScale();
 
 	const CoordDouble3 rayStart = player.getPosition();
-	const VoxelDouble3 rayDirection = [&nativePoint, &game, &options, &cameraDirection]()
-	{
-		const auto &renderer = game.getRenderer();
-		const Int2 windowDims = renderer.getWindowDimensions();
-		const int viewWidth = windowDims.x;
-		const int viewHeight = renderer.getViewHeight();
-		const double viewAspectRatio = static_cast<double>(viewWidth) /
-			static_cast<double>(viewHeight);
-
-		// Mouse position percents across the screen. Add 0.50 to sample at the center
-		// of the pixel.
-		const double mouseXPercent = (static_cast<double>(nativePoint.x) + 0.50) /
-			static_cast<double>(viewWidth);
-		const double mouseYPercent = (static_cast<double>(nativePoint.y) + 0.50) /
-			static_cast<double>(viewHeight);
-
-		return renderer.screenPointToRay(mouseXPercent, mouseYPercent, cameraDirection,
-			options.getGraphics_VerticalFOV(), viewAspectRatio);
-	}();
+	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 
 	// Pixel-perfect selection determines whether an entity's texture is used in the
 	// selection calculation.
@@ -2534,259 +1818,47 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 
 void GameWorldPanel::drawTooltip(const std::string &text, Renderer &renderer)
 {
-	const Texture tooltip = Panel::createTooltip(
-		text, FontName::D, this->getGame().getFontLibrary(), renderer);
-
-	auto &textureManager = this->getGame().getTextureManager();
-	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
-		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
-	const TextureBuilder &gameWorldInterfaceTextureBuilder =
-		textureManager.getTextureBuilderHandle(gameWorldInterfaceTextureBuilderID);
-
-	const int x = 0;
-	const int y = ArenaRenderUtils::SCREEN_HEIGHT -
-		gameWorldInterfaceTextureBuilder.getHeight() - tooltip.getHeight();
-	renderer.drawOriginal(tooltip, x, y);
+	auto &game = this->getGame();
+	const Texture tooltip = TextureUtils::createTooltip(text, game.getFontLibrary(), renderer);	
+	const Int2 tooltipPosition = GameWorldUiView::getTooltipPosition(game, tooltip.getHeight());
+	renderer.drawOriginal(tooltip, tooltipPosition.x, tooltipPosition.y);
 }
 
-void GameWorldPanel::drawCompass(const NewDouble2 &direction, TextureManager &textureManager, Renderer &renderer)
+void GameWorldPanel::drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer)
 {
-	// The compass slider is drawn based on player direction.
-	const TextureBuilderID compassSliderTextureBuilderID = this->getCompassSliderTextureBuilderID();
-	const TextureBuilderID compassFrameTextureBuilderID = this->getCompassFrameTextureBuilderID();
+	auto &game = this->getGame();
 
-	// Angle between 0 and 2 pi.
-	const double angle = std::atan2(-direction.y, -direction.x);
-
-	// Offset in the "slider" texture. Due to how SLIDER.IMG is drawn, there's a
-	// small "pop-in" when turning from N to NE, because N is drawn in two places,
-	// but the second place (offset == 256) has tick marks where "NE" should be.
-	const int xOffset = static_cast<int>(240.0 +
-		std::round(256.0 * (angle / (2.0 * Constants::Pi)))) % 256;
-
-	// Clip area for the visible part of the slider.
+	// Visible part of the slider (based on player position)
+	const TextureBuilderID compassSliderTextureBuilderID = GameWorldUiView::getCompassSliderTextureBuilderID(game);
 	const TextureBuilder &compassSlider = textureManager.getTextureBuilderHandle(compassSliderTextureBuilderID);
-	const Rect clipRect(xOffset, 0, 32, compassSlider.getHeight());
+	const Rect clipRect = GameWorldUiView::getCompassClipRect(game, direction, compassSlider.getHeight());
+	const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(clipRect.getWidth(), clipRect.getHeight());
 
-	// Top-left corner of the slider in 320x200 space.
-	const int sliderX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (clipRect.getWidth() / 2);
-	const int sliderY = clipRect.getHeight();
+	// @temp: since there are some off-by-one rounding errors with SDL_RenderCopy, draw a black rectangle behind the
+	// slider to cover up gaps.
+	renderer.fillOriginalRect(
+		Color::Black,
+		sliderPosition.x - 1,
+		sliderPosition.y - 1,
+		clipRect.getWidth() + 2,
+		clipRect.getHeight() + 2);
 
-	// Since there are some off-by-one rounding errors with SDL_RenderCopy,
-	// draw a black rectangle behind the slider to cover up gaps.
-	renderer.fillOriginalRect(Color::Black, sliderX - 1, sliderY - 1,
-		clipRect.getWidth() + 2, clipRect.getHeight() + 2);
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	const TextureAssetReference paletteTextureAssetRef = GameWorldUiView::getCompassSliderPaletteTextureAssetRef();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAssetRef);
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
 	renderer.drawOriginalClipped(compassSliderTextureBuilderID, *paletteID, clipRect,
-		sliderX, sliderY, textureManager);
+		sliderPosition.x, sliderPosition.y, textureManager);
 
 	// Draw the compass frame over the slider.
+	const TextureBuilderID compassFrameTextureBuilderID = GameWorldUiView::getCompassFrameTextureBuilderID(game);
 	const TextureBuilder &compassFrame = textureManager.getTextureBuilderHandle(compassFrameTextureBuilderID);
-	renderer.drawOriginal(compassFrameTextureBuilderID, *paletteID,
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (compassFrame.getWidth() / 2), 0, textureManager);
-}
-
-void GameWorldPanel::drawProfiler(int profilerLevel, Renderer &renderer)
-{
-	DebugAssert(profilerLevel > Options::MIN_PROFILER_LEVEL);
-	DebugAssert(profilerLevel <= Options::MAX_PROFILER_LEVEL);
-
-	auto &game = this->getGame();
-
-	const FPSCounter &fpsCounter = game.getFPSCounter();
-	const double fps = fpsCounter.getAverageFPS();
-	const double frameTimeMS = 1000.0 / fps;
-
-	const auto &options = game.getOptions();
-	const int targetFps = options.getGraphics_TargetFPS();
-	const int minFps = Options::MIN_FPS;
-
-	// Draw each profiler level with its own draw call.
-	if (profilerLevel >= 1)
-	{
-		// FPS.
-		const std::string fpsText = String::fixedPrecision(fps, 1);
-		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 1);
-		const std::string text = "FPS: " + fpsText + " (" + frameTimeText + "ms)";
-
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			text,
-			FontName::D,
-			Color::White,
-			TextAlignment::Left,
-			fontLibrary);
-
-		const int x = 2;
-		const int y = 2;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
-		renderer.drawOriginal(textBox.getTexture(), x, y);
-	}
-
-	if (profilerLevel >= 2)
-	{
-		// Screen, renderer, timing, and player info.
-		const Int2 windowDims = renderer.getWindowDimensions();
-
-		const Renderer::ProfilerData &profilerData = renderer.getProfilerData();
-		const Int2 renderDims(profilerData.width, profilerData.height);
-		const double resolutionScale = options.getGraphics_ResolutionScale();
-
-		GameState &gameState = game.getGameState();
-		const auto &player = gameState.getPlayer();
-		const CoordDouble3 &playerPosition = player.getPosition();
-		const Double3 &direction = player.getDirection();
-
-		const std::string windowWidth = std::to_string(windowDims.x);
-		const std::string windowHeight = std::to_string(windowDims.y);
-
-		const std::string renderWidth = std::to_string(renderDims.x);
-		const std::string renderHeight = std::to_string(renderDims.y);
-		const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
-		const std::string renderThreadCount = std::to_string(profilerData.threadCount);
-
-		const std::string chunkStr = playerPosition.chunk.toString();
-		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
-		const std::string dirX = String::fixedPrecision(direction.x, 2);
-		const std::string dirY = String::fixedPrecision(direction.y, 2);
-		const std::string dirZ = String::fixedPrecision(direction.z, 2);
-
-		std::string text =
-			"Screen: " + windowWidth + "x" + windowHeight + '\n' +
-			"Render: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
-			renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-			"Chunk: " + chunkStr + '\n' +
-			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
-			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
-
-		auto &fontLibrary = game.getFontLibrary();
-		const FontName fontName = FontName::D;
-		const RichTextString richText(
-			text,
-			fontName,
-			Color::White,
-			TextAlignment::Left,
-			fontLibrary);
-
-		// Get character height of the FPS font so Y position is correct.
-		const char *fontNameStr = FontUtils::fromName(fontName);
-		int fontIndex;
-		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
-		{
-			DebugLogWarning("Couldn't get font \"" + std::string(fontNameStr) + "\".");
-			return;
-		}
-
-		const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
-		const int yOffset = fontDef.getCharacterHeight();
-
-		const int x = 2;
-		const int y = 2 + yOffset;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
-		renderer.drawOriginal(textBox.getTexture(), x, y);
-	}
-
-	if (profilerLevel >= 3)
-	{
-		// Draw frame times and graph.
-		const Renderer::ProfilerData &profilerData = renderer.getProfilerData();
-		const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
-
-		const std::string text =
-			"3D render: " + renderTime + "ms" + "\n" +
-			"Vis flats: " + std::to_string(profilerData.visFlatCount) + " (" +
-			std::to_string(profilerData.potentiallyVisFlatCount) + ")" +
-			", lights: " + std::to_string(profilerData.visLightCount) + "\n" +
-			"FPS Graph:" + '\n' +
-			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
-			"                               " + std::to_string(0);
-
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			text,
-			FontName::D,
-			Color::White,
-			TextAlignment::Left,
-			fontLibrary);
-
-		const int x = 2;
-		const int y = 72;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
-
-		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps]()
-		{
-			// Graph maximum is target FPS, minimum is MIN_FPS.
-			const int columnWidth = 1;
-			const int width = fpsCounter.getFrameCount() * columnWidth;
-			const int height = 32;
-			Surface surface = Surface::createWithFormat(
-				width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-			surface.fill(0, 0, 0, 128);
-
-			const std::array<uint32_t, 3> Colors =
-			{
-				surface.mapRGBA(255, 0, 0, 128),
-				surface.mapRGBA(255, 255, 0, 128),
-				surface.mapRGBA(0, 255, 0, 128)
-			};
-
-			auto drawGraphColumn = [columnWidth, &surface, &Colors](int x, double percent)
-			{
-				const uint32_t color = [&Colors, percent]()
-				{
-					const int colorIndex = [percent]()
-					{
-						if (percent < (1.0 / 3.0))
-						{
-							return 0;
-						}
-						else if (percent < (2.0 / 3.0))
-						{
-							return 1;
-						}
-						else
-						{
-							return 2;
-						}
-					}();
-
-					return Colors.at(colorIndex);
-				}();
-
-				// Height of column in pixels.
-				const int height = std::clamp(static_cast<int>(
-					percent * static_cast<double>(surface.getHeight())), 0, surface.getHeight());
-
-				const Rect rect(x * columnWidth, surface.getHeight() - height, columnWidth, height);
-				surface.fillRect(rect, color);
-			};
-
-			// Fill in columns.
-			const double targetFpsReal = static_cast<double>(targetFps);
-			for (int i = 0; i < fpsCounter.getFrameCount(); i++)
-			{
-				const double frameTime = fpsCounter.getFrameTime(i);
-				const double fps = 1.0 / frameTime;
-				const double fpsPercent = std::clamp(fps / targetFpsReal, 0.0, 1.0);
-				drawGraphColumn(i, fpsPercent);
-			}
-
-			return renderer.createTextureFromSurface(surface);
-		}();
-
-		renderer.drawOriginal(textBox.getTexture(), textBox.getX(), textBox.getY());
-		renderer.drawOriginal(frameTimesGraph, textBox.getX(), 94);
-	}
+	const Int2 compassFramePosition = GameWorldUiView::getCompassFramePosition(compassFrame.getWidth());
+	renderer.drawOriginal(compassFrameTextureBuilderID, *paletteID, compassFramePosition.x, compassFramePosition.y, textureManager);
 }
 
 void GameWorldPanel::tick(double dt)
@@ -2987,22 +2059,21 @@ void GameWorldPanel::render(Renderer &renderer)
 		options.getMisc_ChunkDistance(), activeLevelInst.getCeilingScale(), activeLevelInst, activeSkyInst,
 		activeWeatherInst, game.getRandom(), game.getEntityDefinitionLibrary(), defaultPalette);
 
-	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
-		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+	const TextureBuilderID gameWorldInterfaceTextureBuilderID = GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
 
-	const TextureBuilderID statusGradientTextureBuilderID = [this]()
+	const TextureBuilderID statusGradientTextureBuilderID = [this, &game]()
 	{
 		constexpr int gradientID = 0; // Default for now.
-		return this->getStatusGradientTextureBuilderID(gradientID);
+		return GameWorldUiView::getStatusGradientTextureBuilderID(game, gradientID);
 	}();
 	
-	const TextureBuilderID playerPortraitTextureBuilderID = [this, &player]()
+	const TextureBuilderID playerPortraitTextureBuilderID = [this, &game, &player]()
 	{
 		const std::string &headsFilename = PortraitFile::getHeads(player.isMale(), player.getRaceID(), true);
-		return this->getPlayerPortraitTextureBuilderID(headsFilename, player.getPortraitID());
+		return GameWorldUiView::getPlayerPortraitTextureBuilderID(game, headsFilename, player.getPortraitID());
 	}();
 
-	const TextureBuilderID noSpellTextureBuilderID = this->getNoSpellTextureBuilderID();
+	const TextureBuilderID noSpellTextureBuilderID = GameWorldUiView::getNoSpellTextureBuilderID(game);
 
 	const auto &inputManager = game.getInputManager();
 	const Int2 mousePosition = inputManager.getMousePosition();
@@ -3015,19 +2086,25 @@ void GameWorldPanel::render(Renderer &renderer)
 		// Draw game world interface.
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
-		renderer.drawOriginal(gameWorldInterfaceTextureBuilderID, *defaultPaletteID, 0,
-			ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight(), textureManager);
+		const Int2 gameWorldInterfacePosition =
+			GameWorldUiView::getGameWorldInterfacePosition(gameWorldInterfaceTextureBuilderRef.getHeight());
+		renderer.drawOriginal(gameWorldInterfaceTextureBuilderID, *defaultPaletteID,
+			gameWorldInterfacePosition.x, gameWorldInterfacePosition.y, textureManager);
 
 		// Draw player portrait.
-		renderer.drawOriginal(statusGradientTextureBuilderID, *defaultPaletteID, 14, 166, textureManager);
-		renderer.drawOriginal(playerPortraitTextureBuilderID, *defaultPaletteID, 14, 166, textureManager);
+		renderer.drawOriginal(statusGradientTextureBuilderID, *defaultPaletteID,
+			GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY, textureManager);
+		renderer.drawOriginal(playerPortraitTextureBuilderID, *defaultPaletteID,
+			GameWorldUiView::PlayerPortraitX, GameWorldUiView::PlayerPortraitY, textureManager);
 
 		// If the player's class can't use magic, show the darkened spell icon.
 		const auto &charClassLibrary = game.getCharacterClassLibrary();
 		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
 		if (!charClassDef.canCastMagic())
 		{
-			renderer.drawOriginal(noSpellTextureBuilderID, *defaultPaletteID, 91, 177, textureManager);
+			const Int2 noMagicTexturePosition = GameWorldUiView::getNoMagicTexturePosition();
+			renderer.drawOriginal(noSpellTextureBuilderID, *defaultPaletteID,
+				noMagicTexturePosition.x, noMagicTexturePosition.y, textureManager);
 		}
 
 		// Draw text: player name.
@@ -3040,47 +2117,41 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 {
 	DebugAssert(this->getGame().gameStateIsActive());
 	
-	auto &gameState = this->getGame().getGameState();
+	auto &game = this->getGame();
+	auto &gameState = game.getGameState();
 	auto &player = gameState.getPlayer();
-	const auto &options = this->getGame().getOptions();
+	const auto &options = game.getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	// Several interface objects are in this method because they are hidden by the status
 	// pop-up and the spells list.
-	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &defaultPaletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteFilename.c_str());
+	auto &textureManager = game.getTextureManager();
+	const TextureAssetReference defaultPaletteTextureAssetRef = GameWorldUiView::getDefaultPaletteTextureAssetRef();
+	const std::optional<PaletteID> defaultPaletteID = textureManager.tryGetPaletteID(defaultPaletteTextureAssetRef);
 	if (!defaultPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteFilename + "\".");
+		DebugLogError("Couldn't get default palette ID from \"" + defaultPaletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
 	const TextureBuilderID gameWorldInterfaceTextureBuilderID =
-		GameWorldPanel::getGameWorldInterfaceTextureBuilderID(textureManager);
+		GameWorldUiView::getGameWorldInterfaceTextureBuilderID(textureManager);
 
-	// Display player's weapon if unsheathed. The position also depends on whether
-	// the interface is in classic or modern mode.
-	const auto &weaponAnimation = player.getWeaponAnimation();
-	if (!weaponAnimation.isSheathed())
+	// Display player's weapon if unsheathed.
+	const std::optional<TextureBuilderID> weaponTextureBuilderID = GameWorldUiView::getActiveWeaponAnimationTextureBuilderID(game);
+	if (weaponTextureBuilderID.has_value())
 	{
-		const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-		const TextureBuilderID weaponTextureBuilderID = [this, &weaponAnimation, weaponAnimIndex]()
-		{
-			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			return this->getWeaponTextureBuilderID(weaponFilename, weaponAnimIndex);
-		}();
-
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
-		const TextureBuilderRef weaponTextureBuilderRef = textureManager.getTextureBuilderRef(weaponTextureBuilderID);
-
-		DebugAssertIndex(this->weaponOffsets, weaponAnimIndex);
-		const Int2 &weaponOffset = this->weaponOffsets[weaponAnimIndex];
+		const TextureBuilderRef weaponTextureBuilderRef = textureManager.getTextureBuilderRef(*weaponTextureBuilderID);
+		const Int2 weaponOffset = GameWorldUiView::getCurrentWeaponAnimationOffset(game);
 
 		// Draw the current weapon image depending on interface mode.
 		if (modernInterface)
 		{
+			// @todo: this would probably be a lot easier to do if it could just specify it's in the native vector space?
+			// - clean this up for draw calls/UiTextureID stuff
+
 			// Draw stretched to fit the window.
 			const int letterboxStretchMode = Options::MAX_LETTERBOX_MODE;
 			renderer.setLetterboxMode(letterboxStretchMode);
@@ -3091,8 +2162,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 			// Native left and right screen edges converted to original space.
 			const int newLeft = renderer.nativeToOriginal(Int2(0, 0)).x;
-			const int newRight = renderer.nativeToOriginal(
-				Int2(renderer.getWindowDimensions().x, 0)).x;
+			const int newRight = renderer.nativeToOriginal(Int2(renderer.getWindowDimensions().x, 0)).x;
 			const double newDiff = static_cast<double>(newRight - newLeft);
 
 			// Values to scale original weapon dimensions by.
@@ -3100,18 +2170,14 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			const double weaponScaleY = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT) /
 				static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceTextureBuilderRef.getHeight());
 
-			const int weaponX = newLeft +
-				static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
-			const int weaponY = static_cast<int>(std::round(
-				static_cast<double>(weaponOffset.y) * weaponScaleY));
-			const int weaponWidth = static_cast<int>(std::round(
-				static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
-			const int weaponHeight = static_cast<int>(std::round(
-				static_cast<double>(std::min(weaponTextureBuilderRef.getHeight() + 1,
-					std::max(ArenaRenderUtils::SCREEN_HEIGHT - weaponY, 0))) * weaponScaleY));
+			const int weaponX = newLeft + static_cast<int>(std::round(newDiff * weaponOffsetXPercent));
+			const int weaponY = static_cast<int>(std::round(static_cast<double>(weaponOffset.y) * weaponScaleY));
+			const int weaponWidth = static_cast<int>(std::round(static_cast<double>(weaponTextureBuilderRef.getWidth()) * weaponScaleX));
+			const int weaponHeight = static_cast<int>(std::round(static_cast<double>(
+				std::min(weaponTextureBuilderRef.getHeight() + 1, std::max(ArenaRenderUtils::SCREEN_HEIGHT - weaponY, 0))) * weaponScaleY));
 
-			renderer.drawOriginal(weaponTextureBuilderID, *defaultPaletteID,
-				weaponX, weaponY, weaponWidth, weaponHeight, textureManager);
+			renderer.drawOriginal(*weaponTextureBuilderID, *defaultPaletteID, weaponX, weaponY,
+				weaponWidth, weaponHeight, textureManager);
 
 			// Reset letterbox mode back to what it was.
 			renderer.setLetterboxMode(options.getGraphics_LetterboxMode());
@@ -3126,7 +2192,7 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 			// Add 1 to the height because Arena's renderer has an off-by-one bug, and a 1 pixel
 			// gap appears unless a small change is added.
 			const int weaponHeight = std::clamp(weaponTextureBuilderRef.getHeight() + 1, 0, maxWeaponHeight);
-			renderer.drawOriginal(weaponTextureBuilderID, *defaultPaletteID,
+			renderer.drawOriginal(*weaponTextureBuilderID, *defaultPaletteID,
 				weaponOffset.x, weaponOffset.y, weaponTextureBuilderRef.getWidth(), weaponHeight, textureManager);
 		}
 	}
@@ -3147,15 +2213,11 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
-		const int centerX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (triggerTextTexture->getWidth() / 2) - 1;
-		const int centerY = [modernInterface, &gameWorldInterfaceTextureBuilderRef, triggerTextTexture]()
-		{
-			const int interfaceOffset = modernInterface ? (gameWorldInterfaceTextureBuilderRef.getHeight() / 2) :
-				gameWorldInterfaceTextureBuilderRef.getHeight();
-			return ArenaRenderUtils::SCREEN_HEIGHT - interfaceOffset - triggerTextTexture->getHeight() - 3;
-		}();
+		const Int2 textPosition = GameWorldUiView::getTriggerTextPosition(
+			game, triggerTextTexture->getWidth(), triggerTextTexture->getHeight(),
+			gameWorldInterfaceTextureBuilderRef.getHeight());
 
-		renderer.drawOriginal(*triggerTextTexture, centerX, centerY);
+		renderer.drawOriginal(*triggerTextTexture, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.actionTextIsVisible())
@@ -3163,14 +2225,14 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		const Texture *actionTextTexture;
 		gameState.getActionTextRenderInfo(&actionTextTexture);
 
-		const int textX = (ArenaRenderUtils::SCREEN_WIDTH / 2) - (actionTextTexture->getWidth() / 2);
-		const int textY = 20;
-		renderer.drawOriginal(*actionTextTexture, textX, textY);
+		const Int2 textPosition = GameWorldUiView::getActionTextPosition(actionTextTexture->getWidth());
+		renderer.drawOriginal(*actionTextTexture, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.effectTextIsVisible())
 	{
 		// @todo: draw "effect text".
+		//GameWorldUiView::getEffectTextPosition()
 	}
 
 	// Check if the mouse is over one of the buttons for tooltips in classic mode.
@@ -3189,39 +2251,39 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 
 			if (this->characterSheetButton.contains(originalPosition))
 			{
-				return "Character Sheet";
+				return GameWorldUiModel::getCharacterSheetTooltipText();
 			}
 			else if (this->drawWeaponButton.contains(originalPosition))
 			{
-				return "Draw/Sheathe Weapon";
+				return GameWorldUiModel::getWeaponTooltipText();
 			}
 			else if (this->mapButton.contains(originalPosition))
 			{
-				return "Automap/World Map";
+				return GameWorldUiModel::getMapTooltipText();
 			}
 			else if (this->stealButton.contains(originalPosition))
 			{
-				return "Steal";
+				return GameWorldUiModel::getStealTooltipText();
 			}
 			else if (this->statusButton.contains(originalPosition))
 			{
-				return "Status";
+				return GameWorldUiModel::getStatusTooltipText();
 			}
 			else if (this->magicButton.contains(originalPosition) && charClassDef.canCastMagic())
 			{
-				return "Spells";
+				return GameWorldUiModel::getMagicTooltipText();
 			}
 			else if (this->logbookButton.contains(originalPosition))
 			{
-				return "Logbook";
+				return GameWorldUiModel::getLogbookTooltipText();
 			}
 			else if (this->useItemButton.contains(originalPosition))
 			{
-				return "Use Item";
+				return GameWorldUiModel::getUseItemTooltipText();
 			}
 			else if (this->campButton.contains(originalPosition))
 			{
-				return "Camp";
+				return GameWorldUiModel::getCampTooltipText();
 			}
 			else
 			{
@@ -3236,17 +2298,6 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 		}
 	}
 
-	// Draw some optional profiler text.
-	const int profilerLevel = options.getMisc_ProfilerLevel();
-	if (profilerLevel > Options::MIN_PROFILER_LEVEL)
-	{
-		this->drawProfiler(profilerLevel, renderer);
-	}
-
-	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
-	// levels where ceilingScale < 1.0, and same with ceiling blue dots).
-	if (profilerLevel == Options::MAX_PROFILER_LEVEL)
-	{
-		DEBUG_PhysicsRaycast(this->getGame(), renderer);
-	}	
+	// Optionally draw profiler text.
+	GameWorldUiView::DEBUG_DrawProfiler(game, renderer);
 }

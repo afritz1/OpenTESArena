@@ -1,10 +1,7 @@
 #ifndef CHARACTER_EQUIPMENT_PANEL_H
 #define CHARACTER_EQUIPMENT_PANEL_H
 
-#include <vector>
-
 #include "Panel.h"
-#include "../Math/Vector2.h"
 #include "../UI/Button.h"
 #include "../UI/ListBox.h"
 
@@ -14,14 +11,11 @@ class TextBox;
 class CharacterEquipmentPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox,
-		playerClassTextBox;
+	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox, playerClassTextBox;
 	std::unique_ptr<ListBox> inventoryListBox;
-	Button<Game&> backToStatsButton;
-	Button<> spellbookButton;
+	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;
 	Button<ListBox&> scrollDownButton, scrollUpButton;
-	std::vector<Int2> headOffsets;
 public:
 	CharacterEquipmentPanel(Game &game);
 	virtual ~CharacterEquipmentPanel() = default;

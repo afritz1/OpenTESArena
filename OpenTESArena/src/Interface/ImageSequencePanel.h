@@ -9,9 +9,9 @@
 #include "Panel.h"
 #include "../UI/Button.h"
 
-// Halfway between a CinematicPanel and an ImagePanel, this panel displays still 
-// images one at a time and allows only the escape button to fully skip until the
-// end, unlike the CinematicPanel. Mouse clicks, etc. will skip one image.
+// Halfway between a CinematicPanel and an ImagePanel, this panel displays still images one at a time and
+// allows only the escape button to fully skip until the end, unlike the CinematicPanel. Mouse clicks, etc.
+// will skip one image.
 
 class ImageSequencePanel : public Panel
 {
@@ -23,10 +23,8 @@ private:
 	double currentSeconds;
 	int imageIndex;
 public:
-	ImageSequencePanel(Game &game,
-		const std::vector<std::string> &paletteNames,
-		const std::vector<std::string> &textureNames,
-		const std::vector<double> &imageDurations,
+	ImageSequencePanel(Game &game, const std::vector<std::string> &paletteNames,
+		const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
 		const std::function<void(Game&)> &endingAction);
 	virtual ~ImageSequencePanel() = default;
 

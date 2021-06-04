@@ -6,6 +6,7 @@
 #include "SDL.h"
 
 #include "TextCinematicPanel.h"
+#include "TextCinematicUiView.h"
 #include "../Audio/AudioManager.h"
 #include "../Game/Game.h"
 #include "../Math/Vector2.h"
@@ -21,107 +22,32 @@
 #include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
-#include "components/dos/DOSUtils.h"
-#include "components/utilities/String.h"
 
-TextCinematicPanel::SpeechState::SpeechState()
-{
-	this->templateDatKey = -1;
-	this->nextVoiceIndex = -1;
-}
-
-void TextCinematicPanel::SpeechState::init(int templateDatKey)
-{
-	this->templateDatKey = templateDatKey;
-	this->nextVoiceIndex = 0;
-}
-
-bool TextCinematicPanel::SpeechState::isFirstVoice(int voiceIndex)
-{
-	return voiceIndex == 0;
-}
-
-bool TextCinematicPanel::SpeechState::isBeginningOfNewPage(int voiceIndex)
-{
-	return (voiceIndex % 2) == 0;
-}
-
-int TextCinematicPanel::SpeechState::getNextVoiceIndex() const
-{
-	return this->nextVoiceIndex;
-}
-
-std::string TextCinematicPanel::SpeechState::getVoiceFilename(int voiceIndex) const
-{
-	const int index = voiceIndex / 2;
-	const char letter = SpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
-
-	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "%d_%02d%c.VOC",
-		this->templateDatKey, index, letter);
-
-	return "SPEECH/" + std::string(filename.data());
-}
-
-void TextCinematicPanel::SpeechState::incrementVoiceIndex()
-{
-	this->nextVoiceIndex++;
-}
-
-void TextCinematicPanel::SpeechState::resetVoiceIndex()
-{
-	this->nextVoiceIndex = 0;
-}
-
-TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
-	double secondsPerImage, const std::function<void(Game&)> &endingAction)
+TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex, double secondsPerImage,
+	const std::function<void(Game&)> &endingAction)
 	: Panel(game)
 {
 	const auto &cinematicLibrary = game.getCinematicLibrary();
-	const TextCinematicDefinition &textCinematicDef =
-		cinematicLibrary.getTextDefinition(textCinematicDefIndex);
+	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
 
 	this->textBoxes = [&game, &textCinematicDef]()
 	{
-		const Int2 center(
-			ArenaRenderUtils::SCREEN_WIDTH / 2, 
-			ArenaRenderUtils::SCREEN_HEIGHT - 11);
-
-		const auto &textAssetLibrary = game.getTextAssetLibrary();
-		const auto &templateDat = textAssetLibrary.getTemplateDat();
-		const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
-		std::string cinematicText = templateDatEntry.values.front();
-		cinematicText.push_back('\n');
-
-		// Replace substitution tokens. The original game wraps text onto the next screen if the
-		// player's name is too long, which may push the text for every subsequent screen forward
-		// by a little bit.
-		const std::string playerFirstName = game.getGameState().getPlayer().getFirstName();
-		cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
-
-		// Re-distribute newlines.
-		const std::string newText = String::distributeNewlines(cinematicText, 60);
-
-		// Some more formatting should be done in the future so the text wraps nicer. That is,
-		// replace all new lines with spaces and redistribute new lines given some max line
-		// length value.
-
-		// Count new lines.
-		const int newLineCount = static_cast<int>(std::count(newText.begin(), newText.end(), '\n'));
-
-		// Split text into lines.
-		const std::vector<std::string> textLines = String::split(newText, '\n');
+		const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
+		const int subtitleTextLineCount = TextCinematicUiModel::getSubtitleTextLineCount(subtitleText);
+		const int textBoxesToMake = TextCinematicUiModel::getSubtitleTextBoxCount(subtitleTextLineCount);
+		const std::vector<std::string> subtitleTextLines = TextCinematicUiModel::getSubtitleTextLines(subtitleText);
 
 		// Group up to three text lines per text box.
 		std::vector<std::unique_ptr<TextBox>> textBoxes;
-		int textBoxesToMake = static_cast<int>(std::ceil(newLineCount / 3)) + 1;
 		for (int i = 0; i < textBoxesToMake; i++)
 		{
 			std::string textBoxText;
-			int linesToUse = std::min(newLineCount - (i * 3), 3);
+			int linesToUse = std::min(subtitleTextLineCount - (i * 3), 3);
 			for (int j = 0; j < linesToUse; j++)
 			{
-				const std::string &textLine = textLines.at(j + (i * 3));
+				const int textLineIndex = j + (i * 3);
+				DebugAssertIndex(subtitleTextLines, textLineIndex);
+				const std::string &textLine = subtitleTextLines[textLineIndex];
 				textBoxText.append(textLine);
 				textBoxText.append("\n");
 			}
@@ -132,33 +58,32 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 				continue;
 			}
 
-			const int lineSpacing = 1;
-
-			// Eventually use a different color for other cinematics (Tharn, Emperor, etc.).
+			// Eventually use a different color when other cinematic actors are supported.
 			const auto &fontLibrary = game.getFontLibrary();
 			const RichTextString richText(
 				textBoxText,
-				FontName::Arena,
+				TextCinematicUiView::SubtitleTextBoxFontName,
 				textCinematicDef.getFontColor(),
-				TextAlignment::Center,
-				lineSpacing,
+				TextCinematicUiView::SubtitleTextBoxTextAlignment,
+				TextCinematicUiView::SubtitleTextBoxLineSpacing,
 				fontLibrary);
 
 			auto textBox = std::make_unique<TextBox>(
-				center, richText, fontLibrary, game.getRenderer());
-			textBoxes.push_back(std::move(textBox));
+				TextCinematicUiView::SubtitleTextBoxCenterPoint,
+				richText,
+				fontLibrary,
+				game.getRenderer());
+
+			textBoxes.emplace_back(std::move(textBox));
 		}
 
 		return textBoxes;
 	}();
 
-	this->skipButton = [&endingAction]()
-	{
-		return Button<Game&>(endingAction);
-	}();
+	this->skipButton = Button<Game&>(endingAction);
 
 	// Optionally initialize speech state if speech is available.
-	if (this->shouldPlaySpeech())
+	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
 		this->speechState.init(textCinematicDef.getTemplateDatKey());
 	}
@@ -171,19 +96,11 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex,
 	this->textIndex = 0;
 }
 
-bool TextCinematicPanel::shouldPlaySpeech() const
-{
-	auto &game = this->getGame();
-	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	return !exeData.isFloppyVersion();
-}
-
 void TextCinematicPanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
 	const auto &inputManager = game.getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 
 	if (escapePressed)
 	{
@@ -196,14 +113,12 @@ void TextCinematicPanel::handleEvent(const SDL_Event &e)
 	}
 
 	// Only allow page skipping if there is no speech.
-	if (!this->shouldPlaySpeech())
+	if (!TextCinematicUiModel::shouldPlaySpeech(game))
 	{
-		bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-		bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-		bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-			inputManager.keyPressed(e, SDLK_KP_ENTER);
-
-		bool skipHotkeyPressed = spacePressed || enterPressed;
+		const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+		const bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
+		const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) || inputManager.keyPressed(e, SDLK_KP_ENTER);
+		const bool skipHotkeyPressed = spacePressed || enterPressed;
 
 		if (leftClick || skipHotkeyPressed)
 		{
@@ -245,17 +160,16 @@ void TextCinematicPanel::tick(double dt)
 		}
 	}
 
-	if (this->shouldPlaySpeech())
+	auto &game = this->getGame();
+	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
 		// Update speech state, optionally ending the cinematic if done with last speech.
-		auto &game = this->getGame();
 		auto &audioManager = game.getAudioManager();
 
-		const bool playedFirstVoice = !SpeechState::isFirstVoice(this->speechState.getNextVoiceIndex());
+		const bool playedFirstVoice = !TextCinematicUiModel::SpeechState::isFirstVoice(this->speechState.getNextVoiceIndex());
 		if (!playedFirstVoice)
 		{
-			const std::string voiceFilename =
-				this->speechState.getVoiceFilename(this->speechState.getNextVoiceIndex());
+			const std::string voiceFilename = this->speechState.getVoiceFilename(this->speechState.getNextVoiceIndex());
 			audioManager.playSound(voiceFilename);
 			this->speechState.incrementVoiceIndex();
 		}
@@ -275,7 +189,7 @@ void TextCinematicPanel::tick(double dt)
 					audioManager.playSound(nextVoiceFilename);
 					this->speechState.incrementVoiceIndex();
 
-					if (SpeechState::isBeginningOfNewPage(nextVoiceIndex))
+					if (TextCinematicUiModel::SpeechState::isBeginningOfNewPage(nextVoiceIndex))
 					{
 						this->textIndex++;
 					}

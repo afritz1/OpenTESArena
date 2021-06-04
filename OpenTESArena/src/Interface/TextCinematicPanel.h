@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "Panel.h"
+#include "TextCinematicUiModel.h"
 #include "../Media/TextureManager.h"
 #include "../UI/Button.h"
 
@@ -29,33 +30,12 @@ class TextBox;
 class TextCinematicPanel : public Panel
 {
 private:
-	// Only used when speech files are available (such as with CD version).
-	class SpeechState
-	{
-	private:
-		int templateDatKey, nextVoiceIndex;
-	public:
-		SpeechState();
-
-		void init(int templateDatKey);
-
-		static bool isFirstVoice(int voiceIndex);
-		static bool isBeginningOfNewPage(int voiceIndex);
-
-		int getNextVoiceIndex() const;
-		std::string getVoiceFilename(int voiceIndex) const;
-		void incrementVoiceIndex();
-		void resetVoiceIndex();
-	};
-
 	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
 	Button<Game&> skipButton;
 	std::string animTextureFilename;
-	SpeechState speechState;
+	TextCinematicUiModel::SpeechState speechState;
 	double secondsPerImage, currentImageSeconds;
 	int animImageIndex, textIndex, textCinematicDefIndex;
-	
-	bool shouldPlaySpeech() const;
 public:
 	TextCinematicPanel(Game &game, int textCinematicDefIndex, double secondsPerImage,
 		const std::function<void(Game&)> &endingAction);

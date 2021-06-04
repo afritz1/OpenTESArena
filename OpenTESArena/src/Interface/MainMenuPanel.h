@@ -7,7 +7,6 @@
 #include "Panel.h"
 #include "../Assets/ArenaTypes.h"
 #include "../UI/Button.h"
-#include "../World/VoxelDefinition.h"
 
 class Renderer;
 
@@ -17,12 +16,13 @@ class MainMenuPanel : public Panel
 {
 private:
 	Button<Game&> loadButton, newButton;
+	Button<> exitButton;
 	Button<Game&, int, int, const std::string&,
 		const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType> quickStartButton;
-	Button<> exitButton;
-	Button<MainMenuPanel&> testTypeUpButton, testTypeDownButton, testIndexUpButton,
-		testIndexDownButton, testIndex2UpButton, testIndex2DownButton, testWeatherUpButton,
-		testWeatherDownButton;
+	Button<int*, int*, int*, int*> testTypeUpButton, testTypeDownButton;
+	Button<int*, int*, int*> testIndexUpButton, testIndexDownButton;
+	Button<int, int, int*> testIndex2UpButton, testIndex2DownButton;
+	Button<int, int*> testWeatherUpButton, testWeatherDownButton;
 	int testType, testIndex, testIndex2, testWeather; // Test values for quickstart.
 
 	std::string getSelectedTestName() const;

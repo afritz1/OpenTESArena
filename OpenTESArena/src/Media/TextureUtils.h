@@ -13,10 +13,13 @@
 using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 
+class FontLibrary;
 class Renderer;
 class Surface;
 class Texture;
 class TextureManager;
+
+enum class FontName;
 
 struct TextureAssetReference;
 
@@ -70,6 +73,9 @@ namespace TextureUtils
 	// Generates a new texture from a pattern.
 	Texture generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);
+
+	// Generates a tooltip texture with pre-defined font/color/background.
+	Texture createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
 
 	// Generates individual texture asset references from the given filename. This should be used for filenames
 	// that point to a set of textures.

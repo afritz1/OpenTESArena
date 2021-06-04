@@ -12,6 +12,7 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
+#include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -171,7 +172,7 @@ Game::Game()
 	this->scratchAllocator.init(SCRATCH_BUFFER_SIZE);
 
 	// Initialize panel and music to default.
-	this->panel = Panel::defaultPanel(*this);
+	this->panel = IntroUiModel::makeStartupPanel(*this);
 	
 	const MusicDefinition *mainMenuMusicDef = this->musicLibrary.getRandomMusicDefinition(
 		MusicDefinition::Type::MainMenu, this->random);

@@ -4,7 +4,8 @@
 #include <array>
 
 #include "Panel.h"
-#include "ProvinceMapPanel.h"
+#include "ProvinceMapUiModel.h"
+#include "WorldMapUiModel.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
 
@@ -14,11 +15,11 @@ class WorldMapPanel : public Panel
 {
 private:
 	Button<Game&> backToGameButton;
-	Button<Game&, int, std::unique_ptr<ProvinceMapPanel::TravelData>> provinceButton;
-	std::array<Int2, 9> provinceNameOffsets; // Yellow province name positions.
-	std::unique_ptr<ProvinceMapPanel::TravelData> travelData;
+	Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>> provinceButton;
+	WorldMapUiModel::ProvinceNameOffsetArray provinceNameOffsets; // Yellow province name positions.
+	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
 public:
-	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapPanel::TravelData> travelData);
+	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
 	virtual ~WorldMapPanel() = default;
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;

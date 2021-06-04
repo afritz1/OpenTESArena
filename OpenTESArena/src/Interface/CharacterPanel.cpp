@@ -1,31 +1,11 @@
 #include "SDL.h"
 
-#include "CharacterEquipmentPanel.h"
 #include "CharacterPanel.h"
-#include "GameWorldPanel.h"
-#include "../Assets/ArenaPaletteName.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/BinaryAssetLibrary.h"
-#include "../Assets/CIFFile.h"
-#include "../Assets/ExeData.h"
-#include "../Entities/CharacterClassDefinition.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/Player.h"
-#include "../Game/GameState.h"
+#include "CharacterSheetUiController.h"
+#include "CharacterSheetUiModel.h"
+#include "CharacterSheetUiView.h"
 #include "../Game/Game.h"
-#include "../Game/Options.h"
-#include "../Media/Color.h"
-#include "../Media/PortraitFile.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 
@@ -34,103 +14,76 @@ CharacterPanel::CharacterPanel(Game &game)
 {
 	this->playerNameTextBox = [&game]()
 	{
-		const int x = 10;
-		const int y = 8;
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			game.getGameState().getPlayer().getDisplayName(),
-			FontName::Arena,
-			Color(199, 199, 199),
-			TextAlignment::Left,
+			CharacterSheetUiModel::getPlayerName(game),
+			CharacterSheetUiView::PlayerNameTextBoxFontName,
+			CharacterSheetUiView::PlayerNameTextBoxColor,
+			CharacterSheetUiView::PlayerNameTextBoxAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterSheetUiView::PlayerNameTextBoxX,
+			CharacterSheetUiView::PlayerNameTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->playerRaceTextBox = [&game]()
 	{
-		const int x = 10;
-		const int y = 17;
-
-		const auto &player = game.getGameState().getPlayer();
-		const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-		const std::string &text = exeData.races.singularNames.at(player.getRaceID());
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			text,
-			FontName::Arena,
-			Color(199, 199, 199),
-			TextAlignment::Left,
+			CharacterSheetUiModel::getPlayerRaceName(game),
+			CharacterSheetUiView::PlayerRaceTextBoxFontName,
+			CharacterSheetUiView::PlayerRaceTextBoxColor,
+			CharacterSheetUiView::PlayerRaceTextBoxAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterSheetUiView::PlayerRaceTextBoxX,
+			CharacterSheetUiView::PlayerRaceTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->playerClassTextBox = [&game]()
 	{
-		const int x = 10;
-		const int y = 26;
-
-		const auto &charClassDef = [&game]() -> const CharacterClassDefinition&
-		{
-			const auto &charClassLibrary = game.getCharacterClassLibrary();
-			const auto &player = game.getGameState().getPlayer();
-			return charClassLibrary.getDefinition(player.getCharacterClassDefID());
-		}();
-
 		const auto &fontLibrary = game.getFontLibrary();
 		const RichTextString richText(
-			charClassDef.getName(),
-			FontName::Arena,
-			Color(199, 199, 199),
-			TextAlignment::Left,
+			CharacterSheetUiModel::getPlayerClassName(game),
+			CharacterSheetUiView::PlayerClassTextBoxFontName,
+			CharacterSheetUiView::PlayerClassTextBoxColor,
+			CharacterSheetUiView::PlayerClassTextBoxAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(x, y, richText, fontLibrary, game.getRenderer());
+		return std::make_unique<TextBox>(
+			CharacterSheetUiView::PlayerClassTextBoxX,
+			CharacterSheetUiView::PlayerClassTextBoxY,
+			richText,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
 	this->doneButton = []()
 	{
-		Int2 center(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
-		int width = 21;
-		int height = 13;
-		auto function = [](Game &game)
-		{
-			game.setPanel<GameWorldPanel>(game);
-		};
-		return Button<Game&>(center, width, height, function);
+		return Button<Game&>(
+			CharacterSheetUiView::DoneButtonCenterPoint,
+			CharacterSheetUiView::DoneButtonWidth,
+			CharacterSheetUiView::DoneButtonHeight,
+			CharacterSheetUiController::onDoneButtonSelected);
 	}();
 
 	this->nextPageButton = []()
 	{
-		int x = 108;
-		int y = 179;
-		int width = 49;
-		int height = 13;
-		auto function = [](Game &game)
-		{
-			game.setPanel<CharacterEquipmentPanel>(game);
-		};
-		return Button<Game&>(x, y, width, height, function);
+		return Button<Game&>(
+			CharacterSheetUiView::NextPageButtonX,
+			CharacterSheetUiView::NextPageButtonY,
+			CharacterSheetUiView::NextPageButtonWidth,
+			CharacterSheetUiView::NextPageButtonHeight,
+			CharacterSheetUiController::onNextPageButtonSelected);
 	}();
-
-	// Get pixel offsets for each head.
-	const auto &player = this->getGame().getGameState().getPlayer();
-	const std::string &headsFilename = PortraitFile::getHeads(
-		player.isMale(), player.getRaceID(), false);
-
-	CIFFile cifFile;
-	if (!cifFile.init(headsFilename.c_str()))
-	{
-		DebugCrash("Could not init .CIF file \"" + headsFilename + "\".");
-	}
-
-	for (int i = 0; i < cifFile.getImageCount(); i++)
-	{
-		this->headOffsets.push_back(Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
-	}
 }
 
 std::optional<Panel::CursorData> CharacterPanel::getCurrentCursor() const
@@ -175,76 +128,45 @@ void CharacterPanel::render(Renderer &renderer)
 	// Clear full screen.
 	renderer.clear();
 
-	// Get the filenames for the portrait and clothes.
 	auto &game = this->getGame();
-	const auto &player = game.getGameState().getPlayer();
-	const auto &charClassDef = [&game, &player]() -> const CharacterClassDefinition&
-	{
-		const auto &charClassLibrary = game.getCharacterClassLibrary();
-		return charClassLibrary.getDefinition(player.getCharacterClassDefID());
-	}();
-
 	auto &textureManager = game.getTextureManager();
-	const std::string &charSheetPaletteFilename = ArenaPaletteName::CharSheet;
-	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteFilename.c_str());
+	const TextureAssetReference charSheetPaletteTextureAssetRef = CharacterSheetUiView::getPaletteTextureAssetRef();
+	const std::optional<PaletteID> charSheetPaletteID = textureManager.tryGetPaletteID(charSheetPaletteTextureAssetRef);
 	if (!charSheetPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get character sheet palette ID \"" + charSheetPaletteFilename + "\".");
+		DebugLogError("Couldn't get character sheet palette ID \"" + charSheetPaletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
-	const std::string &bodyFilename = PortraitFile::getBody(player.isMale(), player.getRaceID());
-	const std::string &shirtFilename = PortraitFile::getShirt(player.isMale(), charClassDef.canCastMagic());
-	const std::string &pantsFilename = PortraitFile::getPants(player.isMale());
+	const TextureAssetReference headTextureAssetRef = CharacterSheetUiView::getHeadTextureAssetRef(game);
+	const TextureAssetReference bodyTextureAssetRef = CharacterSheetUiView::getBodyTextureAssetRef(game);
+	const TextureAssetReference shirtTextureAssetRef = CharacterSheetUiView::getShirtTextureAssetRef(game);
+	const TextureAssetReference pantsTextureAssetRef = CharacterSheetUiView::getPantsTextureAssetRef(game);
+	const TextureAssetReference statsBackgroundTextureAssetRef = CharacterSheetUiView::getStatsBackgroundTextureAssetRef();
+	const TextureAssetReference nextPageTextureAssetRef = CharacterSheetUiView::getNextPageButtonTextureAssetRef();
 
-	// Get pixel offsets for each clothes texture.
-	const Int2 shirtOffset = PortraitFile::getShirtOffset(player.isMale(), charClassDef.canCastMagic());
-	const Int2 pantsOffset = PortraitFile::getPantsOffset(player.isMale());
-
-	// Get all texture IDs in advance of any texture references.
-	const TextureBuilderID headTextureBuilderID = [this, &textureManager, &player]()
-	{
-		const std::string &headsFilename = PortraitFile::getHeads(player.isMale(), player.getRaceID(), false);
-		const std::optional<TextureBuilderIdGroup> headTextureBuilderIDs =
-			textureManager.tryGetTextureBuilderIDs(headsFilename.c_str());
-		if (!headTextureBuilderIDs.has_value())
-		{
-			DebugCrash("Couldn't get head texture builder IDs for \"" + headsFilename + "\".");
-		}
-
-		return headTextureBuilderIDs->getID(player.getPortraitID());
-	}();
-
-	const std::string &statsBackgroundTextureFilename = ArenaTextureName::CharacterStats;
-	const std::string &nextPageTextureFilename = ArenaTextureName::NextPage;
-	const std::optional<TextureBuilderID> bodyTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(bodyFilename.c_str());
-	const std::optional<TextureBuilderID> shirtTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(shirtFilename.c_str());
-	const std::optional<TextureBuilderID> pantsTextureBuilderID = 
-		textureManager.tryGetTextureBuilderID(pantsFilename.c_str());
-	const std::optional<TextureBuilderID> statsBackgroundTextureID = 
-		textureManager.tryGetTextureBuilderID(statsBackgroundTextureFilename.c_str());
-	const std::optional<TextureBuilderID> nextPageTextureID =
-		textureManager.tryGetTextureBuilderID(nextPageTextureFilename.c_str());
+	const std::optional<TextureBuilderID> headTextureBuilderID = textureManager.tryGetTextureBuilderID(headTextureAssetRef);
+	const std::optional<TextureBuilderID> bodyTextureBuilderID = textureManager.tryGetTextureBuilderID(bodyTextureAssetRef);
+	const std::optional<TextureBuilderID> shirtTextureBuilderID = textureManager.tryGetTextureBuilderID(shirtTextureAssetRef);
+	const std::optional<TextureBuilderID> pantsTextureBuilderID = textureManager.tryGetTextureBuilderID(pantsTextureAssetRef);
+	const std::optional<TextureBuilderID> statsBackgroundTextureID = textureManager.tryGetTextureBuilderID(statsBackgroundTextureAssetRef);
+	const std::optional<TextureBuilderID> nextPageTextureID = textureManager.tryGetTextureBuilderID(nextPageTextureAssetRef);
+	DebugAssert(headTextureBuilderID.has_value());
 	DebugAssert(bodyTextureBuilderID.has_value());
 	DebugAssert(shirtTextureBuilderID.has_value());
 	DebugAssert(pantsTextureBuilderID.has_value());
 	DebugAssert(statsBackgroundTextureID.has_value());
 	DebugAssert(nextPageTextureID.has_value());
 
-	const int bodyTextureX = [&textureManager, &bodyTextureBuilderID]()
-	{
-		const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*bodyTextureBuilderID);
-		return ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth();
-	}();
-
-	const Int2 &headOffset = this->headOffsets.at(player.getPortraitID());
+	const int bodyOffsetX = CharacterSheetUiView::getBodyOffsetX(game);
+	const Int2 headOffset = CharacterSheetUiView::getHeadOffset(game);
+	const Int2 shirtOffset = CharacterSheetUiView::getShirtOffset(game);
+	const Int2 pantsOffset = CharacterSheetUiView::getPantsOffset(game);
 
 	// Draw the current portrait and clothes.
-	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyTextureX, 0, textureManager);
+	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyOffsetX, 0, textureManager);
 	renderer.drawOriginal(*pantsTextureBuilderID, *charSheetPaletteID, pantsOffset.x, pantsOffset.y, textureManager);
-	renderer.drawOriginal(headTextureBuilderID, *charSheetPaletteID, headOffset.x, headOffset.y, textureManager);
+	renderer.drawOriginal(*headTextureBuilderID, *charSheetPaletteID, headOffset.x, headOffset.y, textureManager);
 	renderer.drawOriginal(*shirtTextureBuilderID, *charSheetPaletteID, shirtOffset.x, shirtOffset.y, textureManager);
 
 	// Draw character stats background.
@@ -254,10 +176,7 @@ void CharacterPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*nextPageTextureID, *charSheetPaletteID, 108, 179, textureManager);
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawOriginal(this->playerNameTextBox->getTexture(),
-		this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawOriginal(this->playerRaceTextBox->getTexture(),
-		this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
-	renderer.drawOriginal(this->playerClassTextBox->getTexture(),
-		this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
+	renderer.drawOriginal(this->playerNameTextBox->getTexture(), this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+	renderer.drawOriginal(this->playerRaceTextBox->getTexture(), this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
+	renderer.drawOriginal(this->playerClassTextBox->getTexture(), this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
 }
