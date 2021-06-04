@@ -13,6 +13,11 @@
 
 #include "components/utilities/String.h"
 
+std::string WorldMapUiModel::getProvinceNameOffsetFilename()
+{
+	return "OUTPROV.CIF";
+}
+
 void WorldMapUiModel::tickTravelTime(Game &game, int travelDays)
 {
 	auto &gameState = game.getGameState();

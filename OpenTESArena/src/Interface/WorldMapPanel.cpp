@@ -1,51 +1,28 @@
 #include "SDL.h"
 
-#include "GameWorldPanel.h"
-#include "ProvinceMapPanel.h"
 #include "WorldMapPanel.h"
-#include "../Assets/ArenaTextureName.h"
+#include "WorldMapUiController.h"
+#include "WorldMapUiModel.h"
+#include "WorldMapUiView.h"
 #include "../Assets/CIFFile.h"
-#include "../Assets/WorldMapMask.h"
 #include "../Game/Game.h"
-#include "../Game/GameState.h"
-#include "../Game/Options.h"
-#include "../Math/Rect.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 
 WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
 	: Panel(game), travelData(std::move(travelData))
 {
-	this->backToGameButton = []()
-	{
-		Int2 center(ArenaRenderUtils::SCREEN_WIDTH - 22, ArenaRenderUtils::SCREEN_HEIGHT - 7);
-		int width = 36;
-		int height = 9;
-		auto function = [](Game &game)
-		{
-			game.setPanel<GameWorldPanel>(game);
-		};
-		return Button<Game&>(center, width, height, function);
-	}();
-
-	this->provinceButton = []()
-	{
-		auto function = [](Game &game, int provinceID,
-			std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
-		{
-			game.setPanel<ProvinceMapPanel>(game, provinceID, std::move(travelData));
-		};
-		return Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>>(function);
-	}();
+	this->backToGameButton = Button<Game&>(
+		WorldMapUiView::BackToGameButtonCenterPoint,
+		WorldMapUiView::BackToGameButtonWidth,
+		WorldMapUiView::BackToGameButtonHeight,
+		WorldMapUiController::onBackToGameButtonSelected);
+	this->provinceButton = Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>>(
+		WorldMapUiController::onProvinceButtonSelected);
 
 	// Load province name offsets.
-	const std::string cifName = "OUTPROV.CIF";
+	// @todo: TextureFileMetadata support
+	const std::string cifName = WorldMapUiModel::getProvinceNameOffsetFilename();
 	CIFFile cif;
 	if (!cif.init(cifName.c_str()))
 	{
@@ -54,7 +31,7 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::Tra
 
 	for (int i = 0; i < static_cast<int>(this->provinceNameOffsets.size()); i++)
 	{
-		this->provinceNameOffsets.at(i) = Int2(cif.getXOffset(i), cif.getYOffset(i));
+		this->provinceNameOffsets[i] = Int2(cif.getXOffset(i), cif.getYOffset(i));
 	}
 }
 
@@ -66,21 +43,20 @@ std::optional<Panel::CursorData> WorldMapPanel::getCurrentCursor() const
 void WorldMapPanel::handleEvent(const SDL_Event &e)
 {
 	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool mPressed = inputManager.keyPressed(e, SDLK_m);
+	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
+	const bool mPressed = inputManager.keyPressed(e, SDLK_m);
 
 	if (escapePressed || mPressed)
 	{
 		this->backToGameButton.click(this->getGame());
 	}
 
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
+	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 
 	if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map and exit button.
 		const auto &worldMapMasks = this->getGame().getBinaryAssetLibrary().getWorldMapMasks();
@@ -101,8 +77,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 					if (maskID < 9)
 					{
 						// Go to the selected province panel.
-						this->provinceButton.click(this->getGame(), maskID,
-							std::move(this->travelData));
+						this->provinceButton.click(this->getGame(), maskID, std::move(this->travelData));
 					}
 					else
 					{
@@ -125,28 +100,28 @@ void WorldMapPanel::render(Renderer &renderer)
 	renderer.clear();
 
 	auto &textureManager = this->getGame().getTextureManager();
-	const std::string &worldMapFilename = ArenaTextureName::WorldMap;
-	const std::string &paletteFilename = worldMapFilename;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
+	const TextureAssetReference worldMapPaletteTextureAssetRef = WorldMapUiView::getWorldMapPaletteTextureAssetReference();
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(worldMapPaletteTextureAssetRef);
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteFilename + "\".");
+		DebugLogError("Couldn't get palette ID for \"" + worldMapPaletteTextureAssetRef.filename + "\".");
 		return;
 	}
 
 	// Draw world map background. This one has "Exit" at the bottom right.
+	const TextureAssetReference worldMapTextureAssetRef = WorldMapUiView::getWorldMapTextureAssetReference();
 	const std::optional<TextureBuilderID> mapBackgroundTextureBuilderID =
-		textureManager.tryGetTextureBuilderID(worldMapFilename.c_str());
+		textureManager.tryGetTextureBuilderID(worldMapTextureAssetRef);
 	if (!mapBackgroundTextureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get map background texture builder ID for \"" + worldMapFilename + "\".");
+		DebugLogError("Couldn't get map background texture builder ID for \"" + worldMapTextureAssetRef.filename + "\".");
 		return;
 	}
 	
 	renderer.drawOriginal(*mapBackgroundTextureBuilderID, *paletteID, textureManager);
 
 	// Draw yellow text over current province name.
-	const std::string &provinceNamesFilename = ArenaTextureName::ProvinceNames;
+	const std::string provinceNamesFilename = WorldMapUiView::getProvinceNamesFilename();
 	const std::optional<TextureBuilderIdGroup> provinceTextTextureBuilderIDs =
 		textureManager.tryGetTextureBuilderIDs(provinceNamesFilename.c_str());
 	if (!provinceTextTextureBuilderIDs.has_value())

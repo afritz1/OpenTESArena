@@ -1,12 +1,24 @@
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
+#include "ProvinceMapPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "../Game/Game.h"
 #include "../World/ArenaWeatherUtils.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationUtils.h"
+
+void WorldMapUiController::onBackToGameButtonSelected(Game &game)
+{
+	game.setPanel<GameWorldPanel>(game);
+}
+
+void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID,
+	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
+{
+	game.setPanel<ProvinceMapPanel>(game, provinceID, std::move(travelData));
+}
 
 void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)

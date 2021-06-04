@@ -4,6 +4,21 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 
+TextureAssetReference WorldMapUiView::getWorldMapTextureAssetReference()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
+}
+
+TextureAssetReference WorldMapUiView::getWorldMapPaletteTextureAssetReference()
+{
+	return TextureAssetReference(std::string(ArenaTextureName::WorldMap));
+}
+
+std::string WorldMapUiView::getProvinceNamesFilename()
+{
+	return ArenaTextureName::ProvinceNames;
+}
+
 int WorldMapUiView::getFastTravelAnimationTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);

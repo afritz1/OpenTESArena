@@ -1,6 +1,8 @@
 #ifndef WORLD_MAP_UI_VIEW_H
 #define WORLD_MAP_UI_VIEW_H
 
+#include <string>
+
 #include "../Assets/TextureAssetReference.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -13,6 +15,20 @@ class Game;
 
 namespace WorldMapUiView
 {
+	// -- World map --
+
+	const Int2 BackToGameButtonCenterPoint(
+		ArenaRenderUtils::SCREEN_WIDTH - 22,
+		ArenaRenderUtils::SCREEN_HEIGHT - 7);
+	constexpr int BackToGameButtonWidth = 36;
+	constexpr int BackToGameButtonHeight = 9;
+
+	TextureAssetReference getWorldMapTextureAssetReference();
+	TextureAssetReference getWorldMapPaletteTextureAssetReference();
+	std::string getProvinceNamesFilename();
+
+	// -- Fast travel --
+
 	constexpr double FastTravelAnimationSecondsPerFrame = 1.0 / 24.0;
 
 	int getFastTravelAnimationTextureX(int textureWidth);

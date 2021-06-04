@@ -5,6 +5,7 @@
 
 #include "Panel.h"
 #include "ProvinceMapUiModel.h"
+#include "WorldMapUiModel.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
 
@@ -15,7 +16,7 @@ class WorldMapPanel : public Panel
 private:
 	Button<Game&> backToGameButton;
 	Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>> provinceButton;
-	std::array<Int2, 9> provinceNameOffsets; // Yellow province name positions.
+	WorldMapUiModel::ProvinceNameOffsetArray provinceNameOffsets; // Yellow province name positions.
 	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
 public:
 	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);

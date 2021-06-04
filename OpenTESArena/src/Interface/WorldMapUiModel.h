@@ -1,14 +1,25 @@
 #ifndef WORLD_MAP_UI_MODEL_H
 #define WORLD_MAP_UI_MODEL_H
 
+#include <array>
 #include <memory>
 #include <string>
+
+#include "../Math/Vector2.h"
 
 class Game;
 class Panel;
 
 namespace WorldMapUiModel
 {
+	// -- World map --
+
+	using ProvinceNameOffsetArray = std::array<Int2, 9>;
+
+	std::string getProvinceNameOffsetFilename();
+
+	// -- Fast travel --
+
 	// Shortest amount of time the fast travel animation can show for.
 	static constexpr double FastTravelAnimationMinSeconds = 1.0;
 
