@@ -298,22 +298,20 @@ std::optional<TextureFileMetadata> TextureManager::tryGetMetadata(const char *fi
 	// and query each one in a similar way to .IMG file palette extraction.
 
 	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(filename);
-	if (ids.has_value())
-	{
-		Buffer<std::pair<int, int>> dimensions(ids->getCount());
-		for (int i = 0; i < ids->getCount(); i++)
-		{
-			const TextureBuilderID id = ids->getID(i);
-			const TextureBuilder &textureBuilder = this->getTextureBuilderHandle(id);
-			dimensions.set(i, std::make_pair(textureBuilder.getWidth(), textureBuilder.getHeight()));
-		}
-
-		return TextureFileMetadata(std::string(filename), std::move(dimensions));
-	}
-	else
+	if (!ids.has_value())
 	{
 		return std::nullopt;
 	}
+
+	Buffer<Int2> dimensions(ids->getCount());
+	for (int i = 0; i < ids->getCount(); i++)
+	{
+		const TextureBuilderID id = ids->getID(i);
+		const TextureBuilder &textureBuilder = this->getTextureBuilderHandle(id);
+		dimensions.set(i, Int2(textureBuilder.getWidth(), textureBuilder.getHeight()));
+	}
+
+	return TextureFileMetadata(std::string(filename), std::move(dimensions));
 }
 
 std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filename)
