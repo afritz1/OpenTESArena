@@ -257,7 +257,13 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(flc.getWidth(), flc.getHeight()));
+			Buffer<Int2> dimensions(flc.getFrameCount());
+			for (int i = 0; i < flc.getFrameCount(); i++)
+			{
+				dimensions.set(i, Int2(flc.getWidth(), flc.getHeight()));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
@@ -304,7 +310,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			Buffer<Int2> dimensions;
+			Buffer<Int2> dimensions(LGTFile::PALETTE_COUNT);
 			for (int i = 0; i < LGTFile::PALETTE_COUNT; i++)
 			{
 				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
@@ -335,7 +341,13 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(RCIFile::WIDTH, RCIFile::HEIGHT));
+			Buffer<Int2> dimensions(rci.getImageCount());
+			for (int i = 0; i < rci.getImageCount(); i++)
+			{
+				dimensions.set(i, Int2(RCIFile::WIDTH, RCIFile::HEIGHT));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_SET))
@@ -359,7 +371,13 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outMetadata != nullptr)
 		{
-			outMetadata->init(std::string(filename), makeDimensions(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT));
+			Buffer<Int2> dimensions(set.getImageCount());
+			for (int i = 0; i < set.getImageCount(); i++)
+			{
+				dimensions.set(i, Int2(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_TXT))
