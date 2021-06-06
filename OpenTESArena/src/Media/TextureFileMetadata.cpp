@@ -39,7 +39,7 @@ bool TextureFileMetadata::hasOffsets() const
 	return this->offsets.getCount() > 0;
 }
 
-const Int2 &TextureFileMetadata::getOffset(int index)
+const Int2 &TextureFileMetadata::getOffset(int index) const
 {
 	DebugAssert(this->hasOffsets());
 	return this->offsets.get(index);

@@ -27,7 +27,7 @@ public:
 	int getHeight(int index) const;
 
 	bool hasOffsets() const;
-	const Int2 &getOffset(int index);
+	const Int2 &getOffset(int index) const;
 };
 
 #endif
