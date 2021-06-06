@@ -1,10 +1,16 @@
 #include "TextureFileMetadata.h"
 
-TextureFileMetadata::TextureFileMetadata(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets)
-	: filename(std::move(filename)), dimensions(std::move(dimensions)), offsets(std::move(offsets)) { }
+void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets)
+{
+	this->filename = std::move(filename);
+	this->dimensions = std::move(dimensions);
+	this->offsets = std::move(offsets);
+}
 
-TextureFileMetadata::TextureFileMetadata(std::string &&filename, Buffer<Int2> &&dimensions)
-	: filename(std::move(filename)), dimensions(std::move(dimensions)), offsets(Buffer<Int2>()) { }
+void TextureFileMetadata::init(std::string &&filename, Buffer<Int2> &&dimensions)
+{
+	this->init(std::move(filename), std::move(dimensions), Buffer<Int2>());
+}
 
 const std::string &TextureFileMetadata::getFilename() const
 {

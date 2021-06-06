@@ -23,29 +23,30 @@ struct TextureAssetReference;
 // All references are read-only interfaces.
 using PaletteRef = BufferRef<const std::vector<Palette>, const Palette>;
 using TextureBuilderRef = BufferRef2D<const std::vector<TextureBuilder>, const TextureBuilder>;
+using TextureFileMetadataRef = BufferRef2D<const std::vector<TextureFileMetadata>, const TextureFileMetadata>;
 
 class TextureManager
 {
 private:
-	// Mappings of texture filenames to sequences of IDs.
+	// Mappings of texture filenames to indices/sequences of IDs.
 	std::unordered_map<std::string, PaletteIdGroup> paletteIDs;
 	std::unordered_map<std::string, TextureBuilderIdGroup> textureBuilderIDs;
+	std::unordered_map<std::string, int> metadataIndices;
 
-	// Texture data for each type. Any groups of textures from the same filename are stored contiguously
+	// Texture data/metadata for each type. Any groups of textures from the same filename are stored contiguously
 	// in the order they appear in the file.
 	std::vector<Palette> palettes;
 	std::vector<TextureBuilder> textureBuilders;
+	std::vector<TextureFileMetadata> metadatas;
 
 	// Returns whether the given filename has the given extension.
 	static bool matchesExtension(const char *filename, const char *extension);
 
 	// Helper functions for loading texture files.
 	static bool tryLoadPalettes(const char *filename, Buffer<Palette> *outPalettes);
-	static bool tryLoadTextureBuilders(const char *filename, Buffer<TextureBuilder> *outTextures);
+	static bool tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures,
+		TextureFileMetadata *outMetadata);
 public:
-	// Returns metadata about a texture file if it exists and is valid.
-	std::optional<TextureFileMetadata> tryGetMetadata(const char *filename);
-
 	// Texture ID retrieval functions, loading texture data if not loaded. All required palettes
 	// must be loaded by the caller in advance -- no palettes are loaded in non-palette loader
 	// functions. If the requested file has multiple images but the caller requested only one, the
@@ -57,15 +58,18 @@ public:
 	std::optional<TextureBuilderIdGroup> tryGetTextureBuilderIDs(const char *filename);
 	std::optional<TextureBuilderID> tryGetTextureBuilderID(const char *filename);
 	std::optional<TextureBuilderID> tryGetTextureBuilderID(const TextureAssetReference &textureAssetRef);
+	std::optional<TextureFileMetadataID> tryGetMetadataID(const char *filename);
 
-	// Texture getter functions, fast look-up. These return reference wrappers to avoid
-	// dangling pointer issues with internal buffer resizing.
+	// Texture getter functions, fast look-up. These return reference wrappers to avoid dangling pointer
+	// issues with internal buffer resizing.
 	PaletteRef getPaletteRef(PaletteID id) const;
 	TextureBuilderRef getTextureBuilderRef(TextureBuilderID id) const;
+	TextureFileMetadataRef getMetadataRef(TextureFileMetadataID id) const;
 
 	// Texture getter functions, fast look-up. These do not protect against dangling pointers.
 	const Palette &getPaletteHandle(PaletteID id) const;
 	const TextureBuilder &getTextureBuilderHandle(TextureBuilderID id) const;
+	const TextureFileMetadata &getMetadataHandle(TextureFileMetadataID id) const;
 };
 
 #endif

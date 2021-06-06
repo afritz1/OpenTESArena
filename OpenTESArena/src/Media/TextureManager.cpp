@@ -16,6 +16,7 @@
 #include "../Assets/TextureAssetReference.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/Surface.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -84,8 +85,12 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 	return true;
 }
 
-bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<TextureBuilder> *outTextures)
+bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures,
+	TextureFileMetadata *outMetadata)
 {
+	// Need at least one non-null out parameter.
+	DebugAssert((outTextures != nullptr) || (outMetadata != nullptr));
+
 	auto makePaletted = [](int width, int height, const uint8_t *texels)
 	{
 		TextureBuilder textureBuilder;
@@ -100,29 +105,41 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 		return textureBuilder;
 	};
 
+	auto makeDimensions = [](int width, int height)
+	{
+		Buffer<Int2> buffer(1);
+		buffer.set(0, Int2(width, height));
+		return buffer;
+	};
+
+	auto makeOffset = [](int xOffset, int yOffset)
+	{
+		Buffer<Int2> buffer(1);
+		buffer.set(0, Int2(xOffset, yOffset));
+		return buffer;
+	};
+
 	if (TextureManager::matchesExtension(filename, EXTENSION_BMP))
 	{
-		SDL_Surface *surface = SDL_LoadBMP(filename);
-		if (surface == nullptr)
+		Surface surface = Surface::loadBMP(filename, SDL_PIXELFORMAT_ARGB8888);
+		if (surface.get() == nullptr)
 		{
 			DebugLogWarning("Couldn't load .BMP file \"" + std::string(filename) + "\".");
 			return false;
 		}
 
-		SDL_Surface *optimizedSurface = SDL_ConvertSurfaceFormat(surface, SDL_PIXELFORMAT_ARGB8888, 0);
-		SDL_FreeSurface(surface);
-		if (optimizedSurface == nullptr)
+		if (outTextures != nullptr)
 		{
-			DebugLogWarning("Couldn't optimize .BMP file \"" + std::string(filename) + "\".");
-			return false;
+			TextureBuilder textureBuilder = makeTrueColor(surface.getWidth(), surface.getHeight(),
+				static_cast<const uint32_t*>(surface.getPixels()));
+			outTextures->init(1);
+			outTextures->set(0, std::move(textureBuilder));
 		}
-
-		TextureBuilder textureBuilder = makeTrueColor(optimizedSurface->w, optimizedSurface->h,
-			static_cast<const uint32_t*>(optimizedSurface->pixels));
-		SDL_FreeSurface(optimizedSurface);
-
-		outTextures->init(1);
-		outTextures->set(0, std::move(textureBuilder));
+		
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(surface.getWidth(), surface.getHeight()));
+		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CFA))
 	{
@@ -133,11 +150,27 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(cfa.getImageCount());
-		for (int i = 0; i < cfa.getImageCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(cfa.getImageCount());
+			for (int i = 0; i < cfa.getImageCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+		
+		if (outMetadata != nullptr)
+		{
+			Buffer<Int2> dimensions(cfa.getImageCount());
+			Buffer<Int2> offsets(cfa.getImageCount());
+			for (int i = 0; i < cfa.getImageCount(); i++)
+			{
+				dimensions.set(i, Int2(cfa.getWidth(), cfa.getHeight()));
+				offsets.set(i, Int2(cfa.getXOffset(), cfa.getYOffset()));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions), std::move(offsets));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_CIF))
@@ -149,11 +182,27 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(cif.getImageCount());
-		for (int i = 0; i < cif.getImageCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(cif.getImageCount());
+			for (int i = 0; i < cif.getImageCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			Buffer<Int2> dimensions(cif.getImageCount());
+			Buffer<Int2> offsets(cif.getImageCount());
+			for (int i = 0; i < cif.getImageCount(); i++)
+			{
+				dimensions.set(i, Int2(cif.getWidth(i), cif.getHeight(i)));
+				offsets.set(i, Int2(cif.getXOffset(i), cif.getYOffset(i)));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions), std::move(offsets));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_DFA))
@@ -165,11 +214,25 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(dfa.getImageCount());
-		for (int i = 0; i < dfa.getImageCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(dfa.getImageCount());
+			for (int i = 0; i < dfa.getImageCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			Buffer<Int2> dimensions(dfa.getImageCount());
+			for (int i = 0; i < dfa.getImageCount(); i++)
+			{
+				dimensions.set(i, Int2(dfa.getWidth(), dfa.getHeight()));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_FLC) ||
@@ -182,11 +245,19 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(flc.getFrameCount());
-		for (int i = 0; i < flc.getFrameCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(flc.getFrameCount());
+			for (int i = 0; i < flc.getFrameCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(flc.getWidth(), flc.getHeight()));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_IMG) ||
@@ -199,9 +270,17 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		TextureBuilder textureBuilder = makePaletted(img.getWidth(), img.getHeight(), img.getPixels());
-		outTextures->init(1);
-		outTextures->set(0, std::move(textureBuilder));
+		if (outTextures != nullptr)
+		{
+			TextureBuilder textureBuilder = makePaletted(img.getWidth(), img.getHeight(), img.getPixels());
+			outTextures->init(1);
+			outTextures->set(0, std::move(textureBuilder));
+		}
+
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(img.getWidth(), img.getHeight()));
+		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_LGT))
 	{
@@ -212,12 +291,27 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(LGTFile::PALETTE_COUNT);
-		for (int i = 0; i < outTextures->getCount(); i++)
+		if (outTextures != nullptr)
 		{
-			const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
-			TextureBuilder textureBuilder = makePaletted(lightPalette.getCount(), 1, lightPalette.get());
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(LGTFile::PALETTE_COUNT);
+			for (int i = 0; i < outTextures->getCount(); i++)
+			{
+				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+				TextureBuilder textureBuilder = makePaletted(lightPalette.getCount(), 1, lightPalette.get());
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			Buffer<Int2> dimensions;
+			for (int i = 0; i < LGTFile::PALETTE_COUNT; i++)
+			{
+				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+				dimensions.set(i, Int2(lightPalette.getCount(), 1));
+			}
+
+			outMetadata->init(std::string(filename), std::move(dimensions));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_RCI))
@@ -229,11 +323,19 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(rci.getImageCount());
-		for (int i = 0; i < rci.getImageCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(rci.getImageCount());
+			for (int i = 0; i < rci.getImageCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(RCIFile::WIDTH, RCIFile::HEIGHT));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_SET))
@@ -245,11 +347,19 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		outTextures->init(set.getImageCount());
-		for (int i = 0; i < set.getImageCount(); i++)
+		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
-			outTextures->set(i, std::move(textureBuilder));
+			outTextures->init(set.getImageCount());
+			for (int i = 0; i < set.getImageCount(); i++)
+			{
+				TextureBuilder textureBuilder = makePaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
+				outTextures->set(i, std::move(textureBuilder));
+			}
+		}
+
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT));
 		}
 	}
 	else if (TextureManager::matchesExtension(filename, ArenaAssetUtils::EXTENSION_TXT))
@@ -261,20 +371,28 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 			return false;
 		}
 
-		const uint16_t *srcPixels = txt.getPixels();
-		constexpr int srcPixelCount = TXTFile::WIDTH * TXTFile::HEIGHT;
-
-		// Expand 16-bit to 32-bit for now since I don't want to add another texture builder format.
-		Buffer<uint32_t> trueColorBuffer(srcPixelCount);
-		std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.get(),
-			[](const uint16_t srcPixel)
+		if (outTextures != nullptr)
 		{
-			return static_cast<uint32_t>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(&srcPixel)));
-		});
+			const uint16_t *srcPixels = txt.getPixels();
+			constexpr int srcPixelCount = TXTFile::WIDTH * TXTFile::HEIGHT;
 
-		TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.get());
-		outTextures->init(1);
-		outTextures->set(0, std::move(textureBuilder));
+			// Expand 16-bit to 32-bit for now since I don't want to add another texture builder format.
+			Buffer<uint32_t> trueColorBuffer(srcPixelCount);
+			std::transform(srcPixels, srcPixels + srcPixelCount, trueColorBuffer.get(),
+				[](const uint16_t srcPixel)
+			{
+				return static_cast<uint32_t>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(&srcPixel)));
+			});
+
+			TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.get());
+			outTextures->init(1);
+			outTextures->set(0, std::move(textureBuilder));
+		}
+		
+		if (outMetadata != nullptr)
+		{
+			outMetadata->init(std::string(filename), makeDimensions(TXTFile::WIDTH, TXTFile::HEIGHT));
+		}
 	}
 	else
 	{
@@ -283,35 +401,6 @@ bool TextureManager::tryLoadTextureBuilders(const char *filename, Buffer<Texture
 	}
 
 	return true;
-}
-
-std::optional<TextureFileMetadata> TextureManager::tryGetMetadata(const char *filename)
-{
-	if (String::isNullOrEmpty(filename))
-	{
-		DebugLogWarning("Missing filename for texture file metadata.");
-		return std::nullopt;
-	}
-
-	// @todo: this function should ideally do the bare minimum decompression work to extract the metadata
-	// and never actually load texel data into memory. I imagine it would have per-file-format branches
-	// and query each one in a similar way to .IMG file palette extraction.
-
-	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(filename);
-	if (!ids.has_value())
-	{
-		return std::nullopt;
-	}
-
-	Buffer<Int2> dimensions(ids->getCount());
-	for (int i = 0; i < ids->getCount(); i++)
-	{
-		const TextureBuilderID id = ids->getID(i);
-		const TextureBuilder &textureBuilder = this->getTextureBuilderHandle(id);
-		dimensions.set(i, Int2(textureBuilder.getWidth(), textureBuilder.getHeight()));
-	}
-
-	return TextureFileMetadata(std::string(filename), std::move(dimensions));
 }
 
 std::optional<PaletteIdGroup> TextureManager::tryGetPaletteIDs(const char *filename)
@@ -391,7 +480,7 @@ std::optional<TextureBuilderIdGroup> TextureManager::tryGetTextureBuilderIDs(con
 	if (iter == this->textureBuilderIDs.end())
 	{
 		Buffer<TextureBuilder> textureBuilders;
-		if (!TextureManager::tryLoadTextureBuilders(filename, &textureBuilders))
+		if (!TextureManager::tryLoadTextureData(filename, &textureBuilders, nullptr))
 		{
 			DebugLogWarning("Couldn't load texture builders from \"" + filenameStr + "\".");
 			return std::nullopt;
@@ -439,6 +528,34 @@ std::optional<PaletteID> TextureManager::tryGetTextureBuilderID(const TextureAss
 	}
 }
 
+std::optional<TextureFileMetadataID> TextureManager::tryGetMetadataID(const char *filename)
+{
+	if (String::isNullOrEmpty(filename))
+	{
+		DebugLogWarning("Missing texture file metadata filename.");
+		return std::nullopt;
+	}
+
+	std::string filenameStr(filename);
+	auto iter = this->metadataIndices.find(filenameStr);
+	if (iter == this->metadataIndices.end())
+	{
+		TextureFileMetadata metadata;
+		if (!TextureManager::tryLoadTextureData(filename, nullptr, &metadata))
+		{
+			DebugLogWarning("Couldn't load texture file metadata from \"" + filenameStr + "\".");
+			return std::nullopt;
+		}
+
+		const TextureFileMetadataID id = static_cast<TextureFileMetadataID>(this->metadatas.size());
+		this->metadatas.emplace_back(std::move(metadata));
+
+		iter = this->metadataIndices.emplace(std::make_pair(std::move(filenameStr), id)).first;
+	}
+
+	return static_cast<TextureFileMetadataID>(iter->second);
+}
+
 PaletteRef TextureManager::getPaletteRef(PaletteID id) const
 {
 	return PaletteRef(&this->palettes, static_cast<int>(id));
@@ -447,6 +564,11 @@ PaletteRef TextureManager::getPaletteRef(PaletteID id) const
 TextureBuilderRef TextureManager::getTextureBuilderRef(TextureBuilderID id) const
 {
 	return TextureBuilderRef(&this->textureBuilders, static_cast<int>(id));
+}
+
+TextureFileMetadataRef TextureManager::getMetadataRef(TextureFileMetadataID id) const
+{
+	return TextureFileMetadataRef(&this->metadatas, static_cast<int>(id));
 }
 
 const Palette &TextureManager::getPaletteHandle(PaletteID id) const
@@ -459,4 +581,10 @@ const TextureBuilder &TextureManager::getTextureBuilderHandle(TextureBuilderID i
 {
 	DebugAssertIndex(this->textureBuilders, id);
 	return this->textureBuilders[id];
+}
+
+const TextureFileMetadata &TextureManager::getMetadataHandle(TextureFileMetadataID id) const
+{
+	DebugAssertIndex(this->metadatas, id);
+	return this->metadatas[id];
 }

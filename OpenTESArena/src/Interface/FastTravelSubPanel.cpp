@@ -29,12 +29,14 @@ void FastTravelSubPanel::tick(double dt)
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const std::string animFilename = WorldMapUiView::getFastTravelAnimationFilename();
-	const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(animFilename.c_str());
-	if (!textureFileMetadata.has_value())
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(animFilename.c_str());
+	if (!metadataID.has_value())
 	{
 		DebugLogError("Couldn't get texture file metadata for fast travel animation \"" + animFilename + "\".");
 		return;
 	}
+
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 
 	// Update horse animation.
 	this->currentSeconds += dt;
@@ -43,7 +45,7 @@ void FastTravelSubPanel::tick(double dt)
 		this->currentSeconds -= WorldMapUiView::FastTravelAnimationSecondsPerFrame;
 		this->frameIndex++;
 
-		if (this->frameIndex == textureFileMetadata->getTextureCount())
+		if (this->frameIndex == textureFileMetadata.getTextureCount())
 		{
 			this->frameIndex = 0;
 		}

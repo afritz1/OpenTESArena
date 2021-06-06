@@ -330,18 +330,19 @@ Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLi
 Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,
 	TextureManager &textureManager)
 {
-	const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(filename.c_str());
-	if (!textureFileMetadata.has_value())
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(filename.c_str());
+	if (!metadataID.has_value())
 	{
 		DebugLogError("Couldn't get texture file metadata for \"" + filename + "\".");
 		return Buffer<TextureAssetReference>();
 	}
 
-	const int textureCount = textureFileMetadata->getTextureCount();
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const int textureCount = textureFileMetadata.getTextureCount();
 	Buffer<TextureAssetReference> textureAssetRefs(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{
-		TextureAssetReference textureAssetRef(std::string(textureFileMetadata->getFilename()), i);
+		TextureAssetReference textureAssetRef(std::string(textureFileMetadata.getFilename()), i);
 		textureAssetRefs.set(i, std::move(textureAssetRef));
 	}
 

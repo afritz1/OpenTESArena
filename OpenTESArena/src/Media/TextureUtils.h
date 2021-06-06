@@ -12,6 +12,7 @@
 // Various texture handles for use with texture manager.
 using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
+using TextureFileMetadataID = int; // Metadata for a texture file (texture count, dimensions, etc.).
 
 class FontLibrary;
 class Renderer;

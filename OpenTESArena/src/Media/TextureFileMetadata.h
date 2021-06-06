@@ -9,7 +9,7 @@
 #include "components/utilities/Buffer.h"
 
 // Various non-texel data about a texture file, useful when only worried about how many textures exist
-// at that filename, as well as some header data (dimensions, image offsets, etc.).
+// at that filename, as well as some header data (dimensions, screen offsets, etc.).
 
 class TextureFileMetadata
 {
@@ -18,8 +18,8 @@ private:
 	Buffer<Int2> dimensions;
 	Buffer<Int2> offsets; // For .CFA + .CIF files.
 public:
-	TextureFileMetadata(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets);
-	TextureFileMetadata(std::string &&filename, Buffer<Int2> &&dimensions);
+	void init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets);
+	void init(std::string &&filename, Buffer<Int2> &&dimensions);
 
 	const std::string &getFilename() const;
 	int getTextureCount() const;

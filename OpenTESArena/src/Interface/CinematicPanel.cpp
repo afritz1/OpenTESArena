@@ -47,15 +47,16 @@ void CinematicPanel::tick(double dt)
 
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
-	const std::optional<TextureFileMetadata> textureFileMetadata = textureManager.tryGetMetadata(this->sequenceFilename.c_str());
-	if (!textureFileMetadata.has_value())
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(this->sequenceFilename.c_str());
+	if (!metadataID.has_value())
 	{
 		DebugLogError("Couldn't get texture file metadata for \"" + this->sequenceFilename + "\".");
 		return;
 	}
 
 	// If at the end, then prepare for the next panel.
-	const int textureCount = textureFileMetadata->getTextureCount();
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	const int textureCount = textureFileMetadata.getTextureCount();
 	if (this->imageIndex >= textureCount)
 	{
 		this->imageIndex = textureCount - 1;

@@ -145,16 +145,16 @@ void TextCinematicPanel::tick(double dt)
 		this->animImageIndex++;
 
 		auto &textureManager = this->getGame().getTextureManager();
-		const std::optional<TextureFileMetadata> textureFileMetadata =
-			textureManager.tryGetMetadata(this->animTextureFilename.c_str());
-		if (!textureFileMetadata.has_value())
+		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(this->animTextureFilename.c_str());
+		if (!metadataID.has_value())
 		{
 			DebugCrash("Couldn't get anim texture file metadata for \"" + this->animTextureFilename + "\".");
 		}
 
 		// If at the end of the sequence, go back to the first image. The cinematic ends at the end
 		// of the last text box.
-		if (this->animImageIndex == textureFileMetadata->getTextureCount())
+		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+		if (this->animImageIndex == textureFileMetadata.getTextureCount())
 		{
 			this->animImageIndex = 0;
 		}
