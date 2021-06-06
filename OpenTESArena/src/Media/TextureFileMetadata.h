@@ -16,7 +16,11 @@ class TextureFileMetadata
 private:
 	std::string filename;
 	Buffer<Int2> dimensions;
-	Buffer<Int2> offsets; // For .CFA + .CIF files.
+
+	// For .CFA + .CIF files.
+	// @todo: to allow future texture formats like PNG to work with this, these values will need to come from a
+	// helper file for the PNGs.
+	Buffer<Int2> offsets;
 public:
 	void init(std::string &&filename, Buffer<Int2> &&dimensions, Buffer<Int2> &&offsets);
 	void init(std::string &&filename, Buffer<Int2> &&dimensions);
