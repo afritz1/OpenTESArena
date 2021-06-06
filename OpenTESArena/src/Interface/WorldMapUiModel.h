@@ -14,8 +14,6 @@ namespace WorldMapUiModel
 {
 	// -- World map --
 
-	using ProvinceNameOffsetArray = std::array<Int2, 9>;
-
 	std::string getProvinceNameOffsetFilename();
 
 	// -- Fast travel --

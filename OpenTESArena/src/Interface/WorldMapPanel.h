@@ -1,8 +1,6 @@
 #ifndef WORLD_MAP_PANEL_H
 #define WORLD_MAP_PANEL_H
 
-#include <array>
-
 #include "Panel.h"
 #include "ProvinceMapUiModel.h"
 #include "WorldMapUiModel.h"
@@ -16,7 +14,7 @@ class WorldMapPanel : public Panel
 private:
 	Button<Game&> backToGameButton;
 	Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>> provinceButton;
-	WorldMapUiModel::ProvinceNameOffsetArray provinceNameOffsets; // Yellow province name positions.
+	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
 	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
 public:
 	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);

@@ -1,6 +1,7 @@
+#include <optional>
+
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Assets/CIFFile.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 
@@ -161,22 +162,16 @@ Int2 CharacterCreationUiView::getHeadOffset(Game &game)
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = PortraitFile::getHeads(isMale, raceID, trimmed);
 
-	// @todo: TextureFileMetadata support for CIFFile offsets
-	CIFFile cifFile;
-	if (!cifFile.init(headsFilename.c_str()))
+	auto &textureManager = game.getTextureManager();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
+	if (!metadataID.has_value())
 	{
-		DebugCrash("Couldn't init .CIF file \"" + headsFilename + "\".");
+		DebugCrash("Couldn't get texture file metadata for \"" + headsFilename + "\".");
 	}
 
-	const int imageCount = cifFile.getImageCount();
-	Buffer<Int2> headOffsets(imageCount);
-	for (int i = 0; i < imageCount; i++)
-	{
-		headOffsets.set(i, Int2(cifFile.getXOffset(i), cifFile.getYOffset(i)));
-	}
-
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 	const int headOffsetIndex = charCreationState.getPortraitIndex();
-	return headOffsets.get(headOffsetIndex);
+	return textureFileMetadata.getOffset(headOffsetIndex);
 }
 
 Int2 CharacterCreationUiView::getShirtOffset(Game &game)

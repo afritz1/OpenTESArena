@@ -4,7 +4,6 @@
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
-#include "../Assets/CIFFile.h"
 #include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
@@ -21,17 +20,19 @@ WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::Tra
 		WorldMapUiController::onProvinceButtonSelected);
 
 	// Load province name offsets.
-	// @todo: TextureFileMetadata support
-	const std::string cifName = WorldMapUiModel::getProvinceNameOffsetFilename();
-	CIFFile cif;
-	if (!cif.init(cifName.c_str()))
+	auto &textureManager = game.getTextureManager();
+	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(provinceNameOffsetFilename.c_str());
+	if (!metadataID.has_value())
 	{
-		DebugCrash("Could not init .CIF file \"" + cifName + "\".");
+		DebugCrash("Couldn't get texture file metadata for \"" + provinceNameOffsetFilename + "\".");
 	}
 
-	for (int i = 0; i < static_cast<int>(this->provinceNameOffsets.size()); i++)
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	this->provinceNameOffsets.init(textureFileMetadata.getTextureCount());
+	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
 	{
-		this->provinceNameOffsets[i] = Int2(cif.getXOffset(i), cif.getYOffset(i));
+		this->provinceNameOffsets.set(i, textureFileMetadata.getOffset(i));
 	}
 }
 
@@ -133,6 +134,6 @@ void WorldMapPanel::render(Renderer &renderer)
 	const auto &gameState = this->getGame().getGameState();
 	const int provinceID = gameState.getProvinceDefinition().getRaceID();
 	const TextureBuilderID provinceTextTextureBuilderID = provinceTextTextureBuilderIDs->getID(provinceID);
-	const Int2 &nameOffset = this->provinceNameOffsets.at(provinceID);
+	const Int2 &nameOffset = this->provinceNameOffsets.get(provinceID);
 	renderer.drawOriginal(provinceTextTextureBuilderID, *paletteID, nameOffset.x, nameOffset.y, textureManager);
 }
