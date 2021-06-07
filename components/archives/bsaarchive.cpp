@@ -1,10 +1,9 @@
-
-#include "bsaarchive.hpp"
-
 #include <algorithm>
 #include <sstream>
 #include <fstream>
 
+#include "bsaarchive.hpp"
+#include "../dos/DOSUtils.h"
 
 namespace Archives
 {
@@ -20,20 +19,20 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
 
     for(size_t i = 0;i < count;++i)
     {
-        std::array<char,13> name;
+        DOSUtils::FilenameBuffer name;
         stream.read(name.data(), name.size()-1);
         name.back() = '\0'; // Ensure null termination
         std::replace(name.begin(), name.end(), '\\', '/');
-        names.push_back(std::string(name.data()));
+        names.emplace_back(std::string(name.data()));
 
         const bool isCompressed = read_le16(stream) != 0;
         if(isCompressed)
             throw std::runtime_error("Compressed entries not supported");
 
         Entry entry;
-        entry.mStart = ((i == 0) ? base : entries[i-1].mEnd);
+        entry.mStart = (i == 0) ? base : entries[i-1].mEnd;
         entry.mEnd = entry.mStart + read_le32(stream);
-        entries.push_back(entry);
+        entries.emplace_back(std::move(entry));
     }
 
     if(!stream.good())
@@ -49,7 +48,7 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
     mEntries.resize(mLookupName.size());
     for(size_t i = 0;i < count;++i)
     {
-        auto iter = std::find(mLookupName.cbegin(), mLookupName.cend(), names[i]);
+        auto iter = std::lower_bound(mLookupName.cbegin(), mLookupName.cend(), names[i]);
         mEntries[std::distance(mLookupName.cbegin(), iter)] = entries[i];
     }
 }
