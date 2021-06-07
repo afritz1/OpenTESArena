@@ -75,7 +75,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 }
 
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
-	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex, const TravelData &travelData)
+	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
 	auto &gameState = game.getGameState();
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
@@ -92,6 +92,10 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
 
 	const Date &currentDate = gameState.getDate();
+	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+	DebugAssert(travelDataPtr != nullptr);
+	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+
 	const Date destinationDate = [&currentDate, &travelData]()
 	{
 		Date newDate = currentDate;

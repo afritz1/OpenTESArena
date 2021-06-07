@@ -13,6 +13,7 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../UI/TimedTextBox.h"
@@ -107,6 +108,7 @@ private:
 	WorldMapInstance worldMapInst;
 	int provinceIndex;
 	int locationIndex;
+	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
 
 	// Game world interface display texts with their associated time remaining. These values 
 	// are stored here so they are not destroyed when switching away from the game world panel.
@@ -213,6 +215,7 @@ public:
 	WorldMapInstance &getWorldMapInstance();
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
+	const ProvinceMapUiModel::TravelData *getTravelData() const;
 	const WeatherList &getWeathersArray() const;
 	Date &getDate();
 	Clock &getClock();
@@ -255,6 +258,9 @@ public:
 	void getTriggerTextRenderInfo(const Texture **outTexture) const;
 	void getActionTextRenderInfo(const Texture **outTexture) const;
 	void getEffectTextRenderInfo(const Texture **outTexture) const;
+
+	// Sets the player's world map travel data when they select a destination.
+	void setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text for various types of in-game messages.
 	void setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);

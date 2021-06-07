@@ -16,8 +16,8 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
-	: Panel(game), travelData(std::move(travelData))
+ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
+	: Panel(game)
 {
 	this->searchButton = []()
 	{
@@ -33,7 +33,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID, std::unique_ptr<P
 	this->travelButton = []()
 	{
 		const Rect &clickArea = ProvinceMapUiView::TravelButtonRect;
-		return Button<Game&, ProvinceMapPanel&, bool>(
+		return Button<Game&, ProvinceMapPanel&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
 			clickArea.getWidth(),
@@ -44,7 +44,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID, std::unique_ptr<P
 	this->backToWorldMapButton = []()
 	{
 		const Rect &clickArea = ProvinceMapUiView::BackToWorldMapRect;
-		return Button<Game&, std::unique_ptr<ProvinceMapUiModel::TravelData>>(
+		return Button<Game&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
 			clickArea.getWidth(),
@@ -114,13 +114,14 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		const int travelDays = LocationUtils::getTravelDays(srcGlobalPoint, dstGlobalPoint,
 			currentDate.getMonth(), gameState.getWeathersArray(), tempRandom, binaryAssetLibrary);
 
-		this->travelData = std::make_unique<ProvinceMapUiModel::TravelData>(
-			selectedLocationID, this->provinceID, travelDays);
+		// Set selected map location.
+		gameState.setTravelData(std::make_unique<ProvinceMapUiModel::TravelData>(selectedLocationID, this->provinceID, travelDays));
+
 		this->blinkTimer = 0.0;
 
 		// Create pop-up travel dialog.
-		const std::string travelText = ProvinceMapUiModel::makeTravelText(this->getGame(), this->provinceID,
-			currentLocationDef, currentProvinceDef, selectedLocationID, *this->travelData.get());
+		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, this->provinceID,
+			currentLocationDef, currentProvinceDef, selectedLocationID);
 		std::unique_ptr<Panel> textPopUp = ProvinceMapUiModel::makeTextPopUp(game, travelText);
 		game.pushSubPanel(std::move(textPopUp));
 	}
@@ -155,7 +156,7 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || rightClick)
 	{
-		this->backToWorldMapButton.click(game, std::move(this->travelData));
+		this->backToWorldMapButton.click(game);
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -171,11 +172,11 @@ void ProvinceMapPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->travelButton.contains(originalPosition))
 		{
-			this->travelButton.click(game, *this, this->travelData.get() != nullptr);
+			this->travelButton.click(game, *this);
 		}
 		else if (this->backToWorldMapButton.contains(originalPosition))
 		{
-			this->backToWorldMapButton.click(game, std::move(this->travelData));
+			this->backToWorldMapButton.click(game);
 		}
 		else
 		{
@@ -251,8 +252,8 @@ void ProvinceMapPanel::handleFastTravel()
 {
 	// Switch to world map and push fast travel sub-panel on top of it.
 	auto &game = this->getGame();
-	game.pushSubPanel<FastTravelSubPanel>(game, *this->travelData.get());
-	game.setPanel<WorldMapPanel>(game, std::move(this->travelData));
+	game.pushSubPanel<FastTravelSubPanel>(game);
+	game.setPanel<WorldMapPanel>(game);
 }
 
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer)
@@ -607,20 +608,25 @@ void ProvinceMapPanel::render(Renderer &renderer)
 
 	// If there is a currently selected location in this province, draw its blinking highlight
 	// if within the "blink on" interval.
-	if ((this->travelData.get() != nullptr) && (this->travelData->provinceID == this->provinceID))
+	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+	if (travelDataPtr != nullptr)
 	{
-		const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapUiView::BlinkPeriodSeconds);
-		const double blinkPeriodPercent = blinkInterval / ProvinceMapUiView::BlinkPeriodSeconds;
-
-		// See if the blink period percent lies within the "on" percent. Use less-than
-		// to compare them so the on-state appears before the off-state.
-		if (blinkPeriodPercent < ProvinceMapUiView::BlinkPeriodPercentOn)
+		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+		if (travelData.provinceID == this->provinceID)
 		{
-			const LocationDefinition &selectedLocationDef = provinceDef.getLocationDef(this->travelData->locationID);
-			const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
+			const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapUiView::BlinkPeriodSeconds);
+			const double blinkPeriodPercent = blinkInterval / ProvinceMapUiView::BlinkPeriodSeconds;
 
-			this->drawLocationHighlight(selectedLocationDef, highlightType, *backgroundPaletteID,
-				textureManager, renderer);
+			// See if the blink period percent lies within the "on" percent. Use less-than
+			// to compare them so the on-state appears before the off-state.
+			if (blinkPeriodPercent < ProvinceMapUiView::BlinkPeriodPercentOn)
+			{
+				const LocationDefinition &selectedLocationDef = provinceDef.getLocationDef(travelData.locationID);
+				const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
+
+				this->drawLocationHighlight(selectedLocationDef, highlightType, *backgroundPaletteID,
+					textureManager, renderer);
+			}
 		}
 	}
 }

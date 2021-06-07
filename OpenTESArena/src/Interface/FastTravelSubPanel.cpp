@@ -6,13 +6,17 @@
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
 
-FastTravelSubPanel::FastTravelSubPanel(Game &game, const ProvinceMapUiModel::TravelData &travelData)
-	: Panel(game), travelData(travelData)
+FastTravelSubPanel::FastTravelSubPanel(Game &game)
+	: Panel(game)
 {
 	this->currentSeconds = 0.0;
 	this->totalSeconds = 0.0;
 
 	// Determine how long the animation should run until switching to the game world.
+	const auto &gameState = game.getGameState();
+	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+	DebugAssert(travelDataPtr != nullptr);
+	const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
 	this->targetSeconds = std::max(WorldMapUiModel::FastTravelAnimationMinSeconds,
 		static_cast<double>(travelData.travelDays) * WorldMapUiView::FastTravelAnimationSecondsPerFrame);
 
@@ -55,8 +59,13 @@ void FastTravelSubPanel::tick(double dt)
 	this->totalSeconds += dt;
 	if (this->totalSeconds >= this->targetSeconds)
 	{
-		WorldMapUiController::onFastTravelAnimationFinished(this->getGame(), this->travelData.provinceID,
-			this->travelData.locationID, this->travelData.travelDays);
+		const auto &gameState = game.getGameState();
+		const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+		DebugAssert(travelDataPtr != nullptr);
+		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+
+		WorldMapUiController::onFastTravelAnimationFinished(game, travelData.provinceID,
+			travelData.locationID, travelData.travelDays);
 	}
 }
 

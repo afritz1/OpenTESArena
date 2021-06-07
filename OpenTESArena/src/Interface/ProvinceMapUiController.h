@@ -13,8 +13,8 @@ namespace ProvinceMapUiController
 	// -- Province panel --
 
 	void onSearchButtonSelected(Game &game, ProvinceMapPanel &panel, int provinceID);
-	void onTravelButtonSelected(Game &game, ProvinceMapPanel &panel, bool hasTravelData);
-	void onBackToWorldMapButtonSelected(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
+	void onTravelButtonSelected(Game &game, ProvinceMapPanel &panel);
+	void onBackToWorldMapButtonSelected(Game &game);
 
 	void onTextPopUpSelected(Game &game);
 

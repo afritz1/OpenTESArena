@@ -13,8 +13,11 @@ void ProvinceMapUiController::onSearchButtonSelected(Game &game, ProvinceMapPane
 	game.pushSubPanel<ProvinceSearchSubPanel>(game, panel, provinceID);
 }
 
-void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPanel &panel, bool hasTravelData)
+void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPanel &panel)
 {
+	const auto &gameState = game.getGameState();
+	const bool hasTravelData = gameState.getTravelData() != nullptr;
+
 	if (hasTravelData)
 	{
 		// Fast travel to the selected destination.
@@ -42,10 +45,9 @@ void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPane
 	}
 }
 
-void ProvinceMapUiController::onBackToWorldMapButtonSelected(Game &game,
-	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
+void ProvinceMapUiController::onBackToWorldMapButtonSelected(Game &game)
 {
-	game.setPanel<WorldMapPanel>(game, std::move(travelData));
+	game.setPanel<WorldMapPanel>(game);
 }
 
 void ProvinceMapUiController::onTextPopUpSelected(Game &game)

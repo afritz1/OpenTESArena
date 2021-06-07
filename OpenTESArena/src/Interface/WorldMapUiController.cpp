@@ -11,20 +11,26 @@
 
 void WorldMapUiController::onBackToGameButtonSelected(Game &game)
 {
+	// Clear selected map location.
+	auto &gameState = game.getGameState();
+	gameState.setTravelData(nullptr);
+
 	game.setPanel<GameWorldPanel>(game);
 }
 
-void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID,
-	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
+void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID)
 {
-	game.setPanel<ProvinceMapPanel>(game, provinceID, std::move(travelData));
+	game.setPanel<ProvinceMapPanel>(game, provinceID);
 }
 
 void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
-	// Handle fast travel behavior and decide which panel to switch to.
+	// Clear selected map location.
 	auto &gameState = game.getGameState();
+	gameState.setTravelData(nullptr);
+
+	// Handle fast travel behavior and decide which panel to switch to.
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();

@@ -1,10 +1,6 @@
 #ifndef WORLD_MAP_UI_CONTROLLER_H
 #define WORLD_MAP_UI_CONTROLLER_H
 
-#include <memory>
-
-#include "ProvinceMapUiModel.h"
-
 class Game;
 
 namespace WorldMapUiController
@@ -12,7 +8,7 @@ namespace WorldMapUiController
 	// -- World map --
 
 	void onBackToGameButtonSelected(Game &game);
-	void onProvinceButtonSelected(Game &game, int provinceID, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
+	void onProvinceButtonSelected(Game &game, int provinceID);
 
 	// -- Fast travel --
 

@@ -2,7 +2,6 @@
 #define WORLD_MAP_PANEL_H
 
 #include "Panel.h"
-#include "ProvinceMapUiModel.h"
 #include "WorldMapUiModel.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
@@ -13,11 +12,10 @@ class WorldMapPanel : public Panel
 {
 private:
 	Button<Game&> backToGameButton;
-	Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>> provinceButton;
+	Button<Game&, int> provinceButton;
 	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
-	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
 public:
-	WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
+	WorldMapPanel(Game &game);
 	virtual ~WorldMapPanel() = default;
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;

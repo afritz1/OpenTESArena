@@ -144,6 +144,6 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 	}
 	else
 	{
-		game.setPanel<WorldMapPanel>(game, nullptr);
+		game.setPanel<WorldMapPanel>(game);
 	}
 }

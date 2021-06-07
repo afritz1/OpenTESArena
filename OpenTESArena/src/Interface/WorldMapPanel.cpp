@@ -8,16 +8,15 @@
 
 #include "components/debug/Debug.h"
 
-WorldMapPanel::WorldMapPanel(Game &game, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
-	: Panel(game), travelData(std::move(travelData))
+WorldMapPanel::WorldMapPanel(Game &game)
+	: Panel(game)
 {
 	this->backToGameButton = Button<Game&>(
 		WorldMapUiView::BackToGameButtonCenterPoint,
 		WorldMapUiView::BackToGameButtonWidth,
 		WorldMapUiView::BackToGameButtonHeight,
 		WorldMapUiController::onBackToGameButtonSelected);
-	this->provinceButton = Button<Game&, int, std::unique_ptr<ProvinceMapUiModel::TravelData>>(
-		WorldMapUiController::onProvinceButtonSelected);
+	this->provinceButton = Button<Game&, int>(WorldMapUiController::onProvinceButtonSelected);
 
 	// Load province name offsets.
 	auto &textureManager = game.getTextureManager();
@@ -78,7 +77,7 @@ void WorldMapPanel::handleEvent(const SDL_Event &e)
 					if (maskID < 9)
 					{
 						// Go to the selected province panel.
-						this->provinceButton.click(this->getGame(), maskID, std::move(this->travelData));
+						this->provinceButton.click(this->getGame(), maskID);
 					}
 					else
 					{

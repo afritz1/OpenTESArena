@@ -760,6 +760,11 @@ LocationInstance &GameState::getLocationInstance()
 	return provinceInst.getLocationInstance(index);
 }
 
+const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
+{
+	return this->travelData.get();
+}
+
 const GameState::WeatherList &GameState::getWeathersArray() const
 {
 	return this->weathers;
@@ -939,6 +944,11 @@ void GameState::getEffectTextRenderInfo(const Texture **outTexture) const
 	{
 		*outTexture = &this->effectText.textBox->getTexture();
 	}
+}
+
+void GameState::setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
+{
+	this->travelData = std::move(travelData);
 }
 
 void GameState::setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)

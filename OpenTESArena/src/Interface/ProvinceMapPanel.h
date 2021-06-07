@@ -4,7 +4,6 @@
 #include <string>
 
 #include "Panel.h"
-#include "ProvinceMapUiModel.h"
 #include "../Math/Vector2.h"
 #include "../Media/Palette.h"
 #include "../UI/Button.h"
@@ -22,9 +21,9 @@ private:
 	enum class LocationHighlightType { Current, Selected };
 
 	Button<Game&, ProvinceMapPanel&, int> searchButton;
-	Button<Game&, ProvinceMapPanel&, bool> travelButton;
-	Button<Game&, std::unique_ptr<ProvinceMapUiModel::TravelData>> backToWorldMapButton;
-	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
+	Button<Game&, ProvinceMapPanel&> travelButton;
+	Button<Game&> backToWorldMapButton;
+	// @todo: store button for every location
 	TextureBuilderIdGroup staffDungeonIconTextureBuilderIDs; // For obtaining palette indices.
 	PaletteID backgroundPaletteID;
 	double blinkTimer;
@@ -56,12 +55,13 @@ private:
 	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
 	void drawButtonTooltip(const std::string &text, Renderer &renderer);
 public:
-	ProvinceMapPanel(Game &game, int provinceID, std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
+	ProvinceMapPanel(Game &game, int provinceID);
 	virtual ~ProvinceMapPanel() = default;
 
 	// Tries to set the given location ID as the selected one. If the player is already at
 	// that location, then an error pop-up is displayed instead. This is a public method
 	// so the province search sub-panel can call it, too.
+	// @todo: the province sub-panel listbox elements should all have std::functions instead
 	void trySelectLocation(int selectedLocationID);
 
 	// Handles loading the target destination into the current game session and changing to the game world panel.
