@@ -1,32 +1,12 @@
 #include "SDL.h"
 
 #include "CharacterEquipmentPanel.h"
-#include "CharacterPanel.h"
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
-#include "../Assets/ArenaPaletteName.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/CIFFile.h"
-#include "../Assets/ExeData.h"
-#include "../Entities/CharacterClassDefinition.h"
-#include "../Entities/Player.h"
-#include "../Game/GameState.h"
 #include "../Game/Game.h"
-#include "../Game/Options.h"
-#include "../Media/PortraitFile.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 
@@ -108,53 +88,34 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 			game.getRenderer());
 	}();
 
-	this->backToStatsButton = []()
-	{
-		return Button<Game&>(
-			CharacterSheetUiView::BackToStatsButtonX,
-			CharacterSheetUiView::BackToStatsButtonY,
-			CharacterSheetUiView::BackToStatsButtonWidth,
-			CharacterSheetUiView::BackToStatsButtonHeight,
-			CharacterSheetUiController::onBackToStatsButtonSelected);
-	}();
-
-	this->spellbookButton = []()
-	{
-		return Button<Game&>(
-			CharacterSheetUiView::SpellbookButtonX,
-			CharacterSheetUiView::SpellbookButtonY,
-			CharacterSheetUiView::SpellbookButtonWidth,
-			CharacterSheetUiView::SpellbookButtonHeight,
-			CharacterSheetUiController::onSpellbookButtonSelected);
-	}();
-
-	this->dropButton = []()
-	{
-		return Button<Game&, int>(
-			CharacterSheetUiView::DropButtonX,
-			CharacterSheetUiView::DropButtonY,
-			CharacterSheetUiView::DropButtonWidth,
-			CharacterSheetUiView::DropButtonHeight,
-			CharacterSheetUiController::onDropButtonSelected);
-	}();
-
-	this->scrollDownButton = []()
-	{
-		return Button<ListBox&>(
-			CharacterSheetUiView::ScrollDownButtonCenterPoint,
-			CharacterSheetUiView::ScrollDownButtonWidth,
-			CharacterSheetUiView::ScrollDownButtonHeight,
-			CharacterSheetUiController::onInventoryScrollDownButtonSelected);
-	}();
-
-	this->scrollUpButton = []()
-	{
-		return Button<ListBox&>(
-			CharacterSheetUiView::ScrollUpButtonCenterPoint,
-			CharacterSheetUiView::ScrollUpButtonWidth,
-			CharacterSheetUiView::ScrollUpButtonHeight,
-			CharacterSheetUiController::onInventoryScrollUpButtonSelected);
-	}();
+	this->backToStatsButton = Button<Game&>(
+		CharacterSheetUiView::BackToStatsButtonX,
+		CharacterSheetUiView::BackToStatsButtonY,
+		CharacterSheetUiView::BackToStatsButtonWidth,
+		CharacterSheetUiView::BackToStatsButtonHeight,
+		CharacterSheetUiController::onBackToStatsButtonSelected);
+	this->spellbookButton = Button<Game&>(
+		CharacterSheetUiView::SpellbookButtonX,
+		CharacterSheetUiView::SpellbookButtonY,
+		CharacterSheetUiView::SpellbookButtonWidth,
+		CharacterSheetUiView::SpellbookButtonHeight,
+		CharacterSheetUiController::onSpellbookButtonSelected);
+	this->dropButton = Button<Game&, int>(
+		CharacterSheetUiView::DropButtonX,
+		CharacterSheetUiView::DropButtonY,
+		CharacterSheetUiView::DropButtonWidth,
+		CharacterSheetUiView::DropButtonHeight,
+		CharacterSheetUiController::onDropButtonSelected);
+	this->scrollDownButton = Button<ListBox&>(
+		CharacterSheetUiView::ScrollDownButtonCenterPoint,
+		CharacterSheetUiView::ScrollDownButtonWidth,
+		CharacterSheetUiView::ScrollDownButtonHeight,
+		CharacterSheetUiController::onInventoryScrollDownButtonSelected);
+	this->scrollUpButton = Button<ListBox&>(
+		CharacterSheetUiView::ScrollUpButtonCenterPoint,
+		CharacterSheetUiView::ScrollUpButtonWidth,
+		CharacterSheetUiView::ScrollUpButtonHeight,
+		CharacterSheetUiController::onInventoryScrollUpButtonSelected);
 }
 
 std::optional<Panel::CursorData> CharacterEquipmentPanel::getCurrentCursor() const

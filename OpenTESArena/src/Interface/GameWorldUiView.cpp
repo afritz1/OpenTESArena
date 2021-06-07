@@ -3,8 +3,6 @@
 #include "GameWorldUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Assets/CFAFile.h"
-#include "../Assets/CIFFile.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../UI/FontUtils.h"
@@ -124,31 +122,16 @@ Int2 GameWorldUiView::getCurrentWeaponAnimationOffset(Game &game)
 	const auto &weaponAnimation = game.getGameState().getPlayer().getWeaponAnimation();
 	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
 	const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-
-	// @todo: add XY offset support to TextureFileMetadata so it can be cached by texture manager.
-
-	if (!weaponAnimation.isRanged())
+	
+	auto &textureManager = game.getTextureManager();
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
+	if (!metadataID.has_value())
 	{
-		// Melee weapon offsets.
-		CIFFile cifFile;
-		if (!cifFile.init(weaponFilename.c_str()))
-		{
-			DebugCrash("Couldn't init .CIF file \"" + weaponFilename + "\".");
-		}
-
-		return Int2(cifFile.getXOffset(weaponAnimIndex), cifFile.getYOffset(weaponAnimIndex));
+		DebugCrash("Couldn't get weapon animation metadata from \"" + weaponFilename + "\".");
 	}
-	else
-	{
-		// Ranged weapon offsets.
-		CFAFile cfaFile;
-		if (!cfaFile.init(weaponFilename.c_str()))
-		{
-			DebugCrash("Couldn't init .CFA file \"" + weaponFilename + "\".");
-		}
 
-		return Int2(cfaFile.getXOffset(), cfaFile.getYOffset());
-	}
+	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
+	return textureFileMetadata.getOffset(weaponAnimIndex);
 }
 
 std::optional<TextureBuilderID> GameWorldUiView::getActiveWeaponAnimationTextureBuilderID(Game &game)
