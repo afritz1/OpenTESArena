@@ -65,6 +65,7 @@ namespace ProvinceMapUiView
 	TextureAssetReference getTownIconTextureAssetRef();
 	TextureAssetReference getVillageIconTextureAssetRef();
 	TextureAssetReference getDungeonIconTextureAssetRef();
+	std::string getStaffDungeonIconsFilename();
 	TextureAssetReference getStaffDungeonIconTextureAssetRef(int provinceID);
 
 	std::string getMapIconOutlinesFilename();

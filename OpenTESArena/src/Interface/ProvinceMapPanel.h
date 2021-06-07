@@ -5,7 +5,6 @@
 
 #include "Panel.h"
 #include "ProvinceMapUiModel.h"
-#include "../Assets/CIFFile.h"
 #include "../Math/Vector2.h"
 #include "../Media/Palette.h"
 #include "../UI/Button.h"
@@ -25,9 +24,9 @@ private:
 	Button<Game&, ProvinceMapPanel&, int> searchButton;
 	Button<Game&, ProvinceMapPanel&, bool> travelButton;
 	Button<Game&, std::unique_ptr<ProvinceMapUiModel::TravelData>> backToWorldMapButton;
-	CIFFile staffDungeonCif; // For obtaining palette indices.
 	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData;
-	Palette provinceMapPalette;
+	TextureBuilderIdGroup staffDungeonIconTextureBuilderIDs; // For obtaining palette indices.
+	PaletteID backgroundPaletteID;
 	double blinkTimer;
 	int provinceID;
 

@@ -68,9 +68,14 @@ TextureAssetReference ProvinceMapUiView::getDungeonIconTextureAssetRef()
 	return TextureAssetReference(std::string(ArenaTextureName::DungeonIcon));
 }
 
+std::string ProvinceMapUiView::getStaffDungeonIconsFilename()
+{
+	return ArenaTextureName::StaffDungeonIcons;
+}
+
 TextureAssetReference ProvinceMapUiView::getStaffDungeonIconTextureAssetRef(int provinceID)
 {
-	return TextureAssetReference(std::string(ArenaTextureName::StaffDungeonIcons), provinceID);
+	return TextureAssetReference(ProvinceMapUiView::getStaffDungeonIconsFilename(), provinceID);
 }
 
 std::string ProvinceMapUiView::getMapIconOutlinesFilename()

@@ -7,36 +7,10 @@
 
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
-#include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiView.h"
-#include "ProvinceSearchSubPanel.h"
-#include "TextSubPanel.h"
 #include "WorldMapPanel.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/ArenaTypes.h"
-#include "../Assets/CityDataFile.h"
-#include "../Assets/ExeData.h"
-#include "../Assets/IMGFile.h"
-#include "../Assets/MIFFile.h"
 #include "../Game/Game.h"
-#include "../Game/Options.h"
-#include "../Math/MathUtils.h"
-#include "../Math/Random.h"
-#include "../Math/Rect.h"
-#include "../Media/TextureManager.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
-#include "../UI/Surface.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
-#include "../UI/Texture.h"
-#include "../WorldMap/LocationDefinition.h"
-#include "../WorldMap/LocationInstance.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -82,25 +56,25 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID, std::unique_ptr<P
 	this->blinkTimer = 0.0;
 
 	// Get the palette for the background image.
-	const TextureAssetReference provinceBgTextureAssetRef =
-		ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID);
-	if (!IMGFile::tryExtractPalette(provinceBgTextureAssetRef.filename.c_str(), this->provinceMapPalette))
+	auto &textureManager = game.getTextureManager();
+	const TextureAssetReference provinceBgTextureAssetRef = ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID);
+	const std::optional<PaletteID> optBackgroundPaletteID = textureManager.tryGetPaletteID(provinceBgTextureAssetRef);
+	if (!optBackgroundPaletteID.has_value())
 	{
-		DebugCrash("Could not extract palette from \"" + provinceBgTextureAssetRef.filename + "\".");
+		DebugCrash("Couldn't get province map background palette \"" + provinceBgTextureAssetRef.filename + "\".");
 	}
 
-	// If displaying a province that contains a staff dungeon, get the staff dungeon icon's
-	// raw palette indices (for yellow and red color swapping).
-	const bool hasStaffDungeon = provinceID != LocationUtils::CENTER_PROVINCE_ID;
-	if (hasStaffDungeon)
+	this->backgroundPaletteID = *optBackgroundPaletteID;
+
+	// Get the staff dungeon icons in case the province contains a staff dungeon (for flashing color swapping).
+	const std::string iconsFilename = ProvinceMapUiView::getStaffDungeonIconsFilename();
+	const std::optional<TextureBuilderIdGroup> iconIdGroup = textureManager.tryGetTextureBuilderIDs(iconsFilename.c_str());
+	if (!iconIdGroup.has_value())
 	{
-		const std::string &cifName = ArenaTextureName::StaffDungeonIcons;
-		this->staffDungeonCif = CIFFile();
-		if (!this->staffDungeonCif.init(cifName.c_str()))
-		{
-			DebugCrash("Could not init .CIF file \"" + cifName + "\".");
-		}
+		DebugCrash("Couldn't get staff dungeon icon texture builder IDs for \"" + iconsFilename + "\".");
 	}
+
+	this->staffDungeonIconTextureBuilderIDs = *iconIdGroup;
 }
 
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
@@ -478,37 +452,37 @@ void ProvinceMapPanel::drawLocationHighlight(const LocationDefinition &locationD
 		{
 			// Staff dungeon. It changes a value in the palette to give the icon's background
 			// its yellow color (since there are no highlight icons for staff dungeons).
-			const Texture highlightTexture = [this, highlightType, &renderer]()
+			// @todo: pre-allocate both textures of the flash state and pick the right one each frame.
+			const Texture highlightTexture = [this, highlightType, &textureManager, &renderer]()
 			{
-				// Get the palette indices associated with the staff dungeon icon.
-				const CIFFile &iconCif = this->staffDungeonCif;
-				const int cifWidth = iconCif.getWidth(this->provinceID);
-				const int cifHeight = iconCif.getHeight(this->provinceID);
+				const Palette &backgroundPalette = textureManager.getPaletteHandle(this->backgroundPaletteID);
+				const TextureBuilderID iconTextureBuilderID = this->staffDungeonIconTextureBuilderIDs.getID(this->provinceID);
+				const TextureBuilder &iconTextureBuilder = textureManager.getTextureBuilderHandle(iconTextureBuilderID);
 
 				// Make a copy of the staff dungeon icon with changes based on which
 				// pixels should be highlighted.
-				Surface surface = Surface::createWithFormat(cifWidth, cifHeight,
+				Surface surface = Surface::createWithFormat(iconTextureBuilder.getWidth(), iconTextureBuilder.getHeight(),
 					Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-				auto getColorFromIndex = [this, highlightType, &surface](int paletteIndex)
+				auto getColorFromIndex = [this, highlightType, &backgroundPalette, &surface](int paletteIndex)
 				{
-					const auto &palette = this->provinceMapPalette;
-					DebugAssertIndex(palette, paletteIndex);
-					const Color &color = palette[paletteIndex];
+					DebugAssertIndex(backgroundPalette, paletteIndex);
+					const Color &color = backgroundPalette[paletteIndex];
 					return surface.mapRGBA(color.r, color.g, color.b, color.a);
 				};
 
-				const uint32_t highlightColor = getColorFromIndex(
-					(highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
-					ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex);
+				const int highlightColorIndex = (highlightType == ProvinceMapPanel::LocationHighlightType::Current) ?
+					ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
+				const uint32_t highlightColor = getColorFromIndex(highlightColorIndex);
 
-				// Convert each palette index to its equivalent 32-bit color, changing 
-				// background indices to highlight indices as they are found.
-				const uint8_t *srcPixels = iconCif.getPixels(this->provinceID);
+				// Convert each palette index to its equivalent 32-bit color, changing background indices
+				// to highlight indices as they are found.
+				DebugAssert(iconTextureBuilder.getType() == TextureBuilder::Type::Paletted);
+				const uint8_t *srcPixels = iconTextureBuilder.getPaletted().texels.get();
 				uint32_t *dstPixels = static_cast<uint32_t*>(surface.get()->pixels);
 				const int pixelCount = surface.getWidth() * surface.getHeight();
 				std::transform(srcPixels, srcPixels + pixelCount, dstPixels,
-					[&getColorFromIndex, highlightColor](uint8_t srcPixel)
+					[&getColorFromIndex, highlightColor](const uint8_t srcPixel)
 				{
 					return (srcPixel == ProvinceMapUiView::BackgroundPaletteIndex) ?
 						highlightColor : getColorFromIndex(srcPixel);
