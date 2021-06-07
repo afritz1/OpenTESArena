@@ -996,8 +996,7 @@ void CharacterCreationUiController::onPostCharacterCreationCinematicFinished(Gam
 	gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
 
 	// Initialize the game world panel.
-	auto gameWorldPanel = std::make_unique<GameWorldPanel>(game);
-	game.setPanel(std::move(gameWorldPanel));
+	game.setPanel<GameWorldPanel>(game);
 
 	// Choose random dungeon music.
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();

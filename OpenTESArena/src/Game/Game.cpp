@@ -307,11 +307,6 @@ const FPSCounter &Game::getFPSCounter() const
 	return this->fpsCounter;
 }
 
-void Game::setPanel(std::unique_ptr<Panel> nextPanel)
-{
-	this->nextPanel = std::move(nextPanel);
-}
-
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
 {
 	this->nextSubPanel = std::move(nextSubPanel);
