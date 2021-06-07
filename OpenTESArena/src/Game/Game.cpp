@@ -616,7 +616,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("handleEvents() exception! " + std::string(e.what()));
+			DebugCrash("handleEvents() exception: " + std::string(e.what()));
 		}
 
 		// Animate the current game state by delta time.
@@ -630,7 +630,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("tick() exception! " + std::string(e.what()));
+			DebugCrash("tick() exception: " + std::string(e.what()));
 		}
 
 		// Draw to the screen.
@@ -640,7 +640,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("render() exception! " + std::string(e.what()));
+			DebugCrash("render() exception: " + std::string(e.what()));
 		}
 	}
 

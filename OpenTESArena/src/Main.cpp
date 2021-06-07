@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	}
 	catch (const std::exception &e)
 	{
-		DebugCrash("Exception! " + std::string(e.what()));
+		DebugCrash("Exception: " + std::string(e.what()));
 	}
 
 	return EXIT_SUCCESS;
