@@ -22,5 +22,5 @@ void MainQuestSplashUiController::onExitButtonSelected(Game &game)
 	AudioManager &audioManager = game.getAudioManager();
 	audioManager.setMusic(musicDef);
 
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 }

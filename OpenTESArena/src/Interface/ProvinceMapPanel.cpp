@@ -254,8 +254,8 @@ void ProvinceMapPanel::handleFastTravel()
 {
 	// Switch to world map and push fast travel sub-panel on top of it.
 	auto &game = this->getGame();
-	game.pushSubPanel<FastTravelSubPanel>(game);
-	game.setPanel<WorldMapPanel>(game);
+	game.pushSubPanel<FastTravelSubPanel>();
+	game.setPanel<WorldMapPanel>();
 }
 
 void ProvinceMapPanel::drawCenteredIcon(const Texture &texture, const Int2 &point, Renderer &renderer)

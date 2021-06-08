@@ -14,7 +14,7 @@
 void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 {
 	game.setGameState(nullptr);
-	game.setPanel<MainMenuPanel>(game);
+	game.setPanel<MainMenuPanel>();
 
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
@@ -31,7 +31,7 @@ void PauseMenuUiController::onNewGameButtonSelected(Game &game)
 
 void PauseMenuUiController::onLoadButtonSelected(Game &game)
 {
-	game.setPanel<LoadSavePanel>(game, LoadSavePanel::Type::Load);
+	game.setPanel<LoadSavePanel>(LoadSavePanel::Type::Load);
 }
 
 void PauseMenuUiController::onSaveButtonSelected(Game &game)
@@ -53,12 +53,12 @@ void PauseMenuUiController::onExitButtonSelected(Game &game)
 
 void PauseMenuUiController::onResumeButtonSelected(Game &game)
 {
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 }
 
 void PauseMenuUiController::onOptionsButtonSelected(Game &game)
 {
-	game.setPanel<OptionsPanel>(game);
+	game.setPanel<OptionsPanel>();
 }
 
 void PauseMenuUiController::onSoundUpButtonSelected(Game &game, PauseMenuPanel &panel)

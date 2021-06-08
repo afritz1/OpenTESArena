@@ -24,7 +24,7 @@
 void CharacterCreationUiController::onBackToMainMenuButtonSelected(Game &game)
 {
 	game.setCharacterCreationState(nullptr);
-	game.setPanel<MainMenuPanel>(game);
+	game.setPanel<MainMenuPanel>();
 
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
@@ -46,12 +46,12 @@ void CharacterCreationUiController::onGenerateClassButtonSelected(Game &game)
 
 void CharacterCreationUiController::onSelectClassButtonSelected(Game &game)
 {
-	game.setPanel<ChooseClassPanel>(game);
+	game.setPanel<ChooseClassPanel>();
 }
 
 void CharacterCreationUiController::onBackToChooseClassCreationButtonSelected(Game &game)
 {
-	game.setPanel<ChooseClassCreationPanel>(game);
+	game.setPanel<ChooseClassCreationPanel>();
 }
 
 void CharacterCreationUiController::onChooseClassListBoxUpButtonSelected(ListBox &listBox)
@@ -80,12 +80,12 @@ void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Gam
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setClassDefID(charClassDefID);
 
-	game.setPanel<ChooseNamePanel>(game);
+	game.setPanel<ChooseNamePanel>();
 }
 
 void CharacterCreationUiController::onBackToChooseNameButtonSelected(Game &game)
 {
-	game.setPanel<ChooseNamePanel>(game);
+	game.setPanel<ChooseNamePanel>();
 }
 
 void CharacterCreationUiController::onChooseGenderMaleButtonSelected(Game &game)
@@ -94,7 +94,7 @@ void CharacterCreationUiController::onChooseGenderMaleButtonSelected(Game &game)
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setGender(male);
 
-	game.setPanel<ChooseRacePanel>(game);
+	game.setPanel<ChooseRacePanel>();
 }
 
 void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &game)
@@ -103,7 +103,7 @@ void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &gam
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setGender(male);
 
-	game.setPanel<ChooseRacePanel>(game);
+	game.setPanel<ChooseRacePanel>();
 }
 
 void CharacterCreationUiController::onBackToChooseClassButtonSelected(Game &game)
@@ -113,7 +113,7 @@ void CharacterCreationUiController::onBackToChooseClassButtonSelected(Game &game
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setName(nullptr);
 
-	game.setPanel<ChooseClassPanel>(game);
+	game.setPanel<ChooseClassPanel>();
 }
 
 void CharacterCreationUiController::onChooseNameAcceptButtonSelected(Game &game, const std::string &acceptedName)
@@ -123,12 +123,12 @@ void CharacterCreationUiController::onChooseNameAcceptButtonSelected(Game &game,
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setName(acceptedName.c_str());
 
-	game.setPanel<ChooseGenderPanel>(game);
+	game.setPanel<ChooseGenderPanel>();
 }
 
 void CharacterCreationUiController::onBackToChooseGenderButtonSelected(Game &game)
 {
-	game.setPanel<ChooseGenderPanel>(game);
+	game.setPanel<ChooseGenderPanel>();
 }
 
 void CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected(Game &game)
@@ -268,7 +268,7 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 	auto toAttributes = [](Game &game)
 	{
 		game.popSubPanel();
-		game.setPanel<ChooseAttributesPanel>(game);
+		game.setPanel<ChooseAttributesPanel>();
 	};
 
 	auto toFourthSubPanel = [textColor, toAttributes](Game &game)
@@ -521,7 +521,7 @@ void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Gam
 
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)
 {
-	game.setPanel<ChooseRacePanel>(game);
+	game.setPanel<ChooseRacePanel>();
 }
 
 void CharacterCreationUiController::onChooseAttributesPopUpSelected(Game &game)
@@ -771,7 +771,6 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 
 	game.setCharacterCreationState(nullptr);
 	game.setPanel<TextCinematicPanel>(
-		game,
 		textCinematicDefIndex,
 		0.171,
 		CharacterCreationUiController::onPostCharacterCreationCinematicFinished);
@@ -996,7 +995,7 @@ void CharacterCreationUiController::onPostCharacterCreationCinematicFinished(Gam
 	gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
 
 	// Initialize the game world panel.
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 
 	// Choose random dungeon music.
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();

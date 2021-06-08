@@ -4,5 +4,5 @@
 
 void LogbookUiController::onBackButtonSelected(Game &game)
 {
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 }

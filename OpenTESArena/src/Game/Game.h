@@ -164,7 +164,7 @@ public:
 	template <class T, typename... Args>
 	void setPanel(Args&&... args)
 	{
-		this->nextPanel = std::make_unique<T>(std::forward<Args>(args)...);
+		this->nextPanel = std::make_unique<T>(*this, std::forward<Args>(args)...);
 	}
 
 	// Adds a new sub-panel after the current SDL event has been processed (to avoid
@@ -173,7 +173,7 @@ public:
 	template <class T, typename... Args>
 	void pushSubPanel(Args&&... args)
 	{
-		this->nextSubPanel = std::make_unique<T>(std::forward<Args>(args)...);
+		this->nextSubPanel = std::make_unique<T>(*this, std::forward<Args>(args)...);
 	}
 
 	// Non-templated substitute for pushSubPanel(), for when the sub-panel takes considerable

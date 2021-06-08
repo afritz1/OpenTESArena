@@ -43,10 +43,10 @@ void LoadSaveUiController::onBackButtonSelected(Game &game)
 {
 	if (game.gameStateIsActive())
 	{
-		game.setPanel<PauseMenuPanel>(game);
+		game.setPanel<PauseMenuPanel>();
 	}
 	else
 	{
-		game.setPanel<MainMenuPanel>(game);
+		game.setPanel<MainMenuPanel>();
 	}
 }

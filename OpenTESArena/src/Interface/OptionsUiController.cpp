@@ -5,7 +5,7 @@
 
 void OptionsUiController::onBackToPauseMenuButtonSelected(Game &game)
 {
-	game.setPanel<PauseMenuPanel>(game);
+	game.setPanel<PauseMenuPanel>();
 }
 
 void OptionsUiController::onTabButtonSelected(OptionsPanel &panel, OptionsUiModel::Tab *currentTab,

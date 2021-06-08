@@ -20,7 +20,7 @@
 
 void GameWorldUiController::onCharacterSheetButtonSelected(Game &game)
 {
-	game.setPanel<CharacterPanel>(game);
+	game.setPanel<CharacterPanel>();
 }
 
 void GameWorldUiController::onWeaponButtonSelected(Player &player)
@@ -66,7 +66,6 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 	const Int2 textureCenter = center;
 
 	game.pushSubPanel<TextSubPanel>(
-		game,
 		center,
 		richText,
 		GameWorldUiController::onStatusPopUpSelected,
@@ -86,7 +85,7 @@ void GameWorldUiController::onMagicButtonSelected()
 
 void GameWorldUiController::onLogbookButtonSelected(Game &game)
 {
-	game.setPanel<LogbookPanel>(game);
+	game.setPanel<LogbookPanel>();
 }
 
 void GameWorldUiController::onUseItemButtonSelected()
@@ -111,7 +110,7 @@ void GameWorldUiController::onScrollDownButtonSelected(GameWorldPanel &panel)
 
 void GameWorldUiController::onPauseButtonSelected(Game &game)
 {
-	game.setPanel<PauseMenuPanel>(game);
+	game.setPanel<PauseMenuPanel>();
 }
 
 void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
@@ -139,11 +138,11 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 			return (isCity || isMainQuestDungeon) ? locationName : std::string();
 		}();
 
-		game.setPanel<AutomapPanel>(game, player.getPosition(), player.getGroundDirection(),
+		game.setPanel<AutomapPanel>(player.getPosition(), player.getGroundDirection(),
 			levelInst.getChunkManager(), automapLocationName);
 	}
 	else
 	{
-		game.setPanel<WorldMapPanel>(game);
+		game.setPanel<WorldMapPanel>();
 	}
 }

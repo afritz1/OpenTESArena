@@ -19,7 +19,7 @@
 
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 {
-	game.setPanel<LoadSavePanel>(game, LoadSavePanel::Type::Load);
+	game.setPanel<LoadSavePanel>(LoadSavePanel::Type::Load);
 }
 
 void MainMenuUiController::onNewGameButtonSelected(Game &game)
@@ -28,7 +28,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	auto changeToCharCreation = [](Game &game)
 	{
 		game.setCharacterCreationState(std::make_unique<CharacterCreationState>());
-		game.setPanel<ChooseClassCreationPanel>(game);
+		game.setPanel<ChooseClassCreationPanel>();
 
 		const MusicLibrary &musicLibrary = game.getMusicLibrary();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
@@ -67,7 +67,6 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 		};
 
 		game.setPanel<ImageSequencePanel>(
-			game,
 			paletteNames,
 			textureNames,
 			imageDurations,
@@ -75,7 +74,6 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	};
 
 	game.setPanel<CinematicPanel>(
-		game,
 		ArenaTextureSequenceName::OpeningScroll,
 		ArenaTextureSequenceName::OpeningScroll,
 		1.0 / 24.0,
@@ -586,7 +584,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	game.setGameState(std::move(gameState));
 
 	// Initialize game world panel.
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 
 	AudioManager &audioManager = game.getAudioManager();
 	audioManager.setMusic(musicDef, jingleMusicDef);

@@ -7,17 +7,17 @@
 
 void CharacterSheetUiController::onDoneButtonSelected(Game &game)
 {
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 }
 
 void CharacterSheetUiController::onNextPageButtonSelected(Game &game)
 {
-	game.setPanel<CharacterEquipmentPanel>(game);
+	game.setPanel<CharacterEquipmentPanel>();
 }
 
 void CharacterSheetUiController::onBackToStatsButtonSelected(Game &game)
 {
-	game.setPanel<CharacterPanel>(game);
+	game.setPanel<CharacterPanel>();
 }
 
 void CharacterSheetUiController::onSpellbookButtonSelected(Game &game)

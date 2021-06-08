@@ -10,7 +10,7 @@
 void ProvinceMapUiController::onSearchButtonSelected(Game &game, ProvinceMapPanel &panel, int provinceID)
 {
 	// Push text entry sub-panel for location searching.
-	game.pushSubPanel<ProvinceSearchSubPanel>(game, panel, provinceID);
+	game.pushSubPanel<ProvinceSearchSubPanel>(panel, provinceID);
 }
 
 void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPanel &panel)
@@ -47,7 +47,7 @@ void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPane
 
 void ProvinceMapUiController::onBackToWorldMapButtonSelected(Game &game)
 {
-	game.setPanel<WorldMapPanel>(game);
+	game.setPanel<WorldMapPanel>();
 }
 
 void ProvinceMapUiController::onTextPopUpSelected(Game &game)

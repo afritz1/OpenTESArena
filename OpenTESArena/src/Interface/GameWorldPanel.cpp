@@ -1770,7 +1770,7 @@ void GameWorldPanel::handleLevelTransition(const CoordInt3 &playerCoord, const C
 				player.teleport(playerDestinationCoord);
 				player.setVelocityToZero();
 
-				game.setPanel<WorldMapPanel>(game);
+				game.setPanel<WorldMapPanel>();
 			};
 
 			// See if it's a level up or level down transition. Ignore other transition types.

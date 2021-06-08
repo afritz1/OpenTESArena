@@ -15,12 +15,12 @@ void WorldMapUiController::onBackToGameButtonSelected(Game &game)
 	auto &gameState = game.getGameState();
 	gameState.setTravelData(nullptr);
 
-	game.setPanel<GameWorldPanel>(game);
+	game.setPanel<GameWorldPanel>();
 }
 
 void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID)
 {
-	game.setPanel<ProvinceMapPanel>(game, provinceID);
+	game.setPanel<ProvinceMapPanel>(provinceID);
 }
 
 void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetProvinceID,
@@ -170,7 +170,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 		AudioManager &audioManager = game.getAudioManager();
 		audioManager.setMusic(musicDef, jingleMusicDef);
 
-		game.setPanel<GameWorldPanel>(game);
+		game.setPanel<GameWorldPanel>();
 
 		// Push a text sub-panel for the city arrival pop-up.
 		std::unique_ptr<Panel> arrivalPopUp = WorldMapUiModel::makeCityArrivalPopUp(
@@ -218,7 +218,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 		AudioManager &audioManager = game.getAudioManager();
 		audioManager.setMusic(musicDef);
 
-		game.setPanel<GameWorldPanel>(game);
+		game.setPanel<GameWorldPanel>();
 	}
 	else if (travelLocationDef.getType() == LocationDefinition::Type::MainQuestDungeon)
 	{
@@ -245,7 +245,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 		if (mainQuestDungeonDef.type == LocationDefinition::MainQuestDungeonDefinition::Type::Staff)
 		{
 			// Go to staff dungeon splash image first.
-			game.setPanel<MainQuestSplashPanel>(game, targetProvinceID);
+			game.setPanel<MainQuestSplashPanel>(targetProvinceID);
 		}
 		else
 		{
@@ -267,7 +267,7 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 			AudioManager &audioManager = game.getAudioManager();
 			audioManager.setMusic(musicDef);
 
-			game.setPanel<GameWorldPanel>(game);
+			game.setPanel<GameWorldPanel>();
 		}
 	}
 	else
