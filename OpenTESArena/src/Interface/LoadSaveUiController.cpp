@@ -33,10 +33,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		richText.getDimensions().x + 10, richText.getDimensions().y + 10,
 		game.getTextureManager(), game.getRenderer());
 
-	auto notImplPopUp = std::make_unique<TextSubPanel>(
-		game, center, richText, popUpFunction, std::move(texture), center);
-
-	game.pushSubPanel(std::move(notImplPopUp));
+	game.pushSubPanel<TextSubPanel>(center, richText, popUpFunction, std::move(texture), center);
 }
 
 void LoadSaveUiController::onBackButtonSelected(Game &game)
