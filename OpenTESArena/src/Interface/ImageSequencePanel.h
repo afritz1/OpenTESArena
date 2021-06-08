@@ -23,10 +23,11 @@ private:
 	double currentSeconds;
 	int imageIndex;
 public:
-	ImageSequencePanel(Game &game, const std::vector<std::string> &paletteNames,
-		const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
-		const std::function<void(Game&)> &endingAction);
+	ImageSequencePanel(Game &game);
 	virtual ~ImageSequencePanel() = default;
+
+	bool init(const std::vector<std::string> &paletteNames, const std::vector<std::string> &textureNames,
+		const std::vector<double> &imageDurations, const std::function<void(Game&)> &endingAction);
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

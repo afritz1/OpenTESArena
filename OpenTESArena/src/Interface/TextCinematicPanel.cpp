@@ -23,10 +23,13 @@
 
 #include "components/debug/Debug.h"
 
-TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex, double secondsPerImage,
+TextCinematicPanel::TextCinematicPanel(Game &game)
+	: Panel(game) { }
+
+bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	const std::function<void(Game&)> &endingAction)
-	: Panel(game)
 {
+	auto &game = this->getGame();
 	const auto &cinematicLibrary = game.getCinematicLibrary();
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
 
@@ -94,6 +97,8 @@ TextCinematicPanel::TextCinematicPanel(Game &game, int textCinematicDefIndex, do
 	this->textCinematicDefIndex = textCinematicDefIndex;
 	this->animImageIndex = 0;
 	this->textIndex = 0;
+
+	return true;
 }
 
 void TextCinematicPanel::handleEvent(const SDL_Event &e)

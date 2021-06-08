@@ -20,8 +20,10 @@ private:
 	Button<Game&> backButton;
 	LoadSavePanel::Type type;
 public:
-	LoadSavePanel(Game &game, LoadSavePanel::Type type);
+	LoadSavePanel(Game &game);
 	virtual ~LoadSavePanel() = default;
+
+	bool init(LoadSavePanel::Type type);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

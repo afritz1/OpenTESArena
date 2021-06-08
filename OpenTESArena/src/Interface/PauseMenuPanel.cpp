@@ -11,8 +11,12 @@
 #include "../Media/PortraitFile.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool PauseMenuPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->playerNameTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -154,6 +158,8 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 		this->optionsButton.getHeight(),
 		game.getTextureManager(),
 		game.getRenderer());
+
+	return true;
 }
 
 void PauseMenuPanel::updateMusicText(double volume)

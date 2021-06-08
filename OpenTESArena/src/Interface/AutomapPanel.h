@@ -46,9 +46,11 @@ private:
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
-	AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
-		const ChunkManager &chunkManager, const std::string &locationName);
+	AutomapPanel(Game &game);
 	virtual ~AutomapPanel() = default;
+
+	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
+		const ChunkManager &chunkManager, const std::string &locationName);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

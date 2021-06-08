@@ -65,13 +65,15 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 		game.getTextureManager(),
 		game.getRenderer());
 
-	return std::make_unique<TextSubPanel>(
-		game,
-		ProvinceMapUiView::TextPopUpCenterPoint,
-		richText,
-		ProvinceMapUiController::onTextPopUpSelected,
-		std::move(texture),
-		ProvinceMapUiView::TextPopUpTextureCenterPoint);
+	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
+	if (!subPanel->init(ProvinceMapUiView::TextPopUpCenterPoint, richText,
+		ProvinceMapUiController::onTextPopUpSelected, std::move(texture),
+		ProvinceMapUiView::TextPopUpTextureCenterPoint))
+	{
+		DebugCrash("Couldn't init sub-panel.");
+	}
+
+	return subPanel;
 }
 
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,

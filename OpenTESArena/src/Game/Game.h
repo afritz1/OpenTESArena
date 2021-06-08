@@ -164,7 +164,13 @@ public:
 	template <class T, typename... Args>
 	void setPanel(Args&&... args)
 	{
-		this->nextPanel = std::make_unique<T>(*this, std::forward<Args>(args)...);
+		std::unique_ptr<T> derivedPanel = std::make_unique<T>(*this);
+		if (!derivedPanel->init(std::forward<Args>(args)...))
+		{
+			DebugCrash("Couldn't init new panel.");
+		}
+
+		this->nextPanel = std::move(derivedPanel);
 	}
 
 	// Adds a new sub-panel after the current SDL event has been processed (to avoid
@@ -173,7 +179,13 @@ public:
 	template <class T, typename... Args>
 	void pushSubPanel(Args&&... args)
 	{
-		this->nextSubPanel = std::make_unique<T>(*this, std::forward<Args>(args)...);
+		std::unique_ptr<T> derivedSubPanel = std::make_unique<T>(*this);
+		if (!derivedSubPanel->init(std::forward<Args>(args)...))
+		{
+			DebugCrash("Couldn't init new sub-panel.");
+		}
+
+		this->nextSubPanel = std::move(derivedSubPanel);
 	}
 
 	// Non-templated substitute for pushSubPanel(), for when the sub-panel takes considerable

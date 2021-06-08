@@ -6,13 +6,18 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
-ImagePanel::ImagePanel(Game &game, const std::string &paletteName, const std::string &textureName,
+ImagePanel::ImagePanel(Game &game)
+	: Panel(game) { }
+
+bool ImagePanel::init(const std::string &paletteName, const std::string &textureName,
 	double secondsToDisplay, const std::function<void(Game&)> &endingAction)
-	: Panel(game), paletteName(paletteName), textureName(textureName)
 {
 	this->skipButton = Button<Game&>(endingAction);
+	this->paletteName = paletteName;
+	this->textureName = textureName;
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;
+	return true;
 }
 
 void ImagePanel::handleEvent(const SDL_Event &e)

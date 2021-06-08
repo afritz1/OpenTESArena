@@ -8,16 +8,22 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/TextBox.h"
 
-MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
-	std::vector<MessageBoxSubPanel::Element> &&elements,
-	const std::function<void(Game&)> &cancelFunction)
-	: Panel(game), title(std::move(title)), elements(std::move(elements)),
-	cancelFunction(cancelFunction) { }
+MessageBoxSubPanel::MessageBoxSubPanel(Game &game)
+	: Panel(game) { }
 
-MessageBoxSubPanel::MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
-	std::vector<MessageBoxSubPanel::Element> &&elements)
-	: Panel(game), title(std::move(title)), elements(std::move(elements)),
-	cancelFunction([](Game&) {}) { }
+bool MessageBoxSubPanel::init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements,
+	const std::function<void(Game&)> &cancelFunction)
+{
+	this->title = std::move(title);
+	this->elements = std::move(elements);
+	this->cancelFunction = cancelFunction;
+	return true;
+}
+
+bool MessageBoxSubPanel::init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements)
+{
+	return this->init(std::move(title), std::move(elements), [](Game&) { });
+}
 
 std::optional<Panel::CursorData> MessageBoxSubPanel::getCurrentCursor() const
 {

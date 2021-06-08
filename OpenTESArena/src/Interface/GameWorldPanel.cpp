@@ -69,8 +69,11 @@
 #include "components/utilities/String.h"
 
 GameWorldPanel::GameWorldPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool GameWorldPanel::init()
 {
+	auto &game = this->getGame();
 	DebugAssert(game.gameStateIsActive());
 
 	this->playerNameTextBox = [&game]()
@@ -171,6 +174,8 @@ GameWorldPanel::GameWorldPanel(Game &game)
 	{
 		GameWorldUiModel::setFreeLookActive(game, true);
 	}
+
+	return true;
 }
 
 GameWorldPanel::~GameWorldPanel()

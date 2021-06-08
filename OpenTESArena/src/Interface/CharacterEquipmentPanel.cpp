@@ -11,8 +11,12 @@
 #include "components/debug/Debug.h"
 
 CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool CharacterEquipmentPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->playerNameTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -116,6 +120,8 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 		CharacterSheetUiView::ScrollUpButtonWidth,
 		CharacterSheetUiView::ScrollUpButtonHeight,
 		CharacterSheetUiController::onInventoryScrollUpButtonSelected);
+
+	return true;
 }
 
 std::optional<Panel::CursorData> CharacterEquipmentPanel::getCurrentCursor() const

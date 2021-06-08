@@ -7,11 +7,6 @@
 #include "../UI/Button.h"
 #include "../UI/Texture.h"
 
-// This panel is for the "How do you wish to select your class?" screen.
-
-// I added new tooltips for each option. I always found it confusing what 
-// the buttons meant exactly.
-
 class Renderer;
 class TextBox;
 
@@ -26,6 +21,8 @@ private:
 public:
 	ChooseClassCreationPanel(Game &game);
 	virtual ~ChooseClassCreationPanel() = default;
+
+	bool init();
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

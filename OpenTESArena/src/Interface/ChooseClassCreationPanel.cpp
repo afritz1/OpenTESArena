@@ -26,8 +26,12 @@
 #include "components/utilities/String.h"
 
 ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseClassCreationPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->parchment = TextureUtils::generate(
 		CharacterCreationUiView::ChooseClassCreationPopUpPatternType,
 		CharacterCreationUiView::ChooseClassCreationPopUpTextureWidth,
@@ -88,7 +92,6 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 	}();
 
 	this->backToMainMenuButton = Button<Game&>(CharacterCreationUiController::onBackToMainMenuButtonSelected);
-
 	this->generateButton = Button<Game&>(
 		CharacterCreationUiView::GenerateClassButtonCenterPoint,
 		CharacterCreationUiView::GenerateClassButtonWidth,
@@ -99,6 +102,8 @@ ChooseClassCreationPanel::ChooseClassCreationPanel(Game &game)
 		CharacterCreationUiView::SelectClassButtonWidth,
 		CharacterCreationUiView::SelectClassButtonHeight,
 		CharacterCreationUiController::onSelectClassButtonSelected);
+
+	return true;
 }
 
 std::optional<Panel::CursorData> ChooseClassCreationPanel::getCurrentCursor() const

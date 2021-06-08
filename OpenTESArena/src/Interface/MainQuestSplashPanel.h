@@ -15,8 +15,10 @@ private:
 	Button<Game&> exitButton;
 	TextureAssetReference splashTextureAssetRef;
 public:
-	MainQuestSplashPanel(Game &game, int provinceID);
+	MainQuestSplashPanel(Game &game);
 	virtual ~MainQuestSplashPanel() = default;
+
+	bool init(int provinceID);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

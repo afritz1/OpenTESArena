@@ -22,6 +22,8 @@ public:
 	PauseMenuPanel(Game &game);
 	virtual ~PauseMenuPanel() = default;
 
+	bool init();
+
 	void updateMusicText(double volume);
 	void updateSoundText(double volume);
 

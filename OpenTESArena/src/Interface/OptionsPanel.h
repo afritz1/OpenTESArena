@@ -53,6 +53,8 @@ public:
 	OptionsPanel(Game &game);
 	virtual ~OptionsPanel() = default;
 
+	bool init();
+
 	// Regenerates all option text boxes in the current tab (public for UiController function).
 	void updateVisibleOptionTextBoxes();
 

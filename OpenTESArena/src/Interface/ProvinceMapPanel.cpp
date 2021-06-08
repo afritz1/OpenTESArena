@@ -16,8 +16,10 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
-	: Panel(game)
+ProvinceMapPanel::ProvinceMapPanel(Game &game)
+	: Panel(game) { }
+
+bool ProvinceMapPanel::init(int provinceID)
 {
 	this->searchButton = []()
 	{
@@ -56,12 +58,14 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 
 	// Get the palette for the background image.
+	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const TextureAssetReference provinceBgTextureAssetRef = ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID);
 	const std::optional<PaletteID> optBackgroundPaletteID = textureManager.tryGetPaletteID(provinceBgTextureAssetRef);
 	if (!optBackgroundPaletteID.has_value())
 	{
-		DebugCrash("Couldn't get province map background palette \"" + provinceBgTextureAssetRef.filename + "\".");
+		DebugLogError("Couldn't get province map background palette \"" + provinceBgTextureAssetRef.filename + "\".");
+		return false;
 	}
 
 	this->backgroundPaletteID = *optBackgroundPaletteID;
@@ -71,10 +75,13 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	const std::optional<TextureBuilderIdGroup> iconIdGroup = textureManager.tryGetTextureBuilderIDs(iconsFilename.c_str());
 	if (!iconIdGroup.has_value())
 	{
-		DebugCrash("Couldn't get staff dungeon icon texture builder IDs for \"" + iconsFilename + "\".");
+		DebugLogError("Couldn't get staff dungeon icon texture builder IDs for \"" + iconsFilename + "\".");
+		return false;
 	}
 
 	this->staffDungeonIconTextureBuilderIDs = *iconIdGroup;
+
+	return true;
 }
 
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)

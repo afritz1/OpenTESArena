@@ -32,8 +32,12 @@
 #include "components/utilities/String.h"
 
 ChooseNamePanel::ChooseNamePanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseNamePanel::init()
 {
+	auto &game = this->getGame();
+
 	this->parchment = TextureUtils::generate(
 		CharacterCreationUiView::ChooseNameTexturePatternType,
 		CharacterCreationUiView::ChooseNameTextureWidth,
@@ -82,6 +86,8 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 
 	// Activate SDL text input (handled in handleEvent()).
 	SDL_StartTextInput();
+
+	return true;
 }
 
 std::optional<Panel::CursorData> ChooseNamePanel::getCurrentCursor() const

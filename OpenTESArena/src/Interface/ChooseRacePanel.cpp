@@ -8,8 +8,12 @@
 #include "../Game/Game.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseRacePanel::init()
 {
+	auto &game = this->getGame();
+
 	this->backToGenderButton = Button<Game&>(CharacterCreationUiController::onBackToChooseGenderButtonSelected);
 	this->selectProvinceButton = Button<Game&, int>(CharacterCreationUiController::onChooseRaceProvinceButtonSelected);
 
@@ -18,6 +22,8 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 	// setting the std::function to empty at that time?
 	std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
 	game.pushSubPanel(std::move(textSubPanel));
+
+	return true;
 }
 
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
@@ -37,13 +43,15 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		game.getTextureManager(),
 		game.getRenderer());
 
-	return std::make_unique<TextSubPanel>(
-		game,
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextCenterPoint,
-		richText,
-		CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected,
-		std::move(texture),
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextureCenterPoint);
+	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
+	if (!subPanel->init(CharacterCreationUiView::ChooseRaceInitialPopUpTextCenterPoint, richText,
+		CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected, std::move(texture),
+		CharacterCreationUiView::ChooseRaceInitialPopUpTextureCenterPoint))
+	{
+		DebugCrash("Couldn't init sub-panel.");
+	}
+
+	return subPanel;
 }
 
 std::optional<Panel::CursorData> ChooseRacePanel::getCurrentCursor() const

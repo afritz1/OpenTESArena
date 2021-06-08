@@ -30,8 +30,12 @@
 #include "components/utilities/String.h"
 
 OptionsPanel::OptionsPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool OptionsPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->titleTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -145,6 +149,8 @@ OptionsPanel::OptionsPanel(Game &game)
 
 	// Initialize all option text boxes for the initial tab.
 	this->updateVisibleOptionTextBoxes();
+
+	return true;
 }
 
 std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOptions()

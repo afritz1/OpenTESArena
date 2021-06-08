@@ -16,6 +16,8 @@ public:
 	LogbookPanel(Game &game);
 	virtual ~LogbookPanel() = default;
 
+	bool init();
+
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;

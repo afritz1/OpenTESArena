@@ -56,8 +56,10 @@ private:
 	// Draws a tooltip for one of the interface buttons (search, travel, back to world map).
 	void drawButtonTooltip(const std::string &text, Renderer &renderer);
 public:
-	ProvinceMapPanel(Game &game, int provinceID);
+	ProvinceMapPanel(Game &game);
 	virtual ~ProvinceMapPanel() = default;
+
+	bool init(int provinceID);
 
 	// Tries to set the given location ID as the selected one. If the player is already at
 	// that location, then an error pop-up is displayed instead. This is a public method

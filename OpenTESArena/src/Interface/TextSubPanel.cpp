@@ -12,19 +12,28 @@
 #include "../UI/RichTextString.h"
 #include "../UI/TextBox.h"
 
-TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
-	const RichTextString &richText, const std::function<void(Game&)> &endingAction,
-	Texture &&texture, const Int2 &textureCenter)
-	: Panel(game), endingAction(endingAction), texture(std::move(texture)),
-	textureCenter(textureCenter)
+TextSubPanel::TextSubPanel(Game &game)
+	: Panel(game) { }
+
+bool TextSubPanel::init(const Int2 &textCenter, const RichTextString &richText,
+	const std::function<void(Game&)> &endingAction, Texture &&texture, const Int2 &textureCenter)
 {
-	this->textBox = std::make_unique<TextBox>(textCenter, richText,
-		game.getFontLibrary(), game.getRenderer());
+	auto &game = this->getGame();
+	this->textBox = std::make_unique<TextBox>(
+		textCenter, richText, game.getFontLibrary(), game.getRenderer());
+	
+	this->endingAction = endingAction;
+	this->texture = std::move(texture);
+	this->textureCenter = textureCenter;
+
+	return true;
 }
 
-TextSubPanel::TextSubPanel(Game &game, const Int2 &textCenter,
-	const RichTextString &richText, const std::function<void(Game&)> &endingAction)
-	: TextSubPanel(game, textCenter, richText, endingAction, std::move(Texture()), Int2()) { }
+bool TextSubPanel::init(const Int2 &textCenter, const RichTextString &richText,
+	const std::function<void(Game&)> &endingAction)
+{
+	return this->init(textCenter, richText, endingAction, Texture(), Int2());
+}
 
 std::optional<Panel::CursorData> TextSubPanel::getCurrentCursor() const
 {

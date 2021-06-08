@@ -31,16 +31,18 @@ private:
 	void renderTextEntry(Renderer &renderer);
 	void renderList(Renderer &renderer);
 public:
-	ProvinceSearchSubPanel(Game &game, ProvinceMapPanel &provinceMapPanel, int provinceID);
-	virtual ~ProvinceSearchSubPanel() = default;
-
 	// Public for UI controller.
 	// - @todo: probably don't leave these as public forever
-	ProvinceMapPanel &provinceMapPanel;
+	ProvinceMapPanel *provinceMapPanel;
 	std::vector<int> locationsListIndices;
 	std::string locationName;
 	ProvinceMapUiModel::SearchMode mode;
 	int provinceID;
+
+	ProvinceSearchSubPanel(Game &game);
+	virtual ~ProvinceSearchSubPanel() = default;
+
+	bool init(ProvinceMapPanel &provinceMapPanel, int provinceID);
 
 	// Initializes the locations list box based on the locations list IDs.
 	// - Public for UI controller

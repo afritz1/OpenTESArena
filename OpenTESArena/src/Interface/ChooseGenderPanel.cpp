@@ -24,8 +24,12 @@
 #include "../UI/TextBox.h"
 
 ChooseGenderPanel::ChooseGenderPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseGenderPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->parchment = TextureUtils::generate(
 		CharacterCreationUiView::ChooseGenderTexturePatternType,
 		CharacterCreationUiView::ChooseGenderTextureWidth,
@@ -95,6 +99,8 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 		CharacterCreationUiView::ChooseGenderFemaleButtonWidth,
 		CharacterCreationUiView::ChooseGenderFemaleButtonHeight,
 		CharacterCreationUiController::onChooseGenderFemaleButtonSelected);
+
+	return true;
 }
 
 std::optional<Panel::CursorData> ChooseGenderPanel::getCurrentCursor() const

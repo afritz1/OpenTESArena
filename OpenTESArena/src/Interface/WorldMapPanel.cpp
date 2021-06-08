@@ -9,7 +9,9 @@
 #include "components/debug/Debug.h"
 
 WorldMapPanel::WorldMapPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool WorldMapPanel::init()
 {
 	this->backToGameButton = Button<Game&>(
 		WorldMapUiView::BackToGameButtonCenterPoint,
@@ -19,12 +21,14 @@ WorldMapPanel::WorldMapPanel(Game &game)
 	this->provinceButton = Button<Game&, int>(WorldMapUiController::onProvinceButtonSelected);
 
 	// Load province name offsets.
+	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const std::string provinceNameOffsetFilename = WorldMapUiModel::getProvinceNameOffsetFilename();
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(provinceNameOffsetFilename.c_str());
 	if (!metadataID.has_value())
 	{
-		DebugCrash("Couldn't get texture file metadata for \"" + provinceNameOffsetFilename + "\".");
+		DebugLogError("Couldn't get texture file metadata for \"" + provinceNameOffsetFilename + "\".");
+		return false;
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
@@ -33,6 +37,8 @@ WorldMapPanel::WorldMapPanel(Game &game)
 	{
 		this->provinceNameOffsets.set(i, textureFileMetadata.getOffset(i));
 	}
+
+	return true;
 }
 
 std::optional<Panel::CursorData> WorldMapPanel::getCurrentCursor() const

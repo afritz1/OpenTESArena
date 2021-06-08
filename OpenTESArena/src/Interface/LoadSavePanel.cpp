@@ -6,9 +6,13 @@
 #include "LoadSaveUiView.h"
 #include "../Game/Game.h"
 
-LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
-	: Panel(game)
+LoadSavePanel::LoadSavePanel(Game &game)
+	: Panel(game) { }
+
+bool LoadSavePanel::init(LoadSavePanel::Type type)
 {
+	auto &game = this->getGame();
+
 	// Populate save slots.
 	const std::vector<LoadSaveUiModel::Entry> entries = LoadSaveUiModel::getSaveEntries(game);
 	for (int i = 0; i < static_cast<int>(entries.size()); i++)
@@ -34,6 +38,8 @@ LoadSavePanel::LoadSavePanel(Game &game, LoadSavePanel::Type type)
 	this->confirmButton = Button<Game&, int>(LoadSaveUiController::onEntryButtonSelected);
 	this->backButton = Button<Game&>(LoadSaveUiController::onBackButtonSelected);
 	this->type = type;
+
+	return true;
 }
 
 std::optional<Panel::CursorData> LoadSavePanel::getCurrentCursor() const

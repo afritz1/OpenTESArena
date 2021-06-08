@@ -7,12 +7,15 @@
 #include "../Game/Game.h"
 
 FastTravelSubPanel::FastTravelSubPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool FastTravelSubPanel::init()
 {
 	this->currentSeconds = 0.0;
 	this->totalSeconds = 0.0;
 
 	// Determine how long the animation should run until switching to the game world.
+	auto &game = this->getGame();
 	const auto &gameState = game.getGameState();
 	const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
 	DebugAssert(travelDataPtr != nullptr);
@@ -21,6 +24,8 @@ FastTravelSubPanel::FastTravelSubPanel(Game &game)
 		static_cast<double>(travelData.travelDays) * WorldMapUiView::FastTravelAnimationSecondsPerFrame);
 
 	this->frameIndex = 0;
+
+	return true;
 }
 
 std::optional<Panel::CursorData> FastTravelSubPanel::getCurrentCursor() const

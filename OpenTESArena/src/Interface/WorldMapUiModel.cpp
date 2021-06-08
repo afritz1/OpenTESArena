@@ -279,11 +279,13 @@ std::unique_ptr<Panel> WorldMapUiModel::makeCityArrivalPopUp(Game &game, int tar
 		game.getTextureManager(),
 		game.getRenderer());
 
-	return std::make_unique<TextSubPanel>(
-		game,
-		WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game),
-		richText,
-		WorldMapUiController::onFastTravelCityArrivalPopUpSelected,
-		std::move(texture),
-		WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(game));
+	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
+	if (!subPanel->init(WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game), richText,
+		WorldMapUiController::onFastTravelCityArrivalPopUpSelected, std::move(texture),
+		WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(game)))
+	{
+		DebugCrash("Couldn't init sub-panel.");
+	}
+
+	return subPanel;
 }

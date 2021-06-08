@@ -37,9 +37,10 @@ private:
 	double secondsPerImage, currentImageSeconds;
 	int animImageIndex, textIndex, textCinematicDefIndex;
 public:
-	TextCinematicPanel(Game &game, int textCinematicDefIndex, double secondsPerImage,
-		const std::function<void(Game&)> &endingAction);
+	TextCinematicPanel(Game &game);
 	virtual ~TextCinematicPanel() = default;
+
+	bool init(int textCinematicDefIndex, double secondsPerImage, const std::function<void(Game&)> &endingAction);
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

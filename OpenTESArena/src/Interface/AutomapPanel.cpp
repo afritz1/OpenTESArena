@@ -35,10 +35,14 @@
 
 #include "components/debug/Debug.h"
 
-AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
+AutomapPanel::AutomapPanel(Game &game)
+	: Panel(game) { }
+
+bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 	const ChunkManager &chunkManager, const std::string &locationName)
-	: Panel(game)
 {
+	auto &game = this->getGame();
+
 	this->locationTextBox = [&game, &locationName]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -53,17 +57,18 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const Vo
 			AutomapUiView::LocationTextBoxShadowOffset);
 
 		return std::make_unique<TextBox>(
-			AutomapUiView::LocationTextBoxCenterPoint, richText, &shadowData, fontLibrary, game.getRenderer());
+			AutomapUiView::LocationTextBoxCenterPoint,
+			richText,
+			&shadowData,
+			fontLibrary,
+			game.getRenderer());
 	}();
 
-	this->backToGameButton = []()
-	{
-		return Button<Game&>(
-			AutomapUiView::BackToGameButtonCenterPoint,
-			AutomapUiView::BackToGameButtonWidth,
-			AutomapUiView::BackToGameButtonHeight,
-			AutomapUiController::onBackToGameButtonSelected);
-	}();
+	this->backToGameButton = Button<Game&>(
+		AutomapUiView::BackToGameButtonCenterPoint,
+		AutomapUiView::BackToGameButtonWidth,
+		AutomapUiView::BackToGameButtonHeight,
+		AutomapUiController::onBackToGameButtonSelected);
 
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
 	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
@@ -87,7 +92,8 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const Vo
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundPaletteTextureAssetRef);
 	if (!backgroundPaletteID.has_value())
 	{
-		DebugCrash("Couldn't get palette ID for \"" + backgroundPaletteTextureAssetRef.filename + "\".");
+		DebugLogError("Couldn't get palette ID for \"" + backgroundPaletteTextureAssetRef.filename + "\".");
+		return false;
 	}
 
 	this->backgroundPaletteID = *backgroundPaletteID;
@@ -96,11 +102,13 @@ AutomapPanel::AutomapPanel(Game &game, const CoordDouble3 &playerCoord, const Vo
 	const std::optional<TextureBuilderID> backgroundTextureBuilderID = textureManager.tryGetTextureBuilderID(backgroundTextureAssetRef);
 	if (!backgroundTextureBuilderID.has_value())
 	{
-		DebugCrash("Couldn't get texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
+		DebugLogError("Couldn't get texture builder ID for \"" + backgroundTextureAssetRef.filename + "\".");
+		return false;
 	}
 
 	this->backgroundTextureBuilderID = *backgroundTextureBuilderID;
 	this->automapOffset = AutomapUiModel::makeAutomapOffset(playerCoordXZ.voxel);
+	return true;
 }
 
 std::optional<Panel::CursorData> AutomapPanel::getCurrentCursor() const

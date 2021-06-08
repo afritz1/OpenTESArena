@@ -22,6 +22,8 @@ public:
 	ChooseRacePanel(Game &game);
 	virtual ~ChooseRacePanel() = default;
 
+	bool init();
+
 	// Gets the initial parchment pop-up (public for the UI controller function).
 	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 

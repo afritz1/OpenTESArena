@@ -20,9 +20,11 @@ private:
 	std::string textureName;
 	double secondsToDisplay, currentSeconds;
 public:
-	ImagePanel(Game &game, const std::string &paletteName, const std::string &textureName, double secondsToDisplay, 
-		const std::function<void(Game&)> &endingAction);
+	ImagePanel(Game &game);
 	virtual ~ImagePanel() = default;
+
+	bool init(const std::string &paletteName, const std::string &textureName, double secondsToDisplay,
+		const std::function<void(Game&)> &endingAction);
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

@@ -250,11 +250,7 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 	messageBoxElements.push_back(std::move(messageBoxYes));
 	messageBoxElements.push_back(std::move(messageBoxNo));
 
-	auto messageBox = std::make_unique<MessageBoxSubPanel>(
-		game, std::move(messageBoxTitle), std::move(messageBoxElements),
-		cancelFunction);
-
-	game.pushSubPanel(std::move(messageBox));
+	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Game &game, int raceID)
@@ -305,11 +301,7 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-		auto fourthSubPanel = std::make_unique<TextSubPanel>(
-			game, center, richText, toAttributes, std::move(texture),
-			textureCenter);
-
-		game.pushSubPanel(std::move(fourthSubPanel));
+		game.pushSubPanel<TextSubPanel>(center, richText, toAttributes, std::move(texture), textureCenter);
 	};
 
 	auto toThirdSubPanel = [textColor, toFourthSubPanel](Game &game)
@@ -364,11 +356,7 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-		auto thirdSubPanel = std::make_unique<TextSubPanel>(
-			game, center, richText, toFourthSubPanel, std::move(texture),
-			textureCenter);
-
-		game.pushSubPanel(std::move(thirdSubPanel));
+		game.pushSubPanel<TextSubPanel>(center, richText, toFourthSubPanel, std::move(texture), textureCenter);
 	};
 
 	auto toSecondSubPanel = [textColor, toThirdSubPanel](Game &game)
@@ -425,11 +413,7 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-		auto secondSubPanel = std::make_unique<TextSubPanel>(
-			game, center, richText, toThirdSubPanel, std::move(texture),
-			textureCenter);
-
-		game.pushSubPanel(std::move(secondSubPanel));
+		game.pushSubPanel<TextSubPanel>(center, richText, toThirdSubPanel, std::move(texture), textureCenter);
 	};
 
 	std::unique_ptr<Panel> firstSubPanel = [&game, &textColor, toSecondSubPanel]()
@@ -503,8 +487,13 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-		return std::make_unique<TextSubPanel>(game, center, richText,
-			toSecondSubPanel, std::move(texture), textureCenter);
+		std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
+		if (!subPanel->init(center, richText, toSecondSubPanel, std::move(texture), textureCenter))
+		{
+			DebugCrash("Couldn't init sub-panel.");
+		}
+
+		return subPanel;
 	}();
 
 	game.pushSubPanel(std::move(firstSubPanel));
@@ -636,13 +625,10 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	messageBoxElements.emplace_back(std::move(messageBoxSave));
 	messageBoxElements.emplace_back(std::move(messageBoxReroll));
 
-	auto messageBox = std::make_unique<MessageBoxSubPanel>(
-		game,
+	game.pushSubPanel<MessageBoxSubPanel>(
 		std::move(messageBoxTitle),
 		std::move(messageBoxElements),
 		cancelFunction);
-
-	game.pushSubPanel(std::move(messageBox));
 }
 
 void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &game)
@@ -817,14 +803,12 @@ void CharacterCreationUiController::onSaveAttributesButtonSelected(Game &game, b
 
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
-	auto appearanceSubPanel = std::make_unique<TextSubPanel>(
-		game,
+	game.pushSubPanel<TextSubPanel>(
 		CharacterCreationUiView::AppearanceMessageBoxCenterPoint,
 		richText,
 		CharacterCreationUiController::onAppearanceMessageBoxSelected,
 		std::move(texture),
 		CharacterCreationUiView::AppearanceMessageBoxCenterPoint);
-	game.pushSubPanel(std::move(appearanceSubPanel));
 
 	*attributesAreSaved = true;
 }

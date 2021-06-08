@@ -6,13 +6,19 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
-CinematicPanel::CinematicPanel(Game &game, const std::string &paletteName, const std::string &sequenceName,
+CinematicPanel::CinematicPanel(Game &game)
+	: Panel(game) { }
+
+bool CinematicPanel::init(const std::string &paletteName, const std::string &sequenceName,
 	double secondsPerImage, const std::function<void(Game&)> &endingAction)
-	: Panel(game), skipButton(endingAction), paletteTextureAssetRef(std::string(paletteName)), sequenceFilename(sequenceName)
 {
+	this->skipButton = Button(endingAction);
+	this->paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
+	this->sequenceFilename = sequenceName;
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
+	return true;
 }
 
 TextureAssetReference CinematicPanel::getCurrentSequenceTextureAssetRef()

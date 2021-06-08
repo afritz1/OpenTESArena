@@ -10,8 +10,12 @@
 #include "components/debug/Debug.h"
 
 CharacterPanel::CharacterPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool CharacterPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->playerNameTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -66,24 +70,19 @@ CharacterPanel::CharacterPanel(Game &game)
 			game.getRenderer());
 	}();
 
-	this->doneButton = []()
-	{
-		return Button<Game&>(
-			CharacterSheetUiView::DoneButtonCenterPoint,
-			CharacterSheetUiView::DoneButtonWidth,
-			CharacterSheetUiView::DoneButtonHeight,
-			CharacterSheetUiController::onDoneButtonSelected);
-	}();
+	this->doneButton = Button<Game&>(
+		CharacterSheetUiView::DoneButtonCenterPoint,
+		CharacterSheetUiView::DoneButtonWidth,
+		CharacterSheetUiView::DoneButtonHeight,
+		CharacterSheetUiController::onDoneButtonSelected);
+	this->nextPageButton = Button<Game&>(
+		CharacterSheetUiView::NextPageButtonX,
+		CharacterSheetUiView::NextPageButtonY,
+		CharacterSheetUiView::NextPageButtonWidth,
+		CharacterSheetUiView::NextPageButtonHeight,
+		CharacterSheetUiController::onNextPageButtonSelected);
 
-	this->nextPageButton = []()
-	{
-		return Button<Game&>(
-			CharacterSheetUiView::NextPageButtonX,
-			CharacterSheetUiView::NextPageButtonY,
-			CharacterSheetUiView::NextPageButtonWidth,
-			CharacterSheetUiView::NextPageButtonHeight,
-			CharacterSheetUiController::onNextPageButtonSelected);
-	}();
+	return true;
 }
 
 std::optional<Panel::CursorData> CharacterPanel::getCurrentCursor() const

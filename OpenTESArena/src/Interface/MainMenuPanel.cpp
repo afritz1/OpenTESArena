@@ -10,7 +10,9 @@
 #include "components/utilities/String.h"
 
 MainMenuPanel::MainMenuPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool MainMenuPanel::init()
 {
 	this->loadButton = Button<Game&>(
 		MainMenuUiView::LoadButtonCenterPoint,
@@ -83,8 +85,13 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	this->testIndex2 = 1;
 	this->testWeather = 0;
 
-	// The game state should not be active on the main menu.
-	DebugAssert(!game.gameStateIsActive());
+	if (this->getGame().gameStateIsActive())
+	{
+		DebugLogError("The game state should not be active on the main menu.");
+		return false;
+	}
+
+	return true;
 }
 
 std::string MainMenuPanel::getSelectedTestName() const

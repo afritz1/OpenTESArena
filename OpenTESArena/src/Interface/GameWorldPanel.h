@@ -75,9 +75,10 @@ private:
 	// Draws the compass for some given player direction in the XZ plane.
 	void drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer);
 public:
-	// Constructs the game world panel. The GameState object in Game must be initialized.
 	GameWorldPanel(Game &game);
 	virtual ~GameWorldPanel();
+
+	bool init();
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

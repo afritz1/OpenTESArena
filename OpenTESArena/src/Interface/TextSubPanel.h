@@ -21,12 +21,13 @@ private:
 	Texture texture;
 	Int2 textureCenter;
 public:
-	TextSubPanel(Game &game, const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game&)> &endingAction, Texture &&texture,
-		const Int2 &textureCenter);
-	TextSubPanel(Game &game, const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game&)> &endingAction);
+	TextSubPanel(Game &game);
 	virtual ~TextSubPanel() = default;
+
+	bool init(const Int2 &textCenter, const RichTextString &richText,
+		const std::function<void(Game&)> &endingAction, Texture &&texture, const Int2 &textureCenter);
+	bool init(const Int2 &textCenter, const RichTextString &richText,
+		const std::function<void(Game&)> &endingAction);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

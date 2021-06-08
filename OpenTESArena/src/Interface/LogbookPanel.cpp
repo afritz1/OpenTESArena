@@ -23,8 +23,12 @@
 #include "../UI/Texture.h"
 
 LogbookPanel::LogbookPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool LogbookPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->titleTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -47,6 +51,8 @@ LogbookPanel::LogbookPanel(Game &game)
 		LogbookUiView::BackButtonWidth,
 		LogbookUiView::BackButtonHeight,
 		LogbookUiController::onBackButtonSelected);
+
+	return true;
 }
 
 std::optional<Panel::CursorData> LogbookPanel::getCurrentCursor() const

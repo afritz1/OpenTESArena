@@ -6,9 +6,13 @@
 
 #include "components/utilities/String.h"
 
-MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
-	: Panel(game)
+MainQuestSplashPanel::MainQuestSplashPanel(Game &game)
+	: Panel(game) { }
+
+bool MainQuestSplashPanel::init(int provinceID)
 {
+	auto &game = this->getGame();
+
 	this->textBox = [&game, provinceID]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -36,8 +40,9 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game, int provinceID)
 		MainQuestSplashUiController::onExitButtonSelected);
 
 	// Get the texture filename of the staff dungeon splash image.
-	this->splashTextureAssetRef = TextureAssetReference(
-		MainQuestSplashUiModel::getSplashFilename(game, provinceID));
+	this->splashTextureAssetRef = TextureAssetReference(MainQuestSplashUiModel::getSplashFilename(game, provinceID));
+
+	return true;
 }
 
 std::optional<Panel::CursorData> MainQuestSplashPanel::getCurrentCursor() const

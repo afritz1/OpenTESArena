@@ -14,8 +14,12 @@
 #include "../UI/RichTextString.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseAttributesPanel::init()
 {
+	auto &game = this->getGame();
+
 	this->nameTextBox = [&game]()
 	{
 		const auto &fontLibrary = game.getFontLibrary();
@@ -70,28 +74,17 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 			game.getRenderer());
 	}();
 
-	this->backToRaceButton = []()
-	{
-		return Button<Game&>(CharacterCreationUiController::onBackToRaceSelectionButtonSelected);
-	}();
-
-	this->doneButton = []()
-	{
-		return Button<Game&, bool*>(
-			CharacterSheetUiView::DoneButtonCenterPoint,
-			CharacterSheetUiView::DoneButtonWidth,
-			CharacterSheetUiView::DoneButtonHeight,
-			CharacterCreationUiController::onAttributesDoneButtonSelected);
-	}();
-
-	this->portraitButton = []()
-	{
-		return Button<Game&, bool>(
-			CharacterCreationUiView::AppearancePortraitButtonCenterPoint,
-			CharacterCreationUiView::AppearancePortraitButtonWidth,
-			CharacterCreationUiView::AppearancePortraitButtonHeight,
-			CharacterCreationUiController::onAppearancePortraitButtonSelected);
-	}();
+	this->backToRaceButton = Button<Game&>(CharacterCreationUiController::onBackToRaceSelectionButtonSelected);
+	this->doneButton = Button<Game&, bool*>(
+		CharacterSheetUiView::DoneButtonCenterPoint,
+		CharacterSheetUiView::DoneButtonWidth,
+		CharacterSheetUiView::DoneButtonHeight,
+		CharacterCreationUiController::onAttributesDoneButtonSelected);
+	this->portraitButton = Button<Game&, bool>(
+		CharacterCreationUiView::AppearancePortraitButtonCenterPoint,
+		CharacterCreationUiView::AppearancePortraitButtonWidth,
+		CharacterCreationUiView::AppearancePortraitButtonHeight,
+		CharacterCreationUiController::onAppearancePortraitButtonSelected);
 
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setPortraitIndex(0);
@@ -99,33 +92,29 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	this->attributesAreSaved = false;
 
 	// Push the initial text pop-up onto the sub-panel stack.
-	std::unique_ptr<Panel> textSubPanel = [&game]()
-	{
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseAttributesText(game),
-			CharacterCreationUiView::ChooseAttributesTextFontName,
-			CharacterCreationUiView::ChooseAttributesTextColor,
-			CharacterCreationUiView::ChooseAttributesTextAlignment,
-			CharacterCreationUiView::ChooseAttributesTextLineSpacing,
-			game.getFontLibrary());
+	const RichTextString initialRichText(
+		CharacterCreationUiModel::getChooseAttributesText(game),
+		CharacterCreationUiView::ChooseAttributesTextFontName,
+		CharacterCreationUiView::ChooseAttributesTextColor,
+		CharacterCreationUiView::ChooseAttributesTextAlignment,
+		CharacterCreationUiView::ChooseAttributesTextLineSpacing,
+		game.getFontLibrary());
 
-		Texture texture = TextureUtils::generate(
-			CharacterCreationUiView::ChooseAttributesTextPatternType,
-			CharacterCreationUiView::getChooseAttributesTextureWidth(),
-			CharacterCreationUiView::getChooseAttributesTextureHeight(),
-			game.getTextureManager(),
-			game.getRenderer());
+	Texture initialTexture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseAttributesTextPatternType,
+		CharacterCreationUiView::getChooseAttributesTextureWidth(),
+		CharacterCreationUiView::getChooseAttributesTextureHeight(),
+		game.getTextureManager(),
+		game.getRenderer());
 
-		return std::make_unique<TextSubPanel>(
-			game,
-			CharacterCreationUiView::ChooseAttributesTextCenterPoint,
-			richText,
-			CharacterCreationUiController::onChooseAttributesPopUpSelected,
-			std::move(texture),
-			CharacterCreationUiView::ChooseAttributesTextureCenterPoint);
-	}();
+	game.pushSubPanel<TextSubPanel>(
+		CharacterCreationUiView::ChooseAttributesTextCenterPoint,
+		initialRichText,
+		CharacterCreationUiController::onChooseAttributesPopUpSelected,
+		std::move(initialTexture),
+		CharacterCreationUiView::ChooseAttributesTextureCenterPoint);
 
-	game.pushSubPanel(std::move(textSubPanel));
+	return true;
 }
 
 std::optional<Panel::CursorData> ChooseAttributesPanel::getCurrentCursor() const

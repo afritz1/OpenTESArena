@@ -34,12 +34,11 @@ private:
 	std::vector<MessageBoxSubPanel::Element> elements;
 	std::function<void(Game&)> cancelFunction; // Called when cancelling the message box.
 public:
-	MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
-		std::vector<MessageBoxSubPanel::Element> &&elements);
-	MessageBoxSubPanel(Game &game, MessageBoxSubPanel::Title &&title,
-		std::vector<MessageBoxSubPanel::Element> &&elements,
-		const std::function<void(Game&)> &cancelFunction);
+	MessageBoxSubPanel(Game &game);
 	virtual ~MessageBoxSubPanel() = default;
+
+	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements, const std::function<void(Game&)> &cancelFunction);
+	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements);
 
 	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

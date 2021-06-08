@@ -10,17 +10,34 @@
 
 #include "components/debug/Debug.h"
 
-ImageSequencePanel::ImageSequencePanel(Game &game, const std::vector<std::string> &paletteNames,
+ImageSequencePanel::ImageSequencePanel(Game &game)
+	: Panel(game) { }
+
+bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
 	const std::function<void(Game&)> &endingAction)
-	: Panel(game), paletteNames(paletteNames), textureNames(textureNames), imageDurations(imageDurations)
 {
-	DebugAssert(paletteNames.size() == textureNames.size());
-	DebugAssert(paletteNames.size() == imageDurations.size());
+	if (paletteNames.size() != textureNames.size())
+	{
+		DebugLogError("Palette names size (" + std::to_string(paletteNames.size()) +
+			") doesn't match texture names size (" + std::to_string(textureNames.size()) + ").");
+		return false;
+	}
+
+	if (paletteNames.size() != imageDurations.size())
+	{
+		DebugLogError("Palette names size (" + std::to_string(paletteNames.size()) +
+			") doesn't match image durations size (" + std::to_string(imageDurations.size()) + ").");
+		return false;
+	}
 
 	this->skipButton = Button<Game&>(endingAction);
+	this->paletteNames = paletteNames;
+	this->textureNames = textureNames;
+	this->imageDurations = imageDurations;
 	this->currentSeconds = 0.0;
 	this->imageIndex = 0;
+	return true;
 }
 
 void ImageSequencePanel::handleEvent(const SDL_Event &e)

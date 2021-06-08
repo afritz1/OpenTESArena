@@ -33,8 +33,12 @@
 #include "components/debug/Debug.h"
 
 ChooseClassPanel::ChooseClassPanel(Game &game)
-	: Panel(game)
+	: Panel(game) { }
+
+bool ChooseClassPanel::init()
 {
+	auto &game = this->getGame();
+
 	// Read in character classes.
 	const auto &charClassLibrary = game.getCharacterClassLibrary();
 	this->charClasses = std::vector<CharacterClassDefinition>(charClassLibrary.getDefinitionCount());
@@ -122,6 +126,8 @@ ChooseClassPanel::ChooseClassPanel(Game &game)
 	// Leave the tooltip textures empty for now. Let them be created on demand. Generating them all at once here
 	// is too slow in debug mode.
 	DebugAssert(this->tooltipTextures.size() == 0);
+
+	return true;
 }
 
 std::optional<Panel::CursorData> ChooseClassPanel::getCurrentCursor() const

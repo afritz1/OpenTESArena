@@ -70,7 +70,7 @@ void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSub
 	{
 		// The location name is an exact match. Try to select the location in the province
 		// map panel based on whether the player is already there.
-		panel.provinceMapPanel.trySelectLocation(*exactLocationIndex);
+		panel.provinceMapPanel->trySelectLocation(*exactLocationIndex);
 
 		// Return to the province map panel.
 		game.popSubPanel();
@@ -87,7 +87,7 @@ void ProvinceMapUiController::onSearchListLocationSelected(Game &game, ProvinceS
 {
 	// Try to select the location in the province map panel based on whether the
 	// player is already there.
-	panel.provinceMapPanel.trySelectLocation(locationID);
+	panel.provinceMapPanel->trySelectLocation(locationID);
 
 	// Return to the province map panel.
 	game.popSubPanel();

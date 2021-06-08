@@ -22,9 +22,13 @@
 
 #include "components/utilities/String.h"
 
-ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game, ProvinceMapPanel &provinceMapPanel, int provinceID)
-	: Panel(game), provinceMapPanel(provinceMapPanel)
+ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game)
+	: Panel(game) { }
+
+bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provinceID)
 {
+	auto &game = this->getGame();
+
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
 	this->parchment = TextureUtils::generate(
@@ -84,11 +88,14 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game, ProvinceMapPanel &pro
 		ProvinceMapUiView::SearchSubPanelListDownButtonHeight,
 		ProvinceMapUiController::onSearchListDownButtonSelected);
 
+	this->provinceMapPanel = &provinceMapPanel;
 	this->mode = ProvinceMapUiModel::SearchMode::TextEntry;
 	this->provinceID = provinceID;
 
 	// Start with text input enabled (see handleTextEntryEvent()).
 	SDL_StartTextInput();
+
+	return true;
 }
 
 std::optional<Panel::CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
