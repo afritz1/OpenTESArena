@@ -6,6 +6,7 @@
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../Media/Palette.h"
+#include "../UI/AnimationState.h"
 #include "../UI/Button.h"
 
 class LocationDefinition;
@@ -26,7 +27,7 @@ private:
 	// @todo: store button for every location
 	TextureBuilderIdGroup staffDungeonIconTextureBuilderIDs; // For obtaining palette indices.
 	PaletteID backgroundPaletteID;
-	double blinkTimer;
+	AnimationState blinkState;
 	int provinceID;
 
 	// Gets the location ID of the location closest to the mouse in 320x200 space.

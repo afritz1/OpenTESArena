@@ -53,7 +53,7 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game, int provinceID)
 	}();
 
 	this->provinceID = provinceID;
-	this->blinkTimer = 0.0;
+	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 
 	// Get the palette for the background image.
 	auto &textureManager = game.getTextureManager();
@@ -117,7 +117,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 		// Set selected map location.
 		gameState.setTravelData(std::make_unique<ProvinceMapUiModel::TravelData>(selectedLocationID, this->provinceID, travelDays));
 
-		this->blinkTimer = 0.0;
+		this->blinkState.reset();
 
 		// Create pop-up travel dialog.
 		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, this->provinceID,
@@ -243,9 +243,11 @@ int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
 
 void ProvinceMapPanel::tick(double dt)
 {
-	// Update the blink timer. Depending on which interval it's in, this will make the currently-selected
-	// location (if any) have a red highlight.
-	this->blinkTimer += dt;
+	const auto &gameState = this->getGame().getGameState();
+	if (gameState.getTravelData() != nullptr)
+	{
+		this->blinkState.update(dt);
+	}
 }
 
 void ProvinceMapPanel::handleFastTravel()
@@ -614,12 +616,9 @@ void ProvinceMapPanel::render(Renderer &renderer)
 		const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
 		if (travelData.provinceID == this->provinceID)
 		{
-			const double blinkInterval = std::fmod(this->blinkTimer, ProvinceMapUiView::BlinkPeriodSeconds);
-			const double blinkPeriodPercent = blinkInterval / ProvinceMapUiView::BlinkPeriodSeconds;
-
-			// See if the blink period percent lies within the "on" percent. Use less-than
-			// to compare them so the on-state appears before the off-state.
-			if (blinkPeriodPercent < ProvinceMapUiView::BlinkPeriodPercentOn)
+			// See if the blink period percent lies within the "on" percent. Use less-than to compare them
+			// so the on-state appears before the off-state.
+			if (this->blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
 			{
 				const LocationDefinition &selectedLocationDef = provinceDef.getLocationDef(travelData.locationID);
 				const auto highlightType = ProvinceMapPanel::LocationHighlightType::Selected;
