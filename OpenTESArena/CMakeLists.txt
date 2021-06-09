@@ -34,6 +34,10 @@ FILE(GLOB TES_GAME
     ${SRC_ROOT}/src/Game/*.h* 
     ${SRC_ROOT}/src/Game/*.c*)
 
+FILE(GLOB TES_GAME_LOGIC
+    ${SRC_ROOT}/src/GameLogic/*.h* 
+    ${SRC_ROOT}/src/GameLogic/*.c*)
+
 FILE(GLOB TES_INPUT
     ${SRC_ROOT}/src/Input/*.h* 
     ${SRC_ROOT}/src/Input/*.c*)
@@ -81,6 +85,7 @@ SET(TES_SOURCES
     ${TES_AUDIO}
     ${TES_ENTITIES}
     ${TES_GAME}
+    ${TES_GAME_LOGIC}
     ${TES_INPUT}
     ${TES_INTERFACE}
     ${TES_ITEMS}
