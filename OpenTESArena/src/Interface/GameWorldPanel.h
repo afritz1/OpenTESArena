@@ -35,40 +35,6 @@ private:
 	Button<Game&, bool> mapButton;
 	std::array<Rect, 9> nativeCursorRegions;
 
-	// Modifies the values in the native cursor regions array so rectangles in
-	// the current window correctly represent regions for different arrow cursors.
-	void updateCursorRegions(int width, int height);
-
-	// Handles input for the player camera.
-	void handlePlayerTurning(double dt, const Int2 &mouseDelta);
-
-	// Handles input for player movement in the game world.
-	void handlePlayerMovement(double dt);
-
-	// Handles input for the player's attack. Takes the change in mouse position since
-	// the previous frame.
-	void handlePlayerAttack(const Int2 &mouseDelta);
-
-	// Handles the behavior of the player clicking in the game world. "primaryClick" is
-	// true for left clicks, false for right clicks.
-	void handleClickInWorld(const Int2 &nativePoint, bool primaryClick, bool debugFadeVoxel);
-
-	// Handles changing night-light-related things on and off.
-	void handleNightLightChange(bool active);
-
-	// Sends an "on voxel enter" message for the given voxel and triggers any text or
-	// sound events.
-	void handleTriggers(const CoordInt3 &coord);
-
-	// Handles the behavior for when the player activates a map transition block and transitions
-	// from one map to another (i.e., from an interior to an exterior). This does not handle
-	// level transitions.
-	void handleMapTransition(const Physics::Hit &hit, const TransitionDefinition &transitionDef);
-
-	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down),
-	// and changes the current level if it is.
-	void handleLevelTransition(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
-
 	// Draws a tooltip sitting on the top left of the game interface.
 	void drawTooltip(const std::string &text, Renderer &renderer);
 

@@ -6,7 +6,10 @@
 #include "../Math/MathUtils.h"
 #include "../World/Coord.h"
 
+#include "components/utilities/BufferView.h"
+
 class Game;
+class Rect;
 
 namespace GameWorldUiModel
 {
@@ -31,6 +34,10 @@ namespace GameWorldUiModel
 	VoxelDouble3 screenToWorldRayDirection(Game &game, const Int2 &windowPoint);
 
 	Radians getCompassAngle(const VoxelDouble2 &direction);
+
+	// Modifies the values in the native cursor regions array so rectangles in
+	// the current window correctly represent regions for different arrow cursors.
+	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
 }
 
 #endif

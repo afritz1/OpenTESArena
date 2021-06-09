@@ -1,4 +1,7 @@
+#include <cmath>
+
 #include "GameWorldUiModel.h"
+#include "GameWorldUiView.h"
 #include "../Entities/Player.h"
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
@@ -245,4 +248,16 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)
 {
 	return std::atan2(-direction.y, -direction.x);
+}
+
+void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height)
+{
+	// @todo: maybe the classic rects should be converted to vector space then scaled by the ratio of aspect ratios?
+	const double xScale = static_cast<double>(width) / static_cast<double>(ArenaRenderUtils::SCREEN_WIDTH);
+	const double yScale = static_cast<double>(height) / static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT);
+
+	for (int i = 0; i < nativeCursorRegions.getCount(); i++)
+	{
+		nativeCursorRegions.set(i, GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale));
+	}
 }
