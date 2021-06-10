@@ -148,9 +148,13 @@ std::string MainMenuPanel::getSelectedTestName() const
 	{
 		return MainMenuUiModel::WildernessLocations.at(this->testIndex);
 	}
-	else
+	else if (this->testType == MainMenuUiModel::TestType_Dungeon)
 	{
 		return MainMenuUiModel::DungeonLocations.at(this->testIndex);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::string, std::to_string(this->testType));
 	}
 }
 
@@ -173,14 +177,14 @@ std::optional<ArenaTypes::InteriorType> MainMenuPanel::getSelectedTestInteriorTy
 	}
 	else
 	{
-		DebugCrash("Unimplemented test type \"" + std::to_string(this->testType) + "\".");
-		return std::nullopt;
+		DebugUnhandledReturnMsg(std::optional<ArenaTypes::InteriorType>, std::to_string(this->testType));
 	}
 }
 
 ArenaTypes::WeatherType MainMenuPanel::getSelectedTestWeatherType() const
 {
-	return MainMenuUiModel::Weathers.at(this->testWeather);
+	DebugAssertIndex(MainMenuUiModel::Weathers, this->testWeather);
+	return MainMenuUiModel::Weathers[this->testWeather];
 }
 
 MapType MainMenuPanel::getSelectedTestMapType() const
@@ -195,9 +199,13 @@ MapType MainMenuPanel::getSelectedTestMapType() const
 	{
 		return MapType::City;
 	}
-	else
+	else if (this->testType == MainMenuUiModel::TestType_Wilderness)
 	{
 		return MapType::Wilderness;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(MapType, std::to_string(this->testType));
 	}
 }
 

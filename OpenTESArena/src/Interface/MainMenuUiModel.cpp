@@ -26,9 +26,13 @@ std::string MainMenuUiModel::getTestTypeName(int type)
 	{
 		return "Wilderness";
 	}
-	else
+	else if (type == TestType_Dungeon)
 	{
 		return "Dungeon";
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(std::string, std::to_string(type));
 	}
 }
 

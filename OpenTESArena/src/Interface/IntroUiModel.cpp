@@ -11,7 +11,14 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 	// If not showing the intro, then jump to the main menu.
 	if (!game.getOptions().getMisc_ShowIntro())
 	{
-		return std::make_unique<MainMenuPanel>(game);
+		std::unique_ptr<MainMenuPanel> panel = std::make_unique<MainMenuPanel>(game);
+		if (!panel->init())
+		{
+			DebugLogError("Couldn't init start-up MainMenuPanel.");
+			return nullptr;
+		}
+
+		return panel;
 	}
 
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
@@ -21,15 +28,25 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 		const TextureAssetReference paletteTextureAssetRef = IntroUiView::getIntroTitlePaletteTextureAssetReference();
 		const TextureAssetReference textureAssetRef = IntroUiView::getIntroTitleTextureAssetReference();
 		std::unique_ptr<ImagePanel> panel = std::make_unique<ImagePanel>(game);
-		panel->init(paletteTextureAssetRef.filename, textureAssetRef.filename, IntroUiView::IntroTitleSeconds,
-			IntroUiController::onIntroTitleFinished);
+		if (!panel->init(paletteTextureAssetRef.filename, textureAssetRef.filename, IntroUiView::IntroTitleSeconds,
+			IntroUiController::onIntroTitleFinished))
+		{
+			DebugLogError("Couldn't init start-up ImagePanel.");
+			return nullptr;
+		}
+
 		return panel;
 	}
 	else
 	{
 		std::unique_ptr<CinematicPanel> panel = std::make_unique<CinematicPanel>(game);
-		panel->init(IntroUiView::getIntroBookPaletteFilename(), IntroUiView::getIntroBookSequenceFilename(),
-			1.0 / IntroUiView::IntroBookFramesPerSecond, IntroUiController::onIntroBookFinished);
+		if (!panel->init(IntroUiView::getIntroBookPaletteFilename(), IntroUiView::getIntroBookSequenceFilename(),
+			1.0 / IntroUiView::IntroBookFramesPerSecond, IntroUiController::onIntroBookFinished))
+		{
+			DebugLogError("Couldn't init start-up CinematicPanel.");
+			return nullptr;
+		}
+
 		return panel;
 	}
 }
