@@ -14,6 +14,7 @@
 #include "../GameLogic/MapLogicController.h"
 #include "../GameLogic/PlayerLogicController.h"
 #include "../Media/PortraitFile.h"
+#include "../UI/CursorData.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -143,7 +144,7 @@ GameWorldPanel::~GameWorldPanel()
 	}
 }
 
-std::optional<Panel::CursorData> GameWorldPanel::getCurrentCursor() const
+std::optional<CursorData> GameWorldPanel::getCurrentCursor() const
 {
 	// The cursor texture depends on the current mouse position.
 	auto &game = this->getGame();

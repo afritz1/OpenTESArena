@@ -58,7 +58,7 @@ public:
 	// Regenerates all option text boxes in the current tab (public for UiController function).
 	void updateVisibleOptionTextBoxes();
 
-	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
+	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

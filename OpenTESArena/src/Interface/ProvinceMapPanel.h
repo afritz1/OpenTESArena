@@ -71,7 +71,7 @@ public:
 	// Public for UI controller.
 	void handleFastTravel();
 
-	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
+	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;

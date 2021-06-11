@@ -6,6 +6,7 @@
 #include "ChooseRacePanel.h"
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
 	: Panel(game) { }
@@ -54,7 +55,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 	return subPanel;
 }
 
-std::optional<Panel::CursorData> ChooseRacePanel::getCurrentCursor() const
+std::optional<CursorData> ChooseRacePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

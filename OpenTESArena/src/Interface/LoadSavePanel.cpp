@@ -5,6 +5,7 @@
 #include "LoadSaveUiModel.h"
 #include "LoadSaveUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 LoadSavePanel::LoadSavePanel(Game &game)
 	: Panel(game) { }
@@ -42,7 +43,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 	return true;
 }
 
-std::optional<Panel::CursorData> LoadSavePanel::getCurrentCursor() const
+std::optional<CursorData> LoadSavePanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

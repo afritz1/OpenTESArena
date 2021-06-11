@@ -27,7 +27,7 @@ public:
 	// Gets the initial parchment pop-up (public for the UI controller function).
 	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 
-	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
+	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 	virtual void renderSecondary(Renderer &renderer) override;

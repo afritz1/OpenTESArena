@@ -17,6 +17,7 @@
 // can be separate interface objects (no need for a "ScrollableButtonedTextBox").
 
 class Color;
+class CursorData;
 class FontLibrary;
 class Game;
 class Renderer;
@@ -31,20 +32,6 @@ union SDL_Event;
 
 class Panel
 {
-public:
-	class CursorData // @todo: rename to CursorDisplayState?
-	{
-	private:
-		TextureBuilderID textureBuilderID; // @todo: maybe should be a UI texture handle at some point.
-		PaletteID paletteID;
-		CursorAlignment alignment;
-	public:
-		CursorData(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment);
-
-		TextureBuilderID getTextureBuilderID() const;
-		PaletteID getPaletteID() const;
-		CursorAlignment getAlignment() const;
-	};
 private:
 	Game &game;
 protected:

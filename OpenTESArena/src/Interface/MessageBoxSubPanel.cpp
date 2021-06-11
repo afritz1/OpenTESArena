@@ -6,6 +6,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/TextBox.h"
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game)
@@ -25,7 +26,7 @@ bool MessageBoxSubPanel::init(MessageBoxSubPanel::Title &&title, std::vector<Mes
 	return this->init(std::move(title), std::move(elements), [](Game&) { });
 }
 
-std::optional<Panel::CursorData> MessageBoxSubPanel::getCurrentCursor() const
+std::optional<CursorData> MessageBoxSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();

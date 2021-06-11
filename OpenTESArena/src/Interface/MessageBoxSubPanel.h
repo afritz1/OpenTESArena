@@ -40,7 +40,7 @@ public:
 	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements, const std::function<void(Game&)> &cancelFunction);
 	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements);
 
-	virtual std::optional<Panel::CursorData> getCurrentCursor() const override;
+	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };

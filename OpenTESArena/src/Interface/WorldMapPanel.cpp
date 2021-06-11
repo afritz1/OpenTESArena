@@ -5,6 +5,7 @@
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
 
@@ -41,7 +42,7 @@ bool WorldMapPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> WorldMapPanel::getCurrentCursor() const
+std::optional<CursorData> WorldMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

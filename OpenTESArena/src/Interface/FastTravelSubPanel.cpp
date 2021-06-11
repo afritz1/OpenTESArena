@@ -5,6 +5,7 @@
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 FastTravelSubPanel::FastTravelSubPanel(Game &game)
 	: Panel(game) { }
@@ -28,7 +29,7 @@ bool FastTravelSubPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> FastTravelSubPanel::getCurrentCursor() const
+std::optional<CursorData> FastTravelSubPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

@@ -16,6 +16,7 @@
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 
@@ -526,7 +527,7 @@ void Game::render()
 	activePanel->renderSecondary(this->renderer);
 
 	// Get the active panel's cursor texture and alignment.
-	const std::optional<Panel::CursorData> cursor = activePanel->getCurrentCursor();
+	const std::optional<CursorData> cursor = activePanel->getCurrentCursor();
 
 	// Draw cursor if valid. Some panels do not define a cursor (like cinematics), so their cursor is empty.
 	if (cursor.has_value())

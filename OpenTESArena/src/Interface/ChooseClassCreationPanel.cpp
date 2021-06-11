@@ -16,6 +16,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
@@ -106,7 +107,7 @@ bool ChooseClassCreationPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> ChooseClassCreationPanel::getCurrentCursor() const
+std::optional<CursorData> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

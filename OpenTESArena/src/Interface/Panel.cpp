@@ -16,6 +16,7 @@
 #include "../Media/Color.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/RichTextString.h"
 #include "../UI/Surface.h"
@@ -24,32 +25,10 @@
 
 #include "components/vfs/manager.hpp"
 
-Panel::CursorData::CursorData(TextureBuilderID textureBuilderID, PaletteID paletteID, CursorAlignment alignment)
-{
-	this->textureBuilderID = textureBuilderID;
-	this->paletteID = paletteID;
-	this->alignment = alignment;
-}
-
-TextureBuilderID Panel::CursorData::getTextureBuilderID() const
-{
-	return this->textureBuilderID;
-}
-
-PaletteID Panel::CursorData::getPaletteID() const
-{
-	return this->paletteID;
-}
-
-CursorAlignment Panel::CursorData::getAlignment() const
-{
-	return this->alignment;
-}
-
 Panel::Panel(Game &game)
 	: game(game) { }
 
-std::optional<Panel::CursorData> Panel::getCurrentCursor() const
+std::optional<CursorData> Panel::getCurrentCursor() const
 {
 	// Empty by default.
 	return std::nullopt;
@@ -79,7 +58,7 @@ Game &Panel::getGame() const
 	return this->game;
 }
 
-Panel::CursorData Panel::getDefaultCursor() const
+CursorData Panel::getDefaultCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();

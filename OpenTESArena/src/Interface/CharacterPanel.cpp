@@ -5,6 +5,7 @@
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 #include "../UI/RichTextString.h"
 
 #include "components/debug/Debug.h"
@@ -85,7 +86,7 @@ bool CharacterPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> CharacterPanel::getCurrentCursor() const
+std::optional<CursorData> CharacterPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

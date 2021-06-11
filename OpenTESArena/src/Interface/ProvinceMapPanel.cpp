@@ -11,6 +11,7 @@
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -147,7 +148,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 	}
 }
 
-std::optional<Panel::CursorData> ProvinceMapPanel::getCurrentCursor() const
+std::optional<CursorData> ProvinceMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

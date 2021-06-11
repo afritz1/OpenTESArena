@@ -11,6 +11,7 @@
 #include "ChooseAttributesPanel.h"
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 #include "../UI/RichTextString.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
@@ -117,7 +118,7 @@ bool ChooseAttributesPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> ChooseAttributesPanel::getCurrentCursor() const
+std::optional<CursorData> ChooseAttributesPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

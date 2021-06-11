@@ -15,6 +15,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
@@ -98,7 +99,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	return true;
 }
 
-std::optional<Panel::CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
+std::optional<CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
 {
 	if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
 	{

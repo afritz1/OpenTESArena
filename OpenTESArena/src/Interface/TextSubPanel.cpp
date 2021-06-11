@@ -8,6 +8,7 @@
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/RichTextString.h"
 #include "../UI/TextBox.h"
@@ -35,7 +36,7 @@ bool TextSubPanel::init(const Int2 &textCenter, const RichTextString &richText,
 	return this->init(textCenter, richText, endingAction, Texture(), Int2());
 }
 
-std::optional<Panel::CursorData> TextSubPanel::getCurrentCursor() const
+std::optional<CursorData> TextSubPanel::getCurrentCursor() const
 {
 	auto &game = this->getGame();
 	auto &renderer = game.getRenderer();

@@ -7,6 +7,7 @@
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
 
@@ -124,7 +125,7 @@ bool CharacterEquipmentPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> CharacterEquipmentPanel::getCurrentCursor() const
+std::optional<CursorData> CharacterEquipmentPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

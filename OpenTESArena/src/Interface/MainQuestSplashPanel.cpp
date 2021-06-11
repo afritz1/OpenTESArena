@@ -3,6 +3,7 @@
 #include "MainQuestSplashUiModel.h"
 #include "MainQuestSplashUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 
 #include "components/utilities/String.h"
 
@@ -45,7 +46,7 @@ bool MainQuestSplashPanel::init(int provinceID)
 	return true;
 }
 
-std::optional<Panel::CursorData> MainQuestSplashPanel::getCurrentCursor() const
+std::optional<CursorData> MainQuestSplashPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

@@ -3,6 +3,7 @@
 #include "MainMenuUiModel.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
+#include "../UI/CursorData.h"
 #include "../World/MapType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -209,7 +210,7 @@ MapType MainMenuPanel::getSelectedTestMapType() const
 	}
 }
 
-std::optional<Panel::CursorData> MainMenuPanel::getCurrentCursor() const
+std::optional<CursorData> MainMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

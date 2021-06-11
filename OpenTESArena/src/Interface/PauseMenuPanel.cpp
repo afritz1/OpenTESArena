@@ -9,6 +9,7 @@
 #include "PauseMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
+#include "../UI/CursorData.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
 	: Panel(game) { }
@@ -212,7 +213,7 @@ void PauseMenuPanel::updateSoundText(double volume)
 	}();
 }
 
-std::optional<Panel::CursorData> PauseMenuPanel::getCurrentCursor() const
+std::optional<CursorData> PauseMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

@@ -15,6 +15,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
@@ -55,7 +56,7 @@ bool LogbookPanel::init()
 	return true;
 }
 
-std::optional<Panel::CursorData> LogbookPanel::getCurrentCursor() const
+std::optional<CursorData> LogbookPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }

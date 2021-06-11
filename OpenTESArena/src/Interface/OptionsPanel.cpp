@@ -19,6 +19,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
@@ -334,7 +335,7 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 		descriptionTextBox->getX(), descriptionTextBox->getY());
 }
 
-std::optional<Panel::CursorData> OptionsPanel::getCurrentCursor() const
+std::optional<CursorData> OptionsPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
 }
