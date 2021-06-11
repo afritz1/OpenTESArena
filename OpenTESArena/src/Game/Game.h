@@ -88,6 +88,9 @@ private:
 	// Animates the game state by delta time.
 	void tick(double dt);
 
+	// Updates audio state and attempts to update the 3D audio listener (if any).
+	void updateAudio(double dt);
+
 	// Runs the current panel's render method for drawing to the screen.
 	void render();
 public:

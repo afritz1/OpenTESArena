@@ -493,6 +493,22 @@ void Game::tick(double dt)
 	this->handlePanelChanges();
 }
 
+void Game::updateAudio(double dt)
+{
+	if (this->gameStateIsActive())
+	{
+		const Player &player = this->getGameState().getPlayer();
+		const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
+		const NewDouble3 &direction = player.getDirection();
+		const AudioManager::ListenerData listenerData(absolutePosition, direction);
+		this->audioManager.update(dt, &listenerData);
+	}
+	else
+	{
+		this->audioManager.update(dt, nullptr);
+	}
+}
+
 void Game::render()
 {
 	// Draw the panel's main content.
@@ -589,22 +605,7 @@ void Game::loop()
 		this->inputManager.update();
 
 		// Update the audio manager listener (if any) and check for finished sounds.
-		if (this->gameStateIsActive())
-		{
-			const AudioManager::ListenerData listenerData = [this]()
-			{
-				const Player &player = this->getGameState().getPlayer();
-				const NewDouble3 absolutePosition = VoxelUtils::coordToNewPoint(player.getPosition());
-				const NewDouble3 &direction = player.getDirection();
-				return AudioManager::ListenerData(absolutePosition, direction);
-			}();
-
-			this->audioManager.update(dt, &listenerData);
-		}
-		else
-		{
-			this->audioManager.update(dt, nullptr);
-		}
+		this->updateAudio(dt);
 
 		// Update FPS counter.
 		this->fpsCounter.updateFrameTime(dt);
