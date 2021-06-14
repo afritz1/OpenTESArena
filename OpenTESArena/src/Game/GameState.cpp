@@ -22,6 +22,7 @@
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../World/ArenaVoxelUtils.h"
 #include "../World/ArenaWeatherUtils.h"
 #include "../World/MapType.h"
@@ -962,7 +963,7 @@ void GameState::setTriggerText(const std::string &text, FontLibrary &fontLibrary
 		lineSpacing,
 		fontLibrary);
 
-	const TextBox::ShadowData shadowData(TriggerTextShadowColor, Int2(-1, 0));
+	const TextRenderUtils::TextShadowInfo shadowData(-1, 0, TriggerTextShadowColor);
 
 	// Create the text box for display (set position to zero; the renderer will
 	// decide where to draw it).
@@ -987,7 +988,7 @@ void GameState::setActionText(const std::string &text, FontLibrary &fontLibrary,
 		TextAlignment::Center,
 		fontLibrary);
 
-	const TextBox::ShadowData shadowData(ActionTextShadowColor, Int2(-1, 0));
+	const TextRenderUtils::TextShadowInfo shadowData(-1, 0, ActionTextShadowColor);
 
 	// Create the text box for display (set position to zero; the renderer will decide
 	// where to draw it).

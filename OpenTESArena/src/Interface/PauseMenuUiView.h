@@ -24,7 +24,8 @@ namespace PauseMenuUiView
 	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::Center;
 	constexpr TextureUtils::PatternType OptionsButtonPatternType = TextureUtils::PatternType::Custom1;
 	const Color OptionsButtonTextShadowColor(101, 77, 24);
-	const Int2 OptionsButtonTextShadowOffset(-1, 1);
+	constexpr int OptionsButtonTextShadowOffsetX = -1;
+	constexpr int OptionsButtonTextShadowOffsetY = 1;
 
 	constexpr int NewGameButtonX = 0;
 	constexpr int NewGameButtonY = 118;

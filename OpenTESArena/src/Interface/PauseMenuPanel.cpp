@@ -10,6 +10,7 @@
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
+#include "../UI/TextRenderUtils.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
 	: Panel(game) { }
@@ -80,9 +81,10 @@ bool PauseMenuPanel::init()
 			PauseMenuUiView::OptionsButtonTextAlignment,
 			fontLibrary);
 
-		const TextBox::ShadowData shadowData(
-			PauseMenuUiView::OptionsButtonTextShadowColor,
-			PauseMenuUiView::OptionsButtonTextShadowOffset);
+		const TextRenderUtils::TextShadowInfo shadowData(
+			PauseMenuUiView::OptionsButtonTextShadowOffsetX,
+			PauseMenuUiView::OptionsButtonTextShadowOffsetY,
+			PauseMenuUiView::OptionsButtonTextShadowColor);
 		return std::make_unique<TextBox>(
 			PauseMenuUiView::OptionsTextBoxCenterPoint,
 			richText,

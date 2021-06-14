@@ -12,6 +12,7 @@
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
+#include "../UI/TextRenderUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -540,9 +541,10 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 		fontLibrary);
 
 	const Int2 center = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, locationID);
-	const TextBox::ShadowData shadowData(
-		ProvinceMapUiView::LocationTextShadowColor,
-		ProvinceMapUiView::LocationTextShadowOffset);
+	const TextRenderUtils::TextShadowInfo shadowData(
+		ProvinceMapUiView::LocationTextShadowOffsetX,
+		ProvinceMapUiView::LocationTextShadowOffsetY,
+		ProvinceMapUiView::LocationTextShadowColor);
 	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, fontLibrary, renderer);
 	const Surface &textBoxSurface = textBox.getSurface();
 

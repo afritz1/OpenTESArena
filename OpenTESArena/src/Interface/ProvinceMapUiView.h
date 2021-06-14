@@ -28,7 +28,8 @@ namespace ProvinceMapUiView
 	const Color LocationTextColor(158, 0, 0);
 	constexpr TextAlignment LocationTextAlignment = TextAlignment::Center;
 	const Color LocationTextShadowColor(48, 48, 48);
-	const Int2 LocationTextShadowOffset(1, 0);
+	constexpr int LocationTextShadowOffsetX = 1;
+	constexpr int LocationTextShadowOffsetY = 0;
 	Int2 getLocationTextClampedPosition(int textX, int textY, int textWidth, int textHeight);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);

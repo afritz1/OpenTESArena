@@ -31,6 +31,7 @@ namespace TextRenderUtils
 		int offsetX, offsetY;
 		Color color;
 
+		TextShadowInfo(int offsetX, int offsetY, const Color &color);
 		TextShadowInfo();
 
 		void init(int offsetX, int offsetY, const Color &color);

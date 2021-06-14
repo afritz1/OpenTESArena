@@ -18,6 +18,13 @@ void TextRenderUtils::TextureGenInfo::init(int width, int height)
 	this->height = height;
 }
 
+TextRenderUtils::TextShadowInfo::TextShadowInfo(int offsetX, int offsetY, const Color &color)
+	: color(color)
+{
+	this->offsetX = offsetX;
+	this->offsetY = offsetY;
+}
+
 TextRenderUtils::TextShadowInfo::TextShadowInfo()
 {
 	this->offsetX = 0;

@@ -64,7 +64,8 @@ namespace AutomapUiView
 	const Color LocationTextBoxFontColor(56, 16, 12);
 	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::Center;
 	const Color LocationTextBoxShadowColor(150, 101, 52);
-	const Int2 LocationTextBoxShadowOffset(2, 2);
+	constexpr int LocationTextBoxShadowOffsetX = 2;
+	constexpr int LocationTextBoxShadowOffsetY = 2;
 
 	const Int2 BackToGameButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
 	constexpr int BackToGameButtonWidth = 38;

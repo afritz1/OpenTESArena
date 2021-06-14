@@ -12,7 +12,7 @@
 #include "components/utilities/String.h"
 
 TextBox::TextBox(int x, int y, const RichTextString &richText,
-	const ShadowData *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
+	const TextRenderUtils::TextShadowInfo *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
 	: richText(richText)
 {
 	this->x = x;
@@ -32,7 +32,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 	// Get the shadow data (if any).
 	const bool hasShadow = shadow != nullptr;
 	const Color shadowColor = hasShadow ? shadow->color : Color();
-	const Int2 shadowOffset = hasShadow ? shadow->offset : Int2();
+	const Int2 shadowOffset = hasShadow ? Int2(shadow->offsetX, shadow->offsetY) : Int2::Zero;
 
 	// Create an intermediate surface for blitting each character surface onto
 	// before changing all non-transparent pixels to the desired text color.
@@ -190,7 +190,7 @@ TextBox::TextBox(int x, int y, const RichTextString &richText,
 }
 
 TextBox::TextBox(const Int2 &center, const RichTextString &richText,
-	const ShadowData *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
+	const TextRenderUtils::TextShadowInfo *shadow, const FontLibrary &fontLibrary, Renderer &renderer)
 	: TextBox(center.x, center.y, richText, shadow, fontLibrary, renderer)
 {
 	// Shift the resulting text box coordinates left and up to center it over

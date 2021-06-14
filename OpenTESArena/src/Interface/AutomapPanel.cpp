@@ -29,6 +29,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
@@ -53,9 +54,10 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 			AutomapUiView::LocationTextBoxFontColor,
 			AutomapUiView::LocationTextBoxTextAlignment,
 			fontLibrary);
-		const TextBox::ShadowData shadowData(
-			AutomapUiView::LocationTextBoxShadowColor,
-			AutomapUiView::LocationTextBoxShadowOffset);
+		const TextRenderUtils::TextShadowInfo shadowData(
+			AutomapUiView::LocationTextBoxShadowOffsetX,
+			AutomapUiView::LocationTextBoxShadowOffsetY,
+			AutomapUiView::LocationTextBoxShadowColor);
 
 		return std::make_unique<TextBox>(
 			AutomapUiView::LocationTextBoxCenterPoint,

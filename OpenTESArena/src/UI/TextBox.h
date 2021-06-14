@@ -6,6 +6,7 @@
 
 #include "RichTextString.h"
 #include "Surface.h"
+#include "TextRenderUtils.h"
 #include "Texture.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
@@ -18,25 +19,15 @@ class Renderer;
 
 class TextBox
 {
-public:
-	// Data for the text box's shadow (if any).
-	struct ShadowData
-	{
-		Color color;
-		Int2 offset;
-
-		ShadowData(const Color &color, const Int2 &offset)
-			: color(color), offset(offset) { }
-	};
 private:
 	RichTextString richText;
 	Surface surface; // For ListBox compatibility. Identical to "texture".
 	Texture texture;
 	int x, y;
 public:
-	TextBox(int x, int y, const RichTextString &richText, const ShadowData *shadow,
+	TextBox(int x, int y, const RichTextString &richText, const TextRenderUtils::TextShadowInfo *shadow,
 		const FontLibrary &fontLibrary, Renderer &renderer);
-	TextBox(const Int2 &center, const RichTextString &richText, const ShadowData *shadow,
+	TextBox(const Int2 &center, const RichTextString &richText, const TextRenderUtils::TextShadowInfo *shadow,
 		const FontLibrary &fontLibrary, Renderer &renderer);
 	TextBox(int x, int y, const RichTextString &richText, const FontLibrary &fontLibrary,
 		Renderer &renderer);
