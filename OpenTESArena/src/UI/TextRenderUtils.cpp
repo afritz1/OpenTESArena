@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 
 #include "TextRenderUtils.h"
 
@@ -15,6 +16,19 @@ void TextRenderUtils::TextureGenInfo::init(int width, int height)
 {
 	this->width = width;
 	this->height = height;
+}
+
+TextRenderUtils::TextShadowInfo::TextShadowInfo()
+{
+	this->offsetX = 0;
+	this->offsetY = 0;
+}
+
+void TextRenderUtils::TextShadowInfo::init(int offsetX, int offsetY, const Color &color)
+{
+	this->offsetX = offsetX;
+	this->offsetY = offsetY;
+	this->color = color;
 }
 
 std::vector<std::string_view> TextRenderUtils::getTextLines(const std::string_view &text)
@@ -51,7 +65,7 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 }
 
 TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
-	const FontDefinition &fontDef, int lineSpacing)
+	const FontDefinition &fontDef, const TextShadowInfo *shadow, int lineSpacing)
 {
 	// Get the width of the longest line of text in pixels.
 	int width = 0;
@@ -71,18 +85,17 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	}
 
 	const int lineCount = static_cast<int>(textLines.size());
-	const int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1));
+	int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1));
+
+	if (shadow != nullptr)
+	{
+		width += std::abs(shadow->offsetX);
+		height += std::abs(shadow->offsetY);
+	}
 
 	TextureGenInfo textureGenInfo;
 	textureGenInfo.init(width, height);
 	return textureGenInfo;
-}
-
-TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
-	const FontDefinition &fontDef)
-{
-	constexpr int lineSpacing = 0;
-	return TextRenderUtils::makeTextureGenInfo(text, fontDef, lineSpacing);
 }
 
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
@@ -110,14 +123,24 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 }
 
 void TextRenderUtils::drawTextLine(const BufferView<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
-	int dstX, int dstY, const Color &textColor, BufferView2D<uint32_t> &outBuffer)
+	int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
 {
-	int currentX = 0;
-	for (int i = 0; i < charIDs.getCount(); i++)
+	auto drawLine = [&charIDs, &fontDef, &outBuffer](int x, int y, const Color &color)
 	{
-		const FontDefinition::CharID charID = charIDs.get(i);
-		const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
-		TextRenderUtils::drawChar(fontChar, dstX + currentX, dstY, textColor, outBuffer);
-		currentX += fontChar.getWidth();
+		int currentX = 0;
+		for (int i = 0; i < charIDs.getCount(); i++)
+		{
+			const FontDefinition::CharID charID = charIDs.get(i);
+			const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
+			TextRenderUtils::drawChar(fontChar, x + currentX, y, color, outBuffer);
+			currentX += fontChar.getWidth();
+		}
+	};
+
+	if (shadow != nullptr)
+	{
+		drawLine(dstX + shadow->offsetX, dstY + shadow->offsetY, shadow->color);
 	}
+
+	drawLine(dstX, dstY, textColor);
 }

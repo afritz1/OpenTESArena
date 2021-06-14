@@ -26,6 +26,16 @@ namespace TextRenderUtils
 		void init(int width, int height);
 	};
 
+	struct TextShadowInfo
+	{
+		int offsetX, offsetY;
+		Color color;
+
+		TextShadowInfo();
+
+		void init(int offsetX, int offsetY, const Color &color);
+	};
+
 	// Splits a string of text into lines based on newline characters.
 	std::vector<std::string_view> getTextLines(const std::string_view &text);
 
@@ -33,8 +43,9 @@ namespace TextRenderUtils
 	std::vector<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);
 
 	// Determines how large a text box texture should be in pixels.
-	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef, int lineSpacing);
-	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef);
+	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
+	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef,
+		const TextShadowInfo *shadow = nullptr, int lineSpacing = 0);
 
 	// Blits the given font character to the output texture, and handles clipping.
 	// @todo: this should draw to a UI texture via UiTextureID eventually. Process will be:
@@ -45,7 +56,7 @@ namespace TextRenderUtils
 	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
 		BufferView2D<uint32_t> &outBuffer);
 	void drawTextLine(const BufferView<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
-		int dstX, int dstY, const Color &textColor, BufferView2D<uint32_t> &outBuffer);
+		int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
 }
 
 #endif
