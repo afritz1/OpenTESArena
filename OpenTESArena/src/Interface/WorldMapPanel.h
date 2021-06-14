@@ -16,7 +16,7 @@ private:
 	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
 public:
 	WorldMapPanel(Game &game);
-	virtual ~WorldMapPanel() = default;
+	~WorldMapPanel() override = default;
 
 	bool init();
 

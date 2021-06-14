@@ -29,7 +29,7 @@ private:
 	std::string name;
 public:
 	ChooseNamePanel(Game &game);
-	virtual ~ChooseNamePanel() = default;
+	~ChooseNamePanel() override = default;
 
 	bool init();
 

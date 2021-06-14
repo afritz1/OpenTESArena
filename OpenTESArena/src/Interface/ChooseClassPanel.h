@@ -34,7 +34,7 @@ private:
 	void drawClassTooltip(int tooltipIndex, Renderer &renderer);
 public:
 	ChooseClassPanel(Game &game);
-	virtual ~ChooseClassPanel() = default;
+	~ChooseClassPanel() override = default;
 
 	bool init();
 

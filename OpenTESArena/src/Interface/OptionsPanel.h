@@ -51,7 +51,7 @@ private:
 	void drawDescription(const std::string &text, Renderer &renderer);
 public:
 	OptionsPanel(Game &game);
-	virtual ~OptionsPanel() = default;
+	~OptionsPanel() override = default;
 
 	bool init();
 

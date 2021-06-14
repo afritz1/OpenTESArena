@@ -21,7 +21,7 @@ private:
 	LoadSavePanel::Type type;
 public:
 	LoadSavePanel(Game &game);
-	virtual ~LoadSavePanel() = default;
+	~LoadSavePanel() override = default;
 
 	bool init(LoadSavePanel::Type type);
 

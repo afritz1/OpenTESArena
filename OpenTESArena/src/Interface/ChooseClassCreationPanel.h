@@ -20,7 +20,7 @@ private:
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	ChooseClassCreationPanel(Game &game);
-	virtual ~ChooseClassCreationPanel() = default;
+	~ChooseClassCreationPanel() override = default;
 
 	bool init();
 

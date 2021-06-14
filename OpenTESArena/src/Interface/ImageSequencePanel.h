@@ -24,7 +24,7 @@ private:
 	int imageIndex;
 public:
 	ImageSequencePanel(Game &game);
-	virtual ~ImageSequencePanel() = default;
+	~ImageSequencePanel() override = default;
 
 	bool init(const std::vector<std::string> &paletteNames, const std::vector<std::string> &textureNames,
 		const std::vector<double> &imageDurations, const std::function<void(Game&)> &endingAction);

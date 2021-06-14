@@ -88,7 +88,7 @@ namespace OptionsUiModel
 	public:
 		BoolOption(const std::string &name, std::string &&tooltip, bool value, Callback &&callback);
 		BoolOption(const std::string &name, bool value, Callback &&callback);
-		virtual ~BoolOption() = default;
+		~BoolOption() override = default;
 
 		virtual std::string getDisplayedValue() const override;
 
@@ -111,7 +111,7 @@ namespace OptionsUiModel
 		IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
 			Callback &&callback);
 		IntOption(const std::string &name, int value, int delta, int min, int max, Callback &&callback);
-		virtual ~IntOption() = default;
+		~IntOption() override = default;
 
 		int getNext() const; // Adds delta to current value, clamped between [min, max].
 		int getPrev() const; // Subtracts delta from current value, clamped between [min, max].
@@ -133,7 +133,7 @@ namespace OptionsUiModel
 			double min, double max, int precision, Callback &&callback);
 		DoubleOption(const std::string &name, double value, double delta, double min, double max,
 			int precision, Callback &&callback);
-		virtual ~DoubleOption() = default;
+		~DoubleOption() override = default;
 
 		double getNext() const; // Adds delta to current value, clamped between [min, max].
 		double getPrev() const; // Subtracts delta from current value, clamped between [min, max].
@@ -152,7 +152,7 @@ namespace OptionsUiModel
 	public:
 		StringOption(const std::string &name, std::string &&tooltip, std::string &&value, Callback &&callback);
 		StringOption(const std::string &name, std::string &&value, Callback &&callback);
-		virtual ~StringOption() = default;
+		~StringOption() override = default;
 
 		virtual std::string getDisplayedValue() const override;
 

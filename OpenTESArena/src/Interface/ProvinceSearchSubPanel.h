@@ -40,7 +40,7 @@ public:
 	int provinceID;
 
 	ProvinceSearchSubPanel(Game &game);
-	virtual ~ProvinceSearchSubPanel() = default;
+	~ProvinceSearchSubPanel() override = default;
 
 	bool init(ProvinceMapPanel &provinceMapPanel, int provinceID);
 

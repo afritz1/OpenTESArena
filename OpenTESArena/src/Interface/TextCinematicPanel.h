@@ -38,7 +38,7 @@ private:
 	int animImageIndex, textIndex, textCinematicDefIndex;
 public:
 	TextCinematicPanel(Game &game);
-	virtual ~TextCinematicPanel() = default;
+	~TextCinematicPanel() override = default;
 
 	bool init(int textCinematicDefIndex, double secondsPerImage, const std::function<void(Game&)> &endingAction);
 

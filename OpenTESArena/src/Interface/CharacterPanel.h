@@ -18,7 +18,7 @@ private:
 	Button<Game&> doneButton, nextPageButton;
 public:
 	CharacterPanel(Game &game);
-	virtual ~CharacterPanel() = default;
+	~CharacterPanel() override = default;
 
 	bool init();
 

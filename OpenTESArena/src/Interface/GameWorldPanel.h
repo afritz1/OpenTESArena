@@ -42,7 +42,7 @@ private:
 	void drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer);
 public:
 	GameWorldPanel(Game &game);
-	virtual ~GameWorldPanel();
+	~GameWorldPanel() override;
 
 	bool init();
 

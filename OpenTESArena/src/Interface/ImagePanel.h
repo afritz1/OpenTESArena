@@ -21,7 +21,7 @@ private:
 	double secondsToDisplay, currentSeconds;
 public:
 	ImagePanel(Game &game);
-	virtual ~ImagePanel() = default;
+	~ImagePanel() override = default;
 
 	bool init(const std::string &paletteName, const std::string &textureName, double secondsToDisplay,
 		const std::function<void(Game&)> &endingAction);

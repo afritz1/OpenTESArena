@@ -10,7 +10,7 @@ class WildMidiDevice : public MidiDevice {
 public:
 	// Constructor (public for std::make_unique).
 	WildMidiDevice(const std::string &midiConfig);
-	virtual ~WildMidiDevice();
+	~WildMidiDevice() override;
 
 	static void init(const std::string &midiConfig);
 

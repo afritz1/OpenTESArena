@@ -16,7 +16,7 @@ private:
 	Button<Game&> backToNameButton, maleButton, femaleButton;
 public:
 	ChooseGenderPanel(Game &game);
-	virtual ~ChooseGenderPanel() = default;
+	~ChooseGenderPanel() override = default;
 
 	bool init();
 

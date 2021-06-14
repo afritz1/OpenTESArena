@@ -14,7 +14,7 @@ private:
 	Button<Game&> backButton;
 public:
 	LogbookPanel(Game &game);
-	virtual ~LogbookPanel() = default;
+	~LogbookPanel() override = default;
 
 	bool init();
 

@@ -28,7 +28,7 @@ private:
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 public:
 	ChooseAttributesPanel(Game &game);
-	virtual ~ChooseAttributesPanel() = default;
+	~ChooseAttributesPanel() override = default;
 
 	bool init();
 

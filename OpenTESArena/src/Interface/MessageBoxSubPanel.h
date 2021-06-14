@@ -35,7 +35,7 @@ private:
 	std::function<void(Game&)> cancelFunction; // Called when cancelling the message box.
 public:
 	MessageBoxSubPanel(Game &game);
-	virtual ~MessageBoxSubPanel() = default;
+	~MessageBoxSubPanel() override = default;
 
 	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements, const std::function<void(Game&)> &cancelFunction);
 	bool init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements);

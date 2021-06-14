@@ -20,7 +20,7 @@ private:
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
 	ChooseRacePanel(Game &game);
-	virtual ~ChooseRacePanel() = default;
+	~ChooseRacePanel() override = default;
 
 	bool init();
 

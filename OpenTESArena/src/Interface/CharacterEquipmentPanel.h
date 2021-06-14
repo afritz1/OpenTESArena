@@ -18,7 +18,7 @@ private:
 	Button<ListBox&> scrollDownButton, scrollUpButton;
 public:
 	CharacterEquipmentPanel(Game &game);
-	virtual ~CharacterEquipmentPanel() = default;
+	~CharacterEquipmentPanel() override = default;
 
 	bool init();
 

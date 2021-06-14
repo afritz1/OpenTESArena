@@ -33,7 +33,7 @@ private:
 	void renderTestUI(Renderer &renderer);
 public:
 	MainMenuPanel(Game &game);
-	virtual ~MainMenuPanel() = default;
+	~MainMenuPanel() override = default;
 
 	bool init();
 

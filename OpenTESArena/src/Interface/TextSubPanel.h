@@ -22,7 +22,7 @@ private:
 	Int2 textureCenter;
 public:
 	TextSubPanel(Game &game);
-	virtual ~TextSubPanel() = default;
+	~TextSubPanel() override = default;
 
 	bool init(const Int2 &textCenter, const RichTextString &richText,
 		const std::function<void(Game&)> &endingAction, Texture &&texture, const Int2 &textureCenter);

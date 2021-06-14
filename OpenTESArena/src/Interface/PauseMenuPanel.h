@@ -20,7 +20,7 @@ private:
 	Texture optionsButtonTexture;
 public:
 	PauseMenuPanel(Game &game);
-	virtual ~PauseMenuPanel() = default;
+	~PauseMenuPanel() override = default;
 
 	bool init();
 

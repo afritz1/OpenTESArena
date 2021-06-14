@@ -18,7 +18,7 @@ private:
 	size_t frameIndex;
 public:
 	FastTravelSubPanel(Game &game);
-	virtual ~FastTravelSubPanel() = default;
+	~FastTravelSubPanel() override = default;
 
 	bool init();
 

@@ -16,7 +16,7 @@ private:
 	TextureAssetReference splashTextureAssetRef;
 public:
 	MainQuestSplashPanel(Game &game);
-	virtual ~MainQuestSplashPanel() = default;
+	~MainQuestSplashPanel() override = default;
 
 	bool init(int provinceID);
 

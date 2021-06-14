@@ -18,7 +18,7 @@ namespace
 
 	public:
 		WildMidiSong(midi *song);
-		virtual ~WildMidiSong();
+		~WildMidiSong() override;
 
 		virtual void getFormat(int *sampleRate) override;
 
