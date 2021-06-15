@@ -129,7 +129,7 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 	}
 }
 
-void TextRenderUtils::drawTextLine(const BufferView<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
+void TextRenderUtils::drawTextLine(const BufferView<const FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
 	int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
 {
 	auto drawLine = [&charIDs, &fontDef, &outBuffer](int x, int y, const Color &color)
@@ -150,4 +150,12 @@ void TextRenderUtils::drawTextLine(const BufferView<FontDefinition::CharID> &cha
 	}
 
 	drawLine(dstX, dstY, textColor);
+}
+
+void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
+	const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
+{
+	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	const BufferView<const FontDefinition::CharID> charIdsView(charIDs.data(), static_cast<int>(charIDs.size()));
+	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, shadow, outBuffer);
 }
