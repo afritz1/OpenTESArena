@@ -1,139 +1,81 @@
-#include <algorithm>
-
 #include "SDL.h"
 
 #include "FontDefinition.h"
 #include "FontLibrary.h"
-#include "FontUtils.h"
 #include "ListBox.h"
-#include "RichTextString.h"
-#include "TextAlignment.h"
-#include "TextBox.h"
-#include "../Math/Rect.h"
-#include "../Math/Vector2.h"
-#include "../Media/Color.h"
+#include "TextRenderUtils.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/String.h"
 
-ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-	FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
-	Renderer &renderer)
-	: point(x, y)
+ListBox::Properties::Properties(int fontDefIndex, int itemHeight, const Color &defaultColor,
+	double scrollScale, int itemSpacing)
+	: defaultColor(defaultColor)
 {
-	DebugAssert(maxDisplayed > 0);
-
-	this->fontName = fontName;
-	this->maxDisplayed = maxDisplayed;
-	this->rowSpacing = rowSpacing;
-	this->scrollIndex = 0;
-
-	// Get the font associated with the font name.
-	const char *fontNameStr = FontUtils::fromName(fontName);
-	int fontIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
-	{
-		DebugCrash("Couldn't get font index \"" + std::string(fontNameStr) + "\".");
-	}
-
-	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
-	this->characterHeight = fontDef.getCharacterHeight();
-
-	// Make text boxes for getting list box dimensions now and drawing later.
-	// It's okay for there to be zero elements. Just be blank, then!
-	for (const auto &element : elements)
-	{
-		// Remove any new lines.
-		const std::string &text = element.first;
-		std::string trimmedElement = String::trimLines(text);
-
-		const int textBoxX = 0;
-		const int textBoxY = 0;
-		const Color &textColor = element.second;
-
-		const RichTextString richText(
-			trimmedElement,
-			fontName,
-			textColor,
-			TextAlignment::Left,
-			fontLibrary);
-
-		// Store the text box for later.
-		auto textBox = std::make_unique<TextBox>(textBoxX, textBoxY, richText, fontLibrary, renderer);
-		this->textBoxes.push_back(std::move(textBox));
-	}
-
-	// Calculate the dimensions of the displayed list box area.
-	const int width = [this]()
-	{
-		int maxWidth = 0;
-		for (const auto &textBox : this->textBoxes)
-		{
-			const int textBoxWidth = textBox->getTexture().getWidth();
-
-			if (textBoxWidth > maxWidth)
-			{
-				maxWidth = textBoxWidth;
-			}
-		}
-
-		return maxWidth;
-	}();
-
-	const int height = (fontDef.getCharacterHeight() * maxDisplayed) +
-		(rowSpacing * (maxDisplayed - 1));
-
-	// Create the clear surface. This exists because the text box surfaces can't
-	// currently have an arbitrary size (otherwise they could extend to the end of 
-	// each row), and because SDL_UpdateTexture requires pixels (so this avoids an 
-	// allocation each time the update method is called).
-	this->clearSurface = Surface::createWithFormat(width, height,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	this->clearSurface.fill(0, 0, 0, 0);
-
-	// Create the visible texture. This will be updated when scrolling the list box.
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, width, height);
-	SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND);
-
-	// Draw the text boxes to the texture.
-	this->updateDisplay();
+	this->fontDefIndex = fontDefIndex;
+	this->itemHeight = itemHeight;
+	this->scrollScale = scrollScale;
+	this->itemSpacing = itemSpacing;
 }
 
-ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
-	Renderer &renderer)
-	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName, maxDisplayed,
-		rowSpacing, fontLibrary, renderer) { }
+ListBox::Properties::Properties()
+	: Properties(-1, 0, Color(), 0.0, 0) { }
 
-ListBox::ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-	FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer)
-	: ListBox(x, y, elements, fontName, maxDisplayed, 0, fontLibrary, renderer) { }
-
-ListBox::ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-	FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer)
-	: ListBox(x, y, ListBox::makeStringColorPairs(elements, textColor), fontName,
-		maxDisplayed, 0, fontLibrary, renderer) { }
-
-int ListBox::getScrollIndex() const
+void ListBox::Item::init(std::string &&text, const std::optional<Color> &overrideColor, const ItemCallback &callback)
 {
-	return this->scrollIndex;
+	this->text = std::move(text);
+	this->overrideColor = overrideColor;
+	this->callback = callback;
 }
 
-int ListBox::getElementCount() const
+ListBox::ListBox()
 {
-	return static_cast<int>(this->textBoxes.size());
+	this->scrollPixelOffset = 0.0;
 }
 
-int ListBox::getMaxDisplayedCount() const
+void ListBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
 {
-	return this->maxDisplayed;
+	this->rect = rect;
+	this->properties = properties;
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING,
+		rect.getWidth(), rect.getHeight());
 }
 
-const Int2 &ListBox::getPoint() const
+const Rect &ListBox::getRect() const
 {
-	return this->point;
+	return this->rect;
+}
+
+Rect ListBox::getItemLocalRect(int index) const
+{
+	const double baseYOffset = static_cast<double>(
+		(index * this->properties.itemHeight) + (std::max(0, index - 1) * this->properties.itemSpacing));
+	return Rect(
+		0,
+		static_cast<int>(baseYOffset - this->scrollPixelOffset),
+		this->rect.getWidth(),
+		this->properties.itemHeight);
+}
+
+Rect ListBox::getItemGlobalRect(int index) const
+{
+	const Rect localRect = this->getItemLocalRect(index);
+	return Rect(
+		this->rect.getLeft() + localRect.getLeft(),
+		this->rect.getTop() + localRect.getTop(),
+		localRect.getWidth(),
+		localRect.getHeight());
+}
+
+int ListBox::getCount() const
+{
+	return static_cast<int>(this->items.size());
+}
+
+const ListBox::ItemCallback &ListBox::getCallback(int index) const
+{
+	DebugAssertIndex(this->items, index);
+	return this->items[index].callback;
 }
 
 const Texture &ListBox::getTexture() const
@@ -141,83 +83,84 @@ const Texture &ListBox::getTexture() const
 	return this->texture;
 }
 
-Int2 ListBox::getDimensions() const
+double ListBox::getScrollDeltaPixels() const
 {
-	int w, h;
-	SDL_QueryTexture(this->texture.get(), nullptr, nullptr, &w, &h);
-	return Int2(w, h);
+	return static_cast<double>(this->properties.itemHeight) * this->properties.scrollScale;
 }
 
-bool ListBox::contains(const Int2 &point)
+void ListBox::insert(int index, std::string &&text)
 {
-	const Int2 dims = this->getDimensions();
-	Rect rect(this->point.x, this->point.y, dims.x, dims.y);
-	return rect.contains(point);
+	DebugAssert(index >= 0);
+	DebugAssert(index <= static_cast<int>(this->items.size())); // One past end is okay.
+
+	ListBox::Item item;
+	item.init(std::move(text), std::nullopt, []() { });
+	this->items.insert(this->items.begin() + index, std::move(item));
 }
 
-int ListBox::getClickedIndex(const Int2 &point) const
+void ListBox::add(std::string &&text)
 {
-	// Only the Y component of the point really matters here.
-	const int index = this->scrollIndex +
-		((point.y - this->point.y) / this->characterHeight);
-	return index;
+	this->insert(static_cast<int>(this->items.size()), std::move(text));
 }
 
-std::vector<std::pair<std::string, Color>> ListBox::makeStringColorPairs(
-	const std::vector<std::string> &strings, const std::vector<Color> &colors)
+void ListBox::setOverrideColor(int index, const std::optional<Color> &overrideColor)
 {
-	DebugAssertMsg(strings.size() == colors.size(), "Mismatched vector sizes.");
-	std::vector<std::pair<std::string, Color>> pairs(strings.size());
-
-	for (size_t i = 0; i < pairs.size(); i++)
-	{
-		pairs[i] = std::make_pair(strings[i], colors[i]);
-	}
-
-	return pairs;
+	DebugAssertIndex(this->items, index);
+	this->items[index].overrideColor = overrideColor;
 }
 
-std::vector<std::pair<std::string, Color>> ListBox::makeStringColorPairs(
-	const std::vector<std::string> &strings, const Color &color)
+void ListBox::setCallback(int index, const ItemCallback &callback)
 {
-	return ListBox::makeStringColorPairs(strings, std::vector<Color>(strings.size(), color));
+	DebugAssertIndex(this->items, index);
+	this->items[index].callback = callback;
 }
 
-void ListBox::updateDisplay()
+void ListBox::remove(int index)
 {
-	// Clear the display texture. Otherwise, remnants of previous text might be left over.
-	SDL_UpdateTexture(this->texture.get(), nullptr,
-		this->clearSurface.get()->pixels, this->clearSurface.get()->pitch);
-
-	// Prepare the range of text boxes that will be displayed.
-	const int totalElements = static_cast<int>(this->textBoxes.size());
-	const int maxDisplayed = this->maxDisplayed;
-	const int indexEnd = std::min(this->scrollIndex + maxDisplayed, totalElements);
-
-	// Draw the relevant text boxes according to scroll index.
-	for (int i = this->scrollIndex; i < indexEnd; i++)
-	{
-		const Surface &surface = this->textBoxes.at(i)->getSurface();
-
-		SDL_Rect rect;
-		rect.x = 0;
-		rect.y = (i - this->scrollIndex) * (surface.getHeight() + this->rowSpacing);
-		rect.w = surface.getWidth();
-		rect.h = surface.getHeight();
-
-		// Update the texture's pixels at the correct height offset.
-		SDL_UpdateTexture(this->texture.get(), &rect, surface.get()->pixels, surface.get()->pitch);
-	}
+	DebugAssertIndex(this->items, index);
+	this->items.erase(this->items.begin() + index);
 }
 
-void ListBox::scrollUp()
+void ListBox::removeAll()
 {
-	this->scrollIndex -= 1;
-	this->updateDisplay();
+	this->items.clear();
+	this->scrollPixelOffset = 0.0;
 }
 
 void ListBox::scrollDown()
 {
-	this->scrollIndex += 1;
-	this->updateDisplay();
+	// @todo: clamp based on rect height and item count, will probably use std::max()
+	this->scrollPixelOffset += this->getScrollDeltaPixels();
+}
+
+void ListBox::scrollUp()
+{
+	this->scrollPixelOffset = std::min(0.0, this->scrollPixelOffset - this->getScrollDeltaPixels());
+}
+
+void ListBox::updateTexture(const FontLibrary &fontLibrary)
+{
+	uint32_t *texturePixels;
+	int pitch;
+	if (SDL_LockTexture(this->texture.get(), nullptr, reinterpret_cast<void**>(&texturePixels), &pitch) != 0)
+	{
+		DebugLogError("Couldn't lock ListBox texture for updating.");
+		return;
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
+	BufferView2D<uint32_t> textureView(texturePixels, this->texture.getWidth(), this->texture.getHeight());
+
+	// Re-draw list box items relative to where they should be with the current scroll value.
+	for (int i = 0; i < static_cast<int>(this->items.size()); i++)
+	{
+		const ListBox::Item &item = this->items[i];
+		const Rect itemRect = this->getItemLocalRect(i);
+		const Color &itemColor = item.overrideColor.has_value() ? *item.overrideColor : this->properties.defaultColor;
+		constexpr TextRenderUtils::TextShadowInfo *shadowInfo = nullptr;
+		TextRenderUtils::drawTextLine(item.text, fontDef, itemRect.getLeft(), itemRect.getTop(),
+			itemColor, shadowInfo, textureView);
+	}
+
+	SDL_UnlockTexture(this->texture.get());
 }
