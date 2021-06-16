@@ -226,11 +226,7 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 		// Custom width to better fill the screen-space.
-		const Rect listBoxRect(
-			this->locationsListBox->getPoint().x,
-			this->locationsListBox->getPoint().y,
-			ProvinceMapUiView::SearchSubPanelListBoxWidth,
-			this->locationsListBox->getDimensions().y);
+		const Rect &listBoxRect = this->locationsListBox->getRect();
 
 		if (listBoxRect.contains(originalPoint))
 		{
@@ -239,7 +235,7 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 				// Verify that the clicked index is valid. If so, get the location ID and
 				// try to select the location.
 				const int index = this->locationsListBox->getClickedIndex(originalPoint);
-				if ((index >= 0) && (index < this->locationsListBox->getElementCount()))
+				if ((index >= 0) && (index < this->locationsListBox->getCount()))
 				{
 					DebugAssertIndex(this->locationsListIndices, index);
 					const int locationsListIndex = this->locationsListIndices[index];
@@ -331,8 +327,9 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 		textureManager);
 
 	// Draw list box text.
+	const Rect &locationsListBoxRect = this->locationsListBox->getRect();
 	renderer.drawOriginal(this->locationsListBox->getTexture(),
-		this->locationsListBox->getPoint().x, this->locationsListBox->getPoint().y);
+		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
 }
 
 void ProvinceSearchSubPanel::render(Renderer &renderer)

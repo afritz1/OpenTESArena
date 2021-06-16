@@ -237,6 +237,6 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->playerClassTextBox->getTexture(), this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
 	
 	// Draw inventory list box.
-	const Int2 &inventoryListBoxPoint = this->inventoryListBox->getPoint();
-	renderer.drawOriginal(this->inventoryListBox->getTexture(), inventoryListBoxPoint.x, inventoryListBoxPoint.y);
+	const Rect &inventoryListBoxRect = this->inventoryListBox->getRect();
+	renderer.drawOriginal(this->inventoryListBox->getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
 }

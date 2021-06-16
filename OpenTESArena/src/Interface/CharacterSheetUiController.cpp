@@ -34,18 +34,10 @@ void CharacterSheetUiController::onDropButtonSelected(Game &game, int itemIndex)
 
 void CharacterSheetUiController::onInventoryScrollDownButtonSelected(ListBox &listBox)
 {
-	// @todo: this condition should be built straight into ListBox.
-	if ((listBox.getScrollIndex() + listBox.getMaxDisplayedCount()) < listBox.getElementCount())
-	{
-		listBox.scrollDown();
-	}
+	listBox.scrollDown();
 }
 
 void CharacterSheetUiController::onInventoryScrollUpButtonSelected(ListBox &listBox)
 {
-	// @todo: this condition should be built straight into ListBox.
-	if (listBox.getScrollIndex() > 0)
-	{
-		listBox.scrollUp();
-	}
+	listBox.scrollUp();
 }

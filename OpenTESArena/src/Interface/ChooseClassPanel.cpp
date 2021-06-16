@@ -165,7 +165,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 		{
 			// Verify that the clicked index is valid. If so, use that character class.
 			const int index = this->classesListBox->getClickedIndex(originalPoint);
-			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+			if ((index >= 0) && (index < this->classesListBox->getCount()))
 			{
 				DebugAssertIndex(this->charClasses, index);
 				const CharacterClassDefinition &charClassDef = this->charClasses[index];
@@ -274,7 +274,9 @@ void ChooseClassPanel::render(Renderer &renderer)
 
 	// Draw text: title, list.
 	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->classesListBox->getTexture(), this->classesListBox->getPoint().x, this->classesListBox->getPoint().y);
+
+	const Rect &classesListBoxRect = this->classesListBox->getRect();
+	renderer.drawOriginal(this->classesListBox->getTexture(), classesListBoxRect.getLeft(), classesListBoxRect.getTop());
 
 	// Draw tooltip if over a valid element in the list box.
 	const auto &inputManager = game.getInputManager();
@@ -285,7 +287,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	if (classListRect.contains(originalPoint))
 	{
 		int index = this->classesListBox->getClickedIndex(originalPoint);
-		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+		if ((index >= 0) && (index < this->classesListBox->getCount()))
 		{
 			this->drawClassTooltip(index, renderer);
 		}

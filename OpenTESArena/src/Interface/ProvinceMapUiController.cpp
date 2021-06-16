@@ -95,23 +95,10 @@ void ProvinceMapUiController::onSearchListLocationSelected(Game &game, ProvinceS
 
 void ProvinceMapUiController::onSearchListUpButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box up one if able.
-	// @todo: this should be built into the ListBox
-	if (listBox.getScrollIndex() > 0)
-	{
-		listBox.scrollUp();
-	}
+	listBox.scrollUp();
 }
 
 void ProvinceMapUiController::onSearchListDownButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box down one if able.
-	// @todo: this should be built into the ListBox
-	const int scrollIndex = listBox.getScrollIndex();
-	const int elementCount = listBox.getElementCount();
-	const int maxDisplayedCount = listBox.getMaxDisplayedCount();
-	if (scrollIndex < (elementCount - maxDisplayedCount))
-	{
-		listBox.scrollDown();
-	}
+	listBox.scrollDown();
 }

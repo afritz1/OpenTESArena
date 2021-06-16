@@ -56,23 +56,12 @@ void CharacterCreationUiController::onBackToChooseClassCreationButtonSelected(Ga
 
 void CharacterCreationUiController::onChooseClassListBoxUpButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box up one if able.
-	if (listBox.getScrollIndex() > 0)
-	{
-		listBox.scrollUp();
-	}
+	listBox.scrollUp();
 }
 
 void CharacterCreationUiController::onChooseClassListBoxDownButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box down one if able.
-	const int scrollIndex = listBox.getScrollIndex();
-	const int elementCount = listBox.getElementCount();
-	const int maxDisplayedCount = listBox.getMaxDisplayedCount();
-	if (scrollIndex < (elementCount - maxDisplayedCount))
-	{
-		listBox.scrollDown();
-	}
+	listBox.scrollDown();
 }
 
 void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Game &game, int charClassDefID)
