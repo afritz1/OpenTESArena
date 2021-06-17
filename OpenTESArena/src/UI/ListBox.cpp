@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "SDL.h"
 
 #include "FontDefinition.h"
@@ -92,7 +94,8 @@ const Texture &ListBox::getTexture() const
 
 double ListBox::getScrollDeltaPixels() const
 {
-	return static_cast<double>(this->properties.itemHeight) * this->properties.scrollScale;
+	return static_cast<double>(this->properties.itemHeight + this->properties.itemSpacing) *
+		this->properties.scrollScale;
 }
 
 void ListBox::insert(int index, std::string &&text)
@@ -140,14 +143,14 @@ void ListBox::removeAll()
 
 void ListBox::scrollDown()
 {
-	// @todo: clamp based on rect height and item count, will probably use std::max()
+	// @todo: clamp based on rect height and item count, will probably use std::min()
 	this->scrollPixelOffset += this->getScrollDeltaPixels();
 	this->dirty = true;
 }
 
 void ListBox::scrollUp()
 {
-	this->scrollPixelOffset = std::min(0.0, this->scrollPixelOffset - this->getScrollDeltaPixels());
+	this->scrollPixelOffset = std::max(0.0, this->scrollPixelOffset - this->getScrollDeltaPixels());
 	this->dirty = true;
 }
 
