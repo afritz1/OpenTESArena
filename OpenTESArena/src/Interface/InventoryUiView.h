@@ -9,7 +9,7 @@ class FontLibrary;
 
 namespace InventoryUiView
 {
-	const Rect PlayerInventoryRect(14, 50, 150, 250); // @todo: verify width and height; they were calculated previously.
+	const Rect PlayerInventoryRect(14, 50, 150, 75);
 
 	const Color PlayerInventoryEquipmentColor(211, 142, 0);
 	const Color PlayerInventoryEquipmentEquippedColor(235, 199, 52);

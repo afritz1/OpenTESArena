@@ -104,7 +104,7 @@ namespace ProvinceMapUiView
 	constexpr int SearchSubPanelListTextureX = 57;
 	constexpr int SearchSubPanelListTextureY = 11;
 
-	const Rect SearchSubPanelListBoxRect(85, 34, 147, 120); // @todo: verify height
+	const Rect SearchSubPanelListBoxRect(85, 34, 147, 55);
 	ListBox::Properties makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAssetReference getSearchSubPanelListTextureAssetRef();
