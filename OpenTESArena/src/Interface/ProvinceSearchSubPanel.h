@@ -21,9 +21,8 @@ class ProvinceSearchSubPanel : public Panel
 private:
 	Texture parchment;
 	std::unique_ptr<TextBox> textTitleTextBox, textEntryTextBox;
-	std::unique_ptr<ListBox> locationsListBox;
+	ListBox locationsListBox;
 	Button<Game&, ProvinceSearchSubPanel&> textAcceptButton;
-	Button<Game&, ProvinceSearchSubPanel&, int> listAcceptButton;
 	Button<ListBox&> listUpButton, listDownButton;
 
 	void handleTextEntryEvent(const SDL_Event &e);

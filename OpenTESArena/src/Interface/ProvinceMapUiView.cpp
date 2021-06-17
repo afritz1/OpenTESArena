@@ -3,6 +3,9 @@
 #include "ProvinceMapUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
+#include "../UI/FontDefinition.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/FontUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -96,6 +99,22 @@ int ProvinceMapUiView::getSearchSubPanelTextEntryTextureX(int textureWidth)
 int ProvinceMapUiView::getSearchSubPanelTextEntryTextureY(int textureHeight)
 {
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 1;
+}
+
+ListBox::Properties ProvinceMapUiView::makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(FontName::Arena);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get search sub-panel list box font \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const Color itemColor(52, 24, 8);
+	constexpr double scrollScale = 1.0;
+	constexpr int rowSpacing = 0;
+	return ListBox::Properties(fontDefIndex, fontDef.getCharacterHeight(), itemColor, scrollScale, rowSpacing);
 }
 
 TextureAssetReference ProvinceMapUiView::getSearchSubPanelListTextureAssetRef()

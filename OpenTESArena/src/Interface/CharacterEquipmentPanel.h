@@ -12,7 +12,7 @@ class CharacterEquipmentPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox, playerClassTextBox;
-	std::unique_ptr<ListBox> inventoryListBox;
+	ListBox inventoryListBox;
 	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;
 	Button<ListBox&> scrollDownButton, scrollUpButton;

@@ -4,6 +4,9 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
+#include "../UI/FontDefinition.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/FontUtils.h"
 
 TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 {
@@ -41,6 +44,22 @@ Rect CharacterCreationUiView::getClassListDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.y,
 		chooseClassListUI.buttonDown.w,
 		chooseClassListUI.buttonDown.h);
+}
+
+ListBox::Properties CharacterCreationUiView::makeClassListBoxProperties(const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(FontName::A);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get class list box font \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const Color itemColor(85, 44, 20);
+	constexpr double scrollScale = 1.0;
+	constexpr int rowSpacing = 0;
+	return ListBox::Properties(fontDefIndex, fontDef.getCharacterHeight(), itemColor, scrollScale, rowSpacing);
 }
 
 TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAssetRef()

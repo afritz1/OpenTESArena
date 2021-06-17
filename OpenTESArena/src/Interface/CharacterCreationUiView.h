@@ -7,6 +7,7 @@
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
+#include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 
 class ExeData;
@@ -56,15 +57,14 @@ namespace CharacterCreationUiView
 	const Color ChooseClassTitleColor(211, 211, 211);
 	constexpr TextAlignment ChooseClassTitleAlignment = TextAlignment::Left;
 
-	constexpr int ChooseClassListBoxTextureX = 55;
-	constexpr int ChooseClassListBoxTextureY = 9;
-	const Color ChooseClassListBoxTextColor(85, 44, 20);
-	constexpr FontName ChooseClassListBoxFontName = FontName::A;
-	constexpr int ChooseClassListBoxMaxDisplayedItems = 6;
+	constexpr int ChooseClassListTextureX = 55;
+	constexpr int ChooseClassListTextureY = 9;
 
 	Rect getClassListRect(Game &game);
 	Rect getClassListUpButtonRect(Game &game);
 	Rect getClassListDownButtonRect(Game &game);
+
+	ListBox::Properties makeClassListBoxProperties(const FontLibrary &fontLibrary);
 	
 	TextureAssetReference getChooseClassListBoxTextureAssetRef();
 

@@ -24,10 +24,9 @@ class ChooseClassPanel : public Panel
 {
 private:
 	std::unique_ptr<TextBox> titleTextBox;
-	std::unique_ptr<ListBox> classesListBox;
+	ListBox classesListBox;
 	Button<Game&> backToClassCreationButton;
 	Button<ListBox&> upButton, downButton;
-	Button<Game&, int> acceptButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClassDefinition> charClasses;
 

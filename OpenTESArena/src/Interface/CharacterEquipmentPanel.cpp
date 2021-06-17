@@ -72,26 +72,22 @@ bool CharacterEquipmentPanel::init()
 			game.getRenderer());
 	}();
 
-	this->inventoryListBox = [&game]()
+	Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
+	std::vector<std::pair<std::string, Color>> elements;
+	for (int i = 0; i < itemUiDefs.getCount(); i++)
 	{
-		Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
-		std::vector<std::pair<std::string, Color>> elements;
-		for (int i = 0; i < itemUiDefs.getCount(); i++)
-		{
-			const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
-			elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
-		}
+		const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
+		elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
+	}
 
-		return std::make_unique<ListBox>(
-			InventoryUiView::PlayerInventoryListBoxX,
-			InventoryUiView::PlayerInventoryListBoxY,
-			elements,
-			InventoryUiView::PlayerInventoryListBoxFontName,
-			InventoryUiView::PlayerInventoryMaxDisplayedItems,
-			InventoryUiView::PlayerInventoryRowSpacing,
-			game.getFontLibrary(),
-			game.getRenderer());
-	}();
+	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,
+		InventoryUiView::makePlayerInventoryListBoxProperties(game.getFontLibrary()), game.getRenderer());
+	for (int i = 0; i < static_cast<int>(elements.size()); i++)
+	{
+		auto &pair = elements[i];
+		this->inventoryListBox.add(std::move(pair.first));
+		this->inventoryListBox.setOverrideColor(i, pair.second);
+	}
 
 	this->backToStatsButton = Button<Game&>(
 		CharacterSheetUiView::BackToStatsButtonX,
@@ -146,8 +142,7 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 	const bool mouseWheeledDown = inputManager.mouseWheeledDown(e);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 	if (leftClick)
 	{
@@ -166,20 +161,20 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->scrollUpButton.contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton.click(*this->inventoryListBox.get());
+			this->scrollUpButton.click(this->inventoryListBox);
 		}
 		else if (this->scrollDownButton.contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton.click(*this->inventoryListBox.get());
+			this->scrollDownButton.click(this->inventoryListBox);
 		}
 	}
 	else if (mouseWheeledUp)
 	{
-		this->scrollUpButton.click(*this->inventoryListBox.get());
+		this->scrollUpButton.click(this->inventoryListBox);
 	}
 	else if (mouseWheeledDown)
 	{
-		this->scrollDownButton.click(*this->inventoryListBox.get());
+		this->scrollDownButton.click(this->inventoryListBox);
 	}
 }
 
@@ -237,6 +232,6 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->playerClassTextBox->getTexture(), this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
 	
 	// Draw inventory list box.
-	const Rect &inventoryListBoxRect = this->inventoryListBox->getRect();
-	renderer.drawOriginal(this->inventoryListBox->getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
+	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
+	renderer.drawOriginal(this->inventoryListBox.getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
 }

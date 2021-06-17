@@ -9,6 +9,7 @@
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
+#include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 
 class Game;
@@ -103,12 +104,8 @@ namespace ProvinceMapUiView
 	constexpr int SearchSubPanelListTextureX = 57;
 	constexpr int SearchSubPanelListTextureY = 11;
 
-	constexpr int SearchSubPanelListBoxX = 85;
-	constexpr int SearchSubPanelListBoxY = 34;
-	constexpr int SearchSubPanelListBoxWidth = 147; // Only width here since it is a custom fit to occupy more space.
-	constexpr FontName SearchSubPanelListBoxFontName = FontName::Arena;
-	const Color SearchSubPanelListBoxTextColor(52, 24, 8);
-	constexpr int SearchSubPanelListBoxMaxDisplayed = 6;
+	const Rect SearchSubPanelListBoxRect(85, 34, 147, 120); // @todo: verify height
+	ListBox::Properties makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAssetReference getSearchSubPanelListTextureAssetRef();
 	TextureAssetReference getSearchSubPanelListPaletteTextureAssetRef(Game &game, int provinceID);

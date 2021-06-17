@@ -64,7 +64,7 @@ void CharacterCreationUiController::onChooseClassListBoxDownButtonSelected(ListB
 	listBox.scrollDown();
 }
 
-void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Game &game, int charClassDefID)
+void CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(Game &game, int charClassDefID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setClassDefID(charClassDefID);

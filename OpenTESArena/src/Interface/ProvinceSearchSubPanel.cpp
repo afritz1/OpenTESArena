@@ -77,7 +77,6 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	}();
 
 	this->textAcceptButton = Button<Game&, ProvinceSearchSubPanel&>(ProvinceMapUiController::onSearchTextAccepted);
-	this->listAcceptButton = Button<Game&, ProvinceSearchSubPanel&, int>(ProvinceMapUiController::onSearchListLocationSelected);
 	this->listUpButton = Button<ListBox&>(
 		ProvinceMapUiView::SearchSubPanelListUpButtonCenterPoint,
 		ProvinceMapUiView::SearchSubPanelListUpButtonWidth,
@@ -123,26 +122,25 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	std::vector<std::string> locationNames;
-	for (const int locationIndex : this->locationsListIndices)
+	this->locationsListBox.init(ProvinceMapUiView::SearchSubPanelListBoxRect,
+		ProvinceMapUiView::makeSearchSubPanelListBoxProperties(game.getFontLibrary()), game.getRenderer());
+
+	for (int i = 0; i < static_cast<int>(this->locationsListIndices.size()); i++)
 	{
+		const int locationIndex = this->locationsListIndices[i];
 		const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
 		const int locationDefIndex = locationInst.getLocationDefIndex();
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-		const std::string &locationName = locationInst.getName(locationDef);
+		std::string locationName = locationInst.getName(locationDef);
 
-		locationNames.push_back(locationName);
+		this->locationsListBox.add(std::move(locationName));
+		this->locationsListBox.setCallback(i, [this, &game, i]()
+		{
+			DebugAssertIndex(this->locationsListIndices, i);
+			const int locationsListIndex = this->locationsListIndices[i];
+			ProvinceMapUiController::onSearchListLocationSelected(game, *this, locationsListIndex);
+		});
 	}
-
-	this->locationsListBox = std::make_unique<ListBox>(
-		ProvinceMapUiView::SearchSubPanelListBoxX,
-		ProvinceMapUiView::SearchSubPanelListBoxY,
-		ProvinceMapUiView::SearchSubPanelListBoxTextColor,
-		locationNames,
-		ProvinceMapUiView::SearchSubPanelListBoxFontName,
-		ProvinceMapUiView::SearchSubPanelListBoxMaxDisplayed,
-		game.getFontLibrary(),
-		game.getRenderer());
 }
 
 void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
@@ -226,29 +224,29 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 		// Custom width to better fill the screen-space.
-		const Rect &listBoxRect = this->locationsListBox->getRect();
-
+		const Rect &listBoxRect = this->locationsListBox.getRect();
 		if (listBoxRect.contains(originalPoint))
 		{
 			if (leftClick)
 			{
-				// Verify that the clicked index is valid. If so, get the location ID and
-				// try to select the location.
-				const int index = this->locationsListBox->getClickedIndex(originalPoint);
-				if ((index >= 0) && (index < this->locationsListBox->getCount()))
+				for (int i = 0; i < this->locationsListBox.getCount(); i++)
 				{
-					DebugAssertIndex(this->locationsListIndices, index);
-					const int locationsListIndex = this->locationsListIndices[index];
-					this->listAcceptButton.click(this->getGame(), *this, locationsListIndex);
+					const Rect &itemGlobalRect = this->locationsListBox.getItemGlobalRect(i);
+					if (itemGlobalRect.contains(originalPoint))
+					{
+						const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
+						itemCallback();
+						break;
+					}
 				}
 			}
 			else if (mouseWheelUp)
 			{
-				this->listUpButton.click(*this->locationsListBox);
+				this->listUpButton.click(this->locationsListBox);
 			}
 			else if (mouseWheelDown)
 			{
-				this->listDownButton.click(*this->locationsListBox);
+				this->listDownButton.click(this->locationsListBox);
 			}
 		}
 		else if (leftClick)
@@ -256,11 +254,11 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 			// Check scroll buttons (they are outside the list box to the left).
 			if (this->listUpButton.contains(originalPoint))
 			{
-				this->listUpButton.click(*this->locationsListBox);
+				this->listUpButton.click(this->locationsListBox);
 			}
 			else if (this->listDownButton.contains(originalPoint))
 			{
-				this->listDownButton.click(*this->locationsListBox);
+				this->listDownButton.click(this->locationsListBox);
 			}
 		}
 	}
@@ -327,8 +325,8 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 		textureManager);
 
 	// Draw list box text.
-	const Rect &locationsListBoxRect = this->locationsListBox->getRect();
-	renderer.drawOriginal(this->locationsListBox->getTexture(),
+	const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+	renderer.drawOriginal(this->locationsListBox.getTexture(),
 		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
 }
 
