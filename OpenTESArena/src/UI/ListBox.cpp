@@ -39,6 +39,11 @@ void ListBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 	this->properties = properties;
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING,
 		rect.getWidth(), rect.getHeight());
+
+	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
+	{
+		DebugLogError("Couldn't set SDL texture blend mode.");
+	}
 }
 
 const Rect &ListBox::getRect() const
@@ -150,6 +155,9 @@ void ListBox::updateTexture(const FontLibrary &fontLibrary)
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
 	BufferView2D<uint32_t> textureView(texturePixels, this->texture.getWidth(), this->texture.getHeight());
+
+	// Clear texture.
+	textureView.fill(0);
 
 	// Re-draw list box items relative to where they should be with the current scroll value.
 	for (int i = 0; i < static_cast<int>(this->items.size()); i++)
