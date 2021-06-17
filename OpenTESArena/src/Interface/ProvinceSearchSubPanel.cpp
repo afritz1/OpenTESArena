@@ -326,6 +326,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 
 	// Draw list box text.
 	const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+	this->locationsListBox.updateTexture(game.getFontLibrary());
 	renderer.drawOriginal(this->locationsListBox.getTexture(),
 		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
 }

@@ -31,6 +31,7 @@ void ListBox::Item::init(std::string &&text, const std::optional<Color> &overrid
 ListBox::ListBox()
 {
 	this->scrollPixelOffset = 0.0;
+	this->dirty = false;
 }
 
 void ListBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
@@ -39,6 +40,7 @@ void ListBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 	this->properties = properties;
 	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING,
 		rect.getWidth(), rect.getHeight());
+	this->dirty = true;
 
 	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
 	{
@@ -54,7 +56,7 @@ const Rect &ListBox::getRect() const
 Rect ListBox::getItemLocalRect(int index) const
 {
 	const double baseYOffset = static_cast<double>(
-		(index * this->properties.itemHeight) + (std::max(0, index - 1) * this->properties.itemSpacing));
+		(index * (this->properties.itemHeight + this->properties.itemSpacing)));
 	return Rect(
 		0,
 		static_cast<int>(baseYOffset - this->scrollPixelOffset),
@@ -101,6 +103,7 @@ void ListBox::insert(int index, std::string &&text)
 	ListBox::Item item;
 	item.init(std::move(text), std::nullopt, []() { });
 	this->items.insert(this->items.begin() + index, std::move(item));
+	this->dirty = true;
 }
 
 void ListBox::add(std::string &&text)
@@ -112,6 +115,7 @@ void ListBox::setOverrideColor(int index, const std::optional<Color> &overrideCo
 {
 	DebugAssertIndex(this->items, index);
 	this->items[index].overrideColor = overrideColor;
+	this->dirty = true;
 }
 
 void ListBox::setCallback(int index, const ItemCallback &callback)
@@ -124,27 +128,36 @@ void ListBox::remove(int index)
 {
 	DebugAssertIndex(this->items, index);
 	this->items.erase(this->items.begin() + index);
+	this->dirty = true;
 }
 
 void ListBox::removeAll()
 {
 	this->items.clear();
 	this->scrollPixelOffset = 0.0;
+	this->dirty = true;
 }
 
 void ListBox::scrollDown()
 {
 	// @todo: clamp based on rect height and item count, will probably use std::max()
 	this->scrollPixelOffset += this->getScrollDeltaPixels();
+	this->dirty = true;
 }
 
 void ListBox::scrollUp()
 {
 	this->scrollPixelOffset = std::min(0.0, this->scrollPixelOffset - this->getScrollDeltaPixels());
+	this->dirty = true;
 }
 
 void ListBox::updateTexture(const FontLibrary &fontLibrary)
 {
+	if (!this->dirty)
+	{
+		return;
+	}
+
 	uint32_t *texturePixels;
 	int pitch;
 	if (SDL_LockTexture(this->texture.get(), nullptr, reinterpret_cast<void**>(&texturePixels), &pitch) != 0)

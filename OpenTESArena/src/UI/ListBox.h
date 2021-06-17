@@ -44,6 +44,7 @@ private:
 	Texture texture; // The output texture, updated upon scrolling or changing the list.
 	Rect rect; // Screen position and dimensions.
 	double scrollPixelOffset; // Difference in pixels between the top of the first item and the top of the texture.
+	bool dirty;
 
 	// Number of pixels scrolled with one scroll delta.
 	double getScrollDeltaPixels() const;
