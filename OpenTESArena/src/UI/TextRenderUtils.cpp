@@ -108,23 +108,22 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
 	BufferView2D<uint32_t> &outBuffer)
 {
-	// Clip source texture to fit in destination texture.
-	const int srcStartX = std::max(0, -dstX);
-	const int srcEndX = std::clamp(outBuffer.getWidth() - dstX, 0, fontChar.getWidth());
-	const int srcStartY = std::max(0, -dstY);
-	const int srcEndY = std::clamp(outBuffer.getHeight() - dstY, 0, fontChar.getHeight());
-
 	const Color &transparentColor = Color::Transparent;
-	const int endX = srcEndX - srcStartX;
-	const int endY = srcEndY - srcStartY;
-	for (int y = 0; y < endY; y++)
+
+	// @todo: clip loop ranges instead of checking in loop.
+	for (int y = dstY; y < (dstY + fontChar.getHeight()); y++)
 	{
-		for (int x = 0; x < endX; x++)
+		for (int x = dstX; x < (dstX + fontChar.getWidth()); x++)
 		{
-			const bool srcPixelIsColored = fontChar.get(srcStartX + x, srcStartY + y);
-			const Color &dstColor = srcPixelIsColored ? textColor : transparentColor;
-			const uint32_t dstPixel = dstColor.toARGB();
-			outBuffer.set(dstX + x, dstY + y, dstPixel);
+			if ((x >= 0) && (x < outBuffer.getWidth()) && (y >= 0) && (y < outBuffer.getHeight()))
+			{
+				const int srcX = x - dstX;
+				const int srcY = y - dstY;
+				const bool srcPixelIsColored = fontChar.get(srcX, srcY);
+				const Color &dstColor = srcPixelIsColored ? textColor : transparentColor;
+				const uint32_t dstPixel = dstColor.toARGB();
+				outBuffer.set(x, y, dstPixel);
+			}
 		}
 	}
 }
