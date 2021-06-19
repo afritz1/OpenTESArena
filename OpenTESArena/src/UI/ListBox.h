@@ -85,6 +85,7 @@ public:
 	void scrollDown();
 	void scrollUp();
 
+	// Redraws the underlying texture for display.
 	void updateTexture(const FontLibrary &fontLibrary);
 };
 

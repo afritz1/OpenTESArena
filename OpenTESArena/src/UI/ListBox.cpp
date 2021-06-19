@@ -89,6 +89,7 @@ const ListBox::ItemCallback &ListBox::getCallback(int index) const
 
 const Texture &ListBox::getTexture() const
 {
+	DebugAssert(!this->dirty);
 	return this->texture;
 }
 
@@ -187,4 +188,6 @@ void ListBox::updateTexture(const FontLibrary &fontLibrary)
 	}
 
 	SDL_UnlockTexture(this->texture.get());
+
+	this->dirty = false;
 }
