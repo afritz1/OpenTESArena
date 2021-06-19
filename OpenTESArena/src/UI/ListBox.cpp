@@ -144,8 +144,14 @@ void ListBox::removeAll()
 
 void ListBox::scrollDown()
 {
-	// @todo: clamp based on rect height and item count, will probably use std::min()
-	this->scrollPixelOffset += this->getScrollDeltaPixels();
+	const int itemCount = this->getCount();
+	const int itemHeightSum = this->properties.itemHeight * itemCount;
+	const int itemPaddingSum = this->properties.itemSpacing * std::max(0, itemCount - 1);
+	const int totalItemSizeSum = itemHeightSum + itemPaddingSum;
+	const int textureHeight = this->texture.getHeight();
+	const double maxScrollPixelOffset = std::max(0.0, static_cast<double>(totalItemSizeSum - textureHeight));
+
+	this->scrollPixelOffset = std::min(this->scrollPixelOffset + this->getScrollDeltaPixels(), maxScrollPixelOffset);
 	this->dirty = true;
 }
 
