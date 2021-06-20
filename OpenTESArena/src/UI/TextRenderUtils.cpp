@@ -51,9 +51,10 @@ const Color &TextRenderUtils::ColorOverrideInfo::getColor(int entryIndex) const
 void TextRenderUtils::ColorOverrideInfo::add(int charIndex, const Color &color)
 {
 	const std::optional<int> existingEntryIndex = this->findEntryIndex(charIndex);
-	if (existingEntryIndex != std::nullopt)
+	if (existingEntryIndex.has_value())
 	{
 		DebugLogError("Already have color override for char index \"" + std::to_string(charIndex) + "\".");
+		return;
 	}
 
 	this->entries.emplace_back(Entry(charIndex, color));
