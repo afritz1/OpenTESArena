@@ -31,6 +31,18 @@ public:
 			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing);
 		Properties();
 	};
+
+	// Helper struct for conveniently defining Rect + Properties together since currently they are somewhat coupled
+	// (rect dimensions == texture dimensions). Intended for static text where the text box dimensions should be known
+	// at construction time. Dynamic text boxes for player input (like the player name in character creation) might not
+	// use init info.
+	struct InitInfo
+	{
+		Rect rect;
+		Properties properties;
+
+		void init(const Rect &rect, Properties &&properties);
+	};
 private:
 	Rect rect; // Screen position and render dimensions (NOT texture dimensions).
 	Properties properties;

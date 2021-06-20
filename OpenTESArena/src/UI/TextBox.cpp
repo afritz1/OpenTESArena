@@ -24,6 +24,12 @@ TextBox::Properties::Properties(int fontDefIndex, const TextRenderUtils::Texture
 TextBox::Properties::Properties()
 	: Properties(-1, TextRenderUtils::TextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
 
+void TextBox::InitInfo::init(const Rect &rect, Properties &&properties)
+{
+	this->rect = rect;
+	this->properties = std::move(properties);
+}
+
 TextBox::TextBox()
 {
 	this->dirty = false;
