@@ -23,10 +23,11 @@ public:
 		int fontDefIndex; // Index in font library.
 		Color defaultColor; // Color of text unless overridden.
 		TextAlignment alignment;
+		std::optional<TextRenderUtils::TextShadowInfo> shadowInfo;
 		int lineSpacing; // Pixels between each line of text.
 
-		Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex,
-			const Color &defaultColor, TextAlignment alignment, int lineSpacing);
+		Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex, const Color &defaultColor,
+			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing);
 		Properties();
 	};
 private:

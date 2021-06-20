@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "TextAlignment.h"
 #include "TextRenderUtils.h"
 
 #include "components/debug/Debug.h"
@@ -118,6 +119,19 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 	return charIDs;
 }
 
+int TextRenderUtils::getLinePixelLength(const std::vector<FontDefinition::CharID> &charIDs,
+	const FontDefinition &fontDef)
+{
+	int width = 0;
+	for (const FontDefinition::CharID charID : charIDs)
+	{
+		const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
+		width += fontChar.getWidth();
+	}
+
+	return width;
+}
+
 TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
 	const FontDefinition &fontDef, const TextShadowInfo *shadow, int lineSpacing)
 {
@@ -127,15 +141,8 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	for (const std::string_view &line : textLines)
 	{
 		const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
-
-		int tempWidth = 0;
-		for (const FontDefinition::CharID charID : charIDs)
-		{
-			const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
-			tempWidth += fontChar.getWidth();
-		}
-
-		width = std::max(width, tempWidth);
+		const int lineWidth = TextRenderUtils::getLinePixelLength(charIDs, fontDef);
+		width = std::max(width, lineWidth);
 	}
 
 	const int lineCount = static_cast<int>(textLines.size());
@@ -150,6 +157,67 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	TextureGenInfo textureGenInfo;
 	textureGenInfo.init(width, height);
 	return textureGenInfo;
+}
+
+std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::string_view> &textLines,
+	TextAlignment alignment, const FontDefinition &fontDef)
+{
+	std::vector<int> xOffsets(textLines.size());
+
+	if (alignment == TextAlignment::Left)
+	{
+		// All text lines are against the left edge.
+		std::fill(xOffsets.begin(), xOffsets.end(), 0);
+	}
+	else if (alignment == TextAlignment::Center)
+	{
+		auto getTextLinePixelLength = [&textLines, &fontDef](int textLinesIndex)
+		{
+			DebugAssertIndex(textLines, textLinesIndex);
+			const std::string_view &textLine = textLines[textLinesIndex];
+			const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(textLine, fontDef);
+			return TextRenderUtils::getLinePixelLength(charIDs, fontDef);
+		};
+
+		// Find longest line then make all other lines' offsets relative to that one.
+		const int longestLineIndex = [&textLines]()
+		{
+			const auto iter = std::max_element(textLines.begin(), textLines.end(),
+				[](const std::string_view &a, const std::string_view &b)
+			{
+				return a.size() < b.size();
+			});
+
+			if (iter == textLines.end())
+			{
+				DebugCrash("Couldn't find longest line for text alignment offsets.");
+			}
+
+			return static_cast<int>(std::distance(textLines.begin(), iter));
+		}();
+
+		const int longestLinePixelLength = getTextLinePixelLength(longestLineIndex);
+
+		for (int i = 0; i < static_cast<int>(textLines.size()); i++)
+		{
+			if (i != longestLineIndex)
+			{
+				const int linePixelLength = getTextLinePixelLength(i);
+				xOffsets[i] = (longestLinePixelLength / 2) - (linePixelLength / 2);
+			}
+			else
+			{
+				// Longest line has no offset.
+				xOffsets[i] = 0;
+			}
+		}
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(alignment)));
+	}
+
+	return xOffsets;
 }
 
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,

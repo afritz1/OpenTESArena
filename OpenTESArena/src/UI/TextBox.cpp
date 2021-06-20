@@ -12,8 +12,9 @@
 #include "components/utilities/StringView.h"
 
 TextBox::Properties::Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex,
-	const Color &defaultColor, TextAlignment alignment, int lineSpacing)
-	: textureGenInfo(textureGenInfo), defaultColor(defaultColor)
+	const Color &defaultColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo,
+	int lineSpacing)
+	: textureGenInfo(textureGenInfo), defaultColor(defaultColor), shadowInfo(shadowInfo)
 {
 	this->fontDefIndex = fontDefIndex;
 	this->alignment = alignment;
@@ -21,7 +22,7 @@ TextBox::Properties::Properties(const TextRenderUtils::TextureGenInfo &textureGe
 }
 
 TextBox::Properties::Properties()
-	: Properties(TextRenderUtils::TextureGenInfo(), -1, Color(), static_cast<TextAlignment>(-1), 0) { }
+	: Properties(TextRenderUtils::TextureGenInfo(), -1, Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
 
 TextBox::TextBox()
 {
@@ -94,9 +95,25 @@ void TextBox::updateTexture(const FontLibrary &fontLibrary)
 
 	if (this->text.size() > 0)
 	{
-		// @todo: draw text to texture
-		// @todo: make sure to handle text alignment
-		DebugNotImplemented();
+		const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
+		const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(textLines, this->properties.alignment, fontDef);
+		DebugAssert(xOffsets.size() == textLines.size());
+
+		// Draw text to texture.
+		// @todo: might need to adjust X and Y by some function of shadow offset. Might also need to draw all shadow lines
+		// before all regular lines.
+		int y = 0;
+		for (int i = 0; i < static_cast<int>(textLines.size()); i++)
+		{
+			const std::string_view &textLine = textLines[i];
+			const int xOffset = xOffsets[i];
+			const TextRenderUtils::TextShadowInfo *shadowInfo =
+				this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
+			TextRenderUtils::drawTextLine(textLine, fontDef, xOffset, y, this->properties.defaultColor,
+				&this->colorOverrideInfo, shadowInfo, textureView);
+
+			y += fontDef.getCharacterHeight() + this->properties.lineSpacing;
+		}
 	}
 
 	SDL_UnlockTexture(this->texture.get());

@@ -14,6 +14,8 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 
+enum class TextAlignment;
+
 namespace TextRenderUtils
 {
 	// Data for generating a texture for rendering text into.
@@ -68,10 +70,18 @@ namespace TextRenderUtils
 	// Gets the font characters needed to render each character in the given line of text.
 	std::vector<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);
 
+	// Gets the number of pixels long a rendered line of characters would be.
+	int getLinePixelLength(const std::vector<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef);
+
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
 	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef,
 		const TextShadowInfo *shadow = nullptr, int lineSpacing = 0);
+
+	// Generates X pixel offsets for each line of a text box based on text alignment.
+	// @todo: might eventually be percentages of the longest line's dimensions?
+	std::vector<int> makeAlignmentXOffsets(const std::vector<std::string_view> &textLines, TextAlignment alignment,
+		const FontDefinition &fontDef);
 
 	// Blits the given font character to the output texture, and handles clipping.
 	// @todo: this should draw to a UI texture via UiTextureID eventually. Process will be:
