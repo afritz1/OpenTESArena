@@ -1,4 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.8.0)
+IF (MSVC)
+    # DPI-awareness property "VS_DPI_AWARE" is in CMake 3.16.
+    # (as of 6/20/2021, Debian is CMake 3.13)
+    CMAKE_MINIMUM_REQUIRED(VERSION 3.16.0)
+ELSE ()
+    CMAKE_MINIMUM_REQUIRED(VERSION 3.8.0)
+ENDIF()
 
 IF (COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)

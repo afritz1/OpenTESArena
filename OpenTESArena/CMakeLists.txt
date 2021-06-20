@@ -145,3 +145,9 @@ SET_TARGET_PROPERTIES(TESArena PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESAren
 
 # Visual Studio filters.
 SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/OpenTESArena FILES ${TES_SOURCES})
+
+# DPI-awareness for Visual Studio project (no manifest required).
+# Note this is a CMake 3.16 feature.
+IF (MSVC)
+	SET_TARGET_PROPERTIES(TESArena PROPERTIES VS_DPI_AWARE "PerMonitor")
+ENDIF()
