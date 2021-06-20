@@ -2,6 +2,8 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/FontUtils.h"
 #include "../UI/Surface.h"
 #include "../World/Chunk.h"
 #include "../World/ChunkManager.h"
@@ -12,6 +14,34 @@
 #include "../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
+
+TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(AutomapUiView::LocationTextBoxFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const TextRenderUtils::TextShadowInfo shadowInfo(
+		AutomapUiView::LocationTextBoxShadowOffsetX,
+		AutomapUiView::LocationTextBoxShadowOffsetY,
+		AutomapUiView::LocationTextBoxShadowColor);
+	
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = 0;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, &shadowInfo, lineSpacing);
+
+	const Rect rect(AutomapUiView::LocationTextBoxCenterPoint, textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo, AutomapUiView::LocationTextBoxFontColor,
+		AutomapUiView::LocationTextBoxTextAlignment, shadowInfo, lineSpacing);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
 
 TextureAssetReference AutomapUiView::getBackgroundTextureAssetRef()
 {

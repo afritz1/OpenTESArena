@@ -12,6 +12,8 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../World/Coord.h"
 
 class ChunkManager;
@@ -66,6 +68,8 @@ namespace AutomapUiView
 	const Color LocationTextBoxShadowColor(150, 101, 52);
 	constexpr int LocationTextBoxShadowOffsetX = 2;
 	constexpr int LocationTextBoxShadowOffsetY = 2;
+
+	TextBox::InitInfo getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToGameButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
 	constexpr int BackToGameButtonWidth = 38;
