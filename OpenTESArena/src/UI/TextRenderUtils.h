@@ -45,6 +45,7 @@ namespace TextRenderUtils
 
 		std::vector<Entry> entries;
 	public:
+		int getEntryCount() const;
 		std::optional<int> findEntryIndex(int charIndex) const;
 		const Color &getColor(int entryIndex) const;
 

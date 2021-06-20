@@ -25,6 +25,11 @@ TextRenderUtils::ColorOverrideInfo::Entry::Entry(int charIndex, const Color &col
 	this->charIndex = charIndex;
 }
 
+int TextRenderUtils::ColorOverrideInfo::getEntryCount() const
+{
+	return static_cast<int>(this->entries.size());
+}
+
 std::optional<int> TextRenderUtils::ColorOverrideInfo::findEntryIndex(int charIndex) const
 {
 	const auto iter = std::find_if(this->entries.begin(), this->entries.end(),

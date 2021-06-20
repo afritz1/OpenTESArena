@@ -107,10 +107,12 @@ void TextBox::updateTexture(const FontLibrary &fontLibrary)
 		{
 			const std::string_view &textLine = textLines[i];
 			const int xOffset = xOffsets[i];
-			const TextRenderUtils::TextShadowInfo *shadowInfo =
+			const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr =
+				(this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
+			const TextRenderUtils::TextShadowInfo *shadowInfoPtr =
 				this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
 			TextRenderUtils::drawTextLine(textLine, fontDef, xOffset, y, this->properties.defaultColor,
-				&this->colorOverrideInfo, shadowInfo, textureView);
+				colorOverrideInfoPtr, shadowInfoPtr, textureView);
 
 			y += fontDef.getCharacterHeight() + this->properties.lineSpacing;
 		}
