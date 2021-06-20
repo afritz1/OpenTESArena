@@ -19,22 +19,22 @@ class TextBox
 public:
 	struct Properties
 	{
-		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
 		int fontDefIndex; // Index in font library.
+		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
 		Color defaultColor; // Color of text unless overridden.
 		TextAlignment alignment;
 		std::optional<TextRenderUtils::TextShadowInfo> shadowInfo;
 		int lineSpacing; // Pixels between each line of text.
 
-		Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex, const Color &defaultColor,
+		Properties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor,
 			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing);
 		Properties();
 	};
 private:
-	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
-	std::string text;
-	Properties properties;
 	Rect rect; // Screen position and render dimensions (NOT texture dimensions).
+	Properties properties;
+	std::string text;
+	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
 	Texture texture; // Output texture for rendering.
 	bool dirty;
 public:

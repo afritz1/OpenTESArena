@@ -11,7 +11,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
 
-TextBox::Properties::Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex,
+TextBox::Properties::Properties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo,
 	const Color &defaultColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo,
 	int lineSpacing)
 	: textureGenInfo(textureGenInfo), defaultColor(defaultColor), shadowInfo(shadowInfo)
@@ -22,7 +22,7 @@ TextBox::Properties::Properties(const TextRenderUtils::TextureGenInfo &textureGe
 }
 
 TextBox::Properties::Properties()
-	: Properties(TextRenderUtils::TextureGenInfo(), -1, Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
+	: Properties(-1, TextRenderUtils::TextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
 
 TextBox::TextBox()
 {
