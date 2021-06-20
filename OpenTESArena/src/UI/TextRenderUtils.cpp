@@ -175,32 +175,51 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 }
 
 void TextRenderUtils::drawTextLine(const BufferView<const FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
-	int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
+	int dstX, int dstY, const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
+	BufferView2D<uint32_t> &outBuffer)
 {
-	auto drawLine = [&charIDs, &fontDef, &outBuffer](int x, int y, const Color &color)
+	auto drawLine = [&charIDs, &fontDef, colorOverrideInfo, &outBuffer](
+		int x, int y, const Color &color, bool allowColorOverrides)
 	{
 		int currentX = 0;
 		for (int i = 0; i < charIDs.getCount(); i++)
 		{
 			const FontDefinition::CharID charID = charIDs.get(i);
 			const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
-			TextRenderUtils::drawChar(fontChar, x + currentX, y, color, outBuffer);
+			const Color &charColor = [colorOverrideInfo, &color, allowColorOverrides, i]() -> const Color&
+			{
+				if (allowColorOverrides)
+				{
+					const std::optional<int> entryIndex = colorOverrideInfo->findEntryIndex(i);
+					if (entryIndex.has_value())
+					{
+						return colorOverrideInfo->getColor(*entryIndex);
+					}
+				}
+
+				return color;
+			}();
+
+			TextRenderUtils::drawChar(fontChar, x + currentX, y, charColor, outBuffer);
 			currentX += fontChar.getWidth();
 		}
 	};
 
 	if (shadow != nullptr)
 	{
-		drawLine(dstX + shadow->offsetX, dstY + shadow->offsetY, shadow->color);
+		constexpr bool allowShadowColorOverrides = false;
+		drawLine(dstX + shadow->offsetX, dstY + shadow->offsetY, shadow->color, allowShadowColorOverrides);
 	}
 
-	drawLine(dstX, dstY, textColor);
+	const bool allowForegroundColorOverrides = colorOverrideInfo != nullptr;
+	drawLine(dstX, dstY, textColor, allowForegroundColorOverrides);
 }
 
 void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
-	const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
+	const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
+	BufferView2D<uint32_t> &outBuffer)
 {
 	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	const BufferView<const FontDefinition::CharID> charIdsView(charIDs.data(), static_cast<int>(charIDs.size()));
-	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, shadow, outBuffer);
+	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, colorOverrideInfo, shadow, outBuffer);
 }

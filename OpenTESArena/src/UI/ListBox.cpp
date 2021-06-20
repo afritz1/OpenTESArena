@@ -172,7 +172,7 @@ void ListBox::updateTexture(const FontLibrary &fontLibrary)
 	int pitch;
 	if (SDL_LockTexture(this->texture.get(), nullptr, reinterpret_cast<void**>(&texturePixels), &pitch) != 0)
 	{
-		DebugLogError("Couldn't lock ListBox texture for updating.");
+		DebugLogError("Couldn't lock list box texture for updating.");
 		return;
 	}
 
@@ -188,9 +188,10 @@ void ListBox::updateTexture(const FontLibrary &fontLibrary)
 		const ListBox::Item &item = this->items[i];
 		const Rect itemRect = this->getItemLocalRect(i);
 		const Color &itemColor = item.overrideColor.has_value() ? *item.overrideColor : this->properties.defaultColor;
+		constexpr TextRenderUtils::ColorOverrideInfo *colorOverrideInfo = nullptr;
 		constexpr TextRenderUtils::TextShadowInfo *shadowInfo = nullptr;
 		TextRenderUtils::drawTextLine(item.text, fontDef, itemRect.getLeft(), itemRect.getTop(),
-			itemColor, shadowInfo, textureView);
+			itemColor, colorOverrideInfo, shadowInfo, textureView);
 	}
 
 	SDL_UnlockTexture(this->texture.get());

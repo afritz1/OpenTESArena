@@ -82,9 +82,11 @@ namespace TextRenderUtils
 	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
 		BufferView2D<uint32_t> &outBuffer);
 	void drawTextLine(const BufferView<const FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
-		int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
-	void drawTextLine(const std::string_view &line, const FontDefinition &fontDef,
-		int dstX, int dstY, const Color &textColor, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
+		int dstX, int dstY, const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
+		BufferView2D<uint32_t> &outBuffer);
+	void drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
+		const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
+		BufferView2D<uint32_t> &outBuffer);
 }
 
 #endif
