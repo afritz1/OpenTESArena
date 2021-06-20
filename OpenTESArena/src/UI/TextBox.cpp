@@ -68,9 +68,9 @@ const Texture &TextBox::getTexture() const
 	return this->texture;
 }
 
-void TextBox::setText(std::string &&text)
+void TextBox::setText(const std::string_view &text)
 {
-	this->text = std::move(text);
+	this->text = std::string(text);
 	this->dirty = true;
 }
 

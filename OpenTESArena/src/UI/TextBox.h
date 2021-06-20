@@ -2,6 +2,7 @@
 #define TEXT_BOX_H
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "TextRenderUtils.h"
@@ -45,7 +46,7 @@ public:
 	const Rect &getRect() const;
 	const Texture &getTexture() const;
 
-	void setText(std::string &&text);
+	void setText(const std::string_view &text);
 
 	void addOverrideColor(int textIndex, const Color &overrideColor);
 	void clearOverrideColors();
