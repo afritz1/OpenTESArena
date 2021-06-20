@@ -18,6 +18,52 @@ void TextRenderUtils::TextureGenInfo::init(int width, int height)
 	this->height = height;
 }
 
+TextRenderUtils::ColorOverrideInfo::Entry::Entry(int charIndex, const Color &color)
+	: color(color)
+{
+	this->charIndex = charIndex;
+}
+
+std::optional<int> TextRenderUtils::ColorOverrideInfo::findEntryIndex(int charIndex) const
+{
+	const auto iter = std::find_if(this->entries.begin(), this->entries.end(),
+		[charIndex](const ColorOverrideInfo::Entry &entry)
+	{
+		return entry.charIndex == charIndex;
+	});
+
+	if (iter != this->entries.end())
+	{
+		return static_cast<int>(std::distance(this->entries.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+const Color &TextRenderUtils::ColorOverrideInfo::getColor(int entryIndex) const
+{
+	DebugAssertIndex(this->entries, entryIndex);
+	return this->entries[entryIndex].color;
+}
+
+void TextRenderUtils::ColorOverrideInfo::add(int charIndex, const Color &color)
+{
+	const std::optional<int> existingEntryIndex = this->findEntryIndex(charIndex);
+	if (existingEntryIndex != std::nullopt)
+	{
+		DebugLogError("Already have color override for char index \"" + std::to_string(charIndex) + "\".");
+	}
+
+	this->entries.emplace_back(Entry(charIndex, color));
+}
+
+void TextRenderUtils::ColorOverrideInfo::clear()
+{
+	this->entries.clear();
+}
+
 TextRenderUtils::TextShadowInfo::TextShadowInfo(int offsetX, int offsetY, const Color &color)
 	: color(color)
 {

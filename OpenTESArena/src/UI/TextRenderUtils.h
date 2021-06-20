@@ -2,6 +2,7 @@
 #define TEXT_RENDER_UTILS_H
 
 #include <cstdint>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -15,7 +16,7 @@
 
 namespace TextRenderUtils
 {
-	// Data for generating a text box texture.
+	// Data for generating a texture for rendering text into.
 	struct TextureGenInfo
 	{
 		int width, height; // In pixels.
@@ -26,6 +27,30 @@ namespace TextRenderUtils
 		void init(int width, int height);
 	};
 
+	// Data for replacing default text character colors with overrides.
+	class ColorOverrideInfo
+	{
+	private:
+		// @todo: not sure about this yet; might eventually insert color formatting into the string itself,
+		// only if it's more convenient.
+		struct Entry
+		{
+			int charIndex; // Index of character in text.
+			Color color;
+
+			Entry(int charIndex, const Color &color);
+		};
+
+		std::vector<Entry> entries;
+	public:
+		std::optional<int> findEntryIndex(int charIndex) const;
+		const Color &getColor(int entryIndex) const;
+
+		void add(int charIndex, const Color &color);
+		void clear();
+	};
+
+	// Data for positioning a shadow within a text box.
 	struct TextShadowInfo
 	{
 		int offsetX, offsetY;

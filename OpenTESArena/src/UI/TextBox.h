@@ -4,46 +4,53 @@
 #include <string>
 #include <vector>
 
-#include "RichTextString.h"
-#include "Surface.h"
 #include "TextRenderUtils.h"
 #include "Texture.h"
-#include "../Math/Vector2.h"
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
 
-// Redesigned for use with the font system using Arena assets.
-
 class FontLibrary;
-class Rect;
 class Renderer;
+
+enum class TextAlignment;
 
 class TextBox
 {
-private:
-	RichTextString richText;
-	Surface surface; // For ListBox compatibility. Identical to "texture".
-	Texture texture;
-	int x, y;
 public:
-	TextBox(int x, int y, const RichTextString &richText, const TextRenderUtils::TextShadowInfo *shadow,
-		const FontLibrary &fontLibrary, Renderer &renderer);
-	TextBox(const Int2 &center, const RichTextString &richText, const TextRenderUtils::TextShadowInfo *shadow,
-		const FontLibrary &fontLibrary, Renderer &renderer);
-	TextBox(int x, int y, const RichTextString &richText, const FontLibrary &fontLibrary,
-		Renderer &renderer);
-	TextBox(const Int2 &center, const RichTextString &richText, const FontLibrary &fontLibrary,
-		Renderer &renderer);
+	struct Properties
+	{
+		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+		int fontDefIndex; // Index in font library.
+		Color defaultColor; // Color of text unless overridden.
+		TextAlignment alignment;
+		int lineSpacing; // Pixels between each line of text.
 
-	int getX() const;
-	int getY() const;
-	const RichTextString &getRichText() const;
+		Properties(const TextRenderUtils::TextureGenInfo &textureGenInfo, int fontDefIndex,
+			const Color &defaultColor, TextAlignment alignment, int lineSpacing);
+		Properties();
+	};
+private:
+	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
+	std::string text;
+	Properties properties;
+	Rect rect; // Screen position and render dimensions (NOT texture dimensions).
+	Texture texture; // Output texture for rendering.
+	bool dirty;
+public:
+	TextBox();
 
-	// Gets the bounding box around the text box's content. Useful for tooltips when hovering
-	// over it with the mouse.
-	Rect getRect() const;
+	void init(const Rect &rect, const Properties &properties, Renderer &renderer);
 
-	const Surface &getSurface() const;
+	const Rect &getRect() const;
 	const Texture &getTexture() const;
+
+	void setText(std::string &&text);
+
+	void addOverrideColor(int textIndex, const Color &overrideColor);
+	void clearOverrideColors();
+
+	// Redraws the underlying texture for display.
+	void updateTexture(const FontLibrary &fontLibrary);
 };
 
 #endif
