@@ -29,18 +29,32 @@ TextBox::TextBox()
 	this->dirty = false;
 }
 
-void TextBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
+bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
 {
 	this->rect = rect;
 	this->properties = properties;
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING,
-		rect.getWidth(), rect.getHeight());
-	this->dirty = true;
+
+	const int textureWidth = properties.textureGenInfo.width;
+	const int textureHeight = properties.textureGenInfo.height;
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+
+	if (this->texture.get() == nullptr)
+	{
+		DebugLogError("Couldn't create text box texture (" + std::to_string(textureWidth) + "x" +
+			std::to_string(textureHeight) + ").");
+		return false;
+	}
 
 	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
 	{
 		DebugLogError("Couldn't set SDL texture blend mode.");
+		return false;
 	}
+
+	this->dirty = true;
+
+	return true;
 }
 
 const Rect &TextBox::getRect() const

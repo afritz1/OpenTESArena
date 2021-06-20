@@ -40,7 +40,7 @@ private:
 public:
 	TextBox();
 
-	void init(const Rect &rect, const Properties &properties, Renderer &renderer);
+	bool init(const Rect &rect, const Properties &properties, Renderer &renderer);
 
 	const Rect &getRect() const;
 	const Texture &getTexture() const;
