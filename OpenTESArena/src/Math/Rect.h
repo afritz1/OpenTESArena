@@ -11,9 +11,10 @@ private:
 	SDL_Rect rect;
 public:
 	Rect(int x, int y, int width, int height);
+	Rect(const Int2 &center, int width, int height);
 	Rect(int width, int height);
 	Rect();
-	Rect(const Rect &rectangle);
+	Rect(const Rect &rect);
 
 	int getWidth() const;
 	int getHeight() const;
