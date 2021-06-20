@@ -54,6 +54,7 @@ public:
 	TextBox();
 
 	bool init(const Rect &rect, const Properties &properties, Renderer &renderer);
+	bool init(const InitInfo &initInfo, Renderer &renderer);
 
 	const Rect &getRect() const;
 	const Texture &getTexture() const;

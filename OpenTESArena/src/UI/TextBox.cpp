@@ -63,6 +63,11 @@ bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 	return true;
 }
 
+bool TextBox::init(const InitInfo &initInfo, Renderer &renderer)
+{
+	return this->init(initInfo.rect, initInfo.properties, renderer);
+}
+
 const Rect &TextBox::getRect() const
 {
 	return this->rect;
