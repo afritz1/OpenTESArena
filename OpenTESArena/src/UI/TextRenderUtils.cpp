@@ -228,8 +228,6 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::s
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
 	BufferView2D<uint32_t> &outBuffer)
 {
-	const Color &transparentColor = Color::Transparent;
-
 	// @todo: clip loop ranges instead of checking in loop.
 	for (int y = dstY; y < (dstY + fontChar.getHeight()); y++)
 	{
@@ -240,9 +238,11 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 				const int srcX = x - dstX;
 				const int srcY = y - dstY;
 				const bool srcPixelIsColored = fontChar.get(srcX, srcY);
-				const Color &dstColor = srcPixelIsColored ? textColor : transparentColor;
-				const uint32_t dstPixel = dstColor.toARGB();
-				outBuffer.set(x, y, dstPixel);
+				if (srcPixelIsColored)
+				{
+					const uint32_t dstPixel = textColor.toARGB();
+					outBuffer.set(x, y, dstPixel);
+				}
 			}
 		}
 	}
