@@ -15,6 +15,8 @@ class ExeData;
 class Game;
 class Rect;
 
+// @todo: might make each of these sections their own namespace in this file so the names aren't so long.
+
 namespace CharacterCreationUiView
 {
 	// -- Common --
@@ -159,6 +161,38 @@ namespace CharacterCreationUiView
 	constexpr TextAlignment ChooseRaceProvinceConfirmNoAlignment = ChooseRaceProvinceConfirmTitleAlignment;
 	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmNoTexturePatternType = TextureUtils::PatternType::Parchment;
 
+	const Int2 ChooseRaceProvinceConfirmedFirstTextCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	constexpr FontName ChooseRaceProvinceConfirmedFirstTextFontName = FontName::Arena;
+	const Color ChooseRaceProvinceConfirmedFirstTextColor(48, 12, 12);
+	constexpr TextAlignment ChooseRaceProvinceConfirmedFirstTextAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceProvinceConfirmedFirstTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedFirstTextPatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseRaceProvinceConfirmedSecondTextCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	constexpr FontName ChooseRaceProvinceConfirmedSecondTextFontName = FontName::Arena;
+	const Color ChooseRaceProvinceConfirmedSecondTextColor(48, 12, 12);
+	constexpr TextAlignment ChooseRaceProvinceConfirmedSecondTextAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceProvinceConfirmedSecondTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedSecondTextPatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseRaceProvinceConfirmedThirdTextCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	constexpr FontName ChooseRaceProvinceConfirmedThirdTextFontName = FontName::Arena;
+	const Color ChooseRaceProvinceConfirmedThirdTextColor(48, 12, 12);
+	constexpr TextAlignment ChooseRaceProvinceConfirmedThirdTextAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceProvinceConfirmedThirdTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedThirdTextPatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseRaceProvinceConfirmedFourthTextCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	constexpr FontName ChooseRaceProvinceConfirmedFourthTextFontName = FontName::Arena;
+	const Color ChooseRaceProvinceConfirmedFourthTextColor(48, 12, 12);
+	constexpr TextAlignment ChooseRaceProvinceConfirmedFourthTextAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceProvinceConfirmedFourthTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedFourthTextPatternType = TextureUtils::PatternType::Parchment;
+
 	TextureAssetReference getChooseRaceBackgroundTextureAssetRef();
 	TextureAssetReference getChooseRaceNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
 
@@ -169,9 +203,16 @@ namespace CharacterCreationUiView
 	Rect getChooseRaceProvinceConfirmYesTextureRect(const Rect &titleTextureRect);
 	Rect getChooseRaceProvinceConfirmNoTextureRect(const Rect &yesTextureRect);
 
+	Rect getChooseRaceProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
+	Rect getChooseRaceProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
+	Rect getChooseRaceProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
+	Rect getChooseRaceProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
+
 	TextBox::InitInfo getChooseRaceProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getChooseRaceProvinceConfirmYesTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getChooseRaceProvinceConfirmNoTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	// @todo: InitInfo's for Confirmed text boxes
 
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(

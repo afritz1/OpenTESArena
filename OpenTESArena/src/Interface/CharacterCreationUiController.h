@@ -34,6 +34,10 @@ namespace CharacterCreationUiController
 	void onChooseRaceProvinceButtonSelected(Game &game, int raceID);
 	void onChooseRaceProvinceConfirmButtonSelected(Game &game, int raceID);
 	void onChooseRaceProvinceCancelButtonSelected(Game &game);
+	void onChooseRaceProvinceConfirmedFirstButtonSelected(Game &game);
+	void onChooseRaceProvinceConfirmedSecondButtonSelected(Game &game);
+	void onChooseRaceProvinceConfirmedThirdButtonSelected(Game &game);
+	void onChooseRaceProvinceConfirmedFourthButtonSelected(Game &game);
 
 	// -- Choose attributes --
 	void onBackToRaceSelectionButtonSelected(Game &game);

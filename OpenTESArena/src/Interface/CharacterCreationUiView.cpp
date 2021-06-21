@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <optional>
 
 #include "CharacterCreationUiView.h"
@@ -134,6 +135,50 @@ Rect CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextureRect(const Re
 		yesTextureRect.getTop() + yesTextureRect.getHeight(),
 		yesTextureRect.getWidth(),
 		yesTextureRect.getHeight());
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 14, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 18, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 8, 40));
 }
 
 TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text,
