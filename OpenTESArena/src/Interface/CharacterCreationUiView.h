@@ -9,6 +9,7 @@
 #include "../UI/FontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 class ExeData;
 class Game;
@@ -133,11 +134,44 @@ namespace CharacterCreationUiView
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
+	const Int2 ChooseRaceProvinceConfirmTitleCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2),
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
+	constexpr FontName ChooseRaceProvinceConfirmTitleFontName = FontName::A;
+	const Color ChooseRaceProvinceConfirmTitleTextColor(52, 24, 8);
+	constexpr TextAlignment ChooseRaceProvinceConfirmTitleAlignment = TextAlignment::Center;
+	constexpr int ChooseRaceProvinceConfirmTitleLineSpacing = 1;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmTitleTexturePatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseRaceProvinceConfirmYesCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
+	constexpr FontName ChooseRaceProvinceConfirmYesFontName = ChooseRaceProvinceConfirmTitleFontName;
+	const Color ChooseRaceProvinceConfirmYesTextColor = ChooseRaceProvinceConfirmTitleTextColor;
+	constexpr TextAlignment ChooseRaceProvinceConfirmYesAlignment = ChooseRaceProvinceConfirmTitleAlignment;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmYesTexturePatternType = TextureUtils::PatternType::Parchment;
+
+	const Int2 ChooseRaceProvinceConfirmNoCenterPoint(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
+	constexpr FontName ChooseRaceProvinceConfirmNoFontName = ChooseRaceProvinceConfirmTitleFontName;
+	const Color ChooseRaceProvinceConfirmNoTextColor = ChooseRaceProvinceConfirmTitleTextColor;
+	constexpr TextAlignment ChooseRaceProvinceConfirmNoAlignment = ChooseRaceProvinceConfirmTitleAlignment;
+	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmNoTexturePatternType = TextureUtils::PatternType::Parchment;
+
 	TextureAssetReference getChooseRaceBackgroundTextureAssetRef();
 	TextureAssetReference getChooseRaceNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
 
 	int getChooseRaceNoExitTextureX(int textureWidth);
 	int getChooseRaceNoExitTextureY(int textureHeight);
+
+	Rect getChooseRaceProvinceConfirmTitleTextureRect(int textWidth, int textHeight);
+	Rect getChooseRaceProvinceConfirmYesTextureRect(const Rect &titleTextureRect);
+	Rect getChooseRaceProvinceConfirmNoTextureRect(const Rect &yesTextureRect);
+
+	TextBox::InitInfo getChooseRaceProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseRaceProvinceConfirmYesTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseRaceProvinceConfirmNoTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(

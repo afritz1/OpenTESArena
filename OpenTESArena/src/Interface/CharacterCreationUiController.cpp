@@ -135,109 +135,88 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
-	const Color textColor(52, 24, 8);
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextBoxInitInfo(titleText, fontLibrary);
 
 	MessageBoxSubPanel::Title messageBoxTitle;
-	messageBoxTitle.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxTitle.textBox.init(titleTextBoxInitInfo, renderer))
 	{
-		const int lineSpacing = 1;
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(game),
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm title text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2),
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
+	messageBoxTitle.textBox.setText(titleText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
+	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
+	const Rect titleTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextureRect(
+		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
+	messageBoxTitle.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleTexturePatternType,
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight(),
+		textureManager,
+		renderer);
+	messageBoxTitle.textureX = titleTextureRect.getLeft();
+	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
-	{
-		const int width = messageBoxTitle.textBox->getRect().getWidth() + 22;
-		const int height = 60;
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
-			textureManager, renderer);
-	}();
-
-	messageBoxTitle.textureX = (ArenaRenderUtils::SCREEN_WIDTH / 2) -
-		(messageBoxTitle.texture.getWidth() / 2) - 1;
-	messageBoxTitle.textureY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) -
-		(messageBoxTitle.texture.getHeight() / 2) - 21;
+	const std::string yesText = CharacterCreationUiModel::getChooseRaceProvinceConfirmYesText(game);
+	const TextBox::InitInfo yesTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextBoxInitInfo(yesText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxYes;
-	messageBoxYes.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxYes.textBox.init(yesTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			"Yes",
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm yes text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
+	messageBoxYes.textBox.setText(yesText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
-
-	messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
-	{
-		const int width = messageBoxTitle.texture.getWidth();
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, 40,
-			textureManager, renderer);
-	}();
+	const Rect yesTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextureRect(titleTextureRect);
+	messageBoxYes.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesTexturePatternType,
+		yesTextureRect.getWidth(),
+		yesTextureRect.getHeight(),
+		textureManager,
+		renderer);
 
 	messageBoxYes.function = [raceID](Game &game)
 	{
 		CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(game, raceID);
 	};
 
-	messageBoxYes.textureX = messageBoxTitle.textureX;
-	messageBoxYes.textureY = messageBoxTitle.textureY + messageBoxTitle.texture.getHeight();
+	messageBoxYes.textureX = yesTextureRect.getLeft();
+	messageBoxYes.textureY = yesTextureRect.getTop();
+
+	const std::string noText = CharacterCreationUiModel::getChooseRaceProvinceConfirmNoText(game);
+	const TextBox::InitInfo noTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextBoxInitInfo(noText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxNo;
-	messageBoxNo.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxNo.textBox.init(noTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			"No",
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm no text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
+	messageBoxNo.textBox.setText(noText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
-
-	messageBoxNo.texture = [&textureManager, &renderer, &messageBoxYes]()
-	{
-		const int width = messageBoxYes.texture.getWidth();
-		const int height = messageBoxYes.texture.getHeight();
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
-			textureManager, renderer);
-	}();
+	const Rect noTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextureRect(yesTextureRect);
+	messageBoxNo.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoTexturePatternType,
+		noTextureRect.getWidth(),
+		noTextureRect.getHeight(),
+		textureManager,
+		renderer);
 
 	messageBoxNo.function = CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected;
-	messageBoxNo.textureX = messageBoxYes.textureX;
-	messageBoxNo.textureY = messageBoxYes.textureY + messageBoxYes.texture.getHeight();
+	messageBoxNo.textureX = noTextureRect.getLeft();
+	messageBoxNo.textureY = noTextureRect.getTop();
 
 	auto cancelFunction = messageBoxNo.function;
 
 	std::vector<MessageBoxSubPanel::Element> messageBoxElements;
-	messageBoxElements.push_back(std::move(messageBoxYes));
-	messageBoxElements.push_back(std::move(messageBoxNo));
+	messageBoxElements.emplace_back(std::move(messageBoxYes));
+	messageBoxElements.emplace_back(std::move(messageBoxNo));
 
 	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }

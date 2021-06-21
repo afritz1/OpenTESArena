@@ -16,7 +16,7 @@ public:
 	// The title or description of the message box.
 	struct Title
 	{
-		std::unique_ptr<TextBox> textBox;
+		TextBox textBox;
 		Texture texture;
 		int textureX, textureY;
 	};
@@ -24,7 +24,7 @@ public:
 	// An element of the message box (i.e., a button with text).
 	struct Element
 	{
-		std::unique_ptr<TextBox> textBox;
+		TextBox textBox;
 		Texture texture;
 		std::function<void(Game&)> function;
 		int textureX, textureY;

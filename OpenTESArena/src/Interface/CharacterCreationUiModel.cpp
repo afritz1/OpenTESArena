@@ -340,6 +340,16 @@ std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(Game
 	return text;
 }
 
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmYesText(Game &game)
+{
+	return "Yes"; // @todo: get from ExeData
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmNoText(Game &game)
+{
+	return "No"; // @todo: get from ExeData
+}
+
 std::string CharacterCreationUiModel::getChooseRaceProvinceTooltipText(Game &game, int provinceID)
 {
 	// Get the race name associated with the province.
