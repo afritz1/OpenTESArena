@@ -1,6 +1,6 @@
 # OpenTESArena
 
-[![GitHub release](https://img.shields.io/github/release/afritz1/OpenTESArena/all.svg)](https://github.com/afritz1/banner/OpenTESArena/latest)
+[![GitHub release](https://img.shields.io/github/release/afritz1/OpenTESArena/all.svg)](https://github.com/afritz1/OpenTESArena/releases/latest)
 [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt) 
 [![Discord](https://img.shields.io/discord/395739926831824908.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/DgHe2jG)
 [![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJpmkgtHRIxR7aOpi909GKw)](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw)
