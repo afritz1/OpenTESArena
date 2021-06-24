@@ -44,12 +44,12 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist w
 If you would like music played in-game, see **Music setup** below. The engine uses `ArenaPath` and `MidiConfig` from the options file to find where the game files and MIDI config are.
 
 ### Windows
-- Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
-- [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website, or get the CD version from somewhere such as [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena).
-- Extract Arena106Setup.zip and run Arena106.exe.
-- Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
-- Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
-- Run OpenTESArena.exe.
+1. Get the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
+1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website, or get the CD version from somewhere such as [GOG](https://www.gog.com/wishlist/games/the_elder_scrolls_arena).
+1. Extract Arena106Setup.zip and run Arena106.exe.
+1. Pick a destination folder to install into. This can be anywhere on your hard drive or in the OpenTESArena `data` folder.
+1. Open `options-default.txt` in the `options` folder and change `ArenaPath` to where you put the `ARENA`/`ARENACD` folder.
+1. Run OpenTESArena.exe.
 
 If you see an error about missing MSVCP141.dll or similar, download and run the [Visual C++ Redistributable Installer](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) for Windows:
 - 64-bit (recommended): vc_redist.x64.exe
@@ -59,19 +59,19 @@ If you see a warning about `alcOpenDevice()` failing, or there is no sound, down
 
 ### macOS
 #### Get the data files for *The Elder Scrolls: Arena*
-- [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
-- Unzip `Arena106Setup.zip`
-- `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files.
+1. [Download the Full Game](http://static.elderscrolls.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip) from the Bethesda website.
+1. Unzip `Arena106Setup.zip`
+1. `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files.
 
 #### Install OpenTESArena
-- Download the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
-- Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location
-- Right-click on the app and choose "Show Package Contents"
-- Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
-- Return to the `Applications` folder or wherever you have the app installed and open OpenTESArena. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
-  - Right-click on the app and choose "Open"
-  - In the warning that appears saying that it is from an unidentified developer, choose "Open"
-  - The app will start. In the future, you can just double-click on the app without having to go through these steps.
+1. Download the most recent build from the [releases](https://github.com/afritz1/OpenTESArena/releases) tab.
+1. Open the `.dmg` and copy OpenTESArena to the `Applications` folder or another location
+1. Right-click on the app and choose "Show Package Contents"
+1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
+1. Return to the `Applications` folder or wherever you have the app installed and open OpenTESArena. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
+   1. Right-click on the app and choose "Open"
+   1. In the warning that appears saying that it is from an unidentified developer, choose "Open"
+   1. The app will start. In the future, you can just double-click on the app without having to go through these steps.
 
 ### Linux (Ubuntu 16.04)
 Substitute `<version>` with the current version number (`0.#.0`), and `<arch>` with the desired architecture (`32` or `64`).
