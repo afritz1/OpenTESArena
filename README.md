@@ -1,10 +1,11 @@
 # OpenTESArena
 
-This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" from 1994 by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
+[![GitHub release](https://img.shields.io/github/release/afritz1/OpenTESArena/all.svg)](https://github.com/afritz1/banner/OpenTESArena/latest)
+[![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt) 
+[![Discord](https://img.shields.io/discord/395739926831824908.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/DgHe2jG)
+[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UCJpmkgtHRIxR7aOpi909GKw)](https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw)
 
-- Version: 0.13.0
-- License: MIT
-- Discord: https://discord.gg/DgHe2jG
+This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" from 1994 by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
 
 ## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
 
@@ -34,8 +35,6 @@ Controls:
 Inspired by [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/), this started out as a simplistic ray tracing tech demo in early 2016, and is now steadily inching closer to something akin to the original game. I am using a clean-room approach for understanding Arena's algorithms and data structures, the details of which can be found in the [wiki](https://github.com/afritz1/OpenTESArena/wiki). It is a behavioral approximation project, not about matching machine instructions, and quality-of-life changes are made where they make sense.
 
 There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
-
-OpenTESArena is [MIT-licensed](LICENSE.txt).
 
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
@@ -136,5 +135,3 @@ If there is a bug or technical problem in the program, check out the issues tab!
 ## Resources
 
 The [Unofficial Elder Scrolls Pages](http://en.uesp.net/wiki/Arena:Arena) are a great resource for information all about Arena. [Various tools](http://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool allow for browsing Arena's content, and there is a very detailed [manual](http://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities) as well. I also recommend the [Lazy Game Review](https://www.youtube.com/watch?v=5MW5SxKMrtE) on YouTube for a humorous overview of the game's history and gameplay.
-
-Project YouTube channel: https://www.youtube.com/channel/UCJpmkgtHRIxR7aOpi909GKw
