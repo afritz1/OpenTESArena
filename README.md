@@ -36,8 +36,6 @@ Inspired by [OpenXcom](http://openxcom.org/) and [OpenMW](http://openmw.org/en/)
 
 There are two versions of Arena: the floppy disk version (which Bethesda released for free) and the CD version. The user must acquire their own copy of Arena because OpenTESArena is a standalone engine and does not contain content.
 
-OpenTESArena is [MIT-licensed](LICENSE.txt).
-
 Check out [CONTRIBUTING.md](CONTRIBUTING.md) for more details on how to assist with development.
 
 ## Installation
