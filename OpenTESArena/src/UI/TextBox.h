@@ -28,7 +28,8 @@ public:
 		int lineSpacing; // Pixels between each line of text.
 
 		Properties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor,
-			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing);
+			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo = std::nullopt,
+			int lineSpacing = 0);
 		Properties();
 	};
 

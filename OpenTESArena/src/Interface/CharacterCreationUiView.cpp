@@ -217,14 +217,12 @@ TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextBo
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	constexpr int lineSpacing = 0;
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
-		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 
 	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmYesCenterPoint,
 		textureGenInfo.width, textureGenInfo.height);
 	TextBox::Properties properties(fontDefIndex, textureGenInfo, CharacterCreationUiView::ChooseRaceProvinceConfirmYesTextColor,
-		CharacterCreationUiView::ChooseRaceProvinceConfirmYesAlignment, std::nullopt, lineSpacing);
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesAlignment);
 
 	TextBox::InitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
@@ -242,14 +240,116 @@ TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextBox
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	constexpr int lineSpacing = 0;
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
-		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 
 	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmNoCenterPoint,
 		textureGenInfo.width, textureGenInfo.height);
 	TextBox::Properties properties(fontDefIndex, textureGenInfo, CharacterCreationUiView::ChooseRaceProvinceConfirmNoTextColor,
-		CharacterCreationUiView::ChooseRaceProvinceConfirmNoAlignment, std::nullopt, lineSpacing);
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextLineSpacing;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+
+	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextAlignment, std::nullopt, lineSpacing);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextLineSpacing;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+
+	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextAlignment, std::nullopt, lineSpacing);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextLineSpacing;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+
+	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextAlignment, std::nullopt, lineSpacing);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextLineSpacing;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, nullptr, lineSpacing);
+
+	const Rect rect(CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextAlignment, std::nullopt, lineSpacing);
 
 	TextBox::InitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
