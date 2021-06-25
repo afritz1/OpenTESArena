@@ -376,24 +376,105 @@ int CharacterCreationUiView::getChooseAttributesTextureHeight()
 	return 42;
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureX(int titleTextureWidth)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextureRect(int textWidth, int textHeight)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (titleTextureWidth / 2) - 1;
+	const int textureWidth = textWidth + 12;
+	const int textureHeight = 24;
+	return Rect(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 21,
+		textureWidth,
+		textureHeight);
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureY(int titleTextureHeight)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextureRect(const Rect &titleTextureRect)
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (titleTextureHeight / 2) - 21;
+	return Rect(
+		titleTextureRect.getLeft(),
+		titleTextureRect.getTop() + titleTextureRect.getHeight(),
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight());
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureWidth(int titleTextWidth)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextureRect(const Rect &saveTextureRect)
 {
-	return titleTextWidth + 12;
+	return Rect(
+		saveTextureRect.getLeft(),
+		saveTextureRect.getTop() + saveTextureRect.getHeight(),
+		saveTextureRect.getWidth(),
+		saveTextureRect.getHeight());
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureHeight()
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	return 24;
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::AttributesMessageBoxTitleFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(CharacterCreationUiView::AttributesMessageBoxTitleCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::AttributesMessageBoxTitleColor,
+		CharacterCreationUiView::AttributesMessageBoxTitleAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::AttributesMessageBoxSaveFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(CharacterCreationUiView::AttributesMessageBoxSaveCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::AttributesMessageBoxSaveColor,
+		CharacterCreationUiView::AttributesMessageBoxSaveAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterCreationUiView::AttributesMessageBoxRerollFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(CharacterCreationUiView::AttributesMessageBoxRerollCenterPoint,
+		textureGenInfo.width, textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterCreationUiView::AttributesMessageBoxRerollColor,
+		CharacterCreationUiView::AttributesMessageBoxRerollAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
 }
 
 int CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(int textWidth)

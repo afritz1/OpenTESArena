@@ -217,8 +217,6 @@ namespace CharacterCreationUiView
 	TextBox::InitInfo getChooseRaceProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getChooseRaceProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	// @todo: InitInfo's for Confirmed text boxes
-
 	// -- Choose attributes --
 	const Int2 ChooseAttributesTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
@@ -233,7 +231,7 @@ namespace CharacterCreationUiView
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-	const Int2 AttributesMessageBoxCenterPoint(
+	const Int2 AttributesMessageBoxTitleCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 	constexpr FontName AttributesMessageBoxTitleFontName = FontName::A;
@@ -275,10 +273,13 @@ namespace CharacterCreationUiView
 	int getChooseAttributesTextureWidth();
 	int getChooseAttributesTextureHeight();
 
-	int getAttributesMessageBoxTitleTextureX(int titleTextureWidth);
-	int getAttributesMessageBoxTitleTextureY(int titleTextureHeight);
-	int getAttributesMessageBoxTitleTextureWidth(int titleTextWidth);
-	int getAttributesMessageBoxTitleTextureHeight();
+	Rect getChooseAttributesUnsavedDoneTitleTextureRect(int textWidth, int textHeight);
+	Rect getChooseAttributesUnsavedDoneSaveTextureRect(const Rect &titleTextureRect);
+	Rect getChooseAttributesUnsavedDoneRerollTextureRect(const Rect &saveTextureRect);
+
+	TextBox::InitInfo getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	int getAppearanceMessageBoxTextureWidth(int textWidth);
 	int getAppearanceMessageBoxTextureHeight(int textHeight);

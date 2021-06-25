@@ -371,59 +371,52 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
+	// @todo: add InitInfos for this Save/Reroll message box sub-panel
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getAttributesMessageBoxTitleText(game);
+	const TextBox::InitInfo titleInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(titleText, fontLibrary);
+
 	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
 	// title text, button count, button font, button alignment, and it figures out everything behind the scenes.
 	MessageBoxSubPanel::Title messageBoxTitle;
-	messageBoxTitle.textBox = [&game, &renderer]()
+	if (!messageBoxTitle.textBox.init(titleInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxTitleText(game),
-			CharacterCreationUiView::AttributesMessageBoxTitleFontName,
-			CharacterCreationUiView::AttributesMessageBoxTitleColor,
-			CharacterCreationUiView::AttributesMessageBoxTitleAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done title text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxTitle.textBox.setText(titleText);
 
+	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
+	const Rect titleTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextureRect(
+		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
 	messageBoxTitle.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		CharacterCreationUiView::getAttributesMessageBoxTitleTextureWidth(messageBoxTitle.textBox->getRect().getWidth()),
-		CharacterCreationUiView::getAttributesMessageBoxTitleTextureHeight(),
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight(),
 		textureManager,
 		renderer);
+	messageBoxTitle.textureX = titleTextureRect.getLeft();
+	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	messageBoxTitle.textureX = CharacterCreationUiView::getAttributesMessageBoxTitleTextureX(messageBoxTitle.texture.getWidth());
-	messageBoxTitle.textureY = CharacterCreationUiView::getAttributesMessageBoxTitleTextureY(messageBoxTitle.texture.getHeight());
+	const std::string saveText = CharacterCreationUiModel::getAttributesMessageBoxSaveText(game);
+	const TextBox::InitInfo saveTextBoxInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(saveText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxSave;
-	messageBoxSave.textBox = [&game, &renderer]()
+	if (!messageBoxSave.textBox.init(saveTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxSaveText(game),
-			CharacterCreationUiView::AttributesMessageBoxSaveFontName,
-			CharacterCreationUiView::AttributesMessageBoxSaveColor,
-			CharacterCreationUiView::AttributesMessageBoxSaveAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done save text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxSaveCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxSave.textBox.setText(saveText);
 
-	// @todo: this is over-specified -- need MessageBoxSubPanel to do a lot of this automatically for its elements.
+	const Rect &saveTextBoxRect = messageBoxSave.textBox.getRect();
+	const Rect saveTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextureRect(titleTextureRect);
 	messageBoxSave.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		messageBoxTitle.texture.getWidth(),
-		messageBoxTitle.texture.getHeight(),
+		saveTextureRect.getWidth(),
+		saveTextureRect.getHeight(),
 		textureManager,
 		renderer);
 
@@ -432,38 +425,32 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 		CharacterCreationUiController::onSaveAttributesButtonSelected(game, attributesAreSaved);
 	};
 
-	messageBoxSave.textureX = messageBoxTitle.textureX;
-	messageBoxSave.textureY = messageBoxTitle.textureY + messageBoxTitle.texture.getHeight();
+	messageBoxSave.textureX = saveTextureRect.getLeft();
+	messageBoxSave.textureY = saveTextureRect.getTop();
+
+	const std::string rerollText = CharacterCreationUiModel::getAttributesMessageBoxRerollText(game);
+	const TextBox::InitInfo rerollTextBoxInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(rerollText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxReroll;
-	messageBoxReroll.textBox = [&game, &renderer]()
+	if (!messageBoxReroll.textBox.init(rerollTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxRerollText(game),
-			CharacterCreationUiView::AttributesMessageBoxRerollFontName,
-			CharacterCreationUiView::AttributesMessageBoxRerollColor,
-			CharacterCreationUiView::AttributesMessageBoxRerollAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done reroll text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxRerollCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxReroll.textBox.setText(rerollText);
 
-	// @todo: this is over-specified -- need MessageBoxSubPanel to do a lot of this automatically for its elements.
+	const Rect &rerollTextBoxRect = messageBoxReroll.textBox.getRect();
+	const Rect rerollTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextureRect(saveTextureRect);
 	messageBoxReroll.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		messageBoxSave.texture.getWidth(),
-		messageBoxSave.texture.getHeight(),
+		rerollTextureRect.getWidth(),
+		rerollTextureRect.getHeight(),
 		textureManager,
 		renderer);
-
 	messageBoxReroll.function = CharacterCreationUiController::onRerollAttributesButtonSelected;
-	messageBoxReroll.textureX = messageBoxSave.textureX;
-	messageBoxReroll.textureY = messageBoxSave.textureY + messageBoxSave.texture.getHeight();
+	messageBoxReroll.textureX = rerollTextureRect.getLeft();
+	messageBoxReroll.textureY = rerollTextureRect.getTop();
 
 	auto cancelFunction = messageBoxReroll.function;
 
@@ -472,10 +459,7 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	messageBoxElements.emplace_back(std::move(messageBoxSave));
 	messageBoxElements.emplace_back(std::move(messageBoxReroll));
 
-	game.pushSubPanel<MessageBoxSubPanel>(
-		std::move(messageBoxTitle),
-		std::move(messageBoxElements),
-		cancelFunction);
+	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
 
 void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &game)
