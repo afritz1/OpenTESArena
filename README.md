@@ -7,7 +7,7 @@
 
 This open-source project aims to be a modern engine re-implementation for "The Elder Scrolls: Arena" from 1994 by Bethesda Softworks. It is written in C++17 and uses SDL2, WildMIDI for music, and OpenAL Soft for sound and mixing. There is support for Windows, Linux, and macOS.
 
-## Current status [![Build Status](https://travis-ci.org/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.org/afritz1/OpenTESArena)
+## Current status [![Build Status](https://travis-ci.com/afritz1/OpenTESArena.svg?branch=master)](https://travis-ci.com/afritz1/OpenTESArena)
 
 No actual gameplay yet, but all locations and interiors can be accessed for testing. Citizens wander around cities and the wilderness but cannot be interacted with. Fast traveling works and you can go to any city or dungeon on the world map. Collision detection is barebones (just enough for playtesting) and needs work. Character creation works but character questions and player attributes are not implemented. Some of the in-game interface icons work; for example, left clicking the map icon goes to the automap, and right clicking it goes to the world map.
 
