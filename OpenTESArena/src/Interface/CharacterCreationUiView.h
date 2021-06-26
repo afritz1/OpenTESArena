@@ -132,6 +132,9 @@ namespace CharacterCreationUiView
 	int getChooseNameTitleTextureX(int textureWidth);
 	int getChooseNameTitleTextureY(int textureHeight);
 
+	TextBox::InitInfo getChooseNameTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseNameEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+
 	// -- Choose race --
 	const Int2 ChooseRaceInitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	constexpr FontName ChooseRaceInitialPopUpFontName = FontName::A;

@@ -5,25 +5,16 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
-// If Escape is pressed here, just go to the class list (even if the user went
-// the answer questions path instead).
-
-// I looked into SDL_StartTextInput(), but I don't quite get it yet. I'll just
-// listen for plain English characters for now, since international characters are
-// way outside the project scope right now.
-
-// No numbers or symbols (i.e., @, #, $) are allowed in the name for now.
-
 class Renderer;
-class TextBox;
 
 class ChooseNamePanel : public Panel
 {
 private:
 	Texture parchment;
-	std::unique_ptr<TextBox> titleTextBox, nameTextBox;
+	TextBox titleTextBox, entryTextBox;
 	Button<Game&> backToClassButton;
 	Button<Game&, const std::string&> acceptButton;
 	std::string name;

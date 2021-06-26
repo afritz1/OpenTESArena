@@ -175,6 +175,33 @@ int CharacterCreationUiView::getChooseNameTitleTextureY(int textureHeight)
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
 }
 
+TextBox::InitInfo CharacterCreationUiView::getChooseNameTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterCreationUiView::ChooseNameTitleTextBoxX,
+		CharacterCreationUiView::ChooseNameTitleTextBoxY,
+		CharacterCreationUiView::ChooseNameTitleFontName,
+		CharacterCreationUiView::ChooseNameTitleColor,
+		CharacterCreationUiView::ChooseNameTitleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseNameEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, 'W');
+
+	return TextBox::InitInfo::makeWithXY(
+		dummyText,
+		CharacterCreationUiView::ChooseNameEntryTextBoxX,
+		CharacterCreationUiView::ChooseNameEntryTextBoxY,
+		CharacterCreationUiView::ChooseNameEntryFontName,
+		CharacterCreationUiView::ChooseNameEntryColor,
+		CharacterCreationUiView::ChooseNameEntryAlignment,
+		fontLibrary);
+}
+
 TextureAssetReference CharacterCreationUiView::getChooseRaceBackgroundTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::RaceSelect));
