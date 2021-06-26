@@ -8,6 +8,7 @@
 #include "../Entities/CharacterClassDefinition.h"
 #include "../UI/Button.h"
 #include "../UI/ListBox.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 // The original class list design in Arena is pretty bad. It's an alphabetical 
@@ -18,12 +19,11 @@ class ExeData;
 class Rect;
 class Renderer;
 class Surface;
-class TextBox;
 
 class ChooseClassPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> titleTextBox;
+	TextBox titleTextBox;
 	ListBox classesListBox;
 	Button<Game&> backToClassCreationButton;
 	Button<ListBox&> upButton, downButton;

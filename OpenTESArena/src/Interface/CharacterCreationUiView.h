@@ -75,6 +75,8 @@ namespace CharacterCreationUiView
 	
 	TextureAssetReference getChooseClassListBoxTextureAssetRef();
 
+	TextBox::InitInfo getChooseClassTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	// -- Choose gender --
 	constexpr int ChooseGenderTextureWidth = 180;
 	constexpr int ChooseGenderTextureHeight = 40;

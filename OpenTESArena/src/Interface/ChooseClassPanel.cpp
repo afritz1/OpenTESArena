@@ -29,7 +29,6 @@
 #include "../UI/RichTextString.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 
 #include "components/debug/Debug.h"
 
@@ -58,23 +57,16 @@ bool ChooseClassPanel::init()
 		return aName.compare(bName) < 0;
 	});
 
-	this->titleTextBox = [&game]()
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseClassTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseClassTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseClassTitleText(game),
-			CharacterCreationUiView::ChooseClassTitleFontName,
-			CharacterCreationUiView::ChooseClassTitleColor,
-			CharacterCreationUiView::ChooseClassTitleAlignment,
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseClassTitleX,
-			CharacterCreationUiView::ChooseClassTitleY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
 	this->classesListBox.init(CharacterCreationUiView::getClassListRect(game),
 		CharacterCreationUiView::makeClassListBoxProperties(game.getFontLibrary()), game.getRenderer());
@@ -260,7 +252,8 @@ void ChooseClassPanel::render(Renderer &renderer)
 		CharacterCreationUiView::ChooseClassListTextureX, CharacterCreationUiView::ChooseClassListTextureY, textureManager);
 
 	// Draw text: title, list.
-	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
 	const Rect &classesListBoxRect = this->classesListBox.getRect();
 	this->classesListBox.updateTexture(game.getFontLibrary());

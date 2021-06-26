@@ -106,6 +106,19 @@ TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAsset
 	return TextureAssetReference(std::string(ArenaTextureName::PopUp2));
 }
 
+TextBox::InitInfo CharacterCreationUiView::getChooseClassTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterCreationUiView::ChooseClassTitleX,
+		CharacterCreationUiView::ChooseClassTitleY,
+		CharacterCreationUiView::ChooseClassTitleFontName,
+		CharacterCreationUiView::ChooseClassTitleColor,
+		CharacterCreationUiView::ChooseClassTitleAlignment,
+		fontLibrary);
+}
+
 int CharacterCreationUiView::getChooseGenderTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
