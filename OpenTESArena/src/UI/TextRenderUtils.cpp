@@ -138,7 +138,7 @@ int TextRenderUtils::getLinePixelLength(const std::vector<FontDefinition::CharID
 }
 
 TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
-	const FontDefinition &fontDef, const TextShadowInfo *shadow, int lineSpacing)
+	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
 	// Get the width of the longest line of text in pixels.
 	int width = 0;
@@ -153,7 +153,7 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	const int lineCount = static_cast<int>(textLines.size());
 	int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1));
 
-	if (shadow != nullptr)
+	if (shadow.has_value())
 	{
 		width += std::abs(shadow->offsetX);
 		height += std::abs(shadow->offsetY);

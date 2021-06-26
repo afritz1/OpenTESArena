@@ -77,7 +77,7 @@ namespace TextRenderUtils
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
 	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef,
-		const TextShadowInfo *shadow = nullptr, int lineSpacing = 0);
+		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Generates X pixel offsets for each line of a text box based on text alignment.
 	// @todo: might eventually be percentages of the longest line's dimensions?

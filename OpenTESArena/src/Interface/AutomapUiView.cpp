@@ -17,30 +17,20 @@
 
 TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(AutomapUiView::LocationTextBoxFontName);
-	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
-	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
-	}
-
 	const TextRenderUtils::TextShadowInfo shadowInfo(
 		AutomapUiView::LocationTextBoxShadowOffsetX,
 		AutomapUiView::LocationTextBoxShadowOffsetY,
 		AutomapUiView::LocationTextBoxShadowColor);
-	
-	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	constexpr int lineSpacing = 0;
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
-		TextRenderUtils::makeTextureGenInfo(text, fontDef, &shadowInfo, lineSpacing);
 
-	const Rect rect(AutomapUiView::LocationTextBoxCenterPoint, textureGenInfo.width, textureGenInfo.height);
-	TextBox::Properties properties(fontDefIndex, textureGenInfo, AutomapUiView::LocationTextBoxFontColor,
-		AutomapUiView::LocationTextBoxTextAlignment, shadowInfo, lineSpacing);
-
-	TextBox::InitInfo initInfo;
-	initInfo.init(rect, std::move(properties));
-	return initInfo;
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		AutomapUiView::LocationTextBoxCenterPoint,
+		AutomapUiView::LocationTextBoxFontName,
+		AutomapUiView::LocationTextBoxFontColor,
+		AutomapUiView::LocationTextBoxTextAlignment,
+		shadowInfo,
+		0,
+		fontLibrary);
 }
 
 TextureAssetReference AutomapUiView::getBackgroundTextureAssetRef()

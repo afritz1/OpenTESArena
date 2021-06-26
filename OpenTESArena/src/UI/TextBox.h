@@ -43,6 +43,17 @@ public:
 		Properties properties;
 
 		void init(const Rect &rect, Properties &&properties);
+
+		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
+			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
+			int lineSpacing, const FontLibrary &fontLibrary);
+		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
+			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
+		static InitInfo makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
+			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
+			int lineSpacing, const FontLibrary &fontLibrary);
+		static InitInfo makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
+			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
 	};
 private:
 	Rect rect; // Screen position and render dimensions (NOT texture dimensions).
