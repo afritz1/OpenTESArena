@@ -4,6 +4,7 @@
 
 #include "FontDefinition.h"
 #include "FontLibrary.h"
+#include "FontUtils.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Rendering/Renderer.h"
@@ -66,6 +67,17 @@ bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 bool TextBox::init(const InitInfo &initInfo, Renderer &renderer)
 {
 	return this->init(initInfo.rect, initInfo.properties, renderer);
+}
+
+bool TextBox::init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer)
+{
+	if (!this->init(initInfo.rect, initInfo.properties, renderer))
+	{
+		return false;
+	}
+
+	this->setText(text);
+	return true;
 }
 
 const Rect &TextBox::getRect() const

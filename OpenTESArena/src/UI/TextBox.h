@@ -57,6 +57,9 @@ public:
 	bool init(const Rect &rect, const Properties &properties, Renderer &renderer);
 	bool init(const InitInfo &initInfo, Renderer &renderer);
 
+	// Also renders text after initialization as a convenience.
+	bool init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer);
+
 	const Rect &getRect() const;
 	const Texture &getTexture() const;
 
