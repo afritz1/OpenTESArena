@@ -20,60 +20,35 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 bool ChooseAttributesPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->nameTextBox = [&game]()
+	const std::string playerNameText = CharacterCreationUiModel::getPlayerName(game);
+	const TextBox::InitInfo playerNameTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getPlayerName(game),
-			CharacterSheetUiView::PlayerNameTextBoxFontName,
-			CharacterSheetUiView::PlayerNameTextBoxColor,
-			CharacterSheetUiView::PlayerNameTextBoxAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player name text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerNameTextBoxX,
-			CharacterSheetUiView::PlayerNameTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->raceTextBox = [&game]()
+	const std::string playerRaceText = CharacterCreationUiModel::getPlayerRaceName(game);
+	const TextBox::InitInfo playerRaceTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
+	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getPlayerRaceName(game),
-			CharacterSheetUiView::PlayerRaceTextBoxFontName,
-			CharacterSheetUiView::PlayerRaceTextBoxColor,
-			CharacterSheetUiView::PlayerRaceTextBoxAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player race text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerRaceTextBoxX,
-			CharacterSheetUiView::PlayerRaceTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->classTextBox = [&game]()
+	const std::string playerClassText = CharacterCreationUiModel::getPlayerClassName(game);
+	const TextBox::InitInfo playerClassTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
+	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getPlayerClassName(game),
-			CharacterSheetUiView::PlayerClassTextBoxFontName,
-			CharacterSheetUiView::PlayerClassTextBoxColor,
-			CharacterSheetUiView::PlayerClassTextBoxAlignment,
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerClassTextBoxX,
-			CharacterSheetUiView::PlayerClassTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init player class text box.");
+		return false;
+	}
 
 	this->backToRaceButton = Button<Game&>(CharacterCreationUiController::onBackToRaceSelectionButtonSelected);
 	this->doneButton = Button<Game&, bool*>(
@@ -209,7 +184,10 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*statsBackgroundTextureID, *charSheetPaletteID, textureManager);
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawOriginal(this->nameTextBox->getTexture(), this->nameTextBox->getX(), this->nameTextBox->getY());
-	renderer.drawOriginal(this->raceTextBox->getTexture(), this->raceTextBox->getX(), this->raceTextBox->getY());
-	renderer.drawOriginal(this->classTextBox->getTexture(), this->classTextBox->getX(), this->classTextBox->getY());
+	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
+	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
+	const Rect &classTextBoxRect = this->classTextBox.getRect();
+	renderer.drawOriginal(this->nameTextBox.getTexture(), nameTextBoxRect.getLeft(), nameTextBoxRect.getTop());
+	renderer.drawOriginal(this->raceTextBox.getTexture(), raceTextBoxRect.getLeft(), raceTextBoxRect.getTop());
+	renderer.drawOriginal(this->classTextBox.getTexture(), classTextBoxRect.getLeft(), classTextBoxRect.getTop());
 }

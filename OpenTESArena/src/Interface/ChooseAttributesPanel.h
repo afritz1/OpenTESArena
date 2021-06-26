@@ -7,6 +7,7 @@
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 // This panel is for choosing character creation attributes and the portrait.
 
@@ -16,12 +17,11 @@
 // Maybe there could be a "LevelUpPanel" for that instead.
 
 class Renderer;
-class TextBox;
 
 class ChooseAttributesPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> nameTextBox, raceTextBox, classTextBox;
+	TextBox nameTextBox, raceTextBox, classTextBox;
 	Button<Game&> backToRaceButton;
 	Button<Game&, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
