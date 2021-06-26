@@ -7,6 +7,7 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
+#include "../UI/RichTextString.h"
 
 ChooseRacePanel::ChooseRacePanel(Game &game)
 	: Panel(game) { }
