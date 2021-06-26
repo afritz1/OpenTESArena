@@ -5,6 +5,85 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
+#include "../UI/FontUtils.h"
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterSheetUiView::PlayerNameTextBoxFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(
+		CharacterSheetUiView::PlayerNameTextBoxX,
+		CharacterSheetUiView::PlayerNameTextBoxY,
+		textureGenInfo.width,
+		textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterSheetUiView::PlayerNameTextBoxColor, CharacterSheetUiView::PlayerNameTextBoxAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterSheetUiView::PlayerRaceTextBoxFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(
+		CharacterSheetUiView::PlayerRaceTextBoxX,
+		CharacterSheetUiView::PlayerRaceTextBoxY,
+		textureGenInfo.width,
+		textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterSheetUiView::PlayerRaceTextBoxColor, CharacterSheetUiView::PlayerRaceTextBoxAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	const char *fontNameStr = FontUtils::fromName(CharacterSheetUiView::PlayerClassTextBoxFontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+
+	const Rect rect(
+		CharacterSheetUiView::PlayerClassTextBoxX,
+		CharacterSheetUiView::PlayerClassTextBoxY,
+		textureGenInfo.width,
+		textureGenInfo.height);
+	TextBox::Properties properties(fontDefIndex, textureGenInfo,
+		CharacterSheetUiView::PlayerClassTextBoxColor, CharacterSheetUiView::PlayerClassTextBoxAlignment);
+
+	TextBox::InitInfo initInfo;
+	initInfo.init(rect, std::move(properties));
+	return initInfo;
+}
 
 int CharacterSheetUiView::getBodyOffsetX(Game &game)
 {
