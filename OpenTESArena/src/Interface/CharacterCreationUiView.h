@@ -53,6 +53,10 @@ namespace CharacterCreationUiView
 	constexpr int SelectClassButtonWidth = 175;
 	constexpr int SelectClassButtonHeight = 35;
 
+	TextBox::InitInfo getChooseClassCreationTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseClassCreationGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseClassCreationSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	// -- Choose class --
 	constexpr int ChooseClassTitleX = 89;
 	constexpr int ChooseClassTitleY = 32;

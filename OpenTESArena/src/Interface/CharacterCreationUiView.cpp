@@ -14,6 +14,44 @@ TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
 }
 
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseClassCreationTitleCenter,
+		CharacterCreationUiView::ChooseClassCreationTitleFontName,
+		CharacterCreationUiView::ChooseClassCreationTitleColor,
+		CharacterCreationUiView::ChooseClassCreationTitleAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseClassCreationTitleLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationGenerateTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::GenerateClassTextCenterPoint,
+		CharacterCreationUiView::GenerateClassTextFontName,
+		CharacterCreationUiView::GenerateClassTextColor,
+		CharacterCreationUiView::GenerateClassTextAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationSelectTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::SelectClassTextCenterPoint,
+		CharacterCreationUiView::SelectClassTextFontName,
+		CharacterCreationUiView::SelectClassTextColor,
+		CharacterCreationUiView::SelectClassTextAlignment,
+		fontLibrary);
+}
+
 Rect CharacterCreationUiView::getClassListRect(Game &game)
 {
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
