@@ -30,64 +30,42 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 bool ChooseGenderPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
 
 	this->parchment = TextureUtils::generate(
 		CharacterCreationUiView::ChooseGenderTexturePatternType,
 		CharacterCreationUiView::ChooseGenderTextureWidth,
 		CharacterCreationUiView::ChooseGenderTextureHeight,
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
-	this->genderTextBox = [&game]()
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseGenderTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseGenderTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseGenderTitleText(game),
-			CharacterCreationUiView::ChooseGenderTitleFontName,
-			CharacterCreationUiView::ChooseGenderTitleColor,
-			CharacterCreationUiView::ChooseGenderTitleAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseGenderTitleCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->maleTextBox = [&game]()
+	const std::string maleText = CharacterCreationUiModel::getChooseGenderMaleText(game);
+	const TextBox::InitInfo maleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseGenderMaleTextBoxInitInfo(maleText, fontLibrary);
+	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseGenderMaleText(game),
-			CharacterCreationUiView::ChooseGenderMaleFontName,
-			CharacterCreationUiView::ChooseGenderMaleColor,
-			CharacterCreationUiView::ChooseGenderMaleAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init male text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseGenderMaleTextBoxCenter,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->femaleTextBox = [&game]()
+	const std::string femaleText = CharacterCreationUiModel::getChooseGenderFemaleText(game);
+	const TextBox::InitInfo femaleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseGenderFemaleTextBoxInitInfo(femaleText, fontLibrary);
+	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseGenderFemaleText(game),
-			CharacterCreationUiView::ChooseGenderFemaleFontName,
-			CharacterCreationUiView::ChooseGenderFemaleColor,
-			CharacterCreationUiView::ChooseGenderFemaleAlignment,
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseGenderFemaleTextBoxCenter,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init female text box.");
+		return false;
+	}
 
 	this->backToNameButton = Button<Game&>(CharacterCreationUiController::onBackToChooseNameButtonSelected);
 	this->maleButton = Button<Game&>(
@@ -169,7 +147,10 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);
 
 	// Draw text: title, male, and female.
-	renderer.drawOriginal(this->genderTextBox->getTexture(), this->genderTextBox->getX(), this->genderTextBox->getY());
-	renderer.drawOriginal(this->maleTextBox->getTexture(), this->maleTextBox->getX(), this->maleTextBox->getY());
-	renderer.drawOriginal(this->femaleTextBox->getTexture(), this->femaleTextBox->getX(), this->femaleTextBox->getY());
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
+	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->maleTextBox.getTexture(), maleTextBoxRect.getLeft(), maleTextBoxRect.getTop());
+	renderer.drawOriginal(this->femaleTextBox.getTexture(), femaleTextBoxRect.getLeft(), femaleTextBoxRect.getTop());
 }

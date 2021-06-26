@@ -108,6 +108,10 @@ namespace CharacterCreationUiView
 	int getChooseGenderTitleTextureX(int textureWidth);
 	int getChooseGenderTitleTextureY(int textureHeight);
 
+	TextBox::InitInfo getChooseGenderTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseGenderMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getChooseGenderFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	// -- Choose name --
 	constexpr int ChooseNameTextureWidth = 300;
 	constexpr int ChooseNameTextureHeight = 60;

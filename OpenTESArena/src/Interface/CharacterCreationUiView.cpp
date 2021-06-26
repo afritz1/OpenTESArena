@@ -129,6 +129,42 @@ int CharacterCreationUiView::getChooseGenderTitleTextureY(int textureHeight)
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
 }
 
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderTitleCenterPoint,
+		CharacterCreationUiView::ChooseGenderTitleFontName,
+		CharacterCreationUiView::ChooseGenderTitleColor,
+		CharacterCreationUiView::ChooseGenderTitleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderMaleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderMaleTextBoxCenter,
+		CharacterCreationUiView::ChooseGenderMaleFontName,
+		CharacterCreationUiView::ChooseGenderMaleColor,
+		CharacterCreationUiView::ChooseGenderMaleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderFemaleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderFemaleTextBoxCenter,
+		CharacterCreationUiView::ChooseGenderFemaleFontName,
+		CharacterCreationUiView::ChooseGenderFemaleColor,
+		CharacterCreationUiView::ChooseGenderFemaleAlignment,
+		fontLibrary);
+}
+
 int CharacterCreationUiView::getChooseNameTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
