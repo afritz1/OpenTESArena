@@ -68,26 +68,26 @@ bool ChooseAttributesPanel::init()
 	this->attributesAreSaved = false;
 
 	// Push the initial text pop-up onto the sub-panel stack.
-	const RichTextString initialRichText(
-		CharacterCreationUiModel::getChooseAttributesText(game),
+	const std::string initialPopUpText = CharacterCreationUiModel::getChooseAttributesText(game);
+	const TextBox::InitInfo initialPopUpTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		initialPopUpText,
+		CharacterCreationUiView::ChooseAttributesTextCenterPoint,
 		CharacterCreationUiView::ChooseAttributesTextFontName,
 		CharacterCreationUiView::ChooseAttributesTextColor,
 		CharacterCreationUiView::ChooseAttributesTextAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseAttributesTextLineSpacing,
-		game.getFontLibrary());
+		fontLibrary);
 
 	Texture initialTexture = TextureUtils::generate(
 		CharacterCreationUiView::ChooseAttributesTextPatternType,
 		CharacterCreationUiView::getChooseAttributesTextureWidth(),
 		CharacterCreationUiView::getChooseAttributesTextureHeight(),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::ChooseAttributesTextCenterPoint,
-		initialRichText,
-		CharacterCreationUiController::onChooseAttributesPopUpSelected,
-		std::move(initialTexture),
+	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
+		CharacterCreationUiController::onChooseAttributesPopUpSelected, std::move(initialTexture),
 		CharacterCreationUiView::ChooseAttributesTextureCenterPoint);
 
 	return true;

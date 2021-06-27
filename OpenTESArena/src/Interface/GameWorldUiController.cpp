@@ -15,6 +15,7 @@
 #include "../UI/FontName.h"
 #include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -47,31 +48,28 @@ void GameWorldUiController::onStealButtonSelected()
 
 void GameWorldUiController::onStatusButtonSelected(Game &game)
 {
-	const RichTextString richText(
-		GameWorldUiModel::getStatusButtonText(game),
+	const std::string text = GameWorldUiModel::getStatusButtonText(game);
+	const Int2 center = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		center,
 		GameWorldUiView::StatusPopUpFontName,
 		GameWorldUiView::StatusPopUpTextColor,
 		GameWorldUiView::StatusPopUpTextAlignment,
+		std::nullopt,
 		GameWorldUiView::StatusPopUpTextLineSpacing,
 		game.getFontLibrary());
 
-	const Int2 &richTextDimensions = richText.getDimensions();
 	Texture texture = TextureUtils::generate(
 		GameWorldUiView::StatusPopUpTexturePatternType,
-		GameWorldUiView::getStatusPopUpTextureWidth(richTextDimensions.x),
-		GameWorldUiView::getStatusPopUpTextureHeight(richTextDimensions.y),
+		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
+		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		game.getRenderer());
 
-	const Int2 center = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
 	const Int2 textureCenter = center;
-
-	game.pushSubPanel<TextSubPanel>(
-		center,
-		richText,
-		GameWorldUiController::onStatusPopUpSelected,
-		std::move(texture),
-		textureCenter);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected,
+		std::move(texture), textureCenter);
 }
 
 void GameWorldUiController::onStatusPopUpSelected(Game &game)

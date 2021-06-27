@@ -16,7 +16,7 @@
 #include "TextSubPanel.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
-#include "../UI/RichTextString.h"
+#include "../UI/TextBox.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -228,29 +228,25 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 {
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getChooseRaceProvinceConfirmedFirstText(game),
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFirstText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextCenterPoint,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextFontName,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextColor,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextLineSpacing,
 		game.getFontLibrary());
 
 	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextureRect(
-		richText.getDimensions().x, richText.getDimensions().y);
-	Texture texture = TextureUtils::generate(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextPatternType,
-		textureRect.getWidth(),
-		textureRect.getHeight(),
-		game.getTextureManager(),
-		game.getRenderer());
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSelected,
-		std::move(texture),
-		textureRect.getCenter());
+		std::move(texture), textureRect.getCenter());
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Game &game)
@@ -266,74 +262,69 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSele
 {
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getChooseRaceProvinceConfirmedSecondText(game),
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedSecondText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextCenterPoint,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextFontName,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextColor,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextLineSpacing,
 		game.getFontLibrary());
 
 	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextureRect(
-		richText.getDimensions().x, richText.getDimensions().y);
-	Texture texture = TextureUtils::generate(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextPatternType,
-		textureRect.getWidth(),
-		textureRect.getHeight(),
-		game.getTextureManager(),
-		game.getRenderer());
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected,
-		std::move(texture),
-		textureRect.getCenter());
+		std::move(texture), textureRect.getCenter());
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getChooseRaceProvinceConfirmedThirdText(game),
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedThirdText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextCenterPoint,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextFontName,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextColor,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextLineSpacing,
 		game.getFontLibrary());
 
 	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextureRect(
-		richText.getDimensions().x, richText.getDimensions().y);
-	Texture texture = TextureUtils::generate(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextPatternType,
-		textureRect.getWidth(),
-		textureRect.getHeight(),
-		game.getTextureManager(),
-		game.getRenderer());
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected,
-		std::move(texture),
-		textureRect.getCenter());
+		std::move(texture), textureRect.getCenter());
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getChooseRaceProvinceConfirmedFourthText(game),
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFourthText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextCenterPoint,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextFontName,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextColor,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextLineSpacing,
 		game.getFontLibrary());
 
 	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextureRect(
-		richText.getDimensions().x, richText.getDimensions().y);
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
 	Texture texture = TextureUtils::generate(
 		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextPatternType,
 		textureRect.getWidth(),
@@ -341,12 +332,9 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSele
 		game.getTextureManager(),
 		game.getRenderer());
 
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected,
-		std::move(texture),
-		textureRect.getCenter());
+		std::move(texture), textureRect.getCenter());
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected(Game &game)
@@ -617,29 +605,29 @@ void CharacterCreationUiController::onSaveAttributesButtonSelected(Game &game, b
 	// it starts the game.
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getAppearanceMessageBoxText(game),
+	const std::string text = CharacterCreationUiModel::getAppearanceMessageBoxText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::AppearanceMessageBoxCenterPoint,
 		CharacterCreationUiView::AppearanceMessageBoxFontName,
 		CharacterCreationUiView::AppearanceMessageBoxColor,
 		CharacterCreationUiView::AppearanceMessageBoxAlignment,
+		std::nullopt,
 		CharacterCreationUiView::AppearanceMessageBoxLineSpacing,
 		game.getFontLibrary());
 
 	Texture texture = TextureUtils::generate(
 		CharacterCreationUiView::AppearanceMessageBoxPatternType,
-		CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(richText.getDimensions().x),
-		CharacterCreationUiView::getAppearanceMessageBoxTextureHeight(richText.getDimensions().y),
+		CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
+		CharacterCreationUiView::getAppearanceMessageBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		game.getRenderer());
 
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::AppearanceMessageBoxCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onAppearanceMessageBoxSelected,
-		std::move(texture),
-		CharacterCreationUiView::AppearanceMessageBoxCenterPoint);
+		std::move(texture), CharacterCreationUiView::AppearanceMessageBoxCenterPoint);
 
 	*attributesAreSaved = true;
 }

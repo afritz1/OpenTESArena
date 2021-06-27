@@ -5,6 +5,10 @@
 #include "ProvinceMapUiView.h"
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/FontUtils.h"
+#include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/utilities/String.h"
@@ -50,27 +54,43 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 
 std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::string &text)
 {
-	const RichTextString richText(
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
+
+	constexpr FontName fontName = ProvinceMapUiView::TextPopUpFontName;
+	const char *fontNameStr = FontUtils::fromName(fontName);
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
+	const TextRenderUtils::TextureGenInfo textBoxTextureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
-		ProvinceMapUiView::TextPopUpFontName,
+		ProvinceMapUiView::TextPopUpCenterPoint,
+		fontName,
 		ProvinceMapUiView::TextPopUpTextColor,
 		ProvinceMapUiView::TextPopUpTextAlignment,
-		ProvinceMapUiView::TextPopUpLineSpacing,
-		game.getFontLibrary());
+		std::nullopt,
+		lineSpacing,
+		fontLibrary);
 
 	Texture texture = TextureUtils::generate(
 		ProvinceMapUiView::TextPopUpTexturePatternType,
-		ProvinceMapUiView::getTextPopUpTextureWidth(richText.getDimensions().x),
-		ProvinceMapUiView::getTextPopUpTextureHeight(richText.getDimensions().y),
+		ProvinceMapUiView::getTextPopUpTextureWidth(textBoxTextureGenInfo.width),
+		ProvinceMapUiView::getTextPopUpTextureHeight(textBoxTextureGenInfo.height),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(ProvinceMapUiView::TextPopUpCenterPoint, richText,
-		ProvinceMapUiController::onTextPopUpSelected, std::move(texture),
-		ProvinceMapUiView::TextPopUpTextureCenterPoint))
+	if (!subPanel->init(textBoxInitInfo, text, ProvinceMapUiController::onTextPopUpSelected,
+		std::move(texture), ProvinceMapUiView::TextPopUpTextureCenterPoint))
 	{
-		DebugCrash("Couldn't init sub-panel.");
+		DebugCrash("Couldn't init province map text sub-panel.");
 	}
 
 	return subPanel;
