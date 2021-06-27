@@ -601,7 +601,7 @@ void GameWorldPanel::tick(double dt)
 		newPlayerCoord.chunk, VoxelUtils::pointToVoxel(newPlayerCoord.point, ceilingScale));
 	if (newPlayerVoxelCoord != oldPlayerVoxelCoord)
 	{
-		MapLogicController::handleTriggers(game, newPlayerVoxelCoord);
+		MapLogicController::handleTriggers(game, newPlayerVoxelCoord, this->triggerText);
 
 		if (mapType == MapType::Interior)
 		{

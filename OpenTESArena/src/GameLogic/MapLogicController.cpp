@@ -4,6 +4,7 @@
 #include "../Entities/EntityType.h"
 #include "../Game/Game.h"
 #include "../Interface/WorldMapPanel.h"
+#include "../UI/TextBox.h"
 #include "../World/MapType.h"
 #include "../World/SkyUtils.h"
 #include "../World/VoxelFacing3D.h"
@@ -58,7 +59,7 @@ void MapLogicController::handleNightLightChange(Game &game, bool active)
 	renderer.setNightLightsActive(active, palette);
 }
 
-void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord)
+void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
 {
 	GameState &gameState = game.getGameState();
 	MapInstance &mapInst = gameState.getActiveMapInst();
@@ -93,7 +94,8 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord)
 				// Ignore the newline at the end.
 				const std::string &textDefText = textDef.getText();
 				const std::string text = textDefText.substr(0, textDefText.size() - 1);
-				gameState.setTriggerText(text);
+				triggerTextBox.setText(text);
+				gameState.setTriggerTextDuration(text);
 
 				// Set the text trigger as activated (regardless of whether or not it's single-shot, just
 				// for consistency).
