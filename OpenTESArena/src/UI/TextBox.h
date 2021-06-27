@@ -76,7 +76,7 @@ public:
 
 	void setText(const std::string_view &text);
 
-	void addOverrideColor(int textIndex, const Color &overrideColor);
+	void addOverrideColor(int charIndex, const Color &overrideColor);
 	void clearOverrideColors();
 
 	// Redraws the underlying texture for display.

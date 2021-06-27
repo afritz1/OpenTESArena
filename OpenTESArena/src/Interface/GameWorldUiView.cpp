@@ -8,6 +8,7 @@
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
 #include "../UI/FontUtils.h"
+#include "../UI/Surface.h"
 
 #include "components/utilities/String.h"
 
@@ -533,15 +534,21 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		text = "No hit";
 	}
 
-	const auto &fontLibrary = game.getFontLibrary();
-	const RichTextString richText(
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
 		text,
+		0,
+		0,
 		FontName::Arena,
 		Color::White,
 		TextAlignment::Left,
-		fontLibrary);
+		game.getFontLibrary());
 
-	const TextBox textBox(0, 0, richText, fontLibrary, renderer);
+	TextBox textBox;
+	if (!textBox.init(textBoxInitInfo, text, renderer))
+	{
+		DebugCrash("Couldn't init physics ray cast text box.");
+	}
+
 	const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
 	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
 	renderer.drawOriginal(textBox.getTexture(), originalX, originalY);
@@ -565,6 +572,8 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 	const int targetFps = options.getGraphics_TargetFPS();
 	const int minFps = Options::MIN_FPS;
 
+	const auto &fontLibrary = game.getFontLibrary();
+
 	// Draw each profiler level with its own draw call.
 	if (profilerLevel >= 1)
 	{
@@ -572,19 +581,23 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 		const std::string fpsText = String::fixedPrecision(fps, 1);
 		const std::string frameTimeText = String::fixedPrecision(frameTimeMS, 1);
 		const std::string text = "FPS: " + fpsText + " (" + frameTimeText + "ms)";
-
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
+		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
 			text,
+			2,
+			2,
 			FontName::D,
 			Color::White,
 			TextAlignment::Left,
 			fontLibrary);
 
-		const int x = 2;
-		const int y = 2;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
-		renderer.drawOriginal(textBox.getTexture(), x, y);
+		TextBox textBox;
+		if (!textBox.init(textBoxInitInfo, text, renderer))
+		{
+			DebugCrash("Couldn't init FPS text box.");
+		}
+
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 
 	if (profilerLevel >= 2)
@@ -625,16 +638,8 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
-		auto &fontLibrary = game.getFontLibrary();
-		const FontName fontName = FontName::D;
-		const RichTextString richText(
-			text,
-			fontName,
-			Color::White,
-			TextAlignment::Left,
-			fontLibrary);
-
 		// Get character height of the FPS font so Y position is correct.
+		constexpr FontName fontName = FontName::D;
 		const char *fontNameStr = FontUtils::fromName(fontName);
 		int fontIndex;
 		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
@@ -646,10 +651,23 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 		const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 		const int yOffset = fontDef.getCharacterHeight();
 
-		const int x = 2;
-		const int y = 2 + yOffset;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
-		renderer.drawOriginal(textBox.getTexture(), x, y);
+		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
+			text,
+			2,
+			2 + yOffset,
+			fontName,
+			Color::White,
+			TextAlignment::Left,
+			fontLibrary);
+		
+		TextBox textBox;
+		if (!textBox.init(textBoxInitInfo, text, renderer))
+		{
+			DebugCrash("Couldn't init general debug profiler text box.");
+		}
+
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 
 	if (profilerLevel >= 3)
@@ -667,17 +685,22 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			"                               " + std::to_string(targetFps) + "\n\n\n\n" +
 			"                               " + std::to_string(0);
 
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
+		const int x = 2;
+		const int y = 72;
+		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
 			text,
+			x,
+			y,
 			FontName::D,
 			Color::White,
 			TextAlignment::Left,
 			fontLibrary);
 
-		const int x = 2;
-		const int y = 72;
-		const TextBox textBox(x, y, richText, fontLibrary, renderer);
+		TextBox textBox;
+		if (!textBox.init(textBoxInitInfo, text, renderer))
+		{
+			DebugCrash("Couldn't init renderer debug text box.");
+		}
 
 		const Texture frameTimesGraph = [&renderer, &game, &fpsCounter, targetFps]()
 		{
@@ -740,8 +763,9 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			return renderer.createTextureFromSurface(surface);
 		}();
 
-		renderer.drawOriginal(textBox.getTexture(), textBox.getX(), textBox.getY());
-		renderer.drawOriginal(frameTimesGraph, textBox.getX(), 94);
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+		renderer.drawOriginal(frameTimesGraph, textBoxRect.getLeft(), 94);
 	}
 
 	// @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
