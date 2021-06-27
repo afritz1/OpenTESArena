@@ -93,8 +93,7 @@ void MapLogicController::handleTriggers(Game &game, const CoordInt3 &coord)
 				// Ignore the newline at the end.
 				const std::string &textDefText = textDef.getText();
 				const std::string text = textDefText.substr(0, textDefText.size() - 1);
-
-				gameState.setTriggerText(text, game.getFontLibrary(), game.getRenderer());
+				gameState.setTriggerText(text);
 
 				// Set the text trigger as activated (regardless of whether or not it's single-shot, just
 				// for consistency).

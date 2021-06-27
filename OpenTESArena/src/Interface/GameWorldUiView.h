@@ -11,6 +11,7 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 class Game;
 
@@ -75,6 +76,9 @@ namespace GameWorldUiView
 	constexpr int CharacterSheetButtonWidth = 40;
 	constexpr int CharacterSheetButtonHeight = 29;
 
+	constexpr int PlayerPortraitX = 14;
+	constexpr int PlayerPortraitY = 166;
+
 	constexpr int WeaponSheathButtonX = 88;
 	constexpr int WeaponSheathButtonY = 151;
 	constexpr int WeaponSheathButtonWidth = 29;
@@ -136,16 +140,39 @@ namespace GameWorldUiView
 	constexpr int MapButtonWidth = 29;
 	constexpr int MapButtonHeight = 22;
 
-	constexpr int PlayerPortraitX = 14;
-	constexpr int PlayerPortraitY = 166;
-
 	Int2 getGameWorldInterfacePosition(int textureHeight);
 
 	Int2 getNoMagicTexturePosition();
 
+	constexpr FontName TriggerTextFontName = FontName::Arena;
+	const Color TriggerTextColor(215, 121, 8);
+	constexpr TextAlignment TriggerTextAlignment = TextAlignment::Center;
+	constexpr int TriggerTextShadowOffsetX = -1;
+	constexpr int TriggerTextShadowOffsetY = 0;
+	const Color TriggerTextShadowColor(12, 12, 24);
+	constexpr int TriggerTextLineSpacing = 1;
+
+	constexpr FontName ActionTextFontName = FontName::Arena;
+	const Color ActionTextColor(195, 0, 0);
+	constexpr TextAlignment ActionTextAlignment = TextAlignment::Center;
+	constexpr int ActionTextShadowOffsetX = -1;
+	constexpr int ActionTextShadowOffsetY = 0;
+	const Color ActionTextShadowColor(12, 12, 24);
+
+	const Color EffectTextColor(251, 239, 77);
+	const Color EffectTextShadowColor(190, 113, 0);
+
 	Int2 getTriggerTextPosition(Game &game, int textWidth, int textHeight, int gameWorldInterfaceTextureHeight);
 	Int2 getActionTextPosition(int textWidth);
 	Int2 getEffectTextPosition();
+
+	double getTriggerTextSeconds(const std::string_view &text);
+	double getActionTextSeconds(const std::string_view &text);
+	double getEffectTextSeconds(const std::string_view &text);
+
+	TextBox::InitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBox::InitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	Int2 getTooltipPosition(Game &game, int textureHeight);
 

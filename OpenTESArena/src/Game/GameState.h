@@ -16,7 +16,7 @@
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
-#include "../UI/TimedTextBox.h"
+#include "../UI/TextBox.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapInstance.h"
 #include "../World/WeatherDefinition.h"
@@ -43,7 +43,6 @@ class MIFFile;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
-class TextBox;
 class Texture;
 class TextureManager;
 
@@ -115,7 +114,8 @@ private:
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
-	TimedTextBox triggerText, actionText, effectText;
+	TextBox triggerText, actionText, effectText;
+	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
 
 	WeatherList weathers;
 
@@ -159,7 +159,8 @@ private:
 	void clearMaps();
 public:
 	// Creates incomplete game state with no active world, to be further initialized later.
-	GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary);
+	GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary, const FontLibrary &fontLibrary,
+		Renderer &renderer);
 	GameState(GameState&&) = default;
 	~GameState();
 
@@ -263,9 +264,9 @@ public:
 	void setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text for various types of in-game messages.
-	void setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
-	void setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
-	void setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
+	void setTriggerText(const std::string_view &text);
+	void setActionText(const std::string_view &text);
+	void setEffectText(const std::string_view &text);
 
 	// Resets on-screen text boxes to empty and hidden.
 	void resetTriggerText();

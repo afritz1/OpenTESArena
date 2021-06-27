@@ -476,7 +476,7 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 			fullGameWindow,
 			options.getGraphics_RenderThreadsMode());
 
-		std::unique_ptr<GameState> gameState = [&game, &binaryAssetLibrary]()
+		std::unique_ptr<GameState> gameState = [&game, &renderer, &binaryAssetLibrary]()
 		{
 			const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -508,7 +508,7 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 					direction, velocity, Player::DEFAULT_WALK_SPEED, Player::DEFAULT_RUN_SPEED, weaponID, exeData);
 			}();
 
-			return std::make_unique<GameState>(std::move(player), binaryAssetLibrary);
+			return std::make_unique<GameState>(std::move(player), binaryAssetLibrary, game.getFontLibrary(), renderer);
 		}();
 
 		// Find starting dungeon location definition.

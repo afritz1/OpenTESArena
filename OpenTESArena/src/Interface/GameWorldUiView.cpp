@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
@@ -70,6 +72,77 @@ Int2 GameWorldUiView::getEffectTextPosition()
 {
 	// @todo
 	return Int2();
+}
+
+double GameWorldUiView::getTriggerTextSeconds(const std::string_view &text)
+{
+	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
+}
+
+double GameWorldUiView::getActionTextSeconds(const std::string_view &text)
+{
+	return std::max(2.25, static_cast<double>(text.size()) * 0.050);
+}
+
+double GameWorldUiView::getEffectTextSeconds(const std::string_view &text)
+{
+	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
+}
+
+TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	std::string dummyText;
+	for (int i = 0; i < 4; i++)
+	{
+		std::string dummyLine(20, 'W'); // @todo: intentionally low so it cuts off text and reminds me to tweak this
+		dummyText += dummyLine + '\n';
+	}
+
+	const TextRenderUtils::TextShadowInfo shadow(
+		GameWorldUiView::TriggerTextShadowOffsetX,
+		GameWorldUiView::TriggerTextShadowOffsetY,
+		GameWorldUiView::TriggerTextShadowColor);
+
+	return TextBox::InitInfo::makeWithCenter(
+		dummyText,
+		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
+		GameWorldUiView::TriggerTextFontName,
+		GameWorldUiView::TriggerTextColor,
+		GameWorldUiView::TriggerTextAlignment,
+		shadow,
+		GameWorldUiView::TriggerTextLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	std::string dummyText;
+	for (int i = 0; i < 2; i++)
+	{
+		std::string dummyLine(8, 'W'); // @todo: intentionally low so it cuts off text and reminds me to tweak this
+		dummyText += dummyLine + '\n';
+	}
+
+	const TextRenderUtils::TextShadowInfo shadow(
+		GameWorldUiView::ActionTextShadowOffsetX,
+		GameWorldUiView::ActionTextShadowOffsetY,
+		GameWorldUiView::ActionTextShadowColor);
+
+	return TextBox::InitInfo::makeWithCenter(
+		dummyText,
+		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
+		GameWorldUiView::ActionTextFontName,
+		GameWorldUiView::ActionTextColor,
+		GameWorldUiView::ActionTextAlignment,
+		shadow,
+		0,
+		fontLibrary);
+}
+
+TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	DebugNotImplemented();
+	return TextBox::InitInfo();
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game, int textureHeight)

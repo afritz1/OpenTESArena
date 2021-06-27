@@ -658,7 +658,7 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 					if (buildingName != nullptr)
 					{
 						auto &gameState = game.getGameState();
-						gameState.setActionText(*buildingName, game.getFontLibrary(), game.getRenderer());
+						gameState.setActionText(*buildingName);
 					}
 				}
 			}
@@ -706,7 +706,7 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 				}
 
 				auto &gameState = game.getGameState();
-				gameState.setActionText(text, game.getFontLibrary(), game.getRenderer());
+				gameState.setActionText(text);
 			}
 		}
 		else

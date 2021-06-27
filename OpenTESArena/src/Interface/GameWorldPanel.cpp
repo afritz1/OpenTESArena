@@ -266,7 +266,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// These coordinates are in Arena's coordinate system.
 		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
 		auto &gameState = game.getGameState();
-		gameState.setActionText(text, game.getFontLibrary(), game.getRenderer());
+		gameState.setActionText(text);
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);

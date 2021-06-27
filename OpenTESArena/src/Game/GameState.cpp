@@ -16,6 +16,7 @@
 #include "../Entities/Entity.h"
 #include "../Entities/EntityManager.h"
 #include "../Entities/Player.h"
+#include "../Interface/GameWorldUiView.h"
 #include "../Math/Constants.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -34,17 +35,6 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
-
-namespace
-{
-	// Colors for UI text.
-	const Color TriggerTextColor(215, 121, 8);
-	const Color TriggerTextShadowColor(12, 12, 24);
-	const Color ActionTextColor(195, 0, 0);
-	const Color ActionTextShadowColor(12, 12, 24);
-	const Color EffectTextColor(251, 239, 77);
-	const Color EffectTextShadowColor(190, 113, 0);
-}
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
 {
@@ -73,12 +63,33 @@ void GameState::MapTransitionState::init(MapState &&mapState,
 	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
 }
 
-GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
+GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary, const FontLibrary &fontLibrary,
+	Renderer &renderer)
 	: player(std::move(player))
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
 	DebugLog("Initializing.");
+
+	// Initialize game world interface text boxes with cross-panel durations (trigger/action/effect).
+	const TextBox::InitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
+	if (!this->triggerText.init(triggerTextBoxInitInfo, renderer))
+	{
+		DebugCrash("Couldn't init trigger text box.");
+	}
+
+	const TextBox::InitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
+	if (!this->actionText.init(actionTextBoxInitInfo, renderer))
+	{
+		DebugCrash("Couldn't init action text box.");
+	}
+
+	// @todo
+	//const TextBox::InitInfo effectTextBoxInitInfo = GameWorldUiView::getEffectTextBoxInitInfo(fontLibrary);
+
+	this->triggerTextRemainingSeconds = 0.0;
+	this->actionTextRemainingSeconds = 0.0;
+	this->effectTextRemainingSeconds = 0.0;
 
 	// Initialize world map definition and instance to default.
 	this->worldMapDef.init(binaryAssetLibrary);
@@ -910,24 +921,24 @@ std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
 
 bool GameState::triggerTextIsVisible() const
 {
-	return this->triggerText.hasRemainingDuration();
+	return this->triggerTextRemainingSeconds > 0.0;
 }
 
 bool GameState::actionTextIsVisible() const
 {
-	return this->actionText.hasRemainingDuration();
+	return this->actionTextRemainingSeconds > 0.0;
 }
 
 bool GameState::effectTextIsVisible() const
 {
-	return this->effectText.hasRemainingDuration();
+	return this->effectTextRemainingSeconds > 0.0;
 }
 
 void GameState::getTriggerTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
-		*outTexture = &this->triggerText.textBox->getTexture();
+		*outTexture = &this->triggerText.getTexture();
 	}
 }
 
@@ -935,7 +946,7 @@ void GameState::getActionTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
-		*outTexture = &this->actionText.textBox->getTexture();
+		*outTexture = &this->actionText.getTexture();
 	}
 }
 
@@ -943,7 +954,7 @@ void GameState::getEffectTextRenderInfo(const Texture **outTexture) const
 {
 	if (outTexture != nullptr)
 	{
-		*outTexture = &this->effectText.textBox->getTexture();
+		*outTexture = &this->effectText.getTexture();
 	}
 }
 
@@ -952,76 +963,40 @@ void GameState::setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> tr
 	this->travelData = std::move(travelData);
 }
 
-void GameState::setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setTriggerText(const std::string_view &text)
 {
-	const int lineSpacing = 1;
-	const RichTextString richText(
-		text,
-		FontName::Arena,
-		TriggerTextColor,
-		TextAlignment::Center,
-		lineSpacing,
-		fontLibrary);
-
-	const TextRenderUtils::TextShadowInfo shadowData(-1, 0, TriggerTextShadowColor);
-
-	// Create the text box for display (set position to zero; the renderer will
-	// decide where to draw it).
-	auto textBox = std::make_unique<TextBox>(
-		Int2(0, 0),
-		richText,
-		&shadowData,
-		fontLibrary,
-		renderer);
-
-	// Assign the text box and its duration to the triggered text member.
-	const double duration = std::max(2.50, static_cast<double>(text.size()) * 0.050);
-	this->triggerText = TimedTextBox(duration, std::move(textBox));
+	this->triggerText.setText(text);
+	this->triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
 }
 
-void GameState::setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setActionText(const std::string_view &text)
 {
-	const RichTextString richText(
-		text,
-		FontName::Arena,
-		ActionTextColor,
-		TextAlignment::Center,
-		fontLibrary);
-
-	const TextRenderUtils::TextShadowInfo shadowData(-1, 0, ActionTextShadowColor);
-
-	// Create the text box for display (set position to zero; the renderer will decide
-	// where to draw it).
-	auto textBox = std::make_unique<TextBox>(
-		Int2(0, 0),
-		richText,
-		&shadowData,
-		fontLibrary,
-		renderer);
-
-	// Assign the text box and its duration to the action text.
-	const double duration = std::max(2.25, static_cast<double>(text.size()) * 0.050);
-	this->actionText = TimedTextBox(duration, std::move(textBox));
+	this->actionText.setText(text);
+	this->actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
 }
 
-void GameState::setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
+void GameState::setEffectText(const std::string_view &text)
 {
 	// @todo
+	DebugNotImplemented();
 }
 
 void GameState::resetTriggerText()
 {
-	this->triggerText.reset();
+	this->triggerText.setText(std::string());
+	this->triggerTextRemainingSeconds = 0.0;
 }
 
 void GameState::resetActionText()
 {
-	this->actionText.reset();
+	this->actionText.setText(std::string());
+	this->actionTextRemainingSeconds = 0.0;
 }
 
 void GameState::resetEffectText()
 {
-	this->effectText.reset();
+	this->effectText.setText(std::string());
+	this->effectTextRemainingSeconds = 0.0;
 }
 
 void GameState::setTransitionedPlayerPosition(const CoordDouble3 &position)
@@ -1219,15 +1194,18 @@ void GameState::tick(double dt, Game &game)
 	this->weatherInst.update(dt, this->clock, renderer.getWindowAspect(), game.getRandom(), game.getAudioManager());
 
 	// Tick on-screen text messages.
-	auto tryTickTextBox = [dt](TimedTextBox &textBox)
+	if (this->triggerTextIsVisible())
 	{
-		if (textBox.hasRemainingDuration())
-		{
-			textBox.remainingDuration -= dt;
-		}
-	};
+		this->triggerTextRemainingSeconds -= dt;
+	}
 
-	tryTickTextBox(this->triggerText);
-	tryTickTextBox(this->actionText);
-	tryTickTextBox(this->effectText);
+	if (this->actionTextIsVisible())
+	{
+		this->actionTextRemainingSeconds -= dt;
+	}
+
+	if (this->effectTextIsVisible())
+	{
+		this->effectTextRemainingSeconds -= dt;
+	}
 }
