@@ -3,14 +3,14 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class Renderer;
-class TextBox;
 
 class LogbookPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> titleTextBox;
+	TextBox titleTextBox;
 	Button<Game&> backButton;
 public:
 	LogbookPanel(Game &game);
