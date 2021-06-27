@@ -71,6 +71,8 @@ namespace GameWorldUiView
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::Left;
 
+	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	constexpr int CharacterSheetButtonX = 14;
 	constexpr int CharacterSheetButtonY = 166;
 	constexpr int CharacterSheetButtonWidth = 40;

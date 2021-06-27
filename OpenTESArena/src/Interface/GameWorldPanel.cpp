@@ -27,23 +27,32 @@ bool GameWorldPanel::init()
 	auto &game = this->getGame();
 	DebugAssert(game.gameStateIsActive());
 
-	this->playerNameTextBox = [&game]()
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
+	const TextBox::InitInfo playerNameTextBoxInitInfo =
+		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			GameWorldUiModel::getPlayerNameText(game),
-			GameWorldUiView::PlayerNameFontName,
-			GameWorldUiView::PlayerNameTextColor,
-			GameWorldUiView::PlayerNameTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player name text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			GameWorldUiView::PlayerNameTextBoxX,
-			GameWorldUiView::PlayerNameTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+	const TextBox::InitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
+	if (!this->triggerText.init(triggerTextBoxInitInfo, renderer))
+	{
+		DebugLogError("Couldn't init trigger text box.");
+		return false;
+	}
+
+	const TextBox::InitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
+	if (!this->actionText.init(actionTextBoxInitInfo, renderer))
+	{
+		DebugLogError("Couldn't init action text box.");
+		return false;
+	}
+
+	// @todo: effect text box initialization
 
 	this->characterSheetButton = Button<Game&>(
 		GameWorldUiView::CharacterSheetButtonX,
@@ -265,8 +274,10 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		// Refresh player coordinates display (probably intended for debugging in the original game).
 		// These coordinates are in Arena's coordinate system.
 		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
+		this->actionText.setText(text);
+
 		auto &gameState = game.getGameState();
-		gameState.setActionText(text);
+		gameState.setActionTextDuration(text);
 	}
 
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
@@ -694,8 +705,9 @@ void GameWorldPanel::render(Renderer &renderer)
 		}
 
 		// Draw text: player name.
-		renderer.drawOriginal(this->playerNameTextBox->getTexture(),
-			this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
+		const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
+		renderer.drawOriginal(this->playerNameTextBox.getTexture(),
+			playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
 	}
 }
 
@@ -794,25 +806,21 @@ void GameWorldPanel::renderSecondary(Renderer &renderer)
 	//   subtracting the time in tick() because it would always be one frame shorter then.
 	if (gameState.triggerTextIsVisible())
 	{
-		const Texture *triggerTextTexture;
-		gameState.getTriggerTextRenderInfo(&triggerTextTexture);
-
+		const Texture &triggerTextTexture = this->triggerText.getTexture();
 		const TextureBuilderRef gameWorldInterfaceTextureBuilderRef =
 			textureManager.getTextureBuilderRef(gameWorldInterfaceTextureBuilderID);
 		const Int2 textPosition = GameWorldUiView::getTriggerTextPosition(
-			game, triggerTextTexture->getWidth(), triggerTextTexture->getHeight(),
+			game, triggerTextTexture.getWidth(), triggerTextTexture.getHeight(),
 			gameWorldInterfaceTextureBuilderRef.getHeight());
 
-		renderer.drawOriginal(*triggerTextTexture, textPosition.x, textPosition.y);
+		renderer.drawOriginal(triggerTextTexture, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.actionTextIsVisible())
 	{
-		const Texture *actionTextTexture;
-		gameState.getActionTextRenderInfo(&actionTextTexture);
-
-		const Int2 textPosition = GameWorldUiView::getActionTextPosition(actionTextTexture->getWidth());
-		renderer.drawOriginal(*actionTextTexture, textPosition.x, textPosition.y);
+		const Texture &actionTextTexture = this->actionText.getTexture();
+		const Int2 textPosition = GameWorldUiView::getActionTextPosition(actionTextTexture.getWidth());
+		renderer.drawOriginal(actionTextTexture, textPosition.x, textPosition.y);
 	}
 
 	if (gameState.effectTextIsVisible())

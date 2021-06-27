@@ -22,6 +22,19 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.getHeight()) * yScale)));
 }
 
+TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		GameWorldUiView::PlayerNameTextBoxX,
+		GameWorldUiView::PlayerNameTextBoxY,
+		GameWorldUiView::PlayerNameFontName,
+		GameWorldUiView::PlayerNameTextColor,
+		GameWorldUiView::PlayerNameTextAlignment,
+		fontLibrary);
+}
+
 Int2 GameWorldUiView::getStatusPopUpTextCenterPoint(Game &game)
 {
 	return GameWorldUiView::getInterfaceCenter(game);

@@ -27,7 +27,7 @@ class TransitionDefinition;
 class GameWorldPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox;
+	TextBox playerNameTextBox, triggerText, actionText, effectText;
 	Button<Game&> characterSheetButton, statusButton, logbookButton, pauseButton;
 	Button<Player&> drawWeaponButton;
 	Button<> stealButton, magicButton, useItemButton, campButton;

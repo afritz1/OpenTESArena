@@ -63,33 +63,12 @@ void GameState::MapTransitionState::init(MapState &&mapState,
 	this->enteringInteriorFromExterior = enteringInteriorFromExterior;
 }
 
-GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary, const FontLibrary &fontLibrary,
-	Renderer &renderer)
+GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibrary)
 	: player(std::move(player))
 {
 	// Most values need to be initialized elsewhere in the program in order to determine
 	// the world state, etc..
 	DebugLog("Initializing.");
-
-	// Initialize game world interface text boxes with cross-panel durations (trigger/action/effect).
-	const TextBox::InitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
-	if (!this->triggerText.init(triggerTextBoxInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init trigger text box.");
-	}
-
-	const TextBox::InitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
-	if (!this->actionText.init(actionTextBoxInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init action text box.");
-	}
-
-	// @todo
-	//const TextBox::InitInfo effectTextBoxInitInfo = GameWorldUiView::getEffectTextBoxInitInfo(fontLibrary);
-
-	this->triggerTextRemainingSeconds = 0.0;
-	this->actionTextRemainingSeconds = 0.0;
-	this->effectTextRemainingSeconds = 0.0;
 
 	// Initialize world map definition and instance to default.
 	this->worldMapDef.init(binaryAssetLibrary);
@@ -127,6 +106,11 @@ GameState::GameState(Player &&player, const BinaryAssetLibrary &binaryAssetLibra
 
 	this->provinceIndex = -1;
 	this->locationIndex = -1;
+
+	this->triggerTextRemainingSeconds = 0.0;
+	this->actionTextRemainingSeconds = 0.0;
+	this->effectTextRemainingSeconds = 0.0;
+
 	this->chasmAnimSeconds = 0.0;
 }
 
@@ -934,68 +918,39 @@ bool GameState::effectTextIsVisible() const
 	return this->effectTextRemainingSeconds > 0.0;
 }
 
-void GameState::getTriggerTextRenderInfo(const Texture **outTexture) const
-{
-	if (outTexture != nullptr)
-	{
-		*outTexture = &this->triggerText.getTexture();
-	}
-}
-
-void GameState::getActionTextRenderInfo(const Texture **outTexture) const
-{
-	if (outTexture != nullptr)
-	{
-		*outTexture = &this->actionText.getTexture();
-	}
-}
-
-void GameState::getEffectTextRenderInfo(const Texture **outTexture) const
-{
-	if (outTexture != nullptr)
-	{
-		*outTexture = &this->effectText.getTexture();
-	}
-}
-
 void GameState::setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData)
 {
 	this->travelData = std::move(travelData);
 }
 
-void GameState::setTriggerText(const std::string_view &text)
+void GameState::setTriggerTextDuration(const std::string_view &text)
 {
-	this->triggerText.setText(text);
 	this->triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
 }
 
-void GameState::setActionText(const std::string_view &text)
+void GameState::setActionTextDuration(const std::string_view &text)
 {
-	this->actionText.setText(text);
 	this->actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
 }
 
-void GameState::setEffectText(const std::string_view &text)
+void GameState::setEffectTextDuration(const std::string_view &text)
 {
 	// @todo
 	DebugNotImplemented();
 }
 
-void GameState::resetTriggerText()
+void GameState::resetTriggerTextDuration()
 {
-	this->triggerText.setText(std::string());
 	this->triggerTextRemainingSeconds = 0.0;
 }
 
-void GameState::resetActionText()
+void GameState::resetActionTextDuration()
 {
-	this->actionText.setText(std::string());
 	this->actionTextRemainingSeconds = 0.0;
 }
 
-void GameState::resetEffectText()
+void GameState::resetEffectTextDuration()
 {
-	this->effectText.setText(std::string());
 	this->effectTextRemainingSeconds = 0.0;
 }
 
