@@ -344,7 +344,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 				if (centerCursorRegion.contains(mousePosition))
 				{
 					const bool primaryClick = true;
-					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, debugFadeVoxel);
+					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, debugFadeVoxel, this->actionText);
 				}
 			}
 		}
@@ -360,7 +360,7 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 				if (centerCursorRegion.contains(mousePosition))
 				{
 					const bool primaryClick = false;
-					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, false);
+					PlayerLogicController::handleClickInWorld(game, mousePosition, primaryClick, false, this->actionText);
 				}
 			}
 		}
@@ -378,13 +378,13 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 		{
 			// Activate (left click in classic mode).
 			const bool primaryClick = true;
-			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, debugFadeVoxel);
+			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, debugFadeVoxel, this->actionText);
 		}
 		else if (leftClick)
 		{
 			// Read (right click in classic mode).
 			const bool primaryClick = false;
-			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, false);
+			PlayerLogicController::handleClickInWorld(game, nativeCenter, primaryClick, false, this->actionText);
 		}
 	}
 }

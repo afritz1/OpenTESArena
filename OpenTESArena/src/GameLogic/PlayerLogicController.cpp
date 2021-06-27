@@ -8,6 +8,7 @@
 #include "../Game/Physics.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
+#include "../UI/TextBox.h"
 #include "../World/ArenaVoxelUtils.h"
 
 #include "components/utilities/String.h"
@@ -518,7 +519,7 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 }
 
 void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoint, bool primaryClick,
-	bool debugFadeVoxel)
+	bool debugFadeVoxel, TextBox &actionTextBox)
 {
 	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
@@ -657,8 +658,10 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 					const std::string *buildingName = chunkPtr->tryGetBuildingName(voxel);
 					if (buildingName != nullptr)
 					{
+						actionTextBox.setText(*buildingName);
+
 						auto &gameState = game.getGameState();
-						gameState.setActionText(*buildingName);
+						gameState.setActionTextDuration(*buildingName);
 					}
 				}
 			}
@@ -705,8 +708,10 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 						EntityUtils::defTypeToString(entityDef) + ")";
 				}
 
+				actionTextBox.setText(text);
+
 				auto &gameState = game.getGameState();
-				gameState.setActionText(text);
+				gameState.setActionTextDuration(text);
 			}
 		}
 		else
