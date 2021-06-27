@@ -108,7 +108,7 @@ TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &
 	std::string dummyText;
 	for (int i = 0; i < 4; i++)
 	{
-		std::string dummyLine(20, 'W'); // @todo: intentionally low so it cuts off text and reminds me to tweak this
+		std::string dummyLine(20, TextRenderUtils::LARGEST_CHAR); // @todo: intentionally low so it cuts off text and reminds me to tweak this
 		dummyText += dummyLine + '\n';
 	}
 
@@ -133,7 +133,7 @@ TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &f
 	std::string dummyText;
 	for (int i = 0; i < 2; i++)
 	{
-		std::string dummyLine(8, 'W'); // @todo: intentionally low so it cuts off text and reminds me to tweak this
+		std::string dummyLine(8, TextRenderUtils::LARGEST_CHAR); // @todo: intentionally low so it cuts off text and reminds me to tweak this
 		dummyText += dummyLine + '\n';
 	}
 

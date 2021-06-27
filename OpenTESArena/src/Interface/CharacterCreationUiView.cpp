@@ -190,7 +190,7 @@ TextBox::InitInfo CharacterCreationUiView::getChooseNameTitleTextBoxInitInfo(con
 
 TextBox::InitInfo CharacterCreationUiView::getChooseNameEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, 'W');
+	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, TextRenderUtils::LARGEST_CHAR);
 
 	return TextBox::InitInfo::makeWithXY(
 		dummyText,
