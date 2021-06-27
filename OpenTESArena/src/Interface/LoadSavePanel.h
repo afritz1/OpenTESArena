@@ -15,7 +15,7 @@ class LoadSavePanel : public Panel
 public:
 	enum class Type { Load, Save };
 private:
-	std::vector<std::unique_ptr<TextBox>> saveTextBoxes;
+	std::vector<TextBox> saveTextBoxes;
 	Button<Game&, int> confirmButton;
 	Button<Game&> backButton;
 	LoadSavePanel::Type type;
