@@ -6,6 +6,7 @@
 #include "../Media/TextureUtils.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 struct TextureAssetReference;
 
@@ -17,6 +18,9 @@ namespace PauseMenuUiView
 
 	const Int2 SoundTextBoxCenterPoint(54, 96);
 	const Int2 MusicTextBoxCenterPoint(127, 96);
+
+	TextBox::InitInfo getSoundTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getMusicTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	
 	const Int2 OptionsTextBoxCenterPoint(234, 95);
 	constexpr FontName OptionsButtonFontName = FontName::Arena;
@@ -26,6 +30,8 @@ namespace PauseMenuUiView
 	const Color OptionsButtonTextShadowColor(101, 77, 24);
 	constexpr int OptionsButtonTextShadowOffsetX = -1;
 	constexpr int OptionsButtonTextShadowOffsetY = 1;
+
+	TextBox::InitInfo getOptionsTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	constexpr int NewGameButtonX = 0;
 	constexpr int NewGameButtonY = 118;
