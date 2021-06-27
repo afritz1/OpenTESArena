@@ -8,6 +8,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 namespace OptionsUiView
 {
@@ -58,12 +59,16 @@ namespace OptionsUiView
 	Color getTitleTextColor();  // Global initialization order workaround.
 	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
 
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	const Int2 BackToPauseMenuTextBoxCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 30,
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr FontName BackToPauseMenuFontName = FontName::Arena;
 	Color getBackToPauseMenuTextColor();
 	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::Center;
+
+	TextBox::InitInfo getBackToPauseMenuTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToPauseMenuButtonCenterPoint = BackToPauseMenuTextBoxCenterPoint;
 	constexpr int BackToPauseMenuButtonWidth = 40;

@@ -18,6 +18,9 @@ enum class TextAlignment;
 
 namespace TextRenderUtils
 {
+	// Used when determining worst-case text box dimensions.
+	constexpr char LARGEST_CHAR = 'W';
+
 	// Data for generating a texture for rendering text into.
 	struct TextureGenInfo
 	{
