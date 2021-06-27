@@ -5,9 +5,8 @@
 #include <vector>
 
 #include "Panel.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
-
-class TextBox;
 
 // A sub-panel intended for displaying text with some buttons.
 class MessageBoxSubPanel : public Panel

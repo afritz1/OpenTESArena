@@ -7,7 +7,6 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
-#include "../UI/TextBox.h"
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game)
 	: Panel(game) { }
@@ -91,14 +90,18 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 
 void MessageBoxSubPanel::render(Renderer &renderer)
 {
-	// Draw title.
 	renderer.drawOriginal(this->title.texture, this->title.textureX, this->title.textureY);
-	renderer.drawOriginal(this->title.textBox->getTexture(), this->title.textBox->getX(), this->title.textBox->getY());
 
-	// Draw elements.
+	const TextBox &titleTextBox = this->title.textBox;
+	const Rect &titleTextBoxRect = titleTextBox.getRect();
+	renderer.drawOriginal(titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+
 	for (const auto &element : this->elements)
 	{
 		renderer.drawOriginal(element.texture, element.textureX, element.textureY);
-		renderer.drawOriginal(element.textBox->getTexture(), element.textBox->getX(), element.textBox->getY());
+
+		const TextBox &elementTextBox = element.textBox;
+		const Rect &elementTextBoxRect = elementTextBox.getRect();
+		renderer.drawOriginal(elementTextBox.getTexture(), elementTextBoxRect.getLeft(), elementTextBoxRect.getTop());
 	}
 }
