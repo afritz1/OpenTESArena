@@ -20,7 +20,7 @@ class ProvinceSearchSubPanel : public Panel
 {
 private:
 	Texture parchment;
-	std::unique_ptr<TextBox> textTitleTextBox, textEntryTextBox;
+	TextBox textTitleTextBox, textEntryTextBox;
 	ListBox locationsListBox;
 	Button<Game&, ProvinceSearchSubPanel&> textAcceptButton;
 	Button<ListBox&> listUpButton, listDownButton;

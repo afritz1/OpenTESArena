@@ -11,6 +11,7 @@
 #include "../UI/FontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 class Game;
 
@@ -83,9 +84,13 @@ namespace ProvinceMapUiView
 	const Color SearchSubPanelTitleColor(52, 24, 8);
 	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::Left;
 
+	TextBox::InitInfo getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+
 	constexpr FontName SearchSubPanelTextEntryFontName = FontName::Arena;
 	const Color SearchSubPanelTextEntryColor(52, 24, 8);
 	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::Left;
+
+	TextBox::InitInfo getSearchSubPanelTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	int getSearchSubPanelTextEntryTextureX(int textureWidth);
 	int getSearchSubPanelTextEntryTextureY(int textureHeight);

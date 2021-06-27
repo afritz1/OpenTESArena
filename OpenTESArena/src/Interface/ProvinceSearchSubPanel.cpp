@@ -29,6 +29,8 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game)
 bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provinceID)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
@@ -39,42 +41,22 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		game.getTextureManager(),
 		game.getRenderer());
 
-	this->textTitleTextBox = [&game]()
+	const std::string textTitleText = ProvinceMapUiModel::getSearchSubPanelTitleText(game);
+	const TextBox::InitInfo textTitleTextBoxInitInfo =
+		ProvinceMapUiView::getSearchSubPanelTitleTextBoxInitInfo(textTitleText, fontLibrary);
+	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			ProvinceMapUiModel::getSearchSubPanelTitleText(game),
-			ProvinceMapUiView::SearchSubPanelTitleFontName,
-			ProvinceMapUiView::SearchSubPanelTitleColor,
-			ProvinceMapUiView::SearchSubPanelTitleTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			ProvinceMapUiView::SearchSubPanelTitleTextBoxX,
-			ProvinceMapUiView::SearchSubPanelTitleTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->textEntryTextBox = [&game]()
+	const TextBox::InitInfo textEntryTextBoxInitInfo =
+		ProvinceMapUiView::getSearchSubPanelTextEntryTextBoxInitInfo(fontLibrary);
+	if (!this->textEntryTextBox.init(textEntryTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			std::string(),
-			ProvinceMapUiView::SearchSubPanelTextEntryFontName,
-			ProvinceMapUiView::SearchSubPanelTextEntryColor,
-			ProvinceMapUiView::SearchSubPanelTextEntryTextAlignment,
-			fontLibrary);
-
-		const Int2 &position = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
-		return std::make_unique<TextBox>(
-			position.x,
-			position.y,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init text entry text box.");
+		return false;
+	}
 
 	this->textAcceptButton = Button<Game&, ProvinceSearchSubPanel&>(ProvinceMapUiController::onSearchTextAccepted);
 	this->listUpButton = Button<ListBox&>(
@@ -175,27 +157,7 @@ void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
 
 		if (textChanged)
 		{
-			// Update the displayed location name.
-			this->textEntryTextBox = [this, &game]()
-			{
-				const RichTextString &oldRichText = this->textEntryTextBox->getRichText();
-
-				const auto &fontLibrary = game.getFontLibrary();
-				const RichTextString richText(
-					this->locationName,
-					oldRichText.getFontName(),
-					oldRichText.getColor(),
-					oldRichText.getAlignment(),
-					fontLibrary);
-
-				const Int2 &position = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
-				return std::make_unique<TextBox>(
-					position.x,
-					position.y,
-					richText,
-					fontLibrary,
-					game.getRenderer());
-			}();
+			this->textEntryTextBox.setText(this->locationName);
 		}
 	}
 }
@@ -290,8 +252,10 @@ void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY);
 
 	// Draw text: title, location name.
-	renderer.drawOriginal(this->textTitleTextBox->getTexture(), this->textTitleTextBox->getX(), this->textTitleTextBox->getY());
-	renderer.drawOriginal(this->textEntryTextBox->getTexture(), this->textEntryTextBox->getX(), this->textEntryTextBox->getY());
+	const Rect &titleTextBoxRect = this->textTitleTextBox.getRect();
+	const Rect &entryTextBoxRect = this->textEntryTextBox.getRect();
+	renderer.drawOriginal(this->textTitleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->textEntryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
 
 	// @todo: draw blinking cursor.
 }

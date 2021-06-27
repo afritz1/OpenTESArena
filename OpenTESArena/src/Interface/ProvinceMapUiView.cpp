@@ -91,6 +91,33 @@ std::string ProvinceMapUiView::getMapIconBlinkingOutlinesFilename()
 	return ArenaTextureName::MapIconOutlinesBlinking;
 }
 
+TextBox::InitInfo ProvinceMapUiView::getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		ProvinceMapUiView::SearchSubPanelTitleTextBoxX,
+		ProvinceMapUiView::SearchSubPanelTitleTextBoxY,
+		ProvinceMapUiView::SearchSubPanelTitleFontName,
+		ProvinceMapUiView::SearchSubPanelTitleColor,
+		ProvinceMapUiView::SearchSubPanelTitleTextAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo ProvinceMapUiView::getSearchSubPanelTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(ProvinceMapUiModel::SearchSubPanelMaxNameLength, TextRenderUtils::LARGEST_CHAR);
+	const Int2 &origin = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
+	return TextBox::InitInfo::makeWithXY(
+		dummyText,
+		origin.x,
+		origin.y,
+		ProvinceMapUiView::SearchSubPanelTextEntryFontName,
+		ProvinceMapUiView::SearchSubPanelTextEntryColor,
+		ProvinceMapUiView::SearchSubPanelTextEntryTextAlignment,
+		fontLibrary);
+}
+
 int ProvinceMapUiView::getSearchSubPanelTextEntryTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
