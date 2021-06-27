@@ -4,6 +4,9 @@
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/FontUtils.h"
+#include "../UI/TextBox.h"
 #include "../World/MapType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -378,61 +381,113 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	renderer.drawOriginal(testButton, testButtonRect.getLeft(), testButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 
-	// Draw test text.
+	constexpr FontName testFontName = MainMenuUiView::TestButtonFontName;
+	const Color testTextColor = MainMenuUiView::getTestButtonTextColor();
 	const auto &fontLibrary = this->getGame().getFontLibrary();
-	const RichTextString testButtonText(
-		"Test",
-		MainMenuUiView::TestButtonFontName,
-		MainMenuUiView::getTestButtonTextColor(),
+	// @todo: need right-aligned text support so this workaround isn't needed.
+	// - all other TextureGenInfo's in this scope can be removed at that point too
+	const FontDefinition &testFontDef = [&fontLibrary, testFontName]() -> const FontDefinition&
+	{
+		const char *fontNameStr = FontUtils::fromName(testFontName);
+		int fontDefIndex;
+		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+		{
+			DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		}
+
+		return fontLibrary.getDefinition(fontDefIndex);
+	}();
+
+	// Draw test text.
+	const std::string testButtonText = "Test";
+	const TextBox::InitInfo testButtonTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		testButtonText,
+		MainMenuUiView::TestButtonTextBoxPoint,
+		testFontName,
+		testTextColor,
 		MainMenuUiView::TestButtonTextAlignment,
 		fontLibrary);
 
-	const TextBox testButtonTextBox(MainMenuUiView::TestButtonTextBoxPoint, testButtonText, fontLibrary, renderer);
-	renderer.drawOriginal(testButtonTextBox.getTexture(), testButtonTextBox.getX(), testButtonTextBox.getY());
+	TextBox testButtonTextBox;
+	if (!testButtonTextBox.init(testButtonTextBoxInitInfo, testButtonText, renderer))
+	{
+		DebugLogError("Couldn't init test button text box.");
+		return;
+	}
 
-	const std::string testTypeName = MainMenuUiModel::getTestTypeName(this->testType);
-	const RichTextString testTypeText(
-		"Test type: " + testTypeName,
-		testButtonText.getFontName(),
-		testButtonText.getColor(),
+	const Rect &testButtonTextBoxRect = testButtonTextBox.getRect();
+	renderer.drawOriginal(testButtonTextBox.getTexture(), testButtonTextBoxRect.getLeft(), testButtonTextBoxRect.getTop());
+
+	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
+	const TextRenderUtils::TextureGenInfo testTypeTextBoxTextureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(testTypeText, testFontDef);
+	const TextBox::InitInfo testTypeTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		testTypeText,
+		this->testTypeUpButton.getX() - testTypeTextBoxTextureGenInfo.width - 2,
+		this->testTypeUpButton.getY() + (testTypeTextBoxTextureGenInfo.height / 2),
+		testFontName,
+		testTextColor,
 		TextAlignment::Left,
 		fontLibrary);
 
-	const int testTypeTextBoxX = this->testTypeUpButton.getX() - testTypeText.getDimensions().x - 2;
-	const int testTypeTextBoxY = this->testTypeUpButton.getY() + (testTypeText.getDimensions().y / 2);
-	const TextBox testTypeTextBox(testTypeTextBoxX, testTypeTextBoxY, testTypeText, fontLibrary, renderer);
-	renderer.drawOriginal(testTypeTextBox.getTexture(), testTypeTextBox.getX(), testTypeTextBox.getY());
+	TextBox testTypeTextBox;
+	if (!testTypeTextBox.init(testTypeTextBoxInitInfo, testTypeText, renderer))
+	{
+		DebugLogError("Couldn't init test type text box.");
+		return;
+	}
 
-	const RichTextString testNameText(
-		"Test location: " + this->getSelectedTestName(),
-		testTypeText.getFontName(),
-		testTypeText.getColor(),
-		testTypeText.getAlignment(),
+	const Rect &testTypeTextBoxRect = testTypeTextBox.getRect();
+	renderer.drawOriginal(testTypeTextBox.getTexture(), testTypeTextBoxRect.getLeft(), testTypeTextBoxRect.getTop());
+
+	const std::string testNameText = "Test location: " + this->getSelectedTestName();
+	const TextRenderUtils::TextureGenInfo testNameTextBoxTextureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(testNameText, testFontDef);
+	const TextBox::InitInfo testNameTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		testNameText,
+		this->testIndexUpButton.getX() - testNameTextBoxTextureGenInfo.width - 2,
+		this->testIndexUpButton.getY() + (testNameTextBoxTextureGenInfo.height / 2),
+		testFontName,
+		testTextColor,
+		TextAlignment::Left,
 		fontLibrary);
-	const int testNameTextBoxX = this->testIndexUpButton.getX() - testNameText.getDimensions().x - 2;
-	const int testNameTextBoxY = this->testIndexUpButton.getY() + (testNameText.getDimensions().y / 2);
-	const TextBox testNameTextBox(testNameTextBoxX, testNameTextBoxY, testNameText, fontLibrary, renderer);
-	renderer.drawOriginal(testNameTextBox.getTexture(), testNameTextBox.getX(), testNameTextBox.getY());
+	
+	TextBox testNameTextBox;
+	if (!testNameTextBox.init(testNameTextBoxInitInfo, testNameText, renderer))
+	{
+		DebugLogError("Couldn't init test name text box.");
+		return;
+	}
+
+	const Rect &testNameTextBoxRect = testNameTextBox.getRect();
+	renderer.drawOriginal(testNameTextBox.getTexture(), testNameTextBoxRect.getLeft(), testNameTextBoxRect.getTop());
 
 	// Draw weather text if applicable.
 	if ((this->testType == MainMenuUiModel::TestType_City) || (this->testType == MainMenuUiModel::TestType_Wilderness))
 	{
 		const ArenaTypes::WeatherType weatherType = this->getSelectedTestWeatherType();
 		const std::string &weatherName = MainMenuUiModel::WeatherTypeNames.at(weatherType);
-
-		const RichTextString testWeatherText(
-			"Test weather: " + weatherName,
-			testTypeText.getFontName(),
-			testTypeText.getColor(),
-			testTypeText.getAlignment(),
+		const std::string testWeatherText = "Test weather: " + weatherName;
+		const TextRenderUtils::TextureGenInfo testWeatherTextBoxTextureGenInfo =
+			TextRenderUtils::makeTextureGenInfo(testWeatherText, testFontDef);
+		const TextBox::InitInfo testWeatherTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+			testWeatherText,
+			this->testWeatherUpButton.getX() - testWeatherTextBoxTextureGenInfo.width - 2,
+			this->testWeatherUpButton.getY() + (testWeatherTextBoxTextureGenInfo.height / 2),
+			testFontName,
+			testTextColor,
+			TextAlignment::Left,
 			fontLibrary);
 
-		const int testWeatherTextBoxX = this->testWeatherUpButton.getX() - testWeatherText.getDimensions().x - 2;
-		const int testWeatherTextBoxY = this->testWeatherUpButton.getY() + (testWeatherText.getDimensions().y / 2);
-		const TextBox testWeatherTextBox(testWeatherTextBoxX, testWeatherTextBoxY,
-			testWeatherText, fontLibrary, renderer);
+		TextBox testWeatherTextBox;
+		if (!testWeatherTextBox.init(testWeatherTextBoxInitInfo, testWeatherText, renderer))
+		{
+			DebugLogError("Couldn't init test weather text box.");
+			return;
+		}
 
-		renderer.drawOriginal(testWeatherTextBox.getTexture(), testWeatherTextBox.getX(), testWeatherTextBox.getY());
+		const Rect &testWeatherTextBoxRect = testWeatherTextBox.getRect();
+		renderer.drawOriginal(testWeatherTextBox.getTexture(), testWeatherTextBoxRect.getLeft(), testWeatherTextBoxRect.getTop());
 	}
 }
 
