@@ -121,7 +121,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
 	auto gameState = std::make_unique<GameState>(Player::makeRandom(
 		game.getCharacterClassLibrary(), binaryAssetLibrary.getExeData(), game.getRandom()),
-		binaryAssetLibrary, game.getFontLibrary(), game.getRenderer());
+		binaryAssetLibrary);
 
 	const int starCount = SkyUtils::getStarCountFromDensity(options.getMisc_StarDensity());
 	const int currentDay = gameState->getDate().getDay();
