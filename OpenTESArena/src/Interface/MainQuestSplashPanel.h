@@ -11,7 +11,7 @@
 class MainQuestSplashPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> textBox;
+	TextBox textBox;
 	Button<Game&> exitButton;
 	TextureAssetReference splashTextureAssetRef;
 public:

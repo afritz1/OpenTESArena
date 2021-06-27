@@ -4,6 +4,7 @@
 #include "../Media/Color.h"
 #include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 namespace MainQuestSplashUiView
 {
@@ -12,8 +13,11 @@ namespace MainQuestSplashUiView
 	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Center;
 	constexpr int DescriptionLineSpacing = 1;
 
+	// @todo: should use center point instead I think
 	int getDescriptionTextBoxX(int textWidth);
 	int getDescriptionTextBoxY();
+
+	TextBox::InitInfo getDescriptionTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	constexpr int ExitButtonX = 272;
 	constexpr int ExitButtonY = 183;
