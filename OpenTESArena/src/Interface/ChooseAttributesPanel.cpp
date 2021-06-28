@@ -12,7 +12,6 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
-#include "../UI/RichTextString.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game) { }

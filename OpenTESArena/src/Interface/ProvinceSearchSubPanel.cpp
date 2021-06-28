@@ -17,7 +17,6 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
 

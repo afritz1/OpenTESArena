@@ -10,7 +10,6 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextBox.h"
 
 TextSubPanel::TextSubPanel(Game &game)

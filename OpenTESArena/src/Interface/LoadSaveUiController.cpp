@@ -5,7 +5,6 @@
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 

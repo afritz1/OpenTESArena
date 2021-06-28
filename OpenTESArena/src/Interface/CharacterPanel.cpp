@@ -6,7 +6,6 @@
 #include "CharacterSheetUiView.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
-#include "../UI/RichTextString.h"
 
 #include "components/debug/Debug.h"
 
