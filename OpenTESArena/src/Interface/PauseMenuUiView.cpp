@@ -3,10 +3,15 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextureAssetReference.h"
 
-TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+namespace
+{
+	const std::string DummyVolumeText = "100"; // Worst-case text size for sound/music volume.
+}
+
+TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithCenter(
-		text,
+		DummyVolumeText,
 		PauseMenuUiView::SoundTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
 		PauseMenuUiView::VolumeColor,
@@ -14,10 +19,10 @@ TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const std::string_vie
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithCenter(
-		text,
+		DummyVolumeText,
 		PauseMenuUiView::MusicTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
 		PauseMenuUiView::VolumeColor,

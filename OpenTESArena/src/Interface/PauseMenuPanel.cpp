@@ -31,7 +31,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string musicText = PauseMenuUiModel::getMusicVolumeText(game);
-	const TextBox::InitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(musicText, fontLibrary);
+	const TextBox::InitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
 	if (!this->musicTextBox.init(musicTextBoxInitInfo, musicText, renderer))
 	{
 		DebugLogError("Couldn't init music volume text box.");
@@ -39,7 +39,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string soundText = PauseMenuUiModel::getSoundVolumeText(game);
-	const TextBox::InitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(soundText, fontLibrary);
+	const TextBox::InitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
 	if (!this->soundTextBox.init(soundTextBoxInitInfo, soundText, renderer))
 	{
 		DebugLogError("Couldn't init sound volume text box.");
