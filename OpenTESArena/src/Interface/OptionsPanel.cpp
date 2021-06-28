@@ -260,7 +260,7 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 
 void OptionsPanel::drawText(Renderer &renderer)
 {
-	auto drawTextBox = [&renderer](const TextBox &textBox)
+	auto drawTextBox = [&renderer](TextBox &textBox)
 	{
 		const Rect &textBoxRect = textBox.getRect();
 		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
@@ -281,7 +281,7 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 	std::optional<int> highlightedOptionIndex;
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
+		auto &optionTextBox = this->currentTabTextBoxes.at(i);
 		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
 		const Rect optionRect(
 			OptionsUiView::ListOrigin.x,

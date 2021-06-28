@@ -105,7 +105,7 @@ void LoadSavePanel::render(Renderer &renderer)
 	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 
 	// Draw save text.
-	for (const TextBox &textBox : this->saveTextBoxes)
+	for (TextBox &textBox : this->saveTextBoxes)
 	{
 		const Rect &textBoxRect = textBox.getRect();
 		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());

@@ -21,15 +21,16 @@ public:
 	struct Properties
 	{
 		int fontDefIndex; // Index in font library.
+		const FontLibrary *fontLibrary; // Stored for ease of redrawing texture. It's okay to store a singleton pointer I guess?
 		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
 		Color defaultColor; // Color of text unless overridden.
 		TextAlignment alignment;
 		std::optional<TextRenderUtils::TextShadowInfo> shadowInfo;
 		int lineSpacing; // Pixels between each line of text.
 
-		Properties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor,
-			TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo = std::nullopt,
-			int lineSpacing = 0);
+		Properties(int fontDefIndex, const FontLibrary *fontLibrary, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+			const Color &defaultColor, TextAlignment alignment,
+			const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo = std::nullopt, int lineSpacing = 0);
 		Properties();
 	};
 
@@ -62,6 +63,9 @@ private:
 	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
 	Texture texture; // Output texture for rendering.
 	bool dirty;
+
+	// Redraws the underlying texture for display.
+	void updateTexture();
 public:
 	TextBox();
 
@@ -72,15 +76,12 @@ public:
 	bool init(const InitInfo &initInfo, const std::string_view &text, Renderer &renderer);
 
 	const Rect &getRect() const;
-	const Texture &getTexture() const;
+	const Texture &getTexture();
 
 	void setText(const std::string_view &text);
 
 	void addOverrideColor(int charIndex, const Color &overrideColor);
 	void clearOverrideColors();
-
-	// Redraws the underlying texture for display.
-	void updateTexture(const FontLibrary &fontLibrary);
 };
 
 #endif

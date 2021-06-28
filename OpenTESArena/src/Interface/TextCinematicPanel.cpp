@@ -237,7 +237,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Draw the relevant text box.
 	DebugAssertIndex(this->textBoxes, this->textIndex);
-	const TextBox &textBox = this->textBoxes[this->textIndex];
+	TextBox &textBox = this->textBoxes[this->textIndex];
 	const Rect &textBoxRect = textBox.getRect();
 	renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

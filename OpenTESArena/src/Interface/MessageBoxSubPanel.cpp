@@ -92,15 +92,15 @@ void MessageBoxSubPanel::render(Renderer &renderer)
 {
 	renderer.drawOriginal(this->title.texture, this->title.textureX, this->title.textureY);
 
-	const TextBox &titleTextBox = this->title.textBox;
+	TextBox &titleTextBox = this->title.textBox;
 	const Rect &titleTextBoxRect = titleTextBox.getRect();
 	renderer.drawOriginal(titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
-	for (const auto &element : this->elements)
+	for (auto &element : this->elements)
 	{
 		renderer.drawOriginal(element.texture, element.textureX, element.textureY);
 
-		const TextBox &elementTextBox = element.textBox;
+		TextBox &elementTextBox = element.textBox;
 		const Rect &elementTextBoxRect = elementTextBox.getRect();
 		renderer.drawOriginal(elementTextBox.getTexture(), elementTextBoxRect.getLeft(), elementTextBoxRect.getTop());
 	}

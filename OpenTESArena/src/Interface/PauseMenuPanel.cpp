@@ -272,7 +272,7 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	renderer.drawOriginal(this->optionsButtonTexture, this->optionsButton.getX(), this->optionsButton.getY());
 
-	auto drawTextBox = [&renderer](const TextBox &textBox, int xOffset)
+	auto drawTextBox = [&renderer](TextBox &textBox, int xOffset)
 	{
 		const Rect &textBoxRect = textBox.getRect();
 		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft() + xOffset, textBoxRect.getTop());
