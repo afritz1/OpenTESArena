@@ -208,26 +208,13 @@ void TextBox::updateTexture()
 	if (this->text.size() > 0)
 	{
 		const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
-		const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(textLines, this->properties.alignment, fontDef);
-		DebugAssert(xOffsets.size() == textLines.size());
-
-		// Draw text to texture.
-		// @todo: might need to adjust X and Y by some function of shadow offset. Might also need to draw all shadow lines
-		// before all regular lines.
-		int y = 0;
-		for (int i = 0; i < static_cast<int>(textLines.size()); i++)
-		{
-			const std::string_view &textLine = textLines[i];
-			const int xOffset = xOffsets[i];
-			const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr =
-				(this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
-			const TextRenderUtils::TextShadowInfo *shadowInfoPtr =
-				this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
-			TextRenderUtils::drawTextLine(textLine, fontDef, xOffset, y, this->properties.defaultColor,
-				colorOverrideInfoPtr, shadowInfoPtr, textureView);
-
-			y += fontDef.getCharacterHeight() + this->properties.lineSpacing;
-		}
+		const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr =
+			(this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
+		const TextRenderUtils::TextShadowInfo *shadowInfoPtr =
+			this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
+		TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
+			fontDef, 0, 0, this->properties.defaultColor, this->properties.alignment, this->properties.lineSpacing,
+			colorOverrideInfoPtr, shadowInfoPtr, textureView);
 	}
 
 	SDL_UnlockTexture(this->texture.get());

@@ -164,10 +164,10 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	return textureGenInfo;
 }
 
-std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::string_view> &textLines,
+std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const BufferView<const std::string_view> &textLines,
 	TextAlignment alignment, const FontDefinition &fontDef)
 {
-	std::vector<int> xOffsets(textLines.size());
+	std::vector<int> xOffsets(textLines.getCount());
 
 	if (alignment == TextAlignment::Left)
 	{
@@ -178,8 +178,7 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::s
 	{
 		auto getTextLinePixelLength = [&textLines, &fontDef](int textLinesIndex)
 		{
-			DebugAssertIndex(textLines, textLinesIndex);
-			const std::string_view &textLine = textLines[textLinesIndex];
+			const std::string_view &textLine = textLines.get(textLinesIndex);
 			const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(textLine, fontDef);
 			return TextRenderUtils::getLinePixelLength(charIDs, fontDef);
 		};
@@ -187,7 +186,7 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::s
 		// Find longest line then make all other lines' offsets relative to that one.
 		const int longestLineIndex = [&textLines]()
 		{
-			const auto iter = std::max_element(textLines.begin(), textLines.end(),
+			const auto iter = std::max_element(textLines.get(), textLines.end(),
 				[](const std::string_view &a, const std::string_view &b)
 			{
 				return a.size() < b.size();
@@ -198,12 +197,12 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const std::vector<std::s
 				DebugCrash("Couldn't find longest line for text alignment offsets.");
 			}
 
-			return static_cast<int>(std::distance(textLines.begin(), iter));
+			return static_cast<int>(std::distance(textLines.get(), iter));
 		}();
 
 		const int longestLinePixelLength = getTextLinePixelLength(longestLineIndex);
 
-		for (int i = 0; i < static_cast<int>(textLines.size()); i++)
+		for (int i = 0; i < textLines.getCount(); i++)
 		{
 			if (i != longestLineIndex)
 			{
@@ -296,4 +295,26 @@ void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefin
 	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	const BufferView<const FontDefinition::CharID> charIdsView(charIDs.data(), static_cast<int>(charIDs.size()));
 	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, colorOverrideInfo, shadow, outBuffer);
+}
+
+void TextRenderUtils::drawTextLines(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	int dstX, int dstY, const Color &textColor, TextAlignment alignment, int lineSpacing,
+	const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
+{
+	const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(textLines, alignment, fontDef);
+	DebugAssert(xOffsets.size() == textLines.getCount());
+
+	// Draw text to texture.
+	// @todo: might need to adjust X and Y by some function of shadow offset. Might also need to draw all shadow lines
+	// before all regular lines.
+	int y = 0;
+	for (int i = 0; i < textLines.getCount(); i++)
+	{
+		const std::string_view &textLine = textLines.get(i);
+		const int xOffset = xOffsets[i];
+		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + xOffset, dstY + y, textColor, colorOverrideInfo,
+			shadow, outBuffer);
+
+		y += fontDef.getCharacterHeight() + lineSpacing;
+	}
 }

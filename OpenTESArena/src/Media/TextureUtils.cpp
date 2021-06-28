@@ -299,7 +299,9 @@ Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLi
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	constexpr int lineSpacing = 1;
+	TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
 	constexpr int padding = 4;
 
 	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
@@ -316,7 +318,11 @@ Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLi
 	const Color textColor(255, 255, 255, 255);
 	BufferView2D<uint32_t> surfacePixelsView(
 		static_cast<uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
-	TextRenderUtils::drawTextLine(text, fontDef, dstX, dstY, textColor, nullptr, nullptr, surfacePixelsView);
+
+	std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
+	constexpr TextAlignment alignment = TextAlignment::Left;
+	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
+		fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
 
 	Texture texture = renderer.createTextureFromSurface(surface);
 	return texture;

@@ -84,7 +84,7 @@ namespace TextRenderUtils
 
 	// Generates X pixel offsets for each line of a text box based on text alignment.
 	// @todo: might eventually be percentages of the longest line's dimensions?
-	std::vector<int> makeAlignmentXOffsets(const std::vector<std::string_view> &textLines, TextAlignment alignment,
+	std::vector<int> makeAlignmentXOffsets(const BufferView<const std::string_view> &textLines, TextAlignment alignment,
 		const FontDefinition &fontDef);
 
 	// Blits the given font character to the output texture, and handles clipping.
@@ -101,6 +101,9 @@ namespace TextRenderUtils
 	void drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
 		BufferView2D<uint32_t> &outBuffer);
+	void drawTextLines(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef, int dstX, int dstY,
+		const Color &textColor, TextAlignment alignment, int lineSpacing, const ColorOverrideInfo *colorOverrideInfo,
+		const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
 }
 
 #endif
