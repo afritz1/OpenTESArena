@@ -3,7 +3,6 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 #include "../UI/Surface.h"
 #include "../World/Chunk.h"
 #include "../World/ChunkManager.h"

@@ -7,7 +7,6 @@
 #include "../Media/PortraitFile.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 
 TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 {
@@ -87,11 +86,11 @@ Rect CharacterCreationUiView::getClassListDownButtonRect(Game &game)
 
 ListBox::Properties CharacterCreationUiView::makeClassListBoxProperties(const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(FontName::A);
+	const char *fontName = ArenaFontName::A;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
 	{
-		DebugCrash("Couldn't get class list box font \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get class list box font \"" + std::string(fontName) + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);

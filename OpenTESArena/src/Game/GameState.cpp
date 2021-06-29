@@ -20,7 +20,6 @@
 #include "../Math/Constants.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"

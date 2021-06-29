@@ -5,7 +5,6 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
-#include "../UI/FontUtils.h"
 
 TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
 	const FontLibrary &fontLibrary)

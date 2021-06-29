@@ -1,15 +1,14 @@
 #include "InventoryUiView.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/FontUtils.h"
 
 ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(FontName::Teeny);
+	const char *fontName = ArenaFontName::Teeny;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
 	{
-		DebugCrash("Couldn't get player inventory list box font \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get player inventory list box font \"" + std::string(fontName) + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);

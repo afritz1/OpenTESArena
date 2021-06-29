@@ -10,7 +10,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
@@ -62,7 +62,7 @@ namespace AutomapUiView
 	const Color ColorWildDoor(255, 0, 0);
 
 	const Int2 LocationTextBoxCenterPoint(120, 28);
-	constexpr FontName LocationTextBoxFontName = FontName::A;
+	const std::string LocationTextBoxFontName = ArenaFontName::A;
 	const Color LocationTextBoxFontColor(56, 16, 12);
 	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::Center;
 	const Color LocationTextBoxShadowColor(150, 101, 52);

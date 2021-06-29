@@ -5,7 +5,6 @@
 #include "../Game/Game.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -130,11 +129,11 @@ int ProvinceMapUiView::getSearchSubPanelTextEntryTextureY(int textureHeight)
 
 ListBox::Properties ProvinceMapUiView::makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(FontName::Arena);
+	const char *fontName = ArenaFontName::Arena;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
 	{
-		DebugCrash("Couldn't get search sub-panel list box font \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get search sub-panel list box font \"" + std::string(fontName) + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);

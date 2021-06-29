@@ -7,7 +7,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Math/Constants.h"
-#include "../UI/FontUtils.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/Surface.h"
 
 #include "components/utilities/String.h"
@@ -538,7 +538,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		text,
 		0,
 		0,
-		FontName::Arena,
+		ArenaFontName::Arena,
 		Color::White,
 		TextAlignment::Left,
 		game.getFontLibrary());
@@ -585,7 +585,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			text,
 			2,
 			2,
-			FontName::D,
+			ArenaFontName::D,
 			Color::White,
 			TextAlignment::Left,
 			fontLibrary);
@@ -639,12 +639,11 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ;
 
 		// Get character height of the FPS font so Y position is correct.
-		constexpr FontName fontName = FontName::D;
-		const char *fontNameStr = FontUtils::fromName(fontName);
+		const char *fontName = ArenaFontName::D;
 		int fontIndex;
-		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontIndex))
+		if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontIndex))
 		{
-			DebugLogWarning("Couldn't get font \"" + std::string(fontNameStr) + "\".");
+			DebugLogWarning("Couldn't get font \"" + std::string(fontName) + "\".");
 			return;
 		}
 
@@ -691,7 +690,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			text,
 			x,
 			y,
-			FontName::D,
+			ArenaFontName::D,
 			Color::White,
 			TextAlignment::Left,
 			fontLibrary);

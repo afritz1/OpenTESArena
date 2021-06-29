@@ -4,7 +4,7 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -19,7 +19,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		center,
-		FontName::Arena,
+		ArenaFontName::Arena,
 		Color(150, 97, 0),
 		TextAlignment::Center,
 		std::nullopt,

@@ -4,7 +4,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -12,7 +12,7 @@ struct TextureAssetReference;
 
 namespace PauseMenuUiView
 {
-	constexpr FontName VolumeFontName = FontName::Arena;
+	const std::string VolumeFontName = ArenaFontName::Arena;
 	const Color VolumeColor(12, 73, 16);
 	constexpr TextAlignment VolumeTextAlignment = TextAlignment::Center;
 
@@ -23,7 +23,7 @@ namespace PauseMenuUiView
 	TextBox::InitInfo getMusicTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
 	const Int2 OptionsTextBoxCenterPoint(234, 95);
-	constexpr FontName OptionsButtonFontName = FontName::Arena;
+	const std::string OptionsButtonFontName = ArenaFontName::Arena;
 	const Color OptionsButtonTextColor(215, 158, 4);
 	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::Center;
 	constexpr TextureUtils::PatternType OptionsButtonPatternType = TextureUtils::PatternType::Custom1;

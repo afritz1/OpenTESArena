@@ -1,5 +1,5 @@
+#include "ArenaFontName.h"
 #include "FontLibrary.h"
-#include "FontUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -8,18 +8,16 @@
 bool FontLibrary::init()
 {
 	// Read a hardcoded set of fonts from file.
-	for (int i = 0; i < FontUtils::getFontNameCount(); i++)
+	for (const char *fontName : ArenaFontName::FontPtrs)
 	{
-		const FontName fontName = FontUtils::getFontName(i);
-		const char *fontNameStr = FontUtils::fromName(fontName);
 		FontDefinition fontDef;
-		if (!fontDef.init(fontNameStr))
+		if (!fontDef.init(fontName))
 		{
-			DebugLogWarning("Couldn't init font definition \"" + std::string(fontNameStr) + "\".");
+			DebugLogWarning("Couldn't init font definition \"" + std::string(fontName) + "\".");
 			return false;
 		}
 
-		this->defs.push_back(std::move(fontDef));
+		this->defs.emplace_back(std::move(fontDef));
 	}
 
 	return true;

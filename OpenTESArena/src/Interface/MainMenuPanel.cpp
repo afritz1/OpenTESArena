@@ -3,9 +3,9 @@
 #include "MainMenuUiModel.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 #include "../UI/TextBox.h"
 #include "../World/MapType.h"
 #include "../WorldMap/LocationUtils.h"
@@ -381,18 +381,17 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 	renderer.drawOriginal(testButton, testButtonRect.getLeft(), testButtonRect.getTop(),
 		testButton.getWidth(), testButton.getHeight());
 
-	constexpr FontName testFontName = MainMenuUiView::TestButtonFontName;
+	const std::string &testFontName = MainMenuUiView::TestButtonFontName;
 	const Color testTextColor = MainMenuUiView::getTestButtonTextColor();
 	const auto &fontLibrary = this->getGame().getFontLibrary();
 	// @todo: need right-aligned text support so this workaround isn't needed.
 	// - all other TextureGenInfo's in this scope can be removed at that point too
-	const FontDefinition &testFontDef = [&fontLibrary, testFontName]() -> const FontDefinition&
+	const FontDefinition &testFontDef = [&fontLibrary, &testFontName]() -> const FontDefinition&
 	{
-		const char *fontNameStr = FontUtils::fromName(testFontName);
 		int fontDefIndex;
-		if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+		if (!fontLibrary.tryGetDefinitionIndex(testFontName.c_str(), &fontDefIndex))
 		{
-			DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+			DebugCrash("Couldn't get font definition for \"" + testFontName + "\".");
 		}
 
 		return fontLibrary.getDefinition(fontDefIndex);

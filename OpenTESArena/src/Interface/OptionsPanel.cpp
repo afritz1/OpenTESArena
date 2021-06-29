@@ -21,8 +21,6 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/FontUtils.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/Texture.h"
 
@@ -171,12 +169,11 @@ void OptionsPanel::initOptionTextBox(int index)
 	auto &game = this->getGame();
 	const auto &fontLibrary = game.getFontLibrary();
 
-	constexpr FontName fontName = OptionsUiView::OptionTextBoxFontName;
-	const char *fontNameStr = FontUtils::fromName(fontName);
+	const std::string &fontName = OptionsUiView::OptionTextBoxFontName;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);

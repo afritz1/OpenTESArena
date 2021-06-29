@@ -45,15 +45,15 @@ public:
 
 		void init(const Rect &rect, Properties &&properties);
 
-		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
+		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 			int lineSpacing, const FontLibrary &fontLibrary);
-		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
+		static InitInfo makeWithCenter(const std::string_view &text, const Int2 &center, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
-		static InitInfo makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
+		static InitInfo makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 			int lineSpacing, const FontLibrary &fontLibrary);
-		static InitInfo makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
+		static InitInfo makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
 			const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
 	};
 private:

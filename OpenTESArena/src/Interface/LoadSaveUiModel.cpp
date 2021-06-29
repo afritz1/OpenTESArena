@@ -2,7 +2,6 @@
 #include "../Assets/ArenaSave.h"
 #include "../Game/Game.h"
 #include "../Math/Rect.h"
-#include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../Utilities/Platform.h"
 

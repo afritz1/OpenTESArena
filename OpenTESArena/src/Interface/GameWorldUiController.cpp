@@ -12,7 +12,6 @@
 #include "../Game/ArenaClockUtils.h"
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
-#include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 

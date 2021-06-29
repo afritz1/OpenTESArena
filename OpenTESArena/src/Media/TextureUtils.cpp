@@ -3,9 +3,8 @@
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/FontUtils.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -291,11 +290,11 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 
 Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
-	const char *fontNameStr = FontUtils::fromName(FontName::D);
+	const char *fontName = ArenaFontName::D;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontName) + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);

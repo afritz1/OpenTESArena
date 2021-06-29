@@ -4,7 +4,6 @@
 
 #include "FontDefinition.h"
 #include "FontLibrary.h"
-#include "FontUtils.h"
 #include "TextAlignment.h"
 #include "TextBox.h"
 #include "../Rendering/Renderer.h"
@@ -32,15 +31,14 @@ void TextBox::InitInfo::init(const Rect &rect, Properties &&properties)
 	this->properties = std::move(properties);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
-	const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
-	int lineSpacing, const FontLibrary &fontLibrary)
+TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center,
+	const std::string &fontName, const Color &textColor, TextAlignment alignment,
+	const std::optional<TextRenderUtils::TextShadowInfo> &shadow, int lineSpacing, const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(fontName);
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
@@ -56,23 +54,22 @@ TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
-	const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
+TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center,
+	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
 	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
 	constexpr int lineSpacing = 0;
 	return InitInfo::makeWithCenter(text, center, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
+TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y, const std::string &fontName,
 	const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
 	int lineSpacing, const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(fontName);
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
@@ -88,8 +85,8 @@ TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, in
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
-	const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
+TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y,
+	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
 	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
 	constexpr int lineSpacing = 0;

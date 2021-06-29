@@ -8,7 +8,7 @@
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -26,7 +26,7 @@ namespace ProvinceMapUiView
 	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 
 	Int2 getLocationCenterPoint(Game &game, int provinceID, int locationID);
-	constexpr FontName LocationFontName = FontName::Arena;
+	const std::string LocationFontName = ArenaFontName::Arena;
 	const Color LocationTextColor(158, 0, 0);
 	constexpr TextAlignment LocationTextAlignment = TextAlignment::Center;
 	const Color LocationTextShadowColor(48, 48, 48);
@@ -35,7 +35,7 @@ namespace ProvinceMapUiView
 	Int2 getLocationTextClampedPosition(int textX, int textY, int textWidth, int textHeight);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
-	constexpr FontName TextPopUpFontName = FontName::Arena;
+	const std::string TextPopUpFontName = ArenaFontName::Arena;
 	const Color TextPopUpTextColor(52, 24, 8);
 	constexpr TextAlignment TextPopUpTextAlignment = TextAlignment::Center;
 	constexpr int TextPopUpLineSpacing = 1;
@@ -80,13 +80,13 @@ namespace ProvinceMapUiView
 
 	const int SearchSubPanelTitleTextBoxX = 30;
 	const int SearchSubPanelTitleTextBoxY = 89;
-	constexpr FontName SearchSubPanelTitleFontName = FontName::Arena;
+	const std::string SearchSubPanelTitleFontName = ArenaFontName::Arena;
 	const Color SearchSubPanelTitleColor(52, 24, 8);
 	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::Left;
 
 	TextBox::InitInfo getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	constexpr FontName SearchSubPanelTextEntryFontName = FontName::Arena;
+	const std::string SearchSubPanelTextEntryFontName = ArenaFontName::Arena;
 	const Color SearchSubPanelTextEntryColor(52, 24, 8);
 	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::Left;
 

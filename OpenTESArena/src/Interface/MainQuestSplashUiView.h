@@ -2,13 +2,13 @@
 #define MAIN_QUEST_SPLASH_UI_VIEW_H
 
 #include "../Media/Color.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
 namespace MainQuestSplashUiView
 {
-	constexpr FontName DescriptionFontName = FontName::Teeny;
+	const std::string DescriptionFontName = ArenaFontName::Teeny;
 	const Color DescriptionTextColor(195, 158, 0);
 	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Center;
 	constexpr int DescriptionLineSpacing = 1;

@@ -8,8 +8,8 @@
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/FontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -67,7 +67,7 @@ namespace GameWorldUiView
 
 	constexpr int PlayerNameTextBoxX = 17;
 	constexpr int PlayerNameTextBoxY = 154;
-	constexpr FontName PlayerNameFontName = FontName::Char;
+	const std::string PlayerNameFontName = ArenaFontName::Char;
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::Left;
 
@@ -96,7 +96,7 @@ namespace GameWorldUiView
 	constexpr int StatusButtonWidth = 29;
 	constexpr int StatusButtonHeight = 22;
 	
-	constexpr FontName StatusPopUpFontName = FontName::Arena;
+	const std::string StatusPopUpFontName = ArenaFontName::Arena;
 	const Color StatusPopUpTextColor(251, 239, 77);
 	constexpr TextAlignment StatusPopUpTextAlignment = TextAlignment::Center;
 	constexpr int StatusPopUpTextLineSpacing = 1;
@@ -146,7 +146,7 @@ namespace GameWorldUiView
 
 	Int2 getNoMagicTexturePosition();
 
-	constexpr FontName TriggerTextFontName = FontName::Arena;
+	const std::string TriggerTextFontName = ArenaFontName::Arena;
 	const Color TriggerTextColor(215, 121, 8);
 	constexpr TextAlignment TriggerTextAlignment = TextAlignment::Center;
 	constexpr int TriggerTextShadowOffsetX = -1;
@@ -154,7 +154,7 @@ namespace GameWorldUiView
 	const Color TriggerTextShadowColor(12, 12, 24);
 	constexpr int TriggerTextLineSpacing = 1;
 
-	constexpr FontName ActionTextFontName = FontName::Arena;
+	const std::string ActionTextFontName = ArenaFontName::Arena;
 	const Color ActionTextColor(195, 0, 0);
 	constexpr TextAlignment ActionTextAlignment = TextAlignment::Center;
 	constexpr int ActionTextShadowOffsetX = -1;

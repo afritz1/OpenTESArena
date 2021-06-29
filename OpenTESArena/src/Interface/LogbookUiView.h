@@ -5,7 +5,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 
@@ -14,7 +14,7 @@ namespace LogbookUiView
 	const Int2 TitleTextCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		ArenaRenderUtils::SCREEN_HEIGHT / 2);
-	constexpr FontName TitleFontName = FontName::A;
+	const std::string TitleFontName = ArenaFontName::A;
 	const Color TitleTextColor(255, 207, 12);
 	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
 

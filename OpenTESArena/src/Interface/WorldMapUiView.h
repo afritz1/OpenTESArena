@@ -8,7 +8,7 @@
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 
 class Game;
@@ -36,7 +36,7 @@ namespace WorldMapUiView
 	std::string getFastTravelAnimationFilename();
 	TextureAssetReference getFastTravelPaletteTextureAssetRef();
 
-	constexpr FontName CityArrivalFontName = FontName::Arena;
+	const std::string CityArrivalFontName = ArenaFontName::Arena;
 	const Color CityArrivalTextColor(251, 239, 77);
 	constexpr TextAlignment CityArrivalTextAlignment = TextAlignment::Center;
 	constexpr int CityArrivalLineSpacing = 1;

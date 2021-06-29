@@ -1,7 +1,6 @@
 #include "MainQuestSplashUiView.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 
 int MainQuestSplashUiView::getDescriptionTextBoxX(int textWidth)
 {
@@ -15,11 +14,11 @@ int MainQuestSplashUiView::getDescriptionTextBoxY()
 
 TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	const char *fontNameStr = FontUtils::fromName(MainQuestSplashUiView::DescriptionFontName);
+	const std::string &fontName = MainQuestSplashUiView::DescriptionFontName;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
@@ -28,7 +27,7 @@ TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std
 		text,
 		MainQuestSplashUiView::getDescriptionTextBoxX(textureGenInfo.width),
 		MainQuestSplashUiView::getDescriptionTextBoxY(),
-		MainQuestSplashUiView::DescriptionFontName,
+		fontName,
 		MainQuestSplashUiView::DescriptionTextColor,
 		MainQuestSplashUiView::DescriptionTextAlignment,
 		std::nullopt,

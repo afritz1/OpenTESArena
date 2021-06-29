@@ -11,7 +11,7 @@
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 
 namespace MainMenuUiView
@@ -34,7 +34,7 @@ namespace MainMenuUiView
 		TestButtonRect.getLeft() + (TestButtonRect.getWidth() / 2),
 		TestButtonRect.getTop() + (TestButtonRect.getHeight() / 2));
 	constexpr TextureUtils::PatternType TestButtonPatternType = TextureUtils::PatternType::Custom1;
-	constexpr FontName TestButtonFontName = FontName::Arena;
+	const std::string TestButtonFontName = ArenaFontName::Arena;
 	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::Center;
 
 	Color getTestButtonTextColor(); // Global initialization order workaround.

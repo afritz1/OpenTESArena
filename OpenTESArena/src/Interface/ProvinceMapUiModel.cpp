@@ -6,7 +6,6 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontUtils.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../WorldMap/LocationUtils.h"
@@ -57,12 +56,11 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
 
-	constexpr FontName fontName = ProvinceMapUiView::TextPopUpFontName;
-	const char *fontNameStr = FontUtils::fromName(fontName);
+	const std::string &fontName = ProvinceMapUiView::TextPopUpFontName;
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontNameStr, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		DebugCrash("Couldn't get font definition for \"" + std::string(fontNameStr) + "\".");
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
