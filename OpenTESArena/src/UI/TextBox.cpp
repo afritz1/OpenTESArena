@@ -59,7 +59,7 @@ TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text
 TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view &text, const Int2 &center, FontName fontName,
 	const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
-	constexpr std::optional<TextRenderUtils::TextShadowInfo> shadow;
+	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
 	constexpr int lineSpacing = 0;
 	return InitInfo::makeWithCenter(text, center, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
