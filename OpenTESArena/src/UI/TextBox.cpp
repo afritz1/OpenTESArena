@@ -91,7 +91,7 @@ TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, in
 TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view &text, int x, int y, FontName fontName,
 	const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
-	constexpr std::optional<TextRenderUtils::TextShadowInfo> shadow;
+	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
 	constexpr int lineSpacing = 0;
 	return InitInfo::makeWithXY(text, x, y, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
