@@ -75,7 +75,10 @@ namespace TextRenderUtils
 	std::vector<FontDefinition::CharID> getLineFontCharIDs(const std::string_view &line, const FontDefinition &fontDef);
 
 	// Gets the number of pixels long a rendered line of characters would be.
-	int getLinePixelLength(const std::vector<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef);
+	int getLinePixelWidth(const std::vector<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
+		const std::optional<TextShadowInfo> &shadow = std::nullopt);
+	int getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
+		const std::optional<TextShadowInfo> &shadow = std::nullopt);
 
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts

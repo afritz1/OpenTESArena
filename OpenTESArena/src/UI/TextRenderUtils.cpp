@@ -124,8 +124,8 @@ std::vector<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const st
 	return charIDs;
 }
 
-int TextRenderUtils::getLinePixelLength(const std::vector<FontDefinition::CharID> &charIDs,
-	const FontDefinition &fontDef)
+int TextRenderUtils::getLinePixelWidth(const std::vector<FontDefinition::CharID> &charIDs,
+	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow)
 {
 	int width = 0;
 	for (const FontDefinition::CharID charID : charIDs)
@@ -134,7 +134,19 @@ int TextRenderUtils::getLinePixelLength(const std::vector<FontDefinition::CharID
 		width += fontChar.getWidth();
 	}
 
+	if (shadow.has_value())
+	{
+		width += std::abs(shadow->offsetX);
+	}
+
 	return width;
+}
+
+int TextRenderUtils::getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
+	const std::optional<TextShadowInfo> &shadow)
+{
+	const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	return TextRenderUtils::getLinePixelWidth(charIDs, fontDef, shadow);
 }
 
 TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const BufferView<const std::string_view> &textLines,
@@ -146,18 +158,12 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const Buffer
 	for (int i = 0; i < lineCount; i++)
 	{
 		const std::string_view &line = textLines.get(i);
-		const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
-		const int lineWidth = TextRenderUtils::getLinePixelLength(charIDs, fontDef);
-		width = std::max(width, lineWidth);
+		const int linePixelWidth = TextRenderUtils::getLinePixelWidth(line, fontDef, shadow);
+		width = std::max(width, linePixelWidth);
 	}
 
-	int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1));
-
-	if (shadow.has_value())
-	{
-		width += std::abs(shadow->offsetX);
-		height += std::abs(shadow->offsetY);
-	}
+	const int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1)) +
+		(shadow.has_value() ? std::abs(shadow->offsetY) : 0);
 
 	TextureGenInfo textureGenInfo;
 	textureGenInfo.init(width, height);
@@ -186,18 +192,10 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const BufferView<const s
 	else if (alignment == TextAlignment::Center)
 	{
 		// All text lines are centered around the middle of the texture.
-		auto getTextLinePixelWidth = [&textLines, &fontDef, &shadow](int textLinesIndex)
-		{
-			const std::string_view &textLine = textLines.get(textLinesIndex);
-			const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(textLine, fontDef);
-			const int basePixelLength = TextRenderUtils::getLinePixelLength(charIDs, fontDef);
-			const int extraPixelLength = shadow.has_value() ? std::abs(shadow->offsetX) : 0;
-			return basePixelLength + extraPixelLength;
-		};
-
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			const int linePixelWidth = getTextLinePixelWidth(i);
+			const std::string_view &textLine = textLines.get(i);
+			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
 			xOffsets[i] = (textureWidth / 2) - (linePixelWidth / 2);
 		}
 	}
