@@ -80,6 +80,12 @@ namespace TextRenderUtils
 	int getLinePixelWidth(const std::string_view &line, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt);
 
+	// Gets the number of pixels wide or tall a rendered block of text lines would be.
+	int getLinesPixelWidth(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+		const std::optional<TextShadowInfo> &shadow = std::nullopt);
+	int getLinesPixelHeight(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
+
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
 	TextureGenInfo makeTextureGenInfo(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
@@ -87,11 +93,10 @@ namespace TextRenderUtils
 	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
-	// Generates X pixel offsets for each line of a text box based on text alignment.
-	// @todo: might eventually be percentages of the longest line's dimensions?
-	std::vector<int> makeAlignmentXOffsets(const BufferView<const std::string_view> &textLines, int textureWidth,
+	// Generates XY pixel offsets for each line of a text box based on text alignment.
+	std::vector<Int2> makeAlignmentOffsets(const BufferView<const std::string_view> &textLines, int textureWidth,
 		int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
-		const std::optional<TextShadowInfo> &shadow);
+		const std::optional<TextShadowInfo> &shadow, int lineSpacing);
 
 	// Blits the given font character to the output texture, and handles clipping.
 	// @todo: this should draw to a UI texture via UiTextureID eventually. Process will be:

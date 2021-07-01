@@ -57,7 +57,7 @@ namespace OptionsUiView
 	const Int2 TitleTextBoxCenterPoint(160, 24);
 	const std::string TitleFontName = ArenaFontName::A;
 	Color getTitleTextColor();  // Global initialization order workaround.
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
@@ -66,7 +66,7 @@ namespace OptionsUiView
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	const std::string BackToPauseMenuFontName = ArenaFontName::Arena;
 	Color getBackToPauseMenuTextColor();
-	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::MiddleCenter;
 
 	TextBox::InitInfo getBackToPauseMenuTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
@@ -76,16 +76,16 @@ namespace OptionsUiView
 
 	const std::string TabFontName = ArenaFontName::Arena;
 	Color getTabTextColor();
-	constexpr TextAlignment TabTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TabTextAlignment = TextAlignment::MiddleCenter;
 	constexpr TextureUtils::PatternType TabBackgroundPatternType = TextureUtils::PatternType::Custom1;
 
 	const std::string OptionTextBoxFontName = ArenaFontName::Arena;
 	Color getOptionTextBoxColor();
-	constexpr TextAlignment OptionTextBoxTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment OptionTextBoxTextAlignment = TextAlignment::MiddleLeft;
 
 	const std::string DescriptionTextFontName = ArenaFontName::Arena;
 	Color getDescriptionTextColor();
-	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopLeft;
 }
 
 #endif

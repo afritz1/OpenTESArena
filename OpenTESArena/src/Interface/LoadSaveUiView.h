@@ -11,7 +11,7 @@ namespace LoadSaveUiView
 {
 	const std::string EntryFontName = ArenaFontName::Arena;
 	const Color EntryTextColor = Color::White;
-	constexpr TextAlignment EntryTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment EntryTextAlignment = TextAlignment::MiddleCenter;
 
 	Int2 getEntryCenterPoint(int index);
 

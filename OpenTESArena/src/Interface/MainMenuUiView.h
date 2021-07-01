@@ -35,7 +35,7 @@ namespace MainMenuUiView
 		TestButtonRect.getTop() + (TestButtonRect.getHeight() / 2));
 	constexpr TextureUtils::PatternType TestButtonPatternType = TextureUtils::PatternType::Custom1;
 	const std::string TestButtonFontName = ArenaFontName::Arena;
-	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::MiddleCenter;
 
 	Color getTestButtonTextColor(); // Global initialization order workaround.
 

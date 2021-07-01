@@ -16,7 +16,7 @@ namespace LogbookUiView
 		ArenaRenderUtils::SCREEN_HEIGHT / 2);
 	const std::string TitleFontName = ArenaFontName::A;
 	const Color TitleTextColor(255, 207, 12);
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
 
 	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 

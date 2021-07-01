@@ -10,7 +10,7 @@ namespace MainQuestSplashUiView
 {
 	const std::string DescriptionFontName = ArenaFontName::Teeny;
 	const Color DescriptionTextColor(195, 158, 0);
-	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopCenter;
 	constexpr int DescriptionLineSpacing = 1;
 
 	// @todo: should use center point instead I think

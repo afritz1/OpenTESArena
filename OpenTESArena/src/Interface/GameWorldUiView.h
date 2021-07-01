@@ -69,7 +69,7 @@ namespace GameWorldUiView
 	constexpr int PlayerNameTextBoxY = 154;
 	const std::string PlayerNameFontName = ArenaFontName::Char;
 	const Color PlayerNameTextColor(215, 121, 8);
-	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::TopLeft;
 
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
@@ -98,7 +98,7 @@ namespace GameWorldUiView
 	
 	const std::string StatusPopUpFontName = ArenaFontName::Arena;
 	const Color StatusPopUpTextColor(251, 239, 77);
-	constexpr TextAlignment StatusPopUpTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment StatusPopUpTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int StatusPopUpTextLineSpacing = 1;
 
 	constexpr TextureUtils::PatternType StatusPopUpTexturePatternType = TextureUtils::PatternType::Dark;
@@ -148,7 +148,7 @@ namespace GameWorldUiView
 
 	const std::string TriggerTextFontName = ArenaFontName::Arena;
 	const Color TriggerTextColor(215, 121, 8);
-	constexpr TextAlignment TriggerTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TriggerTextAlignment = TextAlignment::BottomCenter;
 	constexpr int TriggerTextShadowOffsetX = -1;
 	constexpr int TriggerTextShadowOffsetY = 0;
 	const Color TriggerTextShadowColor(12, 12, 24);
@@ -156,7 +156,7 @@ namespace GameWorldUiView
 
 	const std::string ActionTextFontName = ArenaFontName::Arena;
 	const Color ActionTextColor(195, 0, 0);
-	constexpr TextAlignment ActionTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment ActionTextAlignment = TextAlignment::TopCenter;
 	constexpr int ActionTextShadowOffsetX = -1;
 	constexpr int ActionTextShadowOffsetY = 0;
 	const Color ActionTextShadowColor(12, 12, 24);

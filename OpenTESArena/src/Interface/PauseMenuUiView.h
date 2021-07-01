@@ -14,7 +14,7 @@ namespace PauseMenuUiView
 {
 	const std::string VolumeFontName = ArenaFontName::Arena;
 	const Color VolumeColor(12, 73, 16);
-	constexpr TextAlignment VolumeTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment VolumeTextAlignment = TextAlignment::MiddleCenter;
 
 	const Int2 SoundTextBoxCenterPoint(54, 96);
 	const Int2 MusicTextBoxCenterPoint(127, 96);
@@ -25,7 +25,7 @@ namespace PauseMenuUiView
 	const Int2 OptionsTextBoxCenterPoint(234, 95);
 	const std::string OptionsButtonFontName = ArenaFontName::Arena;
 	const Color OptionsButtonTextColor(215, 158, 4);
-	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::MiddleCenter;
 	constexpr TextureUtils::PatternType OptionsButtonPatternType = TextureUtils::PatternType::Custom1;
 	const Color OptionsButtonTextShadowColor(101, 77, 24);
 	constexpr int OptionsButtonTextShadowOffsetX = -1;

@@ -38,7 +38,7 @@ namespace WorldMapUiView
 
 	const std::string CityArrivalFontName = ArenaFontName::Arena;
 	const Color CityArrivalTextColor(251, 239, 77);
-	constexpr TextAlignment CityArrivalTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment CityArrivalTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int CityArrivalLineSpacing = 1;
 	constexpr TextureUtils::PatternType CityArrivalTexturePatternType = TextureUtils::PatternType::Dark;
 	Int2 getCityArrivalPopUpTextCenterPoint(Game &game);

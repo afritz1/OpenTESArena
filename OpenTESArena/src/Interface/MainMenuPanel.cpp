@@ -426,7 +426,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		this->testTypeUpButton.getY() + (testTypeTextBoxTextureGenInfo.height / 2),
 		testFontName,
 		testTextColor,
-		TextAlignment::Left,
+		TextAlignment::TopRight,
 		fontLibrary);
 
 	TextBox testTypeTextBox;
@@ -448,7 +448,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 		this->testIndexUpButton.getY() + (testNameTextBoxTextureGenInfo.height / 2),
 		testFontName,
 		testTextColor,
-		TextAlignment::Left,
+		TextAlignment::TopRight,
 		fontLibrary);
 	
 	TextBox testNameTextBox;
@@ -475,7 +475,7 @@ void MainMenuPanel::renderTestUI(Renderer &renderer)
 			this->testWeatherUpButton.getY() + (testWeatherTextBoxTextureGenInfo.height / 2),
 			testFontName,
 			testTextColor,
-			TextAlignment::Left,
+			TextAlignment::TopRight,
 			fontLibrary);
 
 		TextBox testWeatherTextBox;

@@ -540,7 +540,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		0,
 		ArenaFontName::Arena,
 		Color::White,
-		TextAlignment::Left,
+		TextAlignment::TopLeft,
 		game.getFontLibrary());
 
 	TextBox textBox;
@@ -587,7 +587,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			2,
 			ArenaFontName::D,
 			Color::White,
-			TextAlignment::Left,
+			TextAlignment::TopLeft,
 			fontLibrary);
 
 		TextBox textBox;
@@ -656,7 +656,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			2 + yOffset,
 			fontName,
 			Color::White,
-			TextAlignment::Left,
+			TextAlignment::TopLeft,
 			fontLibrary);
 		
 		TextBox textBox;
@@ -692,7 +692,7 @@ void GameWorldUiView::DEBUG_DrawProfiler(Game &game, Renderer &renderer)
 			y,
 			ArenaFontName::D,
 			Color::White,
-			TextAlignment::Left,
+			TextAlignment::TopLeft,
 			fontLibrary);
 
 		TextBox textBox;

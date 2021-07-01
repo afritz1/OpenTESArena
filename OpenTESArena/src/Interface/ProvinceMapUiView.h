@@ -28,7 +28,7 @@ namespace ProvinceMapUiView
 	Int2 getLocationCenterPoint(Game &game, int provinceID, int locationID);
 	const std::string LocationFontName = ArenaFontName::Arena;
 	const Color LocationTextColor(158, 0, 0);
-	constexpr TextAlignment LocationTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment LocationTextAlignment = TextAlignment::MiddleCenter;
 	const Color LocationTextShadowColor(48, 48, 48);
 	constexpr int LocationTextShadowOffsetX = 1;
 	constexpr int LocationTextShadowOffsetY = 0;
@@ -37,7 +37,7 @@ namespace ProvinceMapUiView
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
 	const Color TextPopUpTextColor(52, 24, 8);
-	constexpr TextAlignment TextPopUpTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TextPopUpTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int TextPopUpLineSpacing = 1;
 
 	const Int2 TextPopUpTextureCenterPoint(
@@ -82,13 +82,13 @@ namespace ProvinceMapUiView
 	const int SearchSubPanelTitleTextBoxY = 89;
 	const std::string SearchSubPanelTitleFontName = ArenaFontName::Arena;
 	const Color SearchSubPanelTitleColor(52, 24, 8);
-	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment SearchSubPanelTitleTextAlignment = TextAlignment::TopLeft;
 
 	TextBox::InitInfo getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const std::string SearchSubPanelTextEntryFontName = ArenaFontName::Arena;
 	const Color SearchSubPanelTextEntryColor(52, 24, 8);
-	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment SearchSubPanelTextEntryTextAlignment = TextAlignment::TopLeft;
 
 	TextBox::InitInfo getSearchSubPanelTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 

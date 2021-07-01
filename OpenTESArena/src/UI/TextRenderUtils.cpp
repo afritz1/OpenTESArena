@@ -149,21 +149,33 @@ int TextRenderUtils::getLinePixelWidth(const std::string_view &line, const FontD
 	return TextRenderUtils::getLinePixelWidth(charIDs, fontDef, shadow);
 }
 
-TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const BufferView<const std::string_view> &textLines,
-	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
+int TextRenderUtils::getLinesPixelWidth(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	const std::optional<TextShadowInfo> &shadow)
 {
-	// Get the width of the longest line of text in pixels.
 	int width = 0;
-	const int lineCount = textLines.getCount();
-	for (int i = 0; i < lineCount; i++)
+	for (int i = 0; i < textLines.getCount(); i++)
 	{
 		const std::string_view &line = textLines.get(i);
 		const int linePixelWidth = TextRenderUtils::getLinePixelWidth(line, fontDef, shadow);
 		width = std::max(width, linePixelWidth);
 	}
 
-	const int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1)) +
+	return width;
+}
+
+int TextRenderUtils::getLinesPixelHeight(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	const std::optional<TextShadowInfo> &shadow, int lineSpacing)
+{
+	const int lineCount = textLines.getCount();
+	return (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1)) +
 		(shadow.has_value() ? std::abs(shadow->offsetY) : 0);
+}
+
+TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const BufferView<const std::string_view> &textLines,
+	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
+{
+	const int width = TextRenderUtils::getLinesPixelWidth(textLines, fontDef, shadow);
+	const int height = TextRenderUtils::getLinesPixelHeight(textLines, fontDef, shadow, lineSpacing);
 
 	TextureGenInfo textureGenInfo;
 	textureGenInfo.init(width, height);
@@ -178,25 +190,46 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	return TextRenderUtils::makeTextureGenInfo(textLinesView, fontDef, shadow, lineSpacing);
 }
 
-std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const BufferView<const std::string_view> &textLines,
+std::vector<Int2> TextRenderUtils::makeAlignmentOffsets(const BufferView<const std::string_view> &textLines,
 	int textureWidth, int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
-	const std::optional<TextShadowInfo> &shadow)
+	const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
-	std::vector<int> xOffsets(textLines.getCount());
+	// Each offset points to the top-left corner of where the line should be rendered.
+	std::vector<Int2> offsets(textLines.getCount());
 
-	if (alignment == TextAlignment::Left)
+	// X offsets.
+	if ((alignment == TextAlignment::TopLeft) ||
+		(alignment == TextAlignment::MiddleLeft) ||
+		(alignment == TextAlignment::BottomLeft))
 	{
-		// All text lines are against the left edge.
-		std::fill(xOffsets.begin(), xOffsets.end(), 0);
+		// Text lines are against the left edge.
+		for (Int2 &offset : offsets)
+		{
+			offset.x = 0;
+		}
 	}
-	else if (alignment == TextAlignment::Center)
+	else if ((alignment == TextAlignment::TopCenter) ||
+		(alignment == TextAlignment::MiddleCenter) ||
+		(alignment == TextAlignment::BottomCenter))
 	{
-		// All text lines are centered around the middle of the texture.
+		// Text lines are centered horizontally around the middle of the texture.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
 			const std::string_view &textLine = textLines.get(i);
 			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
-			xOffsets[i] = (textureWidth / 2) - (linePixelWidth / 2);
+			offsets[i].x = (textureWidth / 2) - (linePixelWidth / 2);
+		}
+	}
+	else if ((alignment == TextAlignment::TopRight) ||
+		(alignment == TextAlignment::MiddleRight) ||
+		(alignment == TextAlignment::BottomRight))
+	{
+		// Text lines are against the right edge.
+		for (int i = 0; i < textLines.getCount(); i++)
+		{
+			const std::string_view &textLine = textLines.get(i);
+			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
+			offsets[i].x = textureWidth - linePixelWidth;
 		}
 	}
 	else
@@ -204,7 +237,47 @@ std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const BufferView<const s
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(alignment)));
 	}
 
-	return xOffsets;
+	// Y offsets.
+	if ((alignment == TextAlignment::TopLeft) ||
+		(alignment == TextAlignment::TopCenter) ||
+		(alignment == TextAlignment::TopRight))
+	{
+		// The top text line is against the top of the texture.
+		for (int i = 0; i < textLines.getCount(); i++)
+		{
+			offsets[i].y = (fontDef.getCharacterHeight() + lineSpacing) * i;
+		}
+	}
+	else if ((alignment == TextAlignment::MiddleLeft) ||
+		(alignment == TextAlignment::MiddleCenter) ||
+		(alignment == TextAlignment::MiddleRight))
+	{
+		// Text lines are centered vertically around the middle of the texture.
+		const int totalTextHeight = TextRenderUtils::getLinesPixelHeight(textLines, fontDef, shadow, lineSpacing);
+
+		for (int i = 0; i < textLines.getCount(); i++)
+		{
+			offsets[i].y = ((textureHeight / 2) - (totalTextHeight / 2)) +
+				((fontDef.getCharacterHeight() + lineSpacing) * i);
+		}
+	}
+	else if ((alignment == TextAlignment::BottomLeft) ||
+		(alignment == TextAlignment::BottomCenter) ||
+		(alignment == TextAlignment::BottomRight))
+	{
+		// The bottom text line is against the bottom of the texture.
+		for (int i = 0; i < textLines.getCount(); i++)
+		{
+			offsets[i].y = textureHeight - fontDef.getCharacterHeight() -
+				((fontDef.getCharacterHeight() + lineSpacing) * (textLines.getCount() - 1 - i));
+		}
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(alignment)));
+	}
+
+	return offsets;
 }
 
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
@@ -300,21 +373,17 @@ void TextRenderUtils::drawTextLines(const BufferView<const std::string_view> &te
 
 	const int textureWidth = outBuffer.getWidth();
 	const int textureHeight = outBuffer.getHeight();
-	const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(
-		textLines, textureWidth, textureHeight, alignment, fontDef, shadowInfo);
-	DebugAssert(xOffsets.size() == textLines.getCount());
+	const std::vector<Int2> offsets = TextRenderUtils::makeAlignmentOffsets(
+		textLines, textureWidth, textureHeight, alignment, fontDef, shadowInfo, lineSpacing);
+	DebugAssert(offsets.size() == textLines.getCount());
 
 	// Draw text to texture.
-	// @todo: might need to adjust X and Y by some function of shadow offset. Might also need to draw all shadow lines
-	// before all regular lines.
-	int y = 0;
+	// @todo: might need to draw all shadow lines before all regular lines.
 	for (int i = 0; i < textLines.getCount(); i++)
 	{
 		const std::string_view &textLine = textLines.get(i);
-		const int xOffset = xOffsets[i];
-		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + xOffset, dstY + y, textColor, colorOverrideInfo,
-			shadow, outBuffer);
-
-		y += fontDef.getCharacterHeight() + lineSpacing;
+		const Int2 &offset = offsets[i];
+		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor,
+			colorOverrideInfo, shadow, outBuffer);
 	}
 }

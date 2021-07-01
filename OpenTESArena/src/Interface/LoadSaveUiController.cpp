@@ -21,7 +21,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		center,
 		ArenaFontName::Arena,
 		Color(150, 97, 0),
-		TextAlignment::Center,
+		TextAlignment::MiddleCenter,
 		std::nullopt,
 		1,
 		game.getFontLibrary());

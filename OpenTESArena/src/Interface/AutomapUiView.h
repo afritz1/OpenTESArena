@@ -64,7 +64,7 @@ namespace AutomapUiView
 	const Int2 LocationTextBoxCenterPoint(120, 28);
 	const std::string LocationTextBoxFontName = ArenaFontName::A;
 	const Color LocationTextBoxFontColor(56, 16, 12);
-	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::TopCenter;
 	const Color LocationTextBoxShadowColor(150, 101, 52);
 	constexpr int LocationTextBoxShadowOffsetX = 2;
 	constexpr int LocationTextBoxShadowOffsetY = 2;

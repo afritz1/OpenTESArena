@@ -12,7 +12,7 @@ namespace TextCinematicUiView
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		ArenaRenderUtils::SCREEN_HEIGHT - 11);
 	const std::string &SubtitleTextBoxFontName = ArenaFontName::Arena;
-	constexpr TextAlignment SubtitleTextBoxTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment SubtitleTextBoxTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int SubtitleTextBoxLineSpacing = 1;
 }
 
