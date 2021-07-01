@@ -61,7 +61,7 @@ namespace AutomapUiView
 	const Color ColorWildWall(109, 69, 32);
 	const Color ColorWildDoor(255, 0, 0);
 
-	const Int2 LocationTextBoxCenterPoint(120, 28);
+	const Int2 LocationTextBoxCenterPoint(121, 29);
 	const std::string LocationTextBoxFontName = ArenaFontName::A;
 	const Color LocationTextBoxFontColor(56, 16, 12);
 	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::TopCenter;

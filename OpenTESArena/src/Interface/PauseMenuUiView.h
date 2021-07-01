@@ -22,7 +22,7 @@ namespace PauseMenuUiView
 	TextBox::InitInfo getSoundTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getMusicTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
-	const Int2 OptionsTextBoxCenterPoint(234, 95);
+	const Int2 OptionsTextBoxCenterPoint(235, 96);
 	const std::string OptionsButtonFontName = ArenaFontName::Arena;
 	const Color OptionsButtonTextColor(215, 158, 4);
 	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::MiddleCenter;
