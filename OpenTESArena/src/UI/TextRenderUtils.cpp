@@ -137,20 +137,20 @@ int TextRenderUtils::getLinePixelLength(const std::vector<FontDefinition::CharID
 	return width;
 }
 
-TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
+TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const BufferView<const std::string_view> &textLines,
 	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
 {
 	// Get the width of the longest line of text in pixels.
 	int width = 0;
-	const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
-	for (const std::string_view &line : textLines)
+	const int lineCount = textLines.getCount();
+	for (int i = 0; i < lineCount; i++)
 	{
+		const std::string_view &line = textLines.get(i);
 		const std::vector<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 		const int lineWidth = TextRenderUtils::getLinePixelLength(charIDs, fontDef);
 		width = std::max(width, lineWidth);
 	}
 
-	const int lineCount = static_cast<int>(textLines.size());
 	int height = (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1));
 
 	if (shadow.has_value())
@@ -164,8 +164,16 @@ TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::s
 	return textureGenInfo;
 }
 
+TextRenderUtils::TextureGenInfo TextRenderUtils::makeTextureGenInfo(const std::string_view &text,
+	const FontDefinition &fontDef, const std::optional<TextShadowInfo> &shadow, int lineSpacing)
+{
+	const std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
+	const BufferView<const std::string_view> textLinesView(textLines.data(), static_cast<int>(textLines.size()));
+	return TextRenderUtils::makeTextureGenInfo(textLinesView, fontDef, shadow, lineSpacing);
+}
+
 std::vector<int> TextRenderUtils::makeAlignmentXOffsets(const BufferView<const std::string_view> &textLines,
-	TextAlignment alignment, const FontDefinition &fontDef)
+	int textureWidth, int textureHeight, TextAlignment alignment, const FontDefinition &fontDef)
 {
 	std::vector<int> xOffsets(textLines.getCount());
 
@@ -308,7 +316,17 @@ void TextRenderUtils::drawTextLines(const BufferView<const std::string_view> &te
 	int dstX, int dstY, const Color &textColor, TextAlignment alignment, int lineSpacing,
 	const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
 {
-	const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(textLines, alignment, fontDef);
+	// @todo: should pass std::optional parameter instead
+	std::optional<TextRenderUtils::TextShadowInfo> shadowInfo;
+	if (shadow != nullptr)
+	{
+		shadowInfo = *shadow;
+	}
+
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(textLines, fontDef, shadowInfo, lineSpacing);
+	const std::vector<int> xOffsets = TextRenderUtils::makeAlignmentXOffsets(
+		textLines, textureGenInfo.width, textureGenInfo.height, alignment, fontDef);
 	DebugAssert(xOffsets.size() == textLines.getCount());
 
 	// Draw text to texture.
