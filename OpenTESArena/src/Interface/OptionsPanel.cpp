@@ -177,7 +177,7 @@ void OptionsPanel::initOptionTextBox(int index)
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const std::string dummyText(15, TextRenderUtils::LARGEST_CHAR); // @todo: may need to tweak
+	const std::string dummyText(28, TextRenderUtils::LARGEST_CHAR);
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 	const Int2 &point = OptionsUiView::ListOrigin;
 	const int yOffset = textureGenInfo.height * index;
