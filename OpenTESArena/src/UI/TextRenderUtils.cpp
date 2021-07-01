@@ -278,14 +278,21 @@ void TextRenderUtils::drawTextLine(const BufferView<const FontDefinition::CharID
 		}
 	};
 
+	int foregroundDstX = dstX;
+	int foregroundDstY = dstY;
 	if (shadow != nullptr)
 	{
+		foregroundDstX += std::max(-shadow->offsetX, 0);
+		foregroundDstY += std::max(-shadow->offsetY, 0);
+
+		const int shadowDstX = dstX + std::max(shadow->offsetX, 0);
+		const int shadowDstY = dstY + std::max(shadow->offsetY, 0);
 		constexpr bool allowShadowColorOverrides = false;
-		drawLine(dstX + shadow->offsetX, dstY + shadow->offsetY, shadow->color, allowShadowColorOverrides);
+		drawLine(shadowDstX, shadowDstY, shadow->color, allowShadowColorOverrides);
 	}
 
 	const bool allowForegroundColorOverrides = colorOverrideInfo != nullptr;
-	drawLine(dstX, dstY, textColor, allowForegroundColorOverrides);
+	drawLine(foregroundDstX, foregroundDstY, textColor, allowForegroundColorOverrides);
 }
 
 void TextRenderUtils::drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
