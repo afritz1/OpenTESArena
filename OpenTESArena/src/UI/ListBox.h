@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "TextRenderUtils.h"
 #include "Texture.h"
 #include "../Math/Rect.h"
 #include "../Media/Color.h"
@@ -19,12 +20,15 @@ public:
 	struct Properties
 	{
 		int fontDefIndex; // Index in font library.
+		const FontLibrary *fontLibrary; // Stored for ease of redrawing texture.
+		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
 		int itemHeight; // Pixel height of each item.
 		Color defaultColor; // Color of text unless overridden.
 		double scrollScale; // Percent of item size that one scroll delta moves by.
 		int itemSpacing; // Pixels between each item.
 
-		Properties(int fontDefIndex, int itemHeight, const Color &defaultColor, double scrollScale, int itemSpacing);
+		Properties(int fontDefIndex, const FontLibrary *fontLibrary, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+			int itemHeight, const Color &defaultColor, double scrollScale, int itemSpacing = 0);
 		Properties();
 	};
 
@@ -48,10 +52,13 @@ private:
 
 	// Number of pixels scrolled with one scroll delta.
 	double getScrollDeltaPixels() const;
+
+	// Redraws the underlying texture for display.
+	void updateTexture();
 public:
 	ListBox();
 
-	void init(const Rect &rect, const Properties &properties, Renderer &renderer);
+	bool init(const Rect &rect, const Properties &properties, Renderer &renderer);
 
 	// Gets the position and dimensions of the list box in UI space.
 	const Rect &getRect() const;
@@ -68,7 +75,7 @@ public:
 	// falls within the list box rect.
 	const ItemCallback &getCallback(int index) const;
 
-	const Texture &getTexture() const;
+	const Texture &getTexture();
 
 	void insert(int index, std::string &&text);
 	void add(std::string &&text);
@@ -84,9 +91,6 @@ public:
 
 	void scrollDown();
 	void scrollUp();
-
-	// Redraws the underlying texture for display.
-	void updateTexture(const FontLibrary &fontLibrary);
 };
 
 #endif

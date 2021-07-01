@@ -10,18 +10,20 @@
 
 #include "components/debug/Debug.h"
 
-ListBox::Properties::Properties(int fontDefIndex, int itemHeight, const Color &defaultColor,
+ListBox::Properties::Properties(int fontDefIndex, const FontLibrary *fontLibrary,
+	const TextRenderUtils::TextureGenInfo &textureGenInfo, int itemHeight, const Color &defaultColor,
 	double scrollScale, int itemSpacing)
-	: defaultColor(defaultColor)
+	: textureGenInfo(textureGenInfo), defaultColor(defaultColor)
 {
 	this->fontDefIndex = fontDefIndex;
+	this->fontLibrary = fontLibrary;
 	this->itemHeight = itemHeight;
 	this->scrollScale = scrollScale;
 	this->itemSpacing = itemSpacing;
 }
 
 ListBox::Properties::Properties()
-	: Properties(-1, 0, Color(), 0.0, 0) { }
+	: Properties(-1, nullptr, TextRenderUtils::TextureGenInfo(), 0, Color(), 0.0, 0) { }
 
 void ListBox::Item::init(std::string &&text, const std::optional<Color> &overrideColor, const ItemCallback &callback)
 {
@@ -36,18 +38,32 @@ ListBox::ListBox()
 	this->dirty = false;
 }
 
-void ListBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
+bool ListBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
 {
 	this->rect = rect;
 	this->properties = properties;
-	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING,
-		rect.getWidth(), rect.getHeight());
-	this->dirty = true;
+
+	const int textureWidth = properties.textureGenInfo.width;
+	const int textureHeight = properties.textureGenInfo.height;
+	this->texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
+		SDL_TEXTUREACCESS_STREAMING, textureWidth, textureHeight);
+
+	if (this->texture.get() == nullptr)
+	{
+		DebugLogError("Couldn't create list box texture (" + std::to_string(textureWidth) + "x" +
+			std::to_string(textureHeight) + ").");
+		return false;
+	}
 
 	if (SDL_SetTextureBlendMode(this->texture.get(), SDL_BLENDMODE_BLEND) != 0)
 	{
 		DebugLogError("Couldn't set SDL texture blend mode.");
+		return false;
 	}
+
+	this->dirty = true;
+
+	return true;
 }
 
 const Rect &ListBox::getRect() const
@@ -87,9 +103,14 @@ const ListBox::ItemCallback &ListBox::getCallback(int index) const
 	return this->items[index].callback;
 }
 
-const Texture &ListBox::getTexture() const
+const Texture &ListBox::getTexture()
 {
-	DebugAssert(!this->dirty);
+	if (this->dirty)
+	{
+		this->updateTexture();
+		DebugAssert(!this->dirty);
+	}
+
 	return this->texture;
 }
 
@@ -161,7 +182,7 @@ void ListBox::scrollUp()
 	this->dirty = true;
 }
 
-void ListBox::updateTexture(const FontLibrary &fontLibrary)
+void ListBox::updateTexture()
 {
 	if (!this->dirty)
 	{
@@ -176,7 +197,12 @@ void ListBox::updateTexture(const FontLibrary &fontLibrary)
 		return;
 	}
 
-	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
+	// Stored for convenience of redrawing the texture. Couldn't immediately find a better way to do this.
+	// - Maybe try a FontDefinitionRef in the future.
+	const FontLibrary *fontLibrary = this->properties.fontLibrary;
+	DebugAssert(fontLibrary != nullptr);
+
+	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
 	BufferView2D<uint32_t> textureView(texturePixels, this->texture.getWidth(), this->texture.getHeight());
 
 	// Clear texture.

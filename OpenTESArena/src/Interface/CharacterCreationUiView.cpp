@@ -93,11 +93,26 @@ ListBox::Properties CharacterCreationUiView::makeClassListBoxProperties(const Fo
 		DebugCrash("Couldn't get class list box font \"" + std::string(fontName) + "\".");
 	}
 
+	constexpr int maxDisplayedItemCount = 6;
+	std::string dummyText;
+	for (int i = 0; i < maxDisplayedItemCount; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		std::string dummyLine(10, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
+		dummyText += dummyLine;
+	}
+
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+
 	const Color itemColor(85, 44, 20);
 	constexpr double scrollScale = 1.0;
-	constexpr int rowSpacing = 0;
-	return ListBox::Properties(fontDefIndex, fontDef.getCharacterHeight(), itemColor, scrollScale, rowSpacing);
+	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
+		itemColor, scrollScale);
 }
 
 TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAssetRef()
