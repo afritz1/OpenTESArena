@@ -10,30 +10,33 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextBox.h"
 
 TextSubPanel::TextSubPanel(Game &game)
 	: Panel(game) { }
 
-bool TextSubPanel::init(const Int2 &textCenter, const RichTextString &richText,
-	const std::function<void(Game&)> &endingAction, Texture &&texture, const Int2 &textureCenter)
+bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+	const std::function<void(Game&)> &onClosed, Texture &&texture, const Int2 &textureCenter)
 {
 	auto &game = this->getGame();
-	this->textBox = std::make_unique<TextBox>(
-		textCenter, richText, game.getFontLibrary(), game.getRenderer());
+
+	if (!this->textBox.init(textBoxInitInfo, text, game.getRenderer()))
+	{
+		DebugLogError("Couldn't init sub-panel text box.");
+		return false;
+	}
 	
-	this->endingAction = endingAction;
+	this->onClosed = onClosed;
 	this->texture = std::move(texture);
 	this->textureCenter = textureCenter;
 
 	return true;
 }
 
-bool TextSubPanel::init(const Int2 &textCenter, const RichTextString &richText,
-	const std::function<void(Game&)> &endingAction)
+bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+	const std::function<void(Game&)> &onClosed)
 {
-	return this->init(textCenter, richText, endingAction, Texture(), Int2());
+	return this->init(textBoxInitInfo, text, onClosed, Texture(), Int2());
 }
 
 std::optional<CursorData> TextSubPanel::getCurrentCursor() const
@@ -74,7 +77,7 @@ void TextSubPanel::handleEvent(const SDL_Event &e)
 
 	if (escapePressed || spacePressed || enterPressed || leftClick || rightClick)
 	{
-		this->endingAction(this->getGame());
+		this->onClosed(this->getGame());
 	}
 }
 
@@ -97,10 +100,9 @@ void TextSubPanel::render(Renderer &renderer)
 			nativeTextureRect.getHeight());
 	}
 
-	const Rect nativeTextBoxRect = renderer.originalToNative(this->textBox->getRect());
-
 	// Draw text.
-	renderer.draw(this->textBox->getTexture(),
+	const Rect nativeTextBoxRect = renderer.originalToNative(this->textBox.getRect());
+	renderer.draw(this->textBox.getTexture(),
 		nativeTextBoxRect.getLeft(),
 		nativeTextBoxRect.getTop(),
 		nativeTextBoxRect.getWidth(),

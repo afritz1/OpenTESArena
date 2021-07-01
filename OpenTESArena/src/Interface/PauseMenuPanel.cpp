@@ -10,6 +10,7 @@
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 #include "../UI/CursorData.h"
+#include "../UI/TextRenderUtils.h"
 
 PauseMenuPanel::PauseMenuPanel(Game &game)
 	: Panel(game) { }
@@ -17,79 +18,41 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 bool PauseMenuPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->playerNameTextBox = [&game]()
+	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
+	const TextBox::InitInfo playerNameTextBoxInitInfo =
+		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			GameWorldUiModel::getPlayerNameText(game),
-			GameWorldUiView::PlayerNameFontName,
-			GameWorldUiView::PlayerNameTextColor,
-			GameWorldUiView::PlayerNameTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player name text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			GameWorldUiView::PlayerNameTextBoxX,
-			GameWorldUiView::PlayerNameTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->musicTextBox = [&game]()
+	const std::string musicText = PauseMenuUiModel::getMusicVolumeText(game);
+	const TextBox::InitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
+	if (!this->musicTextBox.init(musicTextBoxInitInfo, musicText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			PauseMenuUiModel::getMusicVolumeText(game),
-			PauseMenuUiView::VolumeFontName,
-			PauseMenuUiView::VolumeColor,
-			PauseMenuUiView::VolumeTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init music volume text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			PauseMenuUiView::MusicTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->soundTextBox = [&game]()
+	const std::string soundText = PauseMenuUiModel::getSoundVolumeText(game);
+	const TextBox::InitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
+	if (!this->soundTextBox.init(soundTextBoxInitInfo, soundText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			PauseMenuUiModel::getSoundVolumeText(game),
-			PauseMenuUiView::VolumeFontName,
-			PauseMenuUiView::VolumeColor,
-			PauseMenuUiView::VolumeTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init sound volume text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			PauseMenuUiView::SoundTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->optionsTextBox = [&game]()
+	const std::string optionsText = PauseMenuUiModel::getOptionsButtonText(game);
+	const TextBox::InitInfo optionsTextBoxInitInfo = PauseMenuUiView::getOptionsTextBoxInitInfo(optionsText, fontLibrary);
+	if (!this->optionsTextBox.init(optionsTextBoxInitInfo, optionsText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			PauseMenuUiModel::getOptionsButtonText(game),
-			PauseMenuUiView::OptionsButtonFontName,
-			PauseMenuUiView::OptionsButtonTextColor,
-			PauseMenuUiView::OptionsButtonTextAlignment,
-			fontLibrary);
-
-		const TextBox::ShadowData shadowData(
-			PauseMenuUiView::OptionsButtonTextShadowColor,
-			PauseMenuUiView::OptionsButtonTextShadowOffset);
-		return std::make_unique<TextBox>(
-			PauseMenuUiView::OptionsTextBoxCenterPoint,
-			richText,
-			&shadowData,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init options button text box.");
+		return false;
+	}
 
 	this->newButton = Button<Game&>(
 		PauseMenuUiView::NewGameButtonX,
@@ -158,59 +121,21 @@ bool PauseMenuPanel::init()
 		this->optionsButton.getWidth(),
 		this->optionsButton.getHeight(),
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
 	return true;
 }
 
 void PauseMenuPanel::updateMusicText(double volume)
 {
-	// Update the displayed music volume.
-	this->musicTextBox = [this, volume]()
-	{
-		// @todo: this should pull from PauseMenuUiModel
-		const int displayedVolume = static_cast<int>(std::round(volume * 100.0));
-		const RichTextString &oldRichText = this->musicTextBox->getRichText();
-
-		const auto &fontLibrary = this->getGame().getFontLibrary();
-		const RichTextString richText(
-			std::to_string(displayedVolume),
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			PauseMenuUiView::MusicTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			this->getGame().getRenderer());
-	}();
+	const std::string volumeStr = PauseMenuUiModel::getVolumeString(volume);
+	this->musicTextBox.setText(volumeStr);
 }
 
 void PauseMenuPanel::updateSoundText(double volume)
 {
-	// Update the displayed sound volume.
-	this->soundTextBox = [this, volume]()
-	{
-		// @todo: this should pull from PauseMenuUiModel
-		const int displayedVolume = static_cast<int>(std::round(volume * 100.0));
-		const RichTextString &oldRichText = this->soundTextBox->getRichText();
-
-		const auto &fontLibrary = this->getGame().getFontLibrary();
-		const RichTextString richText(
-			std::to_string(displayedVolume),
-			oldRichText.getFontName(),
-			oldRichText.getColor(),
-			oldRichText.getAlignment(),
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			PauseMenuUiView::SoundTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			this->getGame().getRenderer());
-	}();
+	const std::string volumeStr = PauseMenuUiModel::getVolumeString(volume);
+	this->soundTextBox.setText(volumeStr);
 }
 
 std::optional<CursorData> PauseMenuPanel::getCurrentCursor() const
@@ -347,9 +272,15 @@ void PauseMenuPanel::render(Renderer &renderer)
 
 	renderer.drawOriginal(this->optionsButtonTexture, this->optionsButton.getX(), this->optionsButton.getY());
 
+	auto drawTextBox = [&renderer](TextBox &textBox, int xOffset)
+	{
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft() + xOffset, textBoxRect.getTop());
+	};
+
 	// Draw text: player's name, music volume, sound volume, options.
-	renderer.drawOriginal(this->playerNameTextBox->getTexture(), this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawOriginal(this->musicTextBox->getTexture(), this->musicTextBox->getX(), this->musicTextBox->getY());
-	renderer.drawOriginal(this->soundTextBox->getTexture(), this->soundTextBox->getX(), this->soundTextBox->getY());
-	renderer.drawOriginal(this->optionsTextBox->getTexture(), this->optionsTextBox->getX() - 1, this->optionsTextBox->getY());
+	drawTextBox(this->playerNameTextBox, 0);
+	drawTextBox(this->musicTextBox, 0);
+	drawTextBox(this->soundTextBox, 0);
+	drawTextBox(this->optionsTextBox, -1);
 }

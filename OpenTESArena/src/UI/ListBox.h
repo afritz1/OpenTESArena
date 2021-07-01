@@ -1,104 +1,96 @@
 #ifndef LIST_BOX_H
 #define LIST_BOX_H
 
-#include <memory>
+#include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "Surface.h"
+#include "TextRenderUtils.h"
 #include "Texture.h"
-#include "../Math/Vector2.h"
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
-
-// This class defines a list of displayed text boxes. The index of a clicked text 
-// box can be obtained, and the list can be scrolled up and down. A list box is
-// intended to only be left-aligned.
-
-// Though the index of a selected item can be obtained, this class is not intended
-// for holding data about those selected items. It is simply a view for the text.
 
 class FontLibrary;
 class Renderer;
-class TextBox;
-
-enum class FontName;
 
 class ListBox
 {
-private:
-	std::vector<std::unique_ptr<TextBox>> textBoxes;
-	Int2 point;
-	FontName fontName;
-	Surface clearSurface; // For clearing the texture upon updating.
-	Texture texture;
-	int scrollIndex;
-	int characterHeight;
-	int maxDisplayed;
-	int rowSpacing;
-
-	// Helper functions for pairing each line of a list box with a text color.
-	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
-		const std::vector<std::string> &strings, const std::vector<Color> &colors);
-	static std::vector<std::pair<std::string, Color>> makeStringColorPairs(
-		const std::vector<std::string> &strings, const Color &color);
-
-	// Updates the texture to show the currently visible text boxes.
-	void updateDisplay();
 public:
-	// Per-element color customization and customizable distance between elements.
-	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-		FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
-		Renderer &renderer);
+	struct Properties
+	{
+		int fontDefIndex; // Index in font library.
+		const FontLibrary *fontLibrary; // Stored for ease of redrawing texture.
+		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+		int itemHeight; // Pixel height of each item.
+		Color defaultColor; // Color of text unless overridden.
+		double scrollScale; // Percent of item size that one scroll delta moves by.
+		int itemSpacing; // Pixels between each item.
 
-	// Customizable distance between elements.
-	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-		FontName fontName, int maxDisplayed, int rowSpacing, const FontLibrary &fontLibrary,
-		Renderer &renderer);
+		Properties(int fontDefIndex, const FontLibrary *fontLibrary, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+			int itemHeight, const Color &defaultColor, double scrollScale, int itemSpacing = 0);
+		Properties();
+	};
 
-	// Per-element color customization.
-	ListBox(int x, int y, const std::vector<std::pair<std::string, Color>> &elements,
-		FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer);
+	using ItemCallback = std::function<void()>;
+private:
+	struct Item
+	{
+		std::string text;
+		std::optional<Color> overrideColor;
+		ItemCallback callback;
 
-	// No color or distance customization.
-	ListBox(int x, int y, const Color &textColor, const std::vector<std::string> &elements,
-		FontName fontName, int maxDisplayed, const FontLibrary &fontLibrary, Renderer &renderer);
+		void init(std::string &&text, const std::optional<Color> &overrideColor, const ItemCallback &callback);
+	};
 
-	// Gets the index of the top-most displayed element.
-	int getScrollIndex() const;
+	std::vector<Item> items;
+	Properties properties;
+	Texture texture; // The output texture, updated upon scrolling or changing the list.
+	Rect rect; // Screen position and dimensions.
+	double scrollPixelOffset; // Difference in pixels between the top of the first item and the top of the texture.
+	bool dirty;
 
-	// Gets the total number of text boxes (elements) in the list box.
-	int getElementCount() const;
+	// Number of pixels scrolled with one scroll delta.
+	double getScrollDeltaPixels() const;
 
-	// Gets the max number of displayed text boxes.
-	int getMaxDisplayedCount() const;
+	// Redraws the underlying texture for display.
+	void updateTexture();
+public:
+	ListBox();
 
-	// Gets the top left corner of the list box.
-	const Int2 &getPoint() const;
+	bool init(const Rect &rect, const Properties &properties, Renderer &renderer);
 
-	// Gets the texture for drawing to the screen.
-	const Texture &getTexture() const;
+	// Gets the position and dimensions of the list box in UI space.
+	const Rect &getRect() const;
 
-	// Gets the width and height of the list box.
-	Int2 getDimensions() const;
+	// Gets the position and dimensions of the given item in list box space.
+	Rect getItemLocalRect(int index) const;
 
-	// Returns whether the given point is within the bounds of the list box.
-	bool contains(const Int2 &point);
+	// Gets the position and dimensions of the given item in UI space.
+	Rect getItemGlobalRect(int index) const;
 
-	// Gets the index of a clicked element. ListBox::contains() should be called 
-	// beforehand to make sure the given point is within the list box's bounds.
-	int getClickedIndex(const Int2 &point) const;
+	int getCount() const;
 
-	// Decrement the scroll index by one. Without bounds checking on the caller's behalf,
-	// it will go out-of-bounds when the scroll index is -1.
-	// @todo: change to tryScrollUp()
-	void scrollUp();
+	// Gets the callback (if any) from the list box item at the given index. The caller needs to see if its pointer
+	// falls within the list box rect.
+	const ItemCallback &getCallback(int index) const;
 
-	// Increment the scroll index by one. Without bounds checking on the caller's behalf, 
-	// it can keep scrolling down for a really long time.
-	// @todo: change to tryScrollDown()
+	const Texture &getTexture();
+
+	void insert(int index, std::string &&text);
+	void add(std::string &&text);
+
+	// Sets an item's override color (or resets it).
+	void setOverrideColor(int index, const std::optional<Color> &overrideColor);
+
+	// Sets an item's callback function.
+	void setCallback(int index, const ItemCallback &callback);
+
+	void remove(int index);
+	void removeAll();
+
 	void scrollDown();
-
-	// Instead of a remove() method, just recreate the list box.
+	void scrollUp();
 };
 
 #endif

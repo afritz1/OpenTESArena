@@ -1,13 +1,54 @@
+#include <algorithm>
 #include <optional>
 
 #include "CharacterCreationUiView.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
+#include "../UI/FontDefinition.h"
+#include "../UI/FontLibrary.h"
 
 TextureAssetReference CharacterCreationUiView::getNightSkyTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::CharacterCreation));
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseClassCreationTitleCenter,
+		CharacterCreationUiView::ChooseClassCreationTitleFontName,
+		CharacterCreationUiView::ChooseClassCreationTitleColor,
+		CharacterCreationUiView::ChooseClassCreationTitleAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseClassCreationTitleLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationGenerateTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::GenerateClassTextCenterPoint,
+		CharacterCreationUiView::GenerateClassTextFontName,
+		CharacterCreationUiView::GenerateClassTextColor,
+		CharacterCreationUiView::GenerateClassTextAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassCreationSelectTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::SelectClassTextCenterPoint,
+		CharacterCreationUiView::SelectClassTextFontName,
+		CharacterCreationUiView::SelectClassTextColor,
+		CharacterCreationUiView::SelectClassTextAlignment,
+		fontLibrary);
 }
 
 Rect CharacterCreationUiView::getClassListRect(Game &game)
@@ -43,9 +84,53 @@ Rect CharacterCreationUiView::getClassListDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.h);
 }
 
+ListBox::Properties CharacterCreationUiView::makeClassListBoxProperties(const FontLibrary &fontLibrary)
+{
+	const char *fontName = ArenaFontName::A;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get class list box font \"" + std::string(fontName) + "\".");
+	}
+
+	constexpr int maxDisplayedItemCount = 6;
+	std::string dummyText;
+	for (int i = 0; i < maxDisplayedItemCount; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		std::string dummyLine(10, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
+		dummyText += dummyLine;
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+
+	const Color itemColor(85, 44, 20);
+	constexpr double scrollScale = 1.0;
+	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
+		itemColor, scrollScale);
+}
+
 TextureAssetReference CharacterCreationUiView::getChooseClassListBoxTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::PopUp2));
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseClassTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterCreationUiView::ChooseClassTitleX,
+		CharacterCreationUiView::ChooseClassTitleY,
+		CharacterCreationUiView::ChooseClassTitleFontName,
+		CharacterCreationUiView::ChooseClassTitleColor,
+		CharacterCreationUiView::ChooseClassTitleAlignment,
+		fontLibrary);
 }
 
 int CharacterCreationUiView::getChooseGenderTitleTextureX(int textureWidth)
@@ -58,6 +143,42 @@ int CharacterCreationUiView::getChooseGenderTitleTextureY(int textureHeight)
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
 }
 
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderTitleCenterPoint,
+		CharacterCreationUiView::ChooseGenderTitleFontName,
+		CharacterCreationUiView::ChooseGenderTitleColor,
+		CharacterCreationUiView::ChooseGenderTitleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderMaleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderMaleTextBoxCenter,
+		CharacterCreationUiView::ChooseGenderMaleFontName,
+		CharacterCreationUiView::ChooseGenderMaleColor,
+		CharacterCreationUiView::ChooseGenderMaleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseGenderFemaleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseGenderFemaleTextBoxCenter,
+		CharacterCreationUiView::ChooseGenderFemaleFontName,
+		CharacterCreationUiView::ChooseGenderFemaleColor,
+		CharacterCreationUiView::ChooseGenderFemaleAlignment,
+		fontLibrary);
+}
+
 int CharacterCreationUiView::getChooseNameTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2);
@@ -66,6 +187,33 @@ int CharacterCreationUiView::getChooseNameTitleTextureX(int textureWidth)
 int CharacterCreationUiView::getChooseNameTitleTextureY(int textureHeight)
 {
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseNameTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterCreationUiView::ChooseNameTitleTextBoxX,
+		CharacterCreationUiView::ChooseNameTitleTextBoxY,
+		CharacterCreationUiView::ChooseNameTitleFontName,
+		CharacterCreationUiView::ChooseNameTitleColor,
+		CharacterCreationUiView::ChooseNameTitleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseNameEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, TextRenderUtils::LARGEST_CHAR);
+
+	return TextBox::InitInfo::makeWithXY(
+		dummyText,
+		CharacterCreationUiView::ChooseNameEntryTextBoxX,
+		CharacterCreationUiView::ChooseNameEntryTextBoxY,
+		CharacterCreationUiView::ChooseNameEntryFontName,
+		CharacterCreationUiView::ChooseNameEntryColor,
+		CharacterCreationUiView::ChooseNameEntryAlignment,
+		fontLibrary);
 }
 
 TextureAssetReference CharacterCreationUiView::getChooseRaceBackgroundTextureAssetRef()
@@ -88,6 +236,173 @@ int CharacterCreationUiView::getChooseRaceNoExitTextureY(int textureHeight)
 	return ArenaRenderUtils::SCREEN_HEIGHT - textureHeight;
 }
 
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextureRect(int textWidth, int textHeight)
+{
+	const int width = textWidth + 22;
+	const int height = 60; // Doesn't need text height.
+	return Rect(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (width / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (height / 2) - 21,
+		width,
+		height);
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextureRect(const Rect &titleTextureRect)
+{
+	return Rect(
+		titleTextureRect.getLeft(),
+		titleTextureRect.getTop() + titleTextureRect.getHeight(),
+		titleTextureRect.getWidth(),
+		40);
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextureRect(const Rect &yesTextureRect)
+{
+	return Rect(
+		yesTextureRect.getLeft(),
+		yesTextureRect.getTop() + yesTextureRect.getHeight(),
+		yesTextureRect.getWidth(),
+		yesTextureRect.getHeight());
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 14, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 18, 40));
+}
+
+Rect CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextureRect(int textWidth, int textHeight)
+{
+	const Int2 center(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	return Rect(
+		center,
+		textWidth + 20,
+		std::max(textHeight + 8, 40));
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextLineSpacing,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextLineSpacing,
+		fontLibrary);
+}
+
 int CharacterCreationUiView::getChooseClassCreationTitleTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
@@ -108,24 +423,69 @@ int CharacterCreationUiView::getChooseAttributesTextureHeight()
 	return 42;
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureX(int titleTextureWidth)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextureRect(int textWidth, int textHeight)
 {
-	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (titleTextureWidth / 2) - 1;
+	const int textureWidth = textWidth + 12;
+	const int textureHeight = 24;
+	return Rect(
+		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1,
+		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 21,
+		textureWidth,
+		textureHeight);
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureY(int titleTextureHeight)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextureRect(const Rect &titleTextureRect)
 {
-	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (titleTextureHeight / 2) - 21;
+	return Rect(
+		titleTextureRect.getLeft(),
+		titleTextureRect.getTop() + titleTextureRect.getHeight(),
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight());
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureWidth(int titleTextWidth)
+Rect CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextureRect(const Rect &saveTextureRect)
 {
-	return titleTextWidth + 12;
+	return Rect(
+		saveTextureRect.getLeft(),
+		saveTextureRect.getTop() + saveTextureRect.getHeight(),
+		saveTextureRect.getWidth(),
+		saveTextureRect.getHeight());
 }
 
-int CharacterCreationUiView::getAttributesMessageBoxTitleTextureHeight()
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	return 24;
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::AttributesMessageBoxTitleCenterPoint,
+		CharacterCreationUiView::AttributesMessageBoxTitleFontName,
+		CharacterCreationUiView::AttributesMessageBoxTitleColor,
+		CharacterCreationUiView::AttributesMessageBoxTitleAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::AttributesMessageBoxSaveCenterPoint,
+		CharacterCreationUiView::AttributesMessageBoxSaveFontName,
+		CharacterCreationUiView::AttributesMessageBoxSaveColor,
+		CharacterCreationUiView::AttributesMessageBoxSaveAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(
+	const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::AttributesMessageBoxRerollCenterPoint,
+		CharacterCreationUiView::AttributesMessageBoxRerollFontName,
+		CharacterCreationUiView::AttributesMessageBoxRerollColor,
+		CharacterCreationUiView::AttributesMessageBoxRerollAlignment,
+		fontLibrary);
 }
 
 int CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(int textWidth)

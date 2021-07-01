@@ -24,11 +24,10 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
 #include "../World/VoxelDefinition.h"
@@ -43,27 +42,16 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	const ChunkManager &chunkManager, const std::string &locationName)
 {
 	auto &game = this->getGame();
-
-	this->locationTextBox = [&game, &locationName]()
+	
+	const auto &fontLibrary = game.getFontLibrary();
+	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
+	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.getRenderer()))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			locationName,
-			AutomapUiView::LocationTextBoxFontName,
-			AutomapUiView::LocationTextBoxFontColor,
-			AutomapUiView::LocationTextBoxTextAlignment,
-			fontLibrary);
-		const TextBox::ShadowData shadowData(
-			AutomapUiView::LocationTextBoxShadowColor,
-			AutomapUiView::LocationTextBoxShadowOffset);
+		DebugLogError("Couldn't init location text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			AutomapUiView::LocationTextBoxCenterPoint,
-			richText,
-			&shadowData,
-			fontLibrary,
-			game.getRenderer());
-	}();
+	this->locationTextBox.setText(locationName);
 
 	this->backToGameButton = Button<Game&>(
 		AutomapUiView::BackToGameButtonCenterPoint,
@@ -250,8 +238,9 @@ void AutomapPanel::render(Renderer &renderer)
 	renderer.setClipRect(nullptr);
 
 	// Draw text: title.
-	renderer.drawOriginal(this->locationTextBox->getTexture(),
-		this->locationTextBox->getX(), this->locationTextBox->getY());
+	const Rect &locationTextBoxRect = this->locationTextBox.getRect();
+	renderer.drawOriginal(this->locationTextBox.getTexture(),
+		locationTextBoxRect.getLeft(), locationTextBoxRect.getTop());
 
 	// Check if the mouse is over the compass directions for tooltips.
 	const auto &inputManager = this->getGame().getInputManager();

@@ -29,13 +29,17 @@ bool ChooseRacePanel::init()
 
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
-	const RichTextString richText(
-		CharacterCreationUiModel::getChooseRaceTitleText(game),
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string text = CharacterCreationUiModel::getChooseRaceTitleText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceInitialPopUpTextCenterPoint,
 		CharacterCreationUiView::ChooseRaceInitialPopUpFontName,
 		CharacterCreationUiView::ChooseRaceInitialPopUpColor,
 		CharacterCreationUiView::ChooseRaceInitialPopUpAlignment,
+		std::nullopt,
 		CharacterCreationUiView::ChooseRaceInitialPopUpLineSpacing,
-		game.getFontLibrary());
+		fontLibrary);
 
 	Texture texture = TextureUtils::generate(
 		CharacterCreationUiView::ChooseRaceInitialPopUpPatternType,
@@ -45,11 +49,10 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		game.getRenderer());
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(CharacterCreationUiView::ChooseRaceInitialPopUpTextCenterPoint, richText,
-		CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected, std::move(texture),
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextureCenterPoint))
+	if (!subPanel->init(textBoxInitInfo, text, CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected,
+		std::move(texture), CharacterCreationUiView::ChooseRaceInitialPopUpTextureCenterPoint))
 	{
-		DebugCrash("Couldn't init sub-panel.");
+		DebugCrash("Couldn't init choose race initial sub-panel.");
 	}
 
 	return subPanel;

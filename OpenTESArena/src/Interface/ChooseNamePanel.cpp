@@ -23,11 +23,8 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
 
 #include "components/utilities/String.h"
@@ -38,49 +35,32 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 bool ChooseNamePanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
 
 	this->parchment = TextureUtils::generate(
 		CharacterCreationUiView::ChooseNameTexturePatternType,
 		CharacterCreationUiView::ChooseNameTextureWidth,
 		CharacterCreationUiView::ChooseNameTextureHeight,
 		game.getTextureManager(),
-		game.getRenderer());
+		renderer);
 
-	this->titleTextBox = [&game]()
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseNameTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseNameTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseNameTitleText(game),
-			CharacterCreationUiView::ChooseNameTitleFontName,
-			CharacterCreationUiView::ChooseNameTitleColor,
-			CharacterCreationUiView::ChooseNameTitleAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseNameTitleTextBoxX,
-			CharacterCreationUiView::ChooseNameTitleTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->nameTextBox = [&game]()
+	const TextBox::InitInfo entryTextBoxInitInfo =
+		CharacterCreationUiView::getChooseNameEntryTextBoxInitInfo(fontLibrary);
+	if (!this->entryTextBox.init(entryTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			std::string(),
-			CharacterCreationUiView::ChooseNameEntryFontName,
-			CharacterCreationUiView::ChooseNameEntryColor,
-			CharacterCreationUiView::ChooseNameEntryAlignment,
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseNameEntryTextBoxX,
-			CharacterCreationUiView::ChooseNameEntryTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init entry text box.");
+		return false;
+	}
 
 	this->backToClassButton = Button<Game&>(CharacterCreationUiController::onBackToChooseClassButtonSelected);
 	this->acceptButton = Button<Game&, const std::string&>(CharacterCreationUiController::onChooseNameAcceptButtonSelected);
@@ -122,27 +102,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 
 		if (textChanged)
 		{
-			// Update the displayed name.
-			this->nameTextBox = [this]()
-			{
-				auto &game = this->getGame();
-				const RichTextString &oldRichText = this->nameTextBox->getRichText();
-
-				const auto &fontLibrary = game.getFontLibrary();
-				const RichTextString richText(
-					this->name,
-					oldRichText.getFontName(),
-					oldRichText.getColor(),
-					oldRichText.getAlignment(),
-					fontLibrary);
-
-				return std::make_unique<TextBox>(
-					CharacterCreationUiView::ChooseNameEntryTextBoxX,
-					CharacterCreationUiView::ChooseNameEntryTextBoxY,
-					richText,
-					fontLibrary,
-					game.getRenderer());
-			}();
+			this->entryTextBox.setText(this->name);
 		}
 	}
 }
@@ -177,6 +137,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->parchment, titleParchmentX, titleParchmentY);
 
 	// Draw text: title, name.
-	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->nameTextBox->getTexture(), this->nameTextBox->getX(), this->nameTextBox->getY());
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	const Rect &entryTextBoxRect = this->entryTextBox.getRect();
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->entryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
 }

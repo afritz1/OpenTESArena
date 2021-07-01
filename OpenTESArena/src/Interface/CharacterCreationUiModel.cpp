@@ -340,6 +340,16 @@ std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(Game
 	return text;
 }
 
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmYesText(Game &game)
+{
+	return "Yes"; // @todo: get from ExeData
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmNoText(Game &game)
+{
+	return "No"; // @todo: get from ExeData
+}
+
 std::string CharacterCreationUiModel::getChooseRaceProvinceTooltipText(Game &game, int provinceID)
 {
 	// Get the race name associated with the province.
@@ -381,6 +391,119 @@ std::optional<int> CharacterCreationUiModel::getChooseRaceProvinceID(Game &game,
 
 	// No province mask found at the given location.
 	return std::nullopt;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmedFirstText(Game &game)
+{
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	std::string segment = exeData.charCreation.confirmedRace1;
+	segment = String::replace(segment, '\r', '\n');
+
+	const auto &charCreationState = game.getCharacterCreationState();
+	const int raceIndex = charCreationState.getRaceIndex();
+
+	const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
+	DebugAssertIndex(charCreationProvinceNames, raceIndex);
+	const std::string &provinceName = charCreationProvinceNames[raceIndex];
+
+	const auto &pluralRaceNames = exeData.races.pluralNames;
+	DebugAssertIndex(pluralRaceNames, raceIndex);
+	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const int charClassDefID = charCreationState.getClassDefID();
+	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+	// Replace first %s with player class.
+	size_t index = segment.find("%s");
+	segment.replace(index, 2, charClassDef.getName());
+
+	// Replace second %s with player name.
+	index = segment.find("%s");
+	segment.replace(index, 2, charCreationState.getName());
+
+	// Replace third %s with province name.
+	index = segment.find("%s");
+	segment.replace(index, 2, provinceName);
+
+	// Replace fourth %s with plural race name.
+	index = segment.find("%s");
+	segment.replace(index, 2, pluralRaceName);
+
+	// If player is female, replace "his" with "her".
+	if (!charCreationState.isMale())
+	{
+		index = segment.rfind("his");
+		segment.replace(index, 3, "her");
+	}
+
+	return segment;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmedSecondText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string segment = exeData.charCreation.confirmedRace2;
+	segment = String::replace(segment, '\r', '\n');
+
+	const auto &charCreationState = game.getCharacterCreationState();
+	const int raceIndex = charCreationState.getRaceIndex();
+
+	// Get race description from TEMPLATE.DAT.
+	const auto &templateDat = game.getTextAssetLibrary().getTemplateDat();
+	constexpr std::array<int, 8> raceTemplateIDs =
+	{
+		1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
+	};
+
+	DebugAssertIndex(raceTemplateIDs, raceIndex);
+	const auto &entry = templateDat.getEntry(raceTemplateIDs[raceIndex]);
+	std::string raceDescription = entry.values.front();
+
+	// Re-distribute newlines at 40 character limit.
+	raceDescription = String::distributeNewlines(raceDescription, 40);
+
+	// Append race description to text segment.
+	segment += "\n" + raceDescription;
+
+	return segment;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmedThirdText(Game &game)
+{
+	const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	std::string segment = exeData.charCreation.confirmedRace3;
+	segment = String::replace(segment, '\r', '\n');
+
+	const auto &charCreationState = game.getCharacterCreationState();
+	const auto &charClassLibrary = game.getCharacterClassLibrary();
+	const int charClassDefID = charCreationState.getClassDefID();
+	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+
+	const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
+	DebugAssertIndex(preferredAttributes, charClassDefID);
+	const std::string &preferredAttributesStr = preferredAttributes[charClassDefID];
+
+	// Replace first %s with desired class attributes.
+	size_t index = segment.find("%s");
+	segment.replace(index, 2, preferredAttributesStr);
+
+	// Replace second %s with class name.
+	index = segment.find("%s");
+	segment.replace(index, 2, charClassDef.getName());
+
+	return segment;
+}
+
+std::string CharacterCreationUiModel::getChooseRaceProvinceConfirmedFourthText(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string segment = exeData.charCreation.confirmedRace4;
+	segment = String::replace(segment, '\r', '\n');
+
+	return segment;
 }
 
 std::string CharacterCreationUiModel::getChooseAttributesText(Game &game)

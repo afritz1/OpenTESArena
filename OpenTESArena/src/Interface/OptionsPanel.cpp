@@ -21,10 +21,7 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
@@ -36,43 +33,28 @@ OptionsPanel::OptionsPanel(Game &game)
 bool OptionsPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->titleTextBox = [&game]()
+	const std::string titleText = OptionsUiModel::OptionsTitleText;
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			OptionsUiModel::OptionsTitleText,
-			OptionsUiView::TitleFontName,
-			OptionsUiView::getTitleTextColor(),
-			OptionsUiView::TitleTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			OptionsUiView::TitleTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->backToPauseMenuTextBox = [&game]()
+	const std::string backToPauseMenuText = OptionsUiModel::BackToPauseMenuText;
+	const TextBox::InitInfo backToPauseMenuTextBoxInitInfo =
+		OptionsUiView::getBackToPauseMenuTextBoxInitInfo(backToPauseMenuText, fontLibrary);
+	if (!this->backToPauseMenuTextBox.init(backToPauseMenuTextBoxInitInfo, backToPauseMenuText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			OptionsUiModel::BackToPauseMenuText,
-			OptionsUiView::BackToPauseMenuFontName,
-			OptionsUiView::getBackToPauseMenuTextColor(),
-			OptionsUiView::BackToPauseMenuTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init back to pause menu text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			OptionsUiView::BackToPauseMenuTextBoxCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	// Lambda for creating tab text boxes.
-	auto makeTabTextBox = [&game](int tabIndex, const std::string &text)
+	auto initTabTextBox = [&renderer, &fontLibrary](TextBox &textBox, int tabIndex, const std::string &text)
 	{
 		const Rect &graphicsTabRect = OptionsUiView::GraphicsTabRect;
 		const Int2 &tabsDimensions = OptionsUiView::TabsDimensions;
@@ -82,27 +64,26 @@ bool OptionsPanel::init()
 		const Int2 tabOffset(0, tabsDimensions.y * tabIndex);
 		const Int2 center = initialTabTextCenter + tabOffset;
 
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
+		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 			text,
+			center,
 			OptionsUiView::TabFontName,
 			OptionsUiView::getTabTextColor(),
 			OptionsUiView::TabTextAlignment,
 			fontLibrary);
 
-		return std::make_unique<TextBox>(
-			center,
-			richText,
-			fontLibrary,
-			game.getRenderer());
+		if (!textBox.init(textBoxInitInfo, text, renderer))
+		{
+			DebugCrash("Couldn't init text box " + std::to_string(tabIndex) + ".");
+		}
 	};
 
 	// @todo: should make this iterable
-	this->graphicsTextBox = makeTabTextBox(0, OptionsUiModel::GRAPHICS_TAB_NAME);
-	this->audioTextBox = makeTabTextBox(1, OptionsUiModel::AUDIO_TAB_NAME);
-	this->inputTextBox = makeTabTextBox(2, OptionsUiModel::INPUT_TAB_NAME);
-	this->miscTextBox = makeTabTextBox(3, OptionsUiModel::MISC_TAB_NAME);
-	this->devTextBox = makeTabTextBox(4, OptionsUiModel::DEV_TAB_NAME);
+	initTabTextBox(this->graphicsTextBox, 0, OptionsUiModel::GRAPHICS_TAB_NAME);
+	initTabTextBox(this->audioTextBox, 1, OptionsUiModel::AUDIO_TAB_NAME);
+	initTabTextBox(this->inputTextBox, 2, OptionsUiModel::INPUT_TAB_NAME);
+	initTabTextBox(this->miscTextBox, 3, OptionsUiModel::MISC_TAB_NAME);
+	initTabTextBox(this->devTextBox, 4, OptionsUiModel::DEV_TAB_NAME);
 
 	this->backToPauseMenuButton = Button<Game&>(
 		OptionsUiView::BackToPauseMenuButtonCenterPoint,
@@ -183,28 +164,51 @@ std::vector<std::unique_ptr<OptionsUiModel::Option>> &OptionsPanel::getVisibleOp
 	}
 }
 
-void OptionsPanel::updateOptionTextBox(int index)
+void OptionsPanel::initOptionTextBox(int index)
+{
+	auto &game = this->getGame();
+	const auto &fontLibrary = game.getFontLibrary();
+
+	const std::string &fontName = OptionsUiView::OptionTextBoxFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const std::string dummyText(28, TextRenderUtils::LARGEST_CHAR);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const Int2 &point = OptionsUiView::ListOrigin;
+	const int yOffset = textureGenInfo.height * index;
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		dummyText,
+		point.x,
+		point.y + yOffset,
+		fontName,
+		OptionsUiView::getOptionTextBoxColor(),
+		OptionsUiView::OptionTextBoxTextAlignment,
+		fontLibrary);
+
+	DebugAssertIndex(this->currentTabTextBoxes, index);
+	TextBox &textBox = this->currentTabTextBoxes[index];
+	if (!textBox.init(textBoxInitInfo, game.getRenderer()))
+	{
+		DebugCrash("Couldn't init tab text box " + std::to_string(index) + ".");
+	}
+}
+
+void OptionsPanel::updateOptionTextBoxText(int index)
 {
 	auto &game = this->getGame();
 	const auto &visibleOptions = this->getVisibleOptions();
 	DebugAssertIndex(visibleOptions, index);
 	const auto &visibleOption = visibleOptions[index];
+	const std::string text = visibleOption->getName() + ": " + visibleOption->getDisplayedValue();
 
-	const auto &fontLibrary = game.getFontLibrary();
-	const RichTextString richText(
-		visibleOption->getName() + ": " + visibleOption->getDisplayedValue(),
-		OptionsUiView::OptionTextBoxFontName,
-		OptionsUiView::getOptionTextBoxColor(),
-		OptionsUiView::OptionTextBoxTextAlignment,
-		fontLibrary);
-
-	const Int2 &point = OptionsUiView::ListOrigin;
-	this->currentTabTextBoxes.at(index) = std::make_unique<TextBox>(
-		point.x,
-		point.y + (richText.getDimensions().y * index),
-		richText,
-		fontLibrary,
-		game.getRenderer());
+	DebugAssertIndex(this->currentTabTextBoxes, index);
+	TextBox &textBox = this->currentTabTextBoxes[index];
+	textBox.setText(text);
 }
 
 void OptionsPanel::updateVisibleOptionTextBoxes()
@@ -217,7 +221,8 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		this->updateOptionTextBox(i);
+		this->initOptionTextBox(i);
+		this->updateOptionTextBoxText(i);
 	}
 }
 
@@ -252,16 +257,19 @@ void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
 
 void OptionsPanel::drawText(Renderer &renderer)
 {
-	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->backToPauseMenuTextBox->getTexture(),
-		this->backToPauseMenuTextBox->getX(), this->backToPauseMenuTextBox->getY());
+	auto drawTextBox = [&renderer](TextBox &textBox)
+	{
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
+	};
 
-	// Tabs.
-	renderer.drawOriginal(this->graphicsTextBox->getTexture(), this->graphicsTextBox->getX(), this->graphicsTextBox->getY());
-	renderer.drawOriginal(this->audioTextBox->getTexture(), this->audioTextBox->getX(), this->audioTextBox->getY());
-	renderer.drawOriginal(this->inputTextBox->getTexture(), this->inputTextBox->getX(), this->inputTextBox->getY());
-	renderer.drawOriginal(this->miscTextBox->getTexture(), this->miscTextBox->getX(), this->miscTextBox->getY());
-	renderer.drawOriginal(this->devTextBox->getTexture(), this->devTextBox->getX(), this->devTextBox->getY());
+	drawTextBox(this->titleTextBox);
+	drawTextBox(this->backToPauseMenuTextBox);
+	drawTextBox(this->graphicsTextBox);
+	drawTextBox(this->audioTextBox);
+	drawTextBox(this->inputTextBox);
+	drawTextBox(this->miscTextBox);
+	drawTextBox(this->devTextBox);
 }
 
 void OptionsPanel::drawTextOfOptions(Renderer &renderer)
@@ -270,8 +278,8 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 	std::optional<int> highlightedOptionIndex;
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
-		const auto &optionTextBox = this->currentTabTextBoxes.at(i);
-		const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
+		auto &optionTextBox = this->currentTabTextBoxes.at(i);
+		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
 		const Rect optionRect(
 			OptionsUiView::ListOrigin.x,
 			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
@@ -294,7 +302,8 @@ void OptionsPanel::drawTextOfOptions(Renderer &renderer)
 		}
 
 		// Draw option text.
-		renderer.drawOriginal(optionTextBox->getTexture(), optionTextBox->getX(), optionTextBox->getY());
+		const Rect &optionTextBoxRect = optionTextBox.getRect();
+		renderer.drawOriginal(optionTextBox.getTexture(), optionTextBoxRect.getLeft(), optionTextBoxRect.getTop());
 
 		// Draw description if hovering over an option with a non-empty tooltip.
 		if (highlightedOptionIndex.has_value())
@@ -316,23 +325,26 @@ void OptionsPanel::drawDescription(const std::string &text, Renderer &renderer)
 {
 	auto &game = this->getGame();
 	const auto &fontLibrary = game.getFontLibrary();
-	const RichTextString richText(
+
+	const Int2 &point = OptionsUiView::DescriptionOrigin;
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
 		text,
+		point.x,
+		point.y,
 		OptionsUiView::DescriptionTextFontName,
 		OptionsUiView::getDescriptionTextColor(),
 		OptionsUiView::DescriptionTextAlignment,
 		fontLibrary);
 
-	const Int2 &point = OptionsUiView::DescriptionOrigin;
-	auto descriptionTextBox = std::make_unique<TextBox>(
-		point.x,
-		point.y,
-		richText,
-		fontLibrary,
-		game.getRenderer());
+	TextBox descriptionTextBox;
+	if (!descriptionTextBox.init(textBoxInitInfo, text, renderer))
+	{
+		DebugCrash("Couldn't init description text box.");
+	}
 
-	renderer.drawOriginal(descriptionTextBox->getTexture(),
-		descriptionTextBox->getX(), descriptionTextBox->getY());
+	const Rect &descriptionTextBoxRect = descriptionTextBox.getRect();
+	renderer.drawOriginal(descriptionTextBox.getTexture(),
+		descriptionTextBoxRect.getLeft(), descriptionTextBoxRect.getTop());
 }
 
 std::optional<CursorData> OptionsPanel::getCurrentCursor() const
@@ -393,7 +405,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 		for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 		{
 			const auto &optionTextBox = this->currentTabTextBoxes.at(i);
-			const int optionTextBoxHeight = optionTextBox->getRect().getHeight();
+			const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
 
 			const Rect optionRect(
 				OptionsUiView::ListOrigin.x,
@@ -476,8 +488,7 @@ void OptionsPanel::handleEvent(const SDL_Event &e)
 					tryDecrement();
 				}
 
-				// Update option text.
-				this->updateOptionTextBox(i);
+				this->updateOptionTextBoxText(i);
 				break;
 			}
 		}

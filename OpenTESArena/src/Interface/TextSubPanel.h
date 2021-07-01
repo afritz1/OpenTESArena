@@ -6,28 +6,26 @@
 
 #include "Panel.h"
 #include "../Math/Vector2.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 // A simple sub-panel for displaying a text pop-up on-screen.
 
-class RichTextString;
-class TextBox;
-
 class TextSubPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> textBox;
-	std::function<void(Game&)> endingAction;
+	TextBox textBox;
+	std::function<void(Game&)> onClosed;
 	Texture texture;
 	Int2 textureCenter;
 public:
 	TextSubPanel(Game &game);
-	virtual ~TextSubPanel() = default;
+	~TextSubPanel() override = default;
 
-	bool init(const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game&)> &endingAction, Texture &&texture, const Int2 &textureCenter);
-	bool init(const Int2 &textCenter, const RichTextString &richText,
-		const std::function<void(Game&)> &endingAction);
+	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+		const std::function<void(Game&)> &onClosed, Texture &&texture, const Int2 &textureCenter);
+	bool init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+		const std::function<void(Game&)> &onClosed);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
 	virtual void handleEvent(const SDL_Event &e) override;

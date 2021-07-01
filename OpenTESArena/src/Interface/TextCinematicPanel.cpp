@@ -15,8 +15,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
@@ -27,7 +25,7 @@ TextCinematicPanel::TextCinematicPanel(Game &game)
 	: Panel(game) { }
 
 bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
-	const std::function<void(Game&)> &endingAction)
+	const std::function<void(Game&)> &onFinished)
 {
 	auto &game = this->getGame();
 	const auto &cinematicLibrary = game.getCinematicLibrary();
@@ -35,13 +33,14 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 
 	this->textBoxes = [&game, &textCinematicDef]()
 	{
+		const auto &fontLibrary = game.getFontLibrary();
 		const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
 		const int subtitleTextLineCount = TextCinematicUiModel::getSubtitleTextLineCount(subtitleText);
 		const int textBoxesToMake = TextCinematicUiModel::getSubtitleTextBoxCount(subtitleTextLineCount);
 		const std::vector<std::string> subtitleTextLines = TextCinematicUiModel::getSubtitleTextLines(subtitleText);
 
 		// Group up to three text lines per text box.
-		std::vector<std::unique_ptr<TextBox>> textBoxes;
+		std::vector<TextBox> textBoxes;
 		for (int i = 0; i < textBoxesToMake; i++)
 		{
 			std::string textBoxText;
@@ -62,20 +61,21 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 			}
 
 			// Eventually use a different color when other cinematic actors are supported.
-			const auto &fontLibrary = game.getFontLibrary();
-			const RichTextString richText(
+			const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 				textBoxText,
+				TextCinematicUiView::SubtitleTextBoxCenterPoint,
 				TextCinematicUiView::SubtitleTextBoxFontName,
 				textCinematicDef.getFontColor(),
 				TextCinematicUiView::SubtitleTextBoxTextAlignment,
+				std::nullopt,
 				TextCinematicUiView::SubtitleTextBoxLineSpacing,
 				fontLibrary);
 
-			auto textBox = std::make_unique<TextBox>(
-				TextCinematicUiView::SubtitleTextBoxCenterPoint,
-				richText,
-				fontLibrary,
-				game.getRenderer());
+			TextBox textBox;
+			if (!textBox.init(textBoxInitInfo, textBoxText, game.getRenderer()))
+			{
+				DebugLogError("Couldn't init text box " + std::to_string(i) + ".");
+			}
 
 			textBoxes.emplace_back(std::move(textBox));
 		}
@@ -83,7 +83,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		return textBoxes;
 	}();
 
-	this->skipButton = Button<Game&>(endingAction);
+	this->skipButton = Button<Game&>(onFinished);
 
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
@@ -236,6 +236,7 @@ void TextCinematicPanel::render(Renderer &renderer)
 
 	// Draw the relevant text box.
 	DebugAssertIndex(this->textBoxes, this->textIndex);
-	const auto &textBox = this->textBoxes[this->textIndex];
-	renderer.drawOriginal(textBox->getTexture(), textBox->getX(), textBox->getY());
+	TextBox &textBox = this->textBoxes[this->textIndex];
+	const Rect &textBoxRect = textBox.getRect();
+	renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

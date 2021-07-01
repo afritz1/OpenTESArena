@@ -5,22 +5,22 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 class Renderer;
-class TextBox;
 
 class ChooseClassCreationPanel : public Panel
 {
 private:
 	Texture parchment;
-	std::unique_ptr<TextBox> titleTextBox, generateTextBox, selectTextBox;
+	TextBox titleTextBox, generateTextBox, selectTextBox;
 	Button<Game&> backToMainMenuButton, generateButton, selectButton;
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	ChooseClassCreationPanel(Game &game);
-	virtual ~ChooseClassCreationPanel() = default;
+	~ChooseClassCreationPanel() override = default;
 
 	bool init();
 

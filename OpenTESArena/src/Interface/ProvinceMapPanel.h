@@ -57,7 +57,7 @@ private:
 	void drawButtonTooltip(const std::string &text, Renderer &renderer);
 public:
 	ProvinceMapPanel(Game &game);
-	virtual ~ProvinceMapPanel() = default;
+	~ProvinceMapPanel() override = default;
 
 	bool init(int provinceID);
 

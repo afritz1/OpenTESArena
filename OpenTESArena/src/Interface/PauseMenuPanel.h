@@ -5,22 +5,22 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 class Renderer;
-class TextBox;
 
 class PauseMenuPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
+	TextBox playerNameTextBox, musicTextBox, soundTextBox, optionsTextBox;
 	Button<Game&> loadButton, exitButton;
 	Button<Game&> newButton, saveButton, resumeButton, optionsButton;
 	Button<Game&, PauseMenuPanel&> soundUpButton, soundDownButton, musicUpButton, musicDownButton;
 	Texture optionsButtonTexture;
 public:
 	PauseMenuPanel(Game &game);
-	virtual ~PauseMenuPanel() = default;
+	~PauseMenuPanel() override = default;
 
 	bool init();
 

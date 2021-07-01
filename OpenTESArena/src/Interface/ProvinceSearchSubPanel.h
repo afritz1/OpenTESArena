@@ -20,10 +20,9 @@ class ProvinceSearchSubPanel : public Panel
 {
 private:
 	Texture parchment;
-	std::unique_ptr<TextBox> textTitleTextBox, textEntryTextBox;
-	std::unique_ptr<ListBox> locationsListBox;
+	TextBox textTitleTextBox, textEntryTextBox;
+	ListBox locationsListBox;
 	Button<Game&, ProvinceSearchSubPanel&> textAcceptButton;
-	Button<Game&, ProvinceSearchSubPanel&, int> listAcceptButton;
 	Button<ListBox&> listUpButton, listDownButton;
 
 	void handleTextEntryEvent(const SDL_Event &e);
@@ -40,7 +39,7 @@ public:
 	int provinceID;
 
 	ProvinceSearchSubPanel(Game &game);
-	virtual ~ProvinceSearchSubPanel() = default;
+	~ProvinceSearchSubPanel() override = default;
 
 	bool init(ProvinceMapPanel &provinceMapPanel, int provinceID);
 

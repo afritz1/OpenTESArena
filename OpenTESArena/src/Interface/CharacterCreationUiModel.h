@@ -36,8 +36,14 @@ namespace CharacterCreationUiModel
 
 	std::string getChooseRaceTitleText(Game &game);
 	std::string getChooseRaceProvinceConfirmTitleText(Game &game);
+	std::string getChooseRaceProvinceConfirmYesText(Game &game);
+	std::string getChooseRaceProvinceConfirmNoText(Game &game);
 	std::string getChooseRaceProvinceTooltipText(Game &game, int provinceID);
 	std::optional<int> getChooseRaceProvinceID(Game &game, const Int2 &originalPosition);
+	std::string getChooseRaceProvinceConfirmedFirstText(Game &game);
+	std::string getChooseRaceProvinceConfirmedSecondText(Game &game);
+	std::string getChooseRaceProvinceConfirmedThirdText(Game &game);
+	std::string getChooseRaceProvinceConfirmedFourthText(Game &game);
 
 	std::string getChooseAttributesText(Game &game);
 

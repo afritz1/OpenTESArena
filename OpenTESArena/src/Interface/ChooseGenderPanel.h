@@ -3,20 +3,20 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 class Renderer;
-class TextBox;
 
 class ChooseGenderPanel : public Panel
 {
 private:
 	Texture parchment;
-	std::unique_ptr<TextBox> genderTextBox, maleTextBox, femaleTextBox;
+	TextBox titleTextBox, maleTextBox, femaleTextBox;
 	Button<Game&> backToNameButton, maleButton, femaleButton;
 public:
 	ChooseGenderPanel(Game &game);
-	virtual ~ChooseGenderPanel() = default;
+	~ChooseGenderPanel() override = default;
 
 	bool init();
 

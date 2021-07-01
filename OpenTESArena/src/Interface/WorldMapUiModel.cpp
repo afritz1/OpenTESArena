@@ -8,6 +8,7 @@
 #include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
+#include "../UI/TextBox.h"
 #include "../WorldMap/LocationType.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -264,25 +265,27 @@ std::string WorldMapUiModel::getCityArrivalMessage(Game &game, int targetProvinc
 std::unique_ptr<Panel> WorldMapUiModel::makeCityArrivalPopUp(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
-	const RichTextString richText(
-		WorldMapUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays),
+	const std::string text = WorldMapUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game),
 		WorldMapUiView::CityArrivalFontName,
 		WorldMapUiView::CityArrivalTextColor,
 		WorldMapUiView::CityArrivalTextAlignment,
+		std::nullopt,
 		WorldMapUiView::CityArrivalLineSpacing,
 		game.getFontLibrary());
 
 	Texture texture = TextureUtils::generate(
 		WorldMapUiView::CityArrivalTexturePatternType,
-		WorldMapUiView::getCityArrivalPopUpTextureWidth(richText.getDimensions().x),
-		WorldMapUiView::getCityArrivalPopUpTextureHeight(richText.getDimensions().y),
+		WorldMapUiView::getCityArrivalPopUpTextureWidth(textBoxInitInfo.rect.getWidth()),
+		WorldMapUiView::getCityArrivalPopUpTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		game.getRenderer());
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(WorldMapUiView::getCityArrivalPopUpTextCenterPoint(game), richText,
-		WorldMapUiController::onFastTravelCityArrivalPopUpSelected, std::move(texture),
-		WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(game)))
+	if (!subPanel->init(textBoxInitInfo, text, WorldMapUiController::onFastTravelCityArrivalPopUpSelected,
+		std::move(texture), WorldMapUiView::getCityArrivalPopUpTextureCenterPoint(game)))
 	{
 		DebugCrash("Couldn't init sub-panel.");
 	}

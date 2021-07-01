@@ -6,8 +6,9 @@
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 namespace OptionsUiView
 {
@@ -54,33 +55,37 @@ namespace OptionsUiView
 		TabsDimensions.y);
 
 	const Int2 TitleTextBoxCenterPoint(160, 24);
-	constexpr FontName TitleFontName = FontName::A;
+	const std::string TitleFontName = ArenaFontName::A;
 	Color getTitleTextColor();  // Global initialization order workaround.
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
+
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToPauseMenuTextBoxCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 30,
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
-	constexpr FontName BackToPauseMenuFontName = FontName::Arena;
+	const std::string BackToPauseMenuFontName = ArenaFontName::Arena;
 	Color getBackToPauseMenuTextColor();
-	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment BackToPauseMenuTextAlignment = TextAlignment::MiddleCenter;
+
+	TextBox::InitInfo getBackToPauseMenuTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToPauseMenuButtonCenterPoint = BackToPauseMenuTextBoxCenterPoint;
 	constexpr int BackToPauseMenuButtonWidth = 40;
 	constexpr int BackToPauseMenuButtonHeight = 16;
 
-	constexpr FontName TabFontName = FontName::Arena;
+	const std::string TabFontName = ArenaFontName::Arena;
 	Color getTabTextColor();
-	constexpr TextAlignment TabTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment TabTextAlignment = TextAlignment::MiddleCenter;
 	constexpr TextureUtils::PatternType TabBackgroundPatternType = TextureUtils::PatternType::Custom1;
 
-	constexpr FontName OptionTextBoxFontName = FontName::Arena;
+	const std::string OptionTextBoxFontName = ArenaFontName::Arena;
 	Color getOptionTextBoxColor();
-	constexpr TextAlignment OptionTextBoxTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment OptionTextBoxTextAlignment = TextAlignment::MiddleLeft;
 
-	constexpr FontName DescriptionTextFontName = FontName::Arena;
+	const std::string DescriptionTextFontName = ArenaFontName::Arena;
 	Color getDescriptionTextColor();
-	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::Left;
+	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopLeft;
 }
 
 #endif

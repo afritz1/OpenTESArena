@@ -14,14 +14,17 @@ Rect::Rect(int x, int y, int width, int height)
 	this->rect.h = height;
 }
 
+Rect::Rect(const Int2 &center, int width, int height)
+	: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
+
 Rect::Rect(int width, int height)
 	: Rect(0, 0, width, height) { }
 
 Rect::Rect()
 	: Rect(0, 0, 0, 0) { }
 
-Rect::Rect(const Rect &rectangle)
-	: Rect(rectangle.rect.x, rectangle.rect.y, rectangle.rect.w, rectangle.rect.h) { }
+Rect::Rect(const Rect &rect)
+	: Rect(rect.rect.x, rect.rect.y, rect.rect.w, rect.rect.h) { }
 
 int Rect::getWidth() const
 {

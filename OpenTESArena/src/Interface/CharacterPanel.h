@@ -3,6 +3,7 @@
 
 #include "Panel.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 // Maybe rename this to "CharacterStatsPanel"?
 
@@ -14,11 +15,11 @@ class TextBox;
 class CharacterPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox, playerClassTextBox;
+	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
 	Button<Game&> doneButton, nextPageButton;
 public:
 	CharacterPanel(Game &game);
-	virtual ~CharacterPanel() = default;
+	~CharacterPanel() override = default;
 
 	bool init();
 

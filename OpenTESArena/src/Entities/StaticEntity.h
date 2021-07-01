@@ -12,7 +12,7 @@ private:
 	StaticEntityType derivedType;
 public:
 	StaticEntity();
-	virtual ~StaticEntity() = default;
+	~StaticEntity() override = default;
 
 	void initNPC(EntityDefID defID, const EntityAnimationInstance &animInst);
 	void initDoodad(EntityDefID defID, const EntityAnimationInstance &animInst);
@@ -22,7 +22,7 @@ public:
 	EntityType getEntityType() const override;
 	StaticEntityType getDerivedType() const;
 
-	virtual void reset() override;
+	void reset() override;
 };
 
 #endif

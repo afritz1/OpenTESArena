@@ -17,81 +17,52 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 bool CharacterEquipmentPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->playerNameTextBox = [&game]()
+	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
+	const TextBox::InitInfo playerNameTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterSheetUiModel::getPlayerName(game),
-			CharacterSheetUiView::PlayerNameTextBoxFontName,
-			CharacterSheetUiView::PlayerNameTextBoxColor,
-			CharacterSheetUiView::PlayerNameTextBoxAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player name text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerNameTextBoxX,
-			CharacterSheetUiView::PlayerNameTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->playerRaceTextBox = [&game]()
+	const std::string playerRaceText = CharacterSheetUiModel::getPlayerRaceName(game);
+	const TextBox::InitInfo playerRaceTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
+	if (!this->playerRaceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterSheetUiModel::getPlayerRaceName(game),
-			CharacterSheetUiView::PlayerRaceTextBoxFontName,
-			CharacterSheetUiView::PlayerRaceTextBoxColor,
-			CharacterSheetUiView::PlayerRaceTextBoxAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player race text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerRaceTextBoxX,
-			CharacterSheetUiView::PlayerRaceTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->playerClassTextBox = [&game]()
+	const std::string playerClassText = CharacterSheetUiModel::getPlayerClassName(game);
+	const TextBox::InitInfo playerClassTextBoxInitInfo =
+		CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
+	if (!this->playerClassTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterSheetUiModel::getPlayerClassName(game),
-			CharacterSheetUiView::PlayerClassTextBoxFontName,
-			CharacterSheetUiView::PlayerClassTextBoxColor,
-			CharacterSheetUiView::PlayerClassTextBoxAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init player class text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterSheetUiView::PlayerClassTextBoxX,
-			CharacterSheetUiView::PlayerClassTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->inventoryListBox = [&game]()
+	Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
+	std::vector<std::pair<std::string, Color>> elements;
+	for (int i = 0; i < itemUiDefs.getCount(); i++)
 	{
-		Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
-		std::vector<std::pair<std::string, Color>> elements;
-		for (int i = 0; i < itemUiDefs.getCount(); i++)
-		{
-			const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
-			elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
-		}
+		const InventoryUiModel::ItemUiDefinition &itemUiDef = itemUiDefs.get(i);
+		elements.emplace_back(std::make_pair(std::move(itemUiDef.text), itemUiDef.color));
+	}
 
-		return std::make_unique<ListBox>(
-			InventoryUiView::PlayerInventoryListBoxX,
-			InventoryUiView::PlayerInventoryListBoxY,
-			elements,
-			InventoryUiView::PlayerInventoryListBoxFontName,
-			InventoryUiView::PlayerInventoryMaxDisplayedItems,
-			InventoryUiView::PlayerInventoryRowSpacing,
-			game.getFontLibrary(),
-			game.getRenderer());
-	}();
+	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,
+		InventoryUiView::makePlayerInventoryListBoxProperties(game.getFontLibrary()), game.getRenderer());
+	for (int i = 0; i < static_cast<int>(elements.size()); i++)
+	{
+		auto &pair = elements[i];
+		this->inventoryListBox.add(std::move(pair.first));
+		this->inventoryListBox.setOverrideColor(i, pair.second);
+	}
 
 	this->backToStatsButton = Button<Game&>(
 		CharacterSheetUiView::BackToStatsButtonX,
@@ -146,8 +117,7 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 	const bool mouseWheeledDown = inputManager.mouseWheeledDown(e);
 
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-		.nativeToOriginal(mousePosition);
+	const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 	if (leftClick)
 	{
@@ -166,20 +136,20 @@ void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
 		}
 		else if (this->scrollUpButton.contains(mouseOriginalPoint))
 		{
-			this->scrollUpButton.click(*this->inventoryListBox.get());
+			this->scrollUpButton.click(this->inventoryListBox);
 		}
 		else if (this->scrollDownButton.contains(mouseOriginalPoint))
 		{
-			this->scrollDownButton.click(*this->inventoryListBox.get());
+			this->scrollDownButton.click(this->inventoryListBox);
 		}
 	}
 	else if (mouseWheeledUp)
 	{
-		this->scrollUpButton.click(*this->inventoryListBox.get());
+		this->scrollUpButton.click(this->inventoryListBox);
 	}
 	else if (mouseWheeledDown)
 	{
-		this->scrollDownButton.click(*this->inventoryListBox.get());
+		this->scrollDownButton.click(this->inventoryListBox);
 	}
 }
 
@@ -232,11 +202,14 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*equipmentBgTextureBuilderID, *charSheetPaletteID, textureManager);
 
 	// Draw text boxes: player name, race, class.
-	renderer.drawOriginal(this->playerNameTextBox->getTexture(), this->playerNameTextBox->getX(), this->playerNameTextBox->getY());
-	renderer.drawOriginal(this->playerRaceTextBox->getTexture(), this->playerRaceTextBox->getX(), this->playerRaceTextBox->getY());
-	renderer.drawOriginal(this->playerClassTextBox->getTexture(), this->playerClassTextBox->getX(), this->playerClassTextBox->getY());
+	const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
+	const Rect &playerRaceTextBoxRect = this->playerRaceTextBox.getRect();
+	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
+	renderer.drawOriginal(this->playerNameTextBox.getTexture(), playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
+	renderer.drawOriginal(this->playerRaceTextBox.getTexture(), playerRaceTextBoxRect.getLeft(), playerRaceTextBoxRect.getTop());
+	renderer.drawOriginal(this->playerClassTextBox.getTexture(), playerClassTextBoxRect.getLeft(), playerClassTextBoxRect.getTop());
 	
 	// Draw inventory list box.
-	const Int2 &inventoryListBoxPoint = this->inventoryListBox->getPoint();
-	renderer.drawOriginal(this->inventoryListBox->getTexture(), inventoryListBoxPoint.x, inventoryListBoxPoint.y);
+	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
+	renderer.drawOriginal(this->inventoryListBox.getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());
 }

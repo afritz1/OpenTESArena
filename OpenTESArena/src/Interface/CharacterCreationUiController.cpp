@@ -16,6 +16,7 @@
 #include "TextSubPanel.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
+#include "../UI/TextBox.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -56,26 +57,15 @@ void CharacterCreationUiController::onBackToChooseClassCreationButtonSelected(Ga
 
 void CharacterCreationUiController::onChooseClassListBoxUpButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box up one if able.
-	if (listBox.getScrollIndex() > 0)
-	{
-		listBox.scrollUp();
-	}
+	listBox.scrollUp();
 }
 
 void CharacterCreationUiController::onChooseClassListBoxDownButtonSelected(ListBox &listBox)
 {
-	// Scroll the list box down one if able.
-	const int scrollIndex = listBox.getScrollIndex();
-	const int elementCount = listBox.getElementCount();
-	const int maxDisplayedCount = listBox.getMaxDisplayedCount();
-	if (scrollIndex < (elementCount - maxDisplayedCount))
-	{
-		listBox.scrollDown();
-	}
+	listBox.scrollDown();
 }
 
-void CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected(Game &game, int charClassDefID)
+void CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(Game &game, int charClassDefID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setClassDefID(charClassDefID);
@@ -146,109 +136,90 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
-	const Color textColor(52, 24, 8);
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextBoxInitInfo(titleText, fontLibrary);
 
+	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
+	// title text, button count, button font, button alignment, and it figures out everything behind the scenes.
 	MessageBoxSubPanel::Title messageBoxTitle;
-	messageBoxTitle.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxTitle.textBox.init(titleTextBoxInitInfo, renderer))
 	{
-		const int lineSpacing = 1;
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(game),
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm title text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2),
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
+	messageBoxTitle.textBox.setText(titleText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
+	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
+	const Rect titleTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmTitleTextureRect(
+		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
+	messageBoxTitle.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmTitleTexturePatternType,
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight(),
+		textureManager,
+		renderer);
+	messageBoxTitle.textureX = titleTextureRect.getLeft();
+	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	messageBoxTitle.texture = [&textureManager, &renderer, &messageBoxTitle]()
-	{
-		const int width = messageBoxTitle.textBox->getRect().getWidth() + 22;
-		const int height = 60;
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
-			textureManager, renderer);
-	}();
-
-	messageBoxTitle.textureX = (ArenaRenderUtils::SCREEN_WIDTH / 2) -
-		(messageBoxTitle.texture.getWidth() / 2) - 1;
-	messageBoxTitle.textureY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) -
-		(messageBoxTitle.texture.getHeight() / 2) - 21;
+	const std::string yesText = CharacterCreationUiModel::getChooseRaceProvinceConfirmYesText(game);
+	const TextBox::InitInfo yesTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextBoxInitInfo(yesText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxYes;
-	messageBoxYes.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxYes.textBox.init(yesTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			"Yes",
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm yes text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
+	messageBoxYes.textBox.setText(yesText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
-
-	messageBoxYes.texture = [&textureManager, &renderer, &messageBoxTitle]()
-	{
-		const int width = messageBoxTitle.texture.getWidth();
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, 40,
-			textureManager, renderer);
-	}();
+	const Rect yesTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmYesTextureRect(titleTextureRect);
+	messageBoxYes.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmYesTexturePatternType,
+		yesTextureRect.getWidth(),
+		yesTextureRect.getHeight(),
+		textureManager,
+		renderer);
 
 	messageBoxYes.function = [raceID](Game &game)
 	{
 		CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(game, raceID);
 	};
 
-	messageBoxYes.textureX = messageBoxTitle.textureX;
-	messageBoxYes.textureY = messageBoxTitle.textureY + messageBoxTitle.texture.getHeight();
+	messageBoxYes.textureX = yesTextureRect.getLeft();
+	messageBoxYes.textureY = yesTextureRect.getTop();
+
+	const std::string noText = CharacterCreationUiModel::getChooseRaceProvinceConfirmNoText(game);
+	const TextBox::InitInfo noTextBoxInitInfo =
+		CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextBoxInitInfo(noText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxNo;
-	messageBoxNo.textBox = [&game, &renderer, &textColor]()
+	if (!messageBoxNo.textBox.init(noTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			"No",
-			FontName::A,
-			textColor,
-			TextAlignment::Center,
-			fontLibrary);
+		DebugCrash("Couldn't init province confirm no text box.");
+	}
 
-		const Int2 center(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
+	messageBoxNo.textBox.setText(noText);
 
-		return std::make_unique<TextBox>(center, richText, fontLibrary, renderer);
-	}();
-
-	messageBoxNo.texture = [&textureManager, &renderer, &messageBoxYes]()
-	{
-		const int width = messageBoxYes.texture.getWidth();
-		const int height = messageBoxYes.texture.getHeight();
-		return TextureUtils::generate(TextureUtils::PatternType::Parchment, width, height,
-			textureManager, renderer);
-	}();
+	const Rect noTextureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmNoTextureRect(yesTextureRect);
+	messageBoxNo.texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmNoTexturePatternType,
+		noTextureRect.getWidth(),
+		noTextureRect.getHeight(),
+		textureManager,
+		renderer);
 
 	messageBoxNo.function = CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected;
-	messageBoxNo.textureX = messageBoxYes.textureX;
-	messageBoxNo.textureY = messageBoxYes.textureY + messageBoxYes.texture.getHeight();
+	messageBoxNo.textureX = noTextureRect.getLeft();
+	messageBoxNo.textureY = noTextureRect.getTop();
 
 	auto cancelFunction = messageBoxNo.function;
 
 	std::vector<MessageBoxSubPanel::Element> messageBoxElements;
-	messageBoxElements.push_back(std::move(messageBoxYes));
-	messageBoxElements.push_back(std::move(messageBoxNo));
+	messageBoxElements.emplace_back(std::move(messageBoxYes));
+	messageBoxElements.emplace_back(std::move(messageBoxNo));
 
 	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
@@ -257,246 +228,25 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 {
 	game.popSubPanel();
 
-	const Color textColor(48, 12, 12);
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFirstText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextLineSpacing,
+		game.getFontLibrary());
 
-	// Generate all of the parchments leading up to the attributes panel,
-	// and link them together so they appear after each other.
-	auto toAttributes = [](Game &game)
-	{
-		game.popSubPanel();
-		game.setPanel<ChooseAttributesPanel>();
-	};
+	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedFirstTextureRect(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedFirstTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
-	auto toFourthSubPanel = [textColor, toAttributes](Game &game)
-	{
-		game.popSubPanel();
-
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-
-		const std::string text = [&game]()
-		{
-			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-			std::string segment = exeData.charCreation.confirmedRace4;
-			segment = String::replace(segment, '\r', '\n');
-
-			return segment;
-		}();
-
-		const int lineSpacing = 1;
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			game.getFontLibrary());
-
-		const int textureHeight = std::max(richText.getDimensions().y + 8, 40);
-		Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
-			richText.getDimensions().x + 20, textureHeight,
-			game.getTextureManager(), game.getRenderer());
-
-		const Int2 textureCenter(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-
-		game.pushSubPanel<TextSubPanel>(center, richText, toAttributes, std::move(texture), textureCenter);
-	};
-
-	auto toThirdSubPanel = [textColor, toFourthSubPanel](Game &game)
-	{
-		game.popSubPanel();
-
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-
-		const std::string text = [&game]()
-		{
-			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-			const auto &exeData = binaryAssetLibrary.getExeData();
-			std::string segment = exeData.charCreation.confirmedRace3;
-			segment = String::replace(segment, '\r', '\n');
-
-			const auto &charCreationState = game.getCharacterCreationState();
-			const auto &charClassLibrary = game.getCharacterClassLibrary();
-			const int charClassDefID = charCreationState.getClassDefID();
-			const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-
-			const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
-			DebugAssertIndex(preferredAttributes, charClassDefID);
-			const std::string &preferredAttributesStr = preferredAttributes[charClassDefID];
-
-			// Replace first %s with desired class attributes.
-			size_t index = segment.find("%s");
-			segment.replace(index, 2, preferredAttributesStr);
-
-			// Replace second %s with class name.
-			index = segment.find("%s");
-			segment.replace(index, 2, charClassDef.getName());
-
-			return segment;
-		}();
-
-		const int lineSpacing = 1;
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			game.getFontLibrary());
-
-		const int textureHeight = std::max(richText.getDimensions().y + 18, 40);
-		Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
-			richText.getDimensions().x + 20, textureHeight,
-			game.getTextureManager(), game.getRenderer());
-
-		const Int2 textureCenter(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-
-		game.pushSubPanel<TextSubPanel>(center, richText, toFourthSubPanel, std::move(texture), textureCenter);
-	};
-
-	auto toSecondSubPanel = [textColor, toThirdSubPanel](Game &game)
-	{
-		game.popSubPanel();
-
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-
-		const std::string text = [&game]()
-		{
-			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
-			std::string segment = exeData.charCreation.confirmedRace2;
-			segment = String::replace(segment, '\r', '\n');
-
-			const auto &charCreationState = game.getCharacterCreationState();
-			const int raceIndex = charCreationState.getRaceIndex();
-
-			// Get race description from TEMPLATE.DAT.
-			const auto &templateDat = game.getTextAssetLibrary().getTemplateDat();
-			constexpr std::array<int, 8> raceTemplateIDs =
-			{
-				1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
-			};
-
-			DebugAssertIndex(raceTemplateIDs, raceIndex);
-			const auto &entry = templateDat.getEntry(raceTemplateIDs[raceIndex]);
-			std::string raceDescription = entry.values.front();
-
-			// Re-distribute newlines at 40 character limit.
-			raceDescription = String::distributeNewlines(raceDescription, 40);
-
-			// Append race description to text segment.
-			segment += "\n" + raceDescription;
-
-			return segment;
-		}();
-
-		const int lineSpacing = 1;
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			game.getFontLibrary());
-
-		const int textureHeight = std::max(richText.getDimensions().y + 14, 40);
-		Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
-			richText.getDimensions().x + 20, textureHeight,
-			game.getTextureManager(), game.getRenderer());
-
-		const Int2 textureCenter(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-
-		game.pushSubPanel<TextSubPanel>(center, richText, toThirdSubPanel, std::move(texture), textureCenter);
-	};
-
-	std::unique_ptr<Panel> firstSubPanel = [&game, &textColor, toSecondSubPanel]()
-	{
-		const Int2 center((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-
-		const std::string text = [&game]()
-		{
-			const auto &binaryAssetLibrary = game.getBinaryAssetLibrary();
-			const auto &exeData = binaryAssetLibrary.getExeData();
-			std::string segment = exeData.charCreation.confirmedRace1;
-			segment = String::replace(segment, '\r', '\n');
-
-			const auto &charCreationState = game.getCharacterCreationState();
-			const int raceIndex = charCreationState.getRaceIndex();
-
-			const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
-			DebugAssertIndex(charCreationProvinceNames, raceIndex);
-			const std::string &provinceName = charCreationProvinceNames[raceIndex];
-
-			const auto &pluralRaceNames = exeData.races.pluralNames;
-			DebugAssertIndex(pluralRaceNames, raceIndex);
-			const std::string &pluralRaceName = pluralRaceNames[raceIndex];
-
-			const auto &charClassLibrary = game.getCharacterClassLibrary();
-			const int charClassDefID = charCreationState.getClassDefID();
-			const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-
-			// Replace first %s with player class.
-			size_t index = segment.find("%s");
-			segment.replace(index, 2, charClassDef.getName());
-
-			// Replace second %s with player name.
-			index = segment.find("%s");
-			segment.replace(index, 2, charCreationState.getName());
-
-			// Replace third %s with province name.
-			index = segment.find("%s");
-			segment.replace(index, 2, provinceName);
-
-			// Replace fourth %s with plural race name.
-			index = segment.find("%s");
-			segment.replace(index, 2, pluralRaceName);
-
-			// If player is female, replace "his" with "her".
-			if (!charCreationState.isMale())
-			{
-				index = segment.rfind("his");
-				segment.replace(index, 3, "her");
-			}
-
-			return segment;
-		}();
-
-		const int lineSpacing = 1;
-
-		const RichTextString richText(
-			text,
-			FontName::Arena,
-			textColor,
-			TextAlignment::Center,
-			lineSpacing,
-			game.getFontLibrary());
-
-		const int textureHeight = std::max(richText.getDimensions().y, 40);
-		Texture texture = TextureUtils::generate(TextureUtils::PatternType::Parchment,
-			richText.getDimensions().x + 20, textureHeight,
-			game.getTextureManager(), game.getRenderer());
-
-		const Int2 textureCenter(
-			(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-			(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-
-		std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-		if (!subPanel->init(center, richText, toSecondSubPanel, std::move(texture), textureCenter))
-		{
-			DebugCrash("Couldn't init sub-panel.");
-		}
-
-		return subPanel;
-	}();
-
-	game.pushSubPanel(std::move(firstSubPanel));
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
+		CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSelected,
+		std::move(texture), textureRect.getCenter());
 }
 
 void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Game &game)
@@ -506,6 +256,91 @@ void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Gam
 	// Push the initial text sub-panel.
 	std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
 	game.pushSubPanel(std::move(textSubPanel));
+}
+
+void CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSelected(Game &game)
+{
+	game.popSubPanel();
+
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedSecondText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextLineSpacing,
+		game.getFontLibrary());
+
+	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedSecondTextureRect(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedSecondTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
+
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
+		CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected,
+		std::move(texture), textureRect.getCenter());
+}
+
+void CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected(Game &game)
+{
+	game.popSubPanel();
+
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedThirdText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextLineSpacing,
+		game.getFontLibrary());
+
+	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedThirdTextureRect(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(CharacterCreationUiView::ChooseRaceProvinceConfirmedThirdTextPatternType,
+		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
+
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
+		CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected,
+		std::move(texture), textureRect.getCenter());
+}
+
+void CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected(Game &game)
+{
+	game.popSubPanel();
+
+	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFourthText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextCenterPoint,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextFontName,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextColor,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextAlignment,
+		std::nullopt,
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextLineSpacing,
+		game.getFontLibrary());
+
+	const Rect textureRect = CharacterCreationUiView::getChooseRaceProvinceConfirmedFourthTextureRect(
+		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+	Texture texture = TextureUtils::generate(
+		CharacterCreationUiView::ChooseRaceProvinceConfirmedFourthTextPatternType,
+		textureRect.getWidth(),
+		textureRect.getHeight(),
+		game.getTextureManager(),
+		game.getRenderer());
+
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
+		CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected,
+		std::move(texture), textureRect.getCenter());
+}
+
+void CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected(Game &game)
+{
+	game.popSubPanel();
+	game.setPanel<ChooseAttributesPanel>();
 }
 
 void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)
@@ -524,59 +359,52 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
 
+	// @todo: add InitInfos for this Save/Reroll message box sub-panel
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getAttributesMessageBoxTitleText(game);
+	const TextBox::InitInfo titleInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(titleText, fontLibrary);
+
 	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
 	// title text, button count, button font, button alignment, and it figures out everything behind the scenes.
 	MessageBoxSubPanel::Title messageBoxTitle;
-	messageBoxTitle.textBox = [&game, &renderer]()
+	if (!messageBoxTitle.textBox.init(titleInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxTitleText(game),
-			CharacterCreationUiView::AttributesMessageBoxTitleFontName,
-			CharacterCreationUiView::AttributesMessageBoxTitleColor,
-			CharacterCreationUiView::AttributesMessageBoxTitleAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done title text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxTitle.textBox.setText(titleText);
 
+	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
+	const Rect titleTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneTitleTextureRect(
+		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
 	messageBoxTitle.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		CharacterCreationUiView::getAttributesMessageBoxTitleTextureWidth(messageBoxTitle.textBox->getRect().getWidth()),
-		CharacterCreationUiView::getAttributesMessageBoxTitleTextureHeight(),
+		titleTextureRect.getWidth(),
+		titleTextureRect.getHeight(),
 		textureManager,
 		renderer);
+	messageBoxTitle.textureX = titleTextureRect.getLeft();
+	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	messageBoxTitle.textureX = CharacterCreationUiView::getAttributesMessageBoxTitleTextureX(messageBoxTitle.texture.getWidth());
-	messageBoxTitle.textureY = CharacterCreationUiView::getAttributesMessageBoxTitleTextureY(messageBoxTitle.texture.getHeight());
+	const std::string saveText = CharacterCreationUiModel::getAttributesMessageBoxSaveText(game);
+	const TextBox::InitInfo saveTextBoxInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(saveText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxSave;
-	messageBoxSave.textBox = [&game, &renderer]()
+	if (!messageBoxSave.textBox.init(saveTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxSaveText(game),
-			CharacterCreationUiView::AttributesMessageBoxSaveFontName,
-			CharacterCreationUiView::AttributesMessageBoxSaveColor,
-			CharacterCreationUiView::AttributesMessageBoxSaveAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done save text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxSaveCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxSave.textBox.setText(saveText);
 
-	// @todo: this is over-specified -- need MessageBoxSubPanel to do a lot of this automatically for its elements.
+	const Rect &saveTextBoxRect = messageBoxSave.textBox.getRect();
+	const Rect saveTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneSaveTextureRect(titleTextureRect);
 	messageBoxSave.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		messageBoxTitle.texture.getWidth(),
-		messageBoxTitle.texture.getHeight(),
+		saveTextureRect.getWidth(),
+		saveTextureRect.getHeight(),
 		textureManager,
 		renderer);
 
@@ -585,38 +413,32 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 		CharacterCreationUiController::onSaveAttributesButtonSelected(game, attributesAreSaved);
 	};
 
-	messageBoxSave.textureX = messageBoxTitle.textureX;
-	messageBoxSave.textureY = messageBoxTitle.textureY + messageBoxTitle.texture.getHeight();
+	messageBoxSave.textureX = saveTextureRect.getLeft();
+	messageBoxSave.textureY = saveTextureRect.getTop();
+
+	const std::string rerollText = CharacterCreationUiModel::getAttributesMessageBoxRerollText(game);
+	const TextBox::InitInfo rerollTextBoxInitInfo =
+		CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(rerollText, fontLibrary);
 
 	MessageBoxSubPanel::Element messageBoxReroll;
-	messageBoxReroll.textBox = [&game, &renderer]()
+	if (!messageBoxReroll.textBox.init(rerollTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getAttributesMessageBoxRerollText(game),
-			CharacterCreationUiView::AttributesMessageBoxRerollFontName,
-			CharacterCreationUiView::AttributesMessageBoxRerollColor,
-			CharacterCreationUiView::AttributesMessageBoxRerollAlignment,
-			fontLibrary);
+		DebugCrash("Couldn't init choose attributes unsaved done reroll text box.");
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::AttributesMessageBoxRerollCenterPoint,
-			richText,
-			fontLibrary,
-			renderer);
-	}();
+	messageBoxReroll.textBox.setText(rerollText);
 
-	// @todo: this is over-specified -- need MessageBoxSubPanel to do a lot of this automatically for its elements.
+	const Rect &rerollTextBoxRect = messageBoxReroll.textBox.getRect();
+	const Rect rerollTextureRect = CharacterCreationUiView::getChooseAttributesUnsavedDoneRerollTextureRect(saveTextureRect);
 	messageBoxReroll.texture = TextureUtils::generate(
 		CharacterCreationUiView::AttributesMessageBoxPatternType,
-		messageBoxSave.texture.getWidth(),
-		messageBoxSave.texture.getHeight(),
+		rerollTextureRect.getWidth(),
+		rerollTextureRect.getHeight(),
 		textureManager,
 		renderer);
-
 	messageBoxReroll.function = CharacterCreationUiController::onRerollAttributesButtonSelected;
-	messageBoxReroll.textureX = messageBoxSave.textureX;
-	messageBoxReroll.textureY = messageBoxSave.textureY + messageBoxSave.texture.getHeight();
+	messageBoxReroll.textureX = rerollTextureRect.getLeft();
+	messageBoxReroll.textureY = rerollTextureRect.getTop();
 
 	auto cancelFunction = messageBoxReroll.function;
 
@@ -625,10 +447,7 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	messageBoxElements.emplace_back(std::move(messageBoxSave));
 	messageBoxElements.emplace_back(std::move(messageBoxReroll));
 
-	game.pushSubPanel<MessageBoxSubPanel>(
-		std::move(messageBoxTitle),
-		std::move(messageBoxElements),
-		cancelFunction);
+	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
 
 void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &game)
@@ -645,7 +464,7 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 			fullGameWindow,
 			options.getGraphics_RenderThreadsMode());
 
-		std::unique_ptr<GameState> gameState = [&game, &binaryAssetLibrary]()
+		std::unique_ptr<GameState> gameState = [&game, &renderer, &binaryAssetLibrary]()
 		{
 			const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -786,29 +605,29 @@ void CharacterCreationUiController::onSaveAttributesButtonSelected(Game &game, b
 	// it starts the game.
 	game.popSubPanel();
 
-	const RichTextString richText(
-		CharacterCreationUiModel::getAppearanceMessageBoxText(game),
+	const std::string text = CharacterCreationUiModel::getAppearanceMessageBoxText(game);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		CharacterCreationUiView::AppearanceMessageBoxCenterPoint,
 		CharacterCreationUiView::AppearanceMessageBoxFontName,
 		CharacterCreationUiView::AppearanceMessageBoxColor,
 		CharacterCreationUiView::AppearanceMessageBoxAlignment,
+		std::nullopt,
 		CharacterCreationUiView::AppearanceMessageBoxLineSpacing,
 		game.getFontLibrary());
 
 	Texture texture = TextureUtils::generate(
 		CharacterCreationUiView::AppearanceMessageBoxPatternType,
-		CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(richText.getDimensions().x),
-		CharacterCreationUiView::getAppearanceMessageBoxTextureHeight(richText.getDimensions().y),
+		CharacterCreationUiView::getAppearanceMessageBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
+		CharacterCreationUiView::getAppearanceMessageBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
 		game.getTextureManager(),
 		game.getRenderer());
 
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
-	game.pushSubPanel<TextSubPanel>(
-		CharacterCreationUiView::AppearanceMessageBoxCenterPoint,
-		richText,
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
 		CharacterCreationUiController::onAppearanceMessageBoxSelected,
-		std::move(texture),
-		CharacterCreationUiView::AppearanceMessageBoxCenterPoint);
+		std::move(texture), CharacterCreationUiView::AppearanceMessageBoxCenterPoint);
 
 	*attributesAreSaved = true;
 }

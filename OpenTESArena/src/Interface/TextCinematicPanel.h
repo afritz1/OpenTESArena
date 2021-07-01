@@ -11,6 +11,7 @@
 #include "TextCinematicUiModel.h"
 #include "../Media/TextureManager.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 // Very similar to a cinematic panel, only now it's designed for cinematics with
 // subtitles at the bottom (a.k.a., "text").
@@ -25,12 +26,11 @@
 
 class Game;
 class Renderer;
-class TextBox;
 
 class TextCinematicPanel : public Panel
 {
 private:
-	std::vector<std::unique_ptr<TextBox>> textBoxes; // One for every three new lines.
+	std::vector<TextBox> textBoxes; // One for every three new lines.
 	Button<Game&> skipButton;
 	std::string animTextureFilename;
 	TextCinematicUiModel::SpeechState speechState;
@@ -38,9 +38,9 @@ private:
 	int animImageIndex, textIndex, textCinematicDefIndex;
 public:
 	TextCinematicPanel(Game &game);
-	virtual ~TextCinematicPanel() = default;
+	~TextCinematicPanel() override = default;
 
-	bool init(int textCinematicDefIndex, double secondsPerImage, const std::function<void(Game&)> &endingAction);
+	bool init(int textCinematicDefIndex, double secondsPerImage, const std::function<void(Game&)> &onFinished);
 
 	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;

@@ -3,11 +3,12 @@
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
+#include "../UI/ArenaFontName.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 
 Surface TextureUtils::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette)
 {
@@ -289,42 +290,41 @@ Texture TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 
 Texture TextureUtils::createTooltip(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer)
 {
-	const Color textColor(255, 255, 255, 255);
-	const Color backColor(32, 32, 32, 192);
+	const char *fontName = ArenaFontName::D;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + std::string(fontName) + "\".");
+	}
 
-	const RichTextString richText(
-		text,
-		FontName::D,
-		textColor,
-		TextAlignment::Left,
-		fontLibrary);
-
-	// Create text (position is handled by the caller).
-	constexpr int x = 0;
-	constexpr int y = 0;
-	const TextBox textBox(x, y, richText, fontLibrary, renderer);
-	const Surface &textSurface = textBox.getSurface();
-
-	// Create background. Make it a little bigger than the text box.
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int lineSpacing = 1;
+	TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
 	constexpr int padding = 4;
-	Surface background = Surface::createWithFormat(textSurface.getWidth() + padding, textSurface.getHeight() + padding,
+
+	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	background.fill(backColor.r, backColor.g, backColor.b, backColor.a);
 
-	// Offset the text from the top left corner by a bit so it isn't against the side 
-	// of the tooltip (for aesthetic purposes).
-	const Rect dstRect(
-		padding / 2,
-		padding / 2,
-		textSurface.getWidth(),
-		textSurface.getHeight());
+	const Color backColor(32, 32, 32, 192);
+	surface.fill(backColor.r, backColor.g, backColor.b, backColor.a);
 
-	// Draw the text onto the background.
-	textSurface.blit(background, dstRect);
+	// Offset the text from the top left corner a bit so it isn't against the side of the tooltip
+	// (for aesthetic purposes).
+	const int dstX = padding / 2;
+	const int dstY = padding / 2;
 
-	// Create a hardware texture for the tooltip.
-	Texture tooltip = renderer.createTextureFromSurface(background);
-	return tooltip;
+	const Color textColor(255, 255, 255, 255);
+	BufferView2D<uint32_t> surfacePixelsView(
+		static_cast<uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
+
+	std::vector<std::string_view> textLines = TextRenderUtils::getTextLines(text);
+	constexpr TextAlignment alignment = TextAlignment::TopLeft;
+	TextRenderUtils::drawTextLines(BufferView<const std::string_view>(textLines.data(), static_cast<int>(textLines.size())),
+		fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixelsView);
+
+	Texture texture = renderer.createTextureFromSurface(surface);
+	return texture;
 }
 
 Buffer<TextureAssetReference> TextureUtils::makeTextureAssetRefs(const std::string &filename,

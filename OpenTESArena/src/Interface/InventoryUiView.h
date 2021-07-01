@@ -1,23 +1,23 @@
 #ifndef INVENTORY_UI_VIEW_H
 #define INVENTORY_UI_VIEW_H
 
+#include "../Math/Rect.h"
 #include "../Media/Color.h"
-#include "../UI/FontName.h"
+#include "../UI/ListBox.h"
+
+class FontLibrary;
 
 namespace InventoryUiView
 {
-	constexpr int PlayerInventoryListBoxX = 14;
-	constexpr int PlayerInventoryListBoxY = 50;
-	constexpr FontName PlayerInventoryListBoxFontName = FontName::Teeny;
-
-	constexpr int PlayerInventoryMaxDisplayedItems = 7;
-	constexpr int PlayerInventoryRowSpacing = 3;
+	const Rect PlayerInventoryRect(14, 50, 150, 75);
 
 	const Color PlayerInventoryEquipmentColor(211, 142, 0);
 	const Color PlayerInventoryEquipmentEquippedColor(235, 199, 52);
 	const Color PlayerInventoryMagicItemColor(69, 186, 190);
 	const Color PlayerInventoryMagicItemEquippedColor(138, 255, 255);
 	const Color PlayerInventoryUnequipableColor(199, 32, 0);
+
+	ListBox::Properties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
 }
 
 #endif

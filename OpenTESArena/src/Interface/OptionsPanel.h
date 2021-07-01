@@ -10,32 +10,34 @@
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 
 class AudioManager;
 class Options;
 class Player;
 class Renderer;
-class TextBox;
 
 enum class PlayerInterface;
 
 class OptionsPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> titleTextBox, backToPauseMenuTextBox, graphicsTextBox, audioTextBox,
-		inputTextBox, miscTextBox, devTextBox;
+	TextBox titleTextBox, backToPauseMenuTextBox, graphicsTextBox, audioTextBox, inputTextBox, miscTextBox, devTextBox;
 	Button<Game&> backToPauseMenuButton;
 	Button<OptionsPanel&, OptionsUiModel::Tab*, OptionsUiModel::Tab> tabButton;
 	std::vector<std::unique_ptr<OptionsUiModel::Option>> graphicsOptions, audioOptions,
 		inputOptions, miscOptions, devOptions;
-	std::vector<std::unique_ptr<TextBox>> currentTabTextBoxes;
+	std::vector<TextBox> currentTabTextBoxes;
 	OptionsUiModel::Tab tab;
 
 	// Gets the visible options group based on the current tab.
 	std::vector<std::unique_ptr<OptionsUiModel::Option>> &getVisibleOptions();
 
+	// Initializes an option text box.
+	void initOptionTextBox(int index);
+
 	// Regenerates option text for one option.
-	void updateOptionTextBox(int index);
+	void updateOptionTextBoxText(int index);
 
 	// Draws return buttons and tabs.
 	void drawReturnButtonsAndTabs(Renderer &renderer);
@@ -51,7 +53,7 @@ private:
 	void drawDescription(const std::string &text, Renderer &renderer);
 public:
 	OptionsPanel(Game &game);
-	virtual ~OptionsPanel() = default;
+	~OptionsPanel() override = default;
 
 	bool init();
 

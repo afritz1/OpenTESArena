@@ -11,12 +11,12 @@
 class MainQuestSplashPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> textBox;
+	TextBox textBox;
 	Button<Game&> exitButton;
 	TextureAssetReference splashTextureAssetRef;
 public:
 	MainQuestSplashPanel(Game &game);
-	virtual ~MainQuestSplashPanel() = default;
+	~MainQuestSplashPanel() override = default;
 
 	bool init(int provinceID);
 

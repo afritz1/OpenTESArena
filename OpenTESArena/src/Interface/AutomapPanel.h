@@ -7,6 +7,7 @@
 #include "../Math/Vector2.h"
 #include "../Media/TextureUtils.h"
 #include "../UI/Button.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 #include "../World/VoxelUtils.h"
 
@@ -23,7 +24,6 @@ class Chunk;
 class ChunkManager;
 class Color;
 class Renderer;
-class TextBox;
 class TransitionDefinition;
 class VoxelDefinition;
 
@@ -32,7 +32,7 @@ enum class CardinalDirectionName;
 class AutomapPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> locationTextBox;
+	TextBox locationTextBox;
 	Button<Game&> backToGameButton;
 	Texture mapTexture;
 	TextureBuilderID backgroundTextureBuilderID;
@@ -47,7 +47,7 @@ private:
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
 	AutomapPanel(Game &game);
-	virtual ~AutomapPanel() = default;
+	~AutomapPanel() override = default;
 
 	bool init(const CoordDouble3 &playerCoord, const VoxelDouble2 &playerDirection,
 		const ChunkManager &chunkManager, const std::string &locationName);

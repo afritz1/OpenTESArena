@@ -13,25 +13,17 @@ MainQuestSplashPanel::MainQuestSplashPanel(Game &game)
 bool MainQuestSplashPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->textBox = [&game, provinceID]()
+	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, provinceID);
+	const TextBox::InitInfo descriptionTextBoxInitInfo =
+		MainQuestSplashUiView::getDescriptionTextBoxInitInfo(descriptionText, fontLibrary);
+	if (!this->textBox.init(descriptionTextBoxInitInfo, descriptionText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			MainQuestSplashUiModel::getDungeonText(game, provinceID),
-			MainQuestSplashUiView::DescriptionFontName,
-			MainQuestSplashUiView::DescriptionTextColor,
-			MainQuestSplashUiView::DescriptionTextAlignment,
-			MainQuestSplashUiView::DescriptionLineSpacing,
-			fontLibrary);
-		
-		return std::make_unique<TextBox>(
-			MainQuestSplashUiView::getDescriptionTextBoxX(richText.getDimensions().x),
-			MainQuestSplashUiView::getDescriptionTextBoxY(),
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init description text box.");
+		return false;
+	}
 
 	this->exitButton = Button<Game&>(
 		MainQuestSplashUiView::ExitButtonX,
@@ -96,5 +88,6 @@ void MainQuestSplashPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*splashTextureBuilderID, *splashPaletteID, textureManager);
 
 	// Draw text.
-	renderer.drawOriginal(this->textBox->getTexture(), this->textBox->getX(), this->textBox->getY());
+	const Rect &textBoxRect = this->textBox.getRect();
+	renderer.drawOriginal(this->textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 }

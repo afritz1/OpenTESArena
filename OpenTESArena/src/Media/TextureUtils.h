@@ -20,8 +20,6 @@ class Surface;
 class Texture;
 class TextureManager;
 
-enum class FontName;
-
 struct TextureAssetReference;
 
 namespace TextureUtils

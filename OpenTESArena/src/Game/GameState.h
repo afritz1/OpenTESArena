@@ -16,7 +16,6 @@
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
-#include "../UI/TimedTextBox.h"
 #include "../World/MapDefinition.h"
 #include "../World/MapInstance.h"
 #include "../World/WeatherDefinition.h"
@@ -43,7 +42,6 @@ class MIFFile;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
-class TextBox;
 class Texture;
 class TextureManager;
 
@@ -110,12 +108,12 @@ private:
 	int locationIndex;
 	std::unique_ptr<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
 
-	// Game world interface display texts with their associated time remaining. These values 
-	// are stored here so they are not destroyed when switching away from the game world panel.
+	// Game world interface display texts have an associated time remaining. These values are stored here so
+	// they are not destroyed when switching away from the game world panel.
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
-	TimedTextBox triggerText, actionText, effectText;
+	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
 
 	WeatherList weathers;
 
@@ -254,23 +252,18 @@ public:
 	bool actionTextIsVisible() const;
 	bool effectTextIsVisible() const;
 
-	// On-screen text render info for the game world.
-	void getTriggerTextRenderInfo(const Texture **outTexture) const;
-	void getActionTextRenderInfo(const Texture **outTexture) const;
-	void getEffectTextRenderInfo(const Texture **outTexture) const;
-
 	// Sets the player's world map travel data when they select a destination.
 	void setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
 
-	// Sets on-screen text for various types of in-game messages.
-	void setTriggerText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
-	void setActionText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
-	void setEffectText(const std::string &text, FontLibrary &fontLibrary, Renderer &renderer);
+	// Sets on-screen text duration for various types of in-game messages.
+	void setTriggerTextDuration(const std::string_view &text);
+	void setActionTextDuration(const std::string_view &text);
+	void setEffectTextDuration(const std::string_view &text);
 
 	// Resets on-screen text boxes to empty and hidden.
-	void resetTriggerText();
-	void resetActionText();
-	void resetEffectText();
+	void resetTriggerTextDuration();
+	void resetActionTextDuration();
+	void resetEffectTextDuration();
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(const ExeData &exeData);

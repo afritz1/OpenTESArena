@@ -10,8 +10,10 @@
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
+#include "../UI/TextRenderUtils.h"
 #include "../World/Coord.h"
 
 class ChunkManager;
@@ -59,12 +61,15 @@ namespace AutomapUiView
 	const Color ColorWildWall(109, 69, 32);
 	const Color ColorWildDoor(255, 0, 0);
 
-	const Int2 LocationTextBoxCenterPoint(120, 28);
-	constexpr FontName LocationTextBoxFontName = FontName::A;
+	const Int2 LocationTextBoxCenterPoint(121, 29);
+	const std::string LocationTextBoxFontName = ArenaFontName::A;
 	const Color LocationTextBoxFontColor(56, 16, 12);
-	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::Center;
+	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::TopCenter;
 	const Color LocationTextBoxShadowColor(150, 101, 52);
-	const Int2 LocationTextBoxShadowOffset(2, 2);
+	constexpr int LocationTextBoxShadowOffsetX = 2;
+	constexpr int LocationTextBoxShadowOffsetY = 2;
+
+	TextBox::InitInfo getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToGameButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
 	constexpr int BackToGameButtonWidth = 38;

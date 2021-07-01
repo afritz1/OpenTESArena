@@ -13,25 +13,29 @@ LoadSavePanel::LoadSavePanel(Game &game)
 bool LoadSavePanel::init(LoadSavePanel::Type type)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
 	// Populate save slots.
 	const std::vector<LoadSaveUiModel::Entry> entries = LoadSaveUiModel::getSaveEntries(game);
 	for (int i = 0; i < static_cast<int>(entries.size()); i++)
 	{
 		const LoadSaveUiModel::Entry &entry = entries[i];
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			entry.displayText,
+		const std::string &text = entry.displayText;
+		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+			text,
+			LoadSaveUiView::getEntryCenterPoint(i),
 			LoadSaveUiView::EntryFontName,
 			LoadSaveUiView::EntryTextColor,
 			LoadSaveUiView::EntryTextAlignment,
 			fontLibrary);
 
-		std::unique_ptr<TextBox> textBox = std::make_unique<TextBox>(
-			LoadSaveUiView::getEntryCenterPoint(i),
-			richText,
-			fontLibrary,
-			game.getRenderer());
+		TextBox textBox;
+		if (!textBox.init(textBoxInitInfo, text, renderer))
+		{
+			DebugLogError("Couldn't init load/save text box " + std::to_string(i) + ".");
+			continue;
+		}
 
 		this->saveTextBoxes.emplace_back(std::move(textBox));
 	}
@@ -101,12 +105,9 @@ void LoadSavePanel::render(Renderer &renderer)
 	renderer.drawOriginal(*textureBuilderID, *paletteID, textureManager);
 
 	// Draw save text.
-	for (const auto &textBox : this->saveTextBoxes)
+	for (TextBox &textBox : this->saveTextBoxes)
 	{
-		if (textBox.get() != nullptr)
-		{
-			const Rect textBoxRect = textBox->getRect();
-			renderer.drawOriginal(textBox->getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
-		}
+		const Rect &textBoxRect = textBox.getRect();
+		renderer.drawOriginal(textBox.getTexture(), textBoxRect.getLeft(), textBoxRect.getTop());
 	}
 }

@@ -36,13 +36,14 @@ void WorldMapUiController::onFastTravelAnimationFinished(Game &game, int targetP
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
 	// Update game clock.
+	// @todo: maybe move this to a WorldMapLogicController namespace
 	WorldMapUiModel::tickTravelTime(game, travelDays);
 
 	// Update weathers.
 	gameState.updateWeatherList(exeData);
 
 	// Clear the lore text (action text and effect text are unchanged).
-	gameState.resetTriggerText();
+	gameState.resetTriggerTextDuration();
 
 	// Clear any on-voxel-enter event to avoid things like fast travelling out of the
 	// starting dungeon then being teleported to a random city when going through any

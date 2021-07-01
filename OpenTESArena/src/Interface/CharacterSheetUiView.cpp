@@ -6,6 +6,45 @@
 #include "../Game/Game.h"
 #include "../Media/PortraitFile.h"
 
+TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerNameTextBoxX,
+		CharacterSheetUiView::PlayerNameTextBoxY,
+		CharacterSheetUiView::PlayerNameTextBoxFontName,
+		CharacterSheetUiView::PlayerNameTextBoxColor,
+		CharacterSheetUiView::PlayerNameTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerRaceTextBoxX,
+		CharacterSheetUiView::PlayerRaceTextBoxY,
+		CharacterSheetUiView::PlayerRaceTextBoxFontName,
+		CharacterSheetUiView::PlayerRaceTextBoxColor,
+		CharacterSheetUiView::PlayerRaceTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view &text,
+	const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerClassTextBoxX,
+		CharacterSheetUiView::PlayerClassTextBoxY,
+		CharacterSheetUiView::PlayerClassTextBoxFontName,
+		CharacterSheetUiView::PlayerClassTextBoxColor,
+		CharacterSheetUiView::PlayerClassTextBoxAlignment,
+		fontLibrary);
+}
+
 int CharacterSheetUiView::getBodyOffsetX(Game &game)
 {
 	const TextureAssetReference textureAssetRef = CharacterSheetUiView::getBodyTextureAssetRef(game);

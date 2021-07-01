@@ -7,6 +7,7 @@
 
 class Game;
 class Rect;
+class TextBox;
 
 namespace PlayerLogicController
 {
@@ -22,7 +23,8 @@ namespace PlayerLogicController
 
 	// Handles the behavior of the player clicking in the game world. "primaryClick" is true for left clicks,
 	// false for right clicks.
-	void handleClickInWorld(Game &game, const Int2 &nativePoint, bool primaryClick, bool debugFadeVoxel);
+	void handleClickInWorld(Game &game, const Int2 &nativePoint, bool primaryClick, bool debugFadeVoxel,
+		TextBox &actionTextBox);
 }
 
 #endif

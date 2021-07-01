@@ -16,8 +16,6 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextEntry.h"
 
@@ -29,6 +27,8 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game)
 bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provinceID)
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
@@ -39,45 +39,24 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		game.getTextureManager(),
 		game.getRenderer());
 
-	this->textTitleTextBox = [&game]()
+	const std::string textTitleText = ProvinceMapUiModel::getSearchSubPanelTitleText(game);
+	const TextBox::InitInfo textTitleTextBoxInitInfo =
+		ProvinceMapUiView::getSearchSubPanelTitleTextBoxInitInfo(textTitleText, fontLibrary);
+	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			ProvinceMapUiModel::getSearchSubPanelTitleText(game),
-			ProvinceMapUiView::SearchSubPanelTitleFontName,
-			ProvinceMapUiView::SearchSubPanelTitleColor,
-			ProvinceMapUiView::SearchSubPanelTitleTextAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			ProvinceMapUiView::SearchSubPanelTitleTextBoxX,
-			ProvinceMapUiView::SearchSubPanelTitleTextBoxY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
-
-	this->textEntryTextBox = [&game]()
+	const TextBox::InitInfo textEntryTextBoxInitInfo =
+		ProvinceMapUiView::getSearchSubPanelTextEntryTextBoxInitInfo(fontLibrary);
+	if (!this->textEntryTextBox.init(textEntryTextBoxInitInfo, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			std::string(),
-			ProvinceMapUiView::SearchSubPanelTextEntryFontName,
-			ProvinceMapUiView::SearchSubPanelTextEntryColor,
-			ProvinceMapUiView::SearchSubPanelTextEntryTextAlignment,
-			fontLibrary);
-
-		const Int2 &position = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
-		return std::make_unique<TextBox>(
-			position.x,
-			position.y,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init text entry text box.");
+		return false;
+	}
 
 	this->textAcceptButton = Button<Game&, ProvinceSearchSubPanel&>(ProvinceMapUiController::onSearchTextAccepted);
-	this->listAcceptButton = Button<Game&, ProvinceSearchSubPanel&, int>(ProvinceMapUiController::onSearchListLocationSelected);
 	this->listUpButton = Button<ListBox&>(
 		ProvinceMapUiView::SearchSubPanelListUpButtonCenterPoint,
 		ProvinceMapUiView::SearchSubPanelListUpButtonWidth,
@@ -123,26 +102,25 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	std::vector<std::string> locationNames;
-	for (const int locationIndex : this->locationsListIndices)
+	this->locationsListBox.init(ProvinceMapUiView::SearchSubPanelListBoxRect,
+		ProvinceMapUiView::makeSearchSubPanelListBoxProperties(game.getFontLibrary()), game.getRenderer());
+
+	for (int i = 0; i < static_cast<int>(this->locationsListIndices.size()); i++)
 	{
+		const int locationIndex = this->locationsListIndices[i];
 		const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
 		const int locationDefIndex = locationInst.getLocationDefIndex();
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-		const std::string &locationName = locationInst.getName(locationDef);
+		std::string locationName = locationInst.getName(locationDef);
 
-		locationNames.push_back(locationName);
+		this->locationsListBox.add(std::move(locationName));
+		this->locationsListBox.setCallback(i, [this, &game, i]()
+		{
+			DebugAssertIndex(this->locationsListIndices, i);
+			const int locationsListIndex = this->locationsListIndices[i];
+			ProvinceMapUiController::onSearchListLocationSelected(game, *this, locationsListIndex);
+		});
 	}
-
-	this->locationsListBox = std::make_unique<ListBox>(
-		ProvinceMapUiView::SearchSubPanelListBoxX,
-		ProvinceMapUiView::SearchSubPanelListBoxY,
-		ProvinceMapUiView::SearchSubPanelListBoxTextColor,
-		locationNames,
-		ProvinceMapUiView::SearchSubPanelListBoxFontName,
-		ProvinceMapUiView::SearchSubPanelListBoxMaxDisplayed,
-		game.getFontLibrary(),
-		game.getRenderer());
 }
 
 void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
@@ -177,27 +155,7 @@ void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
 
 		if (textChanged)
 		{
-			// Update the displayed location name.
-			this->textEntryTextBox = [this, &game]()
-			{
-				const RichTextString &oldRichText = this->textEntryTextBox->getRichText();
-
-				const auto &fontLibrary = game.getFontLibrary();
-				const RichTextString richText(
-					this->locationName,
-					oldRichText.getFontName(),
-					oldRichText.getColor(),
-					oldRichText.getAlignment(),
-					fontLibrary);
-
-				const Int2 &position = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
-				return std::make_unique<TextBox>(
-					position.x,
-					position.y,
-					richText,
-					fontLibrary,
-					game.getRenderer());
-			}();
+			this->textEntryTextBox.setText(this->locationName);
 		}
 	}
 }
@@ -226,33 +184,29 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
 
 		// Custom width to better fill the screen-space.
-		const Rect listBoxRect(
-			this->locationsListBox->getPoint().x,
-			this->locationsListBox->getPoint().y,
-			ProvinceMapUiView::SearchSubPanelListBoxWidth,
-			this->locationsListBox->getDimensions().y);
-
+		const Rect &listBoxRect = this->locationsListBox.getRect();
 		if (listBoxRect.contains(originalPoint))
 		{
 			if (leftClick)
 			{
-				// Verify that the clicked index is valid. If so, get the location ID and
-				// try to select the location.
-				const int index = this->locationsListBox->getClickedIndex(originalPoint);
-				if ((index >= 0) && (index < this->locationsListBox->getElementCount()))
+				for (int i = 0; i < this->locationsListBox.getCount(); i++)
 				{
-					DebugAssertIndex(this->locationsListIndices, index);
-					const int locationsListIndex = this->locationsListIndices[index];
-					this->listAcceptButton.click(this->getGame(), *this, locationsListIndex);
+					const Rect &itemGlobalRect = this->locationsListBox.getItemGlobalRect(i);
+					if (itemGlobalRect.contains(originalPoint))
+					{
+						const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
+						itemCallback();
+						break;
+					}
 				}
 			}
 			else if (mouseWheelUp)
 			{
-				this->listUpButton.click(*this->locationsListBox);
+				this->listUpButton.click(this->locationsListBox);
 			}
 			else if (mouseWheelDown)
 			{
-				this->listDownButton.click(*this->locationsListBox);
+				this->listDownButton.click(this->locationsListBox);
 			}
 		}
 		else if (leftClick)
@@ -260,11 +214,11 @@ void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
 			// Check scroll buttons (they are outside the list box to the left).
 			if (this->listUpButton.contains(originalPoint))
 			{
-				this->listUpButton.click(*this->locationsListBox);
+				this->listUpButton.click(this->locationsListBox);
 			}
 			else if (this->listDownButton.contains(originalPoint))
 			{
-				this->listDownButton.click(*this->locationsListBox);
+				this->listDownButton.click(this->locationsListBox);
 			}
 		}
 	}
@@ -296,8 +250,10 @@ void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY);
 
 	// Draw text: title, location name.
-	renderer.drawOriginal(this->textTitleTextBox->getTexture(), this->textTitleTextBox->getX(), this->textTitleTextBox->getY());
-	renderer.drawOriginal(this->textEntryTextBox->getTexture(), this->textEntryTextBox->getX(), this->textEntryTextBox->getY());
+	const Rect &titleTextBoxRect = this->textTitleTextBox.getRect();
+	const Rect &entryTextBoxRect = this->textEntryTextBox.getRect();
+	renderer.drawOriginal(this->textTitleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+	renderer.drawOriginal(this->textEntryTextBox.getTexture(), entryTextBoxRect.getLeft(), entryTextBoxRect.getTop());
 
 	// @todo: draw blinking cursor.
 }
@@ -331,8 +287,9 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 		textureManager);
 
 	// Draw list box text.
-	renderer.drawOriginal(this->locationsListBox->getTexture(),
-		this->locationsListBox->getPoint().x, this->locationsListBox->getPoint().y);
+	const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+	renderer.drawOriginal(this->locationsListBox.getTexture(),
+		locationsListBoxRect.getLeft(), locationsListBoxRect.getTop());
 }
 
 void ProvinceSearchSubPanel::render(Renderer &renderer)

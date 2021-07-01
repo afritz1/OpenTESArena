@@ -1,0 +1,36 @@
+#include "InventoryUiView.h"
+#include "../UI/ArenaFontName.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/TextRenderUtils.h"
+
+ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary)
+{
+	const char *fontName = ArenaFontName::Teeny;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get player inventory list box font \"" + std::string(fontName) + "\".");
+	}
+
+	constexpr int maxDisplayedItemCount = 7;
+	std::string dummyText;
+	for (int i = 0; i < maxDisplayedItemCount; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		std::string dummyLine(24, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
+		dummyText += dummyLine;
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	constexpr int rowSpacing = 3;
+	const TextRenderUtils::TextureGenInfo textureGenInfo =
+		TextRenderUtils::makeTextureGenInfo(dummyText, fontDef, std::nullopt, rowSpacing);
+
+	constexpr double scrollScale = 1.0;
+	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
+		InventoryUiView::PlayerInventoryEquipmentColor, scrollScale, rowSpacing);
+}

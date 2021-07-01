@@ -56,7 +56,7 @@ private:
 		Random &random, double dt);
 public:
 	DynamicEntity();
-	virtual ~DynamicEntity() = default;
+	~DynamicEntity() override = default;
 
 	void initCitizen(EntityDefID defID, const EntityAnimationInstance &animInst,
 		CardinalDirectionName direction);
@@ -85,8 +85,8 @@ public:
 	void setDestination(const NewDouble2 *point, double minDistance);
 	void setDestination(const NewDouble2 *point);
 
-	virtual void reset() override;
-	virtual void tick(Game &game, double dt) override;
+	void reset() override;
+	void tick(Game &game, double dt) override;
 };
 
 #endif

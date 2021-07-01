@@ -27,7 +27,7 @@ class TransitionDefinition;
 class GameWorldPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox;
+	TextBox playerNameTextBox, triggerText, actionText, effectText;
 	Button<Game&> characterSheetButton, statusButton, logbookButton, pauseButton;
 	Button<Player&> drawWeaponButton;
 	Button<> stealButton, magicButton, useItemButton, campButton;
@@ -42,7 +42,7 @@ private:
 	void drawCompass(const VoxelDouble2 &direction, TextureManager &textureManager, Renderer &renderer);
 public:
 	GameWorldPanel(Game &game);
-	virtual ~GameWorldPanel();
+	~GameWorldPanel() override;
 
 	bool init();
 

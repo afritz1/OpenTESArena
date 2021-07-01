@@ -17,10 +17,7 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 LogbookPanel::LogbookPanel(Game &game)
@@ -29,23 +26,17 @@ LogbookPanel::LogbookPanel(Game &game)
 bool LogbookPanel::init()
 {
 	auto &game = this->getGame();
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
 
-	this->titleTextBox = [&game]()
+	const std::string titleText = LogbookUiModel::getTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			LogbookUiModel::getTitleText(game),
-			LogbookUiView::TitleFontName,
-			LogbookUiView::TitleTextColor,
-			LogbookUiView::TitleTextAlignment,
-			fontLibrary);
-
-		return std::make_unique<TextBox>(
-			LogbookUiView::TitleTextCenterPoint,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
 	this->backButton = Button<Game&>(
 		LogbookUiView::BackButtonCenterPoint,
@@ -113,5 +104,6 @@ void LogbookPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *paletteID, textureManager);
 
 	// Draw text: title.
-	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 }

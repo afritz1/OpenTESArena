@@ -11,20 +11,24 @@ namespace
 	}
 }
 
+std::string PauseMenuUiModel::getVolumeString(double percent)
+{
+	const int volumeInteger = VolumePercentToInteger(percent);
+	return std::to_string(volumeInteger);
+}
+
 std::string PauseMenuUiModel::getSoundVolumeText(Game &game)
 {
 	const auto &options = game.getOptions();
 	const double volumePercent = options.getAudio_SoundVolume();
-	const int volumeInteger = VolumePercentToInteger(volumePercent);
-	return std::to_string(volumeInteger);
+	return PauseMenuUiModel::getVolumeString(volumePercent);
 }
 
 std::string PauseMenuUiModel::getMusicVolumeText(Game &game)
 {
 	const auto &options = game.getOptions();
 	const double volumePercent = options.getAudio_MusicVolume();
-	const int volumeInteger = VolumePercentToInteger(volumePercent);
-	return std::to_string(volumeInteger);
+	return PauseMenuUiModel::getVolumeString(volumePercent);
 }
 
 std::string PauseMenuUiModel::getOptionsButtonText(Game &game)

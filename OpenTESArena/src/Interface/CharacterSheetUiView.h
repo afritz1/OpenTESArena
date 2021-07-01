@@ -2,11 +2,13 @@
 #define CHARACTER_SHEET_UI_VIEW_H
 
 #include "../Assets/TextureAssetReference.h"
+#include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 class Game;
 
@@ -14,21 +16,25 @@ namespace CharacterSheetUiView
 {
 	constexpr int PlayerNameTextBoxX = 10;
 	constexpr int PlayerNameTextBoxY = 8;
-	constexpr FontName PlayerNameTextBoxFontName = FontName::Arena;
+	const std::string PlayerNameTextBoxFontName = ArenaFontName::Arena;
 	const Color PlayerNameTextBoxColor(199, 199, 199);
-	constexpr TextAlignment PlayerNameTextBoxAlignment = TextAlignment::Left;
+	constexpr TextAlignment PlayerNameTextBoxAlignment = TextAlignment::TopLeft;
 
 	constexpr int PlayerRaceTextBoxX = 10;
 	constexpr int PlayerRaceTextBoxY = 17;
-	constexpr FontName PlayerRaceTextBoxFontName = FontName::Arena;
+	const std::string PlayerRaceTextBoxFontName = ArenaFontName::Arena;
 	const Color PlayerRaceTextBoxColor(199, 199, 199);
-	constexpr TextAlignment PlayerRaceTextBoxAlignment = TextAlignment::Left;
+	constexpr TextAlignment PlayerRaceTextBoxAlignment = TextAlignment::TopLeft;
 
 	constexpr int PlayerClassTextBoxX = 10;
 	constexpr int PlayerClassTextBoxY = 26;
-	constexpr FontName PlayerClassTextBoxFontName = FontName::Arena;
+	const std::string PlayerClassTextBoxFontName = ArenaFontName::Arena;
 	const Color PlayerClassTextBoxColor(199, 199, 199);
-	constexpr TextAlignment PlayerClassTextBoxAlignment = TextAlignment::Left;
+	constexpr TextAlignment PlayerClassTextBoxAlignment = TextAlignment::TopLeft;
+
+	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

@@ -25,11 +25,8 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 
 #include "components/debug/Debug.h"
 
@@ -51,52 +48,44 @@ bool ChooseClassPanel::init()
 
 	// Sort character classes alphabetically for use with the list box.
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
-		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b)
+		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b) // @todo: move this lambda to UiModel/UiView
 	{
 		const std::string &aName = a.getName();
 		const std::string &bName = b.getName();
 		return aName.compare(bName) < 0;
 	});
 
-	this->titleTextBox = [&game]()
+	auto &renderer = game.getRenderer();
+	const auto &fontLibrary = game.getFontLibrary();
+	const std::string titleText = CharacterCreationUiModel::getChooseClassTitleText(game);
+	const TextBox::InitInfo titleTextBoxInitInfo =
+		CharacterCreationUiView::getChooseClassTitleTextBoxInitInfo(titleText, fontLibrary);
+	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
-		const auto &fontLibrary = game.getFontLibrary();
-		const RichTextString richText(
-			CharacterCreationUiModel::getChooseClassTitleText(game),
-			CharacterCreationUiView::ChooseClassTitleFontName,
-			CharacterCreationUiView::ChooseClassTitleColor,
-			CharacterCreationUiView::ChooseClassTitleAlignment,
-			fontLibrary);
+		DebugLogError("Couldn't init title text box.");
+		return false;
+	}
 
-		return std::make_unique<TextBox>(
-			CharacterCreationUiView::ChooseClassTitleX,
-			CharacterCreationUiView::ChooseClassTitleY,
-			richText,
-			fontLibrary,
-			game.getRenderer());
-	}();
+	this->classesListBox.init(CharacterCreationUiView::getClassListRect(game),
+		CharacterCreationUiView::makeClassListBoxProperties(game.getFontLibrary()), game.getRenderer());
 
-	this->classesListBox = [this, &game]()
+	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{
-		const Rect classListRect = CharacterCreationUiView::getClassListRect(game);
-
-		// This depends on the character classes being already sorted.
-		std::vector<std::string> elements;
-		for (const auto &charClass : this->charClasses)
+		const CharacterClassDefinition &charClass = this->charClasses[i];
+		this->classesListBox.add(std::string(charClass.getName()));
+		this->classesListBox.setCallback(i, [&game, &charClass]()
 		{
-			elements.push_back(charClass.getName());
-		}
+			const auto &charClassLibrary = game.getCharacterClassLibrary();
+			int charClassDefID;
+			if (!charClassLibrary.tryGetDefinitionIndex(charClass, &charClassDefID))
+			{
+				DebugLogError("Couldn't get index of character class definition \"" + charClass.getName() + "\".");
+				return;
+			}
 
-		return std::make_unique<ListBox>(
-			classListRect.getLeft(),
-			classListRect.getTop(),
-			CharacterCreationUiView::ChooseClassListBoxTextColor,
-			elements,
-			CharacterCreationUiView::ChooseClassListBoxFontName,
-			CharacterCreationUiView::ChooseClassListBoxMaxDisplayedItems,
-			game.getFontLibrary(),
-			game.getRenderer());
-	}();
+			CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(game, charClassDefID);
+		});
+	}
 
 	this->backToClassCreationButton = Button<Game&>(CharacterCreationUiController::onBackToChooseClassCreationButtonSelected);
 
@@ -121,8 +110,6 @@ bool ChooseClassPanel::init()
 			rect.getHeight(),
 			CharacterCreationUiController::onChooseClassListBoxDownButtonSelected);
 	}();
-
-	this->acceptButton = Button<Game&, int>(CharacterCreationUiController::onChooseClassListBoxAcceptButtonSelected);
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. Generating them all at once here
 	// is too slow in debug mode.
@@ -156,51 +143,41 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
-	// See if a class in the list was clicked, or if it is being scrolled. Use a custom
-	// width for the list box so it better fills the screen-space.
+	// See if a class in the list was clicked, or if it is being scrolled.
 	const Rect classListRect = CharacterCreationUiView::getClassListRect(game);
 	if (classListRect.contains(originalPoint))
 	{
 		if (leftClick)
 		{
-			// Verify that the clicked index is valid. If so, use that character class.
-			const int index = this->classesListBox->getClickedIndex(originalPoint);
-			if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+			for (int i = 0; i < this->classesListBox.getCount(); i++)
 			{
-				DebugAssertIndex(this->charClasses, index);
-				const CharacterClassDefinition &charClassDef = this->charClasses[index];
-
-				const auto &charClassLibrary = game.getCharacterClassLibrary();
-				int charClassDefID;
-				if (!charClassLibrary.tryGetDefinitionIndex(charClassDef, &charClassDefID))
+				const Rect &itemGlobalRect = this->classesListBox.getItemGlobalRect(i);
+				if (itemGlobalRect.contains(originalPoint))
 				{
-					DebugLogError("Couldn't get index of character class definition \"" +
-						charClassDef.getName() + "\".");
-					return;
+					const ListBox::ItemCallback &itemCallback = this->classesListBox.getCallback(i);
+					itemCallback();
+					break;
 				}
-
-				this->acceptButton.click(game, charClassDefID);
 			}
 		}
 		else if (mouseWheelUp)
 		{
-			this->upButton.click(*this->classesListBox);
+			this->upButton.click(this->classesListBox);
 		}
 		else if (mouseWheelDown)
 		{
-			this->downButton.click(*this->classesListBox);
+			this->downButton.click(this->classesListBox);
 		}
 	}
 	else if (leftClick)
 	{
-		// Check scroll buttons (they are outside the list box to the left).
 		if (this->upButton.contains(originalPoint))
 		{
-			this->upButton.click(*this->classesListBox);
+			this->upButton.click(this->classesListBox);
 		}
 		else if (this->downButton.contains(originalPoint))
 		{
-			this->downButton.click(*this->classesListBox);
+			this->downButton.click(this->classesListBox);
 		}
 	}
 }
@@ -270,11 +247,14 @@ void ChooseClassPanel::render(Renderer &renderer)
 	}
 
 	renderer.drawOriginal(*listTextureBuilderID, *backgroundPaletteID,
-		CharacterCreationUiView::ChooseClassListBoxTextureX, CharacterCreationUiView::ChooseClassListBoxTextureY, textureManager);
+		CharacterCreationUiView::ChooseClassListTextureX, CharacterCreationUiView::ChooseClassListTextureY, textureManager);
 
 	// Draw text: title, list.
-	renderer.drawOriginal(this->titleTextBox->getTexture(), this->titleTextBox->getX(), this->titleTextBox->getY());
-	renderer.drawOriginal(this->classesListBox->getTexture(), this->classesListBox->getPoint().x, this->classesListBox->getPoint().y);
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
+
+	const Rect &classesListBoxRect = this->classesListBox.getRect();
+	renderer.drawOriginal(this->classesListBox.getTexture(), classesListBoxRect.getLeft(), classesListBoxRect.getTop());
 
 	// Draw tooltip if over a valid element in the list box.
 	const auto &inputManager = game.getInputManager();
@@ -284,10 +264,14 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const Rect classListRect = CharacterCreationUiView::getClassListRect(game);
 	if (classListRect.contains(originalPoint))
 	{
-		int index = this->classesListBox->getClickedIndex(originalPoint);
-		if ((index >= 0) && (index < this->classesListBox->getElementCount()))
+		for (int i = 0; i < this->classesListBox.getCount(); i++)
 		{
-			this->drawClassTooltip(index, renderer);
+			const Rect &itemGlobalRect = this->classesListBox.getItemGlobalRect(i);
+			if (itemGlobalRect.contains(originalPoint))
+			{
+				this->drawClassTooltip(i, renderer);
+				break;
+			}
 		}
 	}
 }

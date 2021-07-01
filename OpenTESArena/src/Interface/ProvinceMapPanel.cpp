@@ -12,6 +12,8 @@
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
 #include "../UI/CursorData.h"
+#include "../UI/Surface.h"
+#include "../UI/TextRenderUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -532,23 +534,34 @@ void ProvinceMapPanel::drawLocationName(int locationID, Renderer &renderer)
 {
 	auto &game = this->getGame();
 	const auto &fontLibrary = game.getFontLibrary();
-	const RichTextString richText(
-		ProvinceMapUiModel::getLocationName(game, this->provinceID, locationID),
+
+	const std::string text = ProvinceMapUiModel::getLocationName(game, this->provinceID, locationID);
+	const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, locationID);
+	const Int2 textBoxCenter = locationCenter - Int2(0, 10);
+	const TextRenderUtils::TextShadowInfo shadow(
+		ProvinceMapUiView::LocationTextShadowOffsetX,
+		ProvinceMapUiView::LocationTextShadowOffsetY,
+		ProvinceMapUiView::LocationTextShadowColor);
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		textBoxCenter,
 		ProvinceMapUiView::LocationFontName,
 		ProvinceMapUiView::LocationTextColor,
 		ProvinceMapUiView::LocationTextAlignment,
+		shadow,
+		0,
 		fontLibrary);
-
-	const Int2 center = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, locationID);
-	const TextBox::ShadowData shadowData(
-		ProvinceMapUiView::LocationTextShadowColor,
-		ProvinceMapUiView::LocationTextShadowOffset);
-	const TextBox textBox(center - Int2(0, 10), richText, &shadowData, fontLibrary, renderer);
-	const Surface &textBoxSurface = textBox.getSurface();
+	
+	TextBox textBox;
+	if (!textBox.init(textBoxInitInfo, text, renderer))
+	{
+		DebugCrash("Couldn't init hovered location text box.");
+	}
 
 	// Clamp to screen edges, with some extra space on the left and right.
+	const Rect &textBoxRect = textBox.getRect();
 	const Int2 clampedPosition = ProvinceMapUiView::getLocationTextClampedPosition(
-		textBox.getX(), textBox.getY(), textBoxSurface.getWidth(), textBoxSurface.getHeight());
+		textBoxRect.getLeft(), textBoxRect.getTop(), textBoxRect.getWidth(), textBoxRect.getHeight());
 	renderer.drawOriginal(textBox.getTexture(), clampedPosition.x, clampedPosition.y);
 }
 

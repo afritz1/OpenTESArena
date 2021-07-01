@@ -4,21 +4,21 @@
 #include "Panel.h"
 #include "../UI/Button.h"
 #include "../UI/ListBox.h"
+#include "../UI/TextBox.h"
 
 class Renderer;
-class TextBox;
 
 class CharacterEquipmentPanel : public Panel
 {
 private:
-	std::unique_ptr<TextBox> playerNameTextBox, playerRaceTextBox, playerClassTextBox;
-	std::unique_ptr<ListBox> inventoryListBox;
+	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
+	ListBox inventoryListBox;
 	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;
 	Button<ListBox&> scrollDownButton, scrollUpButton;
 public:
 	CharacterEquipmentPanel(Game &game);
-	virtual ~CharacterEquipmentPanel() = default;
+	~CharacterEquipmentPanel() override = default;
 
 	bool init();
 

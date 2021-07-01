@@ -2,6 +2,7 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../World/Chunk.h"
 #include "../World/ChunkManager.h"
@@ -12,6 +13,24 @@
 #include "../World/VoxelFacing2D.h"
 
 #include "components/debug/Debug.h"
+
+TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+{
+	const TextRenderUtils::TextShadowInfo shadowInfo(
+		AutomapUiView::LocationTextBoxShadowOffsetX,
+		AutomapUiView::LocationTextBoxShadowOffsetY,
+		AutomapUiView::LocationTextBoxShadowColor);
+
+	return TextBox::InitInfo::makeWithCenter(
+		text,
+		AutomapUiView::LocationTextBoxCenterPoint,
+		AutomapUiView::LocationTextBoxFontName,
+		AutomapUiView::LocationTextBoxFontColor,
+		AutomapUiView::LocationTextBoxTextAlignment,
+		shadowInfo,
+		0,
+		fontLibrary);
+}
 
 TextureAssetReference AutomapUiView::getBackgroundTextureAssetRef()
 {

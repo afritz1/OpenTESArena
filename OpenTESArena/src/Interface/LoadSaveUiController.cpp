@@ -4,24 +4,26 @@
 #include "TextSubPanel.h"
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/FontName.h"
-#include "../UI/RichTextString.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
+#include "../UI/TextBox.h"
 
 void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 {
 	// @temp: draw not implemented pop-up.
+	const std::string text = "Not implemented\n(save slot " + std::to_string(index) + ")";
 	const Int2 center(
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		ArenaRenderUtils::SCREEN_HEIGHT / 2);
 
-	const int lineSpacing = 1;
-	const RichTextString richText(
-		"Not implemented\n(save slot " + std::to_string(index) + ")",
-		FontName::Arena,
+	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		text,
+		center,
+		ArenaFontName::Arena,
 		Color(150, 97, 0),
-		TextAlignment::Center,
-		lineSpacing,
+		TextAlignment::MiddleCenter,
+		std::nullopt,
+		1,
 		game.getFontLibrary());
 
 	auto popUpFunction = [](Game &game)
@@ -30,10 +32,10 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 	};
 
 	Texture texture = TextureUtils::generate(TextureUtils::PatternType::Dark,
-		richText.getDimensions().x + 10, richText.getDimensions().y + 10,
+		textBoxInitInfo.rect.getWidth() + 10, textBoxInitInfo.rect.getHeight() + 10,
 		game.getTextureManager(), game.getRenderer());
 
-	game.pushSubPanel<TextSubPanel>(center, richText, popUpFunction, std::move(texture), center);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(texture), center);
 }
 
 void LoadSaveUiController::onBackButtonSelected(Game &game)
