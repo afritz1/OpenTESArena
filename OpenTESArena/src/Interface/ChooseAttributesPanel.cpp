@@ -56,9 +56,9 @@ bool ChooseAttributesPanel::init()
 		CharacterSheetUiView::DoneButtonHeight,
 		CharacterCreationUiController::onAttributesDoneButtonSelected);
 	this->portraitButton = Button<Game&, bool>(
-		CharacterCreationUiView::AppearancePortraitButtonCenterPoint,
-		CharacterCreationUiView::AppearancePortraitButtonWidth,
-		CharacterCreationUiView::AppearancePortraitButtonHeight,
+		ChooseAttributesUiView::PortraitButtonCenterPoint,
+		ChooseAttributesUiView::PortraitButtonWidth,
+		ChooseAttributesUiView::PortraitButtonHeight,
 		CharacterCreationUiController::onAppearancePortraitButtonSelected);
 
 	auto &charCreationState = game.getCharacterCreationState();
@@ -70,24 +70,24 @@ bool ChooseAttributesPanel::init()
 	const std::string initialPopUpText = CharacterCreationUiModel::getChooseAttributesText(game);
 	const TextBox::InitInfo initialPopUpTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		initialPopUpText,
-		CharacterCreationUiView::ChooseAttributesTextCenterPoint,
-		CharacterCreationUiView::ChooseAttributesTextFontName,
-		CharacterCreationUiView::ChooseAttributesTextColor,
-		CharacterCreationUiView::ChooseAttributesTextAlignment,
+		ChooseAttributesUiView::InitialTextCenterPoint,
+		ChooseAttributesUiView::InitialTextFontName,
+		ChooseAttributesUiView::InitialTextColor,
+		ChooseAttributesUiView::InitialTextAlignment,
 		std::nullopt,
-		CharacterCreationUiView::ChooseAttributesTextLineSpacing,
+		ChooseAttributesUiView::InitialTextLineSpacing,
 		fontLibrary);
 
 	Texture initialTexture = TextureUtils::generate(
-		CharacterCreationUiView::ChooseAttributesTextPatternType,
-		CharacterCreationUiView::getChooseAttributesTextureWidth(),
-		CharacterCreationUiView::getChooseAttributesTextureHeight(),
+		ChooseAttributesUiView::InitialTextPatternType,
+		ChooseAttributesUiView::getInitialTextureWidth(),
+		ChooseAttributesUiView::getInitialTextureHeight(),
 		game.getTextureManager(),
 		renderer);
 
 	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
 		CharacterCreationUiController::onChooseAttributesPopUpSelected, std::move(initialTexture),
-		CharacterCreationUiView::ChooseAttributesTextureCenterPoint);
+		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;
 }
@@ -152,10 +152,10 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 		return;
 	}
 
-	const TextureAssetReference headTextureAssetRef = CharacterCreationUiView::getHeadTextureAssetRef(game);
-	const TextureAssetReference bodyTextureAssetRef = CharacterCreationUiView::getBodyTextureAssetRef(game);
-	const TextureAssetReference shirtTextureAssetRef = CharacterCreationUiView::getShirtTextureAssetRef(game);
-	const TextureAssetReference pantsTextureAssetRef = CharacterCreationUiView::getPantsTextureAssetRef(game);
+	const TextureAssetReference headTextureAssetRef = ChooseAttributesUiView::getHeadTextureAssetRef(game);
+	const TextureAssetReference bodyTextureAssetRef = ChooseAttributesUiView::getBodyTextureAssetRef(game);
+	const TextureAssetReference shirtTextureAssetRef = ChooseAttributesUiView::getShirtTextureAssetRef(game);
+	const TextureAssetReference pantsTextureAssetRef = ChooseAttributesUiView::getPantsTextureAssetRef(game);
 	const TextureAssetReference statsBackgroundTextureAssetRef = CharacterSheetUiView::getStatsBackgroundTextureAssetRef();
 	const std::optional<TextureBuilderID> headTextureBuilderID = textureManager.tryGetTextureBuilderID(headTextureAssetRef);
 	const std::optional<TextureBuilderID> bodyTextureBuilderID = textureManager.tryGetTextureBuilderID(bodyTextureAssetRef);
@@ -168,10 +168,10 @@ void ChooseAttributesPanel::render(Renderer &renderer)
 	DebugAssert(pantsTextureBuilderID.has_value());
 	DebugAssert(statsBackgroundTextureID.has_value());
 
-	const int bodyOffsetX = CharacterCreationUiView::getBodyOffsetX(game);
-	const Int2 headOffset = CharacterCreationUiView::getHeadOffset(game);
-	const Int2 shirtOffset = CharacterCreationUiView::getShirtOffset(game);
-	const Int2 pantsOffset = CharacterCreationUiView::getPantsOffset(game);
+	const int bodyOffsetX = ChooseAttributesUiView::getBodyOffsetX(game);
+	const Int2 headOffset = ChooseAttributesUiView::getHeadOffset(game);
+	const Int2 shirtOffset = ChooseAttributesUiView::getShirtOffset(game);
+	const Int2 pantsOffset = ChooseAttributesUiView::getPantsOffset(game);
 
 	// Draw the current portrait and clothes.
 	renderer.drawOriginal(*bodyTextureBuilderID, *charSheetPaletteID, bodyOffsetX, 0, textureManager);

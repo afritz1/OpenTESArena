@@ -15,287 +15,296 @@ class ExeData;
 class Game;
 class Rect;
 
-// @todo: might make each of these sections their own namespace in this file so the names aren't so long.
-
 namespace CharacterCreationUiView
 {
-	// -- Common --
 	constexpr int MaxTooltipLineLength = 14;
 
 	TextureAssetReference getNightSkyTextureAssetRef();
+}
 
-	// -- Choose class creation --
-	constexpr int ChooseClassCreationPopUpTextureWidth = 180;
-	constexpr int ChooseClassCreationPopUpTextureHeight = 40;
-	constexpr TextureUtils::PatternType ChooseClassCreationPopUpPatternType = TextureUtils::PatternType::Parchment;
+namespace ChooseClassCreationUiView
+{
+	constexpr int PopUpTextureWidth = 180;
+	constexpr int PopUpTextureHeight = 40;
+	constexpr TextureUtils::PatternType PopUpPatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseClassCreationTitleCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
-	const std::string ChooseClassCreationTitleFontName = ArenaFontName::A;
-	const Color ChooseClassCreationTitleColor(48, 12, 12);
-	constexpr TextAlignment ChooseClassCreationTitleAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseClassCreationTitleLineSpacing = 1;
+	const Int2 TitleCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
+	const std::string TitleFontName = ArenaFontName::A;
+	const Color TitleColor(48, 12, 12);
+	constexpr TextAlignment TitleAlignment = TextAlignment::MiddleCenter;
+	constexpr int TitleLineSpacing = 1;
 
-	const Int2 GenerateClassTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-	const std::string GenerateClassTextFontName = ArenaFontName::A;
-	const Color GenerateClassTextColor(48, 12, 12);
-	constexpr TextAlignment GenerateClassTextAlignment = TextAlignment::MiddleCenter;
+	const Int2 GenerateTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
+	const std::string GenerateTextFontName = ArenaFontName::A;
+	const Color GenerateTextColor(48, 12, 12);
+	constexpr TextAlignment GenerateTextAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 GenerateClassButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-	constexpr int GenerateClassButtonWidth = 175;
-	constexpr int GenerateClassButtonHeight = 35;
+	const Int2 GenerateButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
+	constexpr int GenerateButtonWidth = 175;
+	constexpr int GenerateButtonHeight = 35;
 
-	const Int2 SelectClassTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-	const std::string SelectClassTextFontName = ArenaFontName::A;
-	const Color SelectClassTextColor(48, 12, 12);
-	constexpr TextAlignment SelectClassTextAlignment = TextAlignment::MiddleCenter;
+	const Int2 SelectTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
+	const std::string SelectTextFontName = ArenaFontName::A;
+	const Color SelectTextColor(48, 12, 12);
+	constexpr TextAlignment SelectTextAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 SelectClassButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-	constexpr int SelectClassButtonWidth = 175;
-	constexpr int SelectClassButtonHeight = 35;
+	const Int2 SelectButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
+	constexpr int SelectButtonWidth = 175;
+	constexpr int SelectButtonHeight = 35;
 
-	TextBox::InitInfo getChooseClassCreationTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseClassCreationGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseClassCreationSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	int getTitleTextureX(int textureWidth);
+	int getTitleTextureY(int textureHeight);
 
-	// -- Choose class --
-	constexpr int ChooseClassTitleX = 89;
-	constexpr int ChooseClassTitleY = 32;
-	const std::string ChooseClassTitleFontName = ArenaFontName::C;
-	const Color ChooseClassTitleColor(211, 211, 211);
-	constexpr TextAlignment ChooseClassTitleAlignment = TextAlignment::TopLeft;
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+}
 
-	constexpr int ChooseClassListTextureX = 55;
-	constexpr int ChooseClassListTextureY = 9;
+namespace ChooseClassUiView
+{
+	constexpr int TitleX = 89;
+	constexpr int TitleY = 32;
+	const std::string TitleFontName = ArenaFontName::C;
+	const Color TitleColor(211, 211, 211);
+	constexpr TextAlignment TitleAlignment = TextAlignment::TopLeft;
 
-	Rect getClassListRect(Game &game);
-	Rect getClassListUpButtonRect(Game &game);
-	Rect getClassListDownButtonRect(Game &game);
+	constexpr int ListTextureX = 55;
+	constexpr int ListTextureY = 9;
 
-	ListBox::Properties makeClassListBoxProperties(const FontLibrary &fontLibrary);
-	
-	TextureAssetReference getChooseClassListBoxTextureAssetRef();
+	Rect getListRect(Game &game);
+	Rect getUpButtonRect(Game &game);
+	Rect getDownButtonRect(Game &game);
 
-	TextBox::InitInfo getChooseClassTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
-	// -- Choose gender --
-	constexpr int ChooseGenderTextureWidth = 180;
-	constexpr int ChooseGenderTextureHeight = 40;
-	constexpr TextureUtils::PatternType ChooseGenderTexturePatternType = TextureUtils::PatternType::Parchment;
+	TextureAssetReference getListBoxTextureAssetRef();
 
-	const Int2 ChooseGenderTitleCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
-	const std::string ChooseGenderTitleFontName = ArenaFontName::A;
-	const Color ChooseGenderTitleColor(48, 12, 12);
-	constexpr TextAlignment ChooseGenderTitleAlignment = TextAlignment::MiddleCenter;
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+}
 
-	const Int2 ChooseGenderMaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
-	const std::string ChooseGenderMaleFontName = ArenaFontName::A;
-	const Color ChooseGenderMaleColor(48, 12, 12);
-	constexpr TextAlignment ChooseGenderMaleAlignment = TextAlignment::MiddleCenter;
+namespace ChooseGenderUiView
+{
+	constexpr int TextureWidth = 180;
+	constexpr int TextureHeight = 40;
+	constexpr TextureUtils::PatternType TexturePatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseGenderMaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
-	constexpr int ChooseGenderMaleButtonWidth = 175;
-	constexpr int ChooseGenderMaleButtonHeight = 35;
+	const Int2 TitleCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	const std::string TitleFontName = ArenaFontName::A;
+	const Color TitleColor(48, 12, 12);
+	constexpr TextAlignment TitleAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 ChooseGenderFemaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
-	const std::string ChooseGenderFemaleFontName = ArenaFontName::A;
-	const Color ChooseGenderFemaleColor(48, 12, 12);
-	constexpr TextAlignment ChooseGenderFemaleAlignment = TextAlignment::MiddleCenter;
+	const Int2 MaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
+	const std::string MaleFontName = ArenaFontName::A;
+	const Color MaleColor(48, 12, 12);
+	constexpr TextAlignment MaleAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 ChooseGenderFemaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
-	constexpr int ChooseGenderFemaleButtonWidth = 175;
-	constexpr int ChooseGenderFemaleButtonHeight = 35;
+	const Int2 MaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
+	constexpr int MaleButtonWidth = 175;
+	constexpr int MaleButtonHeight = 35;
 
-	int getChooseGenderTitleTextureX(int textureWidth);
-	int getChooseGenderTitleTextureY(int textureHeight);
+	const Int2 FemaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+	const std::string FemaleFontName = ArenaFontName::A;
+	const Color FemaleColor(48, 12, 12);
+	constexpr TextAlignment FemaleAlignment = TextAlignment::MiddleCenter;
 
-	TextBox::InitInfo getChooseGenderTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseGenderMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseGenderFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	const Int2 FemaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
+	constexpr int FemaleButtonWidth = 175;
+	constexpr int FemaleButtonHeight = 35;
 
-	// -- Choose name --
-	constexpr int ChooseNameTextureWidth = 300;
-	constexpr int ChooseNameTextureHeight = 60;
-	constexpr TextureUtils::PatternType ChooseNameTexturePatternType = TextureUtils::PatternType::Parchment;
+	int getTitleTextureX(int textureWidth);
+	int getTitleTextureY(int textureHeight);
 
-	constexpr int ChooseNameTitleTextBoxX = 26;
-	constexpr int ChooseNameTitleTextBoxY = 82;
-	const std::string ChooseNameTitleFontName = ArenaFontName::A;
-	const Color ChooseNameTitleColor(48, 12, 12);
-	constexpr TextAlignment ChooseNameTitleAlignment = TextAlignment::TopLeft;
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+}
 
-	constexpr int ChooseNameEntryTextBoxX = 61;
-	constexpr int ChooseNameEntryTextBoxY = 101;
-	const std::string ChooseNameEntryFontName = ArenaFontName::A;
-	const Color ChooseNameEntryColor(48, 12, 12);
-	constexpr TextAlignment ChooseNameEntryAlignment = TextAlignment::TopLeft;
+namespace ChooseNameUiView
+{
+	constexpr int TextureWidth = 300;
+	constexpr int TextureHeight = 60;
+	constexpr TextureUtils::PatternType TexturePatternType = TextureUtils::PatternType::Parchment;
 
-	int getChooseNameTitleTextureX(int textureWidth);
-	int getChooseNameTitleTextureY(int textureHeight);
+	constexpr int TitleTextBoxX = 26;
+	constexpr int TitleTextBoxY = 82;
+	const std::string TitleFontName = ArenaFontName::A;
+	const Color TitleColor(48, 12, 12);
+	constexpr TextAlignment TitleAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getChooseNameTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseNameEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+	constexpr int EntryTextBoxX = 61;
+	constexpr int EntryTextBoxY = 101;
+	const std::string EntryFontName = ArenaFontName::A;
+	const Color EntryColor(48, 12, 12);
+	constexpr TextAlignment EntryAlignment = TextAlignment::TopLeft;
 
-	// -- Choose race --
-	const Int2 ChooseRaceInitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-	const std::string ChooseRaceInitialPopUpFontName = ArenaFontName::A;
-	const Color ChooseRaceInitialPopUpColor(48, 12, 12);
-	constexpr TextAlignment ChooseRaceInitialPopUpAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceInitialPopUpLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceInitialPopUpPatternType = TextureUtils::PatternType::Parchment;
+	int getTitleTextureX(int textureWidth);
+	int getTitleTextureY(int textureHeight);
 
-	constexpr int ChooseRaceInitialPopUpTextureWidth = 240;
-	constexpr int ChooseRaceInitialPopUpTextureHeight = 60;
-	const Int2 ChooseRaceInitialPopUpTextureCenterPoint(
+	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+}
+
+namespace ChooseRaceUiView
+{
+	const Int2 InitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	const std::string InitialPopUpFontName = ArenaFontName::A;
+	const Color InitialPopUpColor(48, 12, 12);
+	constexpr TextAlignment InitialPopUpAlignment = TextAlignment::MiddleCenter;
+	constexpr int InitialPopUpLineSpacing = 1;
+	constexpr TextureUtils::PatternType InitialPopUpPatternType = TextureUtils::PatternType::Parchment;
+
+	constexpr int InitialPopUpTextureWidth = 240;
+	constexpr int InitialPopUpTextureHeight = 60;
+	const Int2 InitialPopUpTextureCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-	const Int2 ChooseRaceProvinceConfirmTitleCenterPoint(
+	const Int2 ProvinceConfirmTitleCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2),
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
-	const std::string ChooseRaceProvinceConfirmTitleFontName = ArenaFontName::A;
-	const Color ChooseRaceProvinceConfirmTitleTextColor(52, 24, 8);
-	constexpr TextAlignment ChooseRaceProvinceConfirmTitleAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceProvinceConfirmTitleLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmTitleTexturePatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmTitleFontName = ArenaFontName::A;
+	const Color ProvinceConfirmTitleTextColor(52, 24, 8);
+	constexpr TextAlignment ProvinceConfirmTitleAlignment = TextAlignment::MiddleCenter;
+	constexpr int ProvinceConfirmTitleLineSpacing = 1;
+	constexpr TextureUtils::PatternType ProvinceConfirmTitleTexturePatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmYesCenterPoint(
+	const Int2 ProvinceConfirmYesCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
-	const std::string ChooseRaceProvinceConfirmYesFontName = ChooseRaceProvinceConfirmTitleFontName;
-	const Color ChooseRaceProvinceConfirmYesTextColor = ChooseRaceProvinceConfirmTitleTextColor;
-	constexpr TextAlignment ChooseRaceProvinceConfirmYesAlignment = ChooseRaceProvinceConfirmTitleAlignment;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmYesTexturePatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmYesFontName = ProvinceConfirmTitleFontName;
+	const Color ProvinceConfirmYesTextColor = ProvinceConfirmTitleTextColor;
+	constexpr TextAlignment ProvinceConfirmYesAlignment = ProvinceConfirmTitleAlignment;
+	constexpr TextureUtils::PatternType ProvinceConfirmYesTexturePatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmNoCenterPoint(
+	const Int2 ProvinceConfirmNoCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
-	const std::string ChooseRaceProvinceConfirmNoFontName = ChooseRaceProvinceConfirmTitleFontName;
-	const Color ChooseRaceProvinceConfirmNoTextColor = ChooseRaceProvinceConfirmTitleTextColor;
-	constexpr TextAlignment ChooseRaceProvinceConfirmNoAlignment = ChooseRaceProvinceConfirmTitleAlignment;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmNoTexturePatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmNoFontName = ProvinceConfirmTitleFontName;
+	const Color ProvinceConfirmNoTextColor = ProvinceConfirmTitleTextColor;
+	constexpr TextAlignment ProvinceConfirmNoAlignment = ProvinceConfirmTitleAlignment;
+	constexpr TextureUtils::PatternType ProvinceConfirmNoTexturePatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmedFirstTextCenterPoint(
+	const Int2 ProvinceConfirmedFirstTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-	const std::string ChooseRaceProvinceConfirmedFirstTextFontName = ArenaFontName::Arena;
-	const Color ChooseRaceProvinceConfirmedFirstTextColor(48, 12, 12);
-	constexpr TextAlignment ChooseRaceProvinceConfirmedFirstTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceProvinceConfirmedFirstTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedFirstTextPatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmedFirstTextFontName = ArenaFontName::Arena;
+	const Color ProvinceConfirmedFirstTextColor(48, 12, 12);
+	constexpr TextAlignment ProvinceConfirmedFirstTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int ProvinceConfirmedFirstTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ProvinceConfirmedFirstTextPatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmedSecondTextCenterPoint(
+	const Int2 ProvinceConfirmedSecondTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-	const std::string ChooseRaceProvinceConfirmedSecondTextFontName = ArenaFontName::Arena;
-	const Color ChooseRaceProvinceConfirmedSecondTextColor(48, 12, 12);
-	constexpr TextAlignment ChooseRaceProvinceConfirmedSecondTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceProvinceConfirmedSecondTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedSecondTextPatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmedSecondTextFontName = ArenaFontName::Arena;
+	const Color ProvinceConfirmedSecondTextColor(48, 12, 12);
+	constexpr TextAlignment ProvinceConfirmedSecondTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int ProvinceConfirmedSecondTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ProvinceConfirmedSecondTextPatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmedThirdTextCenterPoint(
+	const Int2 ProvinceConfirmedThirdTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-	const std::string ChooseRaceProvinceConfirmedThirdTextFontName = ArenaFontName::Arena;
-	const Color ChooseRaceProvinceConfirmedThirdTextColor(48, 12, 12);
-	constexpr TextAlignment ChooseRaceProvinceConfirmedThirdTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceProvinceConfirmedThirdTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedThirdTextPatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmedThirdTextFontName = ArenaFontName::Arena;
+	const Color ProvinceConfirmedThirdTextColor(48, 12, 12);
+	constexpr TextAlignment ProvinceConfirmedThirdTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int ProvinceConfirmedThirdTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ProvinceConfirmedThirdTextPatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ChooseRaceProvinceConfirmedFourthTextCenterPoint(
+	const Int2 ProvinceConfirmedFourthTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
-	const std::string ChooseRaceProvinceConfirmedFourthTextFontName = ArenaFontName::Arena;
-	const Color ChooseRaceProvinceConfirmedFourthTextColor(48, 12, 12);
-	constexpr TextAlignment ChooseRaceProvinceConfirmedFourthTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseRaceProvinceConfirmedFourthTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseRaceProvinceConfirmedFourthTextPatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmedFourthTextFontName = ArenaFontName::Arena;
+	const Color ProvinceConfirmedFourthTextColor(48, 12, 12);
+	constexpr TextAlignment ProvinceConfirmedFourthTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int ProvinceConfirmedFourthTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType ProvinceConfirmedFourthTextPatternType = TextureUtils::PatternType::Parchment;
 
-	TextureAssetReference getChooseRaceBackgroundTextureAssetRef();
-	TextureAssetReference getChooseRaceNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
+	TextureAssetReference getBackgroundTextureAssetRef();
+	TextureAssetReference getNoExitTextureAssetRef(); // Covers up the exit button since character creation doesn't use it.
 
-	int getChooseRaceNoExitTextureX(int textureWidth);
-	int getChooseRaceNoExitTextureY(int textureHeight);
+	int getNoExitTextureX(int textureWidth);
+	int getNoExitTextureY(int textureHeight);
 
-	Rect getChooseRaceProvinceConfirmTitleTextureRect(int textWidth, int textHeight);
-	Rect getChooseRaceProvinceConfirmYesTextureRect(const Rect &titleTextureRect);
-	Rect getChooseRaceProvinceConfirmNoTextureRect(const Rect &yesTextureRect);
+	Rect getProvinceConfirmTitleTextureRect(int textWidth, int textHeight);
+	Rect getProvinceConfirmYesTextureRect(const Rect &titleTextureRect);
+	Rect getProvinceConfirmNoTextureRect(const Rect &yesTextureRect);
 
-	Rect getChooseRaceProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
-	Rect getChooseRaceProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
-	Rect getChooseRaceProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
-	Rect getChooseRaceProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
+	Rect getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
+	Rect getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
+	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
+	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
 
-	TextBox::InitInfo getChooseRaceProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseRaceProvinceConfirmYesTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseRaceProvinceConfirmNoTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmYesTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmNoTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	TextBox::InitInfo getChooseRaceProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseRaceProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseRaceProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseRaceProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+}
 
-	// -- Choose attributes --
-	const Int2 ChooseAttributesTextCenterPoint(
+namespace ChooseAttributesUiView
+{
+	const Int2 InitialTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 2);
-	const std::string ChooseAttributesTextFontName = ArenaFontName::Arena;
-	const Color ChooseAttributesTextColor(199, 199, 199);
-	constexpr TextAlignment ChooseAttributesTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int ChooseAttributesTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ChooseAttributesTextPatternType = TextureUtils::PatternType::Dark;
+	const std::string InitialTextFontName = ArenaFontName::Arena;
+	const Color InitialTextColor(199, 199, 199);
+	constexpr TextAlignment InitialTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int InitialTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType InitialTextPatternType = TextureUtils::PatternType::Dark;
 
-	const Int2 ChooseAttributesTextureCenterPoint(
+	const Int2 InitialTextureCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-	const Int2 AttributesMessageBoxTitleCenterPoint(
+	const Int2 MessageBoxTitleCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
-	const std::string AttributesMessageBoxTitleFontName = ArenaFontName::A;
-	const Color AttributesMessageBoxTitleColor(199, 199, 199);
-	constexpr TextAlignment AttributesMessageBoxTitleAlignment = TextAlignment::MiddleCenter;
-	constexpr TextureUtils::PatternType AttributesMessageBoxPatternType = TextureUtils::PatternType::Dark;
+	const std::string MessageBoxTitleFontName = ArenaFontName::A;
+	const Color MessageBoxTitleColor(199, 199, 199);
+	constexpr TextAlignment MessageBoxTitleAlignment = TextAlignment::MiddleCenter;
+	constexpr TextureUtils::PatternType MessageBoxPatternType = TextureUtils::PatternType::Dark;
 
 	// @todo: various properties of the message box buttons will likely be combined in the future by MessageBoxSubPanel.
-	const Int2 AttributesMessageBoxSaveCenterPoint(
+	const Int2 MessageBoxSaveCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 2);
-	const std::string AttributesMessageBoxSaveFontName = ArenaFontName::A;
-	const Color AttributesMessageBoxSaveColor(190, 113, 0);
-	constexpr TextAlignment AttributesMessageBoxSaveAlignment = TextAlignment::MiddleCenter;
+	const std::string MessageBoxSaveFontName = ArenaFontName::A;
+	const Color MessageBoxSaveColor(190, 113, 0);
+	constexpr TextAlignment MessageBoxSaveAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 AttributesMessageBoxRerollCenterPoint(
+	const Int2 MessageBoxRerollCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 26);
-	const std::string AttributesMessageBoxRerollFontName = ArenaFontName::A;
-	const Color AttributesMessageBoxRerollColor(190, 113, 0);
-	constexpr TextAlignment AttributesMessageBoxRerollAlignment = TextAlignment::MiddleCenter;
+	const std::string MessageBoxRerollFontName = ArenaFontName::A;
+	const Color MessageBoxRerollColor(190, 113, 0);
+	constexpr TextAlignment MessageBoxRerollAlignment = TextAlignment::MiddleCenter;
 
-	const Int2 AppearanceMessageBoxCenterPoint(
+	const Int2 AppearanceTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
-	const std::string AppearanceMessageBoxFontName = ArenaFontName::Arena;
-	const Color AppearanceMessageBoxColor(199, 199, 199);
-	constexpr TextAlignment AppearanceMessageBoxAlignment = TextAlignment::MiddleCenter;
-	constexpr int AppearanceMessageBoxLineSpacing = 1;
-	constexpr TextureUtils::PatternType AppearanceMessageBoxPatternType = TextureUtils::PatternType::Dark;
+	const std::string AppearanceTextFontName = ArenaFontName::Arena;
+	const Color AppearanceTextColor(199, 199, 199);
+	constexpr TextAlignment AppearanceTextAlignment = TextAlignment::MiddleCenter;
+	constexpr int AppearanceTextLineSpacing = 1;
+	constexpr TextureUtils::PatternType AppearanceTextPatternType = TextureUtils::PatternType::Dark;
 
-	const Int2 AppearancePortraitButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 72, 25);
-	constexpr int AppearancePortraitButtonWidth = 60;
-	constexpr int AppearancePortraitButtonHeight = 42;
+	const Int2 PortraitButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 72, 25);
+	constexpr int PortraitButtonWidth = 60;
+	constexpr int PortraitButtonHeight = 42;
 
-	int getChooseClassCreationTitleTextureX(int textureWidth);
-	int getChooseClassCreationTitleTextureY(int textureHeight);
+	int getInitialTextureWidth();
+	int getInitialTextureHeight();
 
-	int getChooseAttributesTextureWidth();
-	int getChooseAttributesTextureHeight();
+	Rect getUnsavedDoneTitleTextureRect(int textWidth, int textHeight);
+	Rect getUnsavedDoneSaveTextureRect(const Rect &titleTextureRect);
+	Rect getUnsavedDoneRerollTextureRect(const Rect &saveTextureRect);
 
-	Rect getChooseAttributesUnsavedDoneTitleTextureRect(int textWidth, int textHeight);
-	Rect getChooseAttributesUnsavedDoneSaveTextureRect(const Rect &titleTextureRect);
-	Rect getChooseAttributesUnsavedDoneRerollTextureRect(const Rect &saveTextureRect);
+	TextBox::InitInfo getUnsavedDoneTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getUnsavedDoneSaveTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getUnsavedDoneRerollTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	TextBox::InitInfo getChooseAttributesUnsavedDoneTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseAttributesUnsavedDoneSaveTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getChooseAttributesUnsavedDoneRerollTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-
-	int getAppearanceMessageBoxTextureWidth(int textWidth);
-	int getAppearanceMessageBoxTextureHeight(int textHeight);
+	int getAppearanceTextBoxTextureWidth(int textWidth);
+	int getAppearanceTextBoxTextureHeight(int textHeight);
 
 	int getBodyOffsetX(Game &game);
 	Int2 getHeadOffset(Game &game);

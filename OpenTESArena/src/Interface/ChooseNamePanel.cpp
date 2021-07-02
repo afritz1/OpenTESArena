@@ -38,16 +38,16 @@ bool ChooseNamePanel::init()
 	auto &renderer = game.getRenderer();
 
 	this->parchment = TextureUtils::generate(
-		CharacterCreationUiView::ChooseNameTexturePatternType,
-		CharacterCreationUiView::ChooseNameTextureWidth,
-		CharacterCreationUiView::ChooseNameTextureHeight,
+		ChooseNameUiView::TexturePatternType,
+		ChooseNameUiView::TextureWidth,
+		ChooseNameUiView::TextureHeight,
 		game.getTextureManager(),
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = CharacterCreationUiModel::getChooseNameTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseNameTitleTextBoxInitInfo(titleText, fontLibrary);
+		ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -55,7 +55,7 @@ bool ChooseNamePanel::init()
 	}
 
 	const TextBox::InitInfo entryTextBoxInitInfo =
-		CharacterCreationUiView::getChooseNameEntryTextBoxInitInfo(fontLibrary);
+		ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
 	if (!this->entryTextBox.init(entryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init entry text box.");
@@ -132,8 +132,8 @@ void ChooseNamePanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchment: title.
-	const int titleParchmentX = CharacterCreationUiView::getChooseNameTitleTextureX(this->parchment.getWidth());
-	const int titleParchmentY = CharacterCreationUiView::getChooseNameTitleTextureY(this->parchment.getHeight());
+	const int titleParchmentX = ChooseNameUiView::getTitleTextureX(this->parchment.getWidth());
+	const int titleParchmentY = ChooseNameUiView::getTitleTextureY(this->parchment.getHeight());
 	renderer.drawOriginal(this->parchment, titleParchmentX, titleParchmentY);
 
 	// Draw text: title, name.

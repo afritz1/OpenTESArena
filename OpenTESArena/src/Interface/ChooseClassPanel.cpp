@@ -59,15 +59,15 @@ bool ChooseClassPanel::init()
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = CharacterCreationUiModel::getChooseClassTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseClassTitleTextBoxInitInfo(titleText, fontLibrary);
+		ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	this->classesListBox.init(CharacterCreationUiView::getClassListRect(game),
-		CharacterCreationUiView::makeClassListBoxProperties(game.getFontLibrary()), game.getRenderer());
+	this->classesListBox.init(ChooseClassUiView::getListRect(game),
+		ChooseClassUiView::makeListBoxProperties(game.getFontLibrary()), game.getRenderer());
 
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{
@@ -91,7 +91,7 @@ bool ChooseClassPanel::init()
 
 	this->upButton = [&game]
 	{
-		const Rect rect = CharacterCreationUiView::getClassListUpButtonRect(game);
+		const Rect rect = ChooseClassUiView::getUpButtonRect(game);
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
@@ -102,7 +102,7 @@ bool ChooseClassPanel::init()
 
 	this->downButton = [&game]
 	{
-		const Rect rect = CharacterCreationUiView::getClassListDownButtonRect(game);
+		const Rect rect = ChooseClassUiView::getDownButtonRect(game);
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
@@ -144,7 +144,7 @@ void ChooseClassPanel::handleEvent(const SDL_Event &e)
 	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 	// See if a class in the list was clicked, or if it is being scrolled.
-	const Rect classListRect = CharacterCreationUiView::getClassListRect(game);
+	const Rect classListRect = ChooseClassUiView::getListRect(game);
 	if (classListRect.contains(originalPoint))
 	{
 		if (leftClick)
@@ -238,7 +238,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw list pop-up.
-	const TextureAssetReference listTextureAssetRef = CharacterCreationUiView::getChooseClassListBoxTextureAssetRef();
+	const TextureAssetReference listTextureAssetRef = ChooseClassUiView::getListBoxTextureAssetRef();
 	const std::optional<TextureBuilderID> listTextureBuilderID = textureManager.tryGetTextureBuilderID(listTextureAssetRef);
 	if (!listTextureBuilderID.has_value())
 	{
@@ -247,7 +247,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	}
 
 	renderer.drawOriginal(*listTextureBuilderID, *backgroundPaletteID,
-		CharacterCreationUiView::ChooseClassListTextureX, CharacterCreationUiView::ChooseClassListTextureY, textureManager);
+		ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY, textureManager);
 
 	// Draw text: title, list.
 	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
@@ -261,7 +261,7 @@ void ChooseClassPanel::render(Renderer &renderer)
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
-	const Rect classListRect = CharacterCreationUiView::getClassListRect(game);
+	const Rect classListRect = ChooseClassUiView::getListRect(game);
 	if (classListRect.contains(originalPoint))
 	{
 		for (int i = 0; i < this->classesListBox.getCount(); i++)

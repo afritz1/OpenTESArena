@@ -31,16 +31,16 @@ bool ChooseGenderPanel::init()
 	auto &renderer = game.getRenderer();
 
 	this->parchment = TextureUtils::generate(
-		CharacterCreationUiView::ChooseGenderTexturePatternType,
-		CharacterCreationUiView::ChooseGenderTextureWidth,
-		CharacterCreationUiView::ChooseGenderTextureHeight,
+		ChooseGenderUiView::TexturePatternType,
+		ChooseGenderUiView::TextureWidth,
+		ChooseGenderUiView::TextureHeight,
 		game.getTextureManager(),
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = CharacterCreationUiModel::getChooseGenderTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseGenderTitleTextBoxInitInfo(titleText, fontLibrary);
+		ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -49,7 +49,7 @@ bool ChooseGenderPanel::init()
 
 	const std::string maleText = CharacterCreationUiModel::getChooseGenderMaleText(game);
 	const TextBox::InitInfo maleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseGenderMaleTextBoxInitInfo(maleText, fontLibrary);
+		ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
 	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
 	{
 		DebugLogError("Couldn't init male text box.");
@@ -58,7 +58,7 @@ bool ChooseGenderPanel::init()
 
 	const std::string femaleText = CharacterCreationUiModel::getChooseGenderFemaleText(game);
 	const TextBox::InitInfo femaleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseGenderFemaleTextBoxInitInfo(femaleText, fontLibrary);
+		ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
 	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))
 	{
 		DebugLogError("Couldn't init female text box.");
@@ -67,14 +67,14 @@ bool ChooseGenderPanel::init()
 
 	this->backToNameButton = Button<Game&>(CharacterCreationUiController::onBackToChooseNameButtonSelected);
 	this->maleButton = Button<Game&>(
-		CharacterCreationUiView::ChooseGenderMaleButtonCenter,
-		CharacterCreationUiView::ChooseGenderMaleButtonWidth,
-		CharacterCreationUiView::ChooseGenderMaleButtonHeight,
+		ChooseGenderUiView::MaleButtonCenter,
+		ChooseGenderUiView::MaleButtonWidth,
+		ChooseGenderUiView::MaleButtonHeight,
 		CharacterCreationUiController::onChooseGenderMaleButtonSelected);
 	this->femaleButton = Button<Game&>(
-		CharacterCreationUiView::ChooseGenderFemaleButtonCenter,
-		CharacterCreationUiView::ChooseGenderFemaleButtonWidth,
-		CharacterCreationUiView::ChooseGenderFemaleButtonHeight,
+		ChooseGenderUiView::FemaleButtonCenter,
+		ChooseGenderUiView::FemaleButtonWidth,
+		ChooseGenderUiView::FemaleButtonHeight,
 		CharacterCreationUiController::onChooseGenderFemaleButtonSelected);
 
 	return true;
@@ -138,8 +138,8 @@ void ChooseGenderPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, male, and female.
-	const int parchmentX = CharacterCreationUiView::getChooseGenderTitleTextureX(this->parchment.getWidth());
-	const int parchmentY = CharacterCreationUiView::getChooseGenderTitleTextureY(this->parchment.getHeight());
+	const int parchmentX = ChooseGenderUiView::getTitleTextureX(this->parchment.getWidth());
+	const int parchmentY = ChooseGenderUiView::getTitleTextureY(this->parchment.getHeight());
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);

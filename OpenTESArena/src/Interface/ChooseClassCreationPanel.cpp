@@ -32,16 +32,16 @@ bool ChooseClassCreationPanel::init()
 	auto &renderer = game.getRenderer();
 
 	this->parchment = TextureUtils::generate(
-		CharacterCreationUiView::ChooseClassCreationPopUpPatternType,
-		CharacterCreationUiView::ChooseClassCreationPopUpTextureWidth,
-		CharacterCreationUiView::ChooseClassCreationPopUpTextureHeight,
+		ChooseClassCreationUiView::PopUpPatternType,
+		ChooseClassCreationUiView::PopUpTextureWidth,
+		ChooseClassCreationUiView::PopUpTextureHeight,
 		game.getTextureManager(),
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
 	const std::string titleText = CharacterCreationUiModel::getChooseClassCreationTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
-		CharacterCreationUiView::getChooseClassCreationTitleTextBoxInitInfo(titleText, fontLibrary);
+		ChooseClassCreationUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -50,7 +50,7 @@ bool ChooseClassCreationPanel::init()
 
 	const std::string generateText = CharacterCreationUiModel::getGenerateClassButtonText(game);
 	const TextBox::InitInfo generateTextBoxInitInfo =
-		CharacterCreationUiView::getChooseClassCreationGenerateTextBoxInitInfo(generateText, fontLibrary);
+		ChooseClassCreationUiView::getGenerateTextBoxInitInfo(generateText, fontLibrary);
 	if (!this->generateTextBox.init(generateTextBoxInitInfo, generateText, renderer))
 	{
 		DebugLogError("Couldn't init generate class text box.");
@@ -59,7 +59,7 @@ bool ChooseClassCreationPanel::init()
 
 	const std::string selectText = CharacterCreationUiModel::getSelectClassButtonText(game);
 	const TextBox::InitInfo selectTextBoxInitInfo =
-		CharacterCreationUiView::getChooseClassCreationSelectTextBoxInitInfo(selectText, fontLibrary);
+		ChooseClassCreationUiView::getSelectTextBoxInitInfo(selectText, fontLibrary);
 	if (!this->selectTextBox.init(selectTextBoxInitInfo, selectText, renderer))
 	{
 		DebugLogError("Couldn't init select class text box.");
@@ -68,14 +68,14 @@ bool ChooseClassCreationPanel::init()
 
 	this->backToMainMenuButton = Button<Game&>(CharacterCreationUiController::onBackToMainMenuButtonSelected);
 	this->generateButton = Button<Game&>(
-		CharacterCreationUiView::GenerateClassButtonCenterPoint,
-		CharacterCreationUiView::GenerateClassButtonWidth,
-		CharacterCreationUiView::GenerateClassButtonHeight,
+		ChooseClassCreationUiView::GenerateButtonCenterPoint,
+		ChooseClassCreationUiView::GenerateButtonWidth,
+		ChooseClassCreationUiView::GenerateButtonHeight,
 		CharacterCreationUiController::onGenerateClassButtonSelected);
 	this->selectButton = Button<Game&>(
-		CharacterCreationUiView::SelectClassButtonCenterPoint,
-		CharacterCreationUiView::SelectClassButtonWidth,
-		CharacterCreationUiView::SelectClassButtonHeight,
+		ChooseClassCreationUiView::SelectButtonCenterPoint,
+		ChooseClassCreationUiView::SelectButtonWidth,
+		ChooseClassCreationUiView::SelectButtonHeight,
 		CharacterCreationUiController::onSelectClassButtonSelected);
 
 	return true;
@@ -157,8 +157,8 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Draw parchments: title, generate, select.
-	const int parchmentX = CharacterCreationUiView::getChooseClassCreationTitleTextureX(this->parchment.getWidth());
-	const int parchmentY = CharacterCreationUiView::getChooseClassCreationTitleTextureY(this->parchment.getHeight());
+	const int parchmentX = ChooseClassCreationUiView::getTitleTextureX(this->parchment.getWidth());
+	const int parchmentY = ChooseClassCreationUiView::getTitleTextureY(this->parchment.getHeight());
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY - 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 20);
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY + 60);

@@ -33,24 +33,24 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 	const std::string text = CharacterCreationUiModel::getChooseRaceTitleText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextCenterPoint,
-		CharacterCreationUiView::ChooseRaceInitialPopUpFontName,
-		CharacterCreationUiView::ChooseRaceInitialPopUpColor,
-		CharacterCreationUiView::ChooseRaceInitialPopUpAlignment,
+		ChooseRaceUiView::InitialPopUpTextCenterPoint,
+		ChooseRaceUiView::InitialPopUpFontName,
+		ChooseRaceUiView::InitialPopUpColor,
+		ChooseRaceUiView::InitialPopUpAlignment,
 		std::nullopt,
-		CharacterCreationUiView::ChooseRaceInitialPopUpLineSpacing,
+		ChooseRaceUiView::InitialPopUpLineSpacing,
 		fontLibrary);
 
 	Texture texture = TextureUtils::generate(
-		CharacterCreationUiView::ChooseRaceInitialPopUpPatternType,
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextureWidth,
-		CharacterCreationUiView::ChooseRaceInitialPopUpTextureHeight,
+		ChooseRaceUiView::InitialPopUpPatternType,
+		ChooseRaceUiView::InitialPopUpTextureWidth,
+		ChooseRaceUiView::InitialPopUpTextureHeight,
 		game.getTextureManager(),
 		game.getRenderer());
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
 	if (!subPanel->init(textBoxInitInfo, text, CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected,
-		std::move(texture), CharacterCreationUiView::ChooseRaceInitialPopUpTextureCenterPoint))
+		std::move(texture), ChooseRaceUiView::InitialPopUpTextureCenterPoint))
 	{
 		DebugCrash("Couldn't init choose race initial sub-panel.");
 	}
@@ -119,7 +119,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 
 	// Draw background map.
 	auto &textureManager = this->getGame().getTextureManager();
-	const TextureAssetReference backgroundTextureAssetRef = CharacterCreationUiView::getChooseRaceBackgroundTextureAssetRef();
+	const TextureAssetReference backgroundTextureAssetRef = ChooseRaceUiView::getBackgroundTextureAssetRef();
 	const std::optional<PaletteID> backgroundPaletteID = textureManager.tryGetPaletteID(backgroundTextureAssetRef);
 	if (!backgroundPaletteID.has_value())
 	{
@@ -137,7 +137,7 @@ void ChooseRacePanel::render(Renderer &renderer)
 	renderer.drawOriginal(*backgroundTextureBuilderID, *backgroundPaletteID, textureManager);
 
 	// Cover up the "exit" text at the bottom right.
-	const TextureAssetReference noExitTextureAssetRef = CharacterCreationUiView::getChooseRaceNoExitTextureAssetRef();
+	const TextureAssetReference noExitTextureAssetRef = ChooseRaceUiView::getNoExitTextureAssetRef();
 	const std::optional<TextureBuilderID> noExitTextureBuilderID = textureManager.tryGetTextureBuilderID(noExitTextureAssetRef);
 	if (!noExitTextureBuilderID.has_value())
 	{
@@ -146,8 +146,8 @@ void ChooseRacePanel::render(Renderer &renderer)
 	}
 
 	const TextureBuilder &noExitTextureBuilder = textureManager.getTextureBuilderHandle(*noExitTextureBuilderID);
-	const int exitCoverX = CharacterCreationUiView::getChooseRaceNoExitTextureX(noExitTextureBuilder.getWidth());
-	const int exitCoverY = CharacterCreationUiView::getChooseRaceNoExitTextureY(noExitTextureBuilder.getHeight());
+	const int exitCoverX = ChooseRaceUiView::getNoExitTextureX(noExitTextureBuilder.getWidth());
+	const int exitCoverY = ChooseRaceUiView::getNoExitTextureY(noExitTextureBuilder.getHeight());
 	renderer.drawOriginal(*noExitTextureBuilderID, *backgroundPaletteID, exitCoverX, exitCoverY, textureManager);
 }
 
