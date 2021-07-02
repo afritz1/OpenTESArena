@@ -45,7 +45,7 @@ bool ChooseNamePanel::init()
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getChooseNameTitleText(game);
+	const std::string titleText = ChooseNameUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
@@ -98,7 +98,7 @@ void ChooseNamePanel::handleEvent(const SDL_Event &e)
 	{
 		// Listen for SDL text input and changes in text.
 		const bool textChanged = TextEntry::updateText(this->name, e, backspacePressed,
-			CharacterCreationUiModel::isPlayerNameCharacterAccepted, CharacterCreationState::MAX_NAME_LENGTH);
+			ChooseNameUiModel::isCharacterAccepted, CharacterCreationState::MAX_NAME_LENGTH);
 
 		if (textChanged)
 		{

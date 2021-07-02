@@ -67,7 +67,7 @@ bool ChooseAttributesPanel::init()
 	this->attributesAreSaved = false;
 
 	// Push the initial text pop-up onto the sub-panel stack.
-	const std::string initialPopUpText = CharacterCreationUiModel::getChooseAttributesText(game);
+	const std::string initialPopUpText = ChooseAttributesUiModel::getInitialText(game);
 	const TextBox::InitInfo initialPopUpTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		initialPopUpText,
 		ChooseAttributesUiView::InitialTextCenterPoint,

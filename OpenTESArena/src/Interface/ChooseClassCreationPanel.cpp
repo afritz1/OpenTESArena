@@ -39,7 +39,7 @@ bool ChooseClassCreationPanel::init()
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getChooseClassCreationTitleText(game);
+	const std::string titleText = ChooseClassCreationUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseClassCreationUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
@@ -48,7 +48,7 @@ bool ChooseClassCreationPanel::init()
 		return false;
 	}
 
-	const std::string generateText = CharacterCreationUiModel::getGenerateClassButtonText(game);
+	const std::string generateText = ChooseClassCreationUiModel::getGenerateButtonText(game);
 	const TextBox::InitInfo generateTextBoxInitInfo =
 		ChooseClassCreationUiView::getGenerateTextBoxInitInfo(generateText, fontLibrary);
 	if (!this->generateTextBox.init(generateTextBoxInitInfo, generateText, renderer))
@@ -57,7 +57,7 @@ bool ChooseClassCreationPanel::init()
 		return false;
 	}
 
-	const std::string selectText = CharacterCreationUiModel::getSelectClassButtonText(game);
+	const std::string selectText = ChooseClassCreationUiModel::getSelectButtonText(game);
 	const TextBox::InitInfo selectTextBoxInitInfo =
 		ChooseClassCreationUiView::getSelectTextBoxInitInfo(selectText, fontLibrary);
 	if (!this->selectTextBox.init(selectTextBoxInitInfo, selectText, renderer))
@@ -178,10 +178,10 @@ void ChooseClassCreationPanel::render(Renderer &renderer)
 
 	if (this->generateButton.contains(originalPoint))
 	{
-		this->drawTooltip(CharacterCreationUiModel::getGenerateClassButtonTooltipText(), renderer);
+		this->drawTooltip(ChooseClassCreationUiModel::getGenerateButtonTooltipText(), renderer);
 	}
 	else if (this->selectButton.contains(originalPoint))
 	{
-		this->drawTooltip(CharacterCreationUiModel::getSelectClassButtonTooltipText(), renderer);
+		this->drawTooltip(ChooseClassCreationUiModel::getSelectButtonTooltipText(), renderer);
 	}
 }

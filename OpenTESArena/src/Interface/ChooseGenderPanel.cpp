@@ -38,7 +38,7 @@ bool ChooseGenderPanel::init()
 		renderer);
 
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getChooseGenderTitleText(game);
+	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
@@ -47,7 +47,7 @@ bool ChooseGenderPanel::init()
 		return false;
 	}
 
-	const std::string maleText = CharacterCreationUiModel::getChooseGenderMaleText(game);
+	const std::string maleText = ChooseGenderUiModel::getMaleText(game);
 	const TextBox::InitInfo maleTextBoxInitInfo =
 		ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
 	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
@@ -56,7 +56,7 @@ bool ChooseGenderPanel::init()
 		return false;
 	}
 
-	const std::string femaleText = CharacterCreationUiModel::getChooseGenderFemaleText(game);
+	const std::string femaleText = ChooseGenderUiModel::getFemaleText(game);
 	const TextBox::InitInfo femaleTextBoxInitInfo =
 		ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
 	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))

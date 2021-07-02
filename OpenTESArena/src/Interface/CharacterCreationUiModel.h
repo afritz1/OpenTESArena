@@ -14,44 +14,62 @@ namespace CharacterCreationUiModel
 	std::string getPlayerName(Game &game);
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
+}
 
-	std::string getChooseClassCreationTitleText(Game &game);
-	std::string getGenerateClassButtonText(Game &game);
-	std::string getGenerateClassButtonTooltipText();
-	std::string getSelectClassButtonText(Game &game);
-	std::string getSelectClassButtonTooltipText();
+namespace ChooseClassCreationUiModel
+{
+	std::string getTitleText(Game &game);
+	std::string getGenerateButtonText(Game &game);
+	std::string getGenerateButtonTooltipText();
+	std::string getSelectButtonText(Game &game);
+	std::string getSelectButtonTooltipText();
+}
 
-	std::string getChooseClassTitleText(Game &game);
-	std::string getChooseClassArmorTooltipText(const CharacterClassDefinition &charClassDef);
-	std::string getChooseClassShieldTooltipText(const CharacterClassDefinition &charClassDef);
-	std::string getChooseClassWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
-	std::string getChooseClassFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
+namespace ChooseClassUiModel
+{
+	std::string getTitleText(Game &game);
+	std::string getArmorTooltipText(const CharacterClassDefinition &charClassDef);
+	std::string getShieldTooltipText(const CharacterClassDefinition &charClassDef);
+	std::string getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
+	std::string getFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game);
+}
 
-	std::string getChooseGenderTitleText(Game &game);
-	std::string getChooseGenderMaleText(Game &game);
-	std::string getChooseGenderFemaleText(Game &game);
+namespace ChooseGenderUiModel
+{
+	std::string getTitleText(Game &game);
+	std::string getMaleText(Game &game);
+	std::string getFemaleText(Game &game);
+}
 
-	std::string getChooseNameTitleText(Game &game);
-	bool isPlayerNameCharacterAccepted(char c);
+namespace ChooseNameUiModel
+{
+	std::string getTitleText(Game &game);
+	bool isCharacterAccepted(char c);
+}
 
-	std::string getChooseRaceTitleText(Game &game);
-	std::string getChooseRaceProvinceConfirmTitleText(Game &game);
-	std::string getChooseRaceProvinceConfirmYesText(Game &game);
-	std::string getChooseRaceProvinceConfirmNoText(Game &game);
-	std::string getChooseRaceProvinceTooltipText(Game &game, int provinceID);
-	std::optional<int> getChooseRaceProvinceID(Game &game, const Int2 &originalPosition);
-	std::string getChooseRaceProvinceConfirmedFirstText(Game &game);
-	std::string getChooseRaceProvinceConfirmedSecondText(Game &game);
-	std::string getChooseRaceProvinceConfirmedThirdText(Game &game);
-	std::string getChooseRaceProvinceConfirmedFourthText(Game &game);
+namespace ChooseRaceUiModel
+{
+	std::string getTitleText(Game &game);
+	std::string getProvinceConfirmTitleText(Game &game);
+	std::string getProvinceConfirmYesText(Game &game);
+	std::string getProvinceConfirmNoText(Game &game);
+	std::string getProvinceTooltipText(Game &game, int provinceID);
+	std::optional<int> getProvinceID(Game &game, const Int2 &originalPosition);
+	std::string getProvinceConfirmedFirstText(Game &game);
+	std::string getProvinceConfirmedSecondText(Game &game);
+	std::string getProvinceConfirmedThirdText(Game &game);
+	std::string getProvinceConfirmedFourthText(Game &game);
+}
 
-	std::string getChooseAttributesText(Game &game);
+namespace ChooseAttributesUiModel
+{
+	std::string getInitialText(Game &game);
 
-	std::string getAttributesMessageBoxTitleText(Game &game);
-	std::string getAttributesMessageBoxSaveText(Game &game);
-	std::string getAttributesMessageBoxRerollText(Game &game);
+	std::string getMessageBoxTitleText(Game &game);
+	std::string getMessageBoxSaveText(Game &game);
+	std::string getMessageBoxRerollText(Game &game);
 
-	std::string getAppearanceMessageBoxText(Game &game);
+	std::string getAppearanceText(Game &game);
 }
 
 #endif

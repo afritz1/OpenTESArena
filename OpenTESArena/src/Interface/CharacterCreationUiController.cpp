@@ -137,7 +137,7 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 	auto &renderer = game.getRenderer();
 
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getChooseRaceProvinceConfirmTitleText(game);
+	const std::string titleText = ChooseRaceUiModel::getProvinceConfirmTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseRaceUiView::getProvinceConfirmTitleTextBoxInitInfo(titleText, fontLibrary);
 
@@ -163,7 +163,7 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 	messageBoxTitle.textureX = titleTextureRect.getLeft();
 	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	const std::string yesText = CharacterCreationUiModel::getChooseRaceProvinceConfirmYesText(game);
+	const std::string yesText = ChooseRaceUiModel::getProvinceConfirmYesText(game);
 	const TextBox::InitInfo yesTextBoxInitInfo =
 		ChooseRaceUiView::getProvinceConfirmYesTextBoxInitInfo(yesText, fontLibrary);
 
@@ -191,7 +191,7 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 	messageBoxYes.textureX = yesTextureRect.getLeft();
 	messageBoxYes.textureY = yesTextureRect.getTop();
 
-	const std::string noText = CharacterCreationUiModel::getChooseRaceProvinceConfirmNoText(game);
+	const std::string noText = ChooseRaceUiModel::getProvinceConfirmNoText(game);
 	const TextBox::InitInfo noTextBoxInitInfo =
 		ChooseRaceUiView::getProvinceConfirmNoTextBoxInitInfo(noText, fontLibrary);
 
@@ -228,7 +228,7 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 {
 	game.popSubPanel();
 
-	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFirstText(game);
+	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFirstText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
@@ -262,7 +262,7 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
-	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedSecondText(game);
+	const std::string text = ChooseRaceUiModel::getProvinceConfirmedSecondText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
@@ -287,7 +287,7 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
-	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedThirdText(game);
+	const std::string text = ChooseRaceUiModel::getProvinceConfirmedThirdText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
@@ -312,7 +312,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
-	const std::string text = CharacterCreationUiModel::getChooseRaceProvinceConfirmedFourthText(game);
+	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFourthText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
@@ -361,7 +361,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 
 	// @todo: add InitInfos for this Save/Reroll message box sub-panel
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getAttributesMessageBoxTitleText(game);
+	const std::string titleText = ChooseAttributesUiModel::getMessageBoxTitleText(game);
 	const TextBox::InitInfo titleInitInfo =
 		ChooseAttributesUiView::getUnsavedDoneTitleTextBoxInitInfo(titleText, fontLibrary);
 
@@ -387,7 +387,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	messageBoxTitle.textureX = titleTextureRect.getLeft();
 	messageBoxTitle.textureY = titleTextureRect.getTop();
 
-	const std::string saveText = CharacterCreationUiModel::getAttributesMessageBoxSaveText(game);
+	const std::string saveText = ChooseAttributesUiModel::getMessageBoxSaveText(game);
 	const TextBox::InitInfo saveTextBoxInitInfo =
 		ChooseAttributesUiView::getUnsavedDoneSaveTextBoxInitInfo(saveText, fontLibrary);
 
@@ -416,7 +416,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	messageBoxSave.textureX = saveTextureRect.getLeft();
 	messageBoxSave.textureY = saveTextureRect.getTop();
 
-	const std::string rerollText = CharacterCreationUiModel::getAttributesMessageBoxRerollText(game);
+	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	const TextBox::InitInfo rerollTextBoxInitInfo =
 		ChooseAttributesUiView::getUnsavedDoneRerollTextBoxInitInfo(rerollText, fontLibrary);
 
@@ -605,7 +605,7 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 	// it starts the game.
 	game.popSubPanel();
 
-	const std::string text = CharacterCreationUiModel::getAppearanceMessageBoxText(game);
+	const std::string text = ChooseAttributesUiModel::getAppearanceText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,

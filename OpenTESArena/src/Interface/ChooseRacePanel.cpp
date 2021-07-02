@@ -30,7 +30,7 @@ bool ChooseRacePanel::init()
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string text = CharacterCreationUiModel::getChooseRaceTitleText(game);
+	const std::string text = ChooseRaceUiModel::getTitleText(game);
 	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::InitialPopUpTextCenterPoint,
@@ -82,7 +82,7 @@ void ChooseRacePanel::handleEvent(const SDL_Event &e)
 		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		// Listen for clicks on the map, checking if the mouse is over a province mask.
-		const std::optional<int> provinceID = CharacterCreationUiModel::getChooseRaceProvinceID(game, originalPoint);
+		const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
 		if (provinceID.has_value())
 		{
 			// Choose the selected province.
@@ -95,7 +95,7 @@ void ChooseRacePanel::drawProvinceTooltip(int provinceID, Renderer &renderer)
 {
 	auto &game = this->getGame();
 	const Texture tooltip = TextureUtils::createTooltip(
-		CharacterCreationUiModel::getChooseRaceProvinceTooltipText(game, provinceID),
+		ChooseRaceUiModel::getProvinceTooltipText(game, provinceID),
 		this->getGame().getFontLibrary(),
 		renderer);
 
@@ -161,7 +161,7 @@ void ChooseRacePanel::renderSecondary(Renderer &renderer)
 	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 	// Draw tooltip if the mouse is in a province.
-	const std::optional<int> provinceID = CharacterCreationUiModel::getChooseRaceProvinceID(game, originalPoint);
+	const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
 	if (provinceID.has_value())
 	{
 		this->drawProvinceTooltip(*provinceID, renderer);

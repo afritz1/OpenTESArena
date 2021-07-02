@@ -57,7 +57,7 @@ bool ChooseClassPanel::init()
 
 	auto &renderer = game.getRenderer();
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = CharacterCreationUiModel::getChooseClassTitleText(game);
+	const std::string titleText = ChooseClassUiModel::getTitleText(game);
 	const TextBox::InitInfo titleTextBoxInitInfo =
 		ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
@@ -192,7 +192,7 @@ void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)
 
 		DebugAssertIndex(this->charClasses, tooltipIndex);
 		const auto &charClassDef = this->charClasses[tooltipIndex];
-		const std::string text = CharacterCreationUiModel::getChooseClassFullTooltipText(charClassDef, game);
+		const std::string text = ChooseClassUiModel::getFullTooltipText(charClassDef, game);
 		Texture texture = TextureUtils::createTooltip(text, game.getFontLibrary(), renderer);
 		tooltipIter = this->tooltipTextures.emplace(std::make_pair(tooltipIndex, std::move(texture))).first;
 	}
