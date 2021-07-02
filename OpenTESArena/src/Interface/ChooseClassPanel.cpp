@@ -83,11 +83,11 @@ bool ChooseClassPanel::init()
 				return;
 			}
 
-			CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(game, charClassDefID);
+			ChooseClassUiController::onItemButtonSelected(game, charClassDefID);
 		});
 	}
 
-	this->backToClassCreationButton = Button<Game&>(CharacterCreationUiController::onBackToChooseClassCreationButtonSelected);
+	this->backToClassCreationButton = Button<Game&>(ChooseClassUiController::onBackToChooseClassCreationButtonSelected);
 
 	this->upButton = [&game]
 	{
@@ -97,7 +97,7 @@ bool ChooseClassPanel::init()
 			rect.getTop(),
 			rect.getWidth(),
 			rect.getHeight(),
-			CharacterCreationUiController::onChooseClassListBoxUpButtonSelected);
+			ChooseClassUiController::onUpButtonSelected);
 	}();
 
 	this->downButton = [&game]
@@ -108,7 +108,7 @@ bool ChooseClassPanel::init()
 			rect.getTop(),
 			rect.getWidth(),
 			rect.getHeight(),
-			CharacterCreationUiController::onChooseClassListBoxDownButtonSelected);
+			ChooseClassUiController::onDownButtonSelected);
 	}();
 
 	// Leave the tooltip textures empty for now. Let them be created on demand. Generating them all at once here

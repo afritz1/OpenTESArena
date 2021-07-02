@@ -22,7 +22,7 @@
 
 #include "components/utilities/String.h"
 
-void CharacterCreationUiController::onBackToMainMenuButtonSelected(Game &game)
+void ChooseClassCreationUiController::onBackToMainMenuButtonSelected(Game &game)
 {
 	game.setCharacterCreationState(nullptr);
 	game.setPanel<MainMenuPanel>();
@@ -40,32 +40,32 @@ void CharacterCreationUiController::onBackToMainMenuButtonSelected(Game &game)
 	audioManager.setMusic(musicDef);
 }
 
-void CharacterCreationUiController::onGenerateClassButtonSelected(Game &game)
+void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
 {
 	// @todo: eventually go to a "ChooseQuestionsPanel" with "pop-up" message
 }
 
-void CharacterCreationUiController::onSelectClassButtonSelected(Game &game)
+void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 {
 	game.setPanel<ChooseClassPanel>();
 }
 
-void CharacterCreationUiController::onBackToChooseClassCreationButtonSelected(Game &game)
+void ChooseClassUiController::onBackToChooseClassCreationButtonSelected(Game &game)
 {
 	game.setPanel<ChooseClassCreationPanel>();
 }
 
-void CharacterCreationUiController::onChooseClassListBoxUpButtonSelected(ListBox &listBox)
+void ChooseClassUiController::onUpButtonSelected(ListBox &listBox)
 {
 	listBox.scrollUp();
 }
 
-void CharacterCreationUiController::onChooseClassListBoxDownButtonSelected(ListBox &listBox)
+void ChooseClassUiController::onDownButtonSelected(ListBox &listBox)
 {
 	listBox.scrollDown();
 }
 
-void CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(Game &game, int charClassDefID)
+void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setClassDefID(charClassDefID);
@@ -73,12 +73,12 @@ void CharacterCreationUiController::onChooseClassListBoxItemButtonSelected(Game 
 	game.setPanel<ChooseNamePanel>();
 }
 
-void CharacterCreationUiController::onBackToChooseNameButtonSelected(Game &game)
+void ChooseGenderUiController::onBackToChooseNameButtonSelected(Game &game)
 {
 	game.setPanel<ChooseNamePanel>();
 }
 
-void CharacterCreationUiController::onChooseGenderMaleButtonSelected(Game &game)
+void ChooseGenderUiController::onMaleButtonSelected(Game &game)
 {
 	constexpr bool male = true;
 	auto &charCreationState = game.getCharacterCreationState();
@@ -87,7 +87,7 @@ void CharacterCreationUiController::onChooseGenderMaleButtonSelected(Game &game)
 	game.setPanel<ChooseRacePanel>();
 }
 
-void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &game)
+void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 {
 	constexpr bool male = false;
 	auto &charCreationState = game.getCharacterCreationState();
@@ -96,7 +96,7 @@ void CharacterCreationUiController::onChooseGenderFemaleButtonSelected(Game &gam
 	game.setPanel<ChooseRacePanel>();
 }
 
-void CharacterCreationUiController::onBackToChooseClassButtonSelected(Game &game)
+void ChooseNameUiController::onBackToChooseClassButtonSelected(Game &game)
 {
 	SDL_StopTextInput();
 
@@ -106,7 +106,7 @@ void CharacterCreationUiController::onBackToChooseClassButtonSelected(Game &game
 	game.setPanel<ChooseClassPanel>();
 }
 
-void CharacterCreationUiController::onChooseNameAcceptButtonSelected(Game &game, const std::string &acceptedName)
+void ChooseNameUiController::onAcceptButtonSelected(Game &game, const std::string &acceptedName)
 {
 	SDL_StopTextInput();
 
@@ -116,17 +116,17 @@ void CharacterCreationUiController::onChooseNameAcceptButtonSelected(Game &game,
 	game.setPanel<ChooseGenderPanel>();
 }
 
-void CharacterCreationUiController::onBackToChooseGenderButtonSelected(Game &game)
+void ChooseRaceUiController::onBackToChooseGenderButtonSelected(Game &game)
 {
 	game.setPanel<ChooseGenderPanel>();
 }
 
-void CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected(Game &game)
+void ChooseRaceUiController::onInitialPopUpButtonSelected(Game &game)
 {
 	game.popSubPanel();
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &game, int raceID)
+void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	// Set character creation race.
 	auto &charCreationState = game.getCharacterCreationState();
@@ -185,7 +185,7 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 
 	messageBoxYes.function = [raceID](Game &game)
 	{
-		CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(game, raceID);
+		ChooseRaceUiController::onProvinceConfirmButtonSelected(game, raceID);
 	};
 
 	messageBoxYes.textureX = yesTextureRect.getLeft();
@@ -211,7 +211,7 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 		textureManager,
 		renderer);
 
-	messageBoxNo.function = CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected;
+	messageBoxNo.function = ChooseRaceUiController::onProvinceCancelButtonSelected;
 	messageBoxNo.textureX = noTextureRect.getLeft();
 	messageBoxNo.textureY = noTextureRect.getTop();
 
@@ -224,7 +224,7 @@ void CharacterCreationUiController::onChooseRaceProvinceButtonSelected(Game &gam
 	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Game &game, int raceID)
+void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int raceID)
 {
 	game.popSubPanel();
 
@@ -245,11 +245,11 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmButtonSelected(Ga
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSelected,
+		ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected,
 		std::move(texture), textureRect.getCenter());
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Game &game)
+void ChooseRaceUiController::onProvinceCancelButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
@@ -258,7 +258,7 @@ void CharacterCreationUiController::onChooseRaceProvinceCancelButtonSelected(Gam
 	game.pushSubPanel(std::move(textSubPanel));
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSelected(Game &game)
+void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
@@ -279,11 +279,11 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmedFirstButtonSele
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected,
+		ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected,
 		std::move(texture), textureRect.getCenter());
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSelected(Game &game)
+void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
@@ -304,11 +304,11 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmedSecondButtonSel
 		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), game.getRenderer());
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected,
+		ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected,
 		std::move(texture), textureRect.getCenter());
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSelected(Game &game)
+void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 {
 	game.popSubPanel();
 
@@ -333,27 +333,27 @@ void CharacterCreationUiController::onChooseRaceProvinceConfirmedThirdButtonSele
 		game.getRenderer());
 
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected,
+		ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected,
 		std::move(texture), textureRect.getCenter());
 }
 
-void CharacterCreationUiController::onChooseRaceProvinceConfirmedFourthButtonSelected(Game &game)
+void ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected(Game &game)
 {
 	game.popSubPanel();
 	game.setPanel<ChooseAttributesPanel>();
 }
 
-void CharacterCreationUiController::onBackToRaceSelectionButtonSelected(Game &game)
+void ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(Game &game)
 {
 	game.setPanel<ChooseRacePanel>();
 }
 
-void CharacterCreationUiController::onChooseAttributesPopUpSelected(Game &game)
+void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
 {
 	game.popSubPanel();
 }
 
-void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool *attributesAreSaved)
 {
 	// Show message box to save or reroll.
 	auto &textureManager = game.getTextureManager();
@@ -410,7 +410,7 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 
 	messageBoxSave.function = [attributesAreSaved](Game &game)
 	{
-		CharacterCreationUiController::onSaveAttributesButtonSelected(game, attributesAreSaved);
+		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
 	};
 
 	messageBoxSave.textureX = saveTextureRect.getLeft();
@@ -436,7 +436,7 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 		rerollTextureRect.getHeight(),
 		textureManager,
 		renderer);
-	messageBoxReroll.function = CharacterCreationUiController::onRerollAttributesButtonSelected;
+	messageBoxReroll.function = ChooseAttributesUiController::onRerollButtonSelected;
 	messageBoxReroll.textureX = rerollTextureRect.getLeft();
 	messageBoxReroll.textureY = rerollTextureRect.getTop();
 
@@ -450,7 +450,7 @@ void CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(Game &
 	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
 }
 
-void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &game)
+void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 {
 	auto gameStateFunction = [](Game &game)
 	{
@@ -578,7 +578,7 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 	game.setPanel<TextCinematicPanel>(
 		textCinematicDefIndex,
 		0.171,
-		CharacterCreationUiController::onPostCharacterCreationCinematicFinished);
+		ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
 
 	// Play dream music.
 	const MusicLibrary &musicLibrary = game.getMusicLibrary();
@@ -599,7 +599,7 @@ void CharacterCreationUiController::onSavedAttributesDoneButtonSelected(Game &ga
 	audioManager.setMusic(musicDef);
 }
 
-void CharacterCreationUiController::onSaveAttributesButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attributesAreSaved)
 {
 	// Confirming the chosen stats will bring up a text sub-panel, and the next time the done button is clicked,
 	// it starts the game.
@@ -626,24 +626,24 @@ void CharacterCreationUiController::onSaveAttributesButtonSelected(Game &game, b
 	// The done button is replaced after the player confirms their stats, and it then leads to the main quest
 	// opening cinematic.
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text,
-		CharacterCreationUiController::onAppearanceMessageBoxSelected,
+		ChooseAttributesUiController::onAppearanceTextBoxSelected,
 		std::move(texture), ChooseAttributesUiView::AppearanceTextCenterPoint);
 
 	*attributesAreSaved = true;
 }
 
-void CharacterCreationUiController::onRerollAttributesButtonSelected(Game &game)
+void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
 {
 	// @todo: reroll attributes.
 	game.popSubPanel();
 }
 
-void CharacterCreationUiController::onAppearanceMessageBoxSelected(Game &game)
+void ChooseAttributesUiController::onAppearanceTextBoxSelected(Game &game)
 {
 	game.popSubPanel();
 }
 
-void CharacterCreationUiController::onAppearancePortraitButtonSelected(Game &game, bool incrementIndex)
+void ChooseAttributesUiController::onPortraitButtonSelected(Game &game, bool incrementIndex)
 {
 	constexpr int minID = 0; // @todo: de-hardcode so it relies on portraits list
 	constexpr int maxID = 9;
@@ -657,19 +657,19 @@ void CharacterCreationUiController::onAppearancePortraitButtonSelected(Game &gam
 	charCreationState.setPortraitIndex(newPortraitIndex);
 }
 
-void CharacterCreationUiController::onAttributesDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attributesAreSaved)
 {
 	if (*attributesAreSaved)
 	{
-		CharacterCreationUiController::onSavedAttributesDoneButtonSelected(game);
+		ChooseAttributesUiController::onSavedDoneButtonSelected(game);
 	}
 	else
 	{
-		CharacterCreationUiController::onUnsavedAttributesDoneButtonSelected(game, attributesAreSaved);
+		ChooseAttributesUiController::onUnsavedDoneButtonSelected(game, attributesAreSaved);
 	}
 }
 
-void CharacterCreationUiController::onPostCharacterCreationCinematicFinished(Game &game)
+void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game &game)
 {
 	// Create the function that will be called when the player leaves the starting dungeon.
 	// @todo: this should be in a game logic controller namespace, not UI controller.

@@ -65,17 +65,17 @@ bool ChooseGenderPanel::init()
 		return false;
 	}
 
-	this->backToNameButton = Button<Game&>(CharacterCreationUiController::onBackToChooseNameButtonSelected);
+	this->backToNameButton = Button<Game&>(ChooseGenderUiController::onBackToChooseNameButtonSelected);
 	this->maleButton = Button<Game&>(
 		ChooseGenderUiView::MaleButtonCenter,
 		ChooseGenderUiView::MaleButtonWidth,
 		ChooseGenderUiView::MaleButtonHeight,
-		CharacterCreationUiController::onChooseGenderMaleButtonSelected);
+		ChooseGenderUiController::onMaleButtonSelected);
 	this->femaleButton = Button<Game&>(
 		ChooseGenderUiView::FemaleButtonCenter,
 		ChooseGenderUiView::FemaleButtonWidth,
 		ChooseGenderUiView::FemaleButtonHeight,
-		CharacterCreationUiController::onChooseGenderFemaleButtonSelected);
+		ChooseGenderUiController::onFemaleButtonSelected);
 
 	return true;
 }

@@ -66,17 +66,17 @@ bool ChooseClassCreationPanel::init()
 		return false;
 	}
 
-	this->backToMainMenuButton = Button<Game&>(CharacterCreationUiController::onBackToMainMenuButtonSelected);
+	this->backToMainMenuButton = Button<Game&>(ChooseClassCreationUiController::onBackToMainMenuButtonSelected);
 	this->generateButton = Button<Game&>(
 		ChooseClassCreationUiView::GenerateButtonCenterPoint,
 		ChooseClassCreationUiView::GenerateButtonWidth,
 		ChooseClassCreationUiView::GenerateButtonHeight,
-		CharacterCreationUiController::onGenerateClassButtonSelected);
+		ChooseClassCreationUiController::onGenerateButtonSelected);
 	this->selectButton = Button<Game&>(
 		ChooseClassCreationUiView::SelectButtonCenterPoint,
 		ChooseClassCreationUiView::SelectButtonWidth,
 		ChooseClassCreationUiView::SelectButtonHeight,
-		CharacterCreationUiController::onSelectClassButtonSelected);
+		ChooseClassCreationUiController::onSelectButtonSelected);
 
 	return true;
 }

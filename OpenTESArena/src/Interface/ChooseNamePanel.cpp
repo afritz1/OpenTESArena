@@ -62,8 +62,8 @@ bool ChooseNamePanel::init()
 		return false;
 	}
 
-	this->backToClassButton = Button<Game&>(CharacterCreationUiController::onBackToChooseClassButtonSelected);
-	this->acceptButton = Button<Game&, const std::string&>(CharacterCreationUiController::onChooseNameAcceptButtonSelected);
+	this->backToClassButton = Button<Game&>(ChooseNameUiController::onBackToChooseClassButtonSelected);
+	this->acceptButton = Button<Game&, const std::string&>(ChooseNameUiController::onAcceptButtonSelected);
 
 	// Activate SDL text input (handled in handleEvent()).
 	SDL_StartTextInput();

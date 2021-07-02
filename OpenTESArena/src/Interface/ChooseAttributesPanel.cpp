@@ -49,17 +49,17 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	this->backToRaceButton = Button<Game&>(CharacterCreationUiController::onBackToRaceSelectionButtonSelected);
+	this->backToRaceButton = Button<Game&>(ChooseAttributesUiController::onBackToRaceSelectionButtonSelected);
 	this->doneButton = Button<Game&, bool*>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
 		CharacterSheetUiView::DoneButtonHeight,
-		CharacterCreationUiController::onAttributesDoneButtonSelected);
+		ChooseAttributesUiController::onDoneButtonSelected);
 	this->portraitButton = Button<Game&, bool>(
 		ChooseAttributesUiView::PortraitButtonCenterPoint,
 		ChooseAttributesUiView::PortraitButtonWidth,
 		ChooseAttributesUiView::PortraitButtonHeight,
-		CharacterCreationUiController::onAppearancePortraitButtonSelected);
+		ChooseAttributesUiController::onPortraitButtonSelected);
 
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setPortraitIndex(0);
@@ -86,7 +86,7 @@ bool ChooseAttributesPanel::init()
 		renderer);
 
 	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
-		CharacterCreationUiController::onChooseAttributesPopUpSelected, std::move(initialTexture),
+		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialTexture),
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;

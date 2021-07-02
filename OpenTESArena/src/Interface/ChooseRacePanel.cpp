@@ -15,8 +15,8 @@ bool ChooseRacePanel::init()
 {
 	auto &game = this->getGame();
 
-	this->backToGenderButton = Button<Game&>(CharacterCreationUiController::onBackToChooseGenderButtonSelected);
-	this->selectProvinceButton = Button<Game&, int>(CharacterCreationUiController::onChooseRaceProvinceButtonSelected);
+	this->backToGenderButton = Button<Game&>(ChooseRaceUiController::onBackToChooseGenderButtonSelected);
+	this->selectProvinceButton = Button<Game&, int>(ChooseRaceUiController::onProvinceButtonSelected);
 
 	// Push the initial text sub-panel.
 	// @todo: allocate std::function for unravelling the map with "push initial parchment sub-panel" on finished,
@@ -49,7 +49,7 @@ std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 		game.getRenderer());
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(textBoxInitInfo, text, CharacterCreationUiController::onChooseRaceInitialPopUpButtonSelected,
+	if (!subPanel->init(textBoxInitInfo, text, ChooseRaceUiController::onInitialPopUpButtonSelected,
 		std::move(texture), ChooseRaceUiView::InitialPopUpTextureCenterPoint))
 	{
 		DebugCrash("Couldn't init choose race initial sub-panel.");
