@@ -332,6 +332,13 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
 	}, false);
 
+	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> saveTextColorOverrides =
+		ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
+	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : saveTextColorOverrides)
+	{
+		panel->addOverrideColor(0, entry.charIndex, entry.color);
+	}
+
 	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	panel->setItemText(1, rerollText);
 	panel->setItemCallback(1, [&game]()
@@ -339,97 +346,14 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		ChooseAttributesUiController::onRerollButtonSelected(game);
 	}, true);
 
+	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> rerollTextColorOverrides =
+		ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
+	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : rerollTextColorOverrides)
+	{
+		panel->addOverrideColor(1, entry.charIndex, entry.color);
+	}
+
 	game.pushSubPanel(std::move(panel));
-
-	// @todo: color override for save
-
-
-	/*const TextBox::InitInfo titleInitInfo =
-		ChooseAttributesUiView::getUnsavedDoneTitleTextBoxInitInfo(titleText, fontLibrary);
-
-	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
-	// title text, button count, button font, button alignment, and it figures out everything behind the scenes.
-	MessageBoxSubPanel::Title messageBoxTitle;
-	if (!messageBoxTitle.textBox.init(titleInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init choose attributes unsaved done title text box.");
-	}
-
-	messageBoxTitle.textBox.setText(titleText);
-
-	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
-	const Rect titleTextureRect = ChooseAttributesUiView::getUnsavedDoneTitleTextureRect(
-		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
-	messageBoxTitle.texture = TextureUtils::generate(
-		ChooseAttributesUiView::MessageBoxPatternType,
-		titleTextureRect.getWidth(),
-		titleTextureRect.getHeight(),
-		textureManager,
-		renderer);
-	messageBoxTitle.textureX = titleTextureRect.getLeft();
-	messageBoxTitle.textureY = titleTextureRect.getTop();
-
-	const std::string saveText = ChooseAttributesUiModel::getMessageBoxSaveText(game);
-	const TextBox::InitInfo saveTextBoxInitInfo =
-		ChooseAttributesUiView::getUnsavedDoneSaveTextBoxInitInfo(saveText, fontLibrary);
-
-	MessageBoxSubPanel::Element messageBoxSave;
-	if (!messageBoxSave.textBox.init(saveTextBoxInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init choose attributes unsaved done save text box.");
-	}
-
-	messageBoxSave.textBox.setText(saveText);
-
-	const Rect &saveTextBoxRect = messageBoxSave.textBox.getRect();
-	const Rect saveTextureRect = ChooseAttributesUiView::getUnsavedDoneSaveTextureRect(titleTextureRect);
-	messageBoxSave.texture = TextureUtils::generate(
-		ChooseAttributesUiView::MessageBoxPatternType,
-		saveTextureRect.getWidth(),
-		saveTextureRect.getHeight(),
-		textureManager,
-		renderer);
-
-	messageBoxSave.function = [attributesAreSaved](Game &game)
-	{
-		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
-	};
-
-	messageBoxSave.textureX = saveTextureRect.getLeft();
-	messageBoxSave.textureY = saveTextureRect.getTop();
-
-	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
-	const TextBox::InitInfo rerollTextBoxInitInfo =
-		ChooseAttributesUiView::getUnsavedDoneRerollTextBoxInitInfo(rerollText, fontLibrary);
-
-	MessageBoxSubPanel::Element messageBoxReroll;
-	if (!messageBoxReroll.textBox.init(rerollTextBoxInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init choose attributes unsaved done reroll text box.");
-	}
-
-	messageBoxReroll.textBox.setText(rerollText);
-
-	const Rect &rerollTextBoxRect = messageBoxReroll.textBox.getRect();
-	const Rect rerollTextureRect = ChooseAttributesUiView::getUnsavedDoneRerollTextureRect(saveTextureRect);
-	messageBoxReroll.texture = TextureUtils::generate(
-		ChooseAttributesUiView::MessageBoxPatternType,
-		rerollTextureRect.getWidth(),
-		rerollTextureRect.getHeight(),
-		textureManager,
-		renderer);
-	messageBoxReroll.function = ChooseAttributesUiController::onRerollButtonSelected;
-	messageBoxReroll.textureX = rerollTextureRect.getLeft();
-	messageBoxReroll.textureY = rerollTextureRect.getTop();
-
-	auto cancelFunction = messageBoxReroll.function;
-
-	// Push message box sub panel.
-	std::vector<MessageBoxSubPanel::Element> messageBoxElements;
-	messageBoxElements.emplace_back(std::move(messageBoxSave));
-	messageBoxElements.emplace_back(std::move(messageBoxReroll));
-
-	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);*/
 }
 
 void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)

@@ -9,6 +9,7 @@
 #include "FontDefinition.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
+#include "../Media/Palette.h"
 
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"
@@ -35,9 +36,7 @@ namespace TextRenderUtils
 	// Data for replacing default text character colors with overrides.
 	class ColorOverrideInfo
 	{
-	private:
-		// @todo: not sure about this yet; might eventually insert color formatting into the string itself,
-		// only if it's more convenient.
+	public:
 		struct Entry
 		{
 			int charIndex; // Index of character in text.
@@ -45,9 +44,13 @@ namespace TextRenderUtils
 
 			Entry(int charIndex, const Color &color);
 		};
-
+	private:
 		std::vector<Entry> entries;
 	public:
+		// Generates a list of color override entries from text containing the "tab-color" pattern,
+		// where an 8-bit palette index follows a '\t' character.
+		static std::vector<Entry> makeEntriesFromText(const std::string_view &text, const Palette &palette);
+
 		int getEntryCount() const;
 		std::optional<int> findEntryIndex(int charIndex) const;
 		const Color &getColor(int entryIndex) const;

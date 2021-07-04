@@ -25,6 +25,24 @@ TextRenderUtils::ColorOverrideInfo::Entry::Entry(int charIndex, const Color &col
 	this->charIndex = charIndex;
 }
 
+std::vector<TextRenderUtils::ColorOverrideInfo::Entry> TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(
+	const std::string_view &text, const Palette &palette)
+{
+	std::vector<Entry> entries;
+
+	for (size_t i = 0; i < text.size(); i++)
+	{
+		if ((text[i] == '\t') && (i < (text.size() - 1)))
+		{
+			const uint8_t paletteIndex = static_cast<uint8_t>(text[i + 1]) + 1;
+			const Color &paletteColor = palette[paletteIndex];
+			entries.emplace_back(Entry(static_cast<int>(i) - 1, paletteColor));
+		}
+	}
+
+	return entries;
+}
+
 int TextRenderUtils::ColorOverrideInfo::getEntryCount() const
 {
 	return static_cast<int>(this->entries.size());

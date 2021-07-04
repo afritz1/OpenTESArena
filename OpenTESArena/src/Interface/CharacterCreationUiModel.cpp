@@ -1,5 +1,6 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Game/Game.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/ArmorMaterialType.h"
@@ -542,6 +543,40 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 	text.erase(1, 2);
 
 	return text;
+}
+
+std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string text = exeData.charCreation.chooseAttributesSave;
+
+	auto &textureManager = game.getTextureManager();
+	const std::string &paletteName = ArenaPaletteName::CharSheet;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
+}
+
+std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
+{
+	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
+	std::string text = exeData.charCreation.chooseAttributesReroll;
+	
+	auto &textureManager = game.getTextureManager();
+	const std::string &paletteName = ArenaPaletteName::CharSheet;
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
+	if (!paletteID.has_value())
+	{
+		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+	}
+
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
 }
 
 std::string ChooseAttributesUiModel::getAppearanceText(Game &game)

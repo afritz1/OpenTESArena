@@ -3,8 +3,10 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "../Math/Vector2.h"
+#include "../UI/TextRenderUtils.h"
 
 class CharacterClassDefinition;
 class Game;
@@ -68,6 +70,8 @@ namespace ChooseAttributesUiModel
 	std::string getMessageBoxTitleText(Game &game);
 	std::string getMessageBoxSaveText(Game &game);
 	std::string getMessageBoxRerollText(Game &game);
+	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxSaveColorOverrides(Game &game);
+	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxRerollColorOverrides(Game &game);
 
 	std::string getAppearanceText(Game &game);
 }
