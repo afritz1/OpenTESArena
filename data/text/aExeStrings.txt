@@ -42,8 +42,8 @@ ConfirmedRace3=0x35CA2,60
 ConfirmedRace4=0x35CE0,67
 DistributeClassPoints=0x35D25,93
 ChooseAttributes=0x35FA3,23
-ChooseAttributesSave=0x3F66B,12
-ChooseAttributesReroll=0x3F67B,14
+ChooseAttributesSave=0x3F669,14
+ChooseAttributesReroll=0x3F679,16
 ChooseAppearance=0x35D84,174
 
 [CityGeneration]

@@ -28,15 +28,17 @@ TextRenderUtils::ColorOverrideInfo::Entry::Entry(int charIndex, const Color &col
 std::vector<TextRenderUtils::ColorOverrideInfo::Entry> TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(
 	const std::string_view &text, const Palette &palette)
 {
+	// Technically the original game treats these as global color mode changes, not single-character overrides,
+	// so that could be something better-handled maybe.
 	std::vector<Entry> entries;
 
 	for (size_t i = 0; i < text.size(); i++)
 	{
-		if ((text[i] == '\t') && (i < (text.size() - 1)))
+		if ((text[i] == '\t') && (i < (text.size() - 2)))
 		{
-			const uint8_t paletteIndex = static_cast<uint8_t>(text[i + 1]) + 1;
+			const uint8_t paletteIndex = static_cast<uint8_t>(text[i + 1]);
 			const Color &paletteColor = palette[paletteIndex];
-			entries.emplace_back(Entry(static_cast<int>(i) - 1, paletteColor));
+			entries.emplace_back(Entry(static_cast<int>(i), paletteColor));
 		}
 	}
 

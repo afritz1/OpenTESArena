@@ -526,9 +526,10 @@ std::string ChooseAttributesUiModel::getMessageBoxSaveText(Game &game)
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
-	// @todo: use the formatting characters in the string for color.
-	// - For now, just delete them.
-	text.erase(1, 2);
+	// Delete color override characters.
+	// @todo: maybe transform the string in a better way so it works with Arena '\t' colors and some kind of modern format.
+	text.erase(3, 2);
+	text.erase(0, 2);
 
 	return text;
 }
@@ -538,9 +539,10 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 
-	// @todo: use the formatting characters in the string for color.
-	// - For now, just delete them.
-	text.erase(1, 2);
+	// Delete color override characters.
+	// @todo: maybe transform the string in a better way so it works with Arena '\t' colors and some kind of modern format.
+	text.erase(3, 2);
+	text.erase(0, 2);
 
 	return text;
 }
@@ -551,7 +553,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
 	auto &textureManager = game.getTextureManager();
-	const std::string &paletteName = ArenaPaletteName::CharSheet;
+	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{
@@ -568,7 +570,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	std::string text = exeData.charCreation.chooseAttributesReroll;
 	
 	auto &textureManager = game.getTextureManager();
-	const std::string &paletteName = ArenaPaletteName::CharSheet;
+	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{
