@@ -7,22 +7,157 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/CursorData.h"
+#include "../UI/TextAlignment.h"
+
+MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::PatternType patternType,
+	int extraTitleWidth, int extraTitleHeight, const std::optional<int> &widthOverride,
+	const std::optional<int> &heightOverride, int itemTextureHeight)
+	: widthOverride(widthOverride), heightOverride(heightOverride)
+{
+	this->patternType = patternType;
+	this->extraTitleWidth = extraTitleWidth;
+	this->extraTitleHeight = extraTitleHeight;
+	this->itemTextureHeight = itemTextureHeight;
+}
+
+MessageBoxSubPanel::TitleProperties::TitleProperties(const std::string &fontName,
+	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
+	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
+{
+	this->lineSpacing = lineSpacing;
+}
+
+MessageBoxSubPanel::ItemsProperties::ItemsProperties(int count, const std::string &fontName,
+	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor)
+	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
+{
+	this->count = count;
+}
+
+MessageBoxSubPanel::Item::Item()
+{
+	this->isCancelButton = false;
+}
+
+void MessageBoxSubPanel::Item::init(const Rect &backgroundTextureRect, Texture &&backgroundTexture, TextBox &&textBox)
+{
+	this->backgroundTextureRect = backgroundTextureRect;
+	this->backgroundTexture = std::move(backgroundTexture);
+	this->textBox = std::move(textBox);
+}
 
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game)
 	: Panel(game) { }
 
-bool MessageBoxSubPanel::init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements,
-	const std::function<void(Game&)> &cancelFunction)
+bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, const Rect &titleRect,
+	const TitleProperties &titleProperties, const ItemsProperties &itemsProperties)
 {
-	this->title = std::move(title);
-	this->elements = std::move(elements);
-	this->cancelFunction = cancelFunction;
+	auto &game = this->getGame();
+	auto &textureManager = game.getTextureManager();
+	auto &renderer = game.getRenderer();
+	const FontLibrary &fontLibrary = game.getFontLibrary();
+
+	// The background expands to fit the text, unless overridden.
+	const int titleBackgroundWidth = backgroundProperties.widthOverride.has_value() ?
+		*backgroundProperties.widthOverride : (titleRect.getWidth() + backgroundProperties.extraTitleWidth);
+	const int titleBackgroundHeight = backgroundProperties.heightOverride.has_value() ?
+		*backgroundProperties.heightOverride : (titleRect.getHeight() + backgroundProperties.extraTitleHeight);
+	this->titleBackgroundRect = Rect(titleRect.getCenter(), titleBackgroundWidth, titleBackgroundHeight);
+	
+	this->titleBackgroundTexture = TextureUtils::generate(backgroundProperties.patternType,
+		this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight(), textureManager, renderer);
+	if (this->titleBackgroundTexture.get() == nullptr)
+	{
+		DebugLogError("Couldn't init message box title background texture.");
+		return false;
+	}
+
+	int titleFontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(titleProperties.fontName.c_str(), &titleFontDefIndex))
+	{
+		DebugLogError("Couldn't get message box title font definition for \"" + titleProperties.fontName + "\".");
+		return false;
+	}
+
+	constexpr TextAlignment titleAlignment = TextAlignment::MiddleCenter;
+	const TextBox::Properties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
+		titleProperties.textColor, titleAlignment, std::nullopt, titleProperties.lineSpacing);
+	if (!this->titleTextBox.init(titleRect, titleTextBoxProperties, renderer))
+	{
+		DebugLogError("Couldn't init message box title text box.");
+		return false;
+	}
+
+	int itemFontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(itemsProperties.fontName.c_str(), &itemFontDefIndex))
+	{
+		DebugLogError("Couldn't get message box item font definition for \"" + itemsProperties.fontName + "\".");
+		return false;
+	}
+
+	constexpr TextAlignment itemAlignment = titleAlignment;
+	const TextBox::Properties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
+		itemsProperties.textColor, itemAlignment);
+	
+	this->items.init(itemsProperties.count);
+	for (int i = 0; i < this->items.getCount(); i++)
+	{
+		const Rect itemBackgroundRect(
+			titleBackgroundRect.getLeft(),
+			titleBackgroundRect.getBottom() + (i * backgroundProperties.itemTextureHeight),
+			titleBackgroundRect.getWidth(),
+			backgroundProperties.itemTextureHeight);
+
+		Texture itemBackgroundTexture = TextureUtils::generate(backgroundProperties.patternType,
+			itemBackgroundRect.getWidth(), itemBackgroundRect.getHeight(), textureManager, renderer);
+
+		Rect itemTextBoxRect(
+			itemBackgroundRect.getCenter(),
+			itemsProperties.textureGenInfo.width,
+			itemsProperties.textureGenInfo.height);
+
+		TextBox itemTextBox;
+		if (!itemTextBox.init(itemTextBoxRect, itemTextBoxProperties, renderer))
+		{
+			DebugLogError("Couldn't init message box item text box " + std::to_string(i) + ".");
+			return false;
+		}
+
+		MessageBoxSubPanel::Item &item = this->items.get(i);
+		item.init(itemBackgroundRect, std::move(itemBackgroundTexture), std::move(itemTextBox));
+	}
+
 	return true;
 }
 
-bool MessageBoxSubPanel::init(MessageBoxSubPanel::Title &&title, std::vector<MessageBoxSubPanel::Element> &&elements)
+void MessageBoxSubPanel::setTitleText(const std::string_view &text)
 {
-	return this->init(std::move(title), std::move(elements), [](Game&) { });
+	this->titleTextBox.setText(text);
+}
+
+void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view &text)
+{
+	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	item.textBox.setText(text);
+}
+
+void MessageBoxSubPanel::setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton)
+{
+	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	item.callback = callback;
+	item.isCancelButton = isCancelButton;
+}
+
+void MessageBoxSubPanel::addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor)
+{
+	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	item.textBox.addOverrideColor(charIndex, overrideColor);
+}
+
+void MessageBoxSubPanel::clearOverrideColors(int itemIndex)
+{
+	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	item.textBox.clearOverrideColors();
 }
 
 std::optional<CursorData> MessageBoxSubPanel::getCurrentCursor() const
@@ -54,33 +189,38 @@ std::optional<CursorData> MessageBoxSubPanel::getCurrentCursor() const
 void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 {
 	auto &game = this->getGame();
-	const auto &inputManager = this->getGame().getInputManager();
+	const auto &inputManager = game.getInputManager();
 	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
 	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
 	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
 
 	if (escapePressed || rightClick)
 	{
-		this->cancelFunction(game);
+		// Try to close the message box as if a cancel button had been clicked.
+		for (int i = 0; i < this->items.getCount(); i++)
+		{
+			const MessageBoxSubPanel::Item &item = this->items.get(i);
+			if (item.isCancelButton)
+			{
+				item.callback();
+				break;
+			}
+		}
 	}
 	else if (leftClick)
 	{
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
+		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
 
 		// See if any buttons were clicked.
-		for (const auto &element : this->elements)
+		for (int i = 0; i < this->items.getCount(); i++)
 		{
-			const Rect elementRect(
-				element.textureX,
-				element.textureY,
-				element.texture.getWidth(),
-				element.texture.getHeight());
-
-			if (elementRect.contains(originalPoint))
+			const MessageBoxSubPanel::Item &item = this->items.get(i);
+			const Rect &itemBackgroundRect = item.backgroundTextureRect;
+			if (itemBackgroundRect.contains(originalPoint))
 			{
-				element.function(game);
+				item.callback();
+				break;
 			}
 		}
 	}
@@ -90,18 +230,16 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 
 void MessageBoxSubPanel::render(Renderer &renderer)
 {
-	renderer.drawOriginal(this->title.texture, this->title.textureX, this->title.textureY);
+	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
+	renderer.drawOriginal(this->titleBackgroundTexture, this->titleBackgroundRect.getLeft(), this->titleBackgroundRect.getTop());
+	renderer.drawOriginal(this->titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
 
-	TextBox &titleTextBox = this->title.textBox;
-	const Rect &titleTextBoxRect = titleTextBox.getRect();
-	renderer.drawOriginal(titleTextBox.getTexture(), titleTextBoxRect.getLeft(), titleTextBoxRect.getTop());
-
-	for (auto &element : this->elements)
+	for (int i = 0; i < this->items.getCount(); i++)
 	{
-		renderer.drawOriginal(element.texture, element.textureX, element.textureY);
-
-		TextBox &elementTextBox = element.textBox;
-		const Rect &elementTextBoxRect = elementTextBox.getRect();
-		renderer.drawOriginal(elementTextBox.getTexture(), elementTextBoxRect.getLeft(), elementTextBoxRect.getTop());
+		MessageBoxSubPanel::Item &item = this->items.get(i);
+		const Rect &itemBackgroundRect = item.backgroundTextureRect;
+		const Rect &itemTextBoxRect = item.textBox.getRect();
+		renderer.drawOriginal(item.backgroundTexture, itemBackgroundRect.getLeft(), itemBackgroundRect.getTop());
+		renderer.drawOriginal(item.textBox.getTexture(), itemTextBoxRect.getLeft(), itemTextBoxRect.getTop());
 	}
 }

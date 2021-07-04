@@ -2,6 +2,7 @@
 #define CHARACTER_CREATION_UI_VIEW_H
 
 #include "../Assets/TextureAssetReference.h"
+#include "../Interface/MessageBoxSubPanel.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureUtils.h"
@@ -164,25 +165,11 @@ namespace ChooseRaceUiView
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 	const std::string ProvinceConfirmTitleFontName = ArenaFontName::A;
 	const Color ProvinceConfirmTitleTextColor(52, 24, 8);
-	constexpr TextAlignment ProvinceConfirmTitleAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmTitleLineSpacing = 1;
 	constexpr TextureUtils::PatternType ProvinceConfirmTitleTexturePatternType = TextureUtils::PatternType::Parchment;
 
-	const Int2 ProvinceConfirmYesCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 28);
-	const std::string ProvinceConfirmYesFontName = ProvinceConfirmTitleFontName;
-	const Color ProvinceConfirmYesTextColor = ProvinceConfirmTitleTextColor;
-	constexpr TextAlignment ProvinceConfirmYesAlignment = ProvinceConfirmTitleAlignment;
-	constexpr TextureUtils::PatternType ProvinceConfirmYesTexturePatternType = TextureUtils::PatternType::Parchment;
-
-	const Int2 ProvinceConfirmNoCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 68);
-	const std::string ProvinceConfirmNoFontName = ProvinceConfirmTitleFontName;
-	const Color ProvinceConfirmNoTextColor = ProvinceConfirmTitleTextColor;
-	constexpr TextAlignment ProvinceConfirmNoAlignment = ProvinceConfirmTitleAlignment;
-	constexpr TextureUtils::PatternType ProvinceConfirmNoTexturePatternType = TextureUtils::PatternType::Parchment;
+	const std::string ProvinceConfirmItemFontName = ProvinceConfirmTitleFontName;
+	const Color ProvinceConfirmItemTextColor = ProvinceConfirmTitleTextColor;
 
 	const Int2 ProvinceConfirmedFirstTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
@@ -222,18 +209,17 @@ namespace ChooseRaceUiView
 	int getNoExitTextureX(int textureWidth);
 	int getNoExitTextureY(int textureHeight);
 
-	Rect getProvinceConfirmTitleTextureRect(int textWidth, int textHeight);
-	Rect getProvinceConfirmYesTextureRect(const Rect &titleTextureRect);
-	Rect getProvinceConfirmNoTextureRect(const Rect &yesTextureRect);
+	Rect getProvinceConfirmTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary);
+
+	MessageBoxSubPanel::BackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
+	MessageBoxSubPanel::TitleProperties getProvinceConfirmMessageBoxTitleProperties(const std::string_view &text,
+		const FontLibrary &fontLibrary);
+	MessageBoxSubPanel::ItemsProperties getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
 	Rect getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
-
-	TextBox::InitInfo getProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getProvinceConfirmYesTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getProvinceConfirmNoTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 
 	TextBox::InitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
@@ -261,23 +247,10 @@ namespace ChooseAttributesUiView
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 	const std::string MessageBoxTitleFontName = ArenaFontName::A;
 	const Color MessageBoxTitleColor(199, 199, 199);
-	constexpr TextAlignment MessageBoxTitleAlignment = TextAlignment::MiddleCenter;
 	constexpr TextureUtils::PatternType MessageBoxPatternType = TextureUtils::PatternType::Dark;
 
-	// @todo: various properties of the message box buttons will likely be combined in the future by MessageBoxSubPanel.
-	const Int2 MessageBoxSaveCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 2);
-	const std::string MessageBoxSaveFontName = ArenaFontName::A;
-	const Color MessageBoxSaveColor(190, 113, 0);
-	constexpr TextAlignment MessageBoxSaveAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 MessageBoxRerollCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) + 26);
-	const std::string MessageBoxRerollFontName = ArenaFontName::A;
-	const Color MessageBoxRerollColor(190, 113, 0);
-	constexpr TextAlignment MessageBoxRerollAlignment = TextAlignment::MiddleCenter;
+	const std::string MessageBoxItemFontName = ArenaFontName::A;
+	const Color MessageBoxItemTextColor(190, 113, 0);
 
 	const Int2 AppearanceTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
@@ -295,13 +268,12 @@ namespace ChooseAttributesUiView
 	int getInitialTextureWidth();
 	int getInitialTextureHeight();
 
-	Rect getUnsavedDoneTitleTextureRect(int textWidth, int textHeight);
-	Rect getUnsavedDoneSaveTextureRect(const Rect &titleTextureRect);
-	Rect getUnsavedDoneRerollTextureRect(const Rect &saveTextureRect);
+	Rect getMessageBoxTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary);
 
-	TextBox::InitInfo getUnsavedDoneTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getUnsavedDoneSaveTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getUnsavedDoneRerollTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	MessageBoxSubPanel::BackgroundProperties getMessageBoxBackgroundProperties();
+	MessageBoxSubPanel::TitleProperties getMessageBoxTitleProperties(const std::string_view &text,
+		const FontLibrary &fontLibrary);
+	MessageBoxSubPanel::ItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
 	int getAppearanceTextBoxTextureWidth(int textWidth);
 	int getAppearanceTextBoxTextureHeight(int textHeight);

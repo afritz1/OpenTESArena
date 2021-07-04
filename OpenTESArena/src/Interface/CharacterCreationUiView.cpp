@@ -246,33 +246,75 @@ int ChooseRaceUiView::getNoExitTextureY(int textureHeight)
 	return ArenaRenderUtils::SCREEN_HEIGHT - textureHeight;
 }
 
-Rect ChooseRaceUiView::getProvinceConfirmTitleTextureRect(int textWidth, int textHeight)
+Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	const int width = textWidth + 22;
-	const int height = 60; // Doesn't need text height.
+	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 	return Rect(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (width / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (height / 2) - 21,
-		width,
-		height);
+		ChooseRaceUiView::ProvinceConfirmTitleCenterPoint,
+		textureGenInfo.width,
+		textureGenInfo.height);
 }
 
-Rect ChooseRaceUiView::getProvinceConfirmYesTextureRect(const Rect &titleTextureRect)
+MessageBoxSubPanel::BackgroundProperties ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties()
 {
-	return Rect(
-		titleTextureRect.getLeft(),
-		titleTextureRect.getTop() + titleTextureRect.getHeight(),
-		titleTextureRect.getWidth(),
+	return MessageBoxSubPanel::BackgroundProperties(
+		ChooseRaceUiView::ProvinceConfirmTitleTexturePatternType,
+		22,
+		0,
+		std::nullopt,
+		60,
 		40);
 }
 
-Rect ChooseRaceUiView::getProvinceConfirmNoTextureRect(const Rect &yesTextureRect)
+MessageBoxSubPanel::TitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(
+	const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	return Rect(
-		yesTextureRect.getLeft(),
-		yesTextureRect.getTop() + yesTextureRect.getHeight(),
-		yesTextureRect.getWidth(),
-		yesTextureRect.getHeight());
+	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
+	return MessageBoxSubPanel::TitleProperties(
+		fontName,
+		textureGenInfo,
+		ChooseRaceUiView::ProvinceConfirmTitleTextColor,
+		ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
+}
+
+MessageBoxSubPanel::ItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(
+	const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(5, TextRenderUtils::LARGEST_CHAR);
+	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmItemFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+
+	constexpr int itemCount = 2;
+	return MessageBoxSubPanel::ItemsProperties(
+		itemCount,
+		fontName,
+		textureGenInfo,
+		ChooseRaceUiView::ProvinceConfirmItemTextColor);
 }
 
 Rect ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight)
@@ -317,44 +359,6 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		center,
 		textWidth + 20,
 		std::max(textHeight + 8, 40));
-}
-
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmTitleTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmTitleCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmTitleFontName,
-		ChooseRaceUiView::ProvinceConfirmTitleTextColor,
-		ChooseRaceUiView::ProvinceConfirmTitleAlignment,
-		std::nullopt,
-		ChooseRaceUiView::ProvinceConfirmTitleLineSpacing,
-		fontLibrary);
-}
-
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmYesTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmYesCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmYesFontName,
-		ChooseRaceUiView::ProvinceConfirmYesTextColor,
-		ChooseRaceUiView::ProvinceConfirmYesAlignment,
-		fontLibrary);
-}
-
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmNoTextBoxInitInfo(const std::string_view &text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmNoCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmNoFontName,
-		ChooseRaceUiView::ProvinceConfirmNoTextColor,
-		ChooseRaceUiView::ProvinceConfirmNoAlignment,
-		fontLibrary);
 }
 
 TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
@@ -423,69 +427,68 @@ int ChooseAttributesUiView::getInitialTextureHeight()
 	return 42;
 }
 
-Rect ChooseAttributesUiView::getUnsavedDoneTitleTextureRect(int textWidth, int textHeight)
+Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary)
 {
-	const int textureWidth = textWidth + 12;
-	const int textureHeight = 24;
-	return Rect(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 21,
-		textureWidth,
-		textureHeight);
-}
+	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
 
-Rect ChooseAttributesUiView::getUnsavedDoneSaveTextureRect(const Rect &titleTextureRect)
-{
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 	return Rect(
-		titleTextureRect.getLeft(),
-		titleTextureRect.getTop() + titleTextureRect.getHeight(),
-		titleTextureRect.getWidth(),
-		titleTextureRect.getHeight());
-}
-
-Rect ChooseAttributesUiView::getUnsavedDoneRerollTextureRect(const Rect &saveTextureRect)
-{
-	return Rect(
-		saveTextureRect.getLeft(),
-		saveTextureRect.getTop() + saveTextureRect.getHeight(),
-		saveTextureRect.getWidth(),
-		saveTextureRect.getHeight());
-}
-
-TextBox::InitInfo ChooseAttributesUiView::getUnsavedDoneTitleTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
 		ChooseAttributesUiView::MessageBoxTitleCenterPoint,
-		ChooseAttributesUiView::MessageBoxTitleFontName,
-		ChooseAttributesUiView::MessageBoxTitleColor,
-		ChooseAttributesUiView::MessageBoxTitleAlignment,
-		fontLibrary);
+		textureGenInfo.width,
+		textureGenInfo.height);
 }
 
-TextBox::InitInfo ChooseAttributesUiView::getUnsavedDoneSaveTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+MessageBoxSubPanel::BackgroundProperties ChooseAttributesUiView::getMessageBoxBackgroundProperties()
 {
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseAttributesUiView::MessageBoxSaveCenterPoint,
-		ChooseAttributesUiView::MessageBoxSaveFontName,
-		ChooseAttributesUiView::MessageBoxSaveColor,
-		ChooseAttributesUiView::MessageBoxSaveAlignment,
-		fontLibrary);
+	return MessageBoxSubPanel::BackgroundProperties(
+		ChooseAttributesUiView::MessageBoxPatternType,
+		12,
+		0,
+		std::nullopt,
+		24,
+		24);
 }
 
-TextBox::InitInfo ChooseAttributesUiView::getUnsavedDoneRerollTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+MessageBoxSubPanel::TitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(const std::string_view &text,
+	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		ChooseAttributesUiView::MessageBoxRerollCenterPoint,
-		ChooseAttributesUiView::MessageBoxRerollFontName,
-		ChooseAttributesUiView::MessageBoxRerollColor,
-		ChooseAttributesUiView::MessageBoxRerollAlignment,
-		fontLibrary);
+	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	return MessageBoxSubPanel::TitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
+}
+
+MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(const FontLibrary &fontLibrary)
+{
+	const std::string dummyText(10, TextRenderUtils::LARGEST_CHAR);
+	const std::string &fontName = ChooseAttributesUiView::MessageBoxItemFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
+	{
+		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+
+	constexpr int itemCount = 2;
+	return MessageBoxSubPanel::ItemsProperties(
+		itemCount,
+		fontName,
+		textureGenInfo,
+		ChooseAttributesUiView::MessageBoxItemTextColor);
 }
 
 int ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(int textWidth)

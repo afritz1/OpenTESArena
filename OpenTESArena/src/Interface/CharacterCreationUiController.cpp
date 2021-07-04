@@ -128,100 +128,47 @@ void ChooseRaceUiController::onInitialPopUpButtonSelected(Game &game)
 
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
-	// Set character creation race.
 	auto &charCreationState = game.getCharacterCreationState();
 	charCreationState.setRaceIndex(raceID);
 
-	// Generate the race selection message box.
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-
 	const auto &fontLibrary = game.getFontLibrary();
-	const std::string titleText = ChooseRaceUiModel::getProvinceConfirmTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo =
-		ChooseRaceUiView::getProvinceConfirmTitleTextBoxInitInfo(titleText, fontLibrary);
 
-	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
-	// title text, button count, button font, button alignment, and it figures out everything behind the scenes.
-	MessageBoxSubPanel::Title messageBoxTitle;
-	if (!messageBoxTitle.textBox.init(titleTextBoxInitInfo, renderer))
+	// Populate and display province confirm message box.
+	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
+		ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties();
+
+	const std::string titleText = ChooseRaceUiModel::getProvinceConfirmTitleText(game);
+	const Rect titleRect = ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(titleText, fontLibrary);
+	const MessageBoxSubPanel::TitleProperties titleProperties =
+		ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxSubPanel::ItemsProperties itemsProperties =
+		ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(fontLibrary);
+	
+	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
+	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
 	{
-		DebugCrash("Couldn't init province confirm title text box.");
+		DebugCrash("Couldn't init province confirm message box sub-panel.");
 	}
 
-	messageBoxTitle.textBox.setText(titleText);
-
-	const Rect &titleTextBoxRect = messageBoxTitle.textBox.getRect();
-	const Rect titleTextureRect = ChooseRaceUiView::getProvinceConfirmTitleTextureRect(
-		titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
-	messageBoxTitle.texture = TextureUtils::generate(
-		ChooseRaceUiView::ProvinceConfirmTitleTexturePatternType,
-		titleTextureRect.getWidth(),
-		titleTextureRect.getHeight(),
-		textureManager,
-		renderer);
-	messageBoxTitle.textureX = titleTextureRect.getLeft();
-	messageBoxTitle.textureY = titleTextureRect.getTop();
+	panel->setTitleText(titleText);
 
 	const std::string yesText = ChooseRaceUiModel::getProvinceConfirmYesText(game);
-	const TextBox::InitInfo yesTextBoxInitInfo =
-		ChooseRaceUiView::getProvinceConfirmYesTextBoxInitInfo(yesText, fontLibrary);
-
-	MessageBoxSubPanel::Element messageBoxYes;
-	if (!messageBoxYes.textBox.init(yesTextBoxInitInfo, renderer))
-	{
-		DebugCrash("Couldn't init province confirm yes text box.");
-	}
-
-	messageBoxYes.textBox.setText(yesText);
-
-	const Rect yesTextureRect = ChooseRaceUiView::getProvinceConfirmYesTextureRect(titleTextureRect);
-	messageBoxYes.texture = TextureUtils::generate(
-		ChooseRaceUiView::ProvinceConfirmYesTexturePatternType,
-		yesTextureRect.getWidth(),
-		yesTextureRect.getHeight(),
-		textureManager,
-		renderer);
-
-	messageBoxYes.function = [raceID](Game &game)
+	panel->setItemText(0, yesText);
+	panel->setItemCallback(0, [&game, raceID]()
 	{
 		ChooseRaceUiController::onProvinceConfirmButtonSelected(game, raceID);
-	};
-
-	messageBoxYes.textureX = yesTextureRect.getLeft();
-	messageBoxYes.textureY = yesTextureRect.getTop();
+	}, false);
 
 	const std::string noText = ChooseRaceUiModel::getProvinceConfirmNoText(game);
-	const TextBox::InitInfo noTextBoxInitInfo =
-		ChooseRaceUiView::getProvinceConfirmNoTextBoxInitInfo(noText, fontLibrary);
-
-	MessageBoxSubPanel::Element messageBoxNo;
-	if (!messageBoxNo.textBox.init(noTextBoxInitInfo, renderer))
+	panel->setItemText(1, noText);
+	panel->setItemCallback(1, [&game]()
 	{
-		DebugCrash("Couldn't init province confirm no text box.");
-	}
+		ChooseRaceUiController::onProvinceCancelButtonSelected(game);
+	}, true);
 
-	messageBoxNo.textBox.setText(noText);
-
-	const Rect noTextureRect = ChooseRaceUiView::getProvinceConfirmNoTextureRect(yesTextureRect);
-	messageBoxNo.texture = TextureUtils::generate(
-		ChooseRaceUiView::ProvinceConfirmNoTexturePatternType,
-		noTextureRect.getWidth(),
-		noTextureRect.getHeight(),
-		textureManager,
-		renderer);
-
-	messageBoxNo.function = ChooseRaceUiController::onProvinceCancelButtonSelected;
-	messageBoxNo.textureX = noTextureRect.getLeft();
-	messageBoxNo.textureY = noTextureRect.getTop();
-
-	auto cancelFunction = messageBoxNo.function;
-
-	std::vector<MessageBoxSubPanel::Element> messageBoxElements;
-	messageBoxElements.emplace_back(std::move(messageBoxYes));
-	messageBoxElements.emplace_back(std::move(messageBoxNo));
-
-	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
+	game.pushSubPanel(std::move(panel));
 }
 
 void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int raceID)
@@ -358,11 +305,46 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	// Show message box to save or reroll.
 	auto &textureManager = game.getTextureManager();
 	auto &renderer = game.getRenderer();
-
-	// @todo: add InitInfos for this Save/Reroll message box sub-panel
 	const auto &fontLibrary = game.getFontLibrary();
+
+	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
+		ChooseAttributesUiView::getMessageBoxBackgroundProperties();
+
 	const std::string titleText = ChooseAttributesUiModel::getMessageBoxTitleText(game);
-	const TextBox::InitInfo titleInitInfo =
+	const Rect titleRect = ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(titleText, fontLibrary);
+	const MessageBoxSubPanel::TitleProperties titleProperties =
+		ChooseAttributesUiView::getMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxSubPanel::ItemsProperties itemsProperties =
+		ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
+
+	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
+	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
+	{
+		DebugCrash("Couldn't init save/reroll message box sub-panel.");
+	}
+
+	panel->setTitleText(titleText);
+
+	const std::string saveText = ChooseAttributesUiModel::getMessageBoxSaveText(game);
+	panel->setItemText(0, saveText);
+	panel->setItemCallback(0, [&game, attributesAreSaved]()
+	{
+		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
+	}, false);
+
+	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
+	panel->setItemText(1, rerollText);
+	panel->setItemCallback(1, [&game]()
+	{
+		ChooseAttributesUiController::onRerollButtonSelected(game);
+	}, true);
+
+	game.pushSubPanel(std::move(panel));
+
+	// @todo: color override for save
+
+
+	/*const TextBox::InitInfo titleInitInfo =
 		ChooseAttributesUiView::getUnsavedDoneTitleTextBoxInitInfo(titleText, fontLibrary);
 
 	// @todo: MessageBoxSubPanel feels over-specified in general. It should be really easy to pass values to it like
@@ -447,7 +429,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	messageBoxElements.emplace_back(std::move(messageBoxSave));
 	messageBoxElements.emplace_back(std::move(messageBoxReroll));
 
-	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);
+	game.pushSubPanel<MessageBoxSubPanel>(std::move(messageBoxTitle), std::move(messageBoxElements), cancelFunction);*/
 }
 
 void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
