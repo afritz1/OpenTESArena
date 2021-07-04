@@ -148,6 +148,12 @@ void MessageBoxSubPanel::setItemCallback(int itemIndex, const ItemCallback &call
 	item.isCancelButton = isCancelButton;
 }
 
+void MessageBoxSubPanel::setItemHotkey(int itemIndex, const std::optional<SDL_Keycode> &keycode)
+{
+	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	item.hotkey = keycode;
+}
+
 void MessageBoxSubPanel::addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor)
 {
 	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
@@ -224,8 +230,19 @@ void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
 			}
 		}
 	}
-
-	// @todo: custom hotkeys.
+	else
+	{
+		// Item-specific hotkeys.
+		for (int i = 0; i < this->items.getCount(); i++)
+		{
+			const MessageBoxSubPanel::Item &item = this->items.get(i);
+			if (item.hotkey.has_value() && inputManager.keyPressed(e, *item.hotkey))
+			{
+				item.callback();
+				break;
+			}
+		}
+	}
 }
 
 void MessageBoxSubPanel::render(Renderer &renderer)

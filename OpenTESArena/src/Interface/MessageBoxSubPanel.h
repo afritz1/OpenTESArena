@@ -5,6 +5,8 @@
 #include <optional>
 #include <string>
 
+#include "SDL.h"
+
 #include "Panel.h"
 #include "../Media/TextureUtils.h"
 #include "../UI/TextBox.h"
@@ -64,6 +66,7 @@ private:
 		Texture backgroundTexture;
 		TextBox textBox;
 		ItemCallback callback;
+		std::optional<SDL_Keycode> hotkey;
 		bool isCancelButton;
 
 		Item();
@@ -85,6 +88,7 @@ public:
 	void setTitleText(const std::string_view &text);
 	void setItemText(int itemIndex, const std::string_view &text);
 	void setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton);
+	void setItemHotkey(int itemIndex, const std::optional<SDL_Keycode> &keycode);
 
 	void addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor);
 	void clearOverrideColors(int itemIndex);

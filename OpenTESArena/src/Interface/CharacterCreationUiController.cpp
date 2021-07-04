@@ -339,6 +339,8 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
 
+	panel->setItemHotkey(0, SDLK_s);
+
 	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	panel->setItemText(1, rerollText);
 	panel->setItemCallback(1, [&game]()
@@ -352,6 +354,8 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	{
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
+
+	panel->setItemHotkey(1, SDLK_r);
 
 	game.pushSubPanel(std::move(panel));
 }
