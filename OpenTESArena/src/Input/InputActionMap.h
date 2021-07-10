@@ -5,6 +5,12 @@
 
 #include "InputActionDefinition.h"
 
-using InputActionMap = std::vector<InputActionDefinition>;
+struct InputActionMap
+{
+	std::vector<InputActionDefinition> defs;
+	bool active;
+
+	InputActionMap();
+};
 
 #endif
