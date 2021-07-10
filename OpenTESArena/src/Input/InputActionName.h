@@ -38,6 +38,7 @@ namespace InputActionName
 	constexpr const char *StartNewGame = "StartNewGame";
 	constexpr const char *LoadGame = "LoadGame";
 	constexpr const char *ExitGame = "ExitGame";
+	constexpr const char *TestGame = "TestGame";
 
 	// Character creation.
 	constexpr const char *SaveAttributes = "SaveAttributes";
