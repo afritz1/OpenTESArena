@@ -10,6 +10,9 @@
 
 namespace StringView
 {
+	// Performs a typical ASCII string comparison (mostly intended for const char* convenience).
+	bool equals(const std::string_view &a, const std::string_view &b);
+
 	// Performs a case-insensitive ASCII string comparison.
 	bool caseInsensitiveEquals(const std::string_view &a, const std::string_view &b);
 
