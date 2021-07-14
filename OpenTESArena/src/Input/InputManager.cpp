@@ -1,7 +1,17 @@
+#include <algorithm>
+
 #include "InputManager.h"
+
+#include "components/debug/Debug.h"
 
 InputManager::InputManager()
 	: mouseDelta(0, 0) { }
+
+void InputManager::init()
+{
+	// Add input action maps to be enabled/disabled as needed.
+	this->actionMaps = InputActionMap::loadDefaultMaps();
+}
 
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
 {
@@ -77,6 +87,27 @@ Int2 InputManager::getMousePosition() const
 Int2 InputManager::getMouseDelta() const
 {
 	return this->mouseDelta;
+}
+
+bool InputManager::setInputActionMapActive(const std::string &name, bool active)
+{
+	const auto iter = std::find_if(this->actionMaps.begin(), this->actionMaps.end(),
+		[&name](const InputActionMap &map)
+	{
+		return map.name == name;
+	});
+
+	if (iter != this->actionMaps.end())
+	{
+		InputActionMap &map = *iter;
+		map.active = active;
+		return true;
+	}
+	else
+	{
+		DebugLogWarning("Couldn't find input action map \"" + name + "\".");
+		return false;
+	}
 }
 
 void InputManager::setRelativeMouseMode(bool active)

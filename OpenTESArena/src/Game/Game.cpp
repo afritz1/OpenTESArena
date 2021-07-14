@@ -79,6 +79,8 @@ Game::Game()
 		throw DebugException("Couldn't init renderer.");
 	}
 
+	this->inputManager.init();
+
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
 	{

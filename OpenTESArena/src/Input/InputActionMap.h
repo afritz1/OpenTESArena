@@ -7,10 +7,15 @@
 
 struct InputActionMap
 {
+	std::string name;
 	std::vector<InputActionDefinition> defs;
 	bool active;
 
 	InputActionMap();
+
+	void init(const std::string &name, bool active);
+
+	static std::vector<InputActionMap> loadDefaultMaps();
 };
 
 #endif

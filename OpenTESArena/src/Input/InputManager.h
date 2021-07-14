@@ -2,9 +2,11 @@
 #define INPUT_MANAGER_H
 
 #include <cstdint>
+#include <vector>
 
 #include "SDL.h"
 
+#include "InputActionMap.h"
 #include "../Math/Vector2.h"
 
 // A simple wrapper class for SDL2 input. 
@@ -14,10 +16,13 @@
 
 class InputManager
 {
-private:	
+private:
+	std::vector<InputActionMap> actionMaps;
 	Int2 mouseDelta;
 public:
 	InputManager();
+
+	void init();
 
 	bool keyPressed(const SDL_Event &e, SDL_Keycode keycode) const;
 	bool keyReleased(const SDL_Event &e, SDL_Keycode keycode) const;
@@ -33,6 +38,8 @@ public:
 	bool applicationExit(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
+
+	bool setInputActionMapActive(const std::string &name, bool active);
 
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);

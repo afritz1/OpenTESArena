@@ -9,6 +9,7 @@ namespace InputActionName
 	constexpr const char *Accept = "Accept";
 	constexpr const char *Cancel = "Cancel";
 	constexpr const char *Skip = "Skip"; // Might be left click, right click, escape, space, enter, keypad enter, etc..
+	constexpr const char *Screenshot = "Screenshot";
 
 	// Game world.
 	constexpr const char *MoveForward = "MoveForward";
@@ -19,6 +20,7 @@ namespace InputActionName
 	constexpr const char *StrafeRight = "StrafeRight";
 	constexpr const char *Jump = "Jump";
 	constexpr const char *Activate = "Activate";
+	constexpr const char *Inspect = "Inspect";
 
 	// Game world interface.
 	constexpr const char *Automap = "Automap";
