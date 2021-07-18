@@ -25,7 +25,11 @@
 #include "components/vfs/manager.hpp"
 
 Panel::Panel(Game &game)
-	: game(game) { }
+	: game(game)
+{
+	InputManager &inputManager = game.getInputManager();
+	this->listenerID = inputManager.nextListenerID();
+}
 
 std::optional<CursorData> Panel::getCurrentCursor() const
 {
@@ -55,6 +59,11 @@ void Panel::resize(int windowWidth, int windowHeight)
 Game &Panel::getGame() const
 {
 	return this->game;
+}
+
+InputManager::ListenerID Panel::getListenerID() const
+{
+	return this->listenerID;
 }
 
 CursorData Panel::getDefaultCursor() const

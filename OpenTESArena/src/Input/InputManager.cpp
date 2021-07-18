@@ -4,13 +4,49 @@
 
 #include "components/debug/Debug.h"
 
+void InputManager::ListenerEntry::init(ListenerID id, const std::string_view &actionName,
+	const InputActionCallback &callback)
+{
+	this->id = id;
+	this->actionName = std::string(actionName);
+	this->callback = callback;
+}
+
 InputManager::InputManager()
-	: mouseDelta(0, 0) { }
+	: mouseDelta(0, 0)
+{
+	this->nextID = 0;
+}
 
 void InputManager::init()
 {
 	// Add input action maps to be enabled/disabled as needed.
 	this->actionMaps = InputActionMap::loadDefaultMaps();
+}
+
+InputManager::ListenerID InputManager::nextListenerID()
+{
+	const InputManager::ListenerID id = this->nextID;
+	this->nextID++;
+	return id;
+}
+
+std::optional<int> InputManager::getListenerEntryIndex(ListenerID id, const std::string_view &actionName) const
+{
+	const auto iter = std::find_if(this->listeners.begin(), this->listeners.end(),
+		[id, &actionName](const ListenerEntry &entry)
+	{
+		return (entry.id == id) && (entry.actionName == actionName);
+	});
+
+	if (iter != this->listeners.end())
+	{
+		return static_cast<int>(std::distance(this->listeners.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
 }
 
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
@@ -107,6 +143,33 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 	{
 		DebugLogWarning("Couldn't find input action map \"" + name + "\".");
 		return false;
+	}
+}
+
+void InputManager::addListener(ListenerID id, const std::string_view &actionName, const InputActionCallback &callback)
+{
+	const std::optional<int> existingIndex = this->getListenerEntryIndex(id, actionName);
+	if (existingIndex.has_value())
+	{
+		DebugLogError("Already registered \"" + std::string(actionName) + "\" for listener " + std::to_string(id) + ".");
+		return;
+	}
+
+	ListenerEntry entry;
+	entry.init(id, actionName, callback);
+	this->listeners.emplace_back(std::move(entry));
+}
+
+void InputManager::removeListener(ListenerID id, const std::string_view &actionName)
+{
+	const std::optional<int> entryIndex = this->getListenerEntryIndex(id, actionName);
+	if (entryIndex.has_value())
+	{
+		this->listeners.erase(this->listeners.begin() + *entryIndex);
+	}
+	else
+	{
+		DebugLogWarning("No \"" + std::string(actionName) + "\" entry to remove for listener " + std::to_string(id) + ".");
 	}
 }
 

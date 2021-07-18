@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 
+#include "../Input/InputManager.h"
 #include "../Math/Vector2.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureUtils.h"
@@ -33,8 +34,10 @@ class Panel
 {
 private:
 	Game &game;
+	InputManager::ListenerID listenerID;
 protected:
 	Game &getGame() const;
+	InputManager::ListenerID getListenerID() const;
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
