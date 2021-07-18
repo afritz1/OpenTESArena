@@ -16,6 +16,7 @@ using MouseButtonHeldCallback = std::function<void(MouseButtonType type, const I
 using MouseScrollChangedCallback = std::function<void(MouseWheelScrollType type, const Int2 &position)>;
 
 // When the mouse cursor changes position on-screen.
-using MousePositionDeltaCallback = std::function<void(int dx, int dy)>;
+// @todo: need to clarify if this is physical mouse position delta or on-screen mouse position delta.
+using MouseMotionCallback = std::function<void(int dx, int dy)>;
 
 #endif

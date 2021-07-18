@@ -1,14 +1,52 @@
 #include <algorithm>
 
+#include "SDL_events.h"
+
 #include "InputManager.h"
 
 #include "components/debug/Debug.h"
 
-void InputManager::ListenerEntry::init(ListenerID id, const std::string_view &actionName,
+void InputManager::InputActionListenerEntry::init(ListenerID id, const std::string_view &actionName,
 	const InputActionCallback &callback)
 {
 	this->id = id;
 	this->actionName = std::string(actionName);
+	this->callback = callback;
+}
+
+void InputManager::MouseButtonChangedListenerEntry::init(ListenerID id, const MouseButtonChangedCallback &callback)
+{
+	this->id = id;
+	this->callback = callback;
+}
+
+void InputManager::MouseButtonHeldListenerEntry::init(ListenerID id, const MouseButtonHeldCallback &callback)
+{
+	this->id = id;
+	this->callback = callback;
+}
+
+void InputManager::MouseScrollChangedListenerEntry::init(ListenerID id, const MouseScrollChangedCallback &callback)
+{
+	this->id = id;
+	this->callback = callback;
+}
+
+void InputManager::MouseMotionListenerEntry::init(ListenerID id, const MouseMotionCallback &callback)
+{
+	this->id = id;
+	this->callback = callback;
+}
+
+void InputManager::ApplicationExitListenerEntry::init(ListenerID id, const ApplicationExitCallback &callback)
+{
+	this->id = id;
+	this->callback = callback;
+}
+
+void InputManager::WindowResizedListenerEntry::init(ListenerID id, const WindowResizedCallback &callback)
+{
+	this->id = id;
 	this->callback = callback;
 }
 
@@ -21,7 +59,7 @@ InputManager::InputManager()
 void InputManager::init()
 {
 	// Add input action maps to be enabled/disabled as needed.
-	this->actionMaps = InputActionMap::loadDefaultMaps();
+	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 }
 
 InputManager::ListenerID InputManager::nextListenerID()
@@ -31,17 +69,36 @@ InputManager::ListenerID InputManager::nextListenerID()
 	return id;
 }
 
-std::optional<int> InputManager::getListenerEntryIndex(ListenerID id, const std::string_view &actionName) const
+std::optional<int> InputManager::getInputActionListenerEntryIndex(ListenerID id, const std::string_view &actionName) const
 {
-	const auto iter = std::find_if(this->listeners.begin(), this->listeners.end(),
-		[id, &actionName](const ListenerEntry &entry)
+	const auto iter = std::find_if(this->inputActionListeners.begin(), this->inputActionListeners.end(),
+		[id, &actionName](const InputActionListenerEntry &entry)
 	{
 		return (entry.id == id) && (entry.actionName == actionName);
 	});
 
-	if (iter != this->listeners.end())
+	if (iter != this->inputActionListeners.end())
 	{
-		return static_cast<int>(std::distance(this->listeners.begin(), iter));
+		return static_cast<int>(std::distance(this->inputActionListeners.begin(), iter));
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
+template <typename EntryType>
+std::optional<int> InputManager::getListenerEntryIndex(ListenerID id, const std::vector<EntryType> &listeners)
+{
+	const auto iter = std::find_if(listeners.begin(), listeners.end(),
+		[id](const EntryType &entry)
+	{
+		return entry.id == id;
+	});
+
+	if (iter != listeners.end())
+	{
+		return static_cast<int>(std::distance(listeners.begin(), iter));
 	}
 	else
 	{
@@ -127,13 +184,13 @@ Int2 InputManager::getMouseDelta() const
 
 bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 {
-	const auto iter = std::find_if(this->actionMaps.begin(), this->actionMaps.end(),
+	const auto iter = std::find_if(this->inputActionMaps.begin(), this->inputActionMaps.end(),
 		[&name](const InputActionMap &map)
 	{
 		return map.name == name;
 	});
 
-	if (iter != this->actionMaps.end())
+	if (iter != this->inputActionMaps.end())
 	{
 		InputActionMap &map = *iter;
 		map.active = active;
@@ -146,31 +203,120 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 	}
 }
 
-void InputManager::addListener(ListenerID id, const std::string_view &actionName, const InputActionCallback &callback)
+template <typename EntryType, typename CallbackType>
+void InputManager::addListenerInternal(ListenerID id, CallbackType &&callback, std::vector<EntryType> &listeners)
 {
-	const std::optional<int> existingIndex = this->getListenerEntryIndex(id, actionName);
+	const std::optional<int> existingIndex = InputManager::getListenerEntryIndex(id, listeners);
 	if (existingIndex.has_value())
 	{
-		DebugLogError("Already registered \"" + std::string(actionName) + "\" for listener " + std::to_string(id) + ".");
+		DebugLogError("Already registered \"" + std::string(typeid(EntryType).name()) + "\" for listener " + std::to_string(id) + ".");
 		return;
 	}
 
-	ListenerEntry entry;
-	entry.init(id, actionName, callback);
-	this->listeners.emplace_back(std::move(entry));
+	EntryType entry;
+	entry.init(id, callback);
+	listeners.emplace_back(std::move(entry));
 }
 
-void InputManager::removeListener(ListenerID id, const std::string_view &actionName)
+void InputManager::addInputActionListener(ListenerID id, const std::string_view &actionName, const InputActionCallback &callback)
 {
-	const std::optional<int> entryIndex = this->getListenerEntryIndex(id, actionName);
+	const std::optional<int> existingIndex = this->getInputActionListenerEntryIndex(id, actionName);
+	if (existingIndex.has_value())
+	{
+		DebugLogError("Already registered \"" + std::string(actionName) + "\" input action for listener " + std::to_string(id) + ".");
+		return;
+	}
+
+	InputActionListenerEntry entry;
+	entry.init(id, actionName, callback);
+	this->inputActionListeners.emplace_back(std::move(entry));
+}
+
+void InputManager::addMouseButtonChangedListener(ListenerID id, const MouseButtonChangedCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->mouseButtonChangedListeners);
+}
+
+void InputManager::addMouseButtonHeldListener(ListenerID id, const MouseButtonHeldCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->mouseButtonHeldListeners);
+}
+
+void InputManager::addMouseScrollChangedListener(ListenerID id, const MouseScrollChangedCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->mouseScrollChangedListeners);
+}
+
+void InputManager::addMouseMotionListener(ListenerID id, const MouseMotionCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->mouseMotionListeners);
+}
+
+void InputManager::addApplicationExitListener(ListenerID id, const ApplicationExitCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->applicationExitListeners);
+}
+
+void InputManager::addWindowResizedListener(ListenerID id, const WindowResizedCallback &callback)
+{
+	this->addListenerInternal(id, callback, this->windowResizedListeners);
+}
+
+template <typename EntryType>
+void InputManager::removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners)
+{
+	const std::optional<int> entryIndex = InputManager::getListenerEntryIndex(id, listeners);
 	if (entryIndex.has_value())
 	{
-		this->listeners.erase(this->listeners.begin() + *entryIndex);
+		listeners.erase(listeners.begin() + *entryIndex);
 	}
 	else
 	{
-		DebugLogWarning("No \"" + std::string(actionName) + "\" entry to remove for listener " + std::to_string(id) + ".");
+		DebugLogWarning("No \"" + std::string(typeid(EntryType).name()) + "\" entry to remove for listener " + std::to_string(id) + ".");
 	}
+}
+
+void InputManager::removeInputActionListener(ListenerID id, const std::string_view &actionName)
+{
+	const std::optional<int> entryIndex = this->getInputActionListenerEntryIndex(id, actionName);
+	if (entryIndex.has_value())
+	{
+		this->inputActionListeners.erase(this->inputActionListeners.begin() + *entryIndex);
+	}
+	else
+	{
+		DebugLogWarning("No \"" + std::string(actionName) + "\" input action entry to remove for listener " + std::to_string(id) + ".");
+	}
+}
+
+void InputManager::removeMouseButtonChangedListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->mouseButtonChangedListeners);
+}
+
+void InputManager::removeMouseButtonHeldListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->mouseButtonHeldListeners);
+}
+
+void InputManager::removeMouseScrollChangedListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->mouseScrollChangedListeners);
+}
+
+void InputManager::removeMouseMotionListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->mouseMotionListeners);
+}
+
+void InputManager::removeApplicationExitListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->applicationExitListeners);
+}
+
+void InputManager::removeWindowResizedListener(ListenerID id)
+{
+	this->removeListenerInternal(id, this->windowResizedListeners);
 }
 
 void InputManager::setRelativeMouseMode(bool active)
