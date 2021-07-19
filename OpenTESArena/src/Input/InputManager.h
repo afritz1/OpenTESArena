@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "SDL_events.h"
+
 #include "ApplicationEvents.h"
 #include "InputActionEvents.h"
 #include "InputActionMap.h"
@@ -14,8 +16,6 @@
 #include "../Math/Vector2.h"
 
 // Handles active input action maps, input listeners, and pointer input events.
-
-union SDL_Event;
 
 class InputManager
 {
@@ -99,6 +99,8 @@ private:
 	ListenerID nextListenerID;
 	std::vector<ListenerID> freedListenerIDs;
 
+	std::vector<SDL_Event> cachedEvents; // @temp: only for compatibility with old event system until completely moved over.
+
 	Int2 mouseDelta;
 
 	ListenerID getNextListenerID();
@@ -128,6 +130,10 @@ public:
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
 
+	// @temp until Game::handleEvents() is removed
+	int getEventCount() const;
+	const SDL_Event &getEvent(int index) const;
+
 	bool setInputActionMapActive(const std::string &name, bool active);
 
 	ListenerID addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
@@ -149,7 +155,7 @@ public:
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
 
-	// Updates input values whose associated SDL functions should only be called once per frame.
+	// Handle input listener callbacks, etc..
 	void update();
 };
 

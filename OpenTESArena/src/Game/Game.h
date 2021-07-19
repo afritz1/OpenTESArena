@@ -47,7 +47,11 @@ private:
 
 	AudioManager audioManager;
 	MusicLibrary musicLibrary;
+
+	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
+	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID;
+
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;
 	CharacterClassLibrary charClassLibrary;
@@ -66,6 +70,7 @@ private:
 	FPSCounter fpsCounter;
 	std::string basePath, optionsPath;
 	bool requestedSubPanelPop;
+	bool running;
 
 	// Gets the top-most sub-panel if one exists, or the main panel if no sub-panels exist.
 	Panel *getActivePanel() const;
@@ -83,7 +88,9 @@ private:
 	void handlePanelChanges();
 
 	// Handles SDL events for the current frame.
-	void handleEvents(bool &running);
+	void handleEvents();
+	void handleApplicationExit();
+	void handleWindowResized(int width, int height);
 
 	// Animates the game state by delta time.
 	void tick(double dt);
@@ -97,6 +104,7 @@ public:
 	Game();
 	Game(const Game&) = delete;
 	Game(Game&&) = delete;
+	~Game();
 
 	Game &operator=(const Game&) = delete;
 	Game &operator=(Game&&) = delete;

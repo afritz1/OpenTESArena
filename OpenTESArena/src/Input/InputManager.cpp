@@ -1,7 +1,5 @@
 #include <algorithm>
 
-#include "SDL_events.h"
-
 #include "InputManager.h"
 
 #include "components/debug/Debug.h"
@@ -229,6 +227,17 @@ InputManager::ListenerID InputManager::addMouseButtonHeldListener(const MouseBut
 	return this->addListenerInternal(callback, this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
 }
 
+int InputManager::getEventCount() const
+{
+	return static_cast<int>(this->cachedEvents.size());
+}
+
+const SDL_Event &InputManager::getEvent(int index) const
+{
+	DebugAssertIndex(this->cachedEvents, index);
+	return this->cachedEvents[index];
+}
+
 InputManager::ListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
 	return this->addListenerInternal(callback, this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
@@ -313,6 +322,53 @@ void InputManager::setRelativeMouseMode(bool active)
 
 void InputManager::update()
 {
+	// @temp: need to allow non-application-level SDL_Events to be processed twice for compatibility with the
+	// old event handling in Game::handleEvents().
+	this->cachedEvents.clear();
+	SDL_Event e;
+	while (SDL_PollEvent(&e) != 0)
+	{
+		this->cachedEvents.emplace_back(std::move(e));
+	}
+
+	// @todo: input listener handling.
+	// For each SDL_Event or whatever:
+	// - if an InputActionDefinition is registered for it AND the input action map is enabled, queue up the callback
+	// - if a mouse button event is registered for it, queue up the callback
+	// - make sure to not fire duplicate callbacks for the same input action
+
+	for (const SDL_Event &e : this->cachedEvents)
+	{
+		const bool applicationExit = this->applicationExit(e);
+		const bool resized = this->windowResized(e);
+
+		if (applicationExit)
+		{
+			for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
+			{
+				entry.callback();
+			}
+		}
+		else if (resized)
+		{
+			const int width = e.window.data1;
+			const int height = e.window.data2;
+			for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
+			{
+				entry.callback(width, height);
+			}
+		}
+
+		// @todo: all other key and mouse events
+	}
+	
+	// @todo: get held mouse button state
+	// - SDL_GetMouseState()
+
 	// Refresh the mouse delta.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
+	// @todo: mouse motion callbacks. might not need to save mouseDelta as its own thing, just store it here as a local variable.
+
+	// @todo: get held key state
+	// - SDL_GetKeyboardState()
 }

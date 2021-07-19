@@ -81,6 +81,21 @@ Game::Game()
 
 	this->inputManager.init();
 
+	// Add application-level input event handlers.
+	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
+		[this]()
+	{
+		this->handleApplicationExit();
+	});
+
+	this->windowResizedListenerID = this->inputManager.addWindowResizedListener(
+		[this](int width, int height)
+	{
+		this->handleWindowResized(width, height);
+	});
+
+	// @todo: screenshot listener ID
+
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
 	{
@@ -200,6 +215,21 @@ Game::Game()
 	// This keeps the programmer from deleting a sub-panel the same frame it's in use.
 	// The pop is delayed until the beginning of the next frame.
 	this->requestedSubPanelPop = false;
+
+	this->running = true;
+}
+
+Game::~Game()
+{
+	if (this->applicationExitListenerID.has_value())
+	{
+		this->inputManager.removeApplicationExitListener(*this->applicationExitListenerID);
+	}
+
+	if (this->windowResizedListenerID.has_value())
+	{
+		this->inputManager.removeWindowResizedListener(*this->windowResizedListenerID);
+	}
 }
 
 Panel *Game::getActivePanel() const
@@ -438,38 +468,17 @@ void Game::handlePanelChanges()
 	}
 }
 
-void Game::handleEvents(bool &running)
+void Game::handleEvents()
 {
+	// Handle input listener callbacks and general input updating.
+	this->inputManager.update();
+
 	// Handle events for the current game state.
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
+	// @todo: move this to InputManager::update(); will probably want to wrap in a try/catch somewhere.
+	for (int i = 0; i < this->inputManager.getEventCount(); i++)
 	{
-		// Application events and window resizes are handled here.
-		bool applicationExit = this->inputManager.applicationExit(e);
-		bool resized = this->inputManager.windowResized(e);
+		const SDL_Event &e = this->inputManager.getEvent(i);
 		bool takeScreenshot = this->inputManager.keyPressed(e, SDLK_PRINTSCREEN);
-
-		if (applicationExit)
-		{
-			running = false;
-		}
-
-		if (resized)
-		{
-			int width = e.window.data1;
-			int height = e.window.data2;
-			this->resizeWindow(width, height);
-
-			// Call each panel's resize method. The panels should not be listening for
-			// resize events themselves because it's more of an "application event" than
-			// a panel event.
-			this->panel->resize(width, height);
-
-			for (auto &subPanel : this->subPanels)
-			{
-				subPanel->resize(width, height);
-			}
-		}
 
 		if (takeScreenshot)
 		{
@@ -484,6 +493,25 @@ void Game::handleEvents(bool &running)
 
 		// See if the event requested any changes in active panels.
 		this->handlePanelChanges();
+	}
+}
+
+void Game::handleApplicationExit()
+{
+	this->running = false;
+}
+
+void Game::handleWindowResized(int width, int height)
+{
+	this->resizeWindow(width, height);
+
+	// Call each panel's resize method. The panels should not be listening for resize events themselves
+	// because it's more of an application event than a panel event.
+	this->panel->resize(width, height);
+
+	for (auto &subPanel : this->subPanels)
+	{
+		subPanel->resize(width, height);
 	}
 }
 
@@ -559,8 +587,7 @@ void Game::loop()
 	auto thisTime = std::chrono::high_resolution_clock::now();
 
 	// Primary game loop.
-	bool running = true;
-	while (running)
+	while (this->running)
 	{
 		const auto lastTime = thisTime;
 		thisTime = std::chrono::high_resolution_clock::now();
@@ -604,9 +631,6 @@ void Game::loop()
 		// Reset scratch allocator for use with this frame.
 		this->scratchAllocator.clear();
 
-		// Update the input manager's state.
-		this->inputManager.update();
-
 		// Update the audio manager listener (if any) and check for finished sounds.
 		this->updateAudio(dt);
 
@@ -616,7 +640,7 @@ void Game::loop()
 		// Listen for input events.
 		try
 		{
-			this->handleEvents(running);
+			this->handleEvents();
 		}
 		catch (const std::exception &e)
 		{
