@@ -7,7 +7,7 @@ namespace InputActionName
 {
 	// Common.
 	constexpr const char *Accept = "Accept";
-	constexpr const char *Cancel = "Cancel";
+	constexpr const char *Back = "Back"; // A.k.a. cancel.
 	constexpr const char *Skip = "Skip"; // Might be left click, right click, escape, space, enter, keypad enter, etc..
 	constexpr const char *Screenshot = "Screenshot";
 

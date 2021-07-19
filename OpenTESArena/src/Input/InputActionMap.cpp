@@ -51,7 +51,7 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_RETURN));
 			defs.emplace_back(makeKeyDef(
-				InputActionName::Cancel,
+				InputActionName::Back,
 				InputStateType::BeginPerform,
 				SDLK_ESCAPE));
 			defs.emplace_back(makeKeyDef(
