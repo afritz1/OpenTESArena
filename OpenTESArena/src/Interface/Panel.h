@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "../Input/InputManager.h"
 #include "../Math/Vector2.h"
@@ -34,16 +35,21 @@ class Panel
 {
 private:
 	Game &game;
-	InputManager::ListenerID listenerID;
 protected:
+	// Allocated input listener IDs that must be freed when the panel is done with them.
+	std::vector<InputManager::ListenerID> inputActionListenerIDs;
+	std::vector<InputManager::ListenerID> mouseButtonChangedListenerIDs;
+	std::vector<InputManager::ListenerID> mouseButtonHeldListenerIDs;
+	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
+	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
+
 	Game &getGame() const;
-	InputManager::ListenerID getListenerID() const;
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
 public:
 	Panel(Game &game);
-	virtual ~Panel() = default;
+	virtual ~Panel();
 
 	// Gets the panel's active mouse cursor and alignment, if any. Override this if the panel has at
 	// least one cursor defined.

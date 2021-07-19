@@ -7,7 +7,7 @@
 #include "../Math/Vector2.h"
 
 // When a mouse button is pressed or released.
-using MouseButtonChangedCallback = std::function<void(MouseButtonType type, const Int2 &position, bool pressed)>;
+using MouseButtonChangedCallback = std::function<void(MouseButtonType type, bool pressed, const Int2 &position)>;
 
 // While a mouse button is held down.
 using MouseButtonHeldCallback = std::function<void(MouseButtonType type, const Int2 &position)>;

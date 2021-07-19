@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "ApplicationEvents.h"
@@ -23,62 +24,58 @@ public:
 private:
 	struct InputActionListenerEntry
 	{
-		ListenerID id;
 		std::string actionName;
 		InputActionCallback callback;
 
-		void init(ListenerID id, const std::string_view &actionName, const InputActionCallback &callback);
+		void init(const std::string_view &actionName, const InputActionCallback &callback);
 	};
 
+	// Leave these as structs in the event that callback priorities become a thing.
 	struct MouseButtonChangedListenerEntry
 	{
-		ListenerID id;
 		MouseButtonChangedCallback callback;
 
-		void init(ListenerID id, const MouseButtonChangedCallback &callback);
+		void init(const MouseButtonChangedCallback &callback);
 	};
 
 	struct MouseButtonHeldListenerEntry
 	{
-		ListenerID id;
 		MouseButtonHeldCallback callback;
 
-		void init(ListenerID id, const MouseButtonHeldCallback &callback);
+		void init(const MouseButtonHeldCallback &callback);
 	};
 
 	struct MouseScrollChangedListenerEntry
 	{
-		ListenerID id;
 		MouseScrollChangedCallback callback;
 
-		void init(ListenerID id, const MouseScrollChangedCallback &callback);
+		void init(const MouseScrollChangedCallback &callback);
 	};
 
 	struct MouseMotionListenerEntry
 	{
-		ListenerID id;
 		MouseMotionCallback callback;
 
-		void init(ListenerID id, const MouseMotionCallback &callback);
+		void init(const MouseMotionCallback &callback);
 	};
 
 	struct ApplicationExitListenerEntry
 	{
-		ListenerID id;
 		ApplicationExitCallback callback;
 
-		void init(ListenerID id, const ApplicationExitCallback &callback);
+		void init(const ApplicationExitCallback &callback);
 	};
 
 	struct WindowResizedListenerEntry
 	{
-		ListenerID id;
 		WindowResizedCallback callback;
 
-		void init(ListenerID id, const WindowResizedCallback &callback);
+		void init(const WindowResizedCallback &callback);
 	};
 
 	std::vector<InputActionMap> inputActionMaps;
+
+	// Listener entry containers.
 	std::vector<InputActionListenerEntry> inputActionListeners;
 	std::vector<MouseButtonChangedListenerEntry> mouseButtonChangedListeners;
 	std::vector<MouseButtonHeldListenerEntry> mouseButtonHeldListeners;
@@ -86,23 +83,35 @@ private:
 	std::vector<MouseMotionListenerEntry> mouseMotionListeners;
 	std::vector<ApplicationExitListenerEntry> applicationExitListeners;
 	std::vector<WindowResizedListenerEntry> windowResizedListeners;
+
+	// Indices to valid listener entries, shared by all listener containers.
+	std::unordered_map<ListenerID, int> listenerIndices;
+
+	// Indices to listener entries that were used but can be reclaimed by a future registration.
+	std::vector<int> freedInputActionListenerIndices;
+	std::vector<int> freedMouseButtonChangedListenerIndices;
+	std::vector<int> freedMouseButtonHeldListenerIndices;
+	std::vector<int> freedMouseScrollChangedListenerIndices;
+	std::vector<int> freedMouseMotionListenerIndices;
+	std::vector<int> freedApplicationExitListenerIndices;
+	std::vector<int> freedWindowResizedListenerIndices;
+
+	ListenerID nextListenerID;
+	std::vector<ListenerID> freedListenerIDs;
+
 	Int2 mouseDelta;
-	ListenerID nextID;
 
-	std::optional<int> getInputActionListenerEntryIndex(ListenerID id, const std::string_view &actionName) const;
+	ListenerID getNextListenerID();
 
-	template <typename EntryType>
-	static std::optional<int> getListenerEntryIndex(ListenerID id, const std::vector<EntryType> &listeners);
 	template <typename EntryType, typename CallbackType>
-	static void addListenerInternal(ListenerID id, CallbackType &&callback, std::vector<EntryType> &listeners);
+	ListenerID addListenerInternal(CallbackType &&callback, std::vector<EntryType> &listeners,
+		std::vector<int> &freedListenerIndices);
 	template <typename EntryType>
-	static void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners);
+	void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
 public:
 	InputManager();
 
 	void init();
-
-	ListenerID nextListenerID();
 
 	bool keyPressed(const SDL_Event &e, SDL_Keycode keycode) const;
 	bool keyReleased(const SDL_Event &e, SDL_Keycode keycode) const;
@@ -121,15 +130,15 @@ public:
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 
-	void addInputActionListener(ListenerID id, const std::string_view &actionName, const InputActionCallback &callback);
-	void addMouseButtonChangedListener(ListenerID id, const MouseButtonChangedCallback &callback);
-	void addMouseButtonHeldListener(ListenerID id, const MouseButtonHeldCallback &callback);
-	void addMouseScrollChangedListener(ListenerID id, const MouseScrollChangedCallback &callback);
-	void addMouseMotionListener(ListenerID id, const MouseMotionCallback &callback);
-	void addApplicationExitListener(ListenerID id, const ApplicationExitCallback &callback);
-	void addWindowResizedListener(ListenerID id, const WindowResizedCallback &callback);
+	ListenerID addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	ListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
+	ListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
+	ListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
+	ListenerID addMouseMotionListener(const MouseMotionCallback &callback);
+	ListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
+	ListenerID addWindowResizedListener(const WindowResizedCallback &callback);
 
-	void removeInputActionListener(ListenerID id, const std::string_view &actionName);
+	void removeInputActionListener(ListenerID id);
 	void removeMouseButtonChangedListener(ListenerID id);
 	void removeMouseButtonHeldListener(ListenerID id);
 	void removeMouseScrollChangedListener(ListenerID id);
@@ -140,8 +149,7 @@ public:
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
 
-	// Updates input values whose associated SDL functions should only be called once 
-	// per frame.
+	// Updates input values whose associated SDL functions should only be called once per frame.
 	void update();
 };
 

@@ -1,5 +1,3 @@
-#include <vector>
-
 #include "SDL.h"
 
 #include "CinematicPanel.h"
@@ -25,10 +23,37 @@
 #include "components/vfs/manager.hpp"
 
 Panel::Panel(Game &game)
-	: game(game)
+	: game(game) { }
+
+Panel::~Panel()
 {
-	InputManager &inputManager = game.getInputManager();
-	this->listenerID = inputManager.nextListenerID();
+	InputManager &inputManager = this->game.getInputManager();
+
+	// Free all the input listener IDs.
+	for (const InputManager::ListenerID listenerID : this->inputActionListenerIDs)
+	{
+		inputManager.removeInputActionListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseButtonChangedListenerIDs)
+	{
+		inputManager.removeMouseButtonChangedListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseButtonHeldListenerIDs)
+	{
+		inputManager.removeMouseButtonHeldListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseScrollChangedListenerIDs)
+	{
+		inputManager.removeMouseScrollChangedListener(listenerID);
+	}
+
+	for (const InputManager::ListenerID listenerID : this->mouseMotionListenerIDs)
+	{
+		inputManager.removeMouseMotionListener(listenerID);
+	}
 }
 
 std::optional<CursorData> Panel::getCurrentCursor() const
@@ -59,11 +84,6 @@ void Panel::resize(int windowWidth, int windowHeight)
 Game &Panel::getGame() const
 {
 	return this->game;
-}
-
-InputManager::ListenerID Panel::getListenerID() const
-{
-	return this->listenerID;
 }
 
 CursorData Panel::getDefaultCursor() const
