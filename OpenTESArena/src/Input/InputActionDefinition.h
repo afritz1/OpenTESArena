@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 
+#include "SDL_keyboard.h"
 #include "SDL_keycode.h"
 
 enum class InputActionType;
@@ -35,12 +36,15 @@ public:
 
 	struct KeyDefinition
 	{
+		// Union of one or more keys (Ctrl, Ctrl + Alt, etc.). All must be pressed when matching key definitions.
+		using Keymod = decltype(SDL_Keysym::mod);
+
 		SDL_Keycode keycode;
-		SDL_Keymod keymod;
+		Keymod keymod;
 
 		KeyDefinition();
 
-		void init(SDL_Keycode keycode, SDL_Keymod keymod);
+		void init(SDL_Keycode keycode, Keymod keymod);
 	};
 
 	std::string name;
@@ -61,7 +65,7 @@ public:
 	void initMouseButtonDef(const std::string &name, InputStateType stateType, MouseButtonType buttonType);
 	void initMouseScrollDef(const std::string &name, MouseWheelScrollType scrollType);
 	void initKeyDef(const std::string &name, InputStateType stateType, SDL_Keycode keycode,
-		const std::optional<SDL_Keymod> &keymod = std::nullopt);
+		const std::optional<KeyDefinition::Keymod> &keymod = std::nullopt);
 };
 
 #endif

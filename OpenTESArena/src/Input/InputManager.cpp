@@ -1,6 +1,10 @@
 #include <algorithm>
+#include <optional>
+#include <type_traits>
 
+#include "InputActionType.h"
 #include "InputManager.h"
+#include "InputStateType.h"
 
 #include "components/debug/Debug.h"
 
@@ -68,6 +72,11 @@ bool InputManager::keyIsDown(SDL_Scancode scancode) const
 	return keys[scancode] != 0;
 }
 
+bool InputManager::isKeyEvent(const SDL_Event &e) const
+{
+	return ((e.type == SDL_KEYDOWN) || (e.type == SDL_KEYUP)) && (e.key.repeat == 0);
+}
+
 bool InputManager::keyIsUp(SDL_Scancode scancode) const
 {
 	const uint8_t *keys = SDL_GetKeyboardState(nullptr);
@@ -94,6 +103,21 @@ bool InputManager::mouseButtonIsUp(uint8_t button) const
 {
 	const uint32_t mouse = SDL_GetMouseState(nullptr, nullptr);
 	return (mouse & SDL_BUTTON(button)) == 0;
+}
+
+bool InputManager::isMouseButtonEvent(const SDL_Event &e) const
+{
+	return (e.type == SDL_MOUSEBUTTONDOWN) || (e.type == SDL_MOUSEBUTTONUP);
+}
+
+bool InputManager::isMouseWheelEvent(const SDL_Event &e) const
+{
+	return e.type == SDL_MOUSEWHEEL;
+}
+
+bool InputManager::isMouseMotionEvent(const SDL_Event &e) const
+{
+	return e.type == SDL_MOUSEMOTION;
 }
 
 bool InputManager::mouseWheeledUp(const SDL_Event &e) const
@@ -316,40 +340,56 @@ void InputManager::removeWindowResizedListener(ListenerID id)
 
 void InputManager::setRelativeMouseMode(bool active)
 {
-	SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
+	const SDL_bool enabled = active ? SDL_TRUE : SDL_FALSE;
 	SDL_SetRelativeMouseMode(enabled);
 }
 
-void InputManager::update()
+void InputManager::cacheSdlEvents()
 {
-	// @temp: need to allow non-application-level SDL_Events to be processed twice for compatibility with the
-	// old event handling in Game::handleEvents().
 	this->cachedEvents.clear();
 	SDL_Event e;
 	while (SDL_PollEvent(&e) != 0)
 	{
 		this->cachedEvents.emplace_back(std::move(e));
 	}
+}
+
+void InputManager::update()
+{
+	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
+	// old event handling in Game::handleEvents().
+	this->cacheSdlEvents();
+
+	Int2 mousePosition;
+	SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+
+	// Refresh the mouse delta.
+	// @todo: don't save mouse delta as member, just keep local variable here once we can.
+	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
+
+	// @todo: get held key state
+	// - SDL_GetKeyboardState()
+	//SDL_GetKeyFromScancode
+	//SDL_GetKeyboardState(nullptr);
 
 	// @todo: input listener handling.
 	// For each SDL_Event or whatever:
 	// - if an InputActionDefinition is registered for it AND the input action map is enabled, queue up the callback
 	// - if a mouse button event is registered for it, queue up the callback
-	// - make sure to not fire duplicate callbacks for the same input action
+
+	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
+	// keys/mouse buttons like Skip.
 
 	for (const SDL_Event &e : this->cachedEvents)
 	{
-		const bool applicationExit = this->applicationExit(e);
-		const bool resized = this->windowResized(e);
-
-		if (applicationExit)
+		if (this->applicationExit(e))
 		{
 			for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
 			{
 				entry.callback();
 			}
 		}
-		else if (resized)
+		else if (this->windowResized(e))
 		{
 			const int width = e.window.data1;
 			const int height = e.window.data2;
@@ -358,17 +398,162 @@ void InputManager::update()
 				entry.callback(width, height);
 			}
 		}
+		else if (this->isKeyEvent(e))
+		{
+			static_assert(std::is_same_v<InputActionDefinition::KeyDefinition::Keymod, decltype(e.key.keysym.mod)>);
 
-		// @todo: all other key and mouse events
+			const SDL_Keycode keycode = e.key.keysym.sym;
+			const InputActionDefinition::KeyDefinition::Keymod keymod = e.key.keysym.mod & 0x0FFF; // Ignore Num/Caps/Scroll Lock.
+			const bool isKeyDown = e.type == SDL_KEYDOWN;
+			const bool isKeyUp = e.type == SDL_KEYUP;
+
+			for (const InputActionMap &map : this->inputActionMaps)
+			{
+				if (map.active)
+				{
+					for (const InputActionDefinition &def : map.defs)
+					{
+						const bool matchesStateType = (isKeyDown && def.stateType == InputStateType::BeginPerform) ||
+							(isKeyUp && def.stateType == InputStateType::EndPerform);
+
+						if ((def.type == InputActionType::Key) && matchesStateType)
+						{
+							const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+
+							// Handle the keymod as an exact comparison; if the definition specifies LCtrl and RCtrl,
+							// both must be held, so combinations like Ctrl + Alt + Delete are possible.
+							if ((keyDef.keycode == keycode) && (keyDef.keymod == keymod))
+							{
+								for (const InputActionListenerEntry &entry : this->inputActionListeners)
+								{
+									if (entry.actionName == def.name)
+									{
+										InputActionCallbackValues values;
+										values.init(isKeyDown, false, isKeyUp);
+										entry.callback(values);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else if (this->isMouseButtonEvent(e))
+		{
+			const std::optional<MouseButtonType> buttonType = [&e]() -> std::optional<MouseButtonType>
+			{
+				switch (e.button.button)
+				{
+				case SDL_BUTTON_LEFT:
+					return MouseButtonType::Left;
+				case SDL_BUTTON_RIGHT:
+					return MouseButtonType::Right;
+				default:
+					return std::nullopt;
+				}
+			}();
+
+			if (buttonType.has_value())
+			{
+				const bool isButtonPress = e.type == SDL_MOUSEBUTTONDOWN;
+				const bool isButtonRelease = e.type == SDL_MOUSEBUTTONUP;
+
+				for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
+				{
+					entry.callback(*buttonType, isButtonPress, mousePosition);
+				}
+
+				for (const InputActionMap &map : this->inputActionMaps)
+				{
+					if (map.active)
+					{
+						for (const InputActionDefinition &def : map.defs)
+						{
+							const bool matchesStateType = (isButtonPress && def.stateType == InputStateType::BeginPerform) ||
+								(isButtonRelease && def.stateType == InputStateType::EndPerform);
+
+							if ((def.type == InputActionType::MouseButton) && matchesStateType)
+							{
+								const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+								if (mouseButtonDef.type == *buttonType)
+								{
+									for (const InputActionListenerEntry &entry : this->inputActionListeners)
+									{
+										if (entry.actionName == def.name)
+										{
+											InputActionCallbackValues values;
+											values.init(isButtonPress, false, isButtonRelease);
+											entry.callback(values);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else if (this->isMouseWheelEvent(e))
+		{
+			const std::optional<MouseWheelScrollType> scrollType = [&e]() -> std::optional<MouseWheelScrollType>
+			{
+				if (e.wheel.y < 0)
+				{
+					return MouseWheelScrollType::Down;
+				}
+				else if (e.wheel.y > 0)
+				{
+					return MouseWheelScrollType::Up;
+				}
+				else
+				{
+					return std::nullopt;
+				}
+			}();
+
+			if (scrollType.has_value())
+			{
+				for (const MouseScrollChangedListenerEntry &entry : this->mouseScrollChangedListeners)
+				{
+					entry.callback(*scrollType, mousePosition);
+				}
+
+				for (const InputActionMap &map : this->inputActionMaps)
+				{
+					if (map.active)
+					{
+						for (const InputActionDefinition &def : map.defs)
+						{
+							const bool matchesStateType = !def.stateType.has_value();
+
+							if ((def.type == InputActionType::MouseWheel) && matchesStateType)
+							{
+								const InputActionDefinition::MouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
+								if (mouseScrollDef.type == *scrollType)
+								{
+									for (const InputActionListenerEntry &entry : this->inputActionListeners)
+									{
+										if (entry.actionName == def.name)
+										{
+											InputActionCallbackValues values;
+											values.init(true, false, false);
+											entry.callback(values);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else if (this->isMouseMotionEvent(e))
+		{
+			for (const MouseMotionListenerEntry &entry : this->mouseMotionListeners)
+			{
+				entry.callback(this->mouseDelta.x, this->mouseDelta.y);
+			}
+		}
 	}
-	
-	// @todo: get held mouse button state
-	// - SDL_GetMouseState()
-
-	// Refresh the mouse delta.
-	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
-	// @todo: mouse motion callbacks. might not need to save mouseDelta as its own thing, just store it here as a local variable.
-
-	// @todo: get held key state
-	// - SDL_GetKeyboardState()
 }

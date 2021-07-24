@@ -50,7 +50,8 @@ private:
 
 	// Listener IDs are optional in case of failed Game construction.
 	InputManager inputManager;
-	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID;
+	std::optional<InputManager::ListenerID> applicationExitListenerID, windowResizedListenerID,
+		takeScreenshotListenerID;
 
 	FontLibrary fontLibrary;
 	CinematicLibrary cinematicLibrary;

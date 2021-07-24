@@ -26,10 +26,10 @@ void InputActionDefinition::MouseScrollDefinition::init(MouseWheelScrollType typ
 InputActionDefinition::KeyDefinition::KeyDefinition()
 {
 	this->keycode = static_cast<SDL_Keycode>(-1);
-	this->keymod = static_cast<SDL_Keymod>(-1);
+	this->keymod = 0;
 }
 
-void InputActionDefinition::KeyDefinition::init(SDL_Keycode keycode, SDL_Keymod keymod)
+void InputActionDefinition::KeyDefinition::init(SDL_Keycode keycode, Keymod keymod)
 {
 	this->keycode = keycode;
 	this->keymod = keymod;
@@ -62,7 +62,7 @@ void InputActionDefinition::initMouseScrollDef(const std::string &name, MouseWhe
 }
 
 void InputActionDefinition::initKeyDef(const std::string &name, InputStateType stateType,
-	SDL_Keycode keycode, const std::optional<SDL_Keymod> &keymod)
+	SDL_Keycode keycode, const std::optional<KeyDefinition::Keymod> &keymod)
 {
 	this->init(std::string(name), InputActionType::Key, stateType);
 	this->keyDef.init(keycode, keymod.value_or(SDL_Keymod::KMOD_NONE));

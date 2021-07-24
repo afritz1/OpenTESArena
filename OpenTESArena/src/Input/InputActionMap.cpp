@@ -30,7 +30,7 @@ namespace
 		};
 
 		auto makeKeyDef = [](const std::string &defName, InputStateType stateType, SDL_Keycode keycode,
-			const std::optional<SDL_Keymod> &keymod = std::nullopt)
+			const std::optional<InputActionDefinition::KeyDefinition::Keymod> &keymod = std::nullopt)
 		{
 			InputActionDefinition def;
 			def.initKeyDef(defName, stateType, keycode, keymod);

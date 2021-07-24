@@ -20,7 +20,7 @@
 class InputManager
 {
 public:
-	using ListenerID = uint32_t;
+	using ListenerID = int32_t;
 private:
 	struct InputActionListenerEntry
 	{
@@ -110,15 +110,21 @@ private:
 		std::vector<int> &freedListenerIndices);
 	template <typename EntryType>
 	void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
+
+	void cacheSdlEvents();
 public:
 	InputManager();
 
 	void init();
 
+	bool isKeyEvent(const SDL_Event &e) const;
 	bool keyPressed(const SDL_Event &e, SDL_Keycode keycode) const;
 	bool keyReleased(const SDL_Event &e, SDL_Keycode keycode) const;
 	bool keyIsDown(SDL_Scancode scancode) const;
 	bool keyIsUp(SDL_Scancode scancode) const;
+	bool isMouseButtonEvent(const SDL_Event &e) const;
+	bool isMouseWheelEvent(const SDL_Event &e) const;
+	bool isMouseMotionEvent(const SDL_Event &e) const;
 	bool mouseButtonPressed(const SDL_Event &e, uint8_t button) const;
 	bool mouseButtonReleased(const SDL_Event &e, uint8_t button) const;
 	bool mouseButtonIsDown(uint8_t button) const;

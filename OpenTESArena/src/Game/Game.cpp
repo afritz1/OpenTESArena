@@ -12,6 +12,7 @@
 #include "Options.h"
 #include "PlayerInterface.h"
 #include "../Assets/CityDataFile.h"
+#include "../Input/InputActionName.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
 #include "../Media/TextureManager.h"
@@ -94,7 +95,17 @@ Game::Game()
 		this->handleWindowResized(width, height);
 	});
 
-	// @todo: screenshot listener ID
+	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			// Save a screenshot to the local folder.
+			const auto &renderer = this->getRenderer();
+			const Surface screenshot = renderer.getScreenshot();
+			this->saveScreenshot(screenshot);
+		}
+	});
 
 	// Determine which version of the game the Arena path is pointing to.
 	const bool isFloppyVersion = [this, arenaPathIsRelative]()
@@ -229,6 +240,11 @@ Game::~Game()
 	if (this->windowResizedListenerID.has_value())
 	{
 		this->inputManager.removeWindowResizedListener(*this->windowResizedListenerID);
+	}
+
+	if (this->takeScreenshotListenerID.has_value())
+	{
+		this->inputManager.removeInputActionListener(*this->takeScreenshotListenerID);
 	}
 }
 
@@ -474,19 +490,11 @@ void Game::handleEvents()
 	this->inputManager.update();
 
 	// Handle events for the current game state.
-	// @todo: move this to InputManager::update(); will probably want to wrap in a try/catch somewhere.
+	// @todo: this is now the legacy input handling for panels. It should eventually all be handled by the InputManager.
+	// - Will probably want to wrap in a try/catch (preferably somewhere that the exception can print input info).
 	for (int i = 0; i < this->inputManager.getEventCount(); i++)
 	{
 		const SDL_Event &e = this->inputManager.getEvent(i);
-		bool takeScreenshot = this->inputManager.keyPressed(e, SDLK_PRINTSCREEN);
-
-		if (takeScreenshot)
-		{
-			// Save a screenshot to the local folder.
-			const auto &renderer = this->getRenderer();
-			const Surface screenshot = renderer.getScreenshot();
-			this->saveScreenshot(screenshot);
-		}
 
 		// Panel-specific events are handled by the active panel.
 		this->getActivePanel()->handleEvent(e);
