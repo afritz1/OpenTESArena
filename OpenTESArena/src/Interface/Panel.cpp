@@ -32,27 +32,27 @@ Panel::~Panel()
 	// Free all the input listener IDs.
 	for (const InputManager::ListenerID listenerID : this->inputActionListenerIDs)
 	{
-		inputManager.removeInputActionListener(listenerID);
+		inputManager.removeListener(listenerID);
 	}
 
 	for (const InputManager::ListenerID listenerID : this->mouseButtonChangedListenerIDs)
 	{
-		inputManager.removeMouseButtonChangedListener(listenerID);
+		inputManager.removeListener(listenerID);
 	}
 
 	for (const InputManager::ListenerID listenerID : this->mouseButtonHeldListenerIDs)
 	{
-		inputManager.removeMouseButtonHeldListener(listenerID);
+		inputManager.removeListener(listenerID);
 	}
 
 	for (const InputManager::ListenerID listenerID : this->mouseScrollChangedListenerIDs)
 	{
-		inputManager.removeMouseScrollChangedListener(listenerID);
+		inputManager.removeListener(listenerID);
 	}
 
 	for (const InputManager::ListenerID listenerID : this->mouseMotionListenerIDs)
 	{
-		inputManager.removeMouseMotionListener(listenerID);
+		inputManager.removeListener(listenerID);
 	}
 }
 

@@ -234,17 +234,17 @@ Game::~Game()
 {
 	if (this->applicationExitListenerID.has_value())
 	{
-		this->inputManager.removeApplicationExitListener(*this->applicationExitListenerID);
+		this->inputManager.removeListener(*this->applicationExitListenerID);
 	}
 
 	if (this->windowResizedListenerID.has_value())
 	{
-		this->inputManager.removeWindowResizedListener(*this->windowResizedListenerID);
+		this->inputManager.removeListener(*this->windowResizedListenerID);
 	}
 
 	if (this->takeScreenshotListenerID.has_value())
 	{
-		this->inputManager.removeInputActionListener(*this->takeScreenshotListenerID);
+		this->inputManager.removeListener(*this->takeScreenshotListenerID);
 	}
 }
 

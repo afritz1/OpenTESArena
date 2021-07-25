@@ -46,6 +46,7 @@ private:
 	{
 		std::string actionName;
 		InputActionCallback callback;
+		bool enabled;
 
 		void init(const std::string_view &actionName, const InputActionCallback &callback);
 		void reset();
@@ -55,6 +56,7 @@ private:
 	struct MouseButtonChangedListenerEntry
 	{
 		MouseButtonChangedCallback callback;
+		bool enabled;
 
 		void init(const MouseButtonChangedCallback &callback);
 		void reset();
@@ -63,6 +65,7 @@ private:
 	struct MouseButtonHeldListenerEntry
 	{
 		MouseButtonHeldCallback callback;
+		bool enabled;
 
 		void init(const MouseButtonHeldCallback &callback);
 		void reset();
@@ -71,6 +74,7 @@ private:
 	struct MouseScrollChangedListenerEntry
 	{
 		MouseScrollChangedCallback callback;
+		bool enabled;
 
 		void init(const MouseScrollChangedCallback &callback);
 		void reset();
@@ -79,6 +83,7 @@ private:
 	struct MouseMotionListenerEntry
 	{
 		MouseMotionCallback callback;
+		bool enabled;
 
 		void init(const MouseMotionCallback &callback);
 		void reset();
@@ -87,6 +92,7 @@ private:
 	struct ApplicationExitListenerEntry
 	{
 		ApplicationExitCallback callback;
+		bool enabled;
 
 		void init(const ApplicationExitCallback &callback);
 		void reset();
@@ -95,6 +101,7 @@ private:
 	struct WindowResizedListenerEntry
 	{
 		WindowResizedCallback callback;
+		bool enabled;
 
 		void init(const WindowResizedCallback &callback);
 		void reset();
@@ -137,8 +144,6 @@ private:
 	template <typename EntryType, typename CallbackType>
 	ListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
-	template <typename EntryType>
-	void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
 
 	void cacheSdlEvents();
 	
@@ -181,13 +186,10 @@ public:
 	ListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
 	ListenerID addWindowResizedListener(const WindowResizedCallback &callback);
 
-	void removeInputActionListener(ListenerID id);
-	void removeMouseButtonChangedListener(ListenerID id);
-	void removeMouseButtonHeldListener(ListenerID id);
-	void removeMouseScrollChangedListener(ListenerID id);
-	void removeMouseMotionListener(ListenerID id);
-	void removeApplicationExitListener(ListenerID id);
-	void removeWindowResizedListener(ListenerID id);
+	void removeListener(ListenerID id);
+
+	// Sets whether a valid listener can hear input callbacks.
+	void setListenerEnabled(ListenerID id, bool enabled);
 
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
