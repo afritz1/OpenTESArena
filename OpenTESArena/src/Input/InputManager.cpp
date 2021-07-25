@@ -51,6 +51,12 @@ namespace
 	}
 }
 
+void InputManager::ListenerLookupEntry::init(ListenerType type, int index)
+{
+	this->type = type;
+	this->index = index;
+}
+
 void InputManager::InputActionListenerEntry::init(const std::string_view &actionName, const InputActionCallback &callback)
 {
 	this->actionName = std::string(actionName);
@@ -222,18 +228,6 @@ bool InputManager::applicationExit(const SDL_Event &e) const
 	return e.type == SDL_QUIT;
 }
 
-Int2 InputManager::getMousePosition() const
-{
-	int x, y;
-	SDL_GetMouseState(&x, &y);
-	return Int2(x, y);
-}
-
-Int2 InputManager::getMouseDelta() const
-{
-	return this->mouseDelta;
-}
-
 InputManager::ListenerID InputManager::getNextListenerID()
 {
 	ListenerID listenerID;
@@ -249,6 +243,29 @@ InputManager::ListenerID InputManager::getNextListenerID()
 	}
 
 	return listenerID;
+}
+
+Int2 InputManager::getMousePosition() const
+{
+	int x, y;
+	SDL_GetMouseState(&x, &y);
+	return Int2(x, y);
+}
+
+Int2 InputManager::getMouseDelta() const
+{
+	return this->mouseDelta;
+}
+
+int InputManager::getEventCount() const
+{
+	return static_cast<int>(this->cachedEvents.size());
+}
+
+const SDL_Event &InputManager::getEvent(int index) const
+{
+	DebugAssertIndex(this->cachedEvents, index);
+	return this->cachedEvents[index];
 }
 
 bool InputManager::setInputActionMapActive(const std::string &name, bool active)
@@ -273,8 +290,8 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 }
 
 template <typename EntryType, typename CallbackType>
-InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callback, std::vector<EntryType> &listeners,
-	std::vector<int> &freedListenerIndices)
+InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
+	std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices)
 {
 	int insertIndex;
 	if (!freedListenerIndices.empty())
@@ -293,7 +310,10 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	listenerEntry.init(callback);
 
 	const ListenerID listenerID = this->getNextListenerID();
-	this->listenerIndices.emplace(listenerID, insertIndex);
+
+	ListenerLookupEntry lookupEntry;
+	lookupEntry.init(listenerType, insertIndex);
+	this->listenerLookupEntries.emplace(listenerID, std::move(lookupEntry));
 
 	return listenerID;
 }
@@ -318,62 +338,60 @@ InputManager::ListenerID InputManager::addInputActionListener(const std::string_
 	listenerEntry.init(actionName, callback);
 
 	const ListenerID listenerID = this->getNextListenerID();
-	this->listenerIndices.emplace(listenerID, insertIndex);
+
+	ListenerLookupEntry lookupEntry;
+	lookupEntry.init(ListenerType::InputAction, insertIndex);
+	this->listenerLookupEntries.emplace(listenerID, std::move(lookupEntry));
 
 	return listenerID;
 }
 
 InputManager::ListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
 {
-	return this->addListenerInternal(callback, this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices);
+	return this->addListenerInternal(callback, ListenerType::MouseButtonChanged,
+		this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices);
 }
 
 InputManager::ListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
 {
-	return this->addListenerInternal(callback, this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
-}
-
-int InputManager::getEventCount() const
-{
-	return static_cast<int>(this->cachedEvents.size());
-}
-
-const SDL_Event &InputManager::getEvent(int index) const
-{
-	DebugAssertIndex(this->cachedEvents, index);
-	return this->cachedEvents[index];
+	return this->addListenerInternal(callback, ListenerType::MouseButtonHeld,
+		this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
 }
 
 InputManager::ListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
-	return this->addListenerInternal(callback, this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
+	return this->addListenerInternal(callback, ListenerType::MouseScrollChanged,
+		this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
 }
 
 InputManager::ListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
 {
-	return this->addListenerInternal(callback, this->mouseMotionListeners, this->freedMouseMotionListenerIndices);
+	return this->addListenerInternal(callback, ListenerType::MouseMotion,
+		this->mouseMotionListeners, this->freedMouseMotionListenerIndices);
 }
 
 InputManager::ListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
 {
-	return this->addListenerInternal(callback, this->applicationExitListeners, this->freedApplicationExitListenerIndices);
+	return this->addListenerInternal(callback, ListenerType::ApplicationExit,
+		this->applicationExitListeners, this->freedApplicationExitListenerIndices);
 }
 
 InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
 {
-	return this->addListenerInternal(callback, this->windowResizedListeners, this->freedWindowResizedListenerIndices);
+	return this->addListenerInternal(callback, ListenerType::WindowResized,
+		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
 }
 
 template <typename EntryType>
 void InputManager::removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners,
 	std::vector<int> &freedListenerIndices)
 {
-	const auto iter = this->listenerIndices.find(id);
-	if (iter != this->listenerIndices.end())
+	const auto iter = this->listenerLookupEntries.find(id);
+	if (iter != this->listenerLookupEntries.end())
 	{
 		// Remove the means of looking up this entry.
-		const int removeIndex = iter->second;
-		this->listenerIndices.erase(iter);
+		const int removeIndex = iter->second.index;
+		this->listenerLookupEntries.erase(iter);
 
 		// Need to reset the entry itself so we don't have to add isValid conditions when iterating them
 		// in update().

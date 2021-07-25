@@ -23,6 +23,25 @@ class InputManager
 public:
 	using ListenerID = int;
 private:
+	enum class ListenerType
+	{
+		InputAction,
+		MouseButtonChanged,
+		MouseButtonHeld,
+		MouseScrollChanged,
+		MouseMotion,
+		ApplicationExit,
+		WindowResized
+	};
+
+	struct ListenerLookupEntry
+	{
+		ListenerType type; // The array the index points into.
+		int index;
+
+		void init(ListenerType type, int index);
+	};
+
 	struct InputActionListenerEntry
 	{
 		std::string actionName;
@@ -92,8 +111,8 @@ private:
 	std::vector<ApplicationExitListenerEntry> applicationExitListeners;
 	std::vector<WindowResizedListenerEntry> windowResizedListeners;
 
-	// Indices to valid listener entries, shared by all listener containers.
-	std::unordered_map<ListenerID, int> listenerIndices;
+	// Look-up values for valid listener entries, shared by all listener containers.
+	std::unordered_map<ListenerID, ListenerLookupEntry> listenerLookupEntries;
 
 	// Indices to listener entries that were used but can be reclaimed by a future registration.
 	std::vector<int> freedInputActionListenerIndices;
@@ -116,7 +135,7 @@ private:
 	bool isInTextEntryMode() const;
 
 	template <typename EntryType, typename CallbackType>
-	ListenerID addListenerInternal(CallbackType &&callback, std::vector<EntryType> &listeners,
+	ListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
 	template <typename EntryType>
 	void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
