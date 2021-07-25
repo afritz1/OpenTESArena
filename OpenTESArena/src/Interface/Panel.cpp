@@ -110,6 +110,36 @@ CursorData Panel::getDefaultCursor() const
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
 }
 
+void Panel::addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback));
+}
+
+void Panel::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseButtonChangedListenerIDs.emplace_back(inputManager.addMouseButtonChangedListener(callback));
+}
+
+void Panel::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseButtonHeldListenerIDs.emplace_back(inputManager.addMouseButtonHeldListener(callback));
+}
+
+void Panel::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseScrollChangedListenerIDs.emplace_back(inputManager.addMouseScrollChangedListener(callback));
+}
+
+void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
+}
+
 void Panel::tick(double dt)
 {
 	// Do nothing by default.

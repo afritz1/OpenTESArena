@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "../Input/InputManager.h"
@@ -47,6 +48,12 @@ protected:
 
 	// Default cursor used by most panels.
 	CursorData getDefaultCursor() const;
+
+	void addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
+	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
+	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
+	void addMouseMotionListener(const MouseMotionCallback &callback);
 public:
 	Panel(Game &game);
 	virtual ~Panel();
