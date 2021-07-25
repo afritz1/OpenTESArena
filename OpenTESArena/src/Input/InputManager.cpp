@@ -133,6 +133,9 @@ void InputManager::init()
 {
 	// Add input action maps to be enabled/disabled as needed.
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
+
+	// Disable text input mode (for some reason it's on by default)?
+	SDL_StopTextInput();
 }
 
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
