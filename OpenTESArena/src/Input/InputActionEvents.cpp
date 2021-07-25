@@ -1,13 +1,7 @@
 #include "InputActionEvents.h"
 
-InputActionCallbackValues::InputActionCallbackValues()
-{
-	this->performed = false;
-	this->held = false;
-	this->released = false;
-}
-
-void InputActionCallbackValues::init(bool performed, bool held, bool released)
+InputActionCallbackValues::InputActionCallbackValues(Game &game, bool performed, bool held, bool released)
+	: game(game)
 {
 	this->performed = performed;
 	this->held = held;

@@ -19,16 +19,16 @@ void AutomapUiController::onBackToGameButtonSelected(Game &game)
 	game.setPanel<GameWorldPanel>();
 }
 
-void AutomapUiController::onBackToGameInputAction(const InputActionCallbackValues &values, Game &game)
+void AutomapUiController::onBackToGameInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{
-		AutomapUiController::onBackToGameButtonSelected(game);
+		AutomapUiController::onBackToGameButtonSelected(values.game);
 	}
 }
 
-void AutomapUiController::onMouseButtonChanged(MouseButtonType buttonType, const Int2 &position, bool pressed,
-	Game &game, const Rect &exitButtonRect)
+void AutomapUiController::onMouseButtonChanged(Game &game, MouseButtonType buttonType, const Int2 &position,
+	bool pressed, const Rect &exitButtonRect)
 {
 	if ((buttonType == MouseButtonType::Left) && pressed)
 	{
@@ -40,8 +40,8 @@ void AutomapUiController::onMouseButtonChanged(MouseButtonType buttonType, const
 	}
 }
 
-void AutomapUiController::onMouseButtonHeld(MouseButtonType buttonType, const Int2 &position, double dt,
-	Game &game, Double2 *automapOffset)
+void AutomapUiController::onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position,
+	double dt, Double2 *automapOffset)
 {
 	// Listen for when the LMB is held on a compass direction.
 	if (buttonType == MouseButtonType::Left)

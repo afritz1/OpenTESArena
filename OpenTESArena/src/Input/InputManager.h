@@ -123,7 +123,7 @@ private:
 
 	void cacheSdlEvents();
 	
-	void handleHeldInputs(uint32_t mouseState, const Int2 &mousePosition, double dt);
+	void handleHeldInputs(Game &game, uint32_t mouseState, const Int2 &mousePosition, double dt);
 public:
 	InputManager();
 
@@ -174,7 +174,7 @@ public:
 	void setRelativeMouseMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(double dt, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

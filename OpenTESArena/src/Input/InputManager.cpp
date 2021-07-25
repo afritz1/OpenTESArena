@@ -70,7 +70,7 @@ void InputManager::MouseButtonChangedListenerEntry::init(const MouseButtonChange
 
 void InputManager::MouseButtonChangedListenerEntry::reset()
 {
-	this->callback = [](MouseButtonType, const Int2&, bool) { };
+	this->callback = [](Game&, MouseButtonType, const Int2&, bool) { };
 }
 
 void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallback &callback)
@@ -80,7 +80,7 @@ void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallb
 
 void InputManager::MouseButtonHeldListenerEntry::reset()
 {
-	this->callback = [](MouseButtonType, const Int2&, double) { };
+	this->callback = [](Game&, MouseButtonType, const Int2&, double) { };
 }
 
 void InputManager::MouseScrollChangedListenerEntry::init(const MouseScrollChangedCallback &callback)
@@ -90,7 +90,7 @@ void InputManager::MouseScrollChangedListenerEntry::init(const MouseScrollChange
 
 void InputManager::MouseScrollChangedListenerEntry::reset()
 {
-	this->callback = [](MouseWheelScrollType, const Int2&) { };
+	this->callback = [](Game&, MouseWheelScrollType, const Int2&) { };
 }
 
 void InputManager::MouseMotionListenerEntry::init(const MouseMotionCallback &callback)
@@ -100,7 +100,7 @@ void InputManager::MouseMotionListenerEntry::init(const MouseMotionCallback &cal
 
 void InputManager::MouseMotionListenerEntry::reset()
 {
-	this->callback = [](int, int) { };
+	this->callback = [](Game&, int, int) { };
 }
 
 void InputManager::ApplicationExitListenerEntry::init(const ApplicationExitCallback &callback)
@@ -447,9 +447,9 @@ bool InputManager::isInTextEntryMode() const
 	return inTextEntryMode == SDL_TRUE;
 }
 
-void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePosition, double dt)
+void InputManager::handleHeldInputs(Game &game, uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
-	auto handleHeldMouseButton = [this, mouseState, &mousePosition, dt](MouseButtonType buttonType)
+	auto handleHeldMouseButton = [this, &game, mouseState, &mousePosition, dt](MouseButtonType buttonType)
 	{
 		const int sdlMouseButton = GetSdlMouseButton(buttonType);
 		const bool isButtonHeld = (mouseState & SDL_BUTTON(sdlMouseButton)) != 0;
@@ -457,7 +457,7 @@ void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePositi
 		{
 			for (const MouseButtonHeldListenerEntry &entry : this->mouseButtonHeldListeners)
 			{
-				entry.callback(buttonType, mousePosition, dt);
+				entry.callback(game, buttonType, mousePosition, dt);
 			}
 		}
 	};
@@ -494,8 +494,7 @@ void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePositi
 							{
 								if (entry.actionName == def.name)
 								{
-									InputActionCallbackValues values;
-									values.init(false, true, false);
+									InputActionCallbackValues values(game, false, true, false);
 									entry.callback(values);
 								}
 							}
@@ -507,7 +506,7 @@ void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePositi
 	}
 }
 
-void InputManager::update(double dt, const std::function<void()> &onFinishedProcessingEvent)
+void InputManager::update(Game &game, double dt, const std::function<void()> &onFinishedProcessingEvent)
 {
 	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
 	// old event handling in Game::handleEvents().
@@ -519,7 +518,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 	// Handle held mouse buttons and keys.
 	Int2 mousePosition;
 	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-	this->handleHeldInputs(mouseState, mousePosition, dt);
+	this->handleHeldInputs(game, mouseState, mousePosition, dt);
 
 	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
@@ -572,8 +571,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 								{
 									if (entry.actionName == def.name)
 									{
-										InputActionCallbackValues values;
-										values.init(isKeyDown, false, isKeyUp);
+										InputActionCallbackValues values(game, isKeyDown, false, isKeyUp);
 										entry.callback(values);
 									}
 								}
@@ -594,7 +592,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 
 				for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
 				{
-					entry.callback(*buttonType, mousePosition, isButtonPress);
+					entry.callback(game, *buttonType, mousePosition, isButtonPress);
 				}
 
 				for (const InputActionMap &map : this->inputActionMaps)
@@ -615,8 +613,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 									{
 										if (entry.actionName == def.name)
 										{
-											InputActionCallbackValues values;
-											values.init(isButtonPress, false, isButtonRelease);
+											InputActionCallbackValues values(game, isButtonPress, false, isButtonRelease);
 											entry.callback(values);
 										}
 									}
@@ -649,7 +646,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 			{
 				for (const MouseScrollChangedListenerEntry &entry : this->mouseScrollChangedListeners)
 				{
-					entry.callback(*scrollType, mousePosition);
+					entry.callback(game, *scrollType, mousePosition);
 				}
 
 				for (const InputActionMap &map : this->inputActionMaps)
@@ -669,8 +666,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 									{
 										if (entry.actionName == def.name)
 										{
-											InputActionCallbackValues values;
-											values.init(true, false, false);
+											InputActionCallbackValues values(game, true, false, false);
 											entry.callback(values);
 										}
 									}
@@ -685,7 +681,7 @@ void InputManager::update(double dt, const std::function<void()> &onFinishedProc
 		{
 			for (const MouseMotionListenerEntry &entry : this->mouseMotionListeners)
 			{
-				entry.callback(this->mouseDelta.x, this->mouseDelta.y);
+				entry.callback(game, this->mouseDelta.x, this->mouseDelta.y);
 			}
 		}
 

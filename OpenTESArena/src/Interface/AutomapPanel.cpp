@@ -69,29 +69,25 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
 
-	auto backToGameInputActionFunc = [&game](const InputActionCallbackValues &values)
-	{
-		AutomapUiController::onBackToGameInputAction(values, game);
-	};
-
+	auto backToGameInputActionFunc = AutomapUiController::onBackToGameInputAction;
 	this->addInputActionListener(AutomapUiController::getInputActionName(), backToGameInputActionFunc);
 	this->addInputActionListener(AutomapUiController::getBackToGameInputActionName(), backToGameInputActionFunc);
 
 	this->addMouseButtonChangedListener(
-		[this, &game](MouseButtonType buttonType, const Int2 &position, bool pressed)
+		[this](Game &game, MouseButtonType buttonType, const Int2 &position, bool pressed)
 	{
 		const Rect exitButtonRect(
 			this->backToGameButton.getX(),
 			this->backToGameButton.getY(),
 			this->backToGameButton.getWidth(),
 			this->backToGameButton.getHeight());
-		AutomapUiController::onMouseButtonChanged(buttonType, position, pressed, game, exitButtonRect);
+		AutomapUiController::onMouseButtonChanged(game, buttonType, position, pressed, exitButtonRect);
 	});
 
 	this->addMouseButtonHeldListener(
-		[this, &game](MouseButtonType buttonType, const Int2 &position, double dt)
+		[this](Game &game, MouseButtonType buttonType, const Int2 &position, double dt)
 	{
-		AutomapUiController::onMouseButtonHeld(buttonType, position, dt, game, &this->automapOffset);
+		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
 	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
