@@ -438,6 +438,12 @@ void InputManager::cacheSdlEvents()
 	}
 }
 
+bool InputManager::isInTextEntryMode() const
+{
+	const SDL_bool inTextEntryMode = SDL_IsTextInputActive();
+	return inTextEntryMode == SDL_TRUE;
+}
+
 void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
 	auto handleHeldMouseButton = [this, mouseState, &mousePosition, dt](MouseButtonType buttonType)
@@ -463,7 +469,7 @@ void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePositi
 
 	for (const InputActionMap &map : this->inputActionMaps)
 	{
-		if (map.active)
+		if (map.active && (!this->isInTextEntryMode() || map.allowedDuringTextEntry))
 		{
 			for (const InputActionDefinition &def : map.defs)
 			{
@@ -544,7 +550,7 @@ void InputManager::update(double dt)
 
 			for (const InputActionMap &map : this->inputActionMaps)
 			{
-				if (map.active)
+				if (map.active && (!this->isInTextEntryMode() || map.allowedDuringTextEntry))
 				{
 					for (const InputActionDefinition &def : map.defs)
 					{

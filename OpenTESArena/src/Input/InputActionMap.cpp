@@ -40,8 +40,9 @@ namespace
 		InputActionMap map;
 
 		// Common map is always active.
-		const bool active = StringView::equals(mapName, InputActionMapName::Common);
-		map.init(mapName, active);
+		const bool allowedDuringTextEntry = StringView::equals(mapName, InputActionMapName::Common);
+		const bool active = allowedDuringTextEntry;
+		map.init(mapName, allowedDuringTextEntry, active);
 
 		std::vector<InputActionDefinition> &defs = map.defs;
 		if (StringView::equals(mapName, InputActionMapName::Common))
@@ -217,12 +218,14 @@ namespace
 
 InputActionMap::InputActionMap()
 {
+	this->allowedDuringTextEntry = false;
 	this->active = false;
 }
 
-void InputActionMap::init(const std::string &name, bool active)
+void InputActionMap::init(const std::string &name, bool allowedDuringTextEntry, bool active)
 {
 	this->name = name;
+	this->allowedDuringTextEntry = allowedDuringTextEntry;
 	this->active = active;
 }
 

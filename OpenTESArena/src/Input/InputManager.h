@@ -112,6 +112,8 @@ private:
 
 	ListenerID getNextListenerID();
 
+	bool isInTextEntryMode() const;
+
 	template <typename EntryType, typename CallbackType>
 	ListenerID addListenerInternal(CallbackType &&callback, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
