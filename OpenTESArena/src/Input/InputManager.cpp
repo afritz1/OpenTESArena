@@ -14,9 +14,20 @@ void InputManager::InputActionListenerEntry::init(const std::string_view &action
 	this->callback = callback;
 }
 
+void InputManager::InputActionListenerEntry::reset()
+{
+	this->actionName.clear();
+	this->callback = [](const InputActionCallbackValues&) { };
+}
+
 void InputManager::MouseButtonChangedListenerEntry::init(const MouseButtonChangedCallback &callback)
 {
 	this->callback = callback;
+}
+
+void InputManager::MouseButtonChangedListenerEntry::reset()
+{
+	this->callback = [](MouseButtonType, bool, const Int2&) { };
 }
 
 void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallback &callback)
@@ -24,9 +35,19 @@ void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallb
 	this->callback = callback;
 }
 
+void InputManager::MouseButtonHeldListenerEntry::reset()
+{
+	this->callback = [](MouseButtonType, const Int2&) { };
+}
+
 void InputManager::MouseScrollChangedListenerEntry::init(const MouseScrollChangedCallback &callback)
 {
 	this->callback = callback;
+}
+
+void InputManager::MouseScrollChangedListenerEntry::reset()
+{
+	this->callback = [](MouseWheelScrollType, const Int2&) { };
 }
 
 void InputManager::MouseMotionListenerEntry::init(const MouseMotionCallback &callback)
@@ -34,14 +55,29 @@ void InputManager::MouseMotionListenerEntry::init(const MouseMotionCallback &cal
 	this->callback = callback;
 }
 
+void InputManager::MouseMotionListenerEntry::reset()
+{
+	this->callback = [](int, int) { };
+}
+
 void InputManager::ApplicationExitListenerEntry::init(const ApplicationExitCallback &callback)
 {
 	this->callback = callback;
 }
 
+void InputManager::ApplicationExitListenerEntry::reset()
+{
+	this->callback = []() { };
+}
+
 void InputManager::WindowResizedListenerEntry::init(const WindowResizedCallback &callback)
 {
 	this->callback = callback;
+}
+
+void InputManager::WindowResizedListenerEntry::reset()
+{
+	this->callback = [](int, int) { };
 }
 
 InputManager::InputManager()
@@ -289,11 +325,16 @@ void InputManager::removeListenerInternal(ListenerID id, std::vector<EntryType> 
 	const auto iter = this->listenerIndices.find(id);
 	if (iter != this->listenerIndices.end())
 	{
-		// Remove the means of looking up this entry. Don't need to actually erase the entry itself.
+		// Remove the means of looking up this entry.
 		const int removeIndex = iter->second;
 		this->listenerIndices.erase(iter);
 
-		DebugAssertIndex(listeners, removeIndex); // Double-check that the entry exists.
+		// Need to reset the entry itself so we don't have to add isValid conditions when iterating them
+		// in update().
+		DebugAssertIndex(listeners, removeIndex);
+		EntryType &entry = listeners[removeIndex];
+		entry.reset();
+
 		freedListenerIndices.emplace_back(removeIndex);
 		this->freedListenerIDs.emplace_back(id);
 	}

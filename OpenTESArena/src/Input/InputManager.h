@@ -20,7 +20,7 @@
 class InputManager
 {
 public:
-	using ListenerID = int32_t;
+	using ListenerID = int;
 private:
 	struct InputActionListenerEntry
 	{
@@ -28,6 +28,7 @@ private:
 		InputActionCallback callback;
 
 		void init(const std::string_view &actionName, const InputActionCallback &callback);
+		void reset();
 	};
 
 	// Leave these as structs in the event that callback priorities become a thing.
@@ -36,6 +37,7 @@ private:
 		MouseButtonChangedCallback callback;
 
 		void init(const MouseButtonChangedCallback &callback);
+		void reset();
 	};
 
 	struct MouseButtonHeldListenerEntry
@@ -43,6 +45,7 @@ private:
 		MouseButtonHeldCallback callback;
 
 		void init(const MouseButtonHeldCallback &callback);
+		void reset();
 	};
 
 	struct MouseScrollChangedListenerEntry
@@ -50,6 +53,7 @@ private:
 		MouseScrollChangedCallback callback;
 
 		void init(const MouseScrollChangedCallback &callback);
+		void reset();
 	};
 
 	struct MouseMotionListenerEntry
@@ -57,6 +61,7 @@ private:
 		MouseMotionCallback callback;
 
 		void init(const MouseMotionCallback &callback);
+		void reset();
 	};
 
 	struct ApplicationExitListenerEntry
@@ -64,6 +69,7 @@ private:
 		ApplicationExitCallback callback;
 
 		void init(const ApplicationExitCallback &callback);
+		void reset();
 	};
 
 	struct WindowResizedListenerEntry
@@ -71,6 +77,7 @@ private:
 		WindowResizedCallback callback;
 
 		void init(const WindowResizedCallback &callback);
+		void reset();
 	};
 
 	std::vector<InputActionMap> inputActionMaps;
