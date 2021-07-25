@@ -484,10 +484,10 @@ void Game::handlePanelChanges()
 	}
 }
 
-void Game::handleEvents()
+void Game::handleInput(double dt)
 {
 	// Handle input listener callbacks and general input updating.
-	this->inputManager.update();
+	this->inputManager.update(dt);
 
 	// Handle events for the current game state.
 	// @todo: this is now the legacy input handling for panels. It should eventually all be handled by the InputManager.
@@ -648,7 +648,7 @@ void Game::loop()
 		// Listen for input events.
 		try
 		{
-			this->handleEvents();
+			this->handleInput(dt);
 		}
 		catch (const std::exception &e)
 		{

@@ -27,7 +27,7 @@ void InputManager::MouseButtonChangedListenerEntry::init(const MouseButtonChange
 
 void InputManager::MouseButtonChangedListenerEntry::reset()
 {
-	this->callback = [](MouseButtonType, bool, const Int2&) { };
+	this->callback = [](MouseButtonType, const Int2&, bool) { };
 }
 
 void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallback &callback)
@@ -37,7 +37,7 @@ void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallb
 
 void InputManager::MouseButtonHeldListenerEntry::reset()
 {
-	this->callback = [](MouseButtonType, const Int2&) { };
+	this->callback = [](MouseButtonType, const Int2&, double) { };
 }
 
 void InputManager::MouseScrollChangedListenerEntry::init(const MouseScrollChangedCallback &callback)
@@ -395,7 +395,7 @@ void InputManager::cacheSdlEvents()
 	}
 }
 
-void InputManager::update()
+void InputManager::update(double dt)
 {
 	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
 	// old event handling in Game::handleEvents().
@@ -502,7 +502,7 @@ void InputManager::update()
 
 				for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
 				{
-					entry.callback(*buttonType, isButtonPress, mousePosition);
+					entry.callback(*buttonType, mousePosition, isButtonPress);
 				}
 
 				for (const InputActionMap &map : this->inputActionMaps)

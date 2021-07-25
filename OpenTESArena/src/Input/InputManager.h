@@ -169,7 +169,7 @@ public:
 	void setRelativeMouseMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update();
+	void update(double dt);
 };
 
 #endif

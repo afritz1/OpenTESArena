@@ -5,17 +5,21 @@
 
 namespace InputActionMapName
 {
-	constexpr const char *Common = "Common"; // Accept/cancel, etc..
-	constexpr const char *Cinematic = "Cinematic"; // Skip, etc..
+	constexpr const char *Common = "Common"; // Accept/cancel, etc.. Globally available to all UI.
+
+	constexpr const char *Automap = "Automap";
 	constexpr const char *CharacterCreation = "CharacterCreation"; // Save/reroll attributes.
+	constexpr const char *Cinematic = "Cinematic"; // Skip, etc..
 	constexpr const char *GameWorld = "GameWorld";
 	constexpr const char *MainMenu = "MainMenu"; // Load, new game, exit, test.
 
 	constexpr const char *Names[] =
 	{
 		Common,
-		Cinematic,
+
+		Automap,
 		CharacterCreation,
+		Cinematic,
 		GameWorld,
 		MainMenu
 	};

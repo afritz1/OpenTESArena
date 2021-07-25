@@ -60,14 +60,12 @@ namespace
 				SDLK_PRINTSCREEN));
 			// Going to keep scroll up/down as pointer events since scrollable UI things need the pointer over them.
 		}
-		else if (StringView::equals(mapName, InputActionMapName::Cinematic))
+		else if (StringView::equals(mapName, InputActionMapName::Automap))
 		{
-			// @todo: support multiple input buttons like left click, right click, escape, space, enter, keypad enter, etc..
-			// The triggering of the Skip input action is the union of those physical inputs.
 			defs.emplace_back(makeKeyDef(
-				InputActionName::Skip,
+				InputActionName::Automap,
 				InputStateType::BeginPerform,
-				SDLK_ESCAPE));
+				SDLK_n));
 		}
 		else if (StringView::equals(mapName, InputActionMapName::CharacterCreation))
 		{
@@ -79,6 +77,15 @@ namespace
 				InputActionName::RerollAttributes,
 				InputStateType::BeginPerform,
 				SDLK_r));
+		}
+		else if (StringView::equals(mapName, InputActionMapName::Cinematic))
+		{
+			// @todo: support multiple input buttons like left click, right click, escape, space, enter, keypad enter, etc..
+			// The triggering of the Skip input action is the union of those physical inputs.
+			defs.emplace_back(makeKeyDef(
+				InputActionName::Skip,
+				InputStateType::BeginPerform,
+				SDLK_ESCAPE));
 		}
 		else if (StringView::equals(mapName, InputActionMapName::GameWorld))
 		{

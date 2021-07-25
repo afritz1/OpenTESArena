@@ -89,7 +89,7 @@ private:
 	void handlePanelChanges();
 
 	// Handles SDL events for the current frame.
-	void handleEvents();
+	void handleInput(double dt);
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
 
