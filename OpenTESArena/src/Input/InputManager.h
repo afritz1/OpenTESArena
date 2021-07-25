@@ -119,6 +119,8 @@ private:
 	void removeListenerInternal(ListenerID id, std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
 
 	void cacheSdlEvents();
+	
+	void handleHeldInputs(uint32_t mouseState, const Int2 &mousePosition, double dt);
 public:
 	InputManager();
 

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <type_traits>
 
@@ -7,6 +8,48 @@
 #include "InputStateType.h"
 
 #include "components/debug/Debug.h"
+
+namespace
+{
+	// Supported mouse buttons used by the game.
+	constexpr std::array<MouseButtonType, 2> MouseButtonTypes =
+	{
+		MouseButtonType::Left,
+		MouseButtonType::Right
+	};
+
+	uint16_t GetFilteredSdlKeymod(uint16_t keymod)
+	{
+		// Ignore Num/Caps/Scroll Lock.
+		return keymod & 0x0FFF;
+	}
+
+	int GetSdlMouseButton(MouseButtonType buttonType)
+	{
+		switch (buttonType)
+		{
+		case MouseButtonType::Left:
+			return SDL_BUTTON_LEFT;
+		case MouseButtonType::Right:
+			return SDL_BUTTON_RIGHT;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(buttonType)));
+		}
+	}
+
+	std::optional<MouseButtonType> GetMouseButtonType(int sdlMouseButton)
+	{
+		switch (sdlMouseButton)
+		{
+		case SDL_BUTTON_LEFT:
+			return MouseButtonType::Left;
+		case SDL_BUTTON_RIGHT:
+			return MouseButtonType::Right;
+		default:
+			return std::nullopt;
+		}
+	}
+}
 
 void InputManager::InputActionListenerEntry::init(const std::string_view &actionName, const InputActionCallback &callback)
 {
@@ -395,32 +438,83 @@ void InputManager::cacheSdlEvents()
 	}
 }
 
+void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePosition, double dt)
+{
+	auto handleHeldMouseButton = [this, mouseState, &mousePosition, dt](MouseButtonType buttonType)
+	{
+		const int sdlMouseButton = GetSdlMouseButton(buttonType);
+		const bool isButtonHeld = (mouseState & SDL_BUTTON(sdlMouseButton)) != 0;
+		if (isButtonHeld)
+		{
+			for (const MouseButtonHeldListenerEntry &entry : this->mouseButtonHeldListeners)
+			{
+				entry.callback(buttonType, mousePosition, dt);
+			}
+		}
+	};
+
+	for (const MouseButtonType buttonType : MouseButtonTypes)
+	{
+		handleHeldMouseButton(buttonType);
+	}
+
+	const uint8_t *keyboardState = SDL_GetKeyboardState(nullptr);
+	const SDL_Keymod keyboardMod = SDL_GetModState();
+
+	for (const InputActionMap &map : this->inputActionMaps)
+	{
+		if (map.active)
+		{
+			for (const InputActionDefinition &def : map.defs)
+			{
+				if (def.stateType == InputStateType::Performing)
+				{
+					if (def.type == InputActionType::MouseButton)
+					{
+						const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+						handleHeldMouseButton(mouseButtonDef.type);
+					}
+					else if (def.type == InputActionType::Key)
+					{
+						const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+						const SDL_Scancode scancode = SDL_GetScancodeFromKey(keyDef.keycode);
+						const bool isKeyHeld = (keyboardState[scancode] != 0) && (keyDef.keymod == keyboardMod);
+						if (isKeyHeld)
+						{
+							for (const InputActionListenerEntry &entry : this->inputActionListeners)
+							{
+								if (entry.actionName == def.name)
+								{
+									InputActionCallbackValues values;
+									values.init(false, true, false);
+									entry.callback(values);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 void InputManager::update(double dt)
 {
 	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
 	// old event handling in Game::handleEvents().
 	this->cacheSdlEvents();
 
-	Int2 mousePosition;
-	SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-
-	// Refresh the mouse delta.
 	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
 
-	// @todo: get held key state
-	// - SDL_GetKeyboardState()
-	//SDL_GetKeyFromScancode
-	//SDL_GetKeyboardState(nullptr);
+	// Handle held mouse buttons and keys.
+	Int2 mousePosition;
+	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+	this->handleHeldInputs(mouseState, mousePosition, dt);
 
-	// @todo: input listener handling.
-	// For each SDL_Event or whatever:
-	// - if an InputActionDefinition is registered for it AND the input action map is enabled, queue up the callback
-	// - if a mouse button event is registered for it, queue up the callback
-
+	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
 	// keys/mouse buttons like Skip.
-
 	for (const SDL_Event &e : this->cachedEvents)
 	{
 		if (this->applicationExit(e))
@@ -444,7 +538,7 @@ void InputManager::update(double dt)
 			static_assert(std::is_same_v<InputActionDefinition::KeyDefinition::Keymod, decltype(e.key.keysym.mod)>);
 
 			const SDL_Keycode keycode = e.key.keysym.sym;
-			const InputActionDefinition::KeyDefinition::Keymod keymod = e.key.keysym.mod & 0x0FFF; // Ignore Num/Caps/Scroll Lock.
+			const InputActionDefinition::KeyDefinition::Keymod keymod = GetFilteredSdlKeymod(e.key.keysym.mod);
 			const bool isKeyDown = e.type == SDL_KEYDOWN;
 			const bool isKeyUp = e.type == SDL_KEYUP;
 
@@ -482,18 +576,7 @@ void InputManager::update(double dt)
 		}
 		else if (this->isMouseButtonEvent(e))
 		{
-			const std::optional<MouseButtonType> buttonType = [&e]() -> std::optional<MouseButtonType>
-			{
-				switch (e.button.button)
-				{
-				case SDL_BUTTON_LEFT:
-					return MouseButtonType::Left;
-				case SDL_BUTTON_RIGHT:
-					return MouseButtonType::Right;
-				default:
-					return std::nullopt;
-				}
-			}();
+			const std::optional<MouseButtonType> buttonType = GetMouseButtonType(e.button.button);
 
 			if (buttonType.has_value())
 			{
