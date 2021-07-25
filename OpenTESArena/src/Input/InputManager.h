@@ -2,6 +2,7 @@
 #define INPUT_MANAGER_H
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -173,7 +174,7 @@ public:
 	void setRelativeMouseMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(double dt);
+	void update(double dt, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

@@ -487,7 +487,13 @@ void Game::handlePanelChanges()
 void Game::handleInput(double dt)
 {
 	// Handle input listener callbacks and general input updating.
-	this->inputManager.update(dt);
+	this->inputManager.update(dt, [this]()
+	{
+		// @todo: uncomment when fully moved over to InputManager and the one in the loop below is removed, otherwise
+		// they'll get double-processed (i.e. pressing Esc in the automap will close it and simultaneously open the 
+		// pause menu).
+		//this->handlePanelChanges();
+	});
 
 	// Handle events for the current game state.
 	// @todo: this is now the legacy input handling for panels. It should eventually all be handled by the InputManager.

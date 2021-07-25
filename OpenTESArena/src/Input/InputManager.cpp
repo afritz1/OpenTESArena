@@ -507,7 +507,7 @@ void InputManager::handleHeldInputs(uint32_t mouseState, const Int2 &mousePositi
 	}
 }
 
-void InputManager::update(double dt)
+void InputManager::update(double dt, const std::function<void()> &onFinishedProcessingEvent)
 {
 	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
 	// old event handling in Game::handleEvents().
@@ -688,5 +688,7 @@ void InputManager::update(double dt)
 				entry.callback(this->mouseDelta.x, this->mouseDelta.y);
 			}
 		}
+
+		onFinishedProcessingEvent();
 	}
 }
