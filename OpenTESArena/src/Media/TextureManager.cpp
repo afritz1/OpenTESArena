@@ -302,7 +302,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(LGTFile::PALETTE_COUNT);
 			for (int i = 0; i < outTextures->getCount(); i++)
 			{
-				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+				BufferViewReadOnly<uint8_t> lightPalette = lgt.getLightPalette(i);
 				TextureBuilder textureBuilder = makePaletted(lightPalette.getCount(), 1, lightPalette.get());
 				outTextures->set(i, std::move(textureBuilder));
 			}
@@ -313,7 +313,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			Buffer<Int2> dimensions(LGTFile::PALETTE_COUNT);
 			for (int i = 0; i < LGTFile::PALETTE_COUNT; i++)
 			{
-				const BufferView<const uint8_t> lightPalette = lgt.getLightPalette(i);
+				BufferViewReadOnly<uint8_t> lightPalette = lgt.getLightPalette(i);
 				dimensions.set(i, Int2(lightPalette.getCount(), 1));
 			}
 

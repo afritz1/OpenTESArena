@@ -108,7 +108,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
-		const BufferView<const MIFFile::Level> mifLevelView(&mifLevel, 1);
+		BufferViewReadOnly<MIFFile::Level> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for interiors.
@@ -248,7 +248,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 }
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-	bool isPremade, const BufferView<const uint8_t> &reservedBlocks, WEInt blockStartPosX,
+	bool isPremade, BufferViewReadOnly<uint8_t> &reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
@@ -352,7 +352,7 @@ bool MapDefinition::initWildLevels(const BufferView2D<const ArenaWildUtils::Wild
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
+	BufferViewReadOnly<ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
 	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices.get(),
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
@@ -476,7 +476,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
+	BufferViewReadOnly<uint8_t> reservedBlocks(generationInfo.reservedBlocks.get(),
 		generationInfo.reservedBlocks.getCount());
 	const LocationDefinition::CityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;

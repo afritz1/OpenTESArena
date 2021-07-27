@@ -14,7 +14,7 @@
 #include "components/utilities/String.h"
 
 void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int2 &mouseDelta,
-	const BufferView<const Rect> &nativeCursorRegions)
+	BufferViewReadOnly<Rect> &nativeCursorRegions)
 {
 	// @todo: move this to some game/player logic controller namespace
 
@@ -139,7 +139,7 @@ void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int
 }
 
 void PlayerLogicController::handlePlayerMovement(Game &game, double dt,
-	const BufferView<const Rect> &nativeCursorRegions)
+	BufferViewReadOnly<Rect> &nativeCursorRegions)
 {
 	// @todo: this should be in some game/player logic controller namespace
 

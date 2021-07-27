@@ -186,7 +186,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	if (!isPremadeCity)
 	{
 		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
-		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+		BufferViewReadOnly<uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
 			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;

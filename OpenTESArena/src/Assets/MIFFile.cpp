@@ -378,39 +378,39 @@ BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getMAP2() const
 		this->map2.get(), this->map2.getWidth(), this->map2.getHeight());
 }
 
-BufferView<const uint8_t> MIFFile::Level::getFLAT() const
+BufferViewReadOnly<uint8_t> MIFFile::Level::getFLAT() const
 {
-	return BufferView<const uint8_t>(this->flat.data(), static_cast<int>(this->flat.size()));
+	return BufferViewReadOnly<uint8_t>(this->flat.data(), static_cast<int>(this->flat.size()));
 }
 
-BufferView<const uint8_t> MIFFile::Level::getINNS() const
+BufferViewReadOnly<uint8_t> MIFFile::Level::getINNS() const
 {
-	return BufferView<const uint8_t>(this->inns.data(), static_cast<int>(this->inns.size()));
+	return BufferViewReadOnly<uint8_t>(this->inns.data(), static_cast<int>(this->inns.size()));
 }
 
-BufferView<const uint8_t> MIFFile::Level::getLOOT() const
+BufferViewReadOnly<uint8_t> MIFFile::Level::getLOOT() const
 {
-	return BufferView<const uint8_t>(this->loot.data(), static_cast<int>(this->loot.size()));
+	return BufferViewReadOnly<uint8_t>(this->loot.data(), static_cast<int>(this->loot.size()));
 }
 
-BufferView<const uint8_t> MIFFile::Level::getSTOR() const
+BufferViewReadOnly<uint8_t> MIFFile::Level::getSTOR() const
 {
-	return BufferView<const uint8_t>(this->stor.data(), static_cast<int>(this->stor.size()));
+	return BufferViewReadOnly<uint8_t>(this->stor.data(), static_cast<int>(this->stor.size()));
 }
 
-BufferView<const ArenaTypes::MIFTarget> MIFFile::Level::getTARG() const
+BufferViewReadOnly<ArenaTypes::MIFTarget> MIFFile::Level::getTARG() const
 {
-	return BufferView<const ArenaTypes::MIFTarget>(this->targ.data(), static_cast<int>(this->targ.size()));
+	return BufferViewReadOnly<ArenaTypes::MIFTarget>(this->targ.data(), static_cast<int>(this->targ.size()));
 }
 
-BufferView<const ArenaTypes::MIFLock> MIFFile::Level::getLOCK() const
+BufferViewReadOnly<ArenaTypes::MIFLock> MIFFile::Level::getLOCK() const
 {
-	return BufferView<const ArenaTypes::MIFLock>(this->lock.data(), static_cast<int>(this->lock.size()));
+	return BufferViewReadOnly<ArenaTypes::MIFLock>(this->lock.data(), static_cast<int>(this->lock.size()));
 }
 
-BufferView<const ArenaTypes::MIFTrigger> MIFFile::Level::getTRIG() const
+BufferViewReadOnly<ArenaTypes::MIFTrigger> MIFFile::Level::getTRIG() const
 {
-	return BufferView<const ArenaTypes::MIFTrigger>(this->trig.data(), static_cast<int>(this->trig.size()));
+	return BufferViewReadOnly<ArenaTypes::MIFTrigger>(this->trig.data(), static_cast<int>(this->trig.size()));
 }
 
 bool MIFFile::init(const char *filename)

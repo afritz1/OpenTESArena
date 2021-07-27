@@ -12,8 +12,8 @@
 #include "../Media/Palette.h"
 
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
+#include "components/utilities/BufferViewReadOnly.h"
 
 enum class TextAlignment;
 
@@ -84,20 +84,20 @@ namespace TextRenderUtils
 		const std::optional<TextShadowInfo> &shadow = std::nullopt);
 
 	// Gets the number of pixels wide or tall a rendered block of text lines would be.
-	int getLinesPixelWidth(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	int getLinesPixelWidth(BufferViewReadOnly<std::string_view> &textLines, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt);
-	int getLinesPixelHeight(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	int getLinesPixelHeight(BufferViewReadOnly<std::string_view> &textLines, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
-	TextureGenInfo makeTextureGenInfo(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef,
+	TextureGenInfo makeTextureGenInfo(BufferViewReadOnly<std::string_view> &textLines, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 	TextureGenInfo makeTextureGenInfo(const std::string_view &text, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Generates XY pixel offsets for each line of a text box based on text alignment.
-	std::vector<Int2> makeAlignmentOffsets(const BufferView<const std::string_view> &textLines, int textureWidth,
+	std::vector<Int2> makeAlignmentOffsets(BufferViewReadOnly<std::string_view> &textLines, int textureWidth,
 		int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
 		const std::optional<TextShadowInfo> &shadow, int lineSpacing);
 
@@ -109,13 +109,13 @@ namespace TextRenderUtils
 	// - render
 	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
 		BufferView2D<uint32_t> &outBuffer);
-	void drawTextLine(const BufferView<const FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
+	void drawTextLine(BufferViewReadOnly<FontDefinition::CharID> &charIDs, const FontDefinition &fontDef,
 		int dstX, int dstY, const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
 		BufferView2D<uint32_t> &outBuffer);
 	void drawTextLine(const std::string_view &line, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, const ColorOverrideInfo *colorOverrideInfo, const TextShadowInfo *shadow,
 		BufferView2D<uint32_t> &outBuffer);
-	void drawTextLines(const BufferView<const std::string_view> &textLines, const FontDefinition &fontDef, int dstX, int dstY,
+	void drawTextLines(BufferViewReadOnly<std::string_view> &&textLines, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, TextAlignment alignment, int lineSpacing, const ColorOverrideInfo *colorOverrideInfo,
 		const TextShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
 }

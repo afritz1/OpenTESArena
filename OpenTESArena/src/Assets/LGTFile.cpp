@@ -26,9 +26,9 @@ bool LGTFile::init(const char *filename)
 	return true;
 }
 
-BufferView<const uint8_t> LGTFile::getLightPalette(int index) const
+BufferViewReadOnly<uint8_t> LGTFile::getLightPalette(int index) const
 {
 	DebugAssert(index < LGTFile::PALETTE_COUNT);
 	const uint8_t *ptr = this->palettes.get() + (index * this->palettes.getWidth());
-	return BufferView(ptr, LGTFile::ELEMENTS_PER_PALETTE);
+	return BufferViewReadOnly(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }

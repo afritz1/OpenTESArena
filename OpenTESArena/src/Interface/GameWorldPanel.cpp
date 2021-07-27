@@ -466,7 +466,7 @@ void GameWorldPanel::tick(double dt)
 	const Int2 mouseDelta = inputManager.getMouseDelta();
 
 	// Handle input for player motion.
-	const BufferView<const Rect> nativeCursorRegionsView(
+	BufferViewReadOnly<Rect> nativeCursorRegionsView(
 		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
 	PlayerLogicController::handlePlayerTurning(game, dt, mouseDelta, nativeCursorRegionsView);
 	PlayerLogicController::handlePlayerMovement(game, dt, nativeCursorRegionsView);

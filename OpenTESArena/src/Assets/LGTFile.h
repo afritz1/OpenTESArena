@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/BufferViewReadOnly.h"
 
 // Light level file, contains 13 light palettes for shading/transparencies.
 
@@ -20,7 +20,7 @@ public:
 
 	bool init(const char *filename);
 
-	BufferView<const uint8_t> getLightPalette(int index) const;
+	BufferViewReadOnly<uint8_t> getLightPalette(int index) const;
 };
 
 #endif
