@@ -37,7 +37,7 @@ namespace GameWorldUiModel
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
-	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
+	void updateNativeCursorRegions(BufferView<Rect> &&nativeCursorRegions, int width, int height);
 }
 
 #endif
