@@ -11,8 +11,6 @@
 #include "../Assets/TextureAssetReference.h"
 #include "../Media/TextureUtils.h"
 
-#include "components/utilities/BufferView.h"
-
 // Instance-specific animation data, references a shared animation definition.
 
 class TextureBuilder;

@@ -8,8 +8,6 @@
 
 #include "MusicDefinition.h"
 
-#include "components/utilities/BufferView.h"
-
 class Random;
 
 class MusicLibrary

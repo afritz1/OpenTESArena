@@ -9,8 +9,6 @@
 #include "EntityAnimationUtils.h"
 #include "../Assets/TextureAssetReference.h"
 
-#include "components/utilities/BufferView.h"
-
 // Shared entity animation data for a particular set of animation directions.
 
 class EntityAnimationDefinition

@@ -3,7 +3,7 @@
 
 #include "../Math/Vector2.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/BufferViewReadOnly.h"
 
 class Game;
 class Rect;
