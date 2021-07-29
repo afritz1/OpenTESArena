@@ -70,8 +70,22 @@ void Panel::handleEvent(const SDL_Event &e)
 
 void Panel::onPauseChanged(bool paused)
 {
-	// Do nothing by default.
-	static_cast<void>(paused);
+	InputManager &inputManager = this->game.getInputManager();
+
+	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
+	{
+		for (const InputManager::ListenerID listenerID : listenerIDs)
+		{
+			inputManager.setListenerEnabled(listenerID, !paused);
+		}
+	};
+
+	// Update listener active states so paused panels aren't hearing input callbacks.
+	setListenersEnabled(this->inputActionListenerIDs);
+	setListenersEnabled(this->mouseButtonChangedListenerIDs);
+	setListenersEnabled(this->mouseButtonHeldListenerIDs);
+	setListenersEnabled(this->mouseScrollChangedListenerIDs);
+	setListenersEnabled(this->mouseMotionListenerIDs);
 }
 
 void Panel::resize(int windowWidth, int windowHeight)
