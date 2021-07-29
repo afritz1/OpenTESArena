@@ -360,21 +360,21 @@ int MIFFile::Level::getNumf() const
 	return this->numf;
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getFLOR() const
+BufferView2DReadOnly<ArenaTypes::VoxelID> MIFFile::Level::getFLOR() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->flor.get(), this->flor.getWidth(), this->flor.getHeight());
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getMAP1() const
+BufferView2DReadOnly<ArenaTypes::VoxelID> MIFFile::Level::getMAP1() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->map1.get(), this->map1.getWidth(), this->map1.getHeight());
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFFile::Level::getMAP2() const
+BufferView2DReadOnly< ArenaTypes::VoxelID> MIFFile::Level::getMAP2() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->map2.get(), this->map2.getWidth(), this->map2.getHeight());
 }
 

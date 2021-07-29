@@ -71,20 +71,20 @@ bool RMDFile::init(const char *filename)
 	return true;
 }
 
-BufferView2D<const ArenaTypes::VoxelID> RMDFile::getFLOR() const
+BufferView2DReadOnly<ArenaTypes::VoxelID> RMDFile::getFLOR() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->flor.get(), this->flor.getWidth(), this->flor.getHeight());
 }
 
-BufferView2D<const ArenaTypes::VoxelID> RMDFile::getMAP1() const
+BufferView2DReadOnly<ArenaTypes::VoxelID> RMDFile::getMAP1() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->map1.get(), this->map1.getWidth(), this->map1.getHeight());
 }
 
-BufferView2D<const ArenaTypes::VoxelID> RMDFile::getMAP2() const
+BufferView2DReadOnly<ArenaTypes::VoxelID> RMDFile::getMAP2() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(
+	return BufferView2DReadOnly<ArenaTypes::VoxelID>(
 		this->map2.get(), this->map2.getWidth(), this->map2.getHeight());
 }

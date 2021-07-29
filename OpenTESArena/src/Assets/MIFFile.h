@@ -13,6 +13,7 @@
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView2D.h"
 #include "components/utilities/BufferViewReadOnly.h"
+#include "components/utilities/BufferView2DReadOnly.h"
 
 // A .MIF file contains a map header and an array of levels. It defines the dimensions of
 // a particular area and which voxels have which IDs, as well as some other data. It is normally
@@ -66,9 +67,9 @@ public:
 		const std::string &getInfo() const;
 		int getNumf() const;
 
-		BufferView2D<const ArenaTypes::VoxelID> getFLOR() const;
-		BufferView2D<const ArenaTypes::VoxelID> getMAP1() const;
-		BufferView2D<const ArenaTypes::VoxelID> getMAP2() const;
+		BufferView2DReadOnly<ArenaTypes::VoxelID> getFLOR() const;
+		BufferView2DReadOnly<ArenaTypes::VoxelID> getMAP1() const;
+		BufferView2DReadOnly<ArenaTypes::VoxelID> getMAP2() const;
 
 		BufferViewReadOnly<uint8_t> getFLAT() const;
 		BufferViewReadOnly<uint8_t> getINNS() const;

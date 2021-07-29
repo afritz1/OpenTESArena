@@ -1673,7 +1673,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera, int c
 		return entityManager.getCountInChunk(ChunkInt2(chunkX, chunkZ));
 	};
 
-	auto getTotalPotentiallyVisFlatCount = [](const BufferView2D<const int> &chunkPotentiallyVisFlatCounts)
+	auto getTotalPotentiallyVisFlatCount = [](BufferView2DReadOnly<int> &&chunkPotentiallyVisFlatCounts)
 	{
 		int count = 0;
 		for (WEInt z = 0; z < chunkPotentiallyVisFlatCounts.getHeight(); z++)
@@ -1701,7 +1701,7 @@ void SoftwareRenderer::updatePotentiallyVisibleFlats(const Camera &camera, int c
 	}
 
 	// Total potentially visible flat count (in the chunks surrounding the player).
-	const int potentiallyVisFlatCount = getTotalPotentiallyVisFlatCount(BufferView2D<const int>(
+	const int potentiallyVisFlatCount = getTotalPotentiallyVisFlatCount(BufferView2DReadOnly<int>(
 		chunkPotentiallyVisFlatCounts.get(), chunkPotentiallyVisFlatCounts.getWidth(),
 		chunkPotentiallyVisFlatCounts.getHeight()));
 

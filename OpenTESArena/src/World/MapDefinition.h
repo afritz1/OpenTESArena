@@ -17,7 +17,7 @@
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/BufferView2DReadOnly.h"
 
 // Modern replacement for .MIF/.RMD files. Helps create a buffer between how the game world data
 // is defined and how it's represented in-engine, so that it doesn't care about things like
@@ -97,7 +97,7 @@ private:
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(const BufferView2D<const ArenaWildUtils::WildBlockID> &wildBlockIDs,
+	bool initWildLevels(BufferView2DReadOnly<ArenaWildUtils::WildBlockID> &wildBlockIDs,
 		uint32_t fallbackSeed, const LocationDefinition::CityDefinition &cityDef,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

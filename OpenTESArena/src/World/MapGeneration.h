@@ -20,6 +20,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/BufferView.h"
+#include "components/utilities/BufferView2DReadOnly.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -204,7 +205,7 @@ namespace MapGeneration
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(BufferViewReadOnly<ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-		const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+		BufferView2DReadOnly<int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,

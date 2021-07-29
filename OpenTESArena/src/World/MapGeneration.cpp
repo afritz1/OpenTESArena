@@ -941,7 +941,7 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
-	void readArenaFLOR(const BufferView2D<const ArenaTypes::VoxelID> &flor, MapType mapType,
+	void readArenaFLOR(BufferView2DReadOnly<ArenaTypes::VoxelID> &&flor, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -1012,7 +1012,7 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
-	void readArenaMAP1(const BufferView2D<const ArenaTypes::VoxelID> &map1, MapType mapType,
+	void readArenaMAP1(BufferView2DReadOnly<ArenaTypes::VoxelID> &&map1, MapType mapType,
 		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaTypes::CityType> &cityType,
@@ -1150,7 +1150,7 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP2 voxels to modern voxel + entity format.
-	void readArenaMAP2(const BufferView2D<const ArenaTypes::VoxelID> &map2, const INFFile &inf,
+	void readArenaMAP2(BufferView2DReadOnly<ArenaTypes::VoxelID> &&map2, const INFFile &inf,
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
 		ArenaVoxelMappingCache *voxelCache)
 	{
@@ -1310,8 +1310,8 @@ namespace MapGeneration
 				// Get the selected level from the random chunks .MIF file.
 				const int blockIndex = (tileSet * 8) + (random.next() % 8);
 				const auto &blockLevel = mif.getLevel(blockIndex);
-				const BufferView2D<const ArenaTypes::VoxelID> &blockFLOR = blockLevel.getFLOR();
-				const BufferView2D<const ArenaTypes::VoxelID> &blockMAP1 = blockLevel.getMAP1();
+				BufferView2DReadOnly<ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
+				BufferView2DReadOnly<ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
 
 				// Copy block data to temp buffers.
 				for (SNInt z = 0; z < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; z++)
@@ -1328,7 +1328,7 @@ namespace MapGeneration
 				}
 
 				// Assign locks to the current block.
-				const BufferViewReadOnly<ArenaTypes::MIFLock> &blockLOCK = blockLevel.getLOCK();
+				BufferViewReadOnly<ArenaTypes::MIFLock> blockLOCK = blockLevel.getLOCK();
 				for (int i = 0; i < blockLOCK.getCount(); i++)
 				{
 					const auto &lock = blockLOCK.get(i);
@@ -1342,7 +1342,7 @@ namespace MapGeneration
 				}
 
 				// Assign text/sound triggers to the current block.
-				const BufferViewReadOnly<ArenaTypes::MIFTrigger> &blockTRIG = blockLevel.getTRIG();
+				BufferViewReadOnly<ArenaTypes::MIFTrigger> blockTRIG = blockLevel.getTRIG();
 				for (int i = 0; i < blockTRIG.getCount(); i++)
 				{
 					const auto &trigger = blockTRIG.get(i);
@@ -1394,11 +1394,11 @@ namespace MapGeneration
 		}
 
 		// Convert temp voxel buffers to the modern format.
-		const BufferView2D<const ArenaTypes::VoxelID> levelFlorView(
+		BufferView2DReadOnly<ArenaTypes::VoxelID> levelFlorView(
 			levelFLOR.get(), levelFLOR.getWidth(), levelFLOR.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(
+		BufferView2DReadOnly<ArenaTypes::VoxelID> levelMap1View(
 			levelMAP1.get(), levelMAP1.getWidth(), levelMAP1.getHeight());
-		MapGeneration::readArenaFLOR(levelFlorView, mapType, interiorType, rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(std::move(levelFlorView), mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 			outLevelInfoDef, florMappings, entityMappings);
 
@@ -1407,7 +1407,7 @@ namespace MapGeneration
 		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for dungeons.
 		constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
 
-		MapGeneration::readArenaMAP1(levelMap1View, mapType, interiorType, rulerSeed, rulerIsMale,
+		MapGeneration::readArenaMAP1(std::move(levelMap1View), mapType, interiorType, rulerSeed, rulerIsMale,
 			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef,
 			map1Mappings, entityMappings, transitionMappings, doorMappings);
@@ -1968,6 +1968,7 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
 	const LocationDefinition::CityDefinition &cityDef, uint32_t fallbackSeed)
 {
+	// this->wildBlockIDs is not used??? just yet?
 	this->wildBlockIDs = std::move(wildBlockIDs);
 	this->cityDef = &cityDef;
 	this->fallbackSeed = fallbackSeed;
@@ -2213,11 +2214,11 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ArenaCityUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
 
-	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
+	BufferView2DReadOnly<ArenaTypes::VoxelID> tempFlorConstView(
 		tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
+	BufferView2DReadOnly<ArenaTypes::VoxelID> tempMap1ConstView(
 		tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
+	BufferView2DReadOnly<ArenaTypes::VoxelID> tempMap2ConstView(
 		tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 	constexpr MapType mapType = MapType::City;
@@ -2225,21 +2226,21 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	constexpr LocationDefinition::DungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
 	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
 
-	MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, rulerIsMale, inf,
+	MapGeneration::readArenaFLOR(std::move(tempFlorConstView), mapType, interiorType, rulerIsMale, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 		outLevelInfoDef, &florMappings, &entityMappings);
-	MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, rulerSeed, rulerIsMale,
+	MapGeneration::readArenaMAP1(std::move(tempMap1ConstView), mapType, interiorType, rulerSeed, rulerIsMale,
 		palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, &map1Mappings,
 		&entityMappings, &transitionMappings, &doorMappings);
-	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
+	MapGeneration::readArenaMAP2(std::move(tempMap2ConstView), inf, outLevelDef, outLevelInfoDef, &map2Mappings);
 	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
 		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
 		outLevelInfoDef);
 }
 
 void MapGeneration::generateRmdWilderness(BufferViewReadOnly<ArenaWildUtils::WildBlockID> &uniqueWildBlockIDs,
-	const BufferView2D<const int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
+	BufferView2DReadOnly<int> &levelDefIndices, const LocationDefinition::CityDefinition &cityDef,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 	BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef,
@@ -2265,9 +2266,9 @@ void MapGeneration::generateRmdWilderness(BufferViewReadOnly<ArenaWildUtils::Wil
 		const auto &rmdFiles = binaryAssetLibrary.getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
-		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
-		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
-		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
+		BufferView2DReadOnly<ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
+		BufferView2DReadOnly<ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
+		BufferView2DReadOnly<ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
 
 		// Copy .RMD voxels into temp buffers.
 		for (int y = 0; y < tempFlor.getHeight(); y++)
@@ -2299,11 +2300,11 @@ void MapGeneration::generateRmdWilderness(BufferViewReadOnly<ArenaWildUtils::Wil
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 
-		const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(
+		BufferView2DReadOnly<ArenaTypes::VoxelID> tempFlorConstView(
 			tempFlor.get(), tempFlor.getWidth(), tempFlor.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(
+		BufferView2DReadOnly<ArenaTypes::VoxelID> tempMap1ConstView(
 			tempMap1.get(), tempMap1.getWidth(), tempMap1.getHeight());
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(
+		BufferView2DReadOnly<ArenaTypes::VoxelID> tempMap2ConstView(
 			tempMap2.get(), tempMap2.getWidth(), tempMap2.getHeight());
 
 		constexpr MapType mapType = MapType::Wilderness;
@@ -2316,14 +2317,14 @@ void MapGeneration::generateRmdWilderness(BufferViewReadOnly<ArenaWildUtils::Wil
 
 		constexpr std::optional<bool> isArtifactDungeon = false; // No artifacts in wild dungeons.
 
-		MapGeneration::readArenaFLOR(tempFlorConstView, mapType, interiorType, cityDef.rulerIsMale, inf,
+		MapGeneration::readArenaFLOR(std::move(tempFlorConstView), mapType, interiorType, cityDef.rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings);
-		MapGeneration::readArenaMAP1(tempMap1ConstView, mapType, interiorType, cityDef.rulerSeed, cityDef.rulerIsMale,
+		MapGeneration::readArenaMAP1(std::move(tempMap1ConstView), mapType, interiorType, cityDef.rulerSeed, cityDef.rulerIsMale,
 			cityDef.palaceIsMainQuestDungeon, cityDef.type, &dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef, outLevelInfoDef, &map1Mappings,
 			&entityMappings, &transitionMappings, &doorMappings);
-		MapGeneration::readArenaMAP2(tempMap2ConstView, inf, &levelDef, outLevelInfoDef, &map2Mappings);
+		MapGeneration::readArenaMAP2(std::move(tempMap2ConstView), inf, &levelDef, outLevelInfoDef, &map2Mappings);
 	}
 
 	// Generate chunk-wise building names for the wilderness.

@@ -80,9 +80,9 @@ void ArenaCityUtils::writeSkeleton(const MIFFile::Level &level,
 	BufferView2D<ArenaTypes::VoxelID> &dstFlor, BufferView2D<ArenaTypes::VoxelID> &dstMap1,
 	BufferView2D<ArenaTypes::VoxelID> &dstMap2)
 {
-	const BufferView2D<const ArenaTypes::VoxelID> levelFLOR = level.getFLOR();
-	const BufferView2D<const ArenaTypes::VoxelID> levelMAP1 = level.getMAP1();
-	const BufferView2D<const ArenaTypes::VoxelID> levelMAP2 = level.getMAP2();
+	BufferView2DReadOnly<ArenaTypes::VoxelID> levelFLOR = level.getFLOR();
+	BufferView2DReadOnly<ArenaTypes::VoxelID> levelMAP1 = level.getMAP1();
+	BufferView2DReadOnly<ArenaTypes::VoxelID> levelMAP2 = level.getMAP2();
 	const WEInt levelWidth = levelFLOR.getWidth();
 	const SNInt levelDepth = levelFLOR.getHeight();
 
@@ -177,9 +177,9 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
 			const auto &blockLevel = blockMif.getLevel(0);
-			const BufferView2D<const ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
-			const BufferView2D<const ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
-			const BufferView2D<const ArenaTypes::VoxelID> blockMAP2 = blockLevel.getMAP2();
+			BufferView2DReadOnly<ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
+			BufferView2DReadOnly<ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
+			BufferView2DReadOnly<ArenaTypes::VoxelID> blockMAP2 = blockLevel.getMAP2();
 
 			// Offset of the block in the voxel grid.
 			const WEInt xOffset = startPosition.x + (xDim * 20);
