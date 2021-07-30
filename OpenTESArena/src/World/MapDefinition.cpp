@@ -354,7 +354,6 @@ bool MapDefinition::initWildLevels(BufferView2DReadOnly<ArenaWildUtils::WildBloc
 
 	BufferViewReadOnly<ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(
 		uniqueWildBlockIDs.data(), static_cast<int>(uniqueWildBlockIDs.size()));
-	// TODO
 	BufferView2DReadOnly<int> levelDefIndicesConstView(levelDefIndices.get(),
 		levelDefIndices.getWidth(), levelDefIndices.getHeight());
 	BufferView<LevelDefinition> levelDefsView(this->levels.get(), this->levels.getCount());
