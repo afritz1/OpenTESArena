@@ -10,6 +10,7 @@
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
@@ -66,7 +67,6 @@ bool ChooseClassCreationPanel::init()
 		return false;
 	}
 
-	this->backToMainMenuButton = Button<Game&>(ChooseClassCreationUiController::onBackToMainMenuButtonSelected);
 	this->generateButton = Button<Game&>(
 		ChooseClassCreationUiView::GenerateButtonCenterPoint,
 		ChooseClassCreationUiView::GenerateButtonWidth,
@@ -78,41 +78,19 @@ bool ChooseClassCreationPanel::init()
 		ChooseClassCreationUiView::SelectButtonHeight,
 		ChooseClassCreationUiController::onSelectButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->generateButton.getRect(),
+		[this, &game]() { this->generateButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->selectButton.getRect(),
+		[this, &game]() { this->selectButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Back, ChooseClassCreationUiController::onBackToMainMenuInputAction);
+
 	return true;
 }
 
 std::optional<CursorData> ChooseClassCreationPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseClassCreationPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		this->backToMainMenuButton.click(this->getGame());
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
-
-		if (this->generateButton.contains(mouseOriginalPoint))
-		{
-			this->generateButton.click(this->getGame());
-		}
-		else if (this->selectButton.contains(mouseOriginalPoint))
-		{
-			this->selectButton.click(this->getGame());
-		}
-	}
 }
 
 void ChooseClassCreationPanel::drawTooltip(const std::string &text, Renderer &renderer)

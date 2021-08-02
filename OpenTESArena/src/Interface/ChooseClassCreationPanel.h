@@ -15,7 +15,7 @@ class ChooseClassCreationPanel : public Panel
 private:
 	Texture parchment;
 	TextBox titleTextBox, generateTextBox, selectTextBox;
-	Button<Game&> backToMainMenuButton, generateButton, selectButton;
+	Button<Game&> generateButton, selectButton;
 
 	void drawTooltip(const std::string &text, Renderer &renderer);
 public:
@@ -25,7 +25,6 @@ public:
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

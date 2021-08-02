@@ -10,7 +10,8 @@ struct InputActionCallbackValues;
 
 namespace ChooseClassCreationUiController
 {
-	void onBackToMainMenuButtonSelected(Game &game);
+	void onBackToMainMenuInputAction(const InputActionCallbackValues &values);
+
 	void onGenerateButtonSelected(Game &game);
 	void onSelectButtonSelected(Game &game);
 }

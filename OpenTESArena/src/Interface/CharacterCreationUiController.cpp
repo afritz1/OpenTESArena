@@ -22,22 +22,26 @@
 
 #include "components/utilities/String.h"
 
-void ChooseClassCreationUiController::onBackToMainMenuButtonSelected(Game &game)
+void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputActionCallbackValues &values)
 {
-	game.setCharacterCreationState(nullptr);
-	game.setPanel<MainMenuPanel>();
-
-	const MusicLibrary &musicLibrary = game.getMusicLibrary();
-	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-		MusicDefinition::Type::MainMenu, game.getRandom());
-
-	if (musicDef == nullptr)
+	if (values.performed)
 	{
-		DebugLogWarning("Missing main menu music.");
-	}
+		auto &game = values.game;
+		game.setCharacterCreationState(nullptr);
+		game.setPanel<MainMenuPanel>();
 
-	AudioManager &audioManager = game.getAudioManager();
-	audioManager.setMusic(musicDef);
+		const MusicLibrary &musicLibrary = game.getMusicLibrary();
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
+			MusicDefinition::Type::MainMenu, game.getRandom());
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing main menu music.");
+		}
+
+		AudioManager &audioManager = game.getAudioManager();
+		audioManager.setMusic(musicDef);
+	}
 }
 
 void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
