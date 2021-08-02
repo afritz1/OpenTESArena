@@ -50,7 +50,6 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	this->backToRaceButton = Button<Game&>(ChooseAttributesUiController::onBackToRaceSelectionButtonSelected);
 	this->doneButton = Button<Game&, bool*>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,

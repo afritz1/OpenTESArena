@@ -294,16 +294,12 @@ void ChooseRaceUiController::onProvinceConfirmedFourthButtonSelected(Game &game)
 	game.setPanel<ChooseAttributesPanel>();
 }
 
-void ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(Game &game)
-{
-	game.setPanel<ChooseRacePanel>();
-}
-
 void ChooseAttributesUiController::onBackToRaceSelectionInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{
-		ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(values.game);
+		auto &game = values.game;
+		game.setPanel<ChooseRacePanel>();
 	}
 }
 

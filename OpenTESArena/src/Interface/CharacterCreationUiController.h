@@ -52,7 +52,6 @@ namespace ChooseRaceUiController
 
 namespace ChooseAttributesUiController
 {
-	void onBackToRaceSelectionButtonSelected(Game &game);
 	void onBackToRaceSelectionInputAction(const InputActionCallbackValues &values);
 
 	void onInitialPopUpSelected(Game &game);
