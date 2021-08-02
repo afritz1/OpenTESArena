@@ -18,7 +18,7 @@ namespace ChooseClassCreationUiController
 
 namespace ChooseClassUiController
 {
-	void onBackToChooseClassCreationButtonSelected(Game &game);
+	void onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values);
 	void onUpButtonSelected(ListBox &listBox);
 	void onDownButtonSelected(ListBox &listBox);
 	void onItemButtonSelected(Game &game, int charClassDefID);

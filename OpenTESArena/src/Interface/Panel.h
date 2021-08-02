@@ -57,8 +57,14 @@ protected:
 	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
 	void addMouseMotionListener(const MouseMotionCallback &callback);
 
-	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
-		const std::function<bool()> &isActiveFunc = std::function<bool()>());
+	// Adds a button proxy for a dynamic button (i.e. ListBox items).
+	void addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
+		const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+
+	// Adds a button proxy for a static button.
+	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
+		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+
 	void clearButtonProxies();
 public:
 	Panel(Game &game);

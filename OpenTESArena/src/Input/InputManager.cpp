@@ -699,7 +699,10 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 						if (isButtonActive)
 						{
 							const Int2 classicMousePos = game.getRenderer().nativeToOriginal(mousePosition);
-							const bool isValidMouseSelection = buttonProxy.rect.contains(classicMousePos);
+
+							DebugAssert(buttonProxy.rectFunc);
+							const Rect buttonRect = buttonProxy.rectFunc();
+							const bool isValidMouseSelection = buttonRect.contains(classicMousePos);
 							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
 							if (isValidMouseSelection && matchesButtonType)
 							{

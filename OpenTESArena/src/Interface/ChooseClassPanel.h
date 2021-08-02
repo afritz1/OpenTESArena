@@ -25,7 +25,6 @@ class ChooseClassPanel : public Panel
 private:
 	TextBox titleTextBox;
 	ListBox classesListBox;
-	Button<Game&> backToClassCreationButton;
 	Button<ListBox&> upButton, downButton;
 	std::unordered_map<int, Texture> tooltipTextures;
 	std::vector<CharacterClassDefinition> charClasses;
@@ -38,7 +37,6 @@ public:
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

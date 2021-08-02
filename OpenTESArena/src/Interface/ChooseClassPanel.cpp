@@ -13,6 +13,7 @@
 #include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionName.h"
 #include "../Items/ArmorMaterial.h"
 #include "../Items/MetalType.h"
 #include "../Items/Shield.h"
@@ -87,8 +88,6 @@ bool ChooseClassPanel::init()
 		});
 	}
 
-	this->backToClassCreationButton = Button<Game&>(ChooseClassUiController::onBackToChooseClassCreationButtonSelected);
-
 	this->upButton = [&game]
 	{
 		const Rect rect = ChooseClassUiView::getUpButtonRect(game);
@@ -111,6 +110,52 @@ bool ChooseClassPanel::init()
 			ChooseClassUiController::onDownButtonSelected);
 	}();
 
+	this->addButtonProxy(MouseButtonType::Left, this->upButton.getRect(),
+		[this, &game]() { this->upButton.click(this->classesListBox); });
+	this->addButtonProxy(MouseButtonType::Left, this->downButton.getRect(),
+		[this, &game]() { this->downButton.click(this->classesListBox); });
+
+	// Add button proxy for each listbox item.
+	for (int i = 0; i < this->classesListBox.getCount(); i++)
+	{
+		auto rectFunc = [this, i]()
+		{
+			return this->classesListBox.getItemGlobalRect(i);
+		};
+
+		auto callback = this->classesListBox.getCallback(i);
+
+		auto isActiveFunc = [&game]()
+		{
+			const auto &inputManager = game.getInputManager();
+			const Int2 mousePosition = inputManager.getMousePosition();
+			const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+			const Rect classListRect = ChooseClassUiView::getListRect(game);
+			return classListRect.contains(classicPosition);
+		};
+
+		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback, isActiveFunc);
+	}
+
+	this->addInputActionListener(InputActionName::Back, ChooseClassUiController::onBackToChooseClassCreationInputAction);
+
+	this->addMouseScrollChangedListener([this](Game &game, MouseWheelScrollType type, const Int2 &position)
+	{
+		const Int2 classicPoint = game.getRenderer().nativeToOriginal(position);
+		const Rect classListRect = ChooseClassUiView::getListRect(game);
+		if (classListRect.contains(classicPoint))
+		{
+			if (type == MouseWheelScrollType::Down)
+			{
+				this->downButton.click(this->classesListBox);
+			}
+			else if (type == MouseWheelScrollType::Up)
+			{
+				this->upButton.click(this->classesListBox);
+			}
+		}
+	});
+
 	// Leave the tooltip textures empty for now. Let them be created on demand. Generating them all at once here
 	// is too slow in debug mode.
 	DebugAssert(this->tooltipTextures.size() == 0);
@@ -121,65 +166,6 @@ bool ChooseClassPanel::init()
 std::optional<CursorData> ChooseClassPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseClassPanel::handleEvent(const SDL_Event &e)
-{
-	// Eventually handle mouse motion: if mouse is over scroll bar and
-	// LMB state is down, move scroll bar to that Y position.
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		this->backToClassCreationButton.click(game);
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool mouseWheelUp = inputManager.mouseWheeledUp(e);
-	bool mouseWheelDown = inputManager.mouseWheeledDown(e);
-
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-	// See if a class in the list was clicked, or if it is being scrolled.
-	const Rect classListRect = ChooseClassUiView::getListRect(game);
-	if (classListRect.contains(originalPoint))
-	{
-		if (leftClick)
-		{
-			for (int i = 0; i < this->classesListBox.getCount(); i++)
-			{
-				const Rect &itemGlobalRect = this->classesListBox.getItemGlobalRect(i);
-				if (itemGlobalRect.contains(originalPoint))
-				{
-					const ListBox::ItemCallback &itemCallback = this->classesListBox.getCallback(i);
-					itemCallback();
-					break;
-				}
-			}
-		}
-		else if (mouseWheelUp)
-		{
-			this->upButton.click(this->classesListBox);
-		}
-		else if (mouseWheelDown)
-		{
-			this->downButton.click(this->classesListBox);
-		}
-	}
-	else if (leftClick)
-	{
-		if (this->upButton.contains(originalPoint))
-		{
-			this->upButton.click(this->classesListBox);
-		}
-		else if (this->downButton.contains(originalPoint))
-		{
-			this->downButton.click(this->classesListBox);
-		}
-	}
 }
 
 void ChooseClassPanel::drawClassTooltip(int tooltipIndex, Renderer &renderer)

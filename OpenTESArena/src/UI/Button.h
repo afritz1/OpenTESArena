@@ -103,13 +103,17 @@ public:
 // worrying about buttons' variadic templates.
 struct ButtonProxy
 {
-	MouseButtonType buttonType; // Which mouse button triggers a click.
-	Rect rect; // Position + size in classic UI space.
-	std::function<void()> callback; // Called if the button is clicked.
-	std::function<bool()> isActiveFunc; // Contains a callable function if it can be inactive.
+	using RectFunction = std::function<Rect()>;
+	using Callback = std::function<void()>;
+	using ActiveFunction = std::function<bool()>;
 
-	ButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
-		const std::function<bool()> &isActiveFunc = std::function<bool()>());
+	MouseButtonType buttonType; // Which mouse button triggers a click.
+	RectFunction rectFunc; // Position + size in classic UI space. Uses a function for dynamic buttons (ListBox, etc.).
+	Callback callback; // Called if the button is clicked.
+	ActiveFunction isActiveFunc; // Contains a callable function if it can be inactive.
+
+	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc,
+		const Callback &callback, const ActiveFunction &isActiveFunc = ActiveFunction());
 	ButtonProxy();
 };
 

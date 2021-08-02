@@ -54,9 +54,13 @@ void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 	game.setPanel<ChooseClassPanel>();
 }
 
-void ChooseClassUiController::onBackToChooseClassCreationButtonSelected(Game &game)
+void ChooseClassUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseClassCreationPanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseClassCreationPanel>();
+	}
 }
 
 void ChooseClassUiController::onUpButtonSelected(ListBox &listBox)
