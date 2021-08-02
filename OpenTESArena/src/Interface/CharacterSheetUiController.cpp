@@ -20,6 +20,14 @@ void CharacterSheetUiController::onBackToStatsButtonSelected(Game &game)
 	game.setPanel<CharacterPanel>();
 }
 
+void CharacterSheetUiController::onBackToStatsInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		CharacterSheetUiController::onBackToStatsButtonSelected(values.game);
+	}
+}
+
 void CharacterSheetUiController::onSpellbookButtonSelected(Game &game)
 {
 	// Nothing yet.

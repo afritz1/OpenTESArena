@@ -7,6 +7,7 @@
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
@@ -93,64 +94,45 @@ bool CharacterEquipmentPanel::init()
 		CharacterSheetUiView::ScrollUpButtonHeight,
 		CharacterSheetUiController::onInventoryScrollUpButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->backToStatsButton.getRect(),
+		[this, &game]() { this->backToStatsButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->spellbookButton.getRect(),
+		[this, &game]() { this->spellbookButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->dropButton.getRect(),
+		[this, &game]()
+	{
+		// @todo: give the index of the clicked item instead.
+		const int itemIndex = 0;
+		this->dropButton.click(game, itemIndex);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->scrollDownButton.getRect(),
+		[this, &game]() { this->scrollDownButton.click(this->inventoryListBox); });
+	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
+		[this, &game]() { this->scrollUpButton.click(this->inventoryListBox); });
+
+	auto backToStatsInputActionFunc = CharacterSheetUiController::onBackToStatsInputAction;
+	this->addInputActionListener(InputActionName::Back, backToStatsInputActionFunc);
+	this->addInputActionListener(InputActionName::CharacterSheet, backToStatsInputActionFunc); // @todo: make sure input action map is active
+
+	this->addMouseScrollChangedListener([this](Game &game, MouseWheelScrollType type, const Int2 &position)
+	{
+		if (type == MouseWheelScrollType::Down)
+		{
+			this->scrollDownButton.click(this->inventoryListBox);
+		}
+		else if (type == MouseWheelScrollType::Up)
+		{
+			this->scrollUpButton.click(this->inventoryListBox);
+		}
+	});
+
 	return true;
 }
 
 std::optional<CursorData> CharacterEquipmentPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void CharacterEquipmentPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool tabPressed = inputManager.keyPressed(e, SDLK_TAB);
-
-	if (escapePressed || tabPressed)
-	{
-		this->backToStatsButton.click(this->getGame());
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool mouseWheeledUp = inputManager.mouseWheeledUp(e);
-	const bool mouseWheeledDown = inputManager.mouseWheeledDown(e);
-
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-	if (leftClick)
-	{
-		if (this->backToStatsButton.contains(mouseOriginalPoint))
-		{
-			this->backToStatsButton.click(this->getGame());
-		}
-		else if (this->spellbookButton.contains(mouseOriginalPoint))
-		{
-			this->spellbookButton.click(this->getGame());
-		}
-		else if (this->dropButton.contains(mouseOriginalPoint))
-		{
-			// Eventually give the index of the clicked item instead.
-			this->dropButton.click(this->getGame(), 0);
-		}
-		else if (this->scrollUpButton.contains(mouseOriginalPoint))
-		{
-			this->scrollUpButton.click(this->inventoryListBox);
-		}
-		else if (this->scrollDownButton.contains(mouseOriginalPoint))
-		{
-			this->scrollDownButton.click(this->inventoryListBox);
-		}
-	}
-	else if (mouseWheeledUp)
-	{
-		this->scrollUpButton.click(this->inventoryListBox);
-	}
-	else if (mouseWheeledDown)
-	{
-		this->scrollDownButton.click(this->inventoryListBox);
-	}
 }
 
 void CharacterEquipmentPanel::render(Renderer &renderer)
@@ -208,7 +190,7 @@ void CharacterEquipmentPanel::render(Renderer &renderer)
 	renderer.drawOriginal(this->playerNameTextBox.getTexture(), playerNameTextBoxRect.getLeft(), playerNameTextBoxRect.getTop());
 	renderer.drawOriginal(this->playerRaceTextBox.getTexture(), playerRaceTextBoxRect.getLeft(), playerRaceTextBoxRect.getTop());
 	renderer.drawOriginal(this->playerClassTextBox.getTexture(), playerClassTextBoxRect.getLeft(), playerClassTextBoxRect.getTop());
-	
+
 	// Draw inventory list box.
 	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
 	renderer.drawOriginal(this->inventoryListBox.getTexture(), inventoryListBoxRect.getLeft(), inventoryListBoxRect.getTop());

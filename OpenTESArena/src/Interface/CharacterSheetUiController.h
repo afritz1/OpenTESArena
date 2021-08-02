@@ -4,11 +4,16 @@
 class Game;
 class ListBox;
 
+struct InputActionCallbackValues;
+
 namespace CharacterSheetUiController
 {
 	void onDoneButtonSelected(Game &game);
 	void onNextPageButtonSelected(Game &game);
+	
 	void onBackToStatsButtonSelected(Game &game);
+	void onBackToStatsInputAction(const InputActionCallbackValues &values);
+
 	void onSpellbookButtonSelected(Game &game);
 	void onDropButtonSelected(Game &game, int itemIndex);
 	void onInventoryScrollDownButtonSelected(ListBox &listBox);
