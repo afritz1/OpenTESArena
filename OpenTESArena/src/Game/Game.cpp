@@ -487,7 +487,8 @@ void Game::handlePanelChanges()
 void Game::handleInput(double dt)
 {
 	// Handle input listener callbacks and general input updating.
-	this->inputManager.update(*this, dt, [this]()
+	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+	this->inputManager.update(*this, dt, buttonProxies, [this]()
 	{
 		// @todo: uncomment when fully moved over to InputManager and the one in the loop below is removed, otherwise
 		// they'll get double-processed (i.e. pressing Esc in the automap will close it and simultaneously open the 

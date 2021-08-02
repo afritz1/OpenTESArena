@@ -68,6 +68,11 @@ void Panel::handleEvent(const SDL_Event &e)
 	static_cast<void>(e);
 }
 
+BufferView<const ButtonProxy> Panel::getButtonProxies() const
+{
+	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
+}
+
 void Panel::onPauseChanged(bool paused)
 {
 	InputManager &inputManager = this->game.getInputManager();
@@ -152,6 +157,17 @@ void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
 {
 	auto &inputManager = this->game.getInputManager();
 	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
+}
+
+void Panel::addButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
+	const std::function<bool()> &isActive)
+{
+	this->buttonProxies.emplace_back(ButtonProxy(buttonType, rect, callback, isActive));
+}
+
+void Panel::clearButtonProxies()
+{
+	this->buttonProxies.clear();
 }
 
 void Panel::tick(double dt)

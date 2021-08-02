@@ -27,19 +27,6 @@ void AutomapUiController::onBackToGameInputAction(const InputActionCallbackValue
 	}
 }
 
-void AutomapUiController::onMouseButtonChanged(Game &game, MouseButtonType buttonType, const Int2 &position,
-	bool pressed, const Rect &exitButtonRect)
-{
-	if ((buttonType == MouseButtonType::Left) && pressed)
-	{
-		const Int2 classicPoint = game.getRenderer().nativeToOriginal(position);
-		if (exitButtonRect.contains(classicPoint))
-		{
-			AutomapUiController::onBackToGameButtonSelected(game);
-		}
-	}
-}
-
 void AutomapUiController::onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position,
 	double dt, Double2 *automapOffset)
 {

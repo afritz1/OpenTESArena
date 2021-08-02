@@ -10,23 +10,23 @@
 #include "../Math/Vector2.h"
 #include "../Media/TextureManager.h"
 #include "../Media/TextureUtils.h"
+#include "../UI/Button.h"
 
-// Each panel interprets user input and draws to the screen. There is only one panel 
-// active at a time, and it is owned by the Game.
+#include "components/utilities/BufferView.h"
 
-// How might "continued" text boxes work? Arena has some pop-up text boxes that have
-// multiple screens based on the amount of text, and even some buttons like "yes/no" on
-// the last screen. I think I'll just replace them with scrolled text boxes. The buttons
-// can be separate interface objects (no need for a "ScrollableButtonedTextBox").
+// Each panel interprets user input and draws to the screen. There is only one panel active at
+// a time, and it is owned by the Game, although there can be any number of sub-panels.
 
 class Color;
 class CursorData;
 class FontLibrary;
 class Game;
+class Rect;
 class Renderer;
 class Texture;
 
 enum class CursorAlignment;
+enum class MouseButtonType;
 
 struct SDL_Texture;
 
@@ -44,6 +44,8 @@ protected:
 	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
 	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
 
+	std::vector<ButtonProxy> buttonProxies;
+
 	Game &getGame() const;
 
 	// Default cursor used by most panels.
@@ -54,6 +56,10 @@ protected:
 	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
 	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
 	void addMouseMotionListener(const MouseMotionCallback &callback);
+
+	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
+		const std::function<bool()> &isActive = std::function<bool()>());
+	void clearButtonProxies();
 public:
 	Panel(Game &game);
 	virtual ~Panel();
@@ -65,6 +71,10 @@ public:
 	// Handles panel-specific events. Application events like closing and resizing
 	// are handled by the game loop.
 	virtual void handleEvent(const SDL_Event &e);
+
+	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
+	// so its callback can be called.
+	virtual BufferView<const ButtonProxy> getButtonProxies() const;
 
 	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
 	virtual void onPauseChanged(bool paused);

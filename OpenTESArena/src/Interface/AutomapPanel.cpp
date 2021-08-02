@@ -66,23 +66,15 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiView::BackToGameButtonHeight,
 		AutomapUiController::onBackToGameButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->backToGameButton.getRect(),
+		[&game]() { AutomapUiController::onBackToGameButtonSelected(game); });
+
 	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
 
 	auto backToGameInputActionFunc = AutomapUiController::onBackToGameInputAction;
 	this->addInputActionListener(AutomapUiController::getInputActionName(), backToGameInputActionFunc);
 	this->addInputActionListener(AutomapUiController::getBackToGameInputActionName(), backToGameInputActionFunc);
-
-	this->addMouseButtonChangedListener(
-		[this](Game &game, MouseButtonType buttonType, const Int2 &position, bool pressed)
-	{
-		const Rect exitButtonRect(
-			this->backToGameButton.getX(),
-			this->backToGameButton.getY(),
-			this->backToGameButton.getWidth(),
-			this->backToGameButton.getHeight());
-		AutomapUiController::onMouseButtonChanged(game, buttonType, position, pressed, exitButtonRect);
-	});
 
 	this->addMouseButtonHeldListener(
 		[this](Game &game, MouseButtonType buttonType, const Int2 &position, double dt)

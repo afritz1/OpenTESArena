@@ -16,7 +16,11 @@
 #include "PointerEvents.h"
 #include "../Math/Vector2.h"
 
+#include "components/utilities/BufferView.h"
+
 // Handles active input action maps, input listeners, and pointer input events.
+
+struct ButtonProxy;
 
 class InputManager
 {
@@ -195,7 +199,8 @@ public:
 	void setRelativeMouseMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, const BufferView<const ButtonProxy> &buttonProxies,
+		const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

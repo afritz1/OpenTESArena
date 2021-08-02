@@ -6,6 +6,9 @@
 #include "InputActionType.h"
 #include "InputManager.h"
 #include "InputStateType.h"
+#include "../Game/Game.h"
+#include "../Rendering/Renderer.h"
+#include "../UI/Button.h"
 
 #include "components/debug/Debug.h"
 
@@ -595,7 +598,8 @@ void InputManager::handleHeldInputs(Game &game, uint32_t mouseState, const Int2 
 	}
 }
 
-void InputManager::update(Game &game, double dt, const std::function<void()> &onFinishedProcessingEvent)
+void InputManager::update(Game &game, double dt, const BufferView<const ButtonProxy> &buttonProxies,
+	const std::function<void()> &onFinishedProcessingEvent)
 {
 	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
 	// old event handling in Game::handleEvents().
@@ -684,6 +688,27 @@ void InputManager::update(Game &game, double dt, const std::function<void()> &on
 			{
 				const bool isButtonPress = e.type == SDL_MOUSEBUTTONDOWN;
 				const bool isButtonRelease = e.type == SDL_MOUSEBUTTONUP;
+
+				if (isButtonPress)
+				{
+					// Check for clicked buttons in the UI.
+					for (int i = 0; i < buttonProxies.getCount(); i++)
+					{
+						const ButtonProxy &buttonProxy = buttonProxies.get(i);
+						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
+						if (isButtonActive)
+						{
+							const Int2 classicMousePos = game.getRenderer().nativeToOriginal(mousePosition);
+							const bool isValidMouseSelection = buttonProxy.rect.contains(classicMousePos);
+							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
+							if (isValidMouseSelection && matchesButtonType)
+							{
+								buttonProxy.callback();
+								break;
+							}
+						}
+					}
+				}
 
 				for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
 				{
