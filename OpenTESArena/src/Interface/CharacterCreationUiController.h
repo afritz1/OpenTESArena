@@ -26,7 +26,7 @@ namespace ChooseClassUiController
 
 namespace ChooseGenderUiController
 {
-	void onBackToChooseNameButtonSelected(Game &game);
+	void onBackToChooseNameInputAction(const InputActionCallbackValues &values);
 	void onMaleButtonSelected(Game &game);
 	void onFemaleButtonSelected(Game &game);
 }

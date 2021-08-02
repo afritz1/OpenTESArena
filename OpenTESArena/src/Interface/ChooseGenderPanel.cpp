@@ -10,6 +10,7 @@
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Vector2.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
@@ -65,7 +66,6 @@ bool ChooseGenderPanel::init()
 		return false;
 	}
 
-	this->backToNameButton = Button<Game&>(ChooseGenderUiController::onBackToChooseNameButtonSelected);
 	this->maleButton = Button<Game&>(
 		ChooseGenderUiView::MaleButtonCenter,
 		ChooseGenderUiView::MaleButtonWidth,
@@ -77,40 +77,19 @@ bool ChooseGenderPanel::init()
 		ChooseGenderUiView::FemaleButtonHeight,
 		ChooseGenderUiController::onFemaleButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->maleButton.getRect(),
+		[this, &game]() { this->maleButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->femaleButton.getRect(),
+		[this, &game]() { this->femaleButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Back, ChooseGenderUiController::onBackToChooseNameInputAction);
+
 	return true;
 }
 
 std::optional<CursorData> ChooseGenderPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ChooseGenderPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-
-	if (escapePressed)
-	{
-		this->backToNameButton.click(this->getGame());
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 mouseOriginalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-		if (this->maleButton.contains(mouseOriginalPoint))
-		{
-			this->maleButton.click(this->getGame());
-		}
-		else if (this->femaleButton.contains(mouseOriginalPoint))
-		{
-			this->femaleButton.click(this->getGame());
-		}
-	}
 }
 
 void ChooseGenderPanel::render(Renderer &renderer)

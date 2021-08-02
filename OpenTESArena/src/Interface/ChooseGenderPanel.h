@@ -13,7 +13,7 @@ class ChooseGenderPanel : public Panel
 private:
 	Texture parchment;
 	TextBox titleTextBox, maleTextBox, femaleTextBox;
-	Button<Game&> backToNameButton, maleButton, femaleButton;
+	Button<Game&> maleButton, femaleButton;
 public:
 	ChooseGenderPanel(Game &game);
 	~ChooseGenderPanel() override = default;
@@ -21,7 +21,6 @@ public:
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 

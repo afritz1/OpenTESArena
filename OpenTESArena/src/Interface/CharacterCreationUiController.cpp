@@ -81,9 +81,13 @@ void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefI
 	game.setPanel<ChooseNamePanel>();
 }
 
-void ChooseGenderUiController::onBackToChooseNameButtonSelected(Game &game)
+void ChooseGenderUiController::onBackToChooseNameInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseNamePanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseNamePanel>();
+	}
 }
 
 void ChooseGenderUiController::onMaleButtonSelected(Game &game)
