@@ -295,6 +295,14 @@ void ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(Game &gam
 	game.setPanel<ChooseRacePanel>();
 }
 
+void ChooseAttributesUiController::onBackToRaceSelectionInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUiController::onBackToRaceSelectionButtonSelected(values.game);
+	}
+}
+
 void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
 {
 	game.popSubPanel();

@@ -6,6 +6,8 @@
 class Game;
 class ListBox;
 
+struct InputActionCallbackValues;
+
 namespace ChooseClassCreationUiController
 {
 	void onBackToMainMenuButtonSelected(Game &game);
@@ -50,6 +52,8 @@ namespace ChooseRaceUiController
 namespace ChooseAttributesUiController
 {
 	void onBackToRaceSelectionButtonSelected(Game &game);
+	void onBackToRaceSelectionInputAction(const InputActionCallbackValues &values);
+
 	void onInitialPopUpSelected(Game &game);
 	void onSaveButtonSelected(Game &game, bool *attributesAreSaved);
 	void onRerollButtonSelected(Game &game);
