@@ -10,6 +10,14 @@ void CharacterSheetUiController::onDoneButtonSelected(Game &game)
 	game.setPanel<GameWorldPanel>();
 }
 
+void CharacterSheetUiController::onDoneInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		CharacterSheetUiController::onDoneButtonSelected(values.game);
+	}
+}
+
 void CharacterSheetUiController::onNextPageButtonSelected(Game &game)
 {
 	game.setPanel<CharacterEquipmentPanel>();

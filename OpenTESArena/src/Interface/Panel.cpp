@@ -160,9 +160,9 @@ void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
-	const std::function<bool()> &isActive)
+	const std::function<bool()> &isActiveFunc)
 {
-	this->buttonProxies.emplace_back(ButtonProxy(buttonType, rect, callback, isActive));
+	this->buttonProxies.emplace_back(ButtonProxy(buttonType, rect, callback, isActiveFunc));
 }
 
 void Panel::clearButtonProxies()

@@ -58,7 +58,7 @@ protected:
 	void addMouseMotionListener(const MouseMotionCallback &callback);
 
 	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const std::function<void()> &callback,
-		const std::function<bool()> &isActive = std::function<bool()>());
+		const std::function<bool()> &isActiveFunc = std::function<bool()>());
 	void clearButtonProxies();
 public:
 	Panel(Game &game);
