@@ -154,7 +154,7 @@ void InputManager::TextInputListenerEntry::init(const TextInputCallback &callbac
 
 void InputManager::TextInputListenerEntry::reset()
 {
-	this->callback = [](const std::string&) { };
+	this->callback = [](const std::string_view&) { };
 	this->enabled = false;
 }
 
@@ -849,7 +849,7 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 		}
 		else if (this->isTextInput(e))
 		{
-			const std::string text = e.text.text;
+			const std::string_view text = e.text.text;
 			for (const TextInputListenerEntry &entry : this->textInputListeners)
 			{
 				if (entry.enabled)

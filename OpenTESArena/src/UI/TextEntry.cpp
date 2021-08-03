@@ -1,6 +1,8 @@
-#include "SDL.h"
+#include "SDL_events.h"
 
 #include "TextEntry.h"
+
+#include "components/debug/Debug.h"
 
 bool TextEntry::updateText(std::string &text, const SDL_Event &e, bool backspace,
 	bool(*charIsAllowed)(char), size_t maxLength)
@@ -33,5 +35,36 @@ bool TextEntry::updateText(std::string &text, const SDL_Event &e, bool backspace
 	}
 
 	// No change in the displayed text.
+	return false;
+}
+
+bool TextEntry::append(std::string &text, const std::string_view &inputText, bool(*isCharAllowed)(char), size_t maxLength)
+{
+	bool dirty = false;
+	for (const char c : inputText)
+	{
+		if (text.size() >= maxLength)
+		{
+			break;
+		}
+
+		if (isCharAllowed(c))
+		{
+			text += c;
+			dirty = true;
+		}
+	}
+
+	return dirty;
+}
+
+bool TextEntry::backspace(std::string &text)
+{
+	if (text.size() > 0)
+	{
+		text.pop_back();
+		return true;
+	}
+
 	return false;
 }

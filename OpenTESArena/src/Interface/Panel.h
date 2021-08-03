@@ -43,6 +43,7 @@ protected:
 	std::vector<InputManager::ListenerID> mouseButtonHeldListenerIDs;
 	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
 	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
+	std::vector<InputManager::ListenerID> textInputListenerIDs;
 
 	std::vector<ButtonProxy> buttonProxies;
 
@@ -56,6 +57,7 @@ protected:
 	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
 	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
 	void addMouseMotionListener(const MouseMotionCallback &callback);
+	void addTextInputListener(const TextInputCallback &callback);
 
 	// Adds a button proxy for a dynamic button (i.e. ListBox items).
 	void addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,

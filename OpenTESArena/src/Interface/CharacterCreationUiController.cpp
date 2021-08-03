@@ -17,6 +17,7 @@
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../UI/TextBox.h"
+#include "../UI/TextEntry.h"
 #include "../World/SkyUtils.h"
 #include "../WorldMap/LocationUtils.h"
 
@@ -108,24 +109,53 @@ void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 	game.setPanel<ChooseRacePanel>();
 }
 
-void ChooseNameUiController::onBackToChooseClassButtonSelected(Game &game)
+void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCallbackValues &values)
 {
-	SDL_StopTextInput();
+	if (values.performed)
+	{
+		SDL_StopTextInput();
 
-	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setName(nullptr);
+		auto &game = values.game;
+		auto &charCreationState = game.getCharacterCreationState();
+		charCreationState.setName(nullptr);
 
-	game.setPanel<ChooseClassPanel>();
+		game.setPanel<ChooseClassPanel>();
+	}
 }
 
-void ChooseNameUiController::onAcceptButtonSelected(Game &game, const std::string &acceptedName)
+void ChooseNameUiController::onTextInput(const std::string_view &text, std::string &name, bool *outDirty)
 {
-	SDL_StopTextInput();
+	DebugAssert(outDirty != nullptr);
 
-	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setName(acceptedName.c_str());
+	*outDirty = TextEntry::append(name, text, ChooseNameUiModel::isCharacterAccepted,
+		CharacterCreationState::MAX_NAME_LENGTH);
+}
 
-	game.setPanel<ChooseGenderPanel>();
+void ChooseNameUiController::onBackspaceInputAction(const InputActionCallbackValues &values, std::string &name, bool *outDirty)
+{
+	DebugAssert(outDirty != nullptr);
+
+	if (values.performed)
+	{
+		*outDirty = TextEntry::backspace(name);
+	}
+}
+
+void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues &values, const std::string &name)
+{
+	if (values.performed)
+	{
+		if (name.size() > 0)
+		{
+			SDL_StopTextInput();
+
+			auto &game = values.game;
+			auto &charCreationState = game.getCharacterCreationState();
+			charCreationState.setName(name.c_str());
+
+			game.setPanel<ChooseGenderPanel>();
+		}
+	}
 }
 
 void ChooseRaceUiController::onBackToChooseGenderButtonSelected(Game &game)

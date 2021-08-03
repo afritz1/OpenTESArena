@@ -33,8 +33,10 @@ namespace ChooseGenderUiController
 
 namespace ChooseNameUiController
 {
-	void onBackToChooseClassButtonSelected(Game &game);
-	void onAcceptButtonSelected(Game &game, const std::string &acceptedName);
+	void onBackToChooseClassInputAction(const InputActionCallbackValues &values);
+	void onTextInput(const std::string_view &text, std::string &name, bool *outDirty);
+	void onBackspaceInputAction(const InputActionCallbackValues &values, std::string &name, bool *outDirty);
+	void onAcceptInputAction(const InputActionCallbackValues &values, const std::string &name);
 }
 
 namespace ChooseRaceUiController

@@ -54,6 +54,11 @@ Panel::~Panel()
 	{
 		inputManager.removeListener(listenerID);
 	}
+
+	for (const InputManager::ListenerID listenerID : this->textInputListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
 }
 
 std::optional<CursorData> Panel::getCurrentCursor() const
@@ -91,6 +96,7 @@ void Panel::onPauseChanged(bool paused)
 	setListenersEnabled(this->mouseButtonHeldListenerIDs);
 	setListenersEnabled(this->mouseScrollChangedListenerIDs);
 	setListenersEnabled(this->mouseMotionListenerIDs);
+	setListenersEnabled(this->textInputListenerIDs);
 }
 
 void Panel::resize(int windowWidth, int windowHeight)
@@ -157,6 +163,12 @@ void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
 {
 	auto &inputManager = this->game.getInputManager();
 	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
+}
+
+void Panel::addTextInputListener(const TextInputCallback &callback)
+{
+	auto &inputManager = this->game.getInputManager();
+	this->textInputListenerIDs.emplace_back(inputManager.addTextInputListener(callback));
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,

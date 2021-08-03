@@ -59,6 +59,10 @@ namespace
 				InputActionName::Screenshot,
 				InputStateType::BeginPerform,
 				SDLK_PRINTSCREEN));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::Backspace,
+				InputStateType::BeginPerform,
+				SDLK_BACKSPACE)); // @todo: or SDLK_KP_BACKSPACE?
 			// Going to keep scroll up/down as pointer events since scrollable UI things need the pointer over them.
 		}
 		else if (StringView::equals(mapName, InputActionMapName::Automap))

@@ -10,6 +10,7 @@ namespace InputActionName
 	constexpr const char *Back = "Back"; // A.k.a. cancel.
 	constexpr const char *Skip = "Skip"; // Might be left click, right click, escape, space, enter, keypad enter, etc..
 	constexpr const char *Screenshot = "Screenshot";
+	constexpr const char *Backspace = "Backspace";
 
 	// Game world.
 	constexpr const char *MoveForward = "MoveForward";
