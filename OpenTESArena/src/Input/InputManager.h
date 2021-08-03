@@ -14,6 +14,7 @@
 #include "InputActionEvents.h"
 #include "InputActionMap.h"
 #include "PointerEvents.h"
+#include "TextEvents.h"
 #include "../Math/Vector2.h"
 
 #include "components/utilities/BufferView.h"
@@ -35,7 +36,8 @@ private:
 		MouseScrollChanged,
 		MouseMotion,
 		ApplicationExit,
-		WindowResized
+		WindowResized,
+		TextInput
 	};
 
 	struct ListenerLookupEntry
@@ -111,6 +113,15 @@ private:
 		void reset();
 	};
 
+	struct TextInputListenerEntry
+	{
+		TextInputCallback callback;
+		bool enabled;
+
+		void init(const TextInputCallback &callback);
+		void reset();
+	};
+
 	std::vector<InputActionMap> inputActionMaps;
 
 	// Listener entry containers.
@@ -121,6 +132,7 @@ private:
 	std::vector<MouseMotionListenerEntry> mouseMotionListeners;
 	std::vector<ApplicationExitListenerEntry> applicationExitListeners;
 	std::vector<WindowResizedListenerEntry> windowResizedListeners;
+	std::vector<TextInputListenerEntry> textInputListeners;
 
 	// Look-up values for valid listener entries, shared by all listener containers.
 	std::unordered_map<ListenerID, ListenerLookupEntry> listenerLookupEntries;
@@ -133,6 +145,7 @@ private:
 	std::vector<int> freedMouseMotionListenerIndices;
 	std::vector<int> freedApplicationExitListenerIndices;
 	std::vector<int> freedWindowResizedListenerIndices;
+	std::vector<int> freedTextInputListenerIndices;
 
 	ListenerID nextListenerID;
 	std::vector<ListenerID> freedListenerIDs;
@@ -171,8 +184,9 @@ public:
 	bool mouseButtonIsUp(uint8_t button) const;
 	bool mouseWheeledUp(const SDL_Event &e) const;
 	bool mouseWheeledDown(const SDL_Event &e) const;
-	bool windowResized(const SDL_Event &e) const;
 	bool applicationExit(const SDL_Event &e) const;
+	bool windowResized(const SDL_Event &e) const;
+	bool isTextInput(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
 
@@ -189,6 +203,7 @@ public:
 	ListenerID addMouseMotionListener(const MouseMotionCallback &callback);
 	ListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
 	ListenerID addWindowResizedListener(const WindowResizedCallback &callback);
+	ListenerID addTextInputListener(const TextInputCallback &callback);
 
 	void removeListener(ListenerID id);
 

@@ -146,6 +146,18 @@ void InputManager::WindowResizedListenerEntry::reset()
 	this->enabled = false;
 }
 
+void InputManager::TextInputListenerEntry::init(const TextInputCallback &callback)
+{
+	this->callback = callback;
+	this->enabled = true;
+}
+
+void InputManager::TextInputListenerEntry::reset()
+{
+	this->callback = [](const std::string&) { };
+	this->enabled = false;
+}
+
 InputManager::InputManager()
 	: mouseDelta(0, 0)
 {
@@ -159,6 +171,11 @@ void InputManager::init()
 
 	// Disable text input mode (for some reason it's on by default)?
 	SDL_StopTextInput();
+}
+
+bool InputManager::isKeyEvent(const SDL_Event &e) const
+{
+	return ((e.type == SDL_KEYDOWN) || (e.type == SDL_KEYUP)) && (e.key.repeat == 0);
 }
 
 bool InputManager::keyPressed(const SDL_Event &e, SDL_Keycode keycode) const
@@ -177,15 +194,25 @@ bool InputManager::keyIsDown(SDL_Scancode scancode) const
 	return keys[scancode] != 0;
 }
 
-bool InputManager::isKeyEvent(const SDL_Event &e) const
-{
-	return ((e.type == SDL_KEYDOWN) || (e.type == SDL_KEYUP)) && (e.key.repeat == 0);
-}
-
 bool InputManager::keyIsUp(SDL_Scancode scancode) const
 {
 	const uint8_t *keys = SDL_GetKeyboardState(nullptr);
 	return keys[scancode] == 0;
+}
+
+bool InputManager::isMouseButtonEvent(const SDL_Event &e) const
+{
+	return (e.type == SDL_MOUSEBUTTONDOWN) || (e.type == SDL_MOUSEBUTTONUP);
+}
+
+bool InputManager::isMouseWheelEvent(const SDL_Event &e) const
+{
+	return e.type == SDL_MOUSEWHEEL;
+}
+
+bool InputManager::isMouseMotionEvent(const SDL_Event &e) const
+{
+	return e.type == SDL_MOUSEMOTION;
 }
 
 bool InputManager::mouseButtonPressed(const SDL_Event &e, uint8_t button) const
@@ -210,21 +237,6 @@ bool InputManager::mouseButtonIsUp(uint8_t button) const
 	return (mouse & SDL_BUTTON(button)) == 0;
 }
 
-bool InputManager::isMouseButtonEvent(const SDL_Event &e) const
-{
-	return (e.type == SDL_MOUSEBUTTONDOWN) || (e.type == SDL_MOUSEBUTTONUP);
-}
-
-bool InputManager::isMouseWheelEvent(const SDL_Event &e) const
-{
-	return e.type == SDL_MOUSEWHEEL;
-}
-
-bool InputManager::isMouseMotionEvent(const SDL_Event &e) const
-{
-	return e.type == SDL_MOUSEMOTION;
-}
-
 bool InputManager::mouseWheeledUp(const SDL_Event &e) const
 {
 	return (e.type == SDL_MOUSEWHEEL) && (e.wheel.y > 0);
@@ -235,14 +247,19 @@ bool InputManager::mouseWheeledDown(const SDL_Event &e) const
 	return (e.type == SDL_MOUSEWHEEL) && (e.wheel.y < 0);
 }
 
+bool InputManager::applicationExit(const SDL_Event &e) const
+{
+	return e.type == SDL_QUIT;
+}
+
 bool InputManager::windowResized(const SDL_Event &e) const
 {
 	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
 }
 
-bool InputManager::applicationExit(const SDL_Event &e) const
+bool InputManager::isTextInput(const SDL_Event &e) const
 {
-	return e.type == SDL_QUIT;
+	return e.type == SDL_TEXTINPUT;
 }
 
 InputManager::ListenerID InputManager::getNextListenerID()
@@ -399,6 +416,12 @@ InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResi
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
 }
 
+InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
+{
+	return this->addListenerInternal(callback, ListenerType::TextInput,
+		this->textInputListeners, this->freedTextInputListenerIndices);
+}
+
 void InputManager::removeListener(ListenerID id)
 {
 	auto resetListenerEntry = [](auto &listeners, auto &freedIndices, int removeIndex)
@@ -445,6 +468,10 @@ void InputManager::removeListener(ListenerID id)
 		else if (listenerType == ListenerType::WindowResized)
 		{
 			resetListenerEntry(this->windowResizedListeners, this->freedWindowResizedListenerIndices, index);
+		}
+		else if (listenerType == ListenerType::TextInput)
+		{
+			resetListenerEntry(this->textInputListeners, this->freedTextInputListenerIndices, index);
 		}
 		else
 		{
@@ -507,6 +534,10 @@ void InputManager::setListenerEnabled(ListenerID id, bool enabled)
 	else if (listenerType == ListenerType::WindowResized)
 	{
 		setEnabled(this->windowResizedListeners, index);
+	}
+	else if (listenerType == ListenerType::TextInput)
+	{
+		setEnabled(this->textInputListeners, index);
 	}
 	else
 	{
@@ -618,29 +649,7 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 	// keys/mouse buttons like Skip.
 	for (const SDL_Event &e : this->cachedEvents)
 	{
-		if (this->applicationExit(e))
-		{
-			for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
-			{
-				if (entry.enabled)
-				{
-					entry.callback();
-				}
-			}
-		}
-		else if (this->windowResized(e))
-		{
-			const int width = e.window.data1;
-			const int height = e.window.data2;
-			for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
-			{
-				if (entry.enabled)
-				{
-					entry.callback(width, height);
-				}
-			}
-		}
-		else if (this->isKeyEvent(e))
+		if (this->isKeyEvent(e))
 		{
 			static_assert(std::is_same_v<InputActionDefinition::KeyDefinition::Keymod, decltype(e.key.keysym.mod)>);
 
@@ -813,6 +822,39 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 				if (entry.enabled)
 				{
 					entry.callback(game, this->mouseDelta.x, this->mouseDelta.y);
+				}
+			}
+		}
+		else if (this->applicationExit(e))
+		{
+			for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
+			{
+				if (entry.enabled)
+				{
+					entry.callback();
+				}
+			}
+		}
+		else if (this->windowResized(e))
+		{
+			const int width = e.window.data1;
+			const int height = e.window.data2;
+			for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
+			{
+				if (entry.enabled)
+				{
+					entry.callback(width, height);
+				}
+			}
+		}
+		else if (this->isTextInput(e))
+		{
+			const std::string text = e.text.text;
+			for (const TextInputListenerEntry &entry : this->textInputListeners)
+			{
+				if (entry.enabled)
+				{
+					entry.callback(text);
 				}
 			}
 		}
