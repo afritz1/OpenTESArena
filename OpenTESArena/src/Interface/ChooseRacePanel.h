@@ -6,7 +6,6 @@
 
 #include "Panel.h"
 #include "../Math/Vector2.h"
-#include "../UI/Button.h"
 #include "../UI/Texture.h"
 
 class Renderer;
@@ -14,9 +13,6 @@ class Renderer;
 class ChooseRacePanel : public Panel
 {
 private:
-	Button<Game&> backToGenderButton;
-	Button<Game&, int> selectProvinceButton;
-
 	void drawProvinceTooltip(int provinceID, Renderer &renderer);	
 public:
 	ChooseRacePanel(Game &game);
@@ -28,7 +24,6 @@ public:
 	static std::unique_ptr<Panel> getInitialSubPanel(Game &game);
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 	virtual void renderSecondary(Renderer &renderer) override;
 };

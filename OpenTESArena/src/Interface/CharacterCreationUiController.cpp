@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "SDL.h"
 
 #include "CharacterCreationUiController.h"
@@ -158,14 +160,33 @@ void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues
 	}
 }
 
-void ChooseRaceUiController::onBackToChooseGenderButtonSelected(Game &game)
+void ChooseRaceUiController::onBackToChooseGenderInputAction(const InputActionCallbackValues &values)
 {
-	game.setPanel<ChooseGenderPanel>();
+	if (values.performed)
+	{
+		auto &game = values.game;
+		game.setPanel<ChooseGenderPanel>();
+	}
 }
 
 void ChooseRaceUiController::onInitialPopUpButtonSelected(Game &game)
 {
 	game.popSubPanel();
+}
+
+void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType buttonType,
+	const Int2 &position, bool pressed)
+{
+	// Listen for clicks on the map, checking if the mouse is over a province mask.
+	if ((buttonType == MouseButtonType::Left) && pressed)
+	{
+		const Int2 originalPoint = game.getRenderer().nativeToOriginal(position);
+		const std::optional<int> provinceID = ChooseRaceUiModel::getProvinceID(game, originalPoint);
+		if (provinceID.has_value())
+		{
+			ChooseRaceUiController::onProvinceButtonSelected(game, *provinceID);
+		}
+	}
 }
 
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
