@@ -391,6 +391,8 @@ void GameWorldPanel::handleEvent(const SDL_Event &e)
 
 void GameWorldPanel::onPauseChanged(bool paused)
 {
+	Panel::onPauseChanged(paused);
+
 	auto &game = this->getGame();
 
 	// If in modern mode, set free-look to the given value.
