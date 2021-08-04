@@ -518,8 +518,8 @@ void PlayerLogicController::handlePlayerAttack(Game &game, const Int2 &mouseDelt
 	}
 }
 
-void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoint, bool primaryClick,
-	bool debugFadeVoxel, TextBox &actionTextBox)
+void PlayerLogicController::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint,
+	bool primaryInteraction, bool debugFadeVoxel, TextBox &actionTextBox)
 {
 	auto &gameState = game.getGameState();
 	const auto &options = game.getOptions();
@@ -569,9 +569,9 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 			const Chunk::VoxelID voxelID = chunkPtr->getVoxel(voxel.x, voxel.y, voxel.z);
 			const VoxelDefinition &voxelDef = chunkPtr->getVoxelDef(voxelID);
 
-			// Primary click handles selection in the game world. Secondary click handles
+			// Primary interaction handles selection in the game world. Secondary interaction handles
 			// reading names of things.
-			if (primaryClick)
+			if (primaryInteraction)
 			{
 				// Arbitrary max distance for selection.
 				// @todo: move to some ArenaPlayerUtils maybe
@@ -671,7 +671,7 @@ void PlayerLogicController::handleClickInWorld(Game &game, const Int2 &nativePoi
 			const Physics::Hit::EntityHit &entityHit = hit.getEntityHit();
 			const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 
-			if (primaryClick)
+			if (primaryInteraction)
 			{
 				// @todo: max selection distance matters when talking to NPCs and selecting corpses.
 				// - need to research a bit since I think it switches between select and inspect

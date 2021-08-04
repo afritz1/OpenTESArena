@@ -152,7 +152,7 @@ namespace
 			defs.emplace_back(makeKeyDef(
 				InputActionName::CharacterSheet,
 				InputStateType::BeginPerform,
-				SDLK_TAB));
+				SDLK_TAB)); // @todo: and F1
 			defs.emplace_back(makeKeyDef(
 				InputActionName::Logbook,
 				InputStateType::BeginPerform,
@@ -173,6 +173,10 @@ namespace
 				InputActionName::Steal,
 				InputStateType::BeginPerform,
 				SDLK_p));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::ToggleCompass,
+				InputStateType::BeginPerform,
+				SDLK_F8));
 			defs.emplace_back(makeKeyDef(
 				InputActionName::ToggleWeapon,
 				InputStateType::BeginPerform,

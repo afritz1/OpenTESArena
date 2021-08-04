@@ -33,6 +33,7 @@ namespace InputActionName
 	constexpr const char *PlayerPosition = "PlayerPosition";
 	constexpr const char *Status = "Status";
 	constexpr const char *Steal = "Steal";
+	constexpr const char *ToggleCompass = "ToggleCompass";
 	constexpr const char *ToggleWeapon = "ToggleWeapon";
 	constexpr const char *UseItem = "UseItem";
 	constexpr const char *WorldMap = "WorldMap";

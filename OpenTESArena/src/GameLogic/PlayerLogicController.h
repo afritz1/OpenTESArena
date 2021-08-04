@@ -21,10 +21,10 @@ namespace PlayerLogicController
 	// Handles input for the player's attack. Takes the change in mouse position since the previous frame.
 	void handlePlayerAttack(Game &game, const Int2 &mouseDelta);
 
-	// Handles the behavior of the player clicking in the game world. "primaryClick" is true for left clicks,
+	// Handles the behavior of the player clicking in the game world. "primaryInteraction" is true for left clicks,
 	// false for right clicks.
-	void handleClickInWorld(Game &game, const Int2 &nativePoint, bool primaryClick, bool debugFadeVoxel,
-		TextBox &actionTextBox);
+	void handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool primaryInteraction,
+		bool debugFadeVoxel, TextBox &actionTextBox);
 }
 
 #endif
