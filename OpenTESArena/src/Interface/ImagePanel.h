@@ -21,12 +21,11 @@ private:
 	double secondsToDisplay, currentSeconds;
 public:
 	ImagePanel(Game &game);
-	~ImagePanel() override = default;
+	~ImagePanel() override;
 
 	bool init(const std::string &paletteName, const std::string &textureName, double secondsToDisplay,
 		const std::function<void(Game&)> &endingAction);
 
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
