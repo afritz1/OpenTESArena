@@ -15,8 +15,11 @@
 
 class ImageSequencePanel : public Panel
 {
+public:
+	using OnFinishedFunction = std::function<void(Game&)>;
 private:
 	Button<Game&> skipButton;
+	OnFinishedFunction onFinished;
 	std::vector<std::string> paletteNames;
 	std::vector<std::string> textureNames;
 	std::vector<double> imageDurations;
@@ -24,12 +27,11 @@ private:
 	int imageIndex;
 public:
 	ImageSequencePanel(Game &game);
-	~ImageSequencePanel() override = default;
+	~ImageSequencePanel() override;
 
 	bool init(const std::vector<std::string> &paletteNames, const std::vector<std::string> &textureNames,
-		const std::vector<double> &imageDurations, const std::function<void(Game&)> &endingAction);
+		const std::vector<double> &imageDurations, const OnFinishedFunction &onFinished);
 
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void tick(double dt) override;
 	virtual void render(Renderer &renderer) override;
 };
