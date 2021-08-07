@@ -3,6 +3,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Media/TextureManager.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/Texture.h"
 
@@ -22,17 +23,26 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
 
+	this->skipButton = Button<Game&>(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT,
+		onFinished);
+
+	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
+		[this, &game]() { this->skipButton.click(game); });
+
 	this->addInputActionListener(InputActionName::Skip,
 		[this](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
 			auto &game = values.game;
-			this->onFinished(game);
+			this->skipButton.click(game);
 		}
 	});
 
-	this->onFinished = onFinished;
 	this->paletteTextureAssetRef = TextureAssetReference(std::string(paletteName));
 	this->sequenceFilename = sequenceName;
 	this->secondsPerImage = secondsPerImage;
@@ -71,7 +81,7 @@ void CinematicPanel::tick(double dt)
 	if (this->imageIndex >= textureCount)
 	{
 		this->imageIndex = textureCount - 1;
-		this->onFinished(game);
+		this->skipButton.click(game);
 	}
 }
 

@@ -24,7 +24,7 @@ ImageSequencePanel::~ImageSequencePanel()
 
 bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
-	const std::function<void(Game&)> &onFinished)
+	const OnFinishedFunction &onFinished)
 {
 	if (paletteNames.size() != textureNames.size())
 	{

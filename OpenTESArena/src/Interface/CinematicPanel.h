@@ -18,7 +18,7 @@ class CinematicPanel : public Panel
 public:
 	using OnFinishedFunction = std::function<void(Game&)>;
 private:
-	OnFinishedFunction onFinished;
+	Button<Game&> skipButton;
 	TextureAssetReference paletteTextureAssetRef;
 	std::string sequenceFilename;
 	double secondsPerImage, currentSeconds;
