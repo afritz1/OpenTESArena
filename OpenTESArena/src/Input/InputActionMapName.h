@@ -11,6 +11,7 @@ namespace InputActionMapName
 	constexpr const char *CharacterCreation = "CharacterCreation"; // Save/reroll attributes.
 	constexpr const char *Cinematic = "Cinematic"; // Skip, etc..
 	constexpr const char *GameWorld = "GameWorld";
+	constexpr const char *Logbook = "Logbook";
 	constexpr const char *MainMenu = "MainMenu"; // Load, new game, exit, test.
 
 	constexpr const char *Names[] =
@@ -21,6 +22,7 @@ namespace InputActionMapName
 		CharacterCreation,
 		Cinematic,
 		GameWorld,
+		Logbook,
 		MainMenu
 	};
 }

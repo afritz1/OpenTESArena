@@ -200,6 +200,13 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_F4));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::Logbook))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::Logbook,
+				InputStateType::BeginPerform,
+				SDLK_l));
+		}
 		else if (StringView::equals(mapName, InputActionMapName::MainMenu))
 		{
 			defs.emplace_back(makeKeyDef(
