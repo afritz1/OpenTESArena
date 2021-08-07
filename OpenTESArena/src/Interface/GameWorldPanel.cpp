@@ -247,10 +247,11 @@ bool GameWorldPanel::init()
 	this->addInputActionListener(InputActionName::Camp,
 		[this](const InputActionCallbackValues &values)
 	{
-		if (values.performed)
-		{
-			this->campButton.click();
-		}
+		Game &game = values.game;
+		GameState &gameState = game.getGameState();
+
+		// @todo: make this click the button eventually when not needed for testing.
+		gameState.setIsCamping(values.performed);
 	});
 
 	this->addInputActionListener(InputActionName::Automap,
@@ -447,9 +448,8 @@ void GameWorldPanel::tick(double dt)
 
 	// Tick the game world clock time.
 	auto &gameState = game.getGameState();
-	const bool debugFastForwardClock = inputManager.keyIsDown(SDL_SCANCODE_R); // @todo: camp button
 	const Clock oldClock = gameState.getClock();
-	gameState.tick(debugFastForwardClock ? (dt * 250.0) : dt, game);
+	gameState.tick(dt, game);
 	const Clock newClock = gameState.getClock();
 
 	Renderer &renderer = game.getRenderer();

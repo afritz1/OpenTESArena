@@ -86,9 +86,9 @@ private:
 			const std::optional<bool> &enteringInteriorFromExterior);
 	};
 
-	// Determines length of a real-time second in-game. For the original game, one real
-	// second is twenty in-game seconds.
-	static constexpr double TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
+	// Determines length of a real-time second in-game. For the original game, one real second is
+	// twenty in-game seconds.
+	static constexpr double GAME_TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
 
 	Player player;
 
@@ -125,6 +125,7 @@ private:
 	Clock clock;
 	ArenaRandom arenaRandom;
 	double chasmAnimSeconds;
+	bool isCamping;
 
 	WeatherDefinition weatherDef;
 	WeatherInstance weatherInst;
@@ -251,6 +252,9 @@ public:
 	bool triggerTextIsVisible() const;
 	bool actionTextIsVisible() const;
 	bool effectTextIsVisible() const;
+
+	// Sets whether the player is camping, which influences time passing and other things.
+	void setIsCamping(bool isCamping);
 
 	// Sets the player's world map travel data when they select a destination.
 	void setTravelData(std::unique_ptr<ProvinceMapUiModel::TravelData> travelData);
