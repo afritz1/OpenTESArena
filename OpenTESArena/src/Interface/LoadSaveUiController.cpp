@@ -38,14 +38,18 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, popUpFunction, std::move(texture), center);
 }
 
-void LoadSaveUiController::onBackButtonSelected(Game &game)
+void LoadSaveUiController::onBackInputAction(const InputActionCallbackValues &values)
 {
-	if (game.gameStateIsActive())
+	if (values.performed)
 	{
-		game.setPanel<PauseMenuPanel>();
-	}
-	else
-	{
-		game.setPanel<MainMenuPanel>();
+		Game &game = values.game;
+		if (game.gameStateIsActive())
+		{
+			game.setPanel<PauseMenuPanel>();
+		}
+		else
+		{
+			game.setPanel<MainMenuPanel>();
+		}
 	}
 }

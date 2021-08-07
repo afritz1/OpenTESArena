@@ -46,6 +46,19 @@ std::vector<LoadSaveUiModel::Entry> LoadSaveUiModel::getSaveEntries(Game &game)
 	return entries;
 }
 
+Rect LoadSaveUiModel::getSlotRect(int index)
+{
+	constexpr int clickWidth = 316;
+	constexpr int clickHeight = 13;
+	constexpr int ySpacing = 1;
+
+	return Rect(
+		2,
+		2 + ((clickHeight + ySpacing) * index),
+		clickWidth,
+		clickHeight);
+}
+
 std::optional<int> LoadSaveUiModel::getClickedIndex(const Int2 &originalPoint)
 {
 	constexpr int x = 2;
