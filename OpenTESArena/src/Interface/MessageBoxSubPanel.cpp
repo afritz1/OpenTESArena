@@ -2,6 +2,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -49,8 +50,17 @@ void MessageBoxSubPanel::Item::init(const Rect &backgroundTextureRect, Texture &
 MessageBoxSubPanel::MessageBoxSubPanel(Game &game)
 	: Panel(game) { }
 
+MessageBoxSubPanel::~MessageBoxSubPanel()
+{
+	if (this->onClosed)
+	{
+		this->onClosed();
+	}
+}
+
 bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, const Rect &titleRect,
-	const TitleProperties &titleProperties, const ItemsProperties &itemsProperties)
+	const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
+	const OnClosedFunction &onClosed)
 {
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
@@ -63,7 +73,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	const int titleBackgroundHeight = backgroundProperties.heightOverride.has_value() ?
 		*backgroundProperties.heightOverride : (titleRect.getHeight() + backgroundProperties.extraTitleHeight);
 	this->titleBackgroundRect = Rect(titleRect.getCenter(), titleBackgroundWidth, titleBackgroundHeight);
-	
+
 	this->titleBackgroundTexture = TextureUtils::generate(backgroundProperties.patternType,
 		this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight(), textureManager, renderer);
 	if (this->titleBackgroundTexture.get() == nullptr)
@@ -98,7 +108,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	constexpr TextAlignment itemAlignment = titleAlignment;
 	const TextBox::Properties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
 		itemsProperties.textColor, itemAlignment);
-	
+
 	this->items.init(itemsProperties.count);
 	for (int i = 0; i < this->items.getCount(); i++)
 	{
@@ -125,7 +135,35 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 
 		MessageBoxSubPanel::Item &item = this->items.get(i);
 		item.init(itemBackgroundRect, std::move(itemBackgroundTexture), std::move(itemTextBox));
+
+		this->addButtonProxy(MouseButtonType::Left, itemBackgroundRect,
+			[this, i]()
+		{
+			MessageBoxSubPanel::Item &item = this->items.get(i);
+			DebugAssert(item.callback);
+			item.callback();
+		});
 	}
+
+	this->addInputActionListener(InputActionName::Back,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			// Try to close the message box as if a cancel button had been clicked.
+			for (int i = 0; i < this->items.getCount(); i++)
+			{
+				const MessageBoxSubPanel::Item &item = this->items.get(i);
+				if (item.isCancelButton)
+				{
+					item.callback();
+					break;
+				}
+			}
+		}
+	});
+
+	this->onClosed = onClosed;
 
 	return true;
 }
@@ -148,10 +186,23 @@ void MessageBoxSubPanel::setItemCallback(int itemIndex, const ItemCallback &call
 	item.isCancelButton = isCancelButton;
 }
 
-void MessageBoxSubPanel::setItemHotkey(int itemIndex, const std::optional<SDL_Keycode> &keycode)
+void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &inputActionName)
 {
+	DebugAssert(!inputActionName.empty());
+
 	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
-	item.hotkey = keycode;
+
+	// Only support setting the hotkey once due to the complication of finding and removing old input actions.
+	DebugAssert(item.inputActionName.empty());
+	item.inputActionName = inputActionName;
+
+	this->addInputActionListener(inputActionName,
+		[this, itemIndex](const InputActionCallbackValues &values)
+	{
+		MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+		DebugAssert(item.callback);
+		item.callback();
+	});
 }
 
 void MessageBoxSubPanel::addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor)
@@ -190,59 +241,6 @@ std::optional<CursorData> MessageBoxSubPanel::getCurrentCursor() const
 	}
 
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
-}
-
-void MessageBoxSubPanel::handleEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	if (escapePressed || rightClick)
-	{
-		// Try to close the message box as if a cancel button had been clicked.
-		for (int i = 0; i < this->items.getCount(); i++)
-		{
-			const MessageBoxSubPanel::Item &item = this->items.get(i);
-			if (item.isCancelButton)
-			{
-				item.callback();
-				break;
-			}
-		}
-	}
-	else if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = game.getRenderer().nativeToOriginal(mousePosition);
-
-		// See if any buttons were clicked.
-		for (int i = 0; i < this->items.getCount(); i++)
-		{
-			const MessageBoxSubPanel::Item &item = this->items.get(i);
-			const Rect &itemBackgroundRect = item.backgroundTextureRect;
-			if (itemBackgroundRect.contains(originalPoint))
-			{
-				item.callback();
-				break;
-			}
-		}
-	}
-	else
-	{
-		// Item-specific hotkeys.
-		for (int i = 0; i < this->items.getCount(); i++)
-		{
-			const MessageBoxSubPanel::Item &item = this->items.get(i);
-			if (item.hotkey.has_value() && inputManager.keyPressed(e, *item.hotkey))
-			{
-				item.callback();
-				break;
-			}
-		}
-	}
 }
 
 void MessageBoxSubPanel::render(Renderer &renderer)

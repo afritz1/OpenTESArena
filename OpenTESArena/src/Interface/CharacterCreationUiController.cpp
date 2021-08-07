@@ -18,6 +18,8 @@
 #include "TextSubPanel.h"
 #include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
 #include "../World/SkyUtils.h"
@@ -384,8 +386,14 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 	const MessageBoxSubPanel::ItemsProperties itemsProperties =
 		ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
 
+	auto onClosed = [&game]()
+	{
+		auto &inputManager = game.getInputManager();
+		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
+	};
+
 	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
-	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
+	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties, onClosed))
 	{
 		DebugCrash("Couldn't init save/reroll message box sub-panel.");
 	}
@@ -406,7 +414,7 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
 
-	panel->setItemHotkey(0, SDLK_s);
+	panel->setItemInputAction(0, InputActionName::SaveAttributes);
 
 	const std::string rerollText = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	panel->setItemText(1, rerollText);
@@ -422,7 +430,10 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
 
-	panel->setItemHotkey(1, SDLK_r);
+	panel->setItemInputAction(1, InputActionName::RerollAttributes);
+
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
 
 	game.pushSubPanel(std::move(panel));
 }
