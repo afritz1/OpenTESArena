@@ -13,22 +13,13 @@
 
 #include "components/utilities/String.h"
 
-void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int2 &mouseDelta,
+Double2 PlayerLogicController::makeTurningAngularValues(Game &game, double dt,
 	const BufferView<const Rect> &nativeCursorRegions)
 {
-	// @todo: move this to some game/player logic controller namespace
-
-	// In the future, maybe this could be separated into two methods:
-	// 1) handleClassicTurning()
-	// 2) handleModernTurning()
-
-	// Don't handle weapon swinging here. That can go in another method.
-	// If right click is held, weapon is out, and mouse motion is significant, then
-	// get the swing direction and swing.
 	const auto &inputManager = game.getInputManager();
+
 	const auto &options = game.getOptions();
 	const bool modernInterface = options.getGraphics_ModernInterface();
-
 	if (!modernInterface)
 	{
 		// Classic interface mode.
@@ -89,8 +80,7 @@ void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int
 			// Yaw the camera left or right. No vertical movement in classic camera mode.
 			// Multiply turning speed by delta time so it behaves correctly with different
 			// frame rates.
-			player.rotate(dx * dt, 0.0, options.getInput_HorizontalSensitivity(),
-				options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
+			return Double2(dx * dt, 0.0);
 		}
 		else if (!lCtrl)
 		{
@@ -98,20 +88,19 @@ void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int
 			if (left)
 			{
 				// Turn left at a fixed angular velocity.
-				player.rotate(-dt, 0.0, options.getInput_HorizontalSensitivity(),
-					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
+				return Double2(-dt, 0.0);
 			}
 			else if (right)
 			{
 				// Turn right at a fixed angular velocity.
-				player.rotate(dt, 0.0, options.getInput_HorizontalSensitivity(),
-					options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
+				return Double2(dt, 0.0);
 			}
 		}
 	}
 	else
 	{
 		// Modern interface. Make the camera look around if the player's weapon is not in use.
+		const Int2 mouseDelta = inputManager.getMouseDelta();
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
 		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
@@ -132,10 +121,20 @@ void PlayerLogicController::handlePlayerTurning(Game &game, double dt, const Int
 			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
 
 			// Pitch and/or yaw the camera.
-			player.rotate(dxx, -dyy, options.getInput_HorizontalSensitivity(),
-				options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
+			return Double2(dxx, -dyy);
 		}
 	}
+
+	// No turning.
+	return Double2::Zero;
+}
+
+void PlayerLogicController::turnPlayer(Game &game, double dx, double dy)
+{
+	const auto &options = game.getOptions();
+	auto &player = game.getGameState().getPlayer();
+	player.rotate(dx, dy, options.getInput_HorizontalSensitivity(),
+		options.getInput_VerticalSensitivity(), options.getInput_CameraPitchLimit());
 }
 
 void PlayerLogicController::handlePlayerMovement(Game &game, double dt,

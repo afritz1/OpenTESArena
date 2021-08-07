@@ -436,14 +436,11 @@ void GameWorldPanel::tick(double dt)
 	auto &game = this->getGame();
 	DebugAssert(game.gameStateIsActive());
 
-	// Get the relative mouse state.
-	const auto &inputManager = game.getInputManager();
-	const Int2 mouseDelta = inputManager.getMouseDelta();
-
 	// Handle input for player motion.
 	const BufferView<const Rect> nativeCursorRegionsView(
 		this->nativeCursorRegions.data(), static_cast<int>(this->nativeCursorRegions.size()));
-	PlayerLogicController::handlePlayerTurning(game, dt, mouseDelta, nativeCursorRegionsView);
+	const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(game, dt, nativeCursorRegionsView);
+	PlayerLogicController::turnPlayer(game, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
 	PlayerLogicController::handlePlayerMovement(game, dt, nativeCursorRegionsView);
 
 	// Tick the game world clock time.
@@ -528,6 +525,8 @@ void GameWorldPanel::tick(double dt)
 	const CoordDouble3 newPlayerCoord = player.getPosition();
 
 	// Handle input for the player's attack.
+	const auto &inputManager = game.getInputManager();
+	const Int2 mouseDelta = inputManager.getMouseDelta();
 	PlayerLogicController::handlePlayerAttack(game, mouseDelta);
 
 	MapInstance &mapInst = gameState.getActiveMapInst();
