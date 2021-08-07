@@ -3,6 +3,8 @@
 #include "MainMenuUiModel.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
@@ -16,8 +18,18 @@
 MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game) { }
 
+MainMenuPanel::~MainMenuPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, false);
+}
+
 bool MainMenuPanel::init()
 {
+	Game &game = this->getGame();
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, true);
+
 	this->loadButton = Button<Game&>(
 		MainMenuUiView::LoadButtonCenterPoint,
 		MainMenuUiView::LoadButtonWidth,
@@ -33,8 +45,11 @@ bool MainMenuPanel::init()
 		MainMenuUiView::ExitButtonWidth,
 		MainMenuUiView::ExitButtonHeight,
 		MainMenuUiController::onExitGameButtonSelected);
-	this->quickStartButton = Button<Game&, int, int, const std::string&, const std::optional<ArenaTypes::InteriorType>&,
-		ArenaTypes::WeatherType, MapType>(MainMenuUiController::onQuickStartButtonSelected);
+	this->quickStartButton = Button<Game&, int, int, const std::string&, const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType>(
+		MainMenuUiView::TestButtonRect.getCenter(),
+		MainMenuUiView::TestButtonRect.getWidth(),
+		MainMenuUiView::TestButtonRect.getHeight(),
+		MainMenuUiController::onQuickStartButtonSelected);
 	this->testTypeUpButton = Button<int*, int*, int*, int*>(
 		MainMenuUiView::TestTypeUpButtonX,
 		MainMenuUiView::TestTypeUpButtonY,
@@ -84,14 +99,136 @@ bool MainMenuPanel::init()
 		MainMenuUiView::TestWeatherDownButtonHeight,
 		MainMenuUiController::onTestWeatherDownButtonSelected);
 
+	this->addButtonProxy(MouseButtonType::Left, this->loadButton.getRect(),
+		[this, &game]() { this->loadButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->newButton.getRect(),
+		[this, &game]() { this->newButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Left, this->exitButton.getRect(),
+		[this]() { this->exitButton.click(); });
+	this->addButtonProxy(MouseButtonType::Left, this->quickStartButton.getRect(),
+		[this, &game]()
+	{
+		this->quickStartButton.click(game,
+			this->testType,
+			this->testIndex,
+			this->getSelectedTestName(),
+			this->getSelectedTestInteriorType(),
+			this->getSelectedTestWeatherType(),
+			this->getSelectedTestMapType());
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testTypeUpButton.getRect(),
+		[this]()
+	{
+		this->testTypeUpButton.click(&this->testType, &this->testIndex, &this->testIndex2, &this->testWeather);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testTypeDownButton.getRect(),
+		[this]()
+	{
+		this->testTypeDownButton.click(&this->testType, &this->testIndex, &this->testIndex2, &this->testWeather);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testIndexUpButton.getRect(),
+		[this]()
+	{
+		this->testIndexUpButton.click(&this->testType, &this->testIndex, &this->testIndex2);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testIndexDownButton.getRect(),
+		[this]()
+	{
+		this->testIndexDownButton.click(&this->testType, &this->testIndex, &this->testIndex2);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testIndex2UpButton.getRect(),
+		[this]()
+	{
+		if (this->testType == MainMenuUiModel::TestType_Interior)
+		{
+			this->testIndex2UpButton.click(this->testType, this->testIndex, &this->testIndex2);
+		}
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testIndex2DownButton.getRect(),
+		[this]()
+	{
+		if (this->testType == MainMenuUiModel::TestType_Interior)
+		{
+			this->testIndex2DownButton.click(this->testType, this->testIndex, &this->testIndex2);
+		}
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testWeatherUpButton.getRect(),
+		[this]()
+	{
+		if ((this->testType == MainMenuUiModel::TestType_City) ||
+			(this->testType == MainMenuUiModel::TestType_Wilderness))
+		{
+			this->testWeatherUpButton.click(this->testType, &this->testWeather);
+		}
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->testWeatherDownButton.getRect(),
+		[this]()
+	{
+		if ((this->testType == MainMenuUiModel::TestType_City) ||
+			(this->testType == MainMenuUiModel::TestType_Wilderness))
+		{
+			this->testWeatherDownButton.click(this->testType, &this->testWeather);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::LoadGame,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->loadButton.click(game);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::StartNewGame,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->newButton.click(game);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::ExitGame,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->exitButton.click();
+		}
+	});
+
+	this->addInputActionListener(InputActionName::TestGame,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->quickStartButton.click(game,
+				this->testType,
+				this->testIndex,
+				this->getSelectedTestName(),
+				this->getSelectedTestInteriorType(),
+				this->getSelectedTestWeatherType(),
+				this->getSelectedTestMapType());
+		}
+	});
+
 	this->testType = 0;
 	this->testIndex = 0;
 	this->testIndex2 = 1;
 	this->testWeather = 0;
 
-	if (this->getGame().gameStateIsActive())
+	if (game.gameStateIsActive())
 	{
-		DebugLogError("The game state should not be active on the main menu.");
+		DebugLogError("An active game state should not exist when on the main menu.");
 		return false;
 	}
 
@@ -216,126 +353,6 @@ MapType MainMenuPanel::getSelectedTestMapType() const
 std::optional<CursorData> MainMenuPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void MainMenuPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool lPressed = inputManager.keyPressed(e, SDLK_l);
-	bool sPressed = inputManager.keyPressed(e, SDLK_s);
-	bool ePressed = inputManager.keyPressed(e, SDLK_e);
-	bool fPressed = inputManager.keyPressed(e, SDLK_f);
-
-	if (lPressed)
-	{
-		this->loadButton.click(this->getGame());
-	}
-	else if (sPressed)
-	{
-		this->newButton.click(this->getGame());
-	}
-	else if (ePressed)
-	{
-		this->exitButton.click();
-	}
-	else if (fPressed)
-	{
-		// Enter the game world immediately (for testing purposes). Use the test traits
-		// selected on the main menu.
-		this->quickStartButton.click(this->getGame(),
-			this->testType,
-			this->testIndex,
-			this->getSelectedTestName(),
-			this->getSelectedTestInteriorType(),
-			this->getSelectedTestWeatherType(),
-			this->getSelectedTestMapType());
-	}
-
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer()
-			.nativeToOriginal(mousePosition);
-
-		if (this->loadButton.contains(originalPoint))
-		{
-			this->loadButton.click(this->getGame());
-		}
-		else if (this->newButton.contains(originalPoint))
-		{
-			this->newButton.click(this->getGame());
-		}
-		else if (this->exitButton.contains(originalPoint))
-		{
-			this->exitButton.click();
-		}
-		else if (MainMenuUiView::TestButtonRect.contains(originalPoint))
-		{
-			// Enter the game world immediately (for testing purposes). Use the test traits
-			// selected on the main menu.
-			this->quickStartButton.click(this->getGame(),
-				this->testType,
-				this->testIndex,
-				this->getSelectedTestName(),
-				this->getSelectedTestInteriorType(),
-				this->getSelectedTestWeatherType(),
-				this->getSelectedTestMapType());
-		}
-		else if (this->testTypeUpButton.contains(originalPoint))
-		{
-			this->testTypeUpButton.click(&this->testType, &this->testIndex, &this->testIndex2, &this->testWeather);
-		}
-		else if (this->testTypeDownButton.contains(originalPoint))
-		{
-			this->testTypeDownButton.click(&this->testType, &this->testIndex, &this->testIndex2, &this->testWeather);
-		}
-		else if (this->testIndexUpButton.contains(originalPoint))
-		{
-			this->testIndexUpButton.click(&this->testType, &this->testIndex, &this->testIndex2);
-		}
-		else if (this->testIndexDownButton.contains(originalPoint))
-		{
-			this->testIndexDownButton.click(&this->testType, &this->testIndex, &this->testIndex2);
-		}
-		else if (this->testType == MainMenuUiModel::TestType_Interior)
-		{
-			// These buttons are only available when selecting interior names.
-			if (this->testIndex2UpButton.contains(originalPoint))
-			{
-				this->testIndex2UpButton.click(this->testType, this->testIndex, &this->testIndex2);
-			}
-			else if (this->testIndex2DownButton.contains(originalPoint))
-			{
-				this->testIndex2DownButton.click(this->testType, this->testIndex, &this->testIndex2);
-			}
-		}
-		else if (this->testType == MainMenuUiModel::TestType_City)
-		{
-			// These buttons are only available when selecting city names.
-			if (this->testWeatherUpButton.contains(originalPoint))
-			{
-				this->testWeatherUpButton.click(this->testType, &this->testWeather);
-			}
-			else if (this->testWeatherDownButton.contains(originalPoint))
-			{
-				this->testWeatherDownButton.click(this->testType, &this->testWeather);
-			}
-		}
-		else if (this->testType == MainMenuUiModel::TestType_Wilderness)
-		{
-			// These buttons are only available when selecting wilderness names.
-			if (this->testWeatherUpButton.contains(originalPoint))
-			{
-				this->testWeatherUpButton.click(this->testType, &this->testWeather);
-			}
-			else if (this->testWeatherDownButton.contains(originalPoint))
-			{
-				this->testWeatherDownButton.click(this->testType, &this->testWeather);
-			}
-		}
-	}
 }
 
 void MainMenuPanel::renderTestUI(Renderer &renderer)

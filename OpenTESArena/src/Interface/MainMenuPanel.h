@@ -33,12 +33,11 @@ private:
 	void renderTestUI(Renderer &renderer);
 public:
 	MainMenuPanel(Game &game);
-	~MainMenuPanel() override = default;
+	~MainMenuPanel() override;
 
 	bool init();
 
 	virtual std::optional<CursorData> getCurrentCursor() const override;
-	virtual void handleEvent(const SDL_Event &e) override;
 	virtual void render(Renderer &renderer) override;
 };
 
