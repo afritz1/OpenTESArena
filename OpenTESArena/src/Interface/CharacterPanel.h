@@ -19,7 +19,7 @@ private:
 	Button<Game&> doneButton, nextPageButton;
 public:
 	CharacterPanel(Game &game);
-	~CharacterPanel() override = default;
+	~CharacterPanel() override;
 
 	bool init();
 

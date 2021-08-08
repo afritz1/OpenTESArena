@@ -5,6 +5,7 @@
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 
@@ -12,6 +13,12 @@
 
 CharacterPanel::CharacterPanel(Game &game)
 	: Panel(game) { }
+
+CharacterPanel::~CharacterPanel()
+{
+	auto &inputManager = this->getGame().getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, false);
+}
 
 bool CharacterPanel::init()
 {
@@ -63,9 +70,12 @@ bool CharacterPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->nextPageButton.getRect(),
 		[this, &game]() { this->nextPageButton.click(game); });
 
+	auto &inputManager = game.getInputManager();
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, true);
+
 	auto doneInputActionFunc = CharacterSheetUiController::onDoneInputAction;
 	this->addInputActionListener(InputActionName::Back, doneInputActionFunc);
-	this->addInputActionListener(InputActionName::CharacterSheet, doneInputActionFunc); // @todo: make sure input action map is active
+	this->addInputActionListener(InputActionName::CharacterSheet, doneInputActionFunc);
 
 	return true;
 }
