@@ -7,6 +7,7 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
@@ -26,45 +27,51 @@ bool WorldMapPanel::init()
 	auto &inputManager = game.getInputManager();
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, true);
 
-	this->backToGameButton = Button<Game&>(
-		WorldMapUiView::BackToGameButtonCenterPoint,
-		WorldMapUiView::BackToGameButtonWidth,
-		WorldMapUiView::BackToGameButtonHeight,
-		WorldMapUiController::onBackToGameButtonSelected);
+	const Rect fullscreenRect(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT);
 
-	for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
+	auto backToGameFunc = WorldMapUiController::onBackToGameButtonSelected;
+
+	this->addButtonProxy(MouseButtonType::Left, fullscreenRect,
+		[this, &game, backToGameFunc]()
 	{
-		const WorldMapMask &mask = WorldMapUiModel::getMask(game, i);
+		const auto &inputManager = game.getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
 
-		this->addButtonProxy(MouseButtonType::Left, mask.getRect(),
-			[this, &game, i]()
+		for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
 		{
-			const auto &inputManager = game.getInputManager();
-			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
-
 			const WorldMapMask &mask = WorldMapUiModel::getMask(game, i);
-			const bool success = mask.get(classicPosition.x, classicPosition.y);
-
-			if (success)
+			const Rect &maskRect = mask.getRect();
+			if (maskRect.contains(classicPosition))
 			{
-				if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
+				const bool success = mask.get(classicPosition.x, classicPosition.y);
+
+				if (success)
 				{
-					WorldMapUiController::onProvinceButtonSelected(game, i);
-				}
-				else
-				{
-					this->backToGameButton.click(game);
+					if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
+					{
+						WorldMapUiController::onProvinceButtonSelected(game, i);
+					}
+					else
+					{
+						backToGameFunc(game);
+					}
+
+					break;
 				}
 			}
-		});
-	}
+		}
+	});
 
-	auto backToGameInputActionFunc = [this](const InputActionCallbackValues &values)
+	auto backToGameInputActionFunc = [backToGameFunc](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			this->backToGameButton.click(values.game);
+			backToGameFunc(values.game);
 		}
 	};
 

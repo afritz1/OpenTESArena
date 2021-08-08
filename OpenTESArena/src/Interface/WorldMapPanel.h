@@ -11,7 +11,6 @@ class Renderer;
 class WorldMapPanel : public Panel
 {
 private:
-	Button<Game&> backToGameButton;
 	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
 public:
 	WorldMapPanel(Game &game);
