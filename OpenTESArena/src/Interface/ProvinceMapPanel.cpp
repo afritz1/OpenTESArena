@@ -11,6 +11,7 @@
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../UI/CursorData.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
@@ -24,6 +25,8 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game)
 
 bool ProvinceMapPanel::init(int provinceID)
 {
+	auto &game = this->getGame();
+
 	this->searchButton = []()
 	{
 		const Rect &clickArea = ProvinceMapUiView::SearchButtonRect;
@@ -57,11 +60,49 @@ bool ProvinceMapPanel::init(int provinceID)
 			ProvinceMapUiController::onBackToWorldMapButtonSelected);
 	}();
 
+	// Use fullscreen button proxy to determine what was clicked since there is button overlap.
+	this->addButtonProxy(MouseButtonType::Left,
+		Rect(0, 0, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
+		[this, &game]()
+	{
+		const auto &inputManager = game.getInputManager();
+		const Int2 mousePosition = inputManager.getMousePosition();
+		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+
+		if (this->searchButton.contains(classicPosition))
+		{
+			this->searchButton.click(game, *this, this->provinceID);
+		}
+		else if (this->travelButton.contains(classicPosition))
+		{
+			this->travelButton.click(game, *this);
+		}
+		else if (this->backToWorldMapButton.contains(classicPosition))
+		{
+			this->backToWorldMapButton.click(game);
+		}
+		else
+		{
+			// The closest location to the cursor was clicked. See if it can be set as the
+			// travel destination (depending on whether the player is already there).
+			const int closestLocationID = this->getClosestLocationID(classicPosition);
+			this->trySelectLocation(closestLocationID);
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Back,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->backToWorldMapButton.click(game);
+		}
+	});
+
 	this->provinceID = provinceID;
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 
 	// Get the palette for the background image.
-	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const TextureAssetReference provinceBgTextureAssetRef = ProvinceMapUiView::getProvinceBackgroundTextureAssetRef(game, provinceID);
 	const std::optional<PaletteID> optBackgroundPaletteID = textureManager.tryGetPaletteID(provinceBgTextureAssetRef);
@@ -153,49 +194,6 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 std::optional<CursorData> ProvinceMapPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void ProvinceMapPanel::handleEvent(const SDL_Event &e)
-{
-	// Input will eventually depend on if the location pop-up is displayed, or
-	// if a location is selected.
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	if (escapePressed || rightClick)
-	{
-		this->backToWorldMapButton.click(game);
-	}
-
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-
-	if (leftClick)
-	{
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = game.getRenderer().nativeToOriginal(mousePosition);
-
-		if (this->searchButton.contains(originalPosition))
-		{
-			this->searchButton.click(game, *this, this->provinceID);
-		}
-		else if (this->travelButton.contains(originalPosition))
-		{
-			this->travelButton.click(game, *this);
-		}
-		else if (this->backToWorldMapButton.contains(originalPosition))
-		{
-			this->backToWorldMapButton.click(game);
-		}
-		else
-		{
-			// The closest location to the cursor was clicked. See if it can be set as the
-			// travel destination (depending on whether the player is already there).
-			const int closestLocationID = this->getClosestLocationID(originalPosition);
-			this->trySelectLocation(closestLocationID);
-		}
-	}
 }
 
 int ProvinceMapPanel::getClosestLocationID(const Int2 &originalPosition) const
