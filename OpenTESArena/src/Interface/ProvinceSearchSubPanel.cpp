@@ -35,23 +35,22 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
 	this->parchment = TextureUtils::generate(
-		ProvinceMapUiView::SearchSubPanelTexturePattern,
-		ProvinceMapUiView::SearchSubPanelTextureWidth,
-		ProvinceMapUiView::SearchSubPanelTextureHeight,
+		ProvinceSearchUiView::TexturePattern,
+		ProvinceSearchUiView::TextureWidth,
+		ProvinceSearchUiView::TextureHeight,
 		game.getTextureManager(),
 		game.getRenderer());
 
-	const std::string textTitleText = ProvinceMapUiModel::getSearchSubPanelTitleText(game);
+	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
 	const TextBox::InitInfo textTitleTextBoxInitInfo =
-		ProvinceMapUiView::getSearchSubPanelTitleTextBoxInitInfo(textTitleText, fontLibrary);
+		ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
 	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo textEntryTextBoxInitInfo =
-		ProvinceMapUiView::getSearchSubPanelTextEntryTextBoxInitInfo(fontLibrary);
+	const TextBox::InitInfo textEntryTextBoxInitInfo = ProvinceSearchUiView::getTextEntryTextBoxInitInfo(fontLibrary);
 	if (!this->textEntryTextBox.init(textEntryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init text entry text box.");
@@ -60,26 +59,26 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	// Button proxies for these are added when the locations list is initialized.
 	this->listUpButton = Button<ListBox&>(
-		ProvinceMapUiView::SearchSubPanelListUpButtonCenterPoint,
-		ProvinceMapUiView::SearchSubPanelListUpButtonWidth,
-		ProvinceMapUiView::SearchSubPanelListUpButtonHeight,
-		ProvinceMapUiController::onSearchListUpButtonSelected);
+		ProvinceSearchUiView::ListUpButtonCenterPoint,
+		ProvinceSearchUiView::ListUpButtonWidth,
+		ProvinceSearchUiView::ListUpButtonHeight,
+		ProvinceSearchUiController::onListUpButtonSelected);
 	this->listDownButton = Button<ListBox&>(
-		ProvinceMapUiView::SearchSubPanelListDownButtonCenterPoint,
-		ProvinceMapUiView::SearchSubPanelListDownButtonWidth,
-		ProvinceMapUiView::SearchSubPanelListDownButtonHeight,
-		ProvinceMapUiController::onSearchListDownButtonSelected);
+		ProvinceSearchUiView::ListDownButtonCenterPoint,
+		ProvinceSearchUiView::ListDownButtonWidth,
+		ProvinceSearchUiView::ListDownButtonHeight,
+		ProvinceSearchUiController::onListDownButtonSelected);
 
 	this->addInputActionListener(InputActionName::Accept,
 		[this, &game](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+			if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 			{
 				// Begin the next step in the location search. Run the entered text through some
 				// checks to see if it matches any location names.
-				ProvinceMapUiController::onSearchTextAccepted(this->getGame(), *this);
+				ProvinceSearchUiController::onTextAccepted(this->getGame(), *this);
 			}
 		}
 	});
@@ -99,7 +98,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	{
 		if (values.performed)
 		{
-			if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+			if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 			{
 				const bool textChanged = TextEntry::backspace(this->locationName);
 				if (textChanged)
@@ -112,7 +111,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	this->addMouseScrollChangedListener([this](Game &game, MouseWheelScrollType type, const Int2 &position)
 	{
-		if (this->mode == ProvinceMapUiModel::SearchMode::List)
+		if (this->mode == ProvinceSearchUiModel::Mode::List)
 		{
 			const Rect &listBoxRect = this->locationsListBox.getRect();
 			const Int2 classicPosition = game.getRenderer().nativeToOriginal(position);
@@ -132,10 +131,10 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	this->addTextInputListener([this](const std::string_view &text)
 	{
-		if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+		if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 		{
 			const bool textChanged = TextEntry::append(this->locationName, text,
-				ProvinceMapUiModel::isCharAllowedInSearchText, ProvinceMapUiModel::SearchSubPanelMaxNameLength);
+				ProvinceSearchUiModel::isCharAllowed, ProvinceSearchUiModel::MaxNameLength);
 
 			if (textChanged)
 			{
@@ -145,7 +144,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	});
 
 	this->provinceMapPanel = &provinceMapPanel;
-	this->mode = ProvinceMapUiModel::SearchMode::TextEntry;
+	this->mode = ProvinceSearchUiModel::Mode::TextEntry;
 	this->provinceID = provinceID;
 
 	// Start with text input enabled.
@@ -156,7 +155,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 std::optional<CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
 {
-	if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+	if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 	{
 		// No mouse cursor when typing.
 		return std::nullopt;
@@ -178,8 +177,8 @@ void ProvinceSearchSubPanel::initLocationsList()
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	this->locationsListBox.init(ProvinceMapUiView::SearchSubPanelListBoxRect,
-		ProvinceMapUiView::makeSearchSubPanelListBoxProperties(game.getFontLibrary()), game.getRenderer());
+	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect,
+		ProvinceSearchUiView::makeListBoxProperties(game.getFontLibrary()), game.getRenderer());
 
 	this->clearButtonProxies();
 
@@ -210,7 +209,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 		{
 			DebugAssertIndex(this->locationsListIndices, i);
 			const int locationsListIndex = this->locationsListIndices[i];
-			ProvinceMapUiController::onSearchListLocationSelected(game, *this, locationsListIndex);
+			ProvinceSearchUiController::onListLocationSelected(game, *this, locationsListIndex);
 		});
 
 		auto rectFunc = [this, i]()
@@ -236,8 +235,8 @@ void ProvinceSearchSubPanel::tick(double dt)
 
 void ProvinceSearchSubPanel::renderTextEntry(Renderer &renderer)
 {
-	const int parchmentX = ProvinceMapUiView::getSearchSubPanelTextEntryTextureX(this->parchment.getWidth());
-	const int parchmentY = ProvinceMapUiView::getSearchSubPanelTextEntryTextureY(this->parchment.getHeight());
+	const int parchmentX = ProvinceSearchUiView::getTextEntryTextureX(this->parchment.getWidth());
+	const int parchmentY = ProvinceSearchUiView::getTextEntryTextureY(this->parchment.getHeight());
 	renderer.drawOriginal(this->parchment, parchmentX, parchmentY);
 
 	// Draw text: title, location name.
@@ -255,7 +254,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 	auto &game = this->getGame();
 	auto &textureManager = game.getTextureManager();
 	const TextureAssetReference listBackgroundPaletteTextureAssetRef =
-		ProvinceMapUiView::getSearchSubPanelListPaletteTextureAssetRef(game, this->provinceID);
+		ProvinceSearchUiView::getListPaletteTextureAssetRef(game, this->provinceID);
 	const std::optional<PaletteID> listBackgroundPaletteID =
 		textureManager.tryGetPaletteID(listBackgroundPaletteTextureAssetRef);
 	if (!listBackgroundPaletteID.has_value())
@@ -264,7 +263,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 		return;
 	}
 	
-	const TextureAssetReference listBackgroundTextureAssetRef = ProvinceMapUiView::getSearchSubPanelListTextureAssetRef();
+	const TextureAssetReference listBackgroundTextureAssetRef = ProvinceSearchUiView::getListTextureAssetRef();
 	const std::optional<TextureBuilderID> listBackgroundTextureBuilderID =
 		textureManager.tryGetTextureBuilderID(listBackgroundTextureAssetRef);
 	if (!listBackgroundTextureBuilderID.has_value())
@@ -274,7 +273,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 	}
 
 	renderer.drawOriginal(*listBackgroundTextureBuilderID, *listBackgroundPaletteID,
-		ProvinceMapUiView::SearchSubPanelListTextureX, ProvinceMapUiView::SearchSubPanelListTextureY,
+		ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY,
 		textureManager);
 
 	// Draw list box text.
@@ -285,7 +284,7 @@ void ProvinceSearchSubPanel::renderList(Renderer &renderer)
 
 void ProvinceSearchSubPanel::render(Renderer &renderer)
 {
-	if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+	if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 	{
 		this->renderTextEntry(renderer);
 	}

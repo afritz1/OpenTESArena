@@ -32,7 +32,7 @@ public:
 	ProvinceMapPanel *provinceMapPanel;
 	std::vector<int> locationsListIndices;
 	std::string locationName;
-	ProvinceMapUiModel::SearchMode mode;
+	ProvinceSearchUiModel::Mode mode;
 	int provinceID;
 
 	ProvinceSearchSubPanel(Game &game);

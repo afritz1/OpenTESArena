@@ -10,20 +10,19 @@ class ProvinceSearchSubPanel;
 
 namespace ProvinceMapUiController
 {
-	// -- Province panel --
-
 	void onSearchButtonSelected(Game &game, ProvinceMapPanel &panel, int provinceID);
 	void onTravelButtonSelected(Game &game, ProvinceMapPanel &panel);
 	void onBackToWorldMapButtonSelected(Game &game);
 
-	void onTextPopUpSelected(Game &game);
+	void onTextPopUpSelected(Game &game);	
+}
 
-	// -- Search sub-panel --
-
-	void onSearchTextAccepted(Game &game, ProvinceSearchSubPanel &panel);
-	void onSearchListLocationSelected(Game &game, ProvinceSearchSubPanel &panel, int locationID);
-	void onSearchListUpButtonSelected(ListBox &listBox);
-	void onSearchListDownButtonSelected(ListBox &listBox);
+namespace ProvinceSearchUiController
+{
+	void onTextAccepted(Game &game, ProvinceSearchSubPanel &panel);
+	void onListLocationSelected(Game &game, ProvinceSearchSubPanel &panel, int locationID);
+	void onListUpButtonSelected(ListBox &listBox);
+	void onListDownButtonSelected(ListBox &listBox);
 }
 
 #endif

@@ -55,7 +55,7 @@ void ProvinceMapUiController::onTextPopUpSelected(Game &game)
 	game.popSubPanel();
 }
 
-void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSubPanel &panel)
+void ProvinceSearchUiController::onTextAccepted(Game &game, ProvinceSearchSubPanel &panel)
 {
 	SDL_StopTextInput();
 
@@ -63,7 +63,7 @@ void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSub
 	// with one of the visible locations in the province, then select that location.
 	// Otherwise, display the list box of locations sorted by their location index.
 	const int *exactLocationIndex = nullptr;
-	panel.locationsListIndices = ProvinceMapUiModel::getMatchingLocations(game,
+	panel.locationsListIndices = ProvinceSearchUiModel::getMatchingLocations(game,
 		panel.locationName, panel.provinceID, &exactLocationIndex);
 
 	if (exactLocationIndex != nullptr)
@@ -79,11 +79,11 @@ void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSub
 	{
 		// No exact match. Change to list mode.
 		panel.initLocationsList();
-		panel.mode = ProvinceMapUiModel::SearchMode::List;
+		panel.mode = ProvinceSearchUiModel::Mode::List;
 	}
 }
 
-void ProvinceMapUiController::onSearchListLocationSelected(Game &game, ProvinceSearchSubPanel &panel, int locationID)
+void ProvinceSearchUiController::onListLocationSelected(Game &game, ProvinceSearchSubPanel &panel, int locationID)
 {
 	// Try to select the location in the province map panel based on whether the
 	// player is already there.
@@ -93,12 +93,12 @@ void ProvinceMapUiController::onSearchListLocationSelected(Game &game, ProvinceS
 	game.popSubPanel();
 }
 
-void ProvinceMapUiController::onSearchListUpButtonSelected(ListBox &listBox)
+void ProvinceSearchUiController::onListUpButtonSelected(ListBox &listBox)
 {
 	listBox.scrollUp();
 }
 
-void ProvinceMapUiController::onSearchListDownButtonSelected(ListBox &listBox)
+void ProvinceSearchUiController::onListDownButtonSelected(ListBox &listBox)
 {
 	listBox.scrollDown();
 }

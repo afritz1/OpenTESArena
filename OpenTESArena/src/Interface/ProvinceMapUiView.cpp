@@ -90,44 +90,44 @@ std::string ProvinceMapUiView::getMapIconBlinkingOutlinesFilename()
 	return ArenaTextureName::MapIconOutlinesBlinking;
 }
 
-TextBox::InitInfo ProvinceMapUiView::getSearchSubPanelTitleTextBoxInitInfo(const std::string_view &text,
+TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view &text,
 	const FontLibrary &fontLibrary)
 {
 	return TextBox::InitInfo::makeWithXY(
 		text,
-		ProvinceMapUiView::SearchSubPanelTitleTextBoxX,
-		ProvinceMapUiView::SearchSubPanelTitleTextBoxY,
-		ProvinceMapUiView::SearchSubPanelTitleFontName,
-		ProvinceMapUiView::SearchSubPanelTitleColor,
-		ProvinceMapUiView::SearchSubPanelTitleTextAlignment,
+		ProvinceSearchUiView::TitleTextBoxX,
+		ProvinceSearchUiView::TitleTextBoxY,
+		ProvinceSearchUiView::TitleFontName,
+		ProvinceSearchUiView::TitleColor,
+		ProvinceSearchUiView::TitleTextAlignment,
 		fontLibrary);
 }
 
-TextBox::InitInfo ProvinceMapUiView::getSearchSubPanelTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBox::InitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	const std::string dummyText(ProvinceMapUiModel::SearchSubPanelMaxNameLength, TextRenderUtils::LARGEST_CHAR);
-	const Int2 &origin = ProvinceMapUiView::SearchSubPanelDefaultTextCursorPosition;
+	const std::string dummyText(ProvinceSearchUiModel::MaxNameLength, TextRenderUtils::LARGEST_CHAR);
+	const Int2 &origin = ProvinceSearchUiView::DefaultTextCursorPosition;
 	return TextBox::InitInfo::makeWithXY(
 		dummyText,
 		origin.x,
 		origin.y,
-		ProvinceMapUiView::SearchSubPanelTextEntryFontName,
-		ProvinceMapUiView::SearchSubPanelTextEntryColor,
-		ProvinceMapUiView::SearchSubPanelTextEntryTextAlignment,
+		ProvinceSearchUiView::TextEntryFontName,
+		ProvinceSearchUiView::TextEntryColor,
+		ProvinceSearchUiView::TextEntryTextAlignment,
 		fontLibrary);
 }
 
-int ProvinceMapUiView::getSearchSubPanelTextEntryTextureX(int textureWidth)
+int ProvinceSearchUiView::getTextEntryTextureX(int textureWidth)
 {
 	return (ArenaRenderUtils::SCREEN_WIDTH / 2) - (textureWidth / 2) - 1;
 }
 
-int ProvinceMapUiView::getSearchSubPanelTextEntryTextureY(int textureHeight)
+int ProvinceSearchUiView::getTextEntryTextureY(int textureHeight)
 {
 	return (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (textureHeight / 2) - 1;
 }
 
-ListBox::Properties ProvinceMapUiView::makeSearchSubPanelListBoxProperties(const FontLibrary &fontLibrary)
+ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::Arena;
 	int fontDefIndex;
@@ -158,12 +158,12 @@ ListBox::Properties ProvinceMapUiView::makeSearchSubPanelListBoxProperties(const
 		itemColor, scrollScale);
 }
 
-TextureAssetReference ProvinceMapUiView::getSearchSubPanelListTextureAssetRef()
+TextureAssetReference ProvinceSearchUiView::getListTextureAssetRef()
 {
 	return TextureAssetReference(std::string(ArenaTextureName::PopUp8));
 }
 
-TextureAssetReference ProvinceMapUiView::getSearchSubPanelListPaletteTextureAssetRef(Game &game, int provinceID)
+TextureAssetReference ProvinceSearchUiView::getListPaletteTextureAssetRef(Game &game, int provinceID)
 {
 	const auto &exeData = game.getBinaryAssetLibrary().getExeData();
 	const auto &provinceImgFilenames = exeData.locations.provinceImgFilenames;
