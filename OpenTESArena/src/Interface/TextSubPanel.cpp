@@ -4,6 +4,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../Math/Rect.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/Renderer.h"
@@ -16,7 +17,7 @@ TextSubPanel::TextSubPanel(Game &game)
 	: Panel(game) { }
 
 bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-	const std::function<void(Game&)> &onClosed, Texture &&texture, const Int2 &textureCenter)
+	const OnClosedFunction &onClosed, Texture &&texture, const Int2 &textureCenter)
 {
 	auto &game = this->getGame();
 
@@ -25,8 +26,28 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 		DebugLogError("Couldn't init sub-panel text box.");
 		return false;
 	}
+
+	this->closeButton = Button<Game&>(
+		0,
+		0,
+		ArenaRenderUtils::SCREEN_WIDTH,
+		ArenaRenderUtils::SCREEN_HEIGHT,
+		onClosed);
+
+	this->addButtonProxy(MouseButtonType::Left, this->closeButton.getRect(),
+		[this, &game]() { this->closeButton.click(game); });
+	this->addButtonProxy(MouseButtonType::Right, this->closeButton.getRect(),
+		[this, &game]() { this->closeButton.click(game); });
+
+	this->addInputActionListener(InputActionName::Back,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			this->closeButton.click(values.game);
+		}
+	});
 	
-	this->onClosed = onClosed;
 	this->texture = std::move(texture);
 	this->textureCenter = textureCenter;
 
@@ -34,7 +55,7 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 }
 
 bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
-	const std::function<void(Game&)> &onClosed)
+	const OnClosedFunction &onClosed)
 {
 	return this->init(textBoxInitInfo, text, onClosed, Texture(), Int2());
 }
@@ -63,22 +84,6 @@ std::optional<CursorData> TextSubPanel::getCurrentCursor() const
 	}
 
 	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
-}
-
-void TextSubPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	bool spacePressed = inputManager.keyPressed(e, SDLK_SPACE);
-	bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
-	bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	if (escapePressed || spacePressed || enterPressed || leftClick || rightClick)
-	{
-		this->onClosed(this->getGame());
-	}
 }
 
 void TextSubPanel::render(Renderer &renderer)
