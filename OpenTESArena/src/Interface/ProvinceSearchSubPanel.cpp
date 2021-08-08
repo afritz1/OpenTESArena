@@ -10,6 +10,8 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/CityDataFile.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
+#include "../Input/TextEvents.h"
 #include "../Media/Color.h"
 #include "../Media/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -56,7 +58,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		return false;
 	}
 
-	this->textAcceptButton = Button<Game&, ProvinceSearchSubPanel&>(ProvinceMapUiController::onSearchTextAccepted);
+	// Button proxies for these are added when the locations list is initialized.
 	this->listUpButton = Button<ListBox&>(
 		ProvinceMapUiView::SearchSubPanelListUpButtonCenterPoint,
 		ProvinceMapUiView::SearchSubPanelListUpButtonWidth,
@@ -68,11 +70,85 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		ProvinceMapUiView::SearchSubPanelListDownButtonHeight,
 		ProvinceMapUiController::onSearchListDownButtonSelected);
 
+	this->addInputActionListener(InputActionName::Accept,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+			{
+				// Begin the next step in the location search. Run the entered text through some
+				// checks to see if it matches any location names.
+				ProvinceMapUiController::onSearchTextAccepted(this->getGame(), *this);
+			}
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Back,
+		[this, &game](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			// Return to the province map panel.
+			game.popSubPanel();
+		}
+	});
+
+	this->addInputActionListener(InputActionName::Backspace,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+			{
+				const bool textChanged = TextEntry::backspace(this->locationName);
+				if (textChanged)
+				{
+					this->textEntryTextBox.setText(this->locationName);
+				}
+			}
+		}
+	});
+
+	this->addMouseScrollChangedListener([this](Game &game, MouseWheelScrollType type, const Int2 &position)
+	{
+		if (this->mode == ProvinceMapUiModel::SearchMode::List)
+		{
+			const Rect &listBoxRect = this->locationsListBox.getRect();
+			const Int2 classicPosition = game.getRenderer().nativeToOriginal(position);
+			if (listBoxRect.contains(classicPosition))
+			{
+				if (type == MouseWheelScrollType::Up)
+				{
+					this->listUpButton.click(this->locationsListBox);
+				}
+				else if (type == MouseWheelScrollType::Down)
+				{
+					this->listDownButton.click(this->locationsListBox);
+				}
+			}
+		}
+	});
+
+	this->addTextInputListener([this](const std::string_view &text)
+	{
+		if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
+		{
+			const bool textChanged = TextEntry::append(this->locationName, text,
+				ProvinceMapUiModel::isCharAllowedInSearchText, ProvinceMapUiModel::SearchSubPanelMaxNameLength);
+
+			if (textChanged)
+			{
+				this->textEntryTextBox.setText(this->locationName);
+			}
+		}
+	});
+
 	this->provinceMapPanel = &provinceMapPanel;
 	this->mode = ProvinceMapUiModel::SearchMode::TextEntry;
 	this->provinceID = provinceID;
 
-	// Start with text input enabled (see handleTextEntryEvent()).
+	// Start with text input enabled.
 	SDL_StartTextInput();
 
 	return true;
@@ -91,7 +167,7 @@ std::optional<CursorData> ProvinceSearchSubPanel::getCurrentCursor() const
 	}
 }
 
-void ProvinceSearchSubPanel::initLocationsListBox()
+void ProvinceSearchSubPanel::initLocationsList()
 {
 	// @todo: move the locationNames into UiModel
 	auto &game = this->getGame();
@@ -105,6 +181,22 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 	this->locationsListBox.init(ProvinceMapUiView::SearchSubPanelListBoxRect,
 		ProvinceMapUiView::makeSearchSubPanelListBoxProperties(game.getFontLibrary()), game.getRenderer());
 
+	this->clearButtonProxies();
+
+	// Add list box scroll button proxies.
+	this->addButtonProxy(MouseButtonType::Left, this->listUpButton.getRect(),
+		[this]()
+	{
+		this->listUpButton.click(this->locationsListBox);
+	});
+
+	this->addButtonProxy(MouseButtonType::Left, this->listDownButton.getRect(),
+		[this]()
+	{
+		this->listDownButton.click(this->locationsListBox);
+	});
+
+	// Add list box items and button proxies.
 	for (int i = 0; i < static_cast<int>(this->locationsListIndices.size()); i++)
 	{
 		const int locationIndex = this->locationsListIndices[i];
@@ -120,126 +212,25 @@ void ProvinceSearchSubPanel::initLocationsListBox()
 			const int locationsListIndex = this->locationsListIndices[i];
 			ProvinceMapUiController::onSearchListLocationSelected(game, *this, locationsListIndex);
 		});
-	}
-}
 
-void ProvinceSearchSubPanel::handleTextEntryEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool enterPressed = inputManager.keyPressed(e, SDLK_RETURN) ||
-		inputManager.keyPressed(e, SDLK_KP_ENTER);
-	const bool backspacePressed = inputManager.keyPressed(e, SDLK_BACKSPACE) ||
-		inputManager.keyPressed(e, SDLK_KP_BACKSPACE);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	// In the original game, right clicking here is registered as enter, but that seems
-	// inconsistent/unintuitive, so I'm making it register as escape instead.
-	if (escapePressed || rightClick)
-	{
-		// Return to the province map panel.
-		game.popSubPanel();
-	}
-	else if (enterPressed)
-	{
-		// Begin the next step in the location search. Run the entered text through some
-		// checks to see if it matches any location names.
-		this->textAcceptButton.click(this->getGame(), *this);
-	}
-	else
-	{
-		// Listen for SDL text input and changes in text.
-		const bool textChanged = TextEntry::updateText(this->locationName, e, backspacePressed,
-			ProvinceMapUiModel::isCharAllowedInSearchText, ProvinceMapUiModel::SearchSubPanelMaxNameLength);
-
-		if (textChanged)
+		auto rectFunc = [this, i]()
 		{
-			this->textEntryTextBox.setText(this->locationName);
-		}
-	}
-}
+			return this->locationsListBox.getItemGlobalRect(i);
+		};
 
-void ProvinceSearchSubPanel::handleListEvent(const SDL_Event &e)
-{
-	auto &game = this->getGame();
-	const auto &inputManager = game.getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	if (escapePressed || rightClick)
-	{
-		// Return to the province map panel.
-		game.popSubPanel();
-	}
-	else
-	{
-		const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-		const bool mouseWheelUp = inputManager.mouseWheeledUp(e);
-		const bool mouseWheelDown = inputManager.mouseWheeledDown(e);
-
-		// If over one of the text elements, select it and perform the travel
-		// behavior depending on whether the player is already there.
-		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-		// Custom width to better fill the screen-space.
-		const Rect &listBoxRect = this->locationsListBox.getRect();
-		if (listBoxRect.contains(originalPoint))
+		auto callback = [this, i]()
 		{
-			if (leftClick)
-			{
-				for (int i = 0; i < this->locationsListBox.getCount(); i++)
-				{
-					const Rect &itemGlobalRect = this->locationsListBox.getItemGlobalRect(i);
-					if (itemGlobalRect.contains(originalPoint))
-					{
-						const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
-						itemCallback();
-						break;
-					}
-				}
-			}
-			else if (mouseWheelUp)
-			{
-				this->listUpButton.click(this->locationsListBox);
-			}
-			else if (mouseWheelDown)
-			{
-				this->listDownButton.click(this->locationsListBox);
-			}
-		}
-		else if (leftClick)
-		{
-			// Check scroll buttons (they are outside the list box to the left).
-			if (this->listUpButton.contains(originalPoint))
-			{
-				this->listUpButton.click(this->locationsListBox);
-			}
-			else if (this->listDownButton.contains(originalPoint))
-			{
-				this->listDownButton.click(this->locationsListBox);
-			}
-		}
-	}
-}
+			const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
+			itemCallback();
+		};
 
-void ProvinceSearchSubPanel::handleEvent(const SDL_Event &e)
-{
-	if (this->mode == ProvinceMapUiModel::SearchMode::TextEntry)
-	{
-		this->handleTextEntryEvent(e);
-	}
-	else
-	{
-		this->handleListEvent(e);
+		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback);
 	}
 }
 
 void ProvinceSearchSubPanel::tick(double dt)
 {
-	// @todo: eventually blink text input cursor in text entry, and listen for
-	// scrolling in list.
+	// @todo: eventually blink text input cursor in text entry, and listen for scrolling in list box.
 	static_cast<void>(dt);
 }
 

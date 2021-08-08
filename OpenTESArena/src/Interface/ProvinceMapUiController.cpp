@@ -78,7 +78,7 @@ void ProvinceMapUiController::onSearchTextAccepted(Game &game, ProvinceSearchSub
 	else
 	{
 		// No exact match. Change to list mode.
-		panel.initLocationsListBox();
+		panel.initLocationsList();
 		panel.mode = ProvinceMapUiModel::SearchMode::List;
 	}
 }
