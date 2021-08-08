@@ -17,6 +17,6 @@ void OptionsUiController::onTabButtonSelected(OptionsPanel &panel, OptionsUiMode
 	if (!tabsAreEqual)
 	{
 		*currentTab = newTab;
-		panel.updateVisibleOptionTextBoxes();
+		panel.updateVisibleOptions();
 	}
 }

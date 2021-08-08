@@ -190,8 +190,8 @@ bool OptionsPanel::init()
 	// Set initial tab.
 	this->tab = OptionsUiModel::Tab::Graphics;
 
-	// Initialize all option text boxes for the initial tab.
-	this->updateVisibleOptionTextBoxes();
+	// Initialize all option text boxes and buttons for the initial tab.
+	this->updateVisibleOptions();
 
 	return true;
 }
@@ -272,7 +272,7 @@ void OptionsPanel::updateOptionTextBoxText(int index)
 	textBox.setText(text);
 }
 
-void OptionsPanel::updateVisibleOptionTextBoxes()
+void OptionsPanel::updateVisibleOptions()
 {
 	auto &game = this->getGame();
 	const auto &visibleOptions = this->getVisibleOptions();
@@ -280,101 +280,71 @@ void OptionsPanel::updateVisibleOptionTextBoxes()
 	this->currentTabTextBoxes.clear();
 	this->currentTabTextBoxes.resize(visibleOptions.size());
 
+	// Remove all button proxies, including the static ones.
+	this->clearButtonProxies();
+
+	auto addTabButtonProxy = [this](OptionsUiModel::Tab tab, const Rect &rect)
+	{
+		this->addButtonProxy(MouseButtonType::Left, rect,
+			[this, tab]() { this->tabButton.click(*this, &this->tab, tab); });
+	};
+
+	// Add the static button proxies.
+	addTabButtonProxy(OptionsUiModel::Tab::Graphics, OptionsUiView::GraphicsTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Audio, OptionsUiView::AudioTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Input, OptionsUiView::InputTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Misc, OptionsUiView::MiscTabRect);
+	addTabButtonProxy(OptionsUiModel::Tab::Dev, OptionsUiView::DevTabRect);
+	this->addButtonProxy(MouseButtonType::Left, this->backToPauseMenuButton.getRect(),
+		[this, &game]() { this->backToPauseMenuButton.click(game); });
+
+	auto addOptionButtonProxies = [this](int index)
+	{
+		DebugAssertIndex(this->currentTabTextBoxes, index);
+		const TextBox &optionTextBox = this->currentTabTextBoxes[index];
+		const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
+
+		const Rect optionRect(
+			OptionsUiView::ListOrigin.x,
+			OptionsUiView::ListOrigin.y + (optionTextBoxHeight * index),
+			OptionsUiView::ListDimensions.x,
+			optionTextBoxHeight);
+
+		auto buttonFunc = [this, index](bool isLeftClick)
+		{
+			auto &visibleOptions = this->getVisibleOptions();
+			DebugAssertIndex(visibleOptions, index);
+			std::unique_ptr<OptionsUiModel::Option> &optionPtr = visibleOptions[index];
+			OptionsUiModel::Option &option = *optionPtr;
+
+			// Modify the option based on which button was pressed.
+			if (isLeftClick)
+			{
+				TryIncrementOption(option);
+			}
+			else
+			{
+				TryDecrementOption(option);
+			}
+
+			this->updateOptionTextBoxText(index);
+		};
+
+		this->addButtonProxy(MouseButtonType::Left, optionRect, [buttonFunc]() { buttonFunc(true); });
+		this->addButtonProxy(MouseButtonType::Right, optionRect, [buttonFunc]() { buttonFunc(false); });
+	};
+
 	for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
 	{
 		this->initOptionTextBox(i);
 		this->updateOptionTextBoxText(i);
+		addOptionButtonProxies(i);
 	}
 }
 
 std::optional<CursorData> OptionsPanel::getCurrentCursor() const
 {
 	return this->getDefaultCursor();
-}
-
-void OptionsPanel::handleEvent(const SDL_Event &e)
-{
-	const auto &inputManager = this->getGame().getInputManager();
-	const bool escapePressed = inputManager.keyPressed(e, SDLK_ESCAPE);
-	const bool leftClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_LEFT);
-	const bool rightClick = inputManager.mouseButtonPressed(e, SDL_BUTTON_RIGHT);
-
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = this->getGame().getRenderer().nativeToOriginal(mousePosition);
-
-	if (escapePressed)
-	{
-		this->backToPauseMenuButton.click(this->getGame());
-	}
-	else if (leftClick)
-	{
-		// Check for various button clicks.
-		// @todo: the tab rects should be pretty easy to iterate over
-		if (this->backToPauseMenuButton.contains(originalPoint))
-		{
-			this->backToPauseMenuButton.click(this->getGame());
-		}
-		else if (OptionsUiView::GraphicsTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Graphics);
-		}
-		else if (OptionsUiView::AudioTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Audio);
-		}
-		else if (OptionsUiView::InputTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Input);
-		}
-		else if (OptionsUiView::MiscTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Misc);
-		}
-		else if (OptionsUiView::DevTabRect.contains(originalPoint))
-		{
-			this->tabButton.click(*this, &this->tab, OptionsUiModel::Tab::Dev);
-		}
-	}
-
-	// Check for option clicks. Left click is "next", right click is "previous", with
-	// respect to an option's value in its pre-defined range (if any).
-	if (leftClick || rightClick)
-	{
-		auto &visibleOptions = this->getVisibleOptions();
-
-		for (int i = 0; i < static_cast<int>(visibleOptions.size()); i++)
-		{
-			const auto &optionTextBox = this->currentTabTextBoxes.at(i);
-			const int optionTextBoxHeight = optionTextBox.getRect().getHeight();
-
-			const Rect optionRect(
-				OptionsUiView::ListOrigin.x,
-				OptionsUiView::ListOrigin.y + (optionTextBoxHeight * i),
-				OptionsUiView::ListDimensions.x,
-				optionTextBoxHeight);
-
-			// See if the option's rectangle contains the mouse click.
-			if (optionRect.contains(originalPoint))
-			{
-				DebugAssertIndex(visibleOptions, i);
-				std::unique_ptr<OptionsUiModel::Option> &optionPtr = visibleOptions[i];
-				OptionsUiModel::Option &option = *optionPtr;
-
-				// Modify the option based on which button was pressed.
-				if (leftClick)
-				{
-					TryIncrementOption(option);
-				}
-				else
-				{
-					TryDecrementOption(option);
-				}
-
-				this->updateOptionTextBoxText(i);
-				break;
-			}
-		}
-	}
 }
 
 void OptionsPanel::drawReturnButtonsAndTabs(Renderer &renderer)
