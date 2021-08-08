@@ -559,6 +559,7 @@ bool InputManager::isInTextEntryMode() const
 }
 
 void InputManager::handleHeldInputs(Game &game, const BufferView<const InputActionMap*> &activeMaps,
+	const BufferView<const InputActionListenerEntry*> &enabledInputActionListeners,
 	uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
 	auto handleHeldMouseButton = [this, &game, mouseState, &mousePosition, dt](MouseButtonType buttonType)
@@ -606,12 +607,13 @@ void InputManager::handleHeldInputs(Game &game, const BufferView<const InputActi
 						const bool isKeyHeld = (keyboardState[scancode] != 0) && (keyDef.keymod == keyboardMod);
 						if (isKeyHeld)
 						{
-							for (const InputActionListenerEntry &entry : this->inputActionListeners)
+							for (int j = 0; j < enabledInputActionListeners.getCount(); j++)
 							{
-								if (entry.enabled && (entry.actionName == def.name))
+								const InputActionListenerEntry *entry = enabledInputActionListeners.get(j);
+								if (entry->actionName == def.name)
 								{
 									InputActionCallbackValues values(game, false, true, false);
-									entry.callback(values);
+									entry->callback(values);
 								}
 							}
 						}
@@ -628,7 +630,7 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
 
-	// Need to gather up active maps before looping over them since callbacks can change which maps are active.
+	// Cache active maps and listeners before looping over them since callbacks can change which ones are active.
 	std::vector<const InputActionMap*> activeMaps;
 	for (const InputActionMap &map : this->inputActionMaps)
 	{
@@ -638,11 +640,76 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 		}
 	}
 
+	std::vector<const InputActionListenerEntry*> enabledInputActionListeners;
+	for (const InputActionListenerEntry &entry : this->inputActionListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledInputActionListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const MouseButtonChangedListenerEntry*> enabledMouseButtonChangedListeners;
+	for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledMouseButtonChangedListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const MouseScrollChangedListenerEntry*> enabledMouseScrollChangedListeners;
+	for (const MouseScrollChangedListenerEntry &entry : this->mouseScrollChangedListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledMouseScrollChangedListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const MouseMotionListenerEntry*> enabledMouseMotionListeners;
+	for (const MouseMotionListenerEntry &entry : this->mouseMotionListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledMouseMotionListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const ApplicationExitListenerEntry*> enabledApplicationExitListeners;
+	for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledApplicationExitListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const WindowResizedListenerEntry*> enabledWindowResizedListeners;
+	for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledWindowResizedListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const TextInputListenerEntry*> enabledTextInputListeners;
+	for (const TextInputListenerEntry &entry : this->textInputListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledTextInputListeners.emplace_back(&entry);
+		}
+	}
+
 	// Handle held mouse buttons and keys.
 	const BufferView<const InputActionMap*> activeMapsView(activeMaps.data(), static_cast<int>(activeMaps.size()));
+	const BufferView<const InputActionListenerEntry*> enabledInputActionListenersView(
+		enabledInputActionListeners.data(), static_cast<int>(enabledInputActionListeners.size()));
 	Int2 mousePosition;
 	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
-	this->handleHeldInputs(game, activeMapsView, mouseState, mousePosition, dt);
+	this->handleHeldInputs(game, activeMapsView, enabledInputActionListenersView, mouseState, mousePosition, dt);
 
 	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
@@ -661,7 +728,7 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 
 			for (const InputActionMap *map : activeMaps)
 			{
-				if (map->active && (!this->isInTextEntryMode() || map->allowedDuringTextEntry))
+				if (!this->isInTextEntryMode() || map->allowedDuringTextEntry)
 				{
 					for (const InputActionDefinition &def : map->defs)
 					{
@@ -676,12 +743,12 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 							// both must be held, so combinations like Ctrl + Alt + Delete are possible.
 							if ((keyDef.keycode == keycode) && (keyDef.keymod == keymod))
 							{
-								for (const InputActionListenerEntry &entry : this->inputActionListeners)
+								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
 								{
-									if (entry.enabled && (entry.actionName == def.name))
+									if (entry->actionName == def.name)
 									{
 										InputActionCallbackValues values(game, isKeyDown, false, isKeyUp);
-										entry.callback(values);
+										entry->callback(values);
 									}
 								}
 							}
@@ -702,6 +769,8 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 				if (isButtonPress)
 				{
 					// Check for clicked buttons in the UI.
+					// @todo: a more "accurate" way to check button clicks might be:
+					// - if button press is in rect, then save it, and if button release is also in that rect, then click.
 					for (int i = 0; i < buttonProxies.getCount(); i++)
 					{
 						const ButtonProxy &buttonProxy = buttonProxies.get(i);
@@ -723,35 +792,29 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 					}
 				}
 
-				for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
+				for (const MouseButtonChangedListenerEntry *entry : enabledMouseButtonChangedListeners)
 				{
-					if (entry.enabled)
-					{
-						entry.callback(game, *buttonType, mousePosition, isButtonPress);
-					}
+					entry->callback(game, *buttonType, mousePosition, isButtonPress);
 				}
 
 				for (const InputActionMap *map : activeMaps)
 				{
-					if (map->active)
+					for (const InputActionDefinition &def : map->defs)
 					{
-						for (const InputActionDefinition &def : map->defs)
-						{
-							const bool matchesStateType = (isButtonPress && def.stateType == InputStateType::BeginPerform) ||
-								(isButtonRelease && def.stateType == InputStateType::EndPerform);
+						const bool matchesStateType = (isButtonPress && def.stateType == InputStateType::BeginPerform) ||
+							(isButtonRelease && def.stateType == InputStateType::EndPerform);
 
-							if ((def.type == InputActionType::MouseButton) && matchesStateType)
+						if ((def.type == InputActionType::MouseButton) && matchesStateType)
+						{
+							const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+							if (mouseButtonDef.type == *buttonType)
 							{
-								const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
-								if (mouseButtonDef.type == *buttonType)
+								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
 								{
-									for (const InputActionListenerEntry &entry : this->inputActionListeners)
+									if (entry->actionName == def.name)
 									{
-										if (entry.enabled && (entry.actionName == def.name))
-										{
-											InputActionCallbackValues values(game, isButtonPress, false, isButtonRelease);
-											entry.callback(values);
-										}
+										InputActionCallbackValues values(game, isButtonPress, false, isButtonRelease);
+										entry->callback(values);
 									}
 								}
 							}
@@ -780,34 +843,28 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 
 			if (scrollType.has_value())
 			{
-				for (const MouseScrollChangedListenerEntry &entry : this->mouseScrollChangedListeners)
+				for (const MouseScrollChangedListenerEntry *entry : enabledMouseScrollChangedListeners)
 				{
-					if (entry.enabled)
-					{
-						entry.callback(game, *scrollType, mousePosition);
-					}
+					entry->callback(game, *scrollType, mousePosition);
 				}
 
 				for (const InputActionMap *map : activeMaps)
 				{
-					if (map->active)
+					for (const InputActionDefinition &def : map->defs)
 					{
-						for (const InputActionDefinition &def : map->defs)
-						{
-							const bool matchesStateType = !def.stateType.has_value();
+						const bool matchesStateType = !def.stateType.has_value();
 
-							if ((def.type == InputActionType::MouseWheel) && matchesStateType)
+						if ((def.type == InputActionType::MouseWheel) && matchesStateType)
+						{
+							const InputActionDefinition::MouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
+							if (mouseScrollDef.type == *scrollType)
 							{
-								const InputActionDefinition::MouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
-								if (mouseScrollDef.type == *scrollType)
+								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
 								{
-									for (const InputActionListenerEntry &entry : this->inputActionListeners)
+									if (entry->actionName == def.name)
 									{
-										if (entry.enabled && (entry.actionName == def.name))
-										{
-											InputActionCallbackValues values(game, true, false, false);
-											entry.callback(values);
-										}
+										InputActionCallbackValues values(game, true, false, false);
+										entry->callback(values);
 									}
 								}
 							}
@@ -818,45 +875,33 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 		}
 		else if (this->isMouseMotionEvent(e))
 		{
-			for (const MouseMotionListenerEntry &entry : this->mouseMotionListeners)
+			for (const MouseMotionListenerEntry *entry : enabledMouseMotionListeners)
 			{
-				if (entry.enabled)
-				{
-					entry.callback(game, this->mouseDelta.x, this->mouseDelta.y);
-				}
+				entry->callback(game, this->mouseDelta.x, this->mouseDelta.y);
 			}
 		}
 		else if (this->applicationExit(e))
 		{
-			for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
+			for (const ApplicationExitListenerEntry *entry : enabledApplicationExitListeners)
 			{
-				if (entry.enabled)
-				{
-					entry.callback();
-				}
+				entry->callback();
 			}
 		}
 		else if (this->windowResized(e))
 		{
 			const int width = e.window.data1;
 			const int height = e.window.data2;
-			for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
+			for (const WindowResizedListenerEntry *entry : enabledWindowResizedListeners)
 			{
-				if (entry.enabled)
-				{
-					entry.callback(width, height);
-				}
+				entry->callback(width, height);
 			}
 		}
 		else if (this->isTextInput(e))
 		{
 			const std::string_view text = e.text.text;
-			for (const TextInputListenerEntry &entry : this->textInputListeners)
+			for (const TextInputListenerEntry *entry : enabledTextInputListeners)
 			{
-				if (entry.enabled)
-				{
-					entry.callback(text);
-				}
+				entry->callback(text);
 			}
 		}
 
