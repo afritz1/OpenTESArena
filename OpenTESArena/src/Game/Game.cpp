@@ -462,25 +462,22 @@ void Game::handlePanelChanges()
 		this->requestedSubPanelPop = false;
 		
 		// Unpause the panel that is now the top-most one.
-		const bool paused = false;
-		this->getActivePanel()->onPauseChanged(paused);
+		this->getActivePanel()->onPauseChanged(false);
+	}
+
+	// If a new panel was requested, switch to it.
+	if (this->nextPanel.get() != nullptr)
+	{
+		this->panel = std::move(this->nextPanel);
 	}
 
 	// If a new sub-panel was requested, then add it to the stack.
 	if (this->nextSubPanel.get() != nullptr)
 	{
 		// Pause the top-most panel.
-		const bool paused = true;
-		this->getActivePanel()->onPauseChanged(paused);
+		this->getActivePanel()->onPauseChanged(true);
 
-		this->subPanels.push_back(std::move(this->nextSubPanel));
-	}
-
-	// If a new panel was requested, switch to it. If it will be the active panel 
-	// (i.e., there are no sub-panels), then subsequent events will be sent to it.
-	if (this->nextPanel.get() != nullptr)
-	{
-		this->panel = std::move(this->nextPanel);
+		this->subPanels.emplace_back(std::move(this->nextSubPanel));
 	}
 }
 
