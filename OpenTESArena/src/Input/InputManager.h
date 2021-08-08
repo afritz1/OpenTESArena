@@ -213,6 +213,9 @@ public:
 	// Sets whether the mouse should move during motion events (for player camera).
 	void setRelativeMouseMode(bool active);
 
+	// Sets whether keyboard input is interpreted as text input or hotkeys.
+	void setTextInputMode(bool active);
+
 	// Handle input listener callbacks, etc..
 	void update(Game &game, double dt, const BufferView<const ButtonProxy> &buttonProxies,
 		const std::function<void()> &onFinishedProcessingEvent);

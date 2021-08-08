@@ -170,7 +170,7 @@ void InputManager::init()
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 
 	// Disable text input mode (for some reason it's on by default)?
-	SDL_StopTextInput();
+	this->setTextInputMode(false);
 }
 
 bool InputManager::isKeyEvent(const SDL_Event &e) const
@@ -414,6 +414,18 @@ InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResi
 {
 	return this->addListenerInternal(callback, ListenerType::WindowResized,
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
+}
+
+void InputManager::setTextInputMode(bool active)
+{
+	if (active)
+	{
+		SDL_StartTextInput();
+	}
+	else
+	{
+		SDL_StopTextInput();
+	}
 }
 
 InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)

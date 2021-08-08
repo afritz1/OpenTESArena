@@ -57,7 +57,8 @@ void ProvinceMapUiController::onTextPopUpSelected(Game &game)
 
 void ProvinceSearchUiController::onTextAccepted(Game &game, ProvinceSearchSubPanel &panel)
 {
-	SDL_StopTextInput();
+	auto &inputManager = game.getInputManager();
+	inputManager.setTextInputMode(false);
 
 	// Determine what to do with the current location name. If it is a valid match
 	// with one of the visible locations in the province, then select that location.

@@ -148,7 +148,8 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	this->provinceID = provinceID;
 
 	// Start with text input enabled.
-	SDL_StartTextInput();
+	auto &inputManager = game.getInputManager();
+	inputManager.setTextInputMode(true);
 
 	return true;
 }

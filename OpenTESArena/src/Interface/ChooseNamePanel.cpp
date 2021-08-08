@@ -91,7 +91,8 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	SDL_StartTextInput();
+	auto &inputManager = game.getInputManager();
+	inputManager.setTextInputMode(true);
 
 	return true;
 }

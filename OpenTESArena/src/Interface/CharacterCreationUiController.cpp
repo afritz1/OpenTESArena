@@ -117,9 +117,10 @@ void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCal
 {
 	if (values.performed)
 	{
-		SDL_StopTextInput();
-
 		auto &game = values.game;
+		auto &inputManager = game.getInputManager();
+		inputManager.setTextInputMode(false);
+
 		auto &charCreationState = game.getCharacterCreationState();
 		charCreationState.setName(nullptr);
 
@@ -151,9 +152,10 @@ void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues
 	{
 		if (name.size() > 0)
 		{
-			SDL_StopTextInput();
-
 			auto &game = values.game;
+			auto &inputManager = game.getInputManager();
+			inputManager.setTextInputMode(false);
+
 			auto &charCreationState = game.getCharacterCreationState();
 			charCreationState.setName(name.c_str());
 
