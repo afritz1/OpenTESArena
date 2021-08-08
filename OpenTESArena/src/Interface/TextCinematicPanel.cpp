@@ -28,11 +28,8 @@ TextCinematicPanel::TextCinematicPanel(Game &game)
 
 TextCinematicPanel::~TextCinematicPanel()
 {
-	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, false);
-
 	// Stop voice if it is still playing.
+	auto &game = this->getGame();
 	auto &audioManager = game.getAudioManager();
 	audioManager.stopSound();
 }
@@ -95,9 +92,6 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		return textBoxes;
 	}();
 
-	auto &inputManager = game.getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
-
 	auto skipPageFunc = [this, onFinished](Game &game)
 	{
 		// Only allow page skipping if there is no speech.
@@ -125,7 +119,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	this->addButtonProxy(MouseButtonType::Left, this->skipButton.getRect(),
 		[this, &game]() { this->skipButton.click(game); });
 
-	this->addInputActionListener(InputActionName::Back,
+	this->addInputActionListener(InputActionName::Skip,
 		[onFinished, &game](const InputActionCallbackValues &values)
 	{
 		if (values.performed)

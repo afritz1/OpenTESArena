@@ -16,12 +16,6 @@
 ImageSequencePanel::ImageSequencePanel(Game &game)
 	: Panel(game) { }
 
-ImageSequencePanel::~ImageSequencePanel()
-{
-	auto &inputManager = this->getGame().getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, false);
-}
-
 bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	const std::vector<std::string> &textureNames, const std::vector<double> &imageDurations,
 	const OnFinishedFunction &onFinished)
@@ -41,8 +35,6 @@ bool ImageSequencePanel::init(const std::vector<std::string> &paletteNames,
 	}
 
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
 
 	this->skipButton = Button<Game&>(0, 0, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT,
 		[this](Game &game)

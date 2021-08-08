@@ -10,18 +10,10 @@
 CinematicPanel::CinematicPanel(Game &game)
 	: Panel(game) { }
 
-CinematicPanel::~CinematicPanel()
-{
-	auto &inputManager = this->getGame().getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, false);
-}
-
 bool CinematicPanel::init(const std::string &paletteName, const std::string &sequenceName,
 	double secondsPerImage, const OnFinishedFunction &onFinished)
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
 
 	this->skipButton = Button<Game&>(
 		0,

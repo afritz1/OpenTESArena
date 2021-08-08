@@ -12,18 +12,10 @@
 ImagePanel::ImagePanel(Game &game)
 	: Panel(game) { }
 
-ImagePanel::~ImagePanel()
-{
-	auto &inputManager = this->getGame().getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, false);
-}
-
 bool ImagePanel::init(const std::string &paletteName, const std::string &textureName,
 	double secondsToDisplay, const std::function<void(Game&)> &endingAction)
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
-	inputManager.setInputActionMapActive(InputActionMapName::Cinematic, true);
 
 	// Fullscreen button.
 	this->skipButton = Button<Game&>(

@@ -27,7 +27,7 @@ private:
 	TextureAssetReference getCurrentSequenceTextureAssetRef();
 public:
 	CinematicPanel(Game &game);
-	~CinematicPanel() override;
+	~CinematicPanel() override = default;
 
 	bool init(const std::string &paletteName, const std::string &sequenceName, double secondsPerImage,
 		const OnFinishedFunction &onFinished);
