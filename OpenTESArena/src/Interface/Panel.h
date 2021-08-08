@@ -76,10 +76,6 @@ public:
 	// least one cursor defined.
 	virtual std::optional<CursorData> getCurrentCursor() const;
 
-	// Handles panel-specific events. Application events like closing and resizing
-	// are handled by the game loop.
-	virtual void handleEvent(const SDL_Event &e);
-
 	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
 	// so its callback can be called.
 	virtual BufferView<const ButtonProxy> getButtonProxies() const;

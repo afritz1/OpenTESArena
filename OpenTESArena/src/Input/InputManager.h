@@ -150,8 +150,6 @@ private:
 	ListenerID nextListenerID;
 	std::vector<ListenerID> freedListenerIDs;
 
-	std::vector<SDL_Event> cachedEvents; // @temp: only for compatibility with old event system until completely moved over.
-
 	Int2 mouseDelta;
 
 	ListenerID getNextListenerID();
@@ -161,8 +159,6 @@ private:
 	template <typename EntryType, typename CallbackType>
 	ListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
-
-	void cacheSdlEvents();
 	
 	void handleHeldInputs(Game &game, uint32_t mouseState, const Int2 &mousePosition, double dt);
 public:
@@ -189,10 +185,6 @@ public:
 	bool isTextInput(const SDL_Event &e) const;
 	Int2 getMousePosition() const;
 	Int2 getMouseDelta() const;
-
-	// @temp until Game::handleEvents() is removed
-	int getEventCount() const;
-	const SDL_Event &getEvent(int index) const;
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 

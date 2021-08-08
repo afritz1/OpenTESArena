@@ -291,17 +291,6 @@ Int2 InputManager::getMouseDelta() const
 	return this->mouseDelta;
 }
 
-int InputManager::getEventCount() const
-{
-	return static_cast<int>(this->cachedEvents.size());
-}
-
-const SDL_Event &InputManager::getEvent(int index) const
-{
-	DebugAssertIndex(this->cachedEvents, index);
-	return this->cachedEvents[index];
-}
-
 bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 {
 	const auto iter = std::find_if(this->inputActionMaps.begin(), this->inputActionMaps.end(),
@@ -563,16 +552,6 @@ void InputManager::setRelativeMouseMode(bool active)
 	SDL_SetRelativeMouseMode(enabled);
 }
 
-void InputManager::cacheSdlEvents()
-{
-	this->cachedEvents.clear();
-	SDL_Event e;
-	while (SDL_PollEvent(&e) != 0)
-	{
-		this->cachedEvents.emplace_back(std::move(e));
-	}
-}
-
 bool InputManager::isInTextEntryMode() const
 {
 	const SDL_bool inTextEntryMode = SDL_IsTextInputActive();
@@ -644,10 +623,6 @@ void InputManager::handleHeldInputs(Game &game, uint32_t mouseState, const Int2 
 void InputManager::update(Game &game, double dt, const BufferView<const ButtonProxy> &buttonProxies,
 	const std::function<void()> &onFinishedProcessingEvent)
 {
-	// @temp: need to allow panel SDL_Events to be processed twice for compatibility with the
-	// old event handling in Game::handleEvents().
-	this->cacheSdlEvents();
-
 	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
 
@@ -659,7 +634,8 @@ void InputManager::update(Game &game, double dt, const BufferView<const ButtonPr
 	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
 	// keys/mouse buttons like Skip.
-	for (const SDL_Event &e : this->cachedEvents)
+	SDL_Event e;
+	while (SDL_PollEvent(&e) != 0)
 	{
 		if (this->isKeyEvent(e))
 		{

@@ -490,25 +490,9 @@ void Game::handleInput(double dt)
 	const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 	this->inputManager.update(*this, dt, buttonProxies, [this]()
 	{
-		// @todo: uncomment when fully moved over to InputManager and the one in the loop below is removed, otherwise
-		// they'll get double-processed (i.e. pressing Esc in the automap will close it and simultaneously open the 
-		// pause menu).
-		//this->handlePanelChanges();
-	});
-
-	// Handle events for the current game state.
-	// @todo: this is now the legacy input handling for panels. It should eventually all be handled by the InputManager.
-	// - Will probably want to wrap in a try/catch (preferably somewhere that the exception can print input info).
-	for (int i = 0; i < this->inputManager.getEventCount(); i++)
-	{
-		const SDL_Event &e = this->inputManager.getEvent(i);
-
-		// Panel-specific events are handled by the active panel.
-		this->getActivePanel()->handleEvent(e);
-
 		// See if the event requested any changes in active panels.
 		this->handlePanelChanges();
-	}
+	});
 }
 
 void Game::handleApplicationExit()
@@ -659,7 +643,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("handleEvents() exception: " + std::string(e.what()));
+			DebugCrash("handleInput() exception: " + std::string(e.what()));
 		}
 
 		// Animate the current game state by delta time.

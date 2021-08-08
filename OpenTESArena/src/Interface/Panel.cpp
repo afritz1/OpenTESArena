@@ -67,12 +67,6 @@ std::optional<CursorData> Panel::getCurrentCursor() const
 	return std::nullopt;
 }
 
-void Panel::handleEvent(const SDL_Event &e)
-{
-	// Do nothing by default.
-	static_cast<void>(e);
-}
-
 BufferView<const ButtonProxy> Panel::getButtonProxies() const
 {
 	return BufferView<const ButtonProxy>(this->buttonProxies.data(), static_cast<int>(this->buttonProxies.size()));
